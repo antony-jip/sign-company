@@ -1,0 +1,9 @@
+export { Hero } from './Hero';
+export { Services } from './Services';
+export { USPs } from './USPs';
+export { Portfolio } from './Portfolio';
+export { FAQ } from './FAQ';
+export { CTA } from './CTA';
+export { Location } from './Location';
+export { Header } from './Header';
+export { Footer } from './Footer';
