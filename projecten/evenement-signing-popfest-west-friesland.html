@@ -1,0 +1,447 @@
+<!--
+=============================================================================
+SIGN COMPANY - PROJECT DETAIL PAGE
+Pagina: Popfest '25 Evenement Signing West-Friesland
+Type: Standalone HTML voor WordPress/Elementor HTML-widget
+=============================================================================
+
+SEO META TAGS (te plaatsen in Yoast/RankMath of theme head):
+
+<title>Evenement Signing Popfest '25 West-Friesland | Festival Branding</title>
+<meta name="description" content="Complete evenement signing voor Popfest '25 in West-Friesland. Sign Company verzorgt festival branding, podiumbanners, bewegwijzering en LED-schermen voor outdoor events.">
+<meta name="keywords" content="evenement signing, festival branding, popfest west-friesland, podiumbanners, festival bewegwijzering, outdoor signing, LED schermen evenement, festivalborden, event graphics">
+<link rel="canonical" href="https://sign-company.nl/projecten/evenement-signing-popfest-west-friesland/">
+
+<meta property="og:title" content="Evenement Signing Popfest '25 West-Friesland | Sign Company">
+<meta property="og:description" content="Complete festival signing met podiumbanners, bewegwijzering en LED-schermen voor Popfest '25 in West-Friesland.">
+<meta property="og:image" content="https://sign-company.nl/wp-content/uploads/projecten/popfest-25-signing-og.jpg">
+<meta property="og:url" content="https://sign-company.nl/projecten/evenement-signing-popfest-west-friesland/">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Evenement Signing Popfest '25 | Festival Branding">
+<meta name="twitter:description" content="Complete evenement signing voor Popfest '25: podiumbanners, bewegwijzering en LED graphics.">
+=============================================================================
+-->
+
+<style>
+*{box-sizing:border-box}:root{--navy:#0f1b2a;--orange:#ff6b35;--gradient:linear-gradient(135deg,#ff6b35 0%,#ff8c42 50%,#ffa94d 100%);--glow:0 0 30px rgba(255,107,53,0.3);--radius:1rem;--shadow:0 4px 24px rgba(0,0,0,0.12)}
+.sc-project-detail{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;color:#1a1a1a;line-height:1.6;margin-left:calc(-50vw + 50%);margin-right:calc(-50vw + 50%);width:100vw;position:relative;overflow-x:hidden}
+.sc-project-detail .sc-hero{position:relative;height:70vh;min-height:500px;display:flex;align-items:flex-end;background:linear-gradient(180deg,transparent 0%,rgba(15,27,42,0.95) 100%),url('/wp-content/uploads/projecten/popfest-25-hero.jpg') center/cover no-repeat;padding:4rem 5%}
+.sc-project-detail .sc-hero-content{max-width:900px}
+.sc-project-detail .sc-breadcrumb{display:flex;gap:.5rem;font-size:.9rem;color:rgba(255,255,255,0.7);margin-bottom:1rem;flex-wrap:wrap}
+.sc-project-detail .sc-breadcrumb a{color:rgba(255,255,255,0.7);text-decoration:none;transition:color .3s}
+.sc-project-detail .sc-breadcrumb a:hover{color:var(--orange)}
+.sc-project-detail .sc-hero-cat{display:inline-block;background:var(--gradient);color:#fff;padding:.5rem 1.25rem;border-radius:2rem;font-size:.85rem;font-weight:600;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.5px}
+.sc-project-detail .sc-hero h1{font-size:clamp(2rem,5vw,3.5rem);color:#fff;margin:0 0 1rem;line-height:1.15;font-weight:800}
+.sc-project-detail .sc-hero-sub{font-size:1.15rem;color:rgba(255,255,255,0.85);max-width:600px}
+.sc-project-detail .sc-info-bar{background:var(--navy);padding:0 5%;position:sticky;top:0;z-index:100;transition:box-shadow .3s}
+.sc-project-detail .sc-info-bar.scrolled{box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.sc-project-detail .sc-info-inner{max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;padding:1rem 0}
+.sc-project-detail .sc-facts{display:flex;gap:2.5rem;flex-wrap:wrap}
+.sc-project-detail .sc-fact{display:flex;flex-direction:column;gap:.15rem}
+.sc-project-detail .sc-fact-label{font-size:.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.5px}
+.sc-project-detail .sc-fact-value{font-size:.95rem;color:#fff;font-weight:600}
+.sc-project-detail .sc-cta-btn{background:var(--gradient);color:#fff;padding:.85rem 2rem;border-radius:2rem;text-decoration:none;font-weight:600;transition:all .3s;box-shadow:var(--glow);border:none;cursor:pointer;font-size:.95rem}
+.sc-project-detail .sc-cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,107,53,0.4)}
+.sc-project-detail .sc-main{max-width:1400px;margin:0 auto;padding:4rem 5%;display:grid;grid-template-columns:1fr 350px;gap:4rem}
+.sc-project-detail .sc-content h2{font-size:1.85rem;color:var(--navy);margin:2.5rem 0 1rem;font-weight:700}
+.sc-project-detail .sc-content h2:first-child{margin-top:0}
+.sc-project-detail .sc-content p{margin:0 0 1.25rem;color:#374151;font-size:1.05rem}
+.sc-project-detail .sc-content ul{margin:0 0 1.5rem;padding-left:1.5rem}
+.sc-project-detail .sc-content li{margin-bottom:.6rem;color:#374151}
+.sc-project-detail .sc-highlight{background:linear-gradient(135deg,#fff7ed 0%,#ffedd5 100%);border-left:4px solid var(--orange);padding:1.5rem 2rem;border-radius:0 var(--radius) var(--radius) 0;margin:2rem 0}
+.sc-project-detail .sc-highlight p{margin:0;font-weight:500;color:var(--navy)}
+.sc-project-detail .sc-sidebar{display:flex;flex-direction:column;gap:2rem}
+.sc-project-detail .sc-sidebar-card{background:#f8fafc;border-radius:var(--radius);padding:2rem;border:1px solid #e2e8f0}
+.sc-project-detail .sc-sidebar-card h3{font-size:1.15rem;color:var(--navy);margin:0 0 1.25rem;font-weight:700}
+.sc-project-detail .sc-specs{display:flex;flex-direction:column;gap:1rem}
+.sc-project-detail .sc-spec{display:flex;justify-content:space-between;padding-bottom:.75rem;border-bottom:1px solid #e2e8f0}
+.sc-project-detail .sc-spec:last-child{border:none;padding:0}
+.sc-project-detail .sc-spec-label{color:#64748b;font-size:.9rem}
+.sc-project-detail .sc-spec-value{color:var(--navy);font-weight:600;font-size:.9rem;text-align:right}
+.sc-project-detail .sc-related-list{display:flex;flex-direction:column;gap:.75rem}
+.sc-project-detail .sc-related-link{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:#fff;border-radius:.5rem;text-decoration:none;color:var(--navy);font-weight:500;transition:all .3s;border:1px solid #e2e8f0}
+.sc-project-detail .sc-related-link:hover{border-color:var(--orange);transform:translateX(4px)}
+.sc-project-detail .sc-related-link span{font-size:1.25rem}
+.sc-project-detail .sc-gallery{padding:4rem 5%;background:#f8fafc}
+.sc-project-detail .sc-gallery-inner{max-width:1400px;margin:0 auto}
+.sc-project-detail .sc-gallery h2{font-size:2rem;color:var(--navy);margin:0 0 2rem;font-weight:700;text-align:center}
+.sc-project-detail .sc-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem}
+.sc-project-detail .sc-gallery-item{position:relative;aspect-ratio:4/3;border-radius:var(--radius);overflow:hidden;cursor:pointer;box-shadow:var(--shadow)}
+.sc-project-detail .sc-gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.sc-project-detail .sc-gallery-item:hover img{transform:scale(1.05)}
+.sc-project-detail .sc-gallery-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(15,27,42,0.8) 100%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:1.5rem}
+.sc-project-detail .sc-gallery-item:hover .sc-gallery-overlay{opacity:1}
+.sc-project-detail .sc-gallery-caption{color:#fff;font-weight:500;font-size:.95rem}
+.sc-project-detail .sc-lightbox{position:fixed;inset:0;background:rgba(15,27,42,0.97);z-index:10000;display:none;align-items:center;justify-content:center;padding:2rem}
+.sc-project-detail .sc-lightbox.active{display:flex}
+.sc-project-detail .sc-lightbox img{max-width:90%;max-height:85vh;object-fit:contain;border-radius:var(--radius)}
+.sc-project-detail .sc-lightbox-close{position:absolute;top:2rem;right:2rem;width:50px;height:50px;background:rgba(255,255,255,0.1);border:none;border-radius:50%;color:#fff;font-size:1.75rem;cursor:pointer;transition:background .3s}
+.sc-project-detail .sc-lightbox-close:hover{background:var(--orange)}
+.sc-project-detail .sc-lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);width:50px;height:50px;background:rgba(255,255,255,0.1);border:none;border-radius:50%;color:#fff;font-size:1.5rem;cursor:pointer;transition:background .3s}
+.sc-project-detail .sc-lightbox-nav:hover{background:var(--orange)}
+.sc-project-detail .sc-lightbox-prev{left:2rem}
+.sc-project-detail .sc-lightbox-next{right:2rem}
+.sc-project-detail .sc-contact{padding:5rem 5%;background:var(--navy)}
+.sc-project-detail .sc-contact-inner{max-width:800px;margin:0 auto;text-align:center}
+.sc-project-detail .sc-contact h2{font-size:2.25rem;color:#fff;margin:0 0 1rem;font-weight:700}
+.sc-project-detail .sc-contact>p,.sc-project-detail .sc-contact-inner>p{color:rgba(255,255,255,0.75);font-size:1.15rem;margin-bottom:2.5rem}
+.sc-project-detail .sc-form{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius);padding:2.5rem;text-align:left}
+.sc-project-detail .sc-form-row{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+.sc-project-detail .sc-form-group{display:flex;flex-direction:column;gap:.4rem}
+.sc-project-detail .sc-form-group.full{grid-column:1/-1}
+.sc-project-detail .sc-form label{color:rgba(255,255,255,0.8);font-size:.9rem;font-weight:500}
+.sc-project-detail .sc-form input,.sc-project-detail .sc-form textarea,.sc-project-detail .sc-form select{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:.5rem;padding:.9rem 1rem;color:#fff;font-size:1rem;transition:border-color .3s,background .3s}
+.sc-project-detail .sc-form input:focus,.sc-project-detail .sc-form textarea:focus,.sc-project-detail .sc-form select:focus{outline:none;border-color:var(--orange);background:rgba(255,255,255,0.08)}
+.sc-project-detail .sc-form textarea{min-height:120px;resize:vertical}
+.sc-project-detail .sc-form select option{background:var(--navy);color:#fff}
+.sc-project-detail .sc-form-submit{width:100%;margin-top:1.5rem;padding:1rem 2rem;font-size:1.05rem}
+.sc-project-detail .sc-related-section{padding:4rem 5%;background:#fff}
+.sc-project-detail .sc-related-inner{max-width:1400px;margin:0 auto}
+.sc-project-detail .sc-related-inner h2{font-size:2rem;color:var(--navy);margin:0 0 2rem;font-weight:700;text-align:center}
+.sc-project-detail .sc-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:2rem}
+.sc-project-detail .sc-related-card{background:#f8fafc;border-radius:var(--radius);overflow:hidden;text-decoration:none;color:inherit;transition:all .3s;border:1px solid #e2e8f0}
+.sc-project-detail .sc-related-card:hover{transform:translateY(-5px);box-shadow:var(--shadow);border-color:var(--orange)}
+.sc-project-detail .sc-related-thumb{aspect-ratio:16/10;overflow:hidden}
+.sc-project-detail .sc-related-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.sc-project-detail .sc-related-card:hover .sc-related-thumb img{transform:scale(1.05)}
+.sc-project-detail .sc-related-info{padding:1.5rem}
+.sc-project-detail .sc-related-cat{display:inline-block;background:linear-gradient(135deg,#ff6b35 0%,#ff8c42 100%);color:#fff;padding:.3rem .8rem;border-radius:1rem;font-size:.75rem;font-weight:600;margin-bottom:.75rem;text-transform:uppercase}
+.sc-project-detail .sc-related-info h3{font-size:1.15rem;color:var(--navy);margin:0 0 .5rem;font-weight:700}
+.sc-project-detail .sc-related-info p{color:#64748b;font-size:.9rem;margin:0}
+@media(max-width:1024px){.sc-project-detail .sc-main{grid-template-columns:1fr;gap:3rem}.sc-project-detail .sc-sidebar{order:-1}}
+@media(max-width:768px){.sc-project-detail .sc-hero{height:60vh;min-height:400px;padding:2rem 5%}.sc-project-detail .sc-facts{gap:1.5rem}.sc-project-detail .sc-fact{min-width:45%}.sc-project-detail .sc-form-row{grid-template-columns:1fr}.sc-project-detail .sc-gallery-grid{grid-template-columns:1fr 1fr}.sc-project-detail .sc-lightbox-nav{display:none}}
+@media(max-width:480px){.sc-project-detail .sc-gallery-grid{grid-template-columns:1fr}.sc-project-detail .sc-related-grid{grid-template-columns:1fr}}
+</style>
+
+<article class="sc-project-detail">
+    <header class="sc-hero">
+        <div class="sc-hero-content">
+            <nav class="sc-breadcrumb">
+                <a href="/">Home</a>
+                <span>/</span>
+                <a href="/projecten/">Projecten</a>
+                <span>/</span>
+                <span>Popfest '25</span>
+            </nav>
+            <span class="sc-hero-cat">Evenement Signing</span>
+            <h1>Popfest '25 West-Friesland</h1>
+            <p class="sc-hero-sub">Complete festival signing inclusief podiumbanners, bewegwijzering en LED-schermgraphics voor het grootste popevenement van West-Friesland.</p>
+        </div>
+    </header>
+
+    <div class="sc-info-bar">
+        <div class="sc-info-inner">
+            <div class="sc-facts">
+                <div class="sc-fact">
+                    <span class="sc-fact-label">Klant</span>
+                    <span class="sc-fact-value">Stichting Popfest</span>
+                </div>
+                <div class="sc-fact">
+                    <span class="sc-fact-label">Locatie</span>
+                    <span class="sc-fact-value">West-Friesland</span>
+                </div>
+                <div class="sc-fact">
+                    <span class="sc-fact-label">Type</span>
+                    <span class="sc-fact-value">Festival Signing</span>
+                </div>
+                <div class="sc-fact">
+                    <span class="sc-fact-label">Jaar</span>
+                    <span class="sc-fact-value">2025</span>
+                </div>
+            </div>
+            <a href="#contact" class="sc-cta-btn">Offerte aanvragen</a>
+        </div>
+    </div>
+
+    <div class="sc-main">
+        <div class="sc-content">
+            <h2>Complete festival branding voor Popfest</h2>
+            <p>Popfest is uitgegroeid tot het grootste gratis popfestival van West-Friesland. Voor de 2025 editie heeft Sign Company de complete visuele signing verzorgd. Van imposante podiumbanners tot bewegwijzering over het hele festivalterrein - alles in de herkenbare Popfest stijl.</p>
+
+            <p>Bij evenement signing draait alles om impact en praktijk. Bezoekers moeten in één oogopslag de podia vinden, sponsoren moeten zichtbaar zijn, en de sfeer moet meteen voelbaar zijn. Wij combineren opvallende graphics met weerbestendige materialen die tegen een stootje kunnen.</p>
+
+            <h2>Podiumbanners en stage graphics</h2>
+            <p>Voor de drie podia van Popfest produceerden we grote backdrops en sidebanners. De banners zijn gemaakt van duurzaam mesh-doek dat wind doorlaat - essentieel voor outdoor evenementen. De levendige fullcolor prints blijven scherp, ook bij wisselende lichtomstandigheden.</p>
+
+            <ul>
+                <li>Hoofdpodium banner: 12 x 4 meter mesh backdrop</li>
+                <li>Sidebanners per podium: 3 x 6 meter</li>
+                <li>DJ-booth branding met LED-compatibele graphics</li>
+                <li>Sponsor integration op strategische posities</li>
+            </ul>
+
+            <div class="sc-highlight">
+                <p>Door mesh-materiaal te gebruiken voor de podiumbanners reduceren we windbelasting met 70%, terwijl de printhelderheid optimaal blijft. Veilig én visueel sterk.</p>
+            </div>
+
+            <h2>Bewegwijzering en wayfinding</h2>
+            <p>Een festival met 15.000 bezoekers vraagt om duidelijke bewegwijzering. Sign Company ontwierp een compleet wayfinding systeem met herkenbare pictogrammen en kleurcodes per zone. Van entree tot EHBO-post, van foodcourt tot toiletten - bezoekers vinden moeiteloos hun weg.</p>
+
+            <p>De bewegwijzeringsborden zijn gemaakt van lichtgewicht aluminium composiet met UV-bestendige print. Na het festival kunnen ze eenvoudig worden opgeslagen voor hergebruik, wat past bij de duurzaamheidsvisie van de organisatie.</p>
+
+            <h2>LED-scherm content en digitale signing</h2>
+            <p>Moderne festivals werken met LED-schermen voor dynamische content. Wij leverden geoptimaliseerde graphics voor de LED-walls: artiestenaankondigingen, sponsorblokken en sfeervolle animaties. Alle content is ontworpen voor de specifieke pixel-pitch van de gebruikte schermen.</p>
+
+            <ul>
+                <li>Artiesten-intro animaties in festivalstijl</li>
+                <li>Sponsor loops met timing per adverteerder</li>
+                <li>Praktische informatie slides</li>
+                <li>Countdown graphics voor podiumwisselingen</li>
+            </ul>
+
+            <h2>Sponsor signing en exposure</h2>
+            <p>Sponsoren zijn essentieel voor een gratis festival. Wij zorgen voor optimale zichtbaarheid via diverse signingvormen: van entreepoorten met sponsornamen tot branded zones in het foodcourt. Elke sponsor krijgt de exposure die past bij hun bijdrage.</p>
+
+            <p>De entreepoort van Popfest is een blikvanger van 6 meter hoog met geïntegreerde sponsorlogo's. Deze constructie combineert aluminium frame met gespannen doek en is ontworpen voor snelle op- en afbouw door ons ervaren team.</p>
+        </div>
+
+        <aside class="sc-sidebar">
+            <div class="sc-sidebar-card">
+                <h3>Project specificaties</h3>
+                <div class="sc-specs">
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Materiaal podia</span>
+                        <span class="sc-spec-value">Mesh banner 340g</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Bewegwijzering</span>
+                        <span class="sc-spec-value">Dibond 3mm</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Entreepoort</span>
+                        <span class="sc-spec-value">6m hoog aluminium</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">LED content</span>
+                        <span class="sc-spec-value">Full HD optimized</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Aantal borden</span>
+                        <span class="sc-spec-value">85+ stuks</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Bezoekers</span>
+                        <span class="sc-spec-value">15.000+</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sc-sidebar-card">
+                <h3>Onze diensten</h3>
+                <div class="sc-related-list">
+                    <a href="/diensten/evenement-signing/" class="sc-related-link">
+                        <span>🎪</span> Evenement Signing
+                    </a>
+                    <a href="/diensten/banners-spandoeken/" class="sc-related-link">
+                        <span>🚩</span> Banners & Spandoeken
+                    </a>
+                    <a href="/diensten/bewegwijzering/" class="sc-related-link">
+                        <span>🧭</span> Bewegwijzering
+                    </a>
+                    <a href="/diensten/digitale-content/" class="sc-related-link">
+                        <span>📺</span> Digitale Content
+                    </a>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <section class="sc-gallery">
+        <div class="sc-gallery-inner">
+            <h2>Projectfoto's</h2>
+            <div class="sc-gallery-grid">
+                <div class="sc-gallery-item" data-index="0">
+                    <img src="/wp-content/uploads/projecten/popfest-25-1.jpg" alt="Hoofdpodium Popfest met mesh backdrop" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Hoofdpodium 12m backdrop</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="1">
+                    <img src="/wp-content/uploads/projecten/popfest-25-2.jpg" alt="Entreepoort Popfest met sponsorlogo's" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">6 meter entreepoort</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="2">
+                    <img src="/wp-content/uploads/projecten/popfest-25-3.jpg" alt="Bewegwijzering festivalterrein" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Wayfinding systeem</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="3">
+                    <img src="/wp-content/uploads/projecten/popfest-25-4.jpg" alt="LED scherm met artiestenaankondiging" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">LED content artiesten</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="4">
+                    <img src="/wp-content/uploads/projecten/popfest-25-5.jpg" alt="Sponsor zone foodcourt Popfest" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Branded sponsor zones</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="5">
+                    <img src="/wp-content/uploads/projecten/popfest-25-6.jpg" alt="Sidebanners tweede podium" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Podium sidebanners</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="sc-lightbox">
+        <button class="sc-lightbox-close" aria-label="Sluiten">&times;</button>
+        <button class="sc-lightbox-nav sc-lightbox-prev" aria-label="Vorige">&#10094;</button>
+        <button class="sc-lightbox-nav sc-lightbox-next" aria-label="Volgende">&#10095;</button>
+        <img src="" alt="Lightbox afbeelding">
+    </div>
+
+    <section class="sc-contact" id="contact">
+        <div class="sc-contact-inner">
+            <h2>Evenement signing nodig?</h2>
+            <p>Van intiem bedrijfsevent tot groot festival - wij verzorgen professionele signing die past bij uw evenement en budget.</p>
+            <form class="sc-form" id="scProjectForm">
+                <input type="hidden" name="project_referentie" value="Popfest '25 West-Friesland">
+                <div class="sc-form-row">
+                    <div class="sc-form-group">
+                        <label for="naam">Naam *</label>
+                        <input type="text" id="naam" name="naam" required>
+                    </div>
+                    <div class="sc-form-group">
+                        <label for="bedrijf">Organisatie</label>
+                        <input type="text" id="bedrijf" name="bedrijf">
+                    </div>
+                </div>
+                <div class="sc-form-row">
+                    <div class="sc-form-group">
+                        <label for="email">E-mail *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="sc-form-group">
+                        <label for="telefoon">Telefoon</label>
+                        <input type="tel" id="telefoon" name="telefoon">
+                    </div>
+                </div>
+                <div class="sc-form-row">
+                    <div class="sc-form-group">
+                        <label for="evenement">Type evenement</label>
+                        <select id="evenement" name="evenement">
+                            <option value="">Selecteer type...</option>
+                            <option value="festival">Festival / Outdoor Event</option>
+                            <option value="beurs">Beurs / Vakbeurs</option>
+                            <option value="bedrijfsevent">Bedrijfsevenement</option>
+                            <option value="sport">Sportevenement</option>
+                            <option value="anders">Anders</option>
+                        </select>
+                    </div>
+                    <div class="sc-form-group">
+                        <label for="bezoekers">Verwacht aantal bezoekers</label>
+                        <select id="bezoekers" name="bezoekers">
+                            <option value="">Selecteer...</option>
+                            <option value="klein">< 500</option>
+                            <option value="middel">500 - 2.500</option>
+                            <option value="groot">2.500 - 10.000</option>
+                            <option value="zeer-groot">10.000+</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="sc-form-row">
+                    <div class="sc-form-group full">
+                        <label for="bericht">Vertel over uw evenement *</label>
+                        <textarea id="bericht" name="bericht" required placeholder="Beschrijf uw evenement, locatie, datum en welke signing u nodig heeft..."></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="sc-cta-btn sc-form-submit">Vrijblijvend advies aanvragen</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="sc-related-section">
+        <div class="sc-related-inner">
+            <h2>Vergelijkbare projecten</h2>
+            <div class="sc-related-grid">
+                <a href="/projecten/hotel-signing-westcord-hotels/" class="sc-related-card">
+                    <div class="sc-related-thumb">
+                        <img src="/wp-content/uploads/projecten/westcord-hotels-thumb.jpg" alt="WestCord Hotels signing" loading="lazy">
+                    </div>
+                    <div class="sc-related-info">
+                        <span class="sc-related-cat">Hotel Signing</span>
+                        <h3>WestCord Hotels</h3>
+                        <p>Landelijk hotel signing project</p>
+                    </div>
+                </a>
+                <a href="/projecten/bewegwijzering-jachthaven-buyshaven-enkhuizen/" class="sc-related-card">
+                    <div class="sc-related-thumb">
+                        <img src="/wp-content/uploads/projecten/buyshaven-thumb.jpg" alt="Buyshaven bewegwijzering" loading="lazy">
+                    </div>
+                    <div class="sc-related-info">
+                        <span class="sc-related-cat">Bewegwijzering</span>
+                        <h3>Buyshaven Enkhuizen</h3>
+                        <p>Jachthaven wayfinding systeem</p>
+                    </div>
+                </a>
+                <a href="/projecten/spandoekframe-nieuwbouw-copernicus-hoorn/" class="sc-related-card">
+                    <div class="sc-related-thumb">
+                        <img src="/wp-content/uploads/projecten/copernicus-thumb.jpg" alt="Copernicus bouwproject" loading="lazy">
+                    </div>
+                    <div class="sc-related-info">
+                        <span class="sc-related-cat">Bouwborden</span>
+                        <h3>Copernicus Hoorn</h3>
+                        <p>Groot spandoekframe nieuwbouw</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+</article>
+
+<script>
+(function(){
+    const d=document,detail=d.querySelector('.sc-project-detail');if(!detail)return;
+    const infoBar=detail.querySelector('.sc-info-bar'),lightbox=detail.querySelector('.sc-lightbox'),lbImg=lightbox.querySelector('img'),items=detail.querySelectorAll('.sc-gallery-item');let idx=0;
+    window.addEventListener('scroll',()=>{infoBar.classList.toggle('scrolled',window.scrollY>400)},{passive:true});
+    const openLB=i=>{idx=i;lbImg.src=items[i].querySelector('img').src;lightbox.classList.add('active');d.body.style.overflow='hidden'};
+    const closeLB=()=>{lightbox.classList.remove('active');d.body.style.overflow=''};
+    const nav=dir=>{idx=(idx+dir+items.length)%items.length;lbImg.src=items[idx].querySelector('img').src};
+    items.forEach((item,i)=>item.addEventListener('click',()=>openLB(i)));
+    lightbox.querySelector('.sc-lightbox-close').addEventListener('click',closeLB);
+    lightbox.querySelector('.sc-lightbox-prev').addEventListener('click',()=>nav(-1));
+    lightbox.querySelector('.sc-lightbox-next').addEventListener('click',()=>nav(1));
+    lightbox.addEventListener('click',e=>{if(e.target===lightbox)closeLB()});
+    d.addEventListener('keydown',e=>{if(!lightbox.classList.contains('active'))return;if(e.key==='Escape')closeLB();if(e.key==='ArrowLeft')nav(-1);if(e.key==='ArrowRight')nav(1)});
+    const form=d.getElementById('scProjectForm');
+    form.addEventListener('submit',async e=>{
+        e.preventDefault();const fd=new FormData(form);fd.append('action','sc_project_contact');
+        const btn=form.querySelector('button[type="submit"]'),orig=btn.textContent;btn.textContent='Verzenden...';btn.disabled=true;
+        try{const r=await fetch('/wp-admin/admin-ajax.php',{method:'POST',body:fd});if(r.ok){form.innerHTML='<p style="color:#4ade80;font-size:1.2rem;text-align:center;padding:2rem;">✓ Bedankt! Wij nemen snel contact met u op over uw evenement.</p>'}else{throw new Error()}}
+        catch(err){btn.textContent=orig;btn.disabled=false;alert('Verzenden mislukt. Probeer opnieuw.')}
+    });
+})();
+</script>
+
+<!--
+Schema.org structured data for SEO
+Plaats in theme header of via SEO plugin
+-->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    "name": "Evenement Signing Popfest '25 West-Friesland",
+    "description": "Complete festival signing voor Popfest '25 met podiumbanners, bewegwijzering en LED-schermcontent voor 15.000+ bezoekers.",
+    "image": "https://sign-company.nl/wp-content/uploads/projecten/popfest-25-hero.jpg",
+    "creator": {
+        "@type": "LocalBusiness",
+        "name": "Sign Company",
+        "url": "https://sign-company.nl"
+    },
+    "dateCreated": "2025",
+    "locationCreated": {
+        "@type": "Place",
+        "name": "West-Friesland"
+    },
+    "keywords": ["evenement signing", "festival branding", "podiumbanners", "bewegwijzering", "LED content", "outdoor signing"]
+}
+</script>

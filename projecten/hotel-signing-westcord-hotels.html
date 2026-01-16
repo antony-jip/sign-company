@@ -1,0 +1,447 @@
+<!--
+=============================================================================
+SIGN COMPANY - PROJECT DETAIL PAGE
+Pagina: Hotel Signing WestCord Hotels Landelijk
+Type: Standalone HTML voor WordPress/Elementor HTML-widget
+=============================================================================
+
+SEO META TAGS (te plaatsen in Yoast/RankMath of theme head):
+
+<title>Hotel Signing WestCord Hotels | Landelijke Hotelketen Branding</title>
+<meta name="description" content="Landelijk hotel signing project voor WestCord Hotels. Sign Company verzorgt consistente branding voor 15+ hotellocaties: gevelletters, lichtreclame, interieur en wayfinding.">
+<meta name="keywords" content="hotel signing, hotelketen branding, WestCord Hotels, hotel gevelletters, hotel lichtreclame, hotel wayfinding, horeca signing, receptie signing, hotelkamer bewegwijzering">
+<link rel="canonical" href="https://sign-company.nl/projecten/hotel-signing-westcord-hotels/">
+
+<meta property="og:title" content="Hotel Signing WestCord Hotels | Sign Company">
+<meta property="og:description" content="Landelijke hotel signing voor WestCord Hotels: consistente branding voor 15+ locaties door heel Nederland.">
+<meta property="og:image" content="https://sign-company.nl/wp-content/uploads/projecten/westcord-hotels-og.jpg">
+<meta property="og:url" content="https://sign-company.nl/projecten/hotel-signing-westcord-hotels/">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hotel Signing WestCord Hotels | Landelijke Branding">
+<meta name="twitter:description" content="Complete hotel signing voor WestCord: van gevel tot kamer, consistent door heel Nederland.">
+=============================================================================
+-->
+
+<style>
+*{box-sizing:border-box}:root{--navy:#0f1b2a;--orange:#ff6b35;--gradient:linear-gradient(135deg,#ff6b35 0%,#ff8c42 50%,#ffa94d 100%);--glow:0 0 30px rgba(255,107,53,0.3);--radius:1rem;--shadow:0 4px 24px rgba(0,0,0,0.12)}
+.sc-project-detail{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;color:#1a1a1a;line-height:1.6;margin-left:calc(-50vw + 50%);margin-right:calc(-50vw + 50%);width:100vw;position:relative;overflow-x:hidden}
+.sc-project-detail .sc-hero{position:relative;height:70vh;min-height:500px;display:flex;align-items:flex-end;background:linear-gradient(180deg,transparent 0%,rgba(15,27,42,0.95) 100%),url('/wp-content/uploads/projecten/westcord-hotels-hero.jpg') center/cover no-repeat;padding:4rem 5%}
+.sc-project-detail .sc-hero-content{max-width:900px}
+.sc-project-detail .sc-breadcrumb{display:flex;gap:.5rem;font-size:.9rem;color:rgba(255,255,255,0.7);margin-bottom:1rem;flex-wrap:wrap}
+.sc-project-detail .sc-breadcrumb a{color:rgba(255,255,255,0.7);text-decoration:none;transition:color .3s}
+.sc-project-detail .sc-breadcrumb a:hover{color:var(--orange)}
+.sc-project-detail .sc-hero-cat{display:inline-block;background:var(--gradient);color:#fff;padding:.5rem 1.25rem;border-radius:2rem;font-size:.85rem;font-weight:600;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.5px}
+.sc-project-detail .sc-hero h1{font-size:clamp(2rem,5vw,3.5rem);color:#fff;margin:0 0 1rem;line-height:1.15;font-weight:800}
+.sc-project-detail .sc-hero-sub{font-size:1.15rem;color:rgba(255,255,255,0.85);max-width:600px}
+.sc-project-detail .sc-info-bar{background:var(--navy);padding:0 5%;position:sticky;top:0;z-index:100;transition:box-shadow .3s}
+.sc-project-detail .sc-info-bar.scrolled{box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.sc-project-detail .sc-info-inner{max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;padding:1rem 0}
+.sc-project-detail .sc-facts{display:flex;gap:2.5rem;flex-wrap:wrap}
+.sc-project-detail .sc-fact{display:flex;flex-direction:column;gap:.15rem}
+.sc-project-detail .sc-fact-label{font-size:.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.5px}
+.sc-project-detail .sc-fact-value{font-size:.95rem;color:#fff;font-weight:600}
+.sc-project-detail .sc-cta-btn{background:var(--gradient);color:#fff;padding:.85rem 2rem;border-radius:2rem;text-decoration:none;font-weight:600;transition:all .3s;box-shadow:var(--glow);border:none;cursor:pointer;font-size:.95rem}
+.sc-project-detail .sc-cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,107,53,0.4)}
+.sc-project-detail .sc-main{max-width:1400px;margin:0 auto;padding:4rem 5%;display:grid;grid-template-columns:1fr 350px;gap:4rem}
+.sc-project-detail .sc-content h2{font-size:1.85rem;color:var(--navy);margin:2.5rem 0 1rem;font-weight:700}
+.sc-project-detail .sc-content h2:first-child{margin-top:0}
+.sc-project-detail .sc-content p{margin:0 0 1.25rem;color:#374151;font-size:1.05rem}
+.sc-project-detail .sc-content ul{margin:0 0 1.5rem;padding-left:1.5rem}
+.sc-project-detail .sc-content li{margin-bottom:.6rem;color:#374151}
+.sc-project-detail .sc-highlight{background:linear-gradient(135deg,#fff7ed 0%,#ffedd5 100%);border-left:4px solid var(--orange);padding:1.5rem 2rem;border-radius:0 var(--radius) var(--radius) 0;margin:2rem 0}
+.sc-project-detail .sc-highlight p{margin:0;font-weight:500;color:var(--navy)}
+.sc-project-detail .sc-sidebar{display:flex;flex-direction:column;gap:2rem}
+.sc-project-detail .sc-sidebar-card{background:#f8fafc;border-radius:var(--radius);padding:2rem;border:1px solid #e2e8f0}
+.sc-project-detail .sc-sidebar-card h3{font-size:1.15rem;color:var(--navy);margin:0 0 1.25rem;font-weight:700}
+.sc-project-detail .sc-specs{display:flex;flex-direction:column;gap:1rem}
+.sc-project-detail .sc-spec{display:flex;justify-content:space-between;padding-bottom:.75rem;border-bottom:1px solid #e2e8f0}
+.sc-project-detail .sc-spec:last-child{border:none;padding:0}
+.sc-project-detail .sc-spec-label{color:#64748b;font-size:.9rem}
+.sc-project-detail .sc-spec-value{color:var(--navy);font-weight:600;font-size:.9rem;text-align:right}
+.sc-project-detail .sc-related-list{display:flex;flex-direction:column;gap:.75rem}
+.sc-project-detail .sc-related-link{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:#fff;border-radius:.5rem;text-decoration:none;color:var(--navy);font-weight:500;transition:all .3s;border:1px solid #e2e8f0}
+.sc-project-detail .sc-related-link:hover{border-color:var(--orange);transform:translateX(4px)}
+.sc-project-detail .sc-related-link span{font-size:1.25rem}
+.sc-project-detail .sc-gallery{padding:4rem 5%;background:#f8fafc}
+.sc-project-detail .sc-gallery-inner{max-width:1400px;margin:0 auto}
+.sc-project-detail .sc-gallery h2{font-size:2rem;color:var(--navy);margin:0 0 2rem;font-weight:700;text-align:center}
+.sc-project-detail .sc-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem}
+.sc-project-detail .sc-gallery-item{position:relative;aspect-ratio:4/3;border-radius:var(--radius);overflow:hidden;cursor:pointer;box-shadow:var(--shadow)}
+.sc-project-detail .sc-gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.sc-project-detail .sc-gallery-item:hover img{transform:scale(1.05)}
+.sc-project-detail .sc-gallery-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(15,27,42,0.8) 100%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:1.5rem}
+.sc-project-detail .sc-gallery-item:hover .sc-gallery-overlay{opacity:1}
+.sc-project-detail .sc-gallery-caption{color:#fff;font-weight:500;font-size:.95rem}
+.sc-project-detail .sc-lightbox{position:fixed;inset:0;background:rgba(15,27,42,0.97);z-index:10000;display:none;align-items:center;justify-content:center;padding:2rem}
+.sc-project-detail .sc-lightbox.active{display:flex}
+.sc-project-detail .sc-lightbox img{max-width:90%;max-height:85vh;object-fit:contain;border-radius:var(--radius)}
+.sc-project-detail .sc-lightbox-close{position:absolute;top:2rem;right:2rem;width:50px;height:50px;background:rgba(255,255,255,0.1);border:none;border-radius:50%;color:#fff;font-size:1.75rem;cursor:pointer;transition:background .3s}
+.sc-project-detail .sc-lightbox-close:hover{background:var(--orange)}
+.sc-project-detail .sc-lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);width:50px;height:50px;background:rgba(255,255,255,0.1);border:none;border-radius:50%;color:#fff;font-size:1.5rem;cursor:pointer;transition:background .3s}
+.sc-project-detail .sc-lightbox-nav:hover{background:var(--orange)}
+.sc-project-detail .sc-lightbox-prev{left:2rem}
+.sc-project-detail .sc-lightbox-next{right:2rem}
+.sc-project-detail .sc-contact{padding:5rem 5%;background:var(--navy)}
+.sc-project-detail .sc-contact-inner{max-width:800px;margin:0 auto;text-align:center}
+.sc-project-detail .sc-contact h2{font-size:2.25rem;color:#fff;margin:0 0 1rem;font-weight:700}
+.sc-project-detail .sc-contact>p,.sc-project-detail .sc-contact-inner>p{color:rgba(255,255,255,0.75);font-size:1.15rem;margin-bottom:2.5rem}
+.sc-project-detail .sc-form{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius);padding:2.5rem;text-align:left}
+.sc-project-detail .sc-form-row{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+.sc-project-detail .sc-form-group{display:flex;flex-direction:column;gap:.4rem}
+.sc-project-detail .sc-form-group.full{grid-column:1/-1}
+.sc-project-detail .sc-form label{color:rgba(255,255,255,0.8);font-size:.9rem;font-weight:500}
+.sc-project-detail .sc-form input,.sc-project-detail .sc-form textarea,.sc-project-detail .sc-form select{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:.5rem;padding:.9rem 1rem;color:#fff;font-size:1rem;transition:border-color .3s,background .3s}
+.sc-project-detail .sc-form input:focus,.sc-project-detail .sc-form textarea:focus,.sc-project-detail .sc-form select:focus{outline:none;border-color:var(--orange);background:rgba(255,255,255,0.08)}
+.sc-project-detail .sc-form textarea{min-height:120px;resize:vertical}
+.sc-project-detail .sc-form select option{background:var(--navy);color:#fff}
+.sc-project-detail .sc-form-submit{width:100%;margin-top:1.5rem;padding:1rem 2rem;font-size:1.05rem}
+.sc-project-detail .sc-related-section{padding:4rem 5%;background:#fff}
+.sc-project-detail .sc-related-inner{max-width:1400px;margin:0 auto}
+.sc-project-detail .sc-related-inner h2{font-size:2rem;color:var(--navy);margin:0 0 2rem;font-weight:700;text-align:center}
+.sc-project-detail .sc-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:2rem}
+.sc-project-detail .sc-related-card{background:#f8fafc;border-radius:var(--radius);overflow:hidden;text-decoration:none;color:inherit;transition:all .3s;border:1px solid #e2e8f0}
+.sc-project-detail .sc-related-card:hover{transform:translateY(-5px);box-shadow:var(--shadow);border-color:var(--orange)}
+.sc-project-detail .sc-related-thumb{aspect-ratio:16/10;overflow:hidden}
+.sc-project-detail .sc-related-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.sc-project-detail .sc-related-card:hover .sc-related-thumb img{transform:scale(1.05)}
+.sc-project-detail .sc-related-info{padding:1.5rem}
+.sc-project-detail .sc-related-cat{display:inline-block;background:linear-gradient(135deg,#ff6b35 0%,#ff8c42 100%);color:#fff;padding:.3rem .8rem;border-radius:1rem;font-size:.75rem;font-weight:600;margin-bottom:.75rem;text-transform:uppercase}
+.sc-project-detail .sc-related-info h3{font-size:1.15rem;color:var(--navy);margin:0 0 .5rem;font-weight:700}
+.sc-project-detail .sc-related-info p{color:#64748b;font-size:.9rem;margin:0}
+@media(max-width:1024px){.sc-project-detail .sc-main{grid-template-columns:1fr;gap:3rem}.sc-project-detail .sc-sidebar{order:-1}}
+@media(max-width:768px){.sc-project-detail .sc-hero{height:60vh;min-height:400px;padding:2rem 5%}.sc-project-detail .sc-facts{gap:1.5rem}.sc-project-detail .sc-fact{min-width:45%}.sc-project-detail .sc-form-row{grid-template-columns:1fr}.sc-project-detail .sc-gallery-grid{grid-template-columns:1fr 1fr}.sc-project-detail .sc-lightbox-nav{display:none}}
+@media(max-width:480px){.sc-project-detail .sc-gallery-grid{grid-template-columns:1fr}.sc-project-detail .sc-related-grid{grid-template-columns:1fr}}
+</style>
+
+<article class="sc-project-detail">
+    <header class="sc-hero">
+        <div class="sc-hero-content">
+            <nav class="sc-breadcrumb">
+                <a href="/">Home</a>
+                <span>/</span>
+                <a href="/projecten/">Projecten</a>
+                <span>/</span>
+                <span>WestCord Hotels</span>
+            </nav>
+            <span class="sc-hero-cat">Hotel Signing</span>
+            <h1>WestCord Hotels Landelijk</h1>
+            <p class="sc-hero-sub">Complete signing voor de WestCord hotelketen: van gevel tot hotelkamer, consistent door heel Nederland op 15+ locaties.</p>
+        </div>
+    </header>
+
+    <div class="sc-info-bar">
+        <div class="sc-info-inner">
+            <div class="sc-facts">
+                <div class="sc-fact">
+                    <span class="sc-fact-label">Klant</span>
+                    <span class="sc-fact-value">WestCord Hotels</span>
+                </div>
+                <div class="sc-fact">
+                    <span class="sc-fact-label">Locatie</span>
+                    <span class="sc-fact-value">Landelijk (15+ locaties)</span>
+                </div>
+                <div class="sc-fact">
+                    <span class="sc-fact-label">Type</span>
+                    <span class="sc-fact-value">Hotel Branding</span>
+                </div>
+                <div class="sc-fact">
+                    <span class="sc-fact-label">Status</span>
+                    <span class="sc-fact-value">Doorlopend</span>
+                </div>
+            </div>
+            <a href="#contact" class="sc-cta-btn">Offerte aanvragen</a>
+        </div>
+    </div>
+
+    <div class="sc-main">
+        <div class="sc-content">
+            <h2>Preferred supplier voor WestCord Hotels</h2>
+            <p>WestCord Hotels is een van de grootste Nederlandse hotelketens met accommodaties van de Waddeneilanden tot het centrum van grote steden. Sign Company fungeert als preferred supplier voor alle signing, wat zorgt voor consistente merkbeleving op elke locatie.</p>
+
+            <p>Een hotelketen succesvol uitrollen vraagt om uniformiteit in signing, maar ook oog voor lokale context. Elk hotel heeft zijn eigen karakter - van stadshotel tot eilandresort - terwijl de WestCord identiteit overal herkenbaar blijft. Die balans creëren is waar onze expertise ligt.</p>
+
+            <h2>Gevelreclame en lichtreclame</h2>
+            <p>De gevel is het eerste wat gasten zien. Voor WestCord produceren we verlichte gevelletters die dag en nacht de WestCord naam uitdragen. Van LED-verlichte doosletters op het stadshotel tot weerbestendige RVS letters op de Waddenlocaties - elk materiaal wordt afgestemd op de omgeving.</p>
+
+            <ul>
+                <li>Verlichte doosletters met LED technologie</li>
+                <li>Weerbestendige uitvoering voor kustlocaties</li>
+                <li>Dimbare verlichting voor woonomgeving</li>
+                <li>Consistent lettertype en kleurpalet</li>
+            </ul>
+
+            <div class="sc-highlight">
+                <p>Door als single supplier te werken voor alle WestCord locaties, garanderen we merkconistentie terwijl we efficiënt kunnen inkopen en produceren. Het resultaat: lagere kosten per locatie én een sterker merk.</p>
+            </div>
+
+            <h2>Interieur signing en wayfinding</h2>
+            <p>In het hotel moet elke gast moeiteloos de weg vinden. Van lobby tot conferentieruimte, van spa tot parkeergarage - overal zorgt duidelijke bewegwijzering voor een soepele gastvervaring. Wij ontwierpen een modulair wayfinding systeem dat op alle locaties werkt.</p>
+
+            <p>De receptiebalie krijgt prominent WestCord branding, terwijl subtiele richtingaanwijzers gasten naar hun kamer leiden. Kamernummers, verdiepingsaanduiding en facility-signing - alles in de WestCord huisstijl maar met een eigen interpretatie per hoteltype.</p>
+
+            <h2>Buitenterrein en parkeergarage</h2>
+            <p>Gasten beginnen hun beleving al bij aankomst. Terreinsigning leidt bezoekers naar de juiste ingang, parkeerplaatsen zijn duidelijk gemarkeerd, en de entree nodigt uit. Voor hotels met parkeergarage maken we complete bewegwijzering inclusief verdiepingsaanduiding.</p>
+
+            <ul>
+                <li>Parkeerplaats reserveringsborden</li>
+                <li>Entree pylonen met WestCord branding</li>
+                <li>Terreinsigning en richtingborden</li>
+                <li>Parkeergarage bewegwijzering</li>
+            </ul>
+
+            <h2>Flexibel en schaalbaar systeem</h2>
+            <p>WestCord groeit en verandert continu. Nieuwe hotels, renovaties, rebranding van concepten - onze signing groeit mee. Door slimme modulaire systemen kunnen nieuwe locaties snel worden uitgerust, terwijl bestaande signing eenvoudig kan worden aangevuld of vervangen.</p>
+
+            <p>Als preferred supplier staan we altijd klaar. Van spoedklus bij schade tot complete uitrusting van een nieuw hotel - het WestCord signing team bij Sign Company kent de keten en levert consistent kwaliteit.</p>
+        </div>
+
+        <aside class="sc-sidebar">
+            <div class="sc-sidebar-card">
+                <h3>Project specificaties</h3>
+                <div class="sc-specs">
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Aantal locaties</span>
+                        <span class="sc-spec-value">15+ hotels</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Gevelreclame</span>
+                        <span class="sc-spec-value">LED doosletters</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Interieur</span>
+                        <span class="sc-spec-value">Modulair systeem</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Materiaal extern</span>
+                        <span class="sc-spec-value">RVS / Aluminium</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Service level</span>
+                        <span class="sc-spec-value">Preferred supplier</span>
+                    </div>
+                    <div class="sc-spec">
+                        <span class="sc-spec-label">Contract</span>
+                        <span class="sc-spec-value">Doorlopend</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sc-sidebar-card">
+                <h3>Onze diensten</h3>
+                <div class="sc-related-list">
+                    <a href="/diensten/gevelreclame/" class="sc-related-link">
+                        <span>🏢</span> Gevelreclame
+                    </a>
+                    <a href="/diensten/lichtreclame/" class="sc-related-link">
+                        <span>💡</span> Lichtreclame
+                    </a>
+                    <a href="/diensten/interieur-signing/" class="sc-related-link">
+                        <span>🏨</span> Interieur Signing
+                    </a>
+                    <a href="/diensten/bewegwijzering/" class="sc-related-link">
+                        <span>🧭</span> Bewegwijzering
+                    </a>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <section class="sc-gallery">
+        <div class="sc-gallery-inner">
+            <h2>Projectfoto's</h2>
+            <div class="sc-gallery-grid">
+                <div class="sc-gallery-item" data-index="0">
+                    <img src="/wp-content/uploads/projecten/westcord-hotels-1.jpg" alt="WestCord Hotel gevelreclame verlicht" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Verlichte gevelletters stadshotel</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="1">
+                    <img src="/wp-content/uploads/projecten/westcord-hotels-2.jpg" alt="WestCord Hotels lobby signing" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Receptie branding</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="2">
+                    <img src="/wp-content/uploads/projecten/westcord-hotels-3.jpg" alt="Hotel wayfinding bewegwijzering" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Interieur wayfinding</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="3">
+                    <img src="/wp-content/uploads/projecten/westcord-hotels-4.jpg" alt="WestCord kustlocatie signing" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Weerbestendige kustlocatie</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="4">
+                    <img src="/wp-content/uploads/projecten/westcord-hotels-5.jpg" alt="Parkeergarage bewegwijzering hotel" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Parkeergarage signing</span>
+                    </div>
+                </div>
+                <div class="sc-gallery-item" data-index="5">
+                    <img src="/wp-content/uploads/projecten/westcord-hotels-6.jpg" alt="WestCord entree pyloon" loading="lazy">
+                    <div class="sc-gallery-overlay">
+                        <span class="sc-gallery-caption">Terrein entree pyloon</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="sc-lightbox">
+        <button class="sc-lightbox-close" aria-label="Sluiten">&times;</button>
+        <button class="sc-lightbox-nav sc-lightbox-prev" aria-label="Vorige">&#10094;</button>
+        <button class="sc-lightbox-nav sc-lightbox-next" aria-label="Volgende">&#10095;</button>
+        <img src="" alt="Lightbox afbeelding">
+    </div>
+
+    <section class="sc-contact" id="contact">
+        <div class="sc-contact-inner">
+            <h2>Hotel signing nodig?</h2>
+            <p>Van boutique hotel tot landelijke keten - wij verzorgen complete hotel signing die past bij uw merk en gastverwachting.</p>
+            <form class="sc-form" id="scProjectForm">
+                <input type="hidden" name="project_referentie" value="WestCord Hotels">
+                <div class="sc-form-row">
+                    <div class="sc-form-group">
+                        <label for="naam">Naam *</label>
+                        <input type="text" id="naam" name="naam" required>
+                    </div>
+                    <div class="sc-form-group">
+                        <label for="bedrijf">Hotel / Keten</label>
+                        <input type="text" id="bedrijf" name="bedrijf">
+                    </div>
+                </div>
+                <div class="sc-form-row">
+                    <div class="sc-form-group">
+                        <label for="email">E-mail *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="sc-form-group">
+                        <label for="telefoon">Telefoon</label>
+                        <input type="tel" id="telefoon" name="telefoon">
+                    </div>
+                </div>
+                <div class="sc-form-row">
+                    <div class="sc-form-group">
+                        <label for="dienst">Type signing</label>
+                        <select id="dienst" name="dienst">
+                            <option value="">Selecteer type...</option>
+                            <option value="gevelreclame">Gevelreclame / Lichtreclame</option>
+                            <option value="interieur">Interieur Signing</option>
+                            <option value="wayfinding">Bewegwijzering</option>
+                            <option value="terrein">Terreinsigning</option>
+                            <option value="compleet">Complete Hotel Signing</option>
+                        </select>
+                    </div>
+                    <div class="sc-form-group">
+                        <label for="locaties">Aantal locaties</label>
+                        <select id="locaties" name="locaties">
+                            <option value="">Selecteer...</option>
+                            <option value="1">1 locatie</option>
+                            <option value="2-5">2-5 locaties</option>
+                            <option value="5-10">5-10 locaties</option>
+                            <option value="10+">10+ locaties</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="sc-form-row">
+                    <div class="sc-form-group full">
+                        <label for="bericht">Projectomschrijving *</label>
+                        <textarea id="bericht" name="bericht" required placeholder="Vertel over uw hotel(s), de gewenste signing en eventuele specifieke wensen..."></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="sc-cta-btn sc-form-submit">Vrijblijvend advies aanvragen</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="sc-related-section">
+        <div class="sc-related-inner">
+            <h2>Vergelijkbare projecten</h2>
+            <div class="sc-related-grid">
+                <a href="/projecten/raamfolie-hoogtewerk-westcord-eindhoven/" class="sc-related-card">
+                    <div class="sc-related-thumb">
+                        <img src="/wp-content/uploads/projecten/westcord-eindhoven-thumb.jpg" alt="WestCord Hotel Eindhoven" loading="lazy">
+                    </div>
+                    <div class="sc-related-info">
+                        <span class="sc-related-cat">Raamfolie</span>
+                        <h3>WestCord Hotel Eindhoven</h3>
+                        <p>Privacy folie hoogtewerk montage</p>
+                    </div>
+                </a>
+                <a href="/projecten/gevelreclame-horeca-vlieland/" class="sc-related-card">
+                    <div class="sc-related-thumb">
+                        <img src="/wp-content/uploads/projecten/vlieland-thumb.jpg" alt="Horeca Vlieland" loading="lazy">
+                    </div>
+                    <div class="sc-related-info">
+                        <span class="sc-related-cat">Gevelreclame</span>
+                        <h3>Signing op Vlieland</h3>
+                        <p>Eiland horeca gevelreclame</p>
+                    </div>
+                </a>
+                <a href="/projecten/interieurbranding-zorginstelling-viva-muiden/" class="sc-related-card">
+                    <div class="sc-related-thumb">
+                        <img src="/wp-content/uploads/projecten/viva-thumb.jpg" alt="Viva Zorggroep" loading="lazy">
+                    </div>
+                    <div class="sc-related-info">
+                        <span class="sc-related-cat">Interieur</span>
+                        <h3>Viva Zorggroep Muiden</h3>
+                        <p>Interieurbranding zorginstelling</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+</article>
+
+<script>
+(function(){
+    const d=document,detail=d.querySelector('.sc-project-detail');if(!detail)return;
+    const infoBar=detail.querySelector('.sc-info-bar'),lightbox=detail.querySelector('.sc-lightbox'),lbImg=lightbox.querySelector('img'),items=detail.querySelectorAll('.sc-gallery-item');let idx=0;
+    window.addEventListener('scroll',()=>{infoBar.classList.toggle('scrolled',window.scrollY>400)},{passive:true});
+    const openLB=i=>{idx=i;lbImg.src=items[i].querySelector('img').src;lightbox.classList.add('active');d.body.style.overflow='hidden'};
+    const closeLB=()=>{lightbox.classList.remove('active');d.body.style.overflow=''};
+    const nav=dir=>{idx=(idx+dir+items.length)%items.length;lbImg.src=items[idx].querySelector('img').src};
+    items.forEach((item,i)=>item.addEventListener('click',()=>openLB(i)));
+    lightbox.querySelector('.sc-lightbox-close').addEventListener('click',closeLB);
+    lightbox.querySelector('.sc-lightbox-prev').addEventListener('click',()=>nav(-1));
+    lightbox.querySelector('.sc-lightbox-next').addEventListener('click',()=>nav(1));
+    lightbox.addEventListener('click',e=>{if(e.target===lightbox)closeLB()});
+    d.addEventListener('keydown',e=>{if(!lightbox.classList.contains('active'))return;if(e.key==='Escape')closeLB();if(e.key==='ArrowLeft')nav(-1);if(e.key==='ArrowRight')nav(1)});
+    const form=d.getElementById('scProjectForm');
+    form.addEventListener('submit',async e=>{
+        e.preventDefault();const fd=new FormData(form);fd.append('action','sc_project_contact');
+        const btn=form.querySelector('button[type="submit"]'),orig=btn.textContent;btn.textContent='Verzenden...';btn.disabled=true;
+        try{const r=await fetch('/wp-admin/admin-ajax.php',{method:'POST',body:fd});if(r.ok){form.innerHTML='<p style="color:#4ade80;font-size:1.2rem;text-align:center;padding:2rem;">✓ Bedankt! Wij nemen snel contact met u op over uw hotel signing.</p>'}else{throw new Error()}}
+        catch(err){btn.textContent=orig;btn.disabled=false;alert('Verzenden mislukt. Probeer opnieuw.')}
+    });
+})();
+</script>
+
+<!--
+Schema.org structured data for SEO
+Plaats in theme header of via SEO plugin
+-->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    "name": "Hotel Signing WestCord Hotels Landelijk",
+    "description": "Complete hotel signing voor WestCord Hotels: gevelreclame, interieur signing en wayfinding voor 15+ locaties door heel Nederland.",
+    "image": "https://sign-company.nl/wp-content/uploads/projecten/westcord-hotels-hero.jpg",
+    "creator": {
+        "@type": "LocalBusiness",
+        "name": "Sign Company",
+        "url": "https://sign-company.nl"
+    },
+    "dateCreated": "2024",
+    "locationCreated": {
+        "@type": "Place",
+        "name": "Nederland (landelijk)"
+    },
+    "keywords": ["hotel signing", "hotelketen branding", "gevelreclame hotel", "interieur signing", "wayfinding", "WestCord"]
+}
+</script>
