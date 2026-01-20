@@ -1,0 +1,337 @@
+<style>
+    .elementor-widget-html > .elementor-widget-container { background-color: #FFFFFF !important; }
+    .sc-project { width: 100vw !important; max-width: 100vw !important; margin-left: calc(-50vw + 50%) !important; margin-right: calc(-50vw + 50%) !important; margin-bottom: 0 !important; padding: 0 !important; overflow-x: hidden !important; font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; color: #141414 !important; line-height: 1.6 !important; -webkit-font-smoothing: antialiased !important; }
+    .sc-project > *:last-child { margin-bottom: 0 !important; }
+    article.sc-project { margin-bottom: 0 !important; padding-bottom: 0 !important; background: #FFFFFF !important; }
+    .sc-project *, .sc-project *::before, .sc-project *::after { box-sizing: border-box !important; }
+    .sc-project { --navy: #1A3752; --black: #141414; --white: #FFFFFF; --off-white: #F7F4F0; --gray-600: #666666; --gray-400: #999999; --gray-200: #ECECEC; --orange: #E57324; --yellow: #F0AA04; --gradient: linear-gradient(135deg, #E57324, #F0AA04); --glow: rgba(229, 115, 36, 0.35); --font-display: 'Excon', -apple-system, BlinkMacSystemFont, sans-serif; --font-body: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .sc-project h1, .sc-project h2, .sc-project h3, .sc-project h4, .sc-project h5, .sc-project h6 { font-family: var(--font-display) !important; color: var(--navy) !important; line-height: 1.05 !important; margin: 0 0 16px 0 !important; padding: 0 !important; font-weight: 900 !important; }
+    .sc-project h2 { letter-spacing: -3px !important; }
+    .sc-project p { font-family: var(--font-body) !important; margin: 0 0 16px 0 !important; }
+    .sc-project a { text-decoration: none !important; color: inherit !important; }
+    .sc-section { width: 100% !important; position: relative !important; }
+    .sc-container { width: 100% !important; max-width: 1200px !important; margin-left: auto !important; margin-right: auto !important; padding-left: 20px !important; padding-right: 20px !important; }
+    @media (min-width: 600px) { .sc-container { padding-left: 32px !important; padding-right: 32px !important; } }
+    @media (min-width: 1024px) { .sc-container { padding-left: 48px !important; padding-right: 48px !important; } }
+    .sc-hero { position: relative !important; width: 100% !important; min-height: 85vh !important; max-height: 900px !important; display: flex !important; align-items: flex-end !important; overflow: hidden !important; background: var(--black) !important; }
+    @media (max-width: 767px) { .sc-hero { min-height: 70vh !important; max-height: 700px !important; } }
+    .sc-hero__bg { position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; z-index: 1 !important; }
+    .sc-hero__img { width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: center !important; }
+    .sc-hero__overlay { position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: linear-gradient(to bottom, rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 0.05) 40%, rgba(20, 20, 20, 0.5) 65%, rgba(20, 20, 20, 0.92) 100%) !important; z-index: 2 !important; }
+    .sc-hero__content { position: relative !important; z-index: 3 !important; width: 100% !important; padding: 0 0 56px !important; }
+    @media (min-width: 768px) { .sc-hero__content { padding: 0 0 72px !important; } }
+    .sc-hero__badge { display: inline-flex !important; align-items: center !important; gap: 8px !important; padding: 10px 18px !important; background: var(--gradient) !important; border-radius: 50px !important; margin-bottom: 24px !important; box-shadow: 0 4px 20px var(--glow) !important; }
+    .sc-hero__badge-icon { width: 16px !important; height: 16px !important; color: #FFFFFF !important; }
+    .sc-hero__badge-text { font-family: var(--font-display) !important; font-size: 11px !important; font-weight: 700 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; letter-spacing: 0.8px !important; text-transform: uppercase !important; }
+    .sc-hero__title { font-family: var(--font-display) !important; font-size: 38px !important; font-weight: 900 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; line-height: 1 !important; letter-spacing: -1.5px !important; margin-bottom: 28px !important; max-width: 800px !important; }
+    @media (min-width: 600px) { .sc-hero__title { font-size: 52px !important; letter-spacing: -2px !important; } }
+    @media (min-width: 1024px) { .sc-hero__title { font-size: 72px !important; letter-spacing: -3px !important; } }
+    .sc-hero__title-highlight { display: block !important; background: linear-gradient(135deg, var(--yellow), var(--orange)) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
+    .sc-hero__tags { display: flex !important; flex-wrap: wrap !important; gap: 10px !important; }
+    .sc-hero__tag { display: inline-flex !important; align-items: center !important; gap: 6px !important; padding: 10px 16px !important; background: rgba(255, 255, 255, 0.12) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; border-radius: 50px !important; font-size: 13px !important; font-weight: 500 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; }
+    .sc-hero__tag-icon { width: 14px !important; height: 14px !important; opacity: 0.85 !important; color: #FFFFFF !important; }
+    .sc-infobar { background: var(--white) !important; padding: 16px 0 !important; border-bottom: 1px solid var(--gray-200) !important; position: sticky !important; top: 0 !important; z-index: 100 !important; transition: box-shadow 0.3s ease !important; }
+    .sc-infobar.is-scrolled { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1) !important; }
+    .sc-infobar__inner { display: flex !important; flex-direction: column !important; gap: 16px !important; }
+    @media (min-width: 768px) { .sc-infobar__inner { flex-direction: row !important; justify-content: space-between !important; align-items: center !important; } }
+    .sc-infobar__facts { display: flex !important; flex-wrap: wrap !important; gap: 20px !important; }
+    @media (min-width: 1024px) { .sc-infobar__facts { gap: 40px !important; } }
+    .sc-infobar__fact { display: flex !important; flex-direction: column !important; gap: 2px !important; }
+    .sc-infobar__label { font-size: 10px !important; font-weight: 600 !important; color: var(--gray-400) !important; text-transform: uppercase !important; letter-spacing: 0.8px !important; }
+    .sc-infobar__value { font-size: 14px !important; font-weight: 600 !important; color: var(--navy) !important; }
+    .sc-infobar__cta { display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; padding: 14px 28px !important; background: var(--gradient) !important; border-radius: 50px !important; font-family: var(--font-display) !important; font-size: 14px !important; font-weight: 700 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; transition: all 0.3s ease !important; box-shadow: 0 4px 16px var(--glow) !important; flex-shrink: 0 !important; }
+    .sc-infobar__cta:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 24px var(--glow) !important; }
+    .sc-infobar__cta-icon { width: 16px !important; height: 16px !important; color: #FFFFFF !important; }
+    .sc-main { background: var(--white) !important; padding: 48px 0 64px !important; }
+    @media (min-width: 768px) { .sc-main { padding: 72px 0 96px !important; } }
+    .sc-main__grid { display: grid !important; grid-template-columns: 1fr !important; gap: 48px !important; }
+    @media (min-width: 1024px) { .sc-main__grid { grid-template-columns: 1fr 340px !important; gap: 64px !important; } }
+    .sc-content__label { display: inline-block !important; padding: 6px 14px !important; background: var(--off-white) !important; border-radius: 6px !important; font-family: var(--font-display) !important; font-size: 11px !important; font-weight: 700 !important; color: var(--orange) !important; text-transform: uppercase !important; letter-spacing: 1px !important; margin-bottom: 20px !important; }
+    .sc-content__title { font-family: var(--font-display) !important; font-size: 28px !important; font-weight: 900 !important; letter-spacing: -3px !important; margin-bottom: 28px !important; color: var(--navy) !important; }
+    @media (min-width: 768px) { .sc-content__title { font-size: 38px !important; } }
+    .sc-content__title-gradient { background: var(--gradient) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
+    .sc-content__text { font-size: 16px !important; line-height: 1.8 !important; color: var(--gray-600) !important; }
+    @media (min-width: 768px) { .sc-content__text { font-size: 17px !important; } }
+    .sc-content__text p { margin-bottom: 20px !important; font-size: inherit !important; line-height: inherit !important; color: inherit !important; }
+    .sc-content__text p:last-child { margin-bottom: 0 !important; }
+    .sc-content__text a { color: var(--navy) !important; font-weight: 500 !important; font-size: inherit !important; line-height: inherit !important; text-decoration: underline !important; text-decoration-color: var(--orange) !important; text-underline-offset: 2px !important; transition: all 0.2s ease !important; }
+    .sc-content__text a:hover { color: var(--orange) !important; }
+    .sc-sidebar { display: flex !important; flex-direction: column !important; gap: 24px !important; }
+    @media (min-width: 1024px) { .sc-sidebar { position: sticky !important; top: 100px !important; } }
+    .sc-card { background: var(--off-white) !important; border-radius: 20px !important; padding: 28px !important; border: 1px solid var(--gray-200) !important; }
+    .sc-card__header { display: flex !important; align-items: center !important; gap: 14px !important; padding-bottom: 18px !important; margin-bottom: 18px !important; border-bottom: 2px solid var(--gray-200) !important; }
+    .sc-card__icon { width: 40px !important; height: 40px !important; display: flex !important; align-items: center !important; justify-content: center !important; background: var(--gradient) !important; border-radius: 12px !important; color: var(--white) !important; flex-shrink: 0 !important; }
+    .sc-card__icon svg { width: 20px !important; height: 20px !important; }
+    .sc-card__heading { font-family: var(--font-display) !important; font-size: 15px !important; font-weight: 700 !important; color: var(--navy) !important; margin: 0 !important; }
+    .sc-card__list { list-style: none !important; margin: 0 !important; padding: 0 !important; }
+    .sc-card__item { display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 14px 0 !important; border-bottom: 1px solid var(--gray-200) !important; }
+    .sc-card__item:last-child { border-bottom: none !important; padding-bottom: 0 !important; }
+    .sc-card__item-label { font-size: 12px !important; font-weight: 500 !important; color: var(--gray-600) !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; }
+    .sc-card__item-value { font-size: 14px !important; font-weight: 600 !important; color: var(--navy) !important; }
+    .sc-card__services { display: flex !important; flex-wrap: wrap !important; gap: 10px !important; margin-top: 20px !important; }
+    .sc-pill { display: inline-block !important; padding: 10px 14px !important; background: var(--white) !important; border: 1px solid var(--gray-200) !important; border-radius: 8px !important; font-size: 13px !important; font-weight: 600 !important; color: var(--navy) !important; transition: all 0.25s ease !important; }
+    .sc-pill:hover { background: var(--gradient) !important; border-color: transparent !important; color: var(--white) !important; transform: translateY(-2px) !important; box-shadow: 0 4px 16px var(--glow) !important; }
+    .sc-card--cta { background: linear-gradient(145deg, var(--navy), #234567) !important; border: none !important; text-align: center !important; position: relative !important; overflow: hidden !important; }
+    .sc-card--cta::before { content: '' !important; position: absolute !important; top: -40% !important; right: -30% !important; width: 80% !important; height: 120% !important; background: radial-gradient(ellipse, rgba(240, 170, 4, 0.2), transparent 60%) !important; pointer-events: none !important; }
+    .sc-card--cta > * { position: relative !important; z-index: 1 !important; }
+    .sc-card__emoji { font-size: 36px !important; display: block !important; margin-bottom: 14px !important; }
+    .sc-card__title { font-family: var(--font-display) !important; font-size: 22px !important; font-weight: 700 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; margin-bottom: 10px !important; }
+    .sc-card__desc { font-size: 14px !important; color: rgba(255, 255, 255, 0.8) !important; line-height: 1.6 !important; margin-bottom: 24px !important; }
+    .sc-btn { display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; width: 100% !important; padding: 16px 28px !important; background: var(--gradient) !important; border-radius: 50px !important; font-family: var(--font-display) !important; font-size: 14px !important; font-weight: 700 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; transition: all 0.3s ease !important; box-shadow: 0 6px 24px var(--glow) !important; border: none !important; cursor: pointer !important; }
+    .sc-btn:hover { transform: translateY(-3px) !important; box-shadow: 0 10px 32px var(--glow) !important; }
+    .sc-btn svg { width: 16px !important; height: 16px !important; color: #FFFFFF !important; }
+    .sc-gallery { background: var(--off-white) !important; padding: 56px 0 64px !important; }
+    @media (min-width: 768px) { .sc-gallery { padding: 80px 0 96px !important; } }
+    .sc-gallery__header { display: flex !important; justify-content: space-between !important; align-items: flex-end !important; margin-bottom: 36px !important; flex-wrap: wrap !important; gap: 16px !important; }
+    .sc-gallery__label { font-family: var(--font-display) !important; font-size: 12px !important; font-weight: 700 !important; color: var(--orange) !important; text-transform: uppercase !important; letter-spacing: 1px !important; margin-bottom: 10px !important; }
+    .sc-gallery__title { font-family: var(--font-display) !important; font-size: 28px !important; font-weight: 900 !important; letter-spacing: -3px !important; margin: 0 !important; color: var(--navy) !important; }
+    @media (min-width: 768px) { .sc-gallery__title { font-size: 38px !important; } }
+    .sc-gallery__count { font-size: 14px !important; color: var(--gray-600) !important; padding: 10px 18px !important; background: var(--white) !important; border-radius: 50px !important; font-weight: 500 !important; }
+    .sc-gallery__grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+    @media (min-width: 768px) { .sc-gallery__grid { grid-template-columns: repeat(3, 1fr) !important; gap: 16px !important; } }
+    @media (min-width: 1024px) { .sc-gallery__grid { grid-template-columns: repeat(4, 1fr) !important; gap: 20px !important; } }
+    .sc-gallery__item { position: relative !important; aspect-ratio: 1 !important; border-radius: 16px !important; overflow: hidden !important; cursor: pointer !important; background: var(--black) !important; }
+    .sc-gallery__item--featured { grid-column: span 2 !important; grid-row: span 2 !important; }
+    @media (max-width: 767px) { .sc-gallery__item--featured { grid-row: span 1 !important; aspect-ratio: 16/9 !important; } }
+    .sc-gallery__item img { width: 100% !important; height: 100% !important; object-fit: cover !important; transition: transform 0.5s ease !important; }
+    .sc-gallery__item:hover img { transform: scale(1.08) !important; }
+    .sc-gallery__item::after { content: '' !important; position: absolute !important; inset: 0 !important; background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.5) 100%) !important; opacity: 0 !important; transition: opacity 0.3s ease !important; }
+    .sc-gallery__item:hover::after { opacity: 1 !important; }
+    .sc-gallery__zoom { position: absolute !important; bottom: 14px !important; right: 14px !important; width: 40px !important; height: 40px !important; display: flex !important; align-items: center !important; justify-content: center !important; background: var(--white) !important; border-radius: 50% !important; color: var(--navy) !important; opacity: 0 !important; transform: translateY(8px) !important; transition: all 0.3s ease !important; z-index: 2 !important; }
+    .sc-gallery__zoom svg { width: 18px !important; height: 18px !important; }
+    .sc-gallery__item:hover .sc-gallery__zoom { opacity: 1 !important; transform: translateY(0) !important; }
+    .sc-lightbox { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background: rgba(0, 0, 0, 0.95) !important; z-index: 9999 !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; visibility: hidden !important; transition: all 0.3s ease !important; cursor: zoom-out !important; }
+    .sc-lightbox.is-active { opacity: 1 !important; visibility: visible !important; }
+    .sc-lightbox__img { max-width: 90% !important; max-height: 90vh !important; object-fit: contain !important; border-radius: 8px !important; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important; transform: scale(0.9) !important; transition: transform 0.3s ease !important; }
+    .sc-lightbox.is-active .sc-lightbox__img { transform: scale(1) !important; }
+    .sc-lightbox__close { position: absolute !important; top: 20px !important; right: 20px !important; width: 50px !important; height: 50px !important; background: var(--white) !important; border: none !important; border-radius: 50% !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.3s ease !important; z-index: 10000 !important; }
+    .sc-lightbox__close:hover { transform: scale(1.1) !important; background: var(--orange) !important; }
+    .sc-lightbox__close:hover svg { color: var(--white) !important; }
+    .sc-lightbox__close svg { width: 24px !important; height: 24px !important; color: var(--navy) !important; transition: color 0.3s ease !important; }
+    .sc-lightbox__nav { position: absolute !important; top: 50% !important; transform: translateY(-50%) !important; width: 50px !important; height: 50px !important; background: var(--white) !important; border: none !important; border-radius: 50% !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.3s ease !important; z-index: 10000 !important; }
+    .sc-lightbox__nav:hover { transform: translateY(-50%) scale(1.1) !important; background: var(--orange) !important; }
+    .sc-lightbox__nav:hover svg { color: var(--white) !important; }
+    .sc-lightbox__nav svg { width: 24px !important; height: 24px !important; color: var(--navy) !important; transition: color 0.3s ease !important; }
+    .sc-lightbox__prev { left: 20px !important; }
+    .sc-lightbox__next { right: 20px !important; }
+    .sc-lightbox__counter { position: absolute !important; bottom: 20px !important; left: 50% !important; transform: translateX(-50%) !important; background: rgba(255, 255, 255, 0.1) !important; padding: 10px 20px !important; border-radius: 50px !important; color: var(--white) !important; font-size: 14px !important; font-weight: 600 !important; }
+    .sc-contact-new { background: linear-gradient(135deg, #F7F4F0 0%, #FFFFFF 100%) !important; padding: 60px 0 80px !important; position: relative !important; overflow: hidden !important; }
+    @media (min-width: 1024px) { .sc-contact-new { padding: 80px 0 100px !important; } }
+    .sc-contact-new__blob { position: absolute !important; border-radius: 45% 55% 60% 40% / 70% 30% 70% 30% !important; animation: sc-blob-dance 32s ease-in-out infinite !important; filter: blur(30px) !important; z-index: 0 !important; pointer-events: none !important; }
+    .sc-contact-new__blob--1 { width: 450px !important; height: 350px !important; top: -120px !important; right: -80px !important; background: radial-gradient(ellipse, rgba(240, 170, 4, 0.14), rgba(229, 115, 36, 0.06) 50%, transparent 75%) !important; }
+    .sc-contact-new__blob--2 { width: 380px !important; height: 420px !important; bottom: -180px !important; left: -140px !important; background: radial-gradient(ellipse, rgba(0, 191, 165, 0.1), rgba(0, 191, 165, 0.04) 50%, transparent 75%) !important; animation-delay: -10s !important; }
+    @keyframes sc-blob-dance { 0%, 100% { border-radius: 45% 55% 60% 40% / 70% 30% 70% 30%; transform: translate(0, 0) rotate(0deg) scale(1); } 25% { border-radius: 55% 45% 50% 50% / 30% 70% 30% 70%; transform: translate(-15px, 20px) rotate(90deg) scale(1.12); } 50% { border-radius: 60% 40% 70% 30% / 50% 50% 50% 50%; transform: translate(20px, -10px) rotate(180deg) scale(0.92); } 75% { border-radius: 30% 70% 40% 60% / 60% 40% 60% 40%; transform: translate(-10px, -15px) rotate(270deg) scale(1.08); } }
+    .sc-contact-new__grid { display: grid !important; grid-template-columns: 1fr !important; gap: 32px !important; position: relative !important; z-index: 2 !important; }
+    @media (min-width: 968px) { .sc-contact-new__grid { grid-template-columns: 1fr 1fr !important; gap: 40px !important; } }
+    .sc-contact-new__image-box { position: relative !important; border-radius: 24px !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; box-shadow: 0 24px 70px rgba(0, 0, 0, 0.18) !important; min-height: 400px !important; }
+    .sc-contact-new__image-box img { width: 100% !important; height: 100% !important; object-fit: cover !important; position: absolute !important; top: 0 !important; left: 0 !important; transition: transform 8s ease !important; }
+    .sc-contact-new__image-box:hover img { transform: scale(1.05) !important; }
+    .sc-contact-new__image-overlay { position: absolute !important; bottom: 0 !important; left: 0 !important; right: 0 !important; height: 80% !important; background: linear-gradient(180deg, transparent 0%, rgba(20, 20, 20, 0.4) 40%, rgba(20, 20, 20, 0.95) 100%) !important; pointer-events: none !important; }
+    .sc-contact-new__image-content { position: absolute !important; bottom: 0 !important; left: 0 !important; right: 0 !important; padding: 32px !important; z-index: 2 !important; }
+    @media (min-width: 1024px) { .sc-contact-new__image-content { padding: 40px !important; } }
+    .sc-contact-new__badge { font-family: var(--font-display) !important; display: inline-flex !important; align-items: center !important; gap: 6px !important; padding: 8px 16px !important; background: linear-gradient(135deg, #F0AA04, #E57324) !important; color: #FFFFFF !important; font-size: 10px !important; font-weight: 700 !important; letter-spacing: 1px !important; text-transform: uppercase !important; border-radius: 50px !important; margin-bottom: 16px !important; box-shadow: 0 4px 16px rgba(240, 170, 4, 0.4) !important; }
+    .sc-contact-new__badge svg { width: 12px !important; height: 12px !important; stroke: currentColor !important; fill: none !important; stroke-width: 2.5 !important; }
+    .sc-contact-new__image-title { font-family: var(--font-display) !important; font-size: 32px !important; font-weight: 900 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; line-height: 1.0 !important; letter-spacing: -3px !important; margin-bottom: 14px !important; }
+    .sc-contact-new__image-title .highlight { background: linear-gradient(135deg, #F0AA04, #FFB347) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
+    @media (min-width: 1024px) { .sc-contact-new__image-title { font-size: 40px !important; } }
+    .sc-contact-new__image-desc { font-family: var(--font-body) !important; font-size: 15px !important; line-height: 1.6 !important; color: rgba(255, 255, 255, 0.88) !important; max-width: 400px !important; }
+    .sc-contact-new__content-box { background: #FFFFFF !important; border-radius: 24px !important; padding: 36px !important; box-shadow: 0 16px 50px rgba(0, 0, 0, 0.08) !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; text-align: center !important; }
+    @media (min-width: 1024px) { .sc-contact-new__content-box { padding: 48px !important; } }
+    .sc-contact-new__content-eyebrow { font-family: var(--font-display) !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 1.5px !important; text-transform: uppercase !important; color: var(--orange) !important; margin-bottom: 12px !important; }
+    .sc-contact-new__content-title { font-family: var(--font-display) !important; font-size: 28px !important; font-weight: 900 !important; color: var(--navy) !important; line-height: 1.1 !important; letter-spacing: -3px !important; margin-bottom: 20px !important; }
+    @media (min-width: 1024px) { .sc-contact-new__content-title { font-size: 34px !important; } }
+    .sc-contact-new__content-text { font-size: 16px !important; color: var(--gray-600) !important; line-height: 1.6 !important; margin-bottom: 32px !important; max-width: 400px !important; }
+    .sc-contact-btn { font-family: var(--font-display) !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 10px !important; width: 100% !important; max-width: 300px !important; padding: 18px 36px !important; background: linear-gradient(135deg, #F0AA04, #E57324) !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; text-decoration: none !important; font-weight: 700 !important; font-size: 16px !important; border: none !important; border-radius: 50px !important; cursor: pointer !important; transition: all 0.3s ease !important; box-shadow: 0 8px 28px rgba(240, 170, 4, 0.35) !important; position: relative !important; overflow: hidden !important; }
+    .sc-contact-btn:hover { transform: translateY(-3px) !important; box-shadow: 0 14px 40px rgba(240, 170, 4, 0.45) !important; }
+    .sc-contact-btn svg { width: 20px !important; height: 20px !important; stroke: #FFFFFF !important; fill: none !important; stroke-width: 2.5 !important; transition: transform 0.3s ease !important; }
+    .sc-contact-btn:hover svg { transform: translateX(4px) !important; }
+    .sc-related { background: #FFFFFF !important; padding: 64px 0 80px !important; position: relative !important; }
+    @media (min-width: 768px) { .sc-related { padding: 96px 0 100px !important; } }
+    .sc-related__header { display: flex !important; flex-direction: column !important; gap: 20px !important; margin-bottom: 48px !important; }
+    @media (min-width: 768px) { .sc-related__header { flex-direction: row !important; justify-content: space-between !important; align-items: center !important; } }
+    .sc-related__title { font-family: var(--font-display) !important; font-size: 28px !important; font-weight: 900 !important; letter-spacing: -3px !important; margin: 0 !important; color: var(--navy) !important; }
+    @media (min-width: 768px) { .sc-related__title { font-size: 38px !important; } }
+    .sc-btn--outline { display: inline-flex !important; align-items: center !important; gap: 8px !important; padding: 14px 28px !important; background: transparent !important; border: 2px solid var(--navy) !important; border-radius: 50px !important; font-family: var(--font-display) !important; font-size: 14px !important; font-weight: 700 !important; color: var(--navy) !important; transition: all 0.3s ease !important; }
+    .sc-btn--outline:hover { background: var(--navy) !important; color: var(--white) !important; }
+    .sc-btn--outline svg { width: 16px !important; height: 16px !important; }
+    .sc-related__grid { display: grid !important; grid-template-columns: 1fr !important; gap: 20px !important; }
+    @media (min-width: 640px) { .sc-related__grid { grid-template-columns: repeat(2, 1fr) !important; } }
+    @media (min-width: 1024px) { .sc-related__grid { grid-template-columns: repeat(3, 1fr) !important; gap: 28px !important; } }
+    .sc-project-card { position: relative !important; height: 340px !important; border-radius: 24px !important; overflow: hidden !important; display: block !important; background: var(--black) !important; }
+    @media (min-width: 768px) { .sc-project-card { height: 400px !important; } }
+    .sc-project-card__media { position: absolute !important; inset: 0 !important; }
+    .sc-project-card__media img { width: 100% !important; height: 100% !important; object-fit: cover !important; transition: transform 0.6s ease !important; }
+    .sc-project-card__overlay { position: absolute !important; inset: 0 !important; background: linear-gradient(180deg, transparent 0%, transparent 40%, rgba(20, 20, 20, 0.95) 100%) !important; }
+    .sc-project-card__content { position: absolute !important; bottom: 0 !important; left: 0 !important; right: 0 !important; padding: 28px !important; }
+    .sc-project-card__badge { display: inline-block !important; padding: 8px 14px !important; background: var(--gradient) !important; border-radius: 50px !important; font-family: var(--font-display) !important; font-size: 10px !important; font-weight: 700 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; margin-bottom: 14px !important; }
+    .sc-project-card__title { font-family: var(--font-display) !important; font-size: 24px !important; font-weight: 700 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; letter-spacing: -0.5px !important; margin-bottom: 8px !important; }
+    .sc-project-card__meta { display: flex !important; align-items: center !important; gap: 6px !important; font-size: 14px !important; color: rgba(255, 255, 255, 0.8) !important; -webkit-text-fill-color: rgba(255, 255, 255, 0.8) !important; }
+    .sc-project-card__meta svg { width: 14px !important; height: 14px !important; }
+    .sc-project-card__arrow { position: absolute !important; top: 24px !important; right: 24px !important; width: 44px !important; height: 44px !important; display: flex !important; align-items: center !important; justify-content: center !important; background: var(--white) !important; border-radius: 50% !important; color: var(--navy) !important; opacity: 0 !important; transform: translateX(-8px) !important; transition: all 0.3s ease !important; }
+    .sc-project-card__arrow svg { width: 20px !important; height: 20px !important; }
+    .sc-project-card:hover .sc-project-card__media img { transform: scale(1.08) !important; }
+    .sc-project-card:hover .sc-project-card__arrow { opacity: 1 !important; transform: translateX(0) !important; }
+    .sc-project-card:hover { box-shadow: 0 20px 56px rgba(0, 0, 0, 0.25) !important; }
+</style>
+
+<!-- SEO META TAGS -->
+<!--
+<title>Lichtreclame voor Bedrijfspanden & Retail | Sign Company</title>
+<meta name="description" content="Grote LED lichtreclame en doosletters voor bouwmarkten en retail. Professionele gevelreclame met maximale zichtbaarheid. Vraag een offerte aan.">
+<meta name="keywords" content="grote lichtreclame, doosletters bouwmarkt, LED gevelreclame, lichtreclame retail, gevelletters bedrijfspand, Sign Company">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://signcompany.nl/projecten/lichtreclame/houtexpert/">
+-->
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    "name": "Lichtreclame Houtexpert",
+    "headline": "Lichtreclame voor Bedrijfspanden & Retail | Sign Company",
+    "description": "Grote LED lichtreclame en doosletters voor bouwmarkten. Professionele gevelreclame met maximale zichtbaarheid voor retail.",
+    "image": ["https://www.signcompany.nl/wp-content/uploads/2026/01/Hero-Houtexpert-.webp"],
+    "url": "https://signcompany.nl/projecten/lichtreclame/houtexpert/",
+    "datePublished": "2025-01-01",
+    "dateModified": "2025-01-20",
+    "author": {"@type": "Organization", "name": "Sign Company"},
+    "publisher": {"@type": "Organization", "name": "Sign Company", "logo": {"@type": "ImageObject", "url": "https://signcompany.nl/wp-content/uploads/2020/04/SITE-ICOON.png"}}
+}
+</script>
+
+<article class="sc-project theme-lichtreclame">
+    <header class="sc-hero sc-section">
+        <div class="sc-hero__bg">
+            <img src="https://www.signcompany.nl/wp-content/uploads/2026/01/Hero-Houtexpert-.webp" alt="Lichtreclame Houtexpert bouwmarkt" class="sc-hero__img" fetchpriority="high" decoding="async">
+            <div class="sc-hero__overlay"></div>
+        </div>
+        <div class="sc-hero__content">
+            <div class="sc-container">
+                <div class="sc-hero__badge">
+                    <svg class="sc-hero__badge-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    <span class="sc-hero__badge-text">LED Lichtreclame</span>
+                </div>
+                <h1 class="sc-hero__title">Lichtreclame voor Bedrijfspanden <span class="sc-hero__title-highlight">& Retail</span></h1>
+                <div class="sc-hero__tags">
+                    <span class="sc-hero__tag"><svg class="sc-hero__tag-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>West-Friesland</span>
+                    <span class="sc-hero__tag"><svg class="sc-hero__tag-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>Bouwmarkt & Retail</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="sc-infobar sc-section" id="sc-infobar">
+        <div class="sc-container">
+            <div class="sc-infobar__inner">
+                <div class="sc-infobar__facts">
+                    <div class="sc-infobar__fact"><span class="sc-infobar__label">Klant</span><span class="sc-infobar__value">Houtexpert</span></div>
+                    <div class="sc-infobar__fact"><span class="sc-infobar__label">Locatie</span><span class="sc-infobar__value">West-Friesland</span></div>
+                    <div class="sc-infobar__fact"><span class="sc-infobar__label">Categorie</span><span class="sc-infobar__value">Doosletters & Lichtreclame</span></div>
+                </div>
+                <a href="/contact/" class="sc-infobar__cta"><svg class="sc-infobar__cta-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>Offerte aanvragen</a>
+            </div>
+        </div>
+    </div>
+
+    <main class="sc-main sc-section">
+        <div class="sc-container">
+            <div class="sc-main__grid">
+                <div class="sc-content">
+                    <span class="sc-content__label">Retail Project</span>
+                    <h2 class="sc-content__title">Imposante gevelreclame die <span class="sc-content__title-gradient">van ver zichtbaar is</span></h2>
+                    <div class="sc-content__text">
+                        <p>Een bouwmarkt vraagt om <a href="/lichtreclame/" style="font-size:inherit!important">grote lichtreclame</a> die direct de aandacht trekt van voorbijgangers en automobilisten. Voor Houtexpert realiseerden we indrukwekkende LED doosletters die het bedrijfspand een professionele en herkenbare uitstraling geven. De combinatie van groen en wit sluit perfect aan bij de huisstijl van deze bouwmarkt.</p>
+                        <p>De <a href="/doosletters/" style="font-size:inherit!important">doosletters voor deze bouwmarkt</a> zijn uitgevoerd in groot formaat voor maximale zichtbaarheid. Dankzij energiezuinige LED-verlichting biedt de gevelreclame 's avonds een indrukwekkend lichtbeeld, terwijl de energiekosten beperkt blijven. Onze monteurs installeerden de lichtreclame vakkundig op de gevel, rekening houdend met de constructie en windbelasting.</p>
+                        <p>Naast de hoofdsigning verzorgden we ook <a href="/gevelletters/" style="font-size:inherit!important">gevelletters</a> en aanvullende bewegwijzering op het terrein. Van parkeerverwijzingen tot afdelingsaanduidingen: complete signing die klanten moeiteloos naar de juiste ingang leidt en het winkelgemak vergroot.</p>
+                    </div>
+                </div>
+                <aside class="sc-sidebar">
+                    <div class="sc-card">
+                        <div class="sc-card__header"><div class="sc-card__icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><span class="sc-card__heading">Projectdetails</span></div>
+                        <ul class="sc-card__list">
+                            <li class="sc-card__item"><span class="sc-card__item-label">Klant</span><span class="sc-card__item-value">Houtexpert</span></li>
+                            <li class="sc-card__item"><span class="sc-card__item-label">Locatie</span><span class="sc-card__item-value">West-Friesland</span></li>
+                            <li class="sc-card__item"><span class="sc-card__item-label">Branche</span><span class="sc-card__item-value">Bouwmarkt</span></li>
+                        </ul>
+                        <div class="sc-card__services">
+                            <a href="/lichtreclame/" class="sc-pill">Lichtreclame</a>
+                            <a href="/doosletters/" class="sc-pill">Doosletters</a>
+                            <a href="/gevelletters/" class="sc-pill">Gevelletters</a>
+                        </div>
+                    </div>
+                    <div class="sc-card sc-card--cta">
+                        <span class="sc-card__emoji">🏗️</span>
+                        <h3 class="sc-card__title">Ook lichtreclame nodig?</h3>
+                        <p class="sc-card__desc">Ontdek wat grote LED doosletters voor jouw bedrijfspand kunnen betekenen.</p>
+                        <a href="/contact/" class="sc-btn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>Neem contact op</a>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <section class="sc-gallery sc-section">
+        <div class="sc-container">
+            <div class="sc-gallery__header">
+                <div><p class="sc-gallery__label">Portfolio</p><h2 class="sc-gallery__title">Projectfoto's</h2></div>
+                <span class="sc-gallery__count">8 foto's</span>
+            </div>
+            <div class="sc-gallery__grid">
+                <div class="sc-gallery__item sc-gallery__item--featured"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/Hero-Houtexpert-.webp" alt="Lichtreclame Houtexpert bouwmarkt" loading="lazy" decoding="async"><span class="sc-gallery__zoom"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg></span></div>
+                <div class="sc-gallery__item"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/grote-doosletters-houtexpert-gevel.webp" alt="Grote doosletters Houtexpert gevel" loading="lazy" decoding="async"><span class="sc-gallery__zoom"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg></span></div>
+                <div class="sc-gallery__item"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/led-lichtreclame-bouwmarkt-houtexpert.webp" alt="LED lichtreclame bouwmarkt Houtexpert" loading="lazy" decoding="async"><span class="sc-gallery__zoom"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg></span></div>
+                <div class="sc-gallery__item"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/gevelreclame-retail-houtexpert-montage.webp" alt="Gevelreclame retail Houtexpert montage" loading="lazy" decoding="async"><span class="sc-gallery__zoom"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg></span></div>
+                <div class="sc-gallery__item"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/maatwerk-lichtreclame-houtexpert-detail.webp" alt="Maatwerk lichtreclame Houtexpert detail" loading="lazy" decoding="async"><span class="sc-gallery__zoom"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg></span></div>
+                <div class="sc-gallery__item"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/installatie-doosletters-houtexpert.webp" alt="Installatie doosletters Houtexpert" loading="lazy" decoding="async"><span class="sc-gallery__zoom"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg></span></div>
+                <div class="sc-gallery__item"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/gevelletters-houtexpert-bedrijfspand.webp" alt="Gevelletters Houtexpert bedrijfspand" loading="lazy" decoding="async"><span class="sc-gallery__zoom"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg></span></div>
+                <div class="sc-gallery__item"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/lichtreclame-houtexpert-resultaat.webp" alt="Lichtreclame Houtexpert resultaat" loading="lazy" decoding="async"><span class="sc-gallery__zoom"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg></span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="sc-contact-new sc-section" id="contact">
+        <div class="sc-contact-new__blob sc-contact-new__blob--1"></div>
+        <div class="sc-contact-new__blob sc-contact-new__blob--2"></div>
+        <div class="sc-container">
+            <div class="sc-contact-new__grid">
+                <div class="sc-contact-new__image-box">
+                    <img src="https://www.signcompany.nl/wp-content/uploads/2026/01/grote-doosletters-houtexpert-gevel.webp" alt="Sign Company lichtreclame retail" loading="lazy" decoding="async">
+                    <div class="sc-contact-new__image-overlay"></div>
+                    <div class="sc-contact-new__image-content">
+                        <span class="sc-contact-new__badge"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>42 jaar vakmanschap</span>
+                        <h2 class="sc-contact-new__image-title">Zelfde resultaat<br>voor jouw <span class="highlight">bedrijfspand?</span></h2>
+                        <p class="sc-contact-new__image-desc">Van doosletters tot complete gevelreclame. Wij maken het waar.</p>
+                    </div>
+                </div>
+                <div class="sc-contact-new__content-box">
+                    <p class="sc-contact-new__content-eyebrow">Direct contact</p>
+                    <h3 class="sc-contact-new__content-title">Klaar om te starten?</h3>
+                    <p class="sc-contact-new__content-text">Neem contact op voor een vrijblijvend gesprek of offerte op maat voor jouw bedrijf.</p>
+                    <a href="/contact/" class="sc-contact-btn">Neem contact op<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="sc-related sc-section">
+        <div class="sc-container">
+            <div class="sc-related__header">
+                <h2 class="sc-related__title">Vergelijkbare projecten</h2>
+                <a href="/projecten/" class="sc-btn--outline">Alle projecten<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a>
+            </div>
+            <div class="sc-related__grid">
+                <a href="/projecten/lichtreclame/gourmet/" class="sc-project-card"><div class="sc-project-card__media"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/Hero-Gourmet-.webp" alt="Gourmet lichtreclame" loading="lazy" decoding="async"></div><div class="sc-project-card__overlay"></div><div class="sc-project-card__content"><span class="sc-project-card__badge">Lichtreclame</span><h3 class="sc-project-card__title">Gourmet</h3><span class="sc-project-card__meta"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>West-Friesland</span></div><span class="sc-project-card__arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></span></a>
+                <a href="/projecten/lichtreclame/syngenta-seeds/" class="sc-project-card"><div class="sc-project-card__media"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/Hero-Syngenta-.webp" alt="Syngenta Seeds lichtreclame" loading="lazy" decoding="async"></div><div class="sc-project-card__overlay"></div><div class="sc-project-card__content"><span class="sc-project-card__badge">Lichtreclame</span><h3 class="sc-project-card__title">Syngenta Seeds</h3><span class="sc-project-card__meta"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>Enkhuizen</span></div><span class="sc-project-card__arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></span></a>
+                <a href="/projecten/gevelreclame/present-grootebroek/" class="sc-project-card"><div class="sc-project-card__media"><img src="https://www.signcompany.nl/wp-content/uploads/2026/01/Hero-Present-.webp" alt="Present Grootebroek gevelreclame" loading="lazy" decoding="async"></div><div class="sc-project-card__overlay"></div><div class="sc-project-card__content"><span class="sc-project-card__badge">Gevelreclame</span><h3 class="sc-project-card__title">Present Grootebroek</h3><span class="sc-project-card__meta"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>Grootebroek</span></div><span class="sc-project-card__arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></span></a>
+            </div>
+        </div>
+    </section>
+</article>
+
+<div class="sc-lightbox" id="sc-lightbox"><button class="sc-lightbox__close" aria-label="Sluiten"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button><button class="sc-lightbox__nav sc-lightbox__prev" aria-label="Vorige"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button><button class="sc-lightbox__nav sc-lightbox__next" aria-label="Volgende"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button><img src="" alt="" class="sc-lightbox__img" id="sc-lightbox-img"><div class="sc-lightbox__counter" id="sc-lightbox-counter"></div></div>
+
+<script>
+const infobar = document.getElementById('sc-infobar');
+if (infobar) { window.addEventListener('scroll', function() { infobar.classList.toggle('is-scrolled', window.scrollY > 400); }); }
+(function() { var lightbox = document.getElementById('sc-lightbox'); var lightboxImg = document.getElementById('sc-lightbox-img'); var lightboxCounter = document.getElementById('sc-lightbox-counter'); var closeBtn = lightbox.querySelector('.sc-lightbox__close'); var prevBtn = lightbox.querySelector('.sc-lightbox__prev'); var nextBtn = lightbox.querySelector('.sc-lightbox__next'); var galleryItems = document.querySelectorAll('.sc-gallery__item'); var currentIndex = 0; var images = []; galleryItems.forEach(function(item, index) { var img = item.querySelector('img'); if (img) { images.push({ src: img.src, alt: img.alt }); item.addEventListener('click', function(e) { e.preventDefault(); openLightbox(index); }); item.style.cursor = 'zoom-in'; } }); function openLightbox(index) { currentIndex = index; updateLightboxImage(); lightbox.classList.add('is-active'); document.body.style.overflow = 'hidden'; } function closeLightbox() { lightbox.classList.remove('is-active'); document.body.style.overflow = ''; } function updateLightboxImage() { lightboxImg.src = images[currentIndex].src; lightboxImg.alt = images[currentIndex].alt; lightboxCounter.textContent = (currentIndex + 1) + ' / ' + images.length; } function nextImage() { currentIndex = (currentIndex + 1) % images.length; updateLightboxImage(); } function prevImage() { currentIndex = (currentIndex - 1 + images.length) % images.length; updateLightboxImage(); } closeBtn.addEventListener('click', closeLightbox); nextBtn.addEventListener('click', function(e) { e.stopPropagation(); nextImage(); }); prevBtn.addEventListener('click', function(e) { e.stopPropagation(); prevImage(); }); lightbox.addEventListener('click', function(e) { if (e.target === lightbox) closeLightbox(); }); document.addEventListener('keydown', function(e) { if (!lightbox.classList.contains('is-active')) return; if (e.key === 'Escape') closeLightbox(); if (e.key === 'ArrowRight') nextImage(); if (e.key === 'ArrowLeft') prevImage(); }); })();
+</script>
