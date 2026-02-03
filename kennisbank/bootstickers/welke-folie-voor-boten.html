@@ -6,7 +6,7 @@
     <title>Welke folie voor boten? Maritieme folie uitgelegd | Sign Company</title>
     <meta name="description" content="Voor boten gebruik je gegoten maritieme folie zoals 3M IJ180mC. Ontdek waarom dit essentieel is en wat het verschil is met autofolie. Advies van experts uit Enkhuizen.">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <link rel="canonical" href="https://signcompany.nl/kennisbank/bootstickers/welke-folie-voor-boten">
+    <link rel="canonical" href="https://signcompany.nl/kennisbank/bootstickers-welke-folie-voor-boten">
 
     <!-- Standaard Meta Tags -->
     <meta name="author" content="Sign Company">
@@ -24,9 +24,29 @@
     <meta name="classification" content="Business, Signing, Reclame">
     <meta name="category" content="Bootstickers">
 
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://signcompany.nl/kennisbank/bootstickers-welke-folie-voor-boten">
+    <meta property="og:title" content="Welke folie voor boten? Maritieme folie uitgelegd | Sign Company">
+    <meta property="og:description" content="Voor boten gebruik je gegoten maritieme folie zoals 3M IJ180mC. Ontdek waarom dit essentieel is en wat het verschil is met autofolie. Advies van experts uit Enkhuizen.">
+    <meta property="og:image" content="https://signcompany.nl/wp-content/uploads/2025/01/sign-company-og-image.jpg">
+    <meta property="og:site_name" content="Sign Company">
+    <meta property="og:locale" content="nl_NL">
+    <meta property="article:publisher" content="https://www.facebook.com/signcompanynl">
+    <meta property="article:published_time" content="2025-01-15">
+    <meta property="article:modified_time" content="2025-02-01">
+    <meta property="article:section" content="Bootstickers">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://signcompany.nl/kennisbank/bootstickers-welke-folie-voor-boten">
+    <meta name="twitter:title" content="Welke folie voor boten? Maritieme folie uitgelegd | Sign Company">
+    <meta name="twitter:description" content="Voor boten gebruik je gegoten maritieme folie zoals 3M IJ180mC. Ontdek waarom dit essentieel is en wat het verschil is met autofolie. Advies van experts uit Enkhuizen.">
+    <meta name="twitter:image" content="https://signcompany.nl/wp-content/uploads/2025/01/sign-company-og-image.jpg">
+
     <!-- Hreflang -->
-    <link rel="alternate" hreflang="nl" href="https://signcompany.nl/kennisbank/bootstickers/welke-folie-voor-boten">
-    <link rel="alternate" hreflang="x-default" href="https://signcompany.nl/kennisbank/bootstickers/welke-folie-voor-boten">
+    <link rel="alternate" hreflang="nl" href="https://signcompany.nl/kennisbank/bootstickers-welke-folie-voor-boten">
+    <link rel="alternate" hreflang="x-default" href="https://signcompany.nl/kennisbank/bootstickers-welke-folie-voor-boten">
 
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 
@@ -123,7 +143,11 @@
         },
         "datePublished": "2025-01-15",
         "dateModified": "2025-02-01",
-        "mainEntityOfPage": "https://signcompany.nl/kennisbank/bootstickers/welke-folie-voor-boten",
+        "mainEntityOfPage": "https://signcompany.nl/kennisbank/bootstickers-welke-folie-voor-boten",
+        "speakable": {
+            "@type": "SpeakableSpecification",
+            "cssSelector": [".hero h1", ".hero-intro", ".text-block h2", ".faq-question span:first-child", ".faq-answer p"]
+        },
         "about": {
             "@type": "Service",
             "name": "Bootbelettering",
@@ -164,8 +188,8 @@
         "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://signcompany.nl" },
             { "@type": "ListItem", "position": 2, "name": "Kennisbank", "item": "https://signcompany.nl/kennisbank" },
-            { "@type": "ListItem", "position": 3, "name": "Bootstickers", "item": "https://signcompany.nl/kennisbank/bootstickers" },
-            { "@type": "ListItem", "position": 4, "name": "Welke folie voor boten?", "item": "https://signcompany.nl/kennisbank/bootstickers/welke-folie-voor-boten" }
+            { "@type": "ListItem", "position": 3, "name": "Bootstickers", "item": "https://signcompany.nl/kennisbank#bootstickers" },
+            { "@type": "ListItem", "position": 4, "name": "Welke folie voor boten?", "item": "https://signcompany.nl/kennisbank/bootstickers-welke-folie-voor-boten" }
         ]
     }
     </script>
@@ -470,9 +494,59 @@
             position: absolute;
             bottom: -60px; right: -40px;
             width: 220px; height: 220px;
-            background: radial-gradient(ellipse, rgba(240,170,4,0.06), rgba(229,115,36,0.03) 40%, transparent 70%);
+            background: radial-gradient(ellipse, rgba(240,170,4,0.08), rgba(229,115,36,0.04) 40%, transparent 70%);
             border-radius: 50%;
             filter: blur(25px);
+            animation: float-shape 15s ease-in-out infinite alternate;
+        }
+
+        /* Additional floating shapes */
+        .cta-floating-shape {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .cta-floating-shape.shape-1 {
+            top: 20px;
+            left: 15%;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(240,170,4,0.2);
+            border-radius: 50%;
+            animation: float-rotate 18s linear infinite;
+        }
+
+        .cta-floating-shape.shape-2 {
+            bottom: 30%;
+            left: -20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(229,115,36,0.08), transparent);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            animation: float-shape 12s ease-in-out infinite alternate-reverse;
+        }
+
+        .cta-floating-shape.shape-3 {
+            top: 40%;
+            right: 10%;
+            width: 24px;
+            height: 24px;
+            background: rgba(240,170,4,0.15);
+            transform: rotate(45deg);
+            animation: float-rotate 20s linear infinite reverse;
+        }
+
+        @keyframes float-shape {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(10px, -15px) scale(1.05); }
+            100% { transform: translate(-5px, 10px) scale(0.95); }
+        }
+
+        @keyframes float-rotate {
+            0% { transform: rotate(0deg) translateY(0); }
+            50% { transform: rotate(180deg) translateY(-10px); }
+            100% { transform: rotate(360deg) translateY(0); }
         }
 
         .cta-box h2 {
@@ -574,9 +648,15 @@
             text-decoration: none;
         }
 
+        /* ===== BOTTOM FLOW WRAPPER - RELATED SECTIONS ===== */
+        .bottom-flow-wrapper {
+            background: #FEFEFE;
+            padding: 0 20px 48px;
+        }
+
         .related-section {
             width: 100%;
-            padding: 0 20px 56px;
+            margin-bottom: 40px;
         }
         .related-label {
             font-family: 'Excon', sans-serif !important;
@@ -641,6 +721,62 @@
             color: var(--orange);
         }
         .related-arrow svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Website Links Section */
+        .website-links-section {
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .website-links-label {
+            font-family: 'Excon', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1.5px !important;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .website-links-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(0,191,165,0.15), transparent 80%);
+        }
+
+        .website-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .website-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            background: rgba(0,191,165,0.08);
+            border: 1px solid rgba(0,191,165,0.15);
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--teal);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .website-link:hover {
+            background: var(--teal);
+            color: #FFFFFF;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,191,165,0.2);
+        }
+        .website-link svg {
             width: 14px;
             height: 14px;
         }
@@ -910,7 +1046,7 @@
             .cta-box { padding: 48px 40px; border-radius: 16px; }
             .cta-buttons { flex-direction: row; justify-content: center; }
             .cta-box h2 { font-size: 32px !important; letter-spacing: -1.5px !important; }
-            .related-section { padding: 0 40px 56px; }
+            .bottom-flow-wrapper { padding: 0 40px 56px; }
             .related-links { grid-template-columns: 1fr 1fr; }
             .faq-inner { padding: 0 40px; }
             .faq-title { font-size: 32px !important; letter-spacing: -1.5px !important; }
@@ -945,7 +1081,7 @@
             .cta-box-text { flex: 1; }
             .cta-box h2 { font-size: 32px !important; letter-spacing: -1.5px !important; }
             .cta-buttons { flex-direction: column; flex-shrink: 0; }
-            .related-section { padding: 0 40px 64px; }
+            .bottom-flow-wrapper { padding: 0 40px 64px; }
             .faq-inner { padding: 0 40px; }
             .faq-section { padding: 64px 0; }
             .faq-list { grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -958,7 +1094,7 @@
             .article-text { padding: 72px 56px 80px 32px; gap: 36px; }
             .cta-section { padding: 0 56px 64px; }
             .cta-box h2 { font-size: 36px !important; letter-spacing: -1.8px !important; }
-            .related-section { padding: 0 56px 72px; }
+            .bottom-flow-wrapper { padding: 0 56px 72px; }
             .faq-section { padding: 72px 0; }
             .faq-title { font-size: 36px !important; letter-spacing: -1.8px !important; }
             .services-strip-inner { padding: 0 56px; }
@@ -969,7 +1105,7 @@
             .article-images { padding: 80px 40px 80px 80px; }
             .article-text { padding: 80px 80px 96px 40px; }
             .cta-section { padding: 0 80px 72px; }
-            .related-section { padding: 0 80px 80px; }
+            .bottom-flow-wrapper { padding: 0 80px 80px; }
             .services-strip-inner { padding: 0 80px; }
         }
 
@@ -980,7 +1116,7 @@
                 transition-duration: 0.15s !important;
                 scroll-behavior: auto !important;
             }
-            .hero::before, .hero::after { animation: none; }
+            .hero::before, .hero::after, .cta-box::after, .cta-floating-shape { animation: none; }
         }
 
         @media (pointer: coarse) {
@@ -1076,6 +1212,11 @@
 <!-- Full Width CTA Box -->
 <section class="cta-section">
     <div class="cta-box">
+        <!-- Floating shapes -->
+        <div class="cta-floating-shape shape-1"></div>
+        <div class="cta-floating-shape shape-2"></div>
+        <div class="cta-floating-shape shape-3"></div>
+
         <div class="cta-box-text">
             <h2>Advies over folie voor jouw boot?</h2>
             <p class="cta-description">Stuur ons een foto van je boot en vertel wat je wilt. We adviseren je over de beste folie en maken een vrijblijvende offerte.</p>
@@ -1093,28 +1234,45 @@
     </div>
 </section>
 
-<!-- Full Width Related Questions -->
-<section class="related-section">
-    <div class="related-label">Gerelateerde vragen</div>
-    <div class="related-links">
-            <a href="/kennisbank/bootstickers/wat-kost-bootbelettering" class="related-link">
+<div class="bottom-flow-wrapper">
+    <!-- Related Kennisbank Pages -->
+    <section class="related-section">
+        <div class="related-label">Gerelateerde vragen</div>
+        <div class="related-links">
+            <a href="/kennisbank/bootstickers-wat-kost-bootbelettering" class="related-link">
                 Wat kost bootbelettering?
                 <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
             </a>
-            <a href="/kennisbank/bootstickers/hoe-lang-gaat-bootbelettering-mee" class="related-link">
+            <a href="/kennisbank/bootstickers-hoe-lang-gaat-bootbelettering-mee" class="related-link">
                 Hoe lang gaat bootbelettering mee?
                 <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
             </a>
-            <a href="/kennisbank/autobelettering/wat-kost-autobelettering" class="related-link">
+            <a href="/kennisbank/autobelettering-wat-kost-autobelettering" class="related-link">
                 Wat kost autobelettering?
                 <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
             </a>
-            <a href="/kennisbank/autobelettering/hoe-lang-gaat-autobelettering-mee" class="related-link">
+            <a href="/kennisbank/autobelettering-hoe-lang-gaat-autobelettering-mee" class="related-link">
                 Hoe lang gaat autobelettering mee?
                 <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
             </a>
         </div>
-</section>
+    </section>
+
+    <!-- Links to Main Website Pages -->
+    <section class="website-links-section">
+        <div class="website-links-label">Meer over bootstickers</div>
+        <div class="website-links">
+            <a href="https://signcompany.nl/autobelettering" class="website-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Autobelettering
+            </a>
+            <a href="https://signcompany.nl/carwrap" class="website-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Carwrap
+            </a>
+        </div>
+    </section>
+</div>
 
 <!-- Full Width FAQ Section -->
 <section class="faq-section">
