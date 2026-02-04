@@ -24,6 +24,26 @@
     <meta name="classification" content="Business, Signing, Reclame">
     <meta name="category" content="Autobelettering">
 
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://signcompany.nl/kennisbank/autobelettering-witte-of-donkere-auto-beletteren">
+    <meta property="og:title" content="Witte of donkere auto beletteren: welke kleur valt meer op? | Sign Company">
+    <meta property="og:description" content="Welke autokleur is het beste voor belettering? Ontdek hoe contrast, leesbaarheid en kleurcombinaties de zichtbaarheid van je bedrijfsreclame bepalen.">
+    <meta property="og:image" content="https://signcompany.nl/wp-content/uploads/2025/01/sign-company-og-image.jpg">
+    <meta property="og:site_name" content="Sign Company">
+    <meta property="og:locale" content="nl_NL">
+    <meta property="article:publisher" content="https://www.facebook.com/signcompanynl">
+    <meta property="article:published_time" content="2025-01-15">
+    <meta property="article:modified_time" content="2025-02-01">
+    <meta property="article:section" content="Autobelettering">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://signcompany.nl/kennisbank/autobelettering-witte-of-donkere-auto-beletteren">
+    <meta name="twitter:title" content="Witte of donkere auto beletteren: welke kleur valt meer op? | Sign Company">
+    <meta name="twitter:description" content="Welke autokleur is het beste voor belettering? Ontdek hoe contrast, leesbaarheid en kleurcombinaties de zichtbaarheid bepalen.">
+    <meta name="twitter:image" content="https://signcompany.nl/wp-content/uploads/2025/01/sign-company-og-image.jpg">
+
     <!-- Hreflang -->
     <link rel="alternate" hreflang="nl" href="https://signcompany.nl/kennisbank/autobelettering-witte-of-donkere-auto-beletteren">
     <link rel="alternate" hreflang="x-default" href="https://signcompany.nl/kennisbank/autobelettering-witte-of-donkere-auto-beletteren">
@@ -124,6 +144,10 @@
         "datePublished": "2025-01-15",
         "dateModified": "2025-02-01",
         "mainEntityOfPage": "https://signcompany.nl/kennisbank/autobelettering-witte-of-donkere-auto-beletteren",
+        "speakable": {
+            "@type": "SpeakableSpecification",
+            "cssSelector": [".hero h1", ".hero-intro", ".text-block h2", ".faq-question span:first-child", ".faq-answer p"]
+        },
         "about": {
             "@type": "Service",
             "name": "Autobelettering",
@@ -164,7 +188,7 @@
         "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://signcompany.nl" },
             { "@type": "ListItem", "position": 2, "name": "Kennisbank", "item": "https://signcompany.nl/kennisbank" },
-            { "@type": "ListItem", "position": 3, "name": "Autobelettering", "item": "https://signcompany.nl/kennisbank/autobelettering" },
+            { "@type": "ListItem", "position": 3, "name": "Autobelettering", "item": "https://signcompany.nl/kennisbank#autobelettering" },
             { "@type": "ListItem", "position": 4, "name": "Witte of donkere auto beletteren", "item": "https://signcompany.nl/kennisbank/autobelettering-witte-of-donkere-auto-beletteren" }
         ]
     }
@@ -645,6 +669,73 @@
             height: 14px;
         }
 
+        /* Website Links Section */
+        .website-links-section {
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .website-links-label {
+            font-family: 'Excon', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1.5px !important;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .website-links-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(0,191,165,0.15), transparent 80%);
+        }
+
+        .website-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .website-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            background: rgba(0,191,165,0.08);
+            border: 1px solid rgba(0,191,165,0.15);
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--teal);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .website-link:hover {
+            background: var(--teal);
+            color: #FFFFFF;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,191,165,0.2);
+        }
+        .website-link svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Bottom Flow Wrapper */
+        .bottom-flow-wrapper {
+            background: #FEFEFE;
+            padding: 0 20px 48px;
+        }
+
+        .bottom-flow-wrapper .related-section {
+            padding: 0;
+            margin-bottom: 40px;
+        }
+
         .services-strip {
             width: 100%;
             background: var(--off-white);
@@ -913,7 +1004,7 @@
             .cta-buttons { flex-direction: row; justify-content: center; }
             .cta-box h2 { font-size: 32px !important; letter-spacing: -1.5px !important; }
 
-            .related-section { padding: 0 40px 56px; }
+            .bottom-flow-wrapper { padding: 0 40px 56px; }
             .related-links {
                 grid-template-columns: 1fr 1fr;
             }
@@ -967,7 +1058,7 @@
             .cta-box h2 { font-size: 32px !important; letter-spacing: -1.5px !important; }
             .cta-buttons { flex-direction: column; flex-shrink: 0; }
 
-            .related-section { padding: 0 40px 64px; }
+            .bottom-flow-wrapper { padding: 0 40px 64px; }
 
             .faq-inner { padding: 0 40px; }
             .faq-section { padding: 64px 0; }
@@ -997,7 +1088,7 @@
             .cta-section { padding: 0 56px 64px; }
             .cta-box h2 { font-size: 36px !important; letter-spacing: -1.8px !important; }
 
-            .related-section { padding: 0 56px 72px; }
+            .bottom-flow-wrapper { padding: 0 56px 72px; }
 
             .faq-section { padding: 72px 0; }
             .faq-title { font-size: 36px !important; letter-spacing: -1.8px !important; }
@@ -1016,7 +1107,7 @@
             }
 
             .cta-section { padding: 0 80px 72px; }
-            .related-section { padding: 0 80px 80px; }
+            .bottom-flow-wrapper { padding: 0 80px 80px; }
             .services-strip-inner { padding: 0 80px; }
         }
 
@@ -1090,7 +1181,7 @@
 
                 <p>Niet voor niets zijn de meeste bedrijfswagens wit. Een witte auto biedt maximale <strong>ontwerpvrijheid</strong>. Je kunt bijna elke kleur <a href="https://signcompany.nl/autobelettering">belettering</a> gebruiken met uitstekend contrast. Zwart, donkerblauw, rood, groen - het werkt allemaal.</p>
 
-                <p>Witte auto's hebben nog meer voordelen: ze zijn goedkoper in aanschaf, warmen minder snel op in de zon en vuil is minder snel zichtbaar dan op donkere kleuren. Voor bedrijven met een <a href="https://signcompany.nl/kennisbank/autobelettering/autobelettering-wagenpark">wagenpark</a> is wit vaak de logische keuze.</p>
+                <p>Witte auto's hebben nog meer voordelen: ze zijn goedkoper in aanschaf, warmen minder snel op in de zon en vuil is minder snel zichtbaar dan op donkere kleuren. Voor bedrijven met een <a href="/kennisbank/autobelettering-autobelettering-wagenpark">wagenpark</a> is wit vaak de logische keuze.</p>
 
                 <p>De beste kleurcombinaties op wit zijn: <strong>zwart</strong> (maximaal contrast), <strong>donkerblauw</strong> (zakelijk), <strong>rood</strong> (opvallend) en <strong>groen</strong> (duurzaamheid). Je huisstijlkleuren bepalen meestal de keuze.</p>
             </div>
@@ -1104,7 +1195,7 @@
 
                 <p>Vermijd donkere belettering op donkere auto's. Donkerblauw op zwart of donkergrijs op antraciet geeft te weinig contrast. Je boodschap wordt dan simpelweg niet gezien, vooral niet in het verkeer.</p>
 
-                <p>Een <strong>volledige wrap</strong> kan bij donkere auto's extra effectief zijn. Je creëert een compleet vlak in je huisstijlkleur waarop je belettering optimaal zichtbaar is. Meer weten? Lees over het <a href="https://signcompany.nl/kennisbank/autobelettering/verschil-autobelettering-carwrapping">verschil tussen belettering en carwrapping</a>.</p>
+                <p>Een <strong>volledige wrap</strong> kan bij donkere auto's extra effectief zijn. Je creëert een compleet vlak in je huisstijlkleur waarop je belettering optimaal zichtbaar is. Meer weten? Lees over het <a href="/kennisbank/autobelettering-verschil-autobelettering-carwrapping">verschil tussen belettering en carwrapping</a>.</p>
             </div>
 
         </div>
@@ -1132,28 +1223,50 @@
     </div>
 </section>
 
-<!-- Full Width Related Questions -->
-<section class="related-section">
-    <div class="related-label">Gerelateerde vragen</div>
-    <div class="related-links">
-        <a href="/kennisbank/autobelettering/wat-kost-autobelettering" class="related-link">
-            Wat kost autobelettering?
-            <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-        </a>
-        <a href="/kennisbank/autobelettering/autobelettering-zelf-ontwerpen-of-laten-doen" class="related-link">
-            Zelf ontwerpen of laten doen?
-            <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-        </a>
-        <a href="/kennisbank/autobelettering/welke-folie-autobelettering" class="related-link">
-            Welke folie voor autobelettering?
-            <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-        </a>
-        <a href="/kennisbank/autobelettering/autobelettering-wagenpark" class="related-link">
-            Wagenpark beletteren
-            <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-        </a>
-    </div>
-</section>
+<!-- Bottom Flow Wrapper -->
+<div class="bottom-flow-wrapper">
+    <!-- Related Kennisbank Pages -->
+    <section class="related-section">
+        <div class="related-label">Gerelateerde vragen</div>
+        <div class="related-links">
+            <a href="/kennisbank/autobelettering-wat-kost-autobelettering" class="related-link">
+                Wat kost autobelettering?
+                <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            </a>
+            <a href="/kennisbank/autobelettering-autobelettering-zelf-ontwerpen-of-laten-doen" class="related-link">
+                Zelf ontwerpen of laten doen?
+                <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            </a>
+            <a href="/kennisbank/autobelettering-welke-folie-autobelettering" class="related-link">
+                Welke folie voor autobelettering?
+                <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            </a>
+            <a href="/kennisbank/autobelettering-autobelettering-wagenpark" class="related-link">
+                Wagenpark beletteren
+                <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Links to Main Website Pages -->
+    <section class="website-links-section">
+        <div class="website-links-label">Meer over autobelettering</div>
+        <div class="website-links">
+            <a href="https://signcompany.nl/autobelettering" class="website-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                Autobelettering
+            </a>
+            <a href="https://signcompany.nl/carwrap" class="website-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2-4H8L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+                Carwrap
+            </a>
+            <a href="https://signcompany.nl/projecten" class="website-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                Projecten
+            </a>
+        </div>
+    </section>
+</div>
 
 <!-- Full Width FAQ Section -->
 <section class="faq-section">
@@ -1210,7 +1323,7 @@
                     <span class="faq-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></span>
                 </summary>
                 <div class="faq-answer">
-                    <p>Een volledige <a href="https://signcompany.nl/kennisbank/autobelettering/verschil-autobelettering-carwrapping">carwrap</a> biedt maximale impact en merkherkenning, maar is ook duurder. Voor veel bedrijven is gedeeltelijke belettering met logo, bedrijfsnaam en contactgegevens voldoende effectief. De keuze hangt af van je budget, doelgroep en merkstrategie.</p>
+                    <p>Een volledige <a href="/kennisbank/autobelettering-verschil-autobelettering-carwrapping">carwrap</a> biedt maximale impact en merkherkenning, maar is ook duurder. Voor veel bedrijven is gedeeltelijke belettering met logo, bedrijfsnaam en contactgegevens voldoende effectief. De keuze hangt af van je budget, doelgroep en merkstrategie.</p>
                 </div>
             </details>
 
@@ -1220,7 +1333,7 @@
                     <span class="faq-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></span>
                 </summary>
                 <div class="faq-answer">
-                    <p>Donkere kleuren zoals zwart, donkerblauw en donkergroen zijn het meest kleurvast. Heldere kleuren zoals rood en oranje kunnen na jaren iets verbleken, vooral bij goedkopere folies. Sign Company werkt met UV-bestendige <a href="https://signcompany.nl/kennisbank/autobelettering/welke-folie-autobelettering">premium folies</a> die minimaal 5 jaar kleurecht blijven.</p>
+                    <p>Donkere kleuren zoals zwart, donkerblauw en donkergroen zijn het meest kleurvast. Heldere kleuren zoals rood en oranje kunnen na jaren iets verbleken, vooral bij goedkopere folies. Sign Company werkt met UV-bestendige <a href="/kennisbank/autobelettering-welke-folie-autobelettering">premium folies</a> die minimaal 5 jaar kleurecht blijven.</p>
                 </div>
             </details>
 
@@ -1230,7 +1343,7 @@
                     <span class="faq-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></span>
                 </summary>
                 <div class="faq-answer">
-                    <p>Bij een <a href="https://signcompany.nl/kennisbank/autobelettering/autobelettering-wagenpark">wagenpark</a> is uniformiteit belangrijk. Kies één autokleur voor het hele park en ontwerp belettering die daar optimaal bij past. Sign Company kan een huisstijlhandleiding voor je wagenpark opstellen, zodat elke nieuwe auto consistent wordt belettered.</p>
+                    <p>Bij een <a href="/kennisbank/autobelettering-autobelettering-wagenpark">wagenpark</a> is uniformiteit belangrijk. Kies één autokleur voor het hele park en ontwerp belettering die daar optimaal bij past. Sign Company kan een huisstijlhandleiding voor je wagenpark opstellen, zodat elke nieuwe auto consistent wordt belettered.</p>
                 </div>
             </details>
 
