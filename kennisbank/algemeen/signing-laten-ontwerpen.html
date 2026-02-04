@@ -6,7 +6,7 @@
     <title>Signing laten ontwerpen of eigen ontwerp aanleveren | Sign Company</title>
     <meta name="description" content="Laat je signing ontwerpen door Sign Company of lever je eigen ontwerp aan. AI, EPS of PDF formaat gewenst. Ontdek de mogelijkheden en bestandseisen.">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <link rel="canonical" href="https://signcompany.nl/kennisbank/algemeen/signing-laten-ontwerpen">
+    <link rel="canonical" href="https://signcompany.nl/kennisbank/algemeen-signing-laten-ontwerpen">
 
     <!-- Standaard Meta Tags -->
     <meta name="author" content="Sign Company">
@@ -24,9 +24,22 @@
     <meta name="classification" content="Business, Signing, Reclame">
     <meta name="category" content="Algemeen">
 
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Signing laten ontwerpen of eigen ontwerp aanleveren | Sign Company">
+    <meta property="og:description" content="Laat je signing ontwerpen door Sign Company of lever je eigen ontwerp aan. AI, EPS of PDF formaat gewenst. Ontdek de mogelijkheden en bestandseisen.">
+    <meta property="og:url" content="https://signcompany.nl/kennisbank/algemeen-signing-laten-ontwerpen">
+    <meta property="og:site_name" content="Sign Company">
+    <meta property="og:locale" content="nl_NL">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Signing laten ontwerpen of eigen ontwerp aanleveren | Sign Company">
+    <meta name="twitter:description" content="Laat je signing ontwerpen door Sign Company of lever je eigen ontwerp aan. AI, EPS of PDF formaat gewenst. Ontdek de mogelijkheden en bestandseisen.">
+
     <!-- Hreflang -->
-    <link rel="alternate" hreflang="nl" href="https://signcompany.nl/kennisbank/algemeen/signing-laten-ontwerpen">
-    <link rel="alternate" hreflang="x-default" href="https://signcompany.nl/kennisbank/algemeen/signing-laten-ontwerpen">
+    <link rel="alternate" hreflang="nl" href="https://signcompany.nl/kennisbank/algemeen-signing-laten-ontwerpen">
+    <link rel="alternate" hreflang="x-default" href="https://signcompany.nl/kennisbank/algemeen-signing-laten-ontwerpen">
 
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 
@@ -123,7 +136,11 @@
         },
         "datePublished": "2025-01-15",
         "dateModified": "2025-02-01",
-        "mainEntityOfPage": "https://signcompany.nl/kennisbank/algemeen/signing-laten-ontwerpen",
+        "mainEntityOfPage": "https://signcompany.nl/kennisbank/algemeen-signing-laten-ontwerpen",
+        "speakable": {
+            "@type": "SpeakableSpecification",
+            "cssSelector": [".hero h1", ".hero-intro", ".text-block h2", ".faq-question span:first-child", ".faq-answer p"]
+        },
         "about": {
             "@type": "Service",
             "name": "Ontwerp signing",
@@ -164,7 +181,8 @@
         "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://signcompany.nl" },
             { "@type": "ListItem", "position": 2, "name": "Kennisbank", "item": "https://signcompany.nl/kennisbank" },
-            { "@type": "ListItem", "position": 3, "name": "Signing laten ontwerpen", "item": "https://signcompany.nl/kennisbank/algemeen/signing-laten-ontwerpen" }
+            { "@type": "ListItem", "position": 3, "name": "Algemeen", "item": "https://signcompany.nl/kennisbank#algemeen" },
+            { "@type": "ListItem", "position": 4, "name": "Signing laten ontwerpen", "item": "https://signcompany.nl/kennisbank/algemeen-signing-laten-ontwerpen" }
         ]
     }
     </script>
@@ -698,6 +716,62 @@
             height: 14px;
         }
 
+        /* ---- WEBSITE LINKS SECTION ---- */
+        .website-links-section {
+            width: 100%;
+            margin-bottom: 40px;
+        }
+        .website-links-label {
+            font-family: 'Excon', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1.5px !important;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .website-links-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(0,191,165,0.2), transparent 80%);
+        }
+        .website-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .website-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 18px;
+            background: rgba(0,191,165,0.08);
+            border: 1px solid rgba(0,191,165,0.15);
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--teal);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: -0.01em;
+        }
+        .website-link:hover {
+            background: var(--teal);
+            color: #FFFFFF;
+            border-color: var(--teal);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,191,165,0.25);
+        }
+
+        /* ---- BOTTOM FLOW WRAPPER ---- */
+        .bottom-flow-wrapper {
+            background: #FEFEFE;
+            padding: 0 20px 48px;
+        }
+
         /* ---- FULL WIDTH SERVICES STRIP ---- */
         .services-strip {
             width: 100%;
@@ -974,10 +1048,12 @@
             .cta-buttons { flex-direction: row; justify-content: center; }
             .cta-box h2 { font-size: 32px !important; letter-spacing: -1.5px !important; }
 
-            .related-section { padding: 0 40px 56px; }
+            .related-section { padding: 0; }
             .related-links {
                 grid-template-columns: 1fr 1fr;
             }
+
+            .bottom-flow-wrapper { padding: 0 40px 56px; }
 
             .faq-inner { padding: 0 40px; }
             .faq-title { font-size: 32px !important; letter-spacing: -1.5px !important; }
@@ -1032,7 +1108,9 @@
             .cta-box h2 { font-size: 32px !important; letter-spacing: -1.5px !important; }
             .cta-buttons { flex-direction: column; flex-shrink: 0; }
 
-            .related-section { padding: 0 40px 64px; }
+            .related-section { padding: 0; }
+
+            .bottom-flow-wrapper { padding: 0 40px 64px; }
 
             .faq-inner { padding: 0 40px; }
             .faq-section { padding: 64px 0; }
@@ -1064,7 +1142,9 @@
             .cta-section { padding: 0 56px 64px; }
             .cta-box h2 { font-size: 36px !important; letter-spacing: -1.8px !important; }
 
-            .related-section { padding: 0 56px 72px; }
+            .related-section { padding: 0; }
+
+            .bottom-flow-wrapper { padding: 0 56px 72px; }
 
             .faq-section { padding: 72px 0; }
             .faq-title { font-size: 36px !important; letter-spacing: -1.8px !important; }
@@ -1085,7 +1165,8 @@
             }
 
             .cta-section { padding: 0 80px 72px; }
-            .related-section { padding: 0 80px 80px; }
+            .related-section { padding: 0; }
+            .bottom-flow-wrapper { padding: 0 80px 80px; }
             .services-strip-inner { padding: 0 80px; }
         }
 
@@ -1247,27 +1328,40 @@
 </section>
 
 <!-- Full Width Related Questions -->
-<section class="related-section">
-    <div class="related-label">Gerelateerde vragen</div>
-    <div class="related-links">
-            <a href="/kennisbank/algemeen/hoe-lang-duurt-een-signing-project" class="related-link">
+<div class="bottom-flow-wrapper">
+    <section class="related-section">
+        <div class="related-label">Gerelateerde vragen</div>
+        <div class="related-links">
+            <a href="/kennisbank/algemeen-hoe-lang-duurt-een-signing-project" class="related-link">
                 Hoe lang duurt een project?
                 <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
             </a>
-            <a href="/kennisbank/algemeen/wat-kost-montage-signing" class="related-link">
+            <a href="/kennisbank/algemeen-wat-kost-montage-signing" class="related-link">
                 Wat kost montage?
                 <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
             </a>
-            <a href="/kennisbank/gevelreclame/wat-kost-gevelreclame" class="related-link">
+            <a href="/kennisbank/gevelreclame-wat-kost-gevelreclame" class="related-link">
                 Wat kost gevelreclame?
                 <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
             </a>
-            <a href="/kennisbank/algemeen/verschil-gegoten-polymeer-monomeer-folie" class="related-link">
+            <a href="/kennisbank/algemeen-verschil-gegoten-polymeer-monomeer-folie" class="related-link">
                 Gegoten vs. polymeer folie
                 <span class="related-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
             </a>
         </div>
-</section>
+    </section>
+
+    <section class="website-links-section">
+        <div class="website-links-label">Bekijk onze diensten</div>
+        <div class="website-links">
+            <a href="https://signcompany.nl/gevelreclame" class="website-link">Gevelreclame</a>
+            <a href="https://signcompany.nl/autobelettering" class="website-link">Autobelettering</a>
+            <a href="https://signcompany.nl/raamfolie" class="website-link">Raamfolie</a>
+            <a href="https://signcompany.nl/contact" class="website-link">Contact</a>
+            <a href="https://signcompany.nl/projecten" class="website-link">Projecten</a>
+        </div>
+    </section>
+</div>
 
 <!-- Full Width FAQ Section -->
 <section class="faq-section">
