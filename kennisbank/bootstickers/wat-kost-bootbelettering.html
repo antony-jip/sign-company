@@ -280,6 +280,23 @@
             outline: none;
         }
 
+        
+/* Animated Hero Blobs */
+.hero-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.hero-blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:0.5;animation-timing-function:ease-in-out;animation-iteration-count:infinite}
+.hero-blob-1{width:340px;height:340px;background:linear-gradient(135deg, rgba(229,115,36,0.12), rgba(240,170,4,0.08));top:-80px;right:-60px;animation:blob-morph-1 18s infinite}
+.hero-blob-2{width:280px;height:280px;background:linear-gradient(135deg, rgba(0,191,165,0.08), rgba(240,170,4,0.06));bottom:-60px;left:-80px;animation:blob-morph-2 22s infinite}
+.hero-blob-3{width:200px;height:200px;background:linear-gradient(135deg, rgba(216,50,85,0.06), rgba(229,115,36,0.04));top:50%;left:60%;animation:blob-morph-3 20s infinite}
+@keyframes blob-morph-1{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%;transform:translate(0,0) rotate(0deg)}50%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%;transform:translate(30px,20px) rotate(15deg)}}
+@keyframes blob-morph-2{0%,100%{border-radius:40% 60% 60% 40%/70% 30% 70% 30%;transform:translate(0,0) rotate(0deg)}50%{border-radius:60% 40% 30% 70%/40% 60% 60% 40%;transform:translate(-20px,30px) rotate(-10deg)}}
+@keyframes blob-morph-3{0%,100%{border-radius:50% 50% 40% 60%/40% 60% 40% 60%;transform:translate(0,0) scale(1)}50%{border-radius:40% 60% 50% 50%/60% 40% 60% 40%;transform:translate(20px,-20px) scale(1.1)}}
+
+/* Article Background Blobs */
+.article-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.article-blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.35}
+.article-blob-1{width:400px;height:400px;background:linear-gradient(135deg, rgba(240,170,4,0.08), rgba(229,115,36,0.05));top:10%;right:-100px;animation:blob-morph-1 25s infinite}
+.article-blob-2{width:300px;height:300px;background:linear-gradient(135deg, rgba(0,191,165,0.06), rgba(240,170,4,0.04));bottom:20%;left:-80px;animation:blob-morph-2 28s infinite}
+
         /* ---- FULL WIDTH HERO ---- */
         .hero {
             width: 100%;
@@ -1272,12 +1289,62 @@
             a { color: var(--navy); text-decoration: underline; }
             a::after { content: ' (' attr(href) ')'; font-size: 11px; color: #999; }
         }
-    .clients-strip{width:100%;background:#1A3752;padding:48px 0;margin-top:0}.clients-strip-inner{max-width:1200px;margin:0 auto;padding:0 20px;text-align:center}.clients-strip h3{font-family:Excon,sans-serif!important;font-size:18px!important;font-weight:700!important;color:#fff!important;margin-bottom:24px}.clients-strip h3 span{background:linear-gradient(135deg,#F0AA04,#E57324);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.clients-logos{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;align-items:center}.client-logo{width:100px;height:60px;display:flex;align-items:center;justify-content:center;opacity:.7;transition:opacity .3s}.client-logo:hover{opacity:1}.client-logo img{max-width:90px;max-height:50px;filter:brightness(0)invert(1);object-fit:contain}@media(min-width:600px){.clients-strip-inner{padding:0 40px}.client-logo{width:120px;height:70px}.client-logo img{max-width:100px;max-height:55px}}/* Enhanced Hover Animations */.btn-primary{position:relative;overflow:hidden}.btn-primary::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:translateX(-100%);transition:none}.btn-primary:hover::after{transform:translateX(100%);transition:transform 0.6s ease}.btn-secondary{position:relative;overflow:hidden}.btn-secondary::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(216,50,85,0.15) 0%,transparent 70%);opacity:0;transition:opacity 0.3s ease}.btn-secondary:hover::before{opacity:1}.client-logo{transform:translateY(0);transition:opacity 0.3s ease,transform 0.3s cubic-bezier(0.34,1.56,0.64,1)}.client-logo:hover{opacity:1;transform:translateY(-4px) scale(1.05)}.related-link{position:relative}.related-link::after{content:'';position:absolute;inset:0;border-radius:12px;box-shadow:0 0 0 0 rgba(229,115,36,0);transition:box-shadow 0.3s ease}.related-link:hover::after{box-shadow:0 0 0 2px rgba(229,115,36,0.15)}.faq-question{position:relative}.faq-question::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(240,170,4,0.03),transparent 50%);opacity:0;transition:opacity 0.3s ease}.faq-question:hover::before{opacity:1}.price-row{position:relative}.price-row::before{content:'';position:absolute;inset:0;border-radius:10px;background:linear-gradient(135deg,rgba(240,170,4,0.02),rgba(229,115,36,0.02));opacity:0;transition:opacity 0.3s ease}.price-row:hover::before{opacity:1}.website-link{position:relative;overflow:hidden}.website-link::after{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:rgba(0,191,165,0.1);border-radius:50%;transform:translate(-50%,-50%);transition:width 0.4s ease,height 0.4s ease}.website-link:hover::after{width:200%;height:200%}.strip-card{position:relative}.strip-card::after{content:'';position:absolute;inset:0;border-radius:12px;opacity:0;transition:opacity 0.3s ease}.strip-gevel::after{background:linear-gradient(135deg,rgba(229,115,36,0.03),rgba(240,170,4,0.03))}.strip-auto::after{background:linear-gradient(135deg,rgba(240,170,4,0.03),rgba(255,179,71,0.03))}.strip-event::after{background:linear-gradient(135deg,rgba(216,50,85,0.03),rgba(155,77,202,0.03))}.strip-interieur::after{background:linear-gradient(135deg,rgba(0,191,165,0.03),rgba(81,57,226,0.03))}.strip-card:hover::after{opacity:1}.article-image{overflow:hidden}.article-image img{transition:transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)}.article-image:hover img{transform:scale(1.03)}.whatsapp-sticky{animation:wa-pulse 2s ease-in-out infinite}@keyframes wa-pulse{0%,100%{box-shadow:0 2px 8px rgba(37,211,102,0.2),0 6px 20px rgba(37,211,102,0.25)}50%{box-shadow:0 2px 12px rgba(37,211,102,0.3),0 8px 28px rgba(37,211,102,0.35)}}.hero-badge{transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease}.hero-badge:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(240,170,4,0.3),0 2px 6px rgba(229,115,36,0.2)}</style>
+    .clients-strip{width:100%;background:#1A3752;padding:48px 0;margin-top:0}.clients-strip-inner{max-width:1200px;margin:0 auto;padding:0 20px;text-align:center}.clients-strip h3{font-family:Excon,sans-serif!important;font-size:18px!important;font-weight:700!important;color:#fff!important;margin-bottom:24px}.clients-strip h3 span{background:linear-gradient(135deg,#F0AA04,#E57324);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.clients-logos{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;align-items:center}.client-logo{width:100px;height:60px;display:flex;align-items:center;justify-content:center;opacity:.7;transition:opacity .3s}.client-logo:hover{opacity:1}.client-logo img{max-width:90px;max-height:50px;filter:brightness(0)invert(1);object-fit:contain}@media(min-width:600px){.clients-strip-inner{padding:0 40px}.client-logo{width:120px;height:70px}.client-logo img{max-width:100px;max-height:55px}}/* Enhanced Hover Animations */.btn-primary{position:relative;overflow:hidden}.btn-primary::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:translateX(-100%);transition:none}.btn-primary:hover::after{transform:translateX(100%);transition:transform 0.6s ease}.btn-secondary{position:relative;overflow:hidden}.btn-secondary::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(216,50,85,0.15) 0%,transparent 70%);opacity:0;transition:opacity 0.3s ease}.btn-secondary:hover::before{opacity:1}.client-logo{transform:translateY(0);transition:opacity 0.3s ease,transform 0.3s cubic-bezier(0.34,1.56,0.64,1)}.client-logo:hover{opacity:1;transform:translateY(-4px) scale(1.05)}.related-link{position:relative}.related-link::after{content:'';position:absolute;inset:0;border-radius:12px;box-shadow:0 0 0 0 rgba(229,115,36,0);transition:box-shadow 0.3s ease}.related-link:hover::after{box-shadow:0 0 0 2px rgba(229,115,36,0.15)}.faq-question{position:relative}.faq-question::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(240,170,4,0.03),transparent 50%);opacity:0;transition:opacity 0.3s ease}.faq-question:hover::before{opacity:1}.price-row{position:relative}.price-row::before{content:'';position:absolute;inset:0;border-radius:10px;background:linear-gradient(135deg,rgba(240,170,4,0.02),rgba(229,115,36,0.02));opacity:0;transition:opacity 0.3s ease}.price-row:hover::before{opacity:1}.website-link{position:relative;overflow:hidden}.website-link::after{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:rgba(0,191,165,0.1);border-radius:50%;transform:translate(-50%,-50%);transition:width 0.4s ease,height 0.4s ease}.website-link:hover::after{width:200%;height:200%}.strip-card{position:relative}.strip-card::after{content:'';position:absolute;inset:0;border-radius:12px;opacity:0;transition:opacity 0.3s ease}.strip-gevel::after{background:linear-gradient(135deg,rgba(229,115,36,0.03),rgba(240,170,4,0.03))}.strip-auto::after{background:linear-gradient(135deg,rgba(240,170,4,0.03),rgba(255,179,71,0.03))}.strip-event::after{background:linear-gradient(135deg,rgba(216,50,85,0.03),rgba(155,77,202,0.03))}.strip-interieur::after{background:linear-gradient(135deg,rgba(0,191,165,0.03),rgba(81,57,226,0.03))}.strip-card:hover::after{opacity:1}.article-image{overflow:hidden}.article-image img{transition:transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)}.article-image:hover img{transform:scale(1.03)}.whatsapp-sticky{animation:wa-pulse 2s ease-in-out infinite}@keyframes wa-pulse{0%,100%{box-shadow:0 2px 8px rgba(37,211,102,0.2),0 6px 20px rgba(37,211,102,0.25)}50%{box-shadow:0 2px 12px rgba(37,211,102,0.3),0 8px 28px rgba(37,211,102,0.35)}}.hero-badge{transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease}.hero-badge:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(240,170,4,0.3),0 2px 6px rgba(229,115,36,0.2)}
+/* Full Width CTA Section */
+.cta-section{position:relative;width:100vw;margin-left:calc(-50vw + 50%);background:linear-gradient(180deg, #FEFEFE 0%, var(--off-white) 100%);padding:0;overflow:hidden}
+.cta-glow{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none}
+.cta-glow-1{width:500px;height:500px;background:radial-gradient(circle,rgba(240,170,4,0.12) 0%,transparent 70%);top:-200px;right:-100px}
+.cta-glow-2{width:400px;height:400px;background:radial-gradient(circle,rgba(0,191,165,0.08) 0%,transparent 70%);bottom:-150px;left:-100px}
+.cta-inner{position:relative;z-index:2;padding:80px 24px;max-width:1280px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center}
+.cta-shapes{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.cta-shape{position:absolute;pointer-events:none}
+.cta-shape--circle-1{width:14px;height:14px;background:var(--teal);border-radius:50%;top:18%;left:8%;opacity:0.7;animation:float-drift-1 8s ease-in-out infinite}
+.cta-shape--circle-2{width:10px;height:10px;background:var(--yellow);border-radius:50%;top:65%;right:12%;opacity:0.8;animation:float-drift-2 10s ease-in-out infinite}
+.cta-shape--circle-3{width:8px;height:8px;background:var(--pink);border-radius:50%;bottom:25%;left:18%;opacity:0.6;animation:float-drift-3 12s ease-in-out infinite}
+.cta-shape--ring-1{width:40px;height:40px;border:2.5px solid var(--teal);border-radius:50%;top:22%;right:6%;opacity:0.3;animation:float-drift-2 16s ease-in-out infinite,spin-slow 40s linear infinite}
+.cta-shape--ring-2{width:28px;height:28px;border:2px solid var(--teal);border-radius:50%;bottom:18%;left:6%;opacity:0.25;animation:float-drift-3 14s ease-in-out infinite,spin-slow 35s linear infinite reverse}
+.cta-shape--diamond{width:16px;height:16px;background:var(--yellow);top:12%;right:18%;opacity:0.5;transform:rotate(45deg);animation:float-drift-1 9s ease-in-out infinite;border-radius:3px}
+.cta-shape--line-1{width:48px;height:2.5px;background:linear-gradient(90deg,var(--teal),transparent);top:40%;left:5%;opacity:0.35;transform:rotate(-20deg);animation:float-drift-2 11s ease-in-out infinite;border-radius:2px}
+.cta-shape--plus{width:18px;height:18px;top:70%;right:25%;opacity:0.3;animation:float-drift-3 10s ease-in-out infinite}
+.cta-shape--plus::before,.cta-shape--plus::after{content:'';position:absolute;background:var(--teal);border-radius:2px}
+.cta-shape--plus::before{width:100%;height:3px;top:50%;transform:translateY(-50%)}
+.cta-shape--plus::after{width:3px;height:100%;left:50%;transform:translateX(-50%)}
+@keyframes float-drift-1{0%,100%{transform:translate(0,0)}25%{transform:translate(8px,-12px)}50%{transform:translate(-5px,-8px)}75%{transform:translate(10px,5px)}}
+@keyframes float-drift-2{0%,100%{transform:translate(0,0)}33%{transform:translate(-10px,8px)}66%{transform:translate(6px,-10px)}}
+@keyframes float-drift-3{0%,100%{transform:translate(0,0)}50%{transform:translate(12px,12px)}}
+@keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.cta-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(240,170,4,0.12),rgba(229,115,36,0.08));color:var(--orange);font-size:12px;font-weight:600;padding:6px 14px;border-radius:99px;margin-bottom:20px;letter-spacing:0.02em;text-transform:uppercase}
+.cta-inner h2{font-family:'Excon',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important;font-size:32px!important;font-weight:900!important;color:var(--navy)!important;letter-spacing:-1.5px!important;line-height:1.08!important;margin-bottom:16px!important;position:relative;z-index:1}
+.cta-inner h2 .cta-highlight{background:linear-gradient(135deg, var(--yellow), var(--orange))!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;background-clip:text!important}
+.cta-description{font-size:16px;color:var(--gray-text);line-height:1.7;margin-bottom:32px;max-width:480px;position:relative;z-index:1;text-wrap:pretty}
+.cta-colorbar{display:flex;width:80px;margin-top:40px;position:relative;z-index:1;border-radius:3px;overflow:hidden}
+.cta-colorbar span{flex:1;height:4px}
+
+        
+/* Bottom Flow with Blobs */
+.bottom-flow{position:relative;width:100vw;margin-left:calc(-50vw + 50%);background:var(--off-white);overflow:hidden}
+.bottom-flow-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.bg-blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.4}
+.bg-blob-1{width:350px;height:350px;background:linear-gradient(135deg, rgba(240,170,4,0.10), rgba(229,115,36,0.06));top:-100px;right:-50px;animation:blob-morph-1 20s infinite}
+.bg-blob-2{width:280px;height:280px;background:linear-gradient(135deg, rgba(0,191,165,0.08), rgba(240,170,4,0.05));top:30%;left:-80px;animation:blob-morph-2 24s infinite}
+.bg-blob-3{width:220px;height:220px;background:linear-gradient(135deg, rgba(216,50,85,0.06), rgba(229,115,36,0.04));bottom:20%;right:10%;animation:blob-morph-3 22s infinite}
+.bg-blob-4{width:180px;height:180px;background:linear-gradient(135deg, rgba(240,170,4,0.08), rgba(0,191,165,0.05));bottom:-50px;left:20%;animation:blob-morph-1 26s infinite}
+
+        
+/* 4:3 Aspect Ratio Images */
+.article-image{aspect-ratio:4/3;background:linear-gradient(135deg,#f8f8f8,#f0f0f0);border-radius:12px;overflow:hidden;position:relative}
+
+        </style>
 </head>
 <body>
 
 <!-- Full Width Hero -->
 <section class="hero">
+    <div class="hero-bg">
+        <div class="hero-blob hero-blob-1"></div>
+        <div class="hero-blob hero-blob-2"></div>
+        <div class="hero-blob hero-blob-3"></div>
+    </div>
     <div class="hero-badge">Bootstickers</div>
     <h1>Wat kost<br><span class="highlight">bootbelettering?</span></h1>
     <p class="hero-intro">Elke boot is anders, dus bootbelettering is altijd maatwerk. Als maritiem signing bedrijf uit Enkhuizen geven we je graag een eerlijk beeld van wat je kunt verwachten.</p>
@@ -1285,26 +1352,45 @@
 
 <!-- Full Width Article: Sticky Images Left + Text Right -->
 <section class="article-section">
+    <div class="article-bg">
+        <div class="article-blob article-blob-1"></div>
+        <div class="article-blob article-blob-2"></div>
+    </div>
     <div class="article-grid">
 
         <!-- Left: 2x 1:1 Sticky Images -->
         <div class="article-images">
             <div class="article-image">
-                <!-- Vervang met: <img src="URL" alt="Bootbelettering door Sign Company Enkhuizen"> -->
                 <div class="placeholder-inner">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
                     <span>Afbeelding 1</span>
                 </div>
             </div>
             <div class="article-image">
-                <!-- Vervang met: <img src="URL" alt="RVS bootletters montage Sign Company"> -->
                 <div class="placeholder-inner">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
                     <span>Afbeelding 2</span>
                 </div>
             </div>
+            <div class="article-image">
+                <div class="placeholder-inner">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    <span>Afbeelding 3</span>
+                </div>
+            </div>
+            <div class="article-image">
+                <div class="placeholder-inner">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    <span>Afbeelding 4</span>
+                </div>
+            </div>
+            <div class="article-image">
+                <div class="placeholder-inner">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    <span>Afbeelding 5</span>
+                </div>
+            </div>
         </div>
-
         <!-- Right: Text -->
         <div class="article-text">
 
@@ -1360,16 +1446,22 @@
 
 <!-- Full Width CTA Box -->
 <section class="cta-section">
-    <div class="cta-box">
-        <!-- Floating shapes -->
-        <div class="cta-floating-shape shape-1"></div>
-        <div class="cta-floating-shape shape-2"></div>
-        <div class="cta-floating-shape shape-3"></div>
-
-        <div class="cta-box-text">
-            <h2>Benieuwd wat jouw boot kost?</h2>
-            <p class="cta-description">Stuur ons een foto van je boot en je wensen, dan rekenen wij het voor je uit. Vrijblijvend en meestal binnen twee werkdagen.</p>
-        </div>
+    <div class="cta-glow cta-glow-1"></div>
+    <div class="cta-glow cta-glow-2"></div>
+    <div class="cta-shapes">
+        <div class="cta-shape cta-shape--circle-1"></div>
+        <div class="cta-shape cta-shape--circle-2"></div>
+        <div class="cta-shape cta-shape--circle-3"></div>
+        <div class="cta-shape cta-shape--ring-1"></div>
+        <div class="cta-shape cta-shape--ring-2"></div>
+        <div class="cta-shape cta-shape--diamond"></div>
+        <div class="cta-shape cta-shape--line-1"></div>
+        <div class="cta-shape cta-shape--plus"></div>
+    </div>
+    <div class="cta-inner">
+        <div class="cta-badge">Offerte op maat</div>
+        <h2>Benieuwd wat jouw boot kost?</h2>
+        <p class="cta-description">Stuur ons een foto van je boot en je wensen, dan rekenen wij het voor je uit. Vrijblijvend en meestal binnen twee werkdagen.</p>
         <div class="cta-buttons">
             <a href="https://signcompany.nl/boot-stickers" class="btn-primary">
                 Bekijk onze bootstickers
@@ -1380,10 +1472,23 @@
                 <span>Neem direct contact op</span>
             </a>
         </div>
+        <div class="cta-colorbar">
+            <span style="background:var(--teal)"></span>
+            <span style="background:var(--yellow)"></span>
+            <span style="background:var(--orange)"></span>
+            <span style="background:var(--pink)"></span>
+        </div>
     </div>
 </section>
 
-<div class="bottom-flow-wrapper">
+<div class="bottom-flow">
+    <div class="bottom-flow-bg">
+        <div class="bg-blob bg-blob-1"></div>
+        <div class="bg-blob bg-blob-2"></div>
+        <div class="bg-blob bg-blob-3"></div>
+        <div class="bg-blob bg-blob-4"></div>
+    </div>
+
     <!-- Related Kennisbank Pages -->
     <section class="related-section">
         <div class="related-label">Gerelateerde vragen</div>
