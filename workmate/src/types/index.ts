@@ -259,6 +259,9 @@ export interface AppSettings {
   calculatie_eenheden: string[];               // Eenheden (bijv. "m²", "stuks", "uur")
   calculatie_standaard_marge: number;          // Standaard marge % voor nieuwe regels
   calculatie_toon_inkoop_in_offerte: boolean;  // Toon inkoopprijs in offerte (normaal niet!)
+  // Offerte regel velden - welke tekstvelden wil je per offerte-item?
+  // Bijv. ["Materiaal", "Lay-out", "Montage", "Opmerking"]
+  offerte_regel_velden: string[];
   created_at: string;
   updated_at: string;
 }

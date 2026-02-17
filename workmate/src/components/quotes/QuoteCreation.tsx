@@ -113,27 +113,31 @@ export function QuoteCreation() {
   }, [klantSearch, klanten])
 
   // Item handlers
-  const handleAddItem = () => {
+  const handleAddItem = (soort: 'prijs' | 'tekst' = 'prijs') => {
     const newItem: QuoteLineItem = {
       id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      soort,
       beschrijving: '',
-      aantal: 1,
+      extra_velden: {},
+      aantal: soort === 'prijs' ? 1 : 0,
       eenheidsprijs: 0,
-      btw_percentage: standaardBtw,
+      btw_percentage: soort === 'prijs' ? standaardBtw : 0,
       korting_percentage: 0,
       totaal: 0,
     }
     setItems([...items, newItem])
   }
 
-  const handleUpdateItem = (id: string, field: keyof QuoteLineItem, value: string | number) => {
+  const handleUpdateItem = (id: string, field: keyof QuoteLineItem, value: any) => {
     setItems(
       items.map((item) => {
         if (item.id !== id) return item
         const updated = { ...item, [field]: value }
-        // Recalculate totaal
-        const bruto = updated.aantal * updated.eenheidsprijs
-        updated.totaal = bruto - bruto * (updated.korting_percentage / 100)
+        // Recalculate totaal (alleen voor prijsregels)
+        if (updated.soort === 'prijs') {
+          const bruto = updated.aantal * updated.eenheidsprijs
+          updated.totaal = bruto - bruto * (updated.korting_percentage / 100)
+        }
         return updated
       })
     )
@@ -174,8 +178,9 @@ export function QuoteCreation() {
   const canProceedStep1 = selectedKlantId && offerteTitel.trim().length > 0
   const canProceedStep2 = items.length > 0
 
-  // Calculate preview totals
-  const subtotaal = items.reduce((sum, item) => {
+  // Calculate preview totals (alleen prijsregels)
+  const prijsItems = items.filter((i) => i.soort === 'prijs')
+  const subtotaal = prijsItems.reduce((sum, item) => {
     const bruto = item.aantal * item.eenheidsprijs
     return sum + (bruto - bruto * (item.korting_percentage / 100))
   }, 0)
@@ -184,7 +189,7 @@ export function QuoteCreation() {
     if (isSaving) return
     setIsSaving(true)
     try {
-      const btwBedrag = items.reduce((sum, item) => {
+      const btwBedrag = prijsItems.reduce((sum, item) => {
         const bruto = item.aantal * item.eenheidsprijs
         const netto = bruto - bruto * (item.korting_percentage / 100)
         return sum + netto * (item.btw_percentage / 100)
@@ -249,7 +254,7 @@ export function QuoteCreation() {
     }
     try {
       toast.info('PDF wordt gegenereerd...')
-      const btwBedrag = items.reduce((sum, item) => {
+      const btwBedrag = prijsItems.reduce((sum, item) => {
         const bruto = item.aantal * item.eenheidsprijs
         const netto = bruto - bruto * (item.korting_percentage / 100)
         return sum + netto * (item.btw_percentage / 100)

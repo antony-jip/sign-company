@@ -170,6 +170,10 @@ function CalculatieTab() {
     settings.calculatie_eenheden || ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set']
   )
   const [toonInkoopInOfferte, setToonInkoopInOfferte] = useState(settings.calculatie_toon_inkoop_in_offerte ?? false)
+  const [regelVelden, setRegelVelden] = useState<string[]>(
+    settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking']
+  )
+  const [nieuwVeld, setNieuwVeld] = useState('')
   const [nieuweCat, setNieuweCat] = useState('')
   const [nieuweEenheid, setNieuweEenheid] = useState('')
 
@@ -201,6 +205,7 @@ function CalculatieTab() {
     setCategorieen(settings.calculatie_categorieen || ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig'])
     setEenheden(settings.calculatie_eenheden || ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'])
     setToonInkoopInOfferte(settings.calculatie_toon_inkoop_in_offerte ?? false)
+    setRegelVelden(settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking'])
   }, [settings])
 
   // ---- Opslaan algemene instellingen ----
@@ -212,6 +217,7 @@ function CalculatieTab() {
         calculatie_categorieen: categorieen,
         calculatie_eenheden: eenheden,
         calculatie_toon_inkoop_in_offerte: toonInkoopInOfferte,
+        offerte_regel_velden: regelVelden,
       })
       toast.success('Calculatie-instellingen opgeslagen')
     } catch (err) {
@@ -312,6 +318,18 @@ function CalculatieTab() {
     } catch (err) {
       console.error(err)
     }
+  }
+
+  // ---- Offerte regel velden beheer ----
+  const addRegelVeld = () => {
+    if (nieuwVeld.trim() && !regelVelden.includes(nieuwVeld.trim())) {
+      setRegelVelden([...regelVelden, nieuwVeld.trim()])
+      setNieuwVeld('')
+    }
+  }
+
+  const removeRegelVeld = (veld: string) => {
+    setRegelVelden(regelVelden.filter((v) => v !== veld))
   }
 
   // ---- Categorieën en eenheden beheer ----
@@ -416,6 +434,50 @@ function CalculatieTab() {
                   {toonInkoopInOfferte ? 'Inkoopprijzen zijn zichtbaar' : 'Inkoopprijzen zijn verborgen (aanbevolen)'}
                 </span>
               </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Offerte regel velden */}
+          <div className="space-y-3">
+            <Label>Offerte regel velden</Label>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Welke extra tekstvelden wil je per offerte-regel? Bijv. Materiaal, Lay-out, Montage, Opmerking.
+              Deze velden verschijnen onder de omschrijving van elke regel.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {regelVelden.map((veld) => (
+                <Badge
+                  key={veld}
+                  variant="secondary"
+                  className="gap-1 pl-2.5 pr-1 py-1"
+                >
+                  {veld}
+                  <button
+                    onClick={() => removeRegelVeld(veld)}
+                    className="ml-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-0.5"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+              {regelVelden.length === 0 && (
+                <span className="text-xs text-gray-400 italic">Geen extra velden — alleen omschrijving en prijs</span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={nieuwVeld}
+                onChange={(e) => setNieuwVeld(e.target.value)}
+                placeholder="Nieuw veld bijv. Montage..."
+                className="w-48"
+                onKeyDown={(e) => e.key === 'Enter' && addRegelVeld()}
+              />
+              <Button variant="outline" size="sm" onClick={addRegelVeld} disabled={!nieuwVeld.trim()}>
+                <Plus className="h-4 w-4 mr-1" />
+                Toevoegen
+              </Button>
             </div>
           </div>
 
