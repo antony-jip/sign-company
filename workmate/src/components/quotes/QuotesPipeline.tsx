@@ -110,7 +110,9 @@ export function QuotesPipeline() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Offertes</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {offertes.length} offertes | Totaalwaarde: {formatCurrency(totaalAlleOffertes)}
+            {offertes.length > 0
+              ? `${offertes.length} offertes | Totaalwaarde: ${formatCurrency(totaalAlleOffertes)}`
+              : 'Maak uw eerste offerte aan om de pipeline te vullen'}
           </p>
         </div>
         <Link to="/offertes/nieuw">

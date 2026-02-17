@@ -639,8 +639,10 @@ function BeveiligingTab() {
       toast.error('Nieuw wachtwoord moet verschillen van het huidige wachtwoord')
       return
     }
-    // TODO: Implement actual password change via Supabase auth API
-    toast.success('Wachtwoord succesvol gewijzigd')
+    // Password change requires Supabase auth connection
+    toast.info('Wachtwoord wijzigen is beschikbaar wanneer Supabase is geconfigureerd', {
+      description: 'Configureer uw Supabase-verbinding in de instellingen om wachtwoorden te beheren.',
+    })
     setCurrentPassword('')
     setNewPassword('')
     setConfirmPassword('')

@@ -29,9 +29,9 @@ import {
   FileSpreadsheet,
   Info,
 } from 'lucide-react'
-import { createKlant, createEmail, createProject } from '@/services/supabaseService'
+import { createKlant } from '@/services/supabaseService'
 import type { Klant } from '@/types'
-import { formatDateTime, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -442,10 +442,22 @@ export function DataImportLayout() {
             result.errors.push({ row: i + 1, message: 'Geen e-mailadres opgegeven.' })
             continue
           }
-          await createEmail({
-            email: mapped.email,
-            naam: mapped.naam || '',
+          // Import email addresses as contacts (Klant records) with prospect status
+          await createKlant({
             bedrijfsnaam: mapped.bedrijfsnaam || '',
+            contactpersoon: mapped.naam || '',
+            email: mapped.email,
+            telefoon: '',
+            adres: '',
+            postcode: '',
+            stad: '',
+            land: 'Nederland',
+            website: '',
+            kvk_nummer: '',
+            btw_nummer: '',
+            status: 'prospect',
+            tags: ['import', 'emaillijst'],
+            notities: 'Geimporteerd via e-mailadres import',
           })
           result.success++
         }
@@ -802,14 +814,14 @@ export function DataImportLayout() {
                         </td>
                         <td className="p-3">
                           <Select
-                            value={mapping?.targetField || ''}
-                            onValueChange={(value) => updateMapping(header, value)}
+                            value={mapping?.targetField || '_none'}
+                            onValueChange={(value) => updateMapping(header, value === '_none' ? '' : value)}
                           >
                             <SelectTrigger className="w-[220px]">
                               <SelectValue placeholder="-- Niet koppelen --" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">-- Niet koppelen --</SelectItem>
+                              <SelectItem value="_none">-- Niet koppelen --</SelectItem>
                               {targetFields.map((field) => (
                                 <SelectItem key={field.value} value={field.value}>
                                   {field.label}

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { FolderPlus, FilePlus, UserPlus, Upload } from 'lucide-react'
+import { FolderPlus, FilePlus, UserPlus, Upload, Newspaper, Mail } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface QuickAction {
@@ -17,7 +17,7 @@ const actions: QuickAction[] = [
   {
     label: 'Nieuw Project',
     icon: FolderPlus,
-    href: '/projecten',
+    href: '/projecten/nieuw',
     iconBg: 'bg-blue-100 dark:bg-blue-900/50',
     iconColor: 'text-blue-600 dark:text-blue-400',
     hoverBorder: 'hover:border-blue-300 dark:hover:border-blue-700',
@@ -39,12 +39,28 @@ const actions: QuickAction[] = [
     hoverBorder: 'hover:border-purple-300 dark:hover:border-purple-700',
   },
   {
-    label: 'Upload Document',
+    label: 'Nieuwsbrief',
+    icon: Newspaper,
+    href: '/nieuwsbrieven',
+    iconBg: 'bg-teal-100 dark:bg-teal-900/50',
+    iconColor: 'text-teal-600 dark:text-teal-400',
+    hoverBorder: 'hover:border-teal-300 dark:hover:border-teal-700',
+  },
+  {
+    label: 'Data Import',
     icon: Upload,
-    href: '/documenten',
+    href: '/importeren',
     iconBg: 'bg-orange-100 dark:bg-orange-900/50',
     iconColor: 'text-orange-600 dark:text-orange-400',
     hoverBorder: 'hover:border-orange-300 dark:hover:border-orange-700',
+  },
+  {
+    label: 'Email',
+    icon: Mail,
+    href: '/email',
+    iconBg: 'bg-indigo-100 dark:bg-indigo-900/50',
+    iconColor: 'text-indigo-600 dark:text-indigo-400',
+    hoverBorder: 'hover:border-indigo-300 dark:hover:border-indigo-700',
   },
 ]
 
@@ -54,7 +70,7 @@ export function QuickActions() {
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
         Snelle Acties
       </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {actions.map((action) => {
           const Icon = action.icon
           return (

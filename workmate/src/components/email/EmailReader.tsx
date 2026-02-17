@@ -13,6 +13,7 @@ import {
   MailOpen,
   Paperclip,
   Inbox,
+  Clock,
 } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import type { Email } from '@/types'
@@ -111,6 +112,17 @@ export function EmailReader({
             {formatDateTime(email.datum)}
           </span>
         </div>
+
+        {/* Scheduled indicator */}
+        {email.scheduled_at && email.map === 'gepland' && (
+          <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+            <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span className="text-sm text-purple-700 dark:text-purple-300">
+              Ingepland voor verzending op{' '}
+              <strong>{formatDateTime(email.scheduled_at)}</strong>
+            </span>
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="flex items-center gap-2 mt-3">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -124,6 +124,7 @@ export function EmailCompose({
   const [scheduleOption, setScheduleOption] = useState<string>('now')
   const [customDate, setCustomDate] = useState('')
   const [customTime, setCustomTime] = useState('09:00')
+  const scheduleDropdownRef = useRef<HTMLDivElement>(null)
 
   // Sync state when defaults change (reply/forward)
   useEffect(() => {
@@ -131,6 +132,18 @@ export function EmailCompose({
     setSubject(defaultSubject)
     setBody(defaultBody)
   }, [defaultTo, defaultSubject, defaultBody])
+
+  // Close schedule dropdown when clicking outside
+  useEffect(() => {
+    if (!showScheduleDropdown) return
+    function handleClickOutside(e: MouseEvent) {
+      if (scheduleDropdownRef.current && !scheduleDropdownRef.current.contains(e.target as Node)) {
+        setShowScheduleDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showScheduleDropdown])
 
   const handleTemplateChange = (value: string) => {
     setTemplate(value)
@@ -341,7 +354,7 @@ export function EmailCompose({
             <Button variant="outline" onClick={resetAndClose}>
               Annuleren
             </Button>
-            <div className="relative">
+            <div className="relative" ref={scheduleDropdownRef}>
               <div className="flex">
                 <Button
                   onClick={handleSend}

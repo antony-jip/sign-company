@@ -21,8 +21,8 @@ import {
   Clock,
 } from 'lucide-react'
 import { getEmails, updateEmail, deleteEmail, createEmail } from '@/services/supabaseService'
-import { formatDateTime } from '@/lib/utils'
-import { cn, truncate } from '@/lib/utils'
+import { formatDateTime, cn, truncate } from '@/lib/utils'
+import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
 import type { Email } from '@/types'
@@ -48,12 +48,25 @@ function extractSenderName(from: string): string {
   return match ? match[1].trim() : from
 }
 
-function formatShortDate(dateStr: string): string {
+function formatShortDate(dateStr: string, isScheduled?: boolean): string {
   const date = new Date(dateStr)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
+  // Future dates (scheduled emails)
+  if (diffMs < 0) {
+    const futureDays = Math.ceil(-diffMs / (1000 * 60 * 60 * 24))
+    if (futureDays === 0) {
+      return `Vandaag ${date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`
+    }
+    if (futureDays === 1) {
+      return `Morgen ${date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`
+    }
+    return date.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Past dates
   if (diffDays === 0) {
     return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
   }
@@ -211,8 +224,18 @@ export function EmailLayout() {
       scheduled_at: data.scheduledAt,
     }
     createEmail(newEmail)
-      .then((saved) => setEmails((prev) => [saved, ...prev]))
-      .catch((err) => console.error('Email opslaan mislukt:', err))
+      .then((saved) => {
+        setEmails((prev) => [saved, ...prev])
+        if (isScheduled) {
+          toast.success('Email ingepland', { description: `Wordt verzonden op ${formatDateTime(data.scheduledAt!)}` })
+        } else {
+          toast.success('Email verzonden')
+        }
+      })
+      .catch((err) => {
+        console.error('Email opslaan mislukt:', err)
+        toast.error('Email kon niet worden verzonden')
+      })
   }
 
   return (
@@ -321,9 +344,19 @@ export function EmailLayout() {
           <ScrollArea className="flex-1">
             {filteredEmails.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <Inbox className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm font-medium">Geen emails</p>
-                <p className="text-xs mt-1">Deze map is leeg.</p>
+                {selectedFolder === 'gepland' ? (
+                  <>
+                    <Clock className="w-10 h-10 mb-3 opacity-30" />
+                    <p className="text-sm font-medium">Geen ingeplande emails</p>
+                    <p className="text-xs mt-1">Plan een email in via de opstelknop.</p>
+                  </>
+                ) : (
+                  <>
+                    <Inbox className="w-10 h-10 mb-3 opacity-30" />
+                    <p className="text-sm font-medium">Geen emails</p>
+                    <p className="text-xs mt-1">Deze map is leeg.</p>
+                  </>
+                )}
               </div>
             ) : (
               <div className="divide-y">
@@ -369,8 +402,11 @@ export function EmailLayout() {
                           >
                             {extractSenderName(email.van)}
                           </span>
-                          <span className="text-[11px] text-muted-foreground flex-shrink-0">
-                            {formatShortDate(email.datum)}
+                          <span className="text-[11px] text-muted-foreground flex-shrink-0 flex items-center gap-1">
+                            {email.scheduled_at && email.map === 'gepland' && (
+                              <Clock className="w-3 h-3 text-purple-500" />
+                            )}
+                            {formatShortDate(email.scheduled_at || email.datum, !!email.scheduled_at)}
                           </span>
                         </div>
                         <p

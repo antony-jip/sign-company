@@ -1,27 +1,28 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createProject, getKlanten } from '@/services/supabaseService';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
-import { ArrowLeft, Save } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { createProject, getKlanten } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
+import type { Klant } from '@/types'
+import { toast } from 'sonner'
+import { ArrowLeft, Save } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
 
-const ProjectCreate = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+export function ProjectCreate() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
 
-  const [klanten, setKlanten] = useState<{ id: string; naam: string }[]>([]);
+  const [klanten, setKlanten] = useState<Klant[]>([])
   const [loading, setLoading] = useState(false);
 
   const [naam, setNaam] = useState('');
@@ -50,13 +51,23 @@ const ProjectCreate = () => {
     e.preventDefault();
 
     if (!naam.trim()) {
-      toast.error('Projectnaam is verplicht');
-      return;
+      toast.error('Projectnaam is verplicht')
+      return
     }
 
     if (!user) {
-      toast.error('Je moet ingelogd zijn om een project aan te maken');
-      return;
+      toast.error('Je moet ingelogd zijn om een project aan te maken')
+      return
+    }
+
+    if (eindDatum && startDatum && eindDatum < startDatum) {
+      toast.error('Einddatum kan niet voor de startdatum liggen')
+      return
+    }
+
+    if (budget && parseFloat(budget) < 0) {
+      toast.error('Budget kan niet negatief zijn')
+      return
     }
 
     setLoading(true);
@@ -67,12 +78,12 @@ const ProjectCreate = () => {
         .map((lid) => lid.trim())
         .filter((lid) => lid.length > 0);
 
-      const selectedKlant = klanten.find((k) => k.id === klantId);
+      const selectedKlant = klanten.find((k) => k.id === klantId)
 
       await createProject({
         user_id: user.id,
         klant_id: klantId,
-        klant_naam: selectedKlant?.naam || '',
+        klant_naam: selectedKlant?.bedrijfsnaam || '',
         naam: naam.trim(),
         beschrijving: beschrijving.trim(),
         status,
@@ -136,12 +147,14 @@ const ProjectCreate = () => {
               <Label htmlFor="klant">Klant</Label>
               <Select value={klantId} onValueChange={setKlantId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecteer een klant" />
+                  <SelectValue placeholder={klanten.length === 0 ? 'Geen klanten beschikbaar' : 'Selecteer een klant'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {klanten.map((klant) => (
+                  {klanten.length === 0 ? (
+                    <SelectItem value="_empty" disabled>Voeg eerst een klant toe</SelectItem>
+                  ) : klanten.map((klant) => (
                     <SelectItem key={klant.id} value={klant.id}>
-                      {klant.naam}
+                      {klant.bedrijfsnaam || klant.contactpersoon}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -240,6 +253,4 @@ const ProjectCreate = () => {
       </Card>
     </div>
   );
-};
-
-export default ProjectCreate;
+}
