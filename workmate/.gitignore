@@ -24,3 +24,10 @@ dist-ssr
 *.sw?
 
 .env
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Vite config build outputs
+vite.config.js
+vite.config.d.ts
