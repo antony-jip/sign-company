@@ -351,6 +351,29 @@ export async function getOfferte(id: string): Promise<Offerte | null> {
   return { ...offerte, klant_naam: klanten.find((k) => k.id === offerte.klant_id)?.bedrijfsnaam || '' }
 }
 
+export async function getOffertesByProject(projectId: string): Promise<Offerte[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offertes')
+      .select('*, klanten(bedrijfsnaam)')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data || []).map((o: any) => ({
+      ...o,
+      klant_naam: o.klanten?.bedrijfsnaam || '',
+    }))
+  }
+  const offertes = getLocalData<Offerte>('offertes')
+  const klanten = getLocalData<Klant>('klanten')
+  return offertes
+    .filter((o) => o.project_id === projectId)
+    .map((o) => ({
+      ...o,
+      klant_naam: klanten.find((k) => k.id === o.klant_id)?.bedrijfsnaam || '',
+    }))
+}
+
 export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' | 'updated_at' | 'klant_naam'>): Promise<Offerte> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase

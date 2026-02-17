@@ -76,6 +76,7 @@ export interface Offerte {
   user_id: string;
   klant_id: string;
   klant_naam?: string;
+  project_id?: string;
   nummer: string;
   titel: string;
   status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen';
