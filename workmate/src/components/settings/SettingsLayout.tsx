@@ -49,7 +49,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
-import type { AppSettings, PipelineStap, CalculatieProduct, CalculatieTemplate, CalculatieRegel } from '@/types'
+import type { AppSettings, PipelineStap, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel } from '@/types'
 import {
   getCalculatieProducten,
   createCalculatieProduct,
@@ -58,6 +58,10 @@ import {
   getCalculatieTemplates,
   createCalculatieTemplate,
   deleteCalculatieTemplate,
+  getOfferteTemplates,
+  createOfferteTemplate,
+  updateOfferteTemplate,
+  deleteOfferteTemplate,
 } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
@@ -811,73 +815,371 @@ function CalculatieTab() {
         </CardContent>
       </Card>
 
-      {/* ---- TEMPLATES ---- */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Copy className="w-5 h-5 text-blue-600" />
-            Calculatie Templates
-          </CardTitle>
-          <CardDescription>
-            Sla veelgebruikte calculaties op als template. Zo hoef je bij vergelijkbare offertes niet steeds
-            dezelfde producten opnieuw toe te voegen.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {templates.length === 0 ? (
-            <div className="text-center py-8">
-              <Copy className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Nog geen templates aangemaakt.
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                Templates worden automatisch beschikbaar wanneer je er een aanmaakt vanuit het calculatiescherm.
-              </p>
+      {/* ---- OFFERTE TEMPLATES ---- */}
+      <OfferteTemplatesSection />
+    </div>
+  )
+}
+
+// ============ OFFERTE TEMPLATES SECTION ============
+// Beheer offerte templates die je kunt importeren bij het aanmaken van offertes.
+
+function OfferteTemplatesSection() {
+  const { user } = useAuth()
+  const { settings } = useAppSettings()
+  const [offerteTemplates, setOfferteTemplates] = useState<OfferteTemplate[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+
+  // Form state
+  const [tplNaam, setTplNaam] = useState('')
+  const [tplBeschrijving, setTplBeschrijving] = useState('')
+  const [tplRegels, setTplRegels] = useState<OfferteTemplateRegel[]>([])
+
+  useEffect(() => {
+    getOfferteTemplates()
+      .then(setOfferteTemplates)
+      .catch(console.error)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const regelVelden = settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking']
+
+  const resetForm = () => {
+    setTplNaam('')
+    setTplBeschrijving('')
+    setTplRegels([])
+    setEditId(null)
+    setShowForm(false)
+  }
+
+  const addRegel = (soort: 'prijs' | 'tekst') => {
+    setTplRegels([
+      ...tplRegels,
+      {
+        soort,
+        beschrijving: '',
+        extra_velden: {},
+        aantal: soort === 'prijs' ? 1 : 0,
+        eenheidsprijs: 0,
+        btw_percentage: soort === 'prijs' ? (settings.standaard_btw || 21) : 0,
+        korting_percentage: 0,
+      },
+    ])
+  }
+
+  const updateRegel = (index: number, updates: Partial<OfferteTemplateRegel>) => {
+    setTplRegels(tplRegels.map((r, i) => (i === index ? { ...r, ...updates } : r)))
+  }
+
+  const removeRegel = (index: number) => {
+    setTplRegels(tplRegels.filter((_, i) => i !== index))
+  }
+
+  const handleEdit = (t: OfferteTemplate) => {
+    setEditId(t.id)
+    setTplNaam(t.naam)
+    setTplBeschrijving(t.beschrijving)
+    setTplRegels([...t.regels])
+    setShowForm(true)
+  }
+
+  const handleSave = async () => {
+    if (!tplNaam.trim()) {
+      toast.error('Vul een template naam in')
+      return
+    }
+    try {
+      setIsSaving(true)
+      if (editId) {
+        const updated = await updateOfferteTemplate(editId, {
+          naam: tplNaam,
+          beschrijving: tplBeschrijving,
+          regels: tplRegels,
+        })
+        setOfferteTemplates((prev) => prev.map((t) => (t.id === editId ? updated : t)))
+        toast.success('Template bijgewerkt')
+      } else {
+        const newTpl = await createOfferteTemplate({
+          user_id: user?.id || 'demo',
+          naam: tplNaam,
+          beschrijving: tplBeschrijving,
+          regels: tplRegels,
+          actief: true,
+        })
+        setOfferteTemplates((prev) => [...prev, newTpl])
+        toast.success('Template aangemaakt')
+      }
+      resetForm()
+    } catch (err) {
+      console.error(err)
+      toast.error('Kon template niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteOfferteTemplate(id)
+      setOfferteTemplates((prev) => prev.filter((t) => t.id !== id))
+      toast.success('Template verwijderd')
+    } catch (err) {
+      toast.error('Kon template niet verwijderen')
+    }
+  }
+
+  const handleToggleActief = async (t: OfferteTemplate) => {
+    try {
+      const updated = await updateOfferteTemplate(t.id, { actief: !t.actief })
+      setOfferteTemplates((prev) => prev.map((tp) => (tp.id === t.id ? updated : tp)))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Copy className="w-5 h-5 text-blue-600" />
+              Offerte Templates
+            </CardTitle>
+            <CardDescription>
+              Maak herbruikbare offerte templates aan. Bij het maken van een offerte kun je een template
+              importeren zodat de regels automatisch worden ingevuld. Bijv. voor autobelettering, gevelreclame, etc.
+            </CardDescription>
+          </div>
+          <Button onClick={() => { resetForm(); setShowForm(true) }} size="sm">
+            <Plus className="h-4 w-4 mr-1.5" />
+            Template maken
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {/* Formulier voor nieuw/bewerken */}
+        {showForm && (
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700 space-y-4">
+            <h4 className="font-medium text-sm text-gray-900 dark:text-white">
+              {editId ? 'Template bewerken' : 'Nieuwe offerte template'}
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Template naam *</Label>
+                <Input
+                  value={tplNaam}
+                  onChange={(e) => setTplNaam(e.target.value)}
+                  placeholder="Bijv. Autobelettering"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Beschrijving</Label>
+                <Input
+                  value={tplBeschrijving}
+                  onChange={(e) => setTplBeschrijving(e.target.value)}
+                  placeholder="Korte uitleg waarvoor deze template is..."
+                />
+              </div>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {templates.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/30"
-                >
-                  <div>
-                    <p className="font-medium text-sm text-gray-900 dark:text-white">{t.naam}</p>
-                    {t.beschrijving && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.beschrijving}</p>
-                    )}
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      {t.regels.length} regel(s)
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={t.actief ? 'default' : 'secondary'}>
-                      {t.actief ? 'Actief' : 'Inactief'}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={async () => {
-                        try {
-                          await deleteCalculatieTemplate(t.id)
-                          setTemplates((prev) => prev.filter((tp) => tp.id !== t.id))
-                          toast.success('Template verwijderd')
-                        } catch (err) {
-                          toast.error('Kon template niet verwijderen')
-                        }
-                      }}
-                      className="h-7 w-7 text-gray-400 hover:text-red-500"
+
+            {/* Template regels */}
+            <div className="space-y-2">
+              <Label className="text-xs">Template regels</Label>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Voeg de regels toe die standaard in de offerte komen wanneer deze template wordt geimporteerd.
+              </p>
+              {tplRegels.length === 0 ? (
+                <p className="text-xs text-gray-400 italic py-2">Nog geen regels. Voeg een prijs- of tekstregel toe.</p>
+              ) : (
+                <div className="space-y-2">
+                  {tplRegels.map((regel, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={regel.soort === 'prijs' ? 'default' : 'secondary'} className="text-[10px]">
+                            {regel.soort === 'prijs' ? 'Prijsregel' : 'Tekstregel'}
+                          </Badge>
+                          <span className="text-xs text-gray-500">#{idx + 1}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeRegel(idx)}
+                          className="h-6 w-6 text-gray-400 hover:text-red-500"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <Input
+                        value={regel.beschrijving}
+                        onChange={(e) => updateRegel(idx, { beschrijving: e.target.value })}
+                        placeholder="Omschrijving..."
+                        className="text-sm"
+                      />
+                      {/* Extra velden */}
+                      {regelVelden.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2">
+                          {regelVelden.map((veld) => (
+                            <div key={veld} className="space-y-0.5">
+                              <Label className="text-[10px] text-gray-400">{veld}</Label>
+                              <Input
+                                value={regel.extra_velden[veld] || ''}
+                                onChange={(e) =>
+                                  updateRegel(idx, {
+                                    extra_velden: { ...regel.extra_velden, [veld]: e.target.value },
+                                  })
+                                }
+                                placeholder={`${veld}...`}
+                                className="text-xs h-8"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Prijs velden - alleen voor prijsregels */}
+                      {regel.soort === 'prijs' && (
+                        <div className="grid grid-cols-4 gap-2">
+                          <div className="space-y-0.5">
+                            <Label className="text-[10px] text-gray-400">Aantal</Label>
+                            <Input
+                              type="number"
+                              value={regel.aantal || ''}
+                              onChange={(e) => updateRegel(idx, { aantal: parseFloat(e.target.value) || 0 })}
+                              className="text-xs h-8"
+                              min={0}
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            <Label className="text-[10px] text-gray-400">Prijs</Label>
+                            <Input
+                              type="number"
+                              value={regel.eenheidsprijs || ''}
+                              onChange={(e) => updateRegel(idx, { eenheidsprijs: parseFloat(e.target.value) || 0 })}
+                              className="text-xs h-8"
+                              min={0}
+                              step={0.01}
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            <Label className="text-[10px] text-gray-400">BTW %</Label>
+                            <Input
+                              type="number"
+                              value={regel.btw_percentage}
+                              onChange={(e) => updateRegel(idx, { btw_percentage: parseFloat(e.target.value) || 0 })}
+                              className="text-xs h-8"
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            <Label className="text-[10px] text-gray-400">Korting %</Label>
+                            <Input
+                              type="number"
+                              value={regel.korting_percentage || ''}
+                              onChange={(e) => updateRegel(idx, { korting_percentage: parseFloat(e.target.value) || 0 })}
+                              className="text-xs h-8"
+                              min={0}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => addRegel('prijs')}>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Prijsregel
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => addRegel('tekst')}>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Tekstregel
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" size="sm" onClick={resetForm}>
+                Annuleren
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={isSaving || !tplNaam.trim()}>
+                <Save className="h-4 w-4 mr-1.5" />
+                {editId ? 'Bijwerken' : 'Opslaan'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Template lijst */}
+        {isLoading ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">Laden...</p>
+        ) : offerteTemplates.length === 0 ? (
+          <div className="text-center py-8">
+            <Copy className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Nog geen offerte templates.
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              Maak templates aan zodat je bij het maken van een offerte snel regels kunt importeren.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {offerteTemplates.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-sm text-gray-900 dark:text-white">{t.naam}</p>
+                  {t.beschrijving && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.beschrijving}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      {t.regels.length} regel(s)
+                    </span>
+                    {t.regels.length > 0 && (
+                      <span className="text-xs text-gray-400">
+                        ({t.regels.filter((r) => r.soort === 'prijs').length} prijs, {t.regels.filter((r) => r.soort === 'tekst').length} tekst)
+                      </span>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={t.actief}
+                    onCheckedChange={() => handleToggleActief(t)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEdit(t)}
+                    className="h-7 w-7 text-gray-400 hover:text-blue-500"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(t.id)}
+                    className="h-7 w-7 text-gray-400 hover:text-red-500"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -2317,9 +2619,58 @@ function BeveiligingTab() {
 
 // ============ WEERGAVE TAB ============
 
+// Alle mogelijke sidebar items met hun labels en secties
+const ALL_SIDEBAR_ITEMS = [
+  { label: 'Dashboard', section: 'Overzicht' },
+  { label: 'Projecten', section: 'Werk' },
+  { label: 'Taken', section: 'Werk' },
+  { label: 'Klanten', section: 'Werk' },
+  { label: 'Offertes', section: 'Werk' },
+  { label: 'Documenten', section: 'Werk' },
+  { label: 'Email', section: 'Communicatie' },
+  { label: 'Nieuwsbrieven', section: 'Communicatie' },
+  { label: 'Kalender', section: 'Communicatie' },
+  { label: 'Financieel', section: 'Beheer' },
+  { label: 'Importeren', section: 'Beheer' },
+  { label: 'AI Assistent', section: 'Beheer' },
+]
+
 function WeergaveTab() {
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage } = useLanguage()
+  const { settings, updateSettings } = useAppSettings()
+  const [sidebarItems, setSidebarItems] = useState<string[]>(
+    settings.sidebar_items || ALL_SIDEBAR_ITEMS.map((i) => i.label)
+  )
+  const [isSavingSidebar, setIsSavingSidebar] = useState(false)
+
+  useEffect(() => {
+    setSidebarItems(settings.sidebar_items || ALL_SIDEBAR_ITEMS.map((i) => i.label))
+  }, [settings.sidebar_items])
+
+  const toggleSidebarItem = (label: string) => {
+    setSidebarItems((prev) =>
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+    )
+  }
+
+  const handleSaveSidebar = async () => {
+    try {
+      setIsSavingSidebar(true)
+      await updateSettings({ sidebar_items: sidebarItems })
+      toast.success('Navigatie-instellingen opgeslagen')
+    } catch (err) {
+      console.error(err)
+      toast.error('Kon navigatie niet opslaan')
+    } finally {
+      setIsSavingSidebar(false)
+    }
+  }
+
+  const handleResetSidebar = () => {
+    setSidebarItems(ALL_SIDEBAR_ITEMS.map((i) => i.label))
+  }
+
   const [autoCollapse, setAutoCollapse] = useState(() => {
     const stored = localStorage.getItem('workmate_autoCollapse')
     return stored !== null ? JSON.parse(stored) : true
@@ -2330,6 +2681,7 @@ function WeergaveTab() {
   })
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -2450,5 +2802,64 @@ function WeergaveTab() {
         </div>
       </CardContent>
     </Card>
+
+    {/* Sidebar Navigatie Aanpassen */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Sliders className="w-5 h-5" />
+          Navigatie aanpassen
+        </CardTitle>
+        <CardDescription>
+          Kies welke menu-items zichtbaar zijn in de sidebar. Schakel items uit die je niet gebruikt,
+          zodat de navigatie overzichtelijker wordt. Instellingen is altijd zichtbaar.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Groepeer per sectie */}
+        {['Overzicht', 'Werk', 'Communicatie', 'Beheer'].map((section) => {
+          const sectionItems = ALL_SIDEBAR_ITEMS.filter((i) => i.section === section)
+          return (
+            <div key={section}>
+              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                {section}
+              </h4>
+              <div className="space-y-2">
+                {sectionItems.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                  >
+                    <span className="text-sm text-gray-900 dark:text-white">{item.label}</span>
+                    <Switch
+                      checked={sidebarItems.includes(item.label)}
+                      onCheckedChange={() => toggleSidebarItem(item.label)}
+                    />
+                  </div>
+                ))}
+              </div>
+              <Separator className="my-3" />
+            </div>
+          )
+        })}
+
+        {/* Instellingen (altijd aan) */}
+        <div className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/30">
+          <span className="text-sm text-gray-900 dark:text-white">Instellingen</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Altijd zichtbaar</span>
+        </div>
+
+        <div className="flex items-center justify-between pt-2">
+          <Button variant="outline" size="sm" onClick={handleResetSidebar}>
+            Alles aanzetten
+          </Button>
+          <Button size="sm" onClick={handleSaveSidebar} disabled={isSavingSidebar}>
+            <Save className="h-4 w-4 mr-1.5" />
+            {isSavingSidebar ? 'Opslaan...' : 'Navigatie opslaan'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+    </>
   )
 }

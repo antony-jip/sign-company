@@ -25,11 +25,12 @@ import {
   FileText,
   Eye,
   Search,
+  Copy,
 } from 'lucide-react'
-import { getKlanten, createOfferte, createOfferteItem } from '@/services/supabaseService'
+import { getKlanten, createOfferte, createOfferteItem, getOfferteTemplates } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant } from '@/types'
+import type { Klant, OfferteTemplate } from '@/types'
 import { generateOffertePDF } from '@/services/pdfService'
 import { formatCurrency } from '@/lib/utils'
 import { QuoteItemsTable, type QuoteLineItem } from './QuoteItemsTable'
@@ -67,6 +68,10 @@ export function QuoteCreation() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
+  // Templates voor importeren
+  const [offerteTemplates, setOfferteTemplates] = useState<OfferteTemplate[]>([])
+  const [showTemplateSelect, setShowTemplateSelect] = useState(false)
+
   // Query params van bijv. projecten-pagina
   const paramKlantId = searchParams.get('klant_id') || ''
   const paramProjectId = searchParams.get('project_id') || ''
@@ -80,6 +85,10 @@ export function QuoteCreation() {
         toast.error('Kon klanten niet laden')
       })
       .finally(() => setIsLoading(false))
+    // Laad offerte templates
+    getOfferteTemplates()
+      .then((data) => setOfferteTemplates(data.filter((t) => t.actief)))
+      .catch(console.error)
   }, [])
 
   // Step 1: Client & basic info - pre-fill vanuit query params
@@ -172,6 +181,26 @@ export function QuoteCreation() {
         return updated
       })
     )
+  }
+
+  // Template importeren: voeg alle regels van een template toe aan de huidige items
+  const handleImportTemplate = (template: OfferteTemplate) => {
+    const newItems: QuoteLineItem[] = template.regels.map((regel, idx) => ({
+      id: `tpl-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+      soort: regel.soort,
+      beschrijving: regel.beschrijving,
+      extra_velden: { ...regel.extra_velden },
+      aantal: regel.aantal,
+      eenheidsprijs: regel.eenheidsprijs,
+      btw_percentage: regel.btw_percentage,
+      korting_percentage: regel.korting_percentage,
+      totaal: regel.soort === 'prijs'
+        ? (regel.aantal * regel.eenheidsprijs) - (regel.aantal * regel.eenheidsprijs * (regel.korting_percentage / 100))
+        : 0,
+    }))
+    setItems([...items, ...newItems])
+    setShowTemplateSelect(false)
+    toast.success(`Template "${template.naam}" geïmporteerd (${template.regels.length} regels)`)
   }
 
   // Step validation
@@ -500,6 +529,59 @@ export function QuoteCreation() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Template importeren */}
+              {offerteTemplates.length > 0 && (
+                <div className="mb-4">
+                  {!showTemplateSelect ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowTemplateSelect(true)}
+                      className="gap-2"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Template importeren
+                    </Button>
+                  ) : (
+                    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                          Kies een template om te importeren
+                        </h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowTemplateSelect(false)}
+                          className="text-xs"
+                        >
+                          Annuleren
+                        </Button>
+                      </div>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
+                        De regels uit de template worden toegevoegd aan je huidige offerte items.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {offerteTemplates.map((tpl) => (
+                          <button
+                            key={tpl.id}
+                            onClick={() => handleImportTemplate(tpl)}
+                            className="text-left p-3 rounded-lg border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-sm transition-all"
+                          >
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{tpl.naam}</p>
+                            {tpl.beschrijving && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{tpl.beschrijving}</p>
+                            )}
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                              {tpl.regels.length} regel(s)
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <QuoteItemsTable
                 items={items}
                 onAddItem={handleAddItem}

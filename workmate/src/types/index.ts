@@ -254,6 +254,8 @@ export interface AppSettings {
   toon_dagen_open: boolean;
   toon_follow_up_indicatoren: boolean;
   dashboard_widgets: string[];
+  // Sidebar navigatie - welke items zijn zichtbaar
+  sidebar_items: string[];
   // Calculatie instellingen
   calculatie_categorieen: string[];            // Product categorieën (bijv. "Materiaal", "Arbeid")
   calculatie_eenheden: string[];               // Eenheden (bijv. "m²", "stuks", "uur")
@@ -343,6 +345,36 @@ export interface OfferteItemCalculatie {
   totaal_marge_bedrag: number;
   totaal_marge_percentage: number;
   notities: string;
+}
+
+/**
+ * Een offerte-template: een complete set offerte-regels die je kunt hergebruiken.
+ * Bijv. "Autobelettering", "Gevelreclame", "DTP werkzaamheden", "Website".
+ * Aanmaken in Instellingen > Calculatie, importeren bij het aanmaken van een offerte.
+ */
+export interface OfferteTemplate {
+  id: string;
+  user_id: string;
+  naam: string;                     // Bijv. "Autobelettering", "Gevelreclame"
+  beschrijving: string;             // Korte uitleg waarvoor deze template is
+  regels: OfferteTemplateRegel[];   // De vooringevulde offerte-regels
+  actief: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Een regel in een offerte-template. Zelfde structuur als een QuoteLineItem
+ * maar dan als template (zonder id, die wordt bij import gegenereerd).
+ */
+export interface OfferteTemplateRegel {
+  soort: 'prijs' | 'tekst';
+  beschrijving: string;
+  extra_velden: Record<string, string>;
+  aantal: number;
+  eenheidsprijs: number;
+  btw_percentage: number;
+  korting_percentage: number;
 }
 
 export type SortDirection = 'asc' | 'desc';

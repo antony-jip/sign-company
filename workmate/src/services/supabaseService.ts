@@ -17,6 +17,7 @@ import type {
   AppSettings,
   CalculatieProduct,
   CalculatieTemplate,
+  OfferteTemplate,
 } from '@/types'
 
 // ============ HELPERS ============
@@ -1195,6 +1196,134 @@ export async function deleteCalculatieTemplate(id: string): Promise<void> {
   setLocalData('calculatie_templates', templates.filter((t) => t.id !== id))
 }
 
+// ============ OFFERTE TEMPLATES ============
+
+/** Standaard offerte-templates voor een sign company */
+const DEFAULT_OFFERTE_TEMPLATES: Omit<OfferteTemplate, 'id' | 'user_id' | 'created_at' | 'updated_at'>[] = [
+  {
+    naam: 'Autobelettering',
+    beschrijving: 'Standaard offerte voor autobelettering inclusief ontwerp en montage',
+    actief: true,
+    regels: [
+      { soort: 'prijs', beschrijving: 'Autobelettering ontwerp en productie', extra_velden: { 'Materiaal': 'Gegoten polymeer folie', 'Lay-out': 'Ontwerp volgens huisstijl', 'Montage': 'Professionele montage op locatie', 'Opmerking': '' }, aantal: 1, eenheidsprijs: 0, btw_percentage: 21, korting_percentage: 0 },
+      { soort: 'tekst', beschrijving: 'Voertuiggegevens', extra_velden: { 'Materiaal': '', 'Lay-out': '', 'Montage': '', 'Opmerking': 'Merk/type en kenteken invullen' }, aantal: 0, eenheidsprijs: 0, btw_percentage: 0, korting_percentage: 0 },
+    ],
+  },
+  {
+    naam: 'Gevelreclame',
+    beschrijving: 'Standaard offerte voor gevelreclame / signing aan pand',
+    actief: true,
+    regels: [
+      { soort: 'prijs', beschrijving: 'Gevelreclame letters/logo', extra_velden: { 'Materiaal': 'Aluminium / Dibond', 'Lay-out': 'Ontwerp volgens huisstijl', 'Montage': 'Montage op gevel incl. hoogwerker', 'Opmerking': '' }, aantal: 1, eenheidsprijs: 0, btw_percentage: 21, korting_percentage: 0 },
+      { soort: 'tekst', beschrijving: 'Locatiegegevens', extra_velden: { 'Materiaal': '', 'Lay-out': '', 'Montage': '', 'Opmerking': 'Adres en contactpersoon locatie' }, aantal: 0, eenheidsprijs: 0, btw_percentage: 0, korting_percentage: 0 },
+    ],
+  },
+  {
+    naam: 'DTP werkzaamheden',
+    beschrijving: 'Offerte voor grafisch ontwerp en DTP werk',
+    actief: true,
+    regels: [
+      { soort: 'prijs', beschrijving: 'Ontwerp / DTP werkzaamheden', extra_velden: { 'Materiaal': 'N.v.t.', 'Lay-out': 'Aanlevering als drukklaar PDF', 'Montage': 'N.v.t.', 'Opmerking': '' }, aantal: 1, eenheidsprijs: 0, btw_percentage: 21, korting_percentage: 0 },
+      { soort: 'prijs', beschrijving: 'Correctieronde', extra_velden: { 'Materiaal': '', 'Lay-out': '1 correctieronde inbegrepen', 'Montage': '', 'Opmerking': 'Extra correcties op nacalculatie' }, aantal: 1, eenheidsprijs: 0, btw_percentage: 21, korting_percentage: 0 },
+    ],
+  },
+  {
+    naam: 'Website',
+    beschrijving: 'Offerte voor website ontwerp en ontwikkeling',
+    actief: true,
+    regels: [
+      { soort: 'prijs', beschrijving: 'Website ontwerp en ontwikkeling', extra_velden: { 'Materiaal': 'WordPress / maatwerk', 'Lay-out': 'Responsive design', 'Montage': 'Hosting eerste jaar inbegrepen', 'Opmerking': '' }, aantal: 1, eenheidsprijs: 0, btw_percentage: 21, korting_percentage: 0 },
+      { soort: 'prijs', beschrijving: 'Content invoer', extra_velden: { 'Materiaal': '', 'Lay-out': '', 'Montage': '', 'Opmerking': 'Teksten en afbeeldingen door klant aangeleverd' }, aantal: 1, eenheidsprijs: 0, btw_percentage: 21, korting_percentage: 0 },
+      { soort: 'tekst', beschrijving: 'Inclusief', extra_velden: { 'Materiaal': '', 'Lay-out': '', 'Montage': '', 'Opmerking': 'SSL certificaat, SEO basisoptimalisatie, contactformulier' }, aantal: 0, eenheidsprijs: 0, btw_percentage: 0, korting_percentage: 0 },
+    ],
+  },
+  {
+    naam: 'Interieur signing',
+    beschrijving: 'Bewegwijzering en interieur signing voor kantoor/bedrijfspand',
+    actief: true,
+    regels: [
+      { soort: 'prijs', beschrijving: 'Interieur signing pakket', extra_velden: { 'Materiaal': 'Acrylaat / vinyl', 'Lay-out': 'Ontwerp volgens huisstijl', 'Montage': 'Professionele montage op locatie', 'Opmerking': '' }, aantal: 1, eenheidsprijs: 0, btw_percentage: 21, korting_percentage: 0 },
+      { soort: 'tekst', beschrijving: 'Opname ter plaatse', extra_velden: { 'Materiaal': '', 'Lay-out': '', 'Montage': '', 'Opmerking': 'Inmeting en opname op locatie' }, aantal: 0, eenheidsprijs: 0, btw_percentage: 0, korting_percentage: 0 },
+    ],
+  },
+]
+
+export async function getOfferteTemplates(): Promise<OfferteTemplate[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_templates')
+      .select('*')
+      .order('naam')
+    if (error) throw error
+    return data || []
+  }
+  const templates = getLocalData<OfferteTemplate>('offerte_templates')
+  // Als er nog geen templates zijn, vul de standaard templates in
+  if (templates.length === 0) {
+    const defaults: OfferteTemplate[] = DEFAULT_OFFERTE_TEMPLATES.map((t) => ({
+      ...t,
+      id: generateId(),
+      user_id: 'demo',
+      created_at: now(),
+      updated_at: now(),
+    }))
+    setLocalData('offerte_templates', defaults)
+    return defaults
+  }
+  return templates
+}
+
+export async function createOfferteTemplate(template: Omit<OfferteTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<OfferteTemplate> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_templates')
+      .insert(template)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const templates = getLocalData<OfferteTemplate>('offerte_templates')
+  const newTemplate: OfferteTemplate = {
+    ...template,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as OfferteTemplate
+  templates.push(newTemplate)
+  setLocalData('offerte_templates', templates)
+  return newTemplate
+}
+
+export async function updateOfferteTemplate(id: string, updates: Partial<OfferteTemplate>): Promise<OfferteTemplate> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_templates')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const templates = getLocalData<OfferteTemplate>('offerte_templates')
+  const index = templates.findIndex((t) => t.id === id)
+  if (index === -1) throw new Error('Offerte template niet gevonden')
+  templates[index] = { ...templates[index], ...updates, updated_at: now() }
+  setLocalData('offerte_templates', templates)
+  return templates[index]
+}
+
+export async function deleteOfferteTemplate(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('offerte_templates').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const templates = getLocalData<OfferteTemplate>('offerte_templates')
+  setLocalData('offerte_templates', templates.filter((t) => t.id !== id))
+}
+
 // ============ APP SETTINGS ============
 
 const DEFAULT_PIPELINE_STAPPEN = [
@@ -1231,6 +1360,10 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     toon_dagen_open: true,
     toon_follow_up_indicatoren: true,
     dashboard_widgets: ['follow_ups', 'pipeline', 'kpi', 'kalender'],
+    sidebar_items: [
+      'Dashboard', 'Projecten', 'Taken', 'Klanten', 'Offertes', 'Documenten',
+      'Email', 'Nieuwsbrieven', 'Kalender', 'Financieel', 'Importeren', 'AI Assistent', 'Instellingen',
+    ],
     calculatie_categorieen: ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig'],
     calculatie_eenheden: ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'],
     calculatie_standaard_marge: 35,

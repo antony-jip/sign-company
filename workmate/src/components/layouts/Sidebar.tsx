@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText, Files,
@@ -9,6 +9,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Button } from '@/components/ui/button'
 
 interface NavItem {
@@ -58,13 +59,26 @@ const navSections: NavSection[] = [
   },
 ]
 
-// Flat list for collapsed mode tooltips
-const allNavItems = navSections.flatMap((s) => s.items)
-
 export function Sidebar() {
   const { isCollapsed, toggleSidebar } = useSidebar()
   const { user, logout } = useAuth()
+  const { settings } = useAppSettings()
   const location = useLocation()
+
+  // Filter navigatie op basis van instellingen — Instellingen is altijd zichtbaar
+  const filteredNavSections = useMemo(() => {
+    const sidebarItems = settings.sidebar_items
+    // Als sidebar_items niet is ingesteld of leeg is, toon alles
+    if (!sidebarItems || sidebarItems.length === 0) return navSections
+    return navSections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) => sidebarItems.includes(item.label) || item.label === 'Instellingen'
+        ),
+      }))
+      .filter((section) => section.items.length > 0)
+  }, [settings.sidebar_items])
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
 
@@ -157,7 +171,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-3 px-2 overflow-y-auto scrollbar-thin">
-        {navSections.map((section, sectionIndex) => (
+        {filteredNavSections.map((section, sectionIndex) => (
           <div key={section.section}>
             {/* Section label (only when expanded) */}
             {!isCollapsed && (
