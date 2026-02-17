@@ -254,6 +254,11 @@ export interface AppSettings {
   toon_dagen_open: boolean;
   toon_follow_up_indicatoren: boolean;
   dashboard_widgets: string[];
+  // Calculatie instellingen
+  calculatie_categorieen: string[];            // Product categorieën (bijv. "Materiaal", "Arbeid")
+  calculatie_eenheden: string[];               // Eenheden (bijv. "m²", "stuks", "uur")
+  calculatie_standaard_marge: number;          // Standaard marge % voor nieuwe regels
+  calculatie_toon_inkoop_in_offerte: boolean;  // Toon inkoopprijs in offerte (normaal niet!)
   created_at: string;
   updated_at: string;
 }
@@ -264,6 +269,77 @@ export interface PipelineStap {
   kleur: string;
   volgorde: number;
   actief: boolean;
+}
+
+// ============ CALCULATIE SYSTEEM ============
+
+/**
+ * Een product/dienst in je productcatalogus.
+ * Stel deze in bij Instellingen > Calculatie zodat je ze snel kunt hergebruiken.
+ */
+export interface CalculatieProduct {
+  id: string;
+  user_id: string;
+  naam: string;                    // Bijv. "Dibond plaat 3mm", "Montage per uur"
+  categorie: string;               // Bijv. "Materiaal", "Arbeid", "Transport"
+  eenheid: string;                 // Bijv. "m²", "stuks", "uur", "meter"
+  inkoop_prijs: number;            // Wat je zelf betaalt (inkoopprijs)
+  verkoop_prijs: number;           // Wat je de klant rekent (verkoopprijs)
+  standaard_marge: number;         // Standaard marge in % (bijv. 35)
+  btw_percentage: number;          // BTW tarief (21, 9, of 0)
+  actief: boolean;                 // Staat het product actief in je catalogus?
+  notitie: string;                 // Eventuele toelichting
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Een regel in een calculatie.
+ * Elke regel is een product/dienst met aantal, inkoop, verkoop, marge en korting.
+ */
+export interface CalculatieRegel {
+  id: string;
+  product_id?: string;             // Optioneel: link naar een catalogus-product
+  product_naam: string;            // Productnaam (vrij invoerbaar of uit catalogus)
+  categorie: string;               // Categorie van het product
+  eenheid: string;                 // Eenheid (m², stuks, uur, etc.)
+  aantal: number;                  // Hoeveel stuks/m²/uren
+  inkoop_prijs: number;            // Inkoopprijs per eenheid
+  verkoop_prijs: number;           // Verkoopprijs per eenheid
+  marge_percentage: number;        // Marge % (automatisch berekend of handmatig)
+  korting_percentage: number;      // Korting % die je aan de klant geeft
+  nacalculatie: boolean;           // Markeer voor nacalculatie (achteraf verrekenen)
+  btw_percentage: number;          // BTW tarief
+  notitie: string;                 // Eventuele toelichting per regel
+}
+
+/**
+ * Een calculatie-template die je kunt hergebruiken.
+ * Stel veelgebruikte calculaties samen en gebruik ze bij nieuwe offertes.
+ */
+export interface CalculatieTemplate {
+  id: string;
+  user_id: string;
+  naam: string;                    // Bijv. "Standaard gevelreclame", "Autobelettering basis"
+  beschrijving: string;            // Korte omschrijving waar de template voor is
+  regels: CalculatieRegel[];       // De regels in dit template
+  actief: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * De calculatie die bij een offerte-item hoort.
+ * Bevat alle regels die samen de prijs van het offerte-item bepalen.
+ */
+export interface OfferteItemCalculatie {
+  offerte_item_id: string;
+  regels: CalculatieRegel[];
+  totaal_inkoop: number;
+  totaal_verkoop: number;
+  totaal_marge_bedrag: number;
+  totaal_marge_percentage: number;
+  notities: string;
 }
 
 export type SortDirection = 'asc' | 'desc';

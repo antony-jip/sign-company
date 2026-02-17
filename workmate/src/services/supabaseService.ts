@@ -15,6 +15,8 @@ import type {
   Profile,
   Nieuwsbrief,
   AppSettings,
+  CalculatieProduct,
+  CalculatieTemplate,
 } from '@/types'
 
 // ============ HELPERS ============
@@ -1063,6 +1065,136 @@ export async function deleteNieuwsbrief(id: string): Promise<void> {
   setLocalData('nieuwsbrieven', items.filter((n) => n.id !== id))
 }
 
+// ============ CALCULATIE PRODUCTEN ============
+
+export async function getCalculatieProducten(): Promise<CalculatieProduct[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('calculatie_producten')
+      .select('*')
+      .order('categorie')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<CalculatieProduct>('calculatie_producten')
+}
+
+export async function createCalculatieProduct(product: Omit<CalculatieProduct, 'id' | 'created_at' | 'updated_at'>): Promise<CalculatieProduct> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('calculatie_producten')
+      .insert(product)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const producten = getLocalData<CalculatieProduct>('calculatie_producten')
+  const newProduct: CalculatieProduct = {
+    ...product,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as CalculatieProduct
+  producten.push(newProduct)
+  setLocalData('calculatie_producten', producten)
+  return newProduct
+}
+
+export async function updateCalculatieProduct(id: string, updates: Partial<CalculatieProduct>): Promise<CalculatieProduct> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('calculatie_producten')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const producten = getLocalData<CalculatieProduct>('calculatie_producten')
+  const index = producten.findIndex((p) => p.id === id)
+  if (index === -1) throw new Error('Calculatie product niet gevonden')
+  producten[index] = { ...producten[index], ...updates, updated_at: now() }
+  setLocalData('calculatie_producten', producten)
+  return producten[index]
+}
+
+export async function deleteCalculatieProduct(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('calculatie_producten').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const producten = getLocalData<CalculatieProduct>('calculatie_producten')
+  setLocalData('calculatie_producten', producten.filter((p) => p.id !== id))
+}
+
+// ============ CALCULATIE TEMPLATES ============
+
+export async function getCalculatieTemplates(): Promise<CalculatieTemplate[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('calculatie_templates')
+      .select('*')
+      .order('naam')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<CalculatieTemplate>('calculatie_templates')
+}
+
+export async function createCalculatieTemplate(template: Omit<CalculatieTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<CalculatieTemplate> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('calculatie_templates')
+      .insert(template)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const templates = getLocalData<CalculatieTemplate>('calculatie_templates')
+  const newTemplate: CalculatieTemplate = {
+    ...template,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as CalculatieTemplate
+  templates.push(newTemplate)
+  setLocalData('calculatie_templates', templates)
+  return newTemplate
+}
+
+export async function updateCalculatieTemplate(id: string, updates: Partial<CalculatieTemplate>): Promise<CalculatieTemplate> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('calculatie_templates')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const templates = getLocalData<CalculatieTemplate>('calculatie_templates')
+  const index = templates.findIndex((t) => t.id === id)
+  if (index === -1) throw new Error('Calculatie template niet gevonden')
+  templates[index] = { ...templates[index], ...updates, updated_at: now() }
+  setLocalData('calculatie_templates', templates)
+  return templates[index]
+}
+
+export async function deleteCalculatieTemplate(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('calculatie_templates').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const templates = getLocalData<CalculatieTemplate>('calculatie_templates')
+  setLocalData('calculatie_templates', templates.filter((t) => t.id !== id))
+}
+
 // ============ APP SETTINGS ============
 
 const DEFAULT_PIPELINE_STAPPEN = [
@@ -1099,6 +1231,10 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     toon_dagen_open: true,
     toon_follow_up_indicatoren: true,
     dashboard_widgets: ['follow_ups', 'pipeline', 'kpi', 'kalender'],
+    calculatie_categorieen: ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig'],
+    calculatie_eenheden: ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'],
+    calculatie_standaard_marge: 35,
+    calculatie_toon_inkoop_in_offerte: false,
     created_at: now(),
     updated_at: now(),
   }

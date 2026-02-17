@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,6 +34,7 @@ import { generateOffertePDF } from '@/services/pdfService'
 import { formatCurrency } from '@/lib/utils'
 import { QuoteItemsTable, type QuoteLineItem } from './QuoteItemsTable'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
+import type { CalculatieRegel } from '@/types'
 
 const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
 2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
@@ -58,12 +59,18 @@ function generateOfferteNummer(prefix: string = 'OFF'): string {
 
 export function QuoteCreation() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const { offertePrefix, offerteGeldigheidDagen, standaardBtw, valuta, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, profile } = useAppSettings()
   const [currentStep, setCurrentStep] = useState(1)
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Query params van bijv. projecten-pagina
+  const paramKlantId = searchParams.get('klant_id') || ''
+  const paramProjectId = searchParams.get('project_id') || ''
+  const paramTitel = searchParams.get('titel') || ''
 
   useEffect(() => {
     getKlanten()
@@ -75,10 +82,10 @@ export function QuoteCreation() {
       .finally(() => setIsLoading(false))
   }, [])
 
-  // Step 1: Client & basic info
-  const [selectedKlantId, setSelectedKlantId] = useState('')
+  // Step 1: Client & basic info - pre-fill vanuit query params
+  const [selectedKlantId, setSelectedKlantId] = useState(paramKlantId)
   const [klantSearch, setKlantSearch] = useState('')
-  const [offerteTitel, setOfferteTitel] = useState('')
+  const [offerteTitel, setOfferteTitel] = useState(paramTitel)
   const [geldigTot, setGeldigTot] = useState(() => {
     const d = new Date()
     d.setDate(d.getDate() + offerteGeldigheidDagen)
@@ -136,6 +143,33 @@ export function QuoteCreation() {
     setItems(items.filter((item) => item.id !== id))
   }
 
+  // Verwerk calculatieresultaat: update beschrijving, prijs en sla calculatieregels op
+  const handleUpdateItemWithCalculatie = (
+    id: string,
+    data: {
+      beschrijving: string
+      eenheidsprijs: number
+      calculatie_regels: CalculatieRegel[]
+    }
+  ) => {
+    setItems(
+      items.map((item) => {
+        if (item.id !== id) return item
+        const updated = {
+          ...item,
+          beschrijving: data.beschrijving,
+          eenheidsprijs: data.eenheidsprijs,
+          calculatie_regels: data.calculatie_regels,
+          heeft_calculatie: true,
+        }
+        // Herbereken totaal
+        const bruto = updated.aantal * updated.eenheidsprijs
+        updated.totaal = bruto - bruto * (updated.korting_percentage / 100)
+        return updated
+      })
+    )
+  }
+
   // Step validation
   const canProceedStep1 = selectedKlantId && offerteTitel.trim().length > 0
   const canProceedStep2 = items.length > 0
@@ -159,6 +193,7 @@ export function QuoteCreation() {
       const newOfferte = await createOfferte({
         user_id: user?.id || 'demo',
         klant_id: selectedKlantId,
+        ...(paramProjectId ? { project_id: paramProjectId } : {}),
         nummer: offerteNummer,
         titel: offerteTitel,
         status,
@@ -465,6 +500,7 @@ export function QuoteCreation() {
                 onAddItem={handleAddItem}
                 onUpdateItem={handleUpdateItem}
                 onRemoveItem={handleRemoveItem}
+                onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
               />
             </CardContent>
           </Card>

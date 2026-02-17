@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -8,8 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Trash2, Plus, Calculator } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { CalculatieModal } from './CalculatieModal'
+import type { CalculatieRegel } from '@/types'
 
 export interface QuoteLineItem {
   id: string
@@ -19,6 +28,10 @@ export interface QuoteLineItem {
   btw_percentage: number
   korting_percentage: number
   totaal: number
+  /** Calculatieregels die bij dit item horen (voor nacalculatie/inzicht) */
+  calculatie_regels?: CalculatieRegel[]
+  /** Of dit item een calculatie heeft */
+  heeft_calculatie?: boolean
 }
 
 interface QuoteItemsTableProps {
@@ -26,6 +39,15 @@ interface QuoteItemsTableProps {
   onAddItem: () => void
   onUpdateItem: (id: string, field: keyof QuoteLineItem, value: string | number) => void
   onRemoveItem: (id: string) => void
+  /** Update een item met calculatiedata (regels + totaal) */
+  onUpdateItemWithCalculatie?: (
+    id: string,
+    data: {
+      beschrijving: string
+      eenheidsprijs: number
+      calculatie_regels: CalculatieRegel[]
+    }
+  ) => void
 }
 
 function calculateLineTotaal(item: QuoteLineItem): number {
@@ -39,7 +61,14 @@ export function QuoteItemsTable({
   onAddItem,
   onUpdateItem,
   onRemoveItem,
+  onUpdateItemWithCalculatie,
 }: QuoteItemsTableProps) {
+  // State voor de calculatie modal
+  const [calculatieOpen, setCalculatieOpen] = useState(false)
+  const [activeItemId, setActiveItemId] = useState<string | null>(null)
+
+  const activeItem = items.find((i) => i.id === activeItemId)
+
   const subtotaal = items.reduce((sum, item) => sum + calculateLineTotaal(item), 0)
 
   const btwTotalen = items.reduce(
@@ -56,15 +85,46 @@ export function QuoteItemsTable({
   const totaalBtw = Object.values(btwTotalen).reduce((sum, val) => sum + val, 0)
   const totaal = subtotaal + totaalBtw
 
+  // Open calculatie modal voor een specifiek item
+  const openCalculatie = (itemId: string) => {
+    setActiveItemId(itemId)
+    setCalculatieOpen(true)
+  }
+
+  // Verwerk de calculatie resultaten
+  const handleCalculatieConfirm = (data: {
+    regels: CalculatieRegel[]
+    totaalVerkoop: number
+    totaalInkoop: number
+    beschrijving: string
+  }) => {
+    if (!activeItemId) return
+
+    if (onUpdateItemWithCalculatie) {
+      onUpdateItemWithCalculatie(activeItemId, {
+        beschrijving: data.beschrijving,
+        eenheidsprijs: data.totaalVerkoop,
+        calculatie_regels: data.regels,
+      })
+    } else {
+      // Fallback: update individuele velden
+      onUpdateItem(activeItemId, 'beschrijving', data.beschrijving)
+      onUpdateItem(activeItemId, 'eenheidsprijs', data.totaalVerkoop)
+    }
+
+    setCalculatieOpen(false)
+    setActiveItemId(null)
+  }
+
   return (
     <div className="space-y-4">
-      {/* Table */}
+      {/* Tabel */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400 min-w-[280px]">
-                Beschrijving
+                Omschrijving
               </th>
               <th className="text-right px-4 py-3 font-medium text-gray-600 dark:text-gray-400 w-24">
                 Aantal
@@ -81,7 +141,7 @@ export function QuoteItemsTable({
               <th className="text-right px-4 py-3 font-medium text-gray-600 dark:text-gray-400 w-36">
                 Totaal
               </th>
-              <th className="px-4 py-3 w-12" />
+              <th className="px-2 py-3 w-20" />
             </tr>
           </thead>
           <tbody>
@@ -95,12 +155,19 @@ export function QuoteItemsTable({
                   } hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors`}
                 >
                   <td className="px-4 py-2">
-                    <Input
-                      value={item.beschrijving}
-                      onChange={(e) => onUpdateItem(item.id, 'beschrijving', e.target.value)}
-                      placeholder="Beschrijving van het item..."
-                      className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9"
-                    />
+                    <div className="flex items-center gap-1">
+                      <Input
+                        value={item.beschrijving}
+                        onChange={(e) => onUpdateItem(item.id, 'beschrijving', e.target.value)}
+                        placeholder="Beschrijving van het item..."
+                        className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 flex-1"
+                      />
+                      {item.heeft_calculatie && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-blue-600 border-blue-200 dark:border-blue-800 flex-shrink-0">
+                          Calc
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-2">
                     <Input
@@ -151,15 +218,43 @@ export function QuoteItemsTable({
                   <td className="px-4 py-2 text-right font-medium text-gray-900 dark:text-gray-100">
                     {formatCurrency(lineTotaal)}
                   </td>
-                  <td className="px-4 py-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onRemoveItem(item.id)}
-                      className="h-8 w-8 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <td className="px-2 py-2">
+                    <div className="flex items-center gap-0.5">
+                      {/* Calculatie knop - opent de calculatie modal */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openCalculatie(item.id)}
+                              className={`h-8 w-8 ${
+                                item.heeft_calculatie
+                                  ? 'text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'
+                                  : 'text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400'
+                              }`}
+                            >
+                              <Calculator className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{item.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie maken'}</p>
+                            <p className="text-xs text-gray-400">
+                              Bouw de prijs op uit losse onderdelen
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onRemoveItem(item.id)}
+                        className="h-8 w-8 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               )
@@ -175,7 +270,7 @@ export function QuoteItemsTable({
         </table>
       </div>
 
-      {/* Add Item Button */}
+      {/* Item toevoegen knop */}
       <Button
         variant="outline"
         onClick={onAddItem}
@@ -185,7 +280,7 @@ export function QuoteItemsTable({
         Item Toevoegen
       </Button>
 
-      {/* Totals Footer */}
+      {/* Totalen footer */}
       <div className="flex justify-end">
         <div className="w-80 space-y-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
@@ -215,6 +310,18 @@ export function QuoteItemsTable({
           </div>
         </div>
       </div>
+
+      {/* Calculatie Modal */}
+      <CalculatieModal
+        open={calculatieOpen}
+        onClose={() => {
+          setCalculatieOpen(false)
+          setActiveItemId(null)
+        }}
+        initialRegels={activeItem?.calculatie_regels}
+        itemBeschrijving={activeItem?.beschrijving}
+        onConfirm={handleCalculatieConfirm}
+      />
     </div>
   )
 }

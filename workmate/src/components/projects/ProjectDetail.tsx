@@ -44,7 +44,7 @@ import {
   getPriorityColor,
   getInitials,
 } from '@/lib/utils'
-import { getProject, getTakenByProject, getDocumenten, createTaak, getOffertesByProject, createOfferte, createOfferteItem, updateOfferte } from '@/services/supabaseService'
+import { getProject, getTakenByProject, getDocumenten, createTaak, getOffertesByProject, updateOfferte } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { ProjectTasksTable } from './ProjectTasksTable'
@@ -104,14 +104,17 @@ export function ProjectDetail() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
 
-  // Offerte aanmaken state
-  const [nieuweOfferteOpen, setNieuweOfferteOpen] = useState(false)
-  const [offerteTitel, setOfferteTitel] = useState('')
-  const [offerteNotities, setOfferteNotities] = useState('')
-  const [offerteItems, setOfferteItems] = useState<Array<{ beschrijving: string; aantal: number; eenheidsprijs: number; btw_percentage: number }>>([
-    { beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw },
-  ])
-  const [isOfferteOpslaan, setIsOfferteOpslaan] = useState(false)
+  // Offerte aanmaken - navigeert naar de volledige offerte-pagina
+  const openNieuweOfferte = () => {
+    if (!project) return
+    // Navigeer naar offerte-aanmaakpagina met project- en klantinfo als query params
+    const params = new URLSearchParams({
+      project_id: id || '',
+      klant_id: project.klant_id || '',
+      titel: project.naam || '',
+    })
+    navigate(`/offertes/nieuw?${params.toString()}`)
+  }
 
   // Email offerte state
   const [emailOfferteOpen, setEmailOfferteOpen] = useState(false)
@@ -527,7 +530,7 @@ export function ProjectDetail() {
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0"
-                  onClick={() => setNieuweOfferteOpen(true)}
+                  onClick={openNieuweOfferte}
                   title="Nieuwe offerte"
                 >
                   <Plus className="h-4 w-4" />
@@ -542,7 +545,7 @@ export function ProjectDetail() {
                     variant="link"
                     size="sm"
                     className="text-indigo-600 dark:text-indigo-400 mt-1 h-auto p-0"
-                    onClick={() => setNieuweOfferteOpen(true)}
+                    onClick={openNieuweOfferte}
                   >
                     Eerste offerte aanmaken
                   </Button>
@@ -597,219 +600,6 @@ export function ProjectDetail() {
               )}
             </CardContent>
           </Card>
-
-          {/* Offerte aanmaken dialog */}
-          <Dialog open={nieuweOfferteOpen} onOpenChange={(open) => {
-            setNieuweOfferteOpen(open)
-            if (!open) {
-              setOfferteTitel('')
-              setOfferteNotities('')
-              setOfferteItems([{ beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw }])
-            }
-          }}>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Nieuwe offerte aanmaken</DialogTitle>
-                <DialogDescription>
-                  Maak een offerte aan voor project "{project.naam}" ({project.klant_naam}).
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="offerte-titel">Titel</Label>
-                  <Input
-                    id="offerte-titel"
-                    placeholder="bijv. Gevelreclame nieuwe locatie"
-                    value={offerteTitel}
-                    onChange={(e) => setOfferteTitel(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Offerte items</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setOfferteItems([...offerteItems, { beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw }])}
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1" />
-                      Item
-                    </Button>
-                  </div>
-                  {offerteItems.map((item, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-2 items-end bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
-                      <div className="col-span-5 space-y-1">
-                        {index === 0 && <Label className="text-xs text-muted-foreground">Beschrijving</Label>}
-                        <Input
-                          placeholder="Beschrijving..."
-                          value={item.beschrijving}
-                          onChange={(e) => {
-                            const updated = [...offerteItems]
-                            updated[index] = { ...updated[index], beschrijving: e.target.value }
-                            setOfferteItems(updated)
-                          }}
-                        />
-                      </div>
-                      <div className="col-span-2 space-y-1">
-                        {index === 0 && <Label className="text-xs text-muted-foreground">Aantal</Label>}
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.aantal}
-                          onChange={(e) => {
-                            const updated = [...offerteItems]
-                            updated[index] = { ...updated[index], aantal: Number(e.target.value) || 1 }
-                            setOfferteItems(updated)
-                          }}
-                        />
-                      </div>
-                      <div className="col-span-3 space-y-1">
-                        {index === 0 && <Label className="text-xs text-muted-foreground">Prijs</Label>}
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={item.eenheidsprijs || ''}
-                          onChange={(e) => {
-                            const updated = [...offerteItems]
-                            updated[index] = { ...updated[index], eenheidsprijs: Number(e.target.value) || 0 }
-                            setOfferteItems(updated)
-                          }}
-                        />
-                      </div>
-                      <div className="col-span-2 flex items-end gap-1">
-                        <div className="flex-1 space-y-1">
-                          {index === 0 && <Label className="text-xs text-muted-foreground">BTW%</Label>}
-                          <Input
-                            type="number"
-                            min="0"
-                            value={item.btw_percentage}
-                            onChange={(e) => {
-                              const updated = [...offerteItems]
-                              updated[index] = { ...updated[index], btw_percentage: Number(e.target.value) || 0 }
-                              setOfferteItems(updated)
-                            }}
-                          />
-                        </div>
-                        {offerteItems.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700 px-2"
-                            onClick={() => setOfferteItems(offerteItems.filter((_, i) => i !== index))}
-                          >
-                            &times;
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Totaal preview */}
-                  <div className="flex justify-end pt-2">
-                    <div className="text-right space-y-1">
-                      <p className="text-sm text-muted-foreground">
-                        Subtotaal: <span className="font-semibold text-foreground">
-                          {formatCurrency(offerteItems.reduce((sum, i) => sum + i.aantal * i.eenheidsprijs, 0))}
-                        </span>
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        BTW: <span className="font-semibold text-foreground">
-                          {formatCurrency(offerteItems.reduce((sum, i) => sum + (i.aantal * i.eenheidsprijs * i.btw_percentage / 100), 0))}
-                        </span>
-                      </p>
-                      <p className="text-base font-bold text-foreground">
-                        Totaal: {formatCurrency(
-                          offerteItems.reduce((sum, i) => sum + i.aantal * i.eenheidsprijs * (1 + i.btw_percentage / 100), 0)
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="offerte-notities">Notities (optioneel)</Label>
-                  <Textarea
-                    id="offerte-notities"
-                    placeholder="Extra notities voor deze offerte..."
-                    value={offerteNotities}
-                    onChange={(e) => setOfferteNotities(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setNieuweOfferteOpen(false)}>
-                  Annuleren
-                </Button>
-                <Button
-                  disabled={!offerteTitel.trim() || offerteItems.every(i => !i.beschrijving.trim()) || isOfferteOpslaan}
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
-                  onClick={async () => {
-                    setIsOfferteOpslaan(true)
-                    try {
-                      const validItems = offerteItems.filter(i => i.beschrijving.trim())
-                      const subtotaal = validItems.reduce((sum, i) => sum + i.aantal * i.eenheidsprijs, 0)
-                      const btwBedrag = validItems.reduce((sum, i) => sum + (i.aantal * i.eenheidsprijs * i.btw_percentage / 100), 0)
-                      const year = new Date().getFullYear()
-                      const num = String(Math.floor(Math.random() * 900) + 100)
-                      const nummer = `${offertePrefix}-${year}-${num}`
-                      const geldigTot = new Date()
-                      geldigTot.setDate(geldigTot.getDate() + offerteGeldigheidDagen)
-
-                      const newOfferte = await createOfferte({
-                        user_id: user?.id || 'demo',
-                        klant_id: project.klant_id,
-                        project_id: id!,
-                        nummer,
-                        titel: offerteTitel.trim(),
-                        status: 'concept',
-                        subtotaal,
-                        btw_bedrag: btwBedrag,
-                        totaal: subtotaal + btwBedrag,
-                        geldig_tot: geldigTot.toISOString().split('T')[0],
-                        notities: offerteNotities,
-                        voorwaarden: '',
-                      })
-
-                      await Promise.all(
-                        validItems.map((item, index) =>
-                          createOfferteItem({
-                            offerte_id: newOfferte.id,
-                            beschrijving: item.beschrijving,
-                            aantal: item.aantal,
-                            eenheidsprijs: item.eenheidsprijs,
-                            btw_percentage: item.btw_percentage,
-                            korting_percentage: 0,
-                            totaal: item.aantal * item.eenheidsprijs,
-                            volgorde: index + 1,
-                          })
-                        )
-                      )
-
-                      toast.success(`Offerte "${offerteTitel}" aangemaakt`)
-                      setNieuweOfferteOpen(false)
-                      setOfferteTitel('')
-                      setOfferteNotities('')
-                      setOfferteItems([{ beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw }])
-                      await fetchOffertes()
-                    } catch (err) {
-                      console.error('Fout bij aanmaken offerte:', err)
-                      toast.error('Kon offerte niet aanmaken')
-                    } finally {
-                      setIsOfferteOpslaan(false)
-                    }
-                  }}
-                >
-                  {isOfferteOpslaan ? 'Opslaan...' : 'Offerte aanmaken'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
           {/* Email offerte dialog */}
           <Dialog open={emailOfferteOpen} onOpenChange={(open) => {

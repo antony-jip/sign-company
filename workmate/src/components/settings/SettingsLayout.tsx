@@ -36,6 +36,11 @@ import {
   Trash2,
   GripVertical,
   Save,
+  Calculator,
+  Package,
+  HelpCircle,
+  Edit2,
+  Copy,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -44,8 +49,18 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
-import type { AppSettings, PipelineStap } from '@/types'
+import type { AppSettings, PipelineStap, CalculatieProduct, CalculatieTemplate, CalculatieRegel } from '@/types'
+import {
+  getCalculatieProducten,
+  createCalculatieProduct,
+  updateCalculatieProduct,
+  deleteCalculatieProduct,
+  getCalculatieTemplates,
+  createCalculatieTemplate,
+  deleteCalculatieTemplate,
+} from '@/services/supabaseService'
 import { toast } from 'sonner'
+import { formatCurrency } from '@/lib/utils'
 
 export function SettingsLayout() {
   const [activeTab, setActiveTab] = useState('profiel')
@@ -68,7 +83,7 @@ export function SettingsLayout() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8">
           <TabsTrigger value="profiel" className="gap-2">
             <User className="w-4 h-4 hidden sm:inline" />
             Profiel
@@ -76,6 +91,10 @@ export function SettingsLayout() {
           <TabsTrigger value="bedrijf" className="gap-2">
             <Building2 className="w-4 h-4 hidden sm:inline" />
             Bedrijf
+          </TabsTrigger>
+          <TabsTrigger value="calculatie" className="gap-2">
+            <Calculator className="w-4 h-4 hidden sm:inline" />
+            Calculatie
           </TabsTrigger>
           <TabsTrigger value="aanpassingen" className="gap-2">
             <Sliders className="w-4 h-4 hidden sm:inline" />
@@ -105,6 +124,9 @@ export function SettingsLayout() {
         <TabsContent value="bedrijf">
           <BedrijfTab />
         </TabsContent>
+        <TabsContent value="calculatie">
+          <CalculatieTab />
+        </TabsContent>
         <TabsContent value="aanpassingen">
           <AanpassingenTab />
         </TabsContent>
@@ -121,6 +143,678 @@ export function SettingsLayout() {
           <WeergaveTab />
         </TabsContent>
       </Tabs>
+    </div>
+  )
+}
+
+// ============ CALCULATIE TAB ============
+// Hier stel je alles in voor het calculatiesysteem bij offertes.
+// Producten, categorieën, eenheden en standaard marges.
+
+function CalculatieTab() {
+  const { user } = useAuth()
+  const { settings, updateSettings, refreshSettings } = useAppSettings()
+
+  // ---- Producten catalogus ----
+  const [producten, setProducten] = useState<CalculatieProduct[]>([])
+  const [templates, setTemplates] = useState<CalculatieTemplate[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // ---- Instellingen velden ----
+  const [standaardMarge, setStandaardMarge] = useState(settings.calculatie_standaard_marge ?? 35)
+  const [categorieen, setCategorieen] = useState<string[]>(
+    settings.calculatie_categorieen || ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig']
+  )
+  const [eenheden, setEenheden] = useState<string[]>(
+    settings.calculatie_eenheden || ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set']
+  )
+  const [toonInkoopInOfferte, setToonInkoopInOfferte] = useState(settings.calculatie_toon_inkoop_in_offerte ?? false)
+  const [nieuweCat, setNieuweCat] = useState('')
+  const [nieuweEenheid, setNieuweEenheid] = useState('')
+
+  // ---- Nieuw product formulier ----
+  const [showProductForm, setShowProductForm] = useState(false)
+  const [editProductId, setEditProductId] = useState<string | null>(null)
+  const [productNaam, setProductNaam] = useState('')
+  const [productCategorie, setProductCategorie] = useState('')
+  const [productEenheid, setProductEenheid] = useState('stuks')
+  const [productInkoop, setProductInkoop] = useState(0)
+  const [productVerkoop, setProductVerkoop] = useState(0)
+  const [productMarge, setProductMarge] = useState(35)
+  const [productBtw, setProductBtw] = useState(21)
+  const [productNotitie, setProductNotitie] = useState('')
+
+  // Laden
+  useEffect(() => {
+    Promise.all([getCalculatieProducten(), getCalculatieTemplates()])
+      .then(([prods, tmps]) => {
+        setProducten(prods)
+        setTemplates(tmps)
+      })
+      .catch(console.error)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  useEffect(() => {
+    setStandaardMarge(settings.calculatie_standaard_marge ?? 35)
+    setCategorieen(settings.calculatie_categorieen || ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig'])
+    setEenheden(settings.calculatie_eenheden || ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'])
+    setToonInkoopInOfferte(settings.calculatie_toon_inkoop_in_offerte ?? false)
+  }, [settings])
+
+  // ---- Opslaan algemene instellingen ----
+  const handleSaveSettings = async () => {
+    try {
+      setIsSaving(true)
+      await updateSettings({
+        calculatie_standaard_marge: standaardMarge,
+        calculatie_categorieen: categorieen,
+        calculatie_eenheden: eenheden,
+        calculatie_toon_inkoop_in_offerte: toonInkoopInOfferte,
+      })
+      toast.success('Calculatie-instellingen opgeslagen')
+    } catch (err) {
+      console.error(err)
+      toast.error('Kon instellingen niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // ---- Product CRUD ----
+  const resetProductForm = () => {
+    setProductNaam('')
+    setProductCategorie('')
+    setProductEenheid('stuks')
+    setProductInkoop(0)
+    setProductVerkoop(0)
+    setProductMarge(standaardMarge)
+    setProductBtw(21)
+    setProductNotitie('')
+    setEditProductId(null)
+    setShowProductForm(false)
+  }
+
+  const handleEditProduct = (p: CalculatieProduct) => {
+    setEditProductId(p.id)
+    setProductNaam(p.naam)
+    setProductCategorie(p.categorie)
+    setProductEenheid(p.eenheid)
+    setProductInkoop(p.inkoop_prijs)
+    setProductVerkoop(p.verkoop_prijs)
+    setProductMarge(p.standaard_marge)
+    setProductBtw(p.btw_percentage)
+    setProductNotitie(p.notitie)
+    setShowProductForm(true)
+  }
+
+  const handleSaveProduct = async () => {
+    if (!productNaam.trim()) {
+      toast.error('Vul een productnaam in')
+      return
+    }
+    try {
+      setIsSaving(true)
+      if (editProductId) {
+        const updated = await updateCalculatieProduct(editProductId, {
+          naam: productNaam,
+          categorie: productCategorie,
+          eenheid: productEenheid,
+          inkoop_prijs: productInkoop,
+          verkoop_prijs: productVerkoop,
+          standaard_marge: productMarge,
+          btw_percentage: productBtw,
+          notitie: productNotitie,
+        })
+        setProducten((prev) => prev.map((p) => (p.id === editProductId ? updated : p)))
+        toast.success('Product bijgewerkt')
+      } else {
+        const newProduct = await createCalculatieProduct({
+          user_id: user?.id || 'demo',
+          naam: productNaam,
+          categorie: productCategorie,
+          eenheid: productEenheid,
+          inkoop_prijs: productInkoop,
+          verkoop_prijs: productVerkoop,
+          standaard_marge: productMarge,
+          btw_percentage: productBtw,
+          actief: true,
+          notitie: productNotitie,
+        })
+        setProducten((prev) => [...prev, newProduct])
+        toast.success('Product toegevoegd aan catalogus')
+      }
+      resetProductForm()
+    } catch (err) {
+      console.error(err)
+      toast.error('Kon product niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      await deleteCalculatieProduct(id)
+      setProducten((prev) => prev.filter((p) => p.id !== id))
+      toast.success('Product verwijderd')
+    } catch (err) {
+      console.error(err)
+      toast.error('Kon product niet verwijderen')
+    }
+  }
+
+  const handleToggleProductActief = async (p: CalculatieProduct) => {
+    try {
+      const updated = await updateCalculatieProduct(p.id, { actief: !p.actief })
+      setProducten((prev) => prev.map((pr) => (pr.id === p.id ? updated : pr)))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // ---- Categorieën en eenheden beheer ----
+  const addCategorie = () => {
+    if (nieuweCat.trim() && !categorieen.includes(nieuweCat.trim())) {
+      setCategorieen([...categorieen, nieuweCat.trim()])
+      setNieuweCat('')
+    }
+  }
+
+  const removeCategorie = (cat: string) => {
+    setCategorieen(categorieen.filter((c) => c !== cat))
+  }
+
+  const addEenheid = () => {
+    if (nieuweEenheid.trim() && !eenheden.includes(nieuweEenheid.trim())) {
+      setEenheden([...eenheden, nieuweEenheid.trim()])
+      setNieuweEenheid('')
+    }
+  }
+
+  const removeEenheid = (e: string) => {
+    setEenheden(eenheden.filter((ee) => ee !== e))
+  }
+
+  // Groepeer producten per categorie
+  const productenPerCategorie = producten.reduce((acc, p) => {
+    const cat = p.categorie || 'Overig'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(p)
+    return acc
+  }, {} as Record<string, CalculatieProduct[]>)
+
+  return (
+    <div className="space-y-6">
+      {/* ---- INTRO UITLEG ---- */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calculator className="w-5 h-5 text-blue-600" />
+            Calculatie Instellingen
+          </CardTitle>
+          <CardDescription>
+            Stel hier je calculatiesysteem in. Deze instellingen bepalen hoe je prijzen opbouwt
+            bij het maken van offertes. Je kunt producten, categorieën, eenheden en marges instellen.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-100 dark:border-blue-900">
+            <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-1.5">
+              <HelpCircle className="h-4 w-4" />
+              Hoe werkt het calculatiesysteem?
+            </h4>
+            <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
+              <li><strong>1. Producten toevoegen:</strong> Voeg je materialen, diensten en producten toe met inkoop- en verkoopprijzen.</li>
+              <li><strong>2. Offerte maken:</strong> Bij het aanmaken van een offerte klik je op het rekenmachine-icoon naast een regel.</li>
+              <li><strong>3. Calculatie opbouwen:</strong> In het calculatiescherm voeg je producten toe, pas je aantallen aan en zie je direct je marge.</li>
+              <li><strong>4. Automatisch doorrekenen:</strong> De verkoopprijs wordt automatisch berekend en op de offerte gezet.</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ---- STANDAARD WAARDEN ---- */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Standaard waarden</CardTitle>
+          <CardDescription>
+            Deze waarden worden automatisch ingevuld bij nieuwe calculatieregels
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="calc-marge">
+                Standaard marge (%)
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="calc-marge"
+                  type="number"
+                  value={standaardMarge}
+                  onChange={(e) => setStandaardMarge(parseFloat(e.target.value) || 0)}
+                  min={0}
+                  max={500}
+                  step={1}
+                  className="w-32"
+                />
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Dit is de marge die standaard wordt ingevuld bij nieuwe regels
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Toon inkoopprijs in offerte</Label>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={toonInkoopInOfferte}
+                  onCheckedChange={setToonInkoopInOfferte}
+                />
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {toonInkoopInOfferte ? 'Inkoopprijzen zijn zichtbaar' : 'Inkoopprijzen zijn verborgen (aanbevolen)'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Categorieën */}
+          <div className="space-y-3">
+            <Label>Product categorieën</Label>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Categorieën helpen je producten te organiseren. Bijv. Materiaal, Arbeid, Transport.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {categorieen.map((cat) => (
+                <Badge
+                  key={cat}
+                  variant="secondary"
+                  className="gap-1 pl-2.5 pr-1 py-1"
+                >
+                  {cat}
+                  <button
+                    onClick={() => removeCategorie(cat)}
+                    className="ml-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-0.5"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={nieuweCat}
+                onChange={(e) => setNieuweCat(e.target.value)}
+                placeholder="Nieuwe categorie..."
+                className="w-48"
+                onKeyDown={(e) => e.key === 'Enter' && addCategorie()}
+              />
+              <Button variant="outline" size="sm" onClick={addCategorie} disabled={!nieuweCat.trim()}>
+                <Plus className="h-4 w-4 mr-1" />
+                Toevoegen
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Eenheden */}
+          <div className="space-y-3">
+            <Label>Eenheden</Label>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Eenheden bepalen hoe je producten telt. Bijv. stuks, m&sup2;, uur, meter.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {eenheden.map((e) => (
+                <Badge
+                  key={e}
+                  variant="outline"
+                  className="gap-1 pl-2.5 pr-1 py-1"
+                >
+                  {e}
+                  <button
+                    onClick={() => removeEenheid(e)}
+                    className="ml-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-0.5"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={nieuweEenheid}
+                onChange={(e) => setNieuweEenheid(e.target.value)}
+                placeholder="Nieuwe eenheid..."
+                className="w-48"
+                onKeyDown={(e) => e.key === 'Enter' && addEenheid()}
+              />
+              <Button variant="outline" size="sm" onClick={addEenheid} disabled={!nieuweEenheid.trim()}>
+                <Plus className="h-4 w-4 mr-1" />
+                Toevoegen
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button onClick={handleSaveSettings} disabled={isSaving}>
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? 'Opslaan...' : 'Instellingen opslaan'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ---- PRODUCTEN CATALOGUS ---- */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Package className="w-5 h-5 text-blue-600" />
+                Producten Catalogus
+              </CardTitle>
+              <CardDescription>
+                Voeg hier je producten, materialen en diensten toe. Deze kun je snel kiezen bij het maken van een calculatie.
+              </CardDescription>
+            </div>
+            <Button onClick={() => { resetProductForm(); setShowProductForm(true) }} size="sm">
+              <Plus className="h-4 w-4 mr-1.5" />
+              Product toevoegen
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Product formulier */}
+          {showProductForm && (
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700 space-y-4">
+              <h4 className="font-medium text-sm text-gray-900 dark:text-white">
+                {editProductId ? 'Product bewerken' : 'Nieuw product toevoegen'}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Productnaam *</Label>
+                  <Input
+                    value={productNaam}
+                    onChange={(e) => setProductNaam(e.target.value)}
+                    placeholder="Bijv. Dibond plaat 3mm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Categorie</Label>
+                  <Select value={productCategorie} onValueChange={setProductCategorie}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Kies categorie..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categorieen.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Eenheid</Label>
+                  <Select value={productEenheid} onValueChange={setProductEenheid}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eenheden.map((e) => (
+                        <SelectItem key={e} value={e}>{e}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Inkoopprijs per eenheid</Label>
+                  <Input
+                    type="number"
+                    value={productInkoop || ''}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0
+                      setProductInkoop(val)
+                      setProductVerkoop(val * (1 + productMarge / 100))
+                    }}
+                    min={0}
+                    step={0.01}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Verkoopprijs per eenheid</Label>
+                  <Input
+                    type="number"
+                    value={productVerkoop || ''}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0
+                      setProductVerkoop(val)
+                      if (productInkoop > 0) {
+                        setProductMarge(((val - productInkoop) / productInkoop) * 100)
+                      }
+                    }}
+                    min={0}
+                    step={0.01}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Marge (%)</Label>
+                  <Input
+                    type="number"
+                    value={Math.round(productMarge * 10) / 10 || ''}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0
+                      setProductMarge(val)
+                      setProductVerkoop(productInkoop * (1 + val / 100))
+                    }}
+                    step={1}
+                    placeholder="35"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">BTW tarief</Label>
+                  <Select value={String(productBtw)} onValueChange={(v) => setProductBtw(parseInt(v))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="21">21% (standaard)</SelectItem>
+                      <SelectItem value="9">9% (verlaagd)</SelectItem>
+                      <SelectItem value="0">0% (vrijgesteld)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-xs">Notitie (optioneel)</Label>
+                  <Input
+                    value={productNotitie}
+                    onChange={(e) => setProductNotitie(e.target.value)}
+                    placeholder="Eventuele toelichting..."
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={resetProductForm}>
+                  Annuleren
+                </Button>
+                <Button size="sm" onClick={handleSaveProduct} disabled={isSaving || !productNaam.trim()}>
+                  <Save className="h-4 w-4 mr-1.5" />
+                  {editProductId ? 'Bijwerken' : 'Toevoegen'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Producten lijst per categorie */}
+          {isLoading ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">Laden...</p>
+          ) : producten.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Nog geen producten in je catalogus.
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Voeg producten toe zodat je ze snel kunt kiezen bij het maken van een calculatie.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(productenPerCategorie).map(([categorie, prods]) => (
+                <div key={categorie}>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    {categorie} ({prods.length})
+                  </h4>
+                  <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-800/50">
+                          <th className="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-400">Product</th>
+                          <th className="text-center px-3 py-2 font-medium text-gray-600 dark:text-gray-400 w-20">Eenheid</th>
+                          <th className="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400 w-24">Inkoop</th>
+                          <th className="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400 w-24">Verkoop</th>
+                          <th className="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400 w-20">Marge</th>
+                          <th className="text-center px-3 py-2 font-medium text-gray-600 dark:text-gray-400 w-16">BTW</th>
+                          <th className="text-center px-3 py-2 font-medium text-gray-600 dark:text-gray-400 w-16">Actief</th>
+                          <th className="w-20" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {prods.map((p) => (
+                          <tr key={p.id} className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                            <td className="px-3 py-2">
+                              <span className="font-medium text-gray-900 dark:text-white">{p.naam}</span>
+                              {p.notitie && (
+                                <span className="block text-xs text-gray-400 dark:text-gray-500">{p.notitie}</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{p.eenheid}</td>
+                            <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">
+                              {formatCurrency(p.inkoop_prijs)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-medium text-gray-900 dark:text-gray-100">
+                              {formatCurrency(p.verkoop_prijs)}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <span className={`font-medium ${
+                                p.standaard_marge > 0
+                                  ? 'text-green-600 dark:text-green-400'
+                                  : 'text-gray-600 dark:text-gray-400'
+                              }`}>
+                                {Math.round(p.standaard_marge)}%
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">
+                              {p.btw_percentage}%
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <Switch
+                                checked={p.actief}
+                                onCheckedChange={() => handleToggleProductActief(p)}
+                              />
+                            </td>
+                            <td className="px-2 py-2">
+                              <div className="flex items-center gap-0.5">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditProduct(p)}
+                                  className="h-7 w-7 text-gray-400 hover:text-blue-500"
+                                >
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteProduct(p.id)}
+                                  className="h-7 w-7 text-gray-400 hover:text-red-500"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ---- TEMPLATES ---- */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Copy className="w-5 h-5 text-blue-600" />
+            Calculatie Templates
+          </CardTitle>
+          <CardDescription>
+            Sla veelgebruikte calculaties op als template. Zo hoef je bij vergelijkbare offertes niet steeds
+            dezelfde producten opnieuw toe te voegen.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {templates.length === 0 ? (
+            <div className="text-center py-8">
+              <Copy className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Nog geen templates aangemaakt.
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Templates worden automatisch beschikbaar wanneer je er een aanmaakt vanuit het calculatiescherm.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {templates.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                >
+                  <div>
+                    <p className="font-medium text-sm text-gray-900 dark:text-white">{t.naam}</p>
+                    {t.beschrijving && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.beschrijving}</p>
+                    )}
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      {t.regels.length} regel(s)
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={t.actief ? 'default' : 'secondary'}>
+                      {t.actief ? 'Actief' : 'Inactief'}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={async () => {
+                        try {
+                          await deleteCalculatieTemplate(t.id)
+                          setTemplates((prev) => prev.filter((tp) => tp.id !== t.id))
+                          toast.success('Template verwijderd')
+                        } catch (err) {
+                          toast.error('Kon template niet verwijderen')
+                        }
+                      }}
+                      className="h-7 w-7 text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
