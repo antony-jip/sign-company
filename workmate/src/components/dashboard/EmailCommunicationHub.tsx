@@ -64,7 +64,9 @@ export function EmailCommunicationHub() {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Mail className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-400 shadow-md">
+              <Mail className="h-4 w-4 text-white" />
+            </div>
             <span>Recente Berichten</span>
           </CardTitle>
           {recentUnread.length > 0 && (
@@ -136,7 +138,7 @@ export function EmailCommunicationHub() {
         <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
           <Link
             to="/email"
-            className="flex items-center justify-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors py-1"
+            className="flex items-center justify-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors py-1"
           >
             Bekijk alle berichten
             <ArrowRight className="h-4 w-4" />

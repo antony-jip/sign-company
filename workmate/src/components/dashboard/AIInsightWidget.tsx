@@ -12,6 +12,7 @@ import {
   FileText,
   FolderKanban,
   Loader2,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 import { getProjecten, getOffertes, getKlanten, getTaken } from '@/services/supabaseService'
@@ -52,7 +53,6 @@ export function AIInsightWidget() {
     const now = new Date()
     const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    // Check for expiring offertes
     const expiringOffertes = offertes.filter((o) => {
       if (o.status === 'goedgekeurd' || o.status === 'afgewezen') return false
       const geldigTot = new Date(o.geldig_tot)
@@ -63,14 +63,13 @@ export function AIInsightWidget() {
         id: 'expiring-quotes',
         message: `${expiringOffertes.length} offerte${expiringOffertes.length > 1 ? 's' : ''} verlo${expiringOffertes.length > 1 ? 'pen' : 'opt'} binnen 7 dagen`,
         icon: AlertTriangle,
-        iconColor: 'text-orange-600 dark:text-orange-400',
-        iconBg: 'bg-orange-50 dark:bg-orange-900/30',
+        iconColor: 'text-amber-500',
+        iconBg: 'bg-amber-500/10',
         actionLabel: 'Bekijk offertes',
         href: '/offertes',
       })
     }
 
-    // Check for overdue tasks
     const overdueTaken = taken.filter((t) => {
       if (t.status === 'klaar') return false
       return new Date(t.deadline) < now
@@ -80,14 +79,13 @@ export function AIInsightWidget() {
         id: 'overdue-tasks',
         message: `${overdueTaken.length} ta${overdueTaken.length > 1 ? 'ken' : 'ak'} ${overdueTaken.length > 1 ? 'zijn' : 'is'} verlopen en ${overdueTaken.length > 1 ? 'vereisen' : 'vereist'} actie`,
         icon: Clock,
-        iconColor: 'text-red-600 dark:text-red-400',
-        iconBg: 'bg-red-50 dark:bg-red-900/30',
+        iconColor: 'text-red-500',
+        iconBg: 'bg-red-500/10',
         actionLabel: 'Bekijk taken',
         href: '/taken',
       })
     }
 
-    // Check for active projects nearing deadline
     const nearDeadlineProjects = projecten.filter((p) => {
       if (p.status === 'afgerond') return false
       const deadline = new Date(p.eind_datum)
@@ -98,64 +96,60 @@ export function AIInsightWidget() {
         id: 'deadline-projects',
         message: `${nearDeadlineProjects.length} project${nearDeadlineProjects.length > 1 ? 'en naderen hun' : ' nadert zijn'} deadline`,
         icon: FolderKanban,
-        iconColor: 'text-blue-600 dark:text-blue-400',
-        iconBg: 'bg-blue-50 dark:bg-blue-900/30',
+        iconColor: 'text-blue-500',
+        iconBg: 'bg-blue-500/10',
         actionLabel: 'Bekijk projecten',
         href: '/projecten',
       })
     }
 
-    // Show completed projects
     const completedProjects = projecten.filter((p) => p.status === 'afgerond')
     if (completedProjects.length > 0) {
       items.push({
         id: 'completed-projects',
         message: `${completedProjects.length} project${completedProjects.length > 1 ? 'en' : ''} succesvol afgerond`,
         icon: CheckCircle,
-        iconColor: 'text-green-600 dark:text-green-400',
-        iconBg: 'bg-green-50 dark:bg-green-900/30',
+        iconColor: 'text-emerald-500',
+        iconBg: 'bg-emerald-500/10',
         actionLabel: 'Bekijk projecten',
         href: '/projecten',
       })
     }
 
-    // Show total klanten count
     if (klanten.length > 0) {
       const actieveKlanten = klanten.filter((k) => k.status === 'actief').length
       items.push({
         id: 'active-clients',
         message: `${actieveKlanten} actieve klant${actieveKlanten !== 1 ? 'en' : ''} in uw portfolio`,
         icon: Users,
-        iconColor: 'text-green-600 dark:text-green-400',
-        iconBg: 'bg-green-50 dark:bg-green-900/30',
+        iconColor: 'text-emerald-500',
+        iconBg: 'bg-emerald-500/10',
         actionLabel: 'Bekijk klanten',
         href: '/klanten',
       })
     }
 
-    // Show pending offertes
     const pendingOffertes = offertes.filter((o) => o.status === 'verzonden' || o.status === 'bekeken')
     if (pendingOffertes.length > 0) {
       items.push({
         id: 'pending-quotes',
         message: `${pendingOffertes.length} offerte${pendingOffertes.length > 1 ? 's' : ''} wacht${pendingOffertes.length > 1 ? 'en' : ''} op reactie`,
         icon: FileText,
-        iconColor: 'text-purple-600 dark:text-purple-400',
-        iconBg: 'bg-purple-50 dark:bg-purple-900/30',
+        iconColor: 'text-violet-500',
+        iconBg: 'bg-violet-500/10',
         actionLabel: 'Bekijk offertes',
         href: '/offertes',
       })
     }
 
-    // If no data at all, show getting-started insights
     if (items.length === 0) {
       if (klanten.length === 0) {
         items.push({
           id: 'no-clients',
           message: 'Begin met het toevoegen van uw eerste klant',
           icon: Users,
-          iconColor: 'text-blue-600 dark:text-blue-400',
-          iconBg: 'bg-blue-50 dark:bg-blue-900/30',
+          iconColor: 'text-blue-500',
+          iconBg: 'bg-blue-500/10',
           actionLabel: 'Klanten beheren',
           href: '/klanten',
         })
@@ -165,8 +159,8 @@ export function AIInsightWidget() {
           id: 'no-projects',
           message: 'Maak uw eerste project aan om aan de slag te gaan',
           icon: FolderKanban,
-          iconColor: 'text-green-600 dark:text-green-400',
-          iconBg: 'bg-green-50 dark:bg-green-900/30',
+          iconColor: 'text-emerald-500',
+          iconBg: 'bg-emerald-500/10',
           actionLabel: 'Nieuw project',
           href: '/projecten/nieuw',
         })
@@ -176,8 +170,8 @@ export function AIInsightWidget() {
           id: 'no-quotes',
           message: 'Stel uw eerste offerte op voor een klant',
           icon: FileText,
-          iconColor: 'text-purple-600 dark:text-purple-400',
-          iconBg: 'bg-purple-50 dark:bg-purple-900/30',
+          iconColor: 'text-violet-500',
+          iconBg: 'bg-violet-500/10',
           actionLabel: 'Nieuwe offerte',
           href: '/offertes/nieuw',
         })
@@ -188,22 +182,26 @@ export function AIInsightWidget() {
   }, [projecten, offertes, klanten, taken])
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500">
-            <Bot className="h-4 w-4 text-white" />
+          <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 shadow-md">
+            <Sparkles className="h-4 w-4 text-white" />
           </div>
           <span>AI Inzichten</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2">
         {loading ? (
           <div className="flex items-center justify-center py-6">
-            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            <div className="flex gap-1">
+              <div className="typing-dot w-2 h-2 rounded-full bg-primary/40" />
+              <div className="typing-dot w-2 h-2 rounded-full bg-primary/40" />
+              <div className="typing-dot w-2 h-2 rounded-full bg-primary/40" />
+            </div>
           </div>
         ) : insights.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+          <p className="text-sm text-muted-foreground text-center py-4">
             Geen inzichten beschikbaar
           </p>
         ) : (
@@ -212,24 +210,20 @@ export function AIInsightWidget() {
             return (
               <div
                 key={insight.id}
-                className={`flex items-start gap-3 rounded-lg p-3 ${insight.iconBg} transition-colors duration-150`}
+                className={`flex items-start gap-3 rounded-xl p-3 ${insight.iconBg} transition-all duration-200 hover:scale-[1.01] cursor-pointer`}
+                onClick={() => navigate(insight.href)}
               >
-                <Icon
-                  className={`h-5 w-5 mt-0.5 flex-shrink-0 ${insight.iconColor}`}
-                />
+                <div className="mt-0.5 flex-shrink-0">
+                  <Icon className={`h-4.5 w-4.5 ${insight.iconColor}`} />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
+                  <p className="text-sm text-foreground/80 leading-snug">
                     {insight.message}
                   </p>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="h-auto p-0 mt-1 text-xs font-medium"
-                    onClick={() => navigate(insight.href)}
-                  >
+                  <span className="text-xs font-medium text-primary mt-1 inline-flex items-center gap-1">
                     {insight.actionLabel}
-                    <ArrowRight className="h-3 w-3 ml-1" />
-                  </Button>
+                    <ArrowRight className="h-3 w-3" />
+                  </span>
                 </div>
               </div>
             )

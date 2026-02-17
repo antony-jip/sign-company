@@ -5,7 +5,7 @@ import {
   Users,
   FileText,
   PiggyBank,
-  Loader2,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react'
 import { getProjecten, getKlanten, getOffertes } from '@/services/supabaseService'
@@ -17,8 +17,8 @@ interface StatCard {
   value: string
   subtitle: string
   icon: LucideIcon
-  iconBg: string
-  iconColor: string
+  gradient: string
+  accentColor: string
 }
 
 export function StatisticsCards() {
@@ -52,9 +52,13 @@ export function StatisticsCards() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-6 flex items-center justify-center h-[120px]">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          <Card key={i} className="overflow-hidden">
+            <CardContent className="p-6 h-[120px]">
+              <div className="space-y-3">
+                <div className="h-3 w-24 animate-shimmer rounded" />
+                <div className="h-7 w-16 animate-shimmer rounded" />
+                <div className="h-2.5 w-20 animate-shimmer rounded" />
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -72,64 +76,66 @@ export function StatisticsCards() {
       value: actieveProjecten.toString(),
       subtitle: `${projecten.length} totaal`,
       icon: FolderKanban,
-      iconBg: 'bg-blue-100 dark:bg-blue-900/50',
-      iconColor: 'text-blue-600 dark:text-blue-400',
+      gradient: 'from-blue-500 to-cyan-400',
+      accentColor: 'text-blue-500',
     },
     {
       title: 'Totaal Klanten',
       value: totaalKlanten.toString(),
       subtitle: `${klanten.filter((k) => k.status === 'actief').length} actief`,
       icon: Users,
-      iconBg: 'bg-green-100 dark:bg-green-900/50',
-      iconColor: 'text-green-600 dark:text-green-400',
+      gradient: 'from-emerald-500 to-teal-400',
+      accentColor: 'text-emerald-500',
     },
     {
       title: 'Openstaande Offertes',
       value: formatCurrency(openstaandeOffertes),
       subtitle: `${offertes.filter((o) => ['verzonden', 'bekeken', 'concept'].includes(o.status)).length} offertes`,
       icon: FileText,
-      iconBg: 'bg-purple-100 dark:bg-purple-900/50',
-      iconColor: 'text-purple-600 dark:text-purple-400',
+      gradient: 'from-violet-500 to-purple-400',
+      accentColor: 'text-violet-500',
     },
     {
       title: 'Goedgekeurde Offertes',
       value: formatCurrency(goedgekeurdeOffertes),
       subtitle: `${offertes.filter((o) => o.status === 'goedgekeurd').length} goedgekeurd`,
       icon: PiggyBank,
-      iconBg: 'bg-orange-100 dark:bg-orange-900/50',
-      iconColor: 'text-orange-600 dark:text-orange-400',
+      gradient: 'from-amber-500 to-orange-400',
+      accentColor: 'text-amber-500',
     },
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 wm-stagger">
       {stats.map((stat) => {
         const Icon = stat.icon
 
         return (
           <Card
             key={stat.title}
-            className="hover:shadow-md transition-shadow duration-200 cursor-default"
+            className="wm-stat-card cursor-default group overflow-hidden"
           >
-            <CardContent className="p-6">
+            <CardContent className="p-6 relative">
+              {/* Gradient accent line */}
+              <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${stat.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <p className="text-sm font-medium text-muted-foreground">
                     {stat.title}
                   </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-2xl font-bold text-foreground tracking-tight">
                     {stat.value}
                   </p>
                 </div>
-                <div
-                  className={`flex items-center justify-center h-12 w-12 rounded-full ${stat.iconBg}`}
-                >
-                  <Icon className={`h-6 w-6 ${stat.iconColor}`} />
+                <div className={`flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
+                  <Icon className="h-5 w-5 text-white" />
                 </div>
               </div>
 
-              <div className="mt-4">
-                <span className="text-xs text-gray-400 dark:text-gray-500">
+              <div className="mt-4 flex items-center gap-1.5">
+                <TrendingUp className={`h-3.5 w-3.5 ${stat.accentColor}`} />
+                <span className="text-xs text-muted-foreground">
                   {stat.subtitle}
                 </span>
               </div>

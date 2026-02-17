@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import { Mail, Lock, Eye, EyeOff, User, Loader2 } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Loader2, Sparkles } from 'lucide-react'
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0
@@ -82,203 +82,217 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-700 p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0">
-        <CardHeader className="text-center pb-2">
-          {/* Workmate Logo */}
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">W</span>
-            </div>
-            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">Workmate</span>
-          </div>
-          <CardTitle className="text-2xl font-bold">Account aanmaken</CardTitle>
-          <CardDescription className="text-base">Maak een nieuw account aan om te beginnen</CardDescription>
-        </CardHeader>
+    <div className="min-h-screen flex items-center justify-center wm-login-bg p-4 relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/20 rounded-full animate-float" />
+        <div className="absolute top-3/4 right-1/4 w-1.5 h-1.5 bg-white/15 rounded-full animate-float" style={{ animationDelay: '1s' }} />
+      </div>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="voornaam">Voornaam</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="voornaam"
-                    type="text"
-                    placeholder="Jan"
-                    value={voornaam}
-                    onChange={(e) => setVoornaam(e.target.value)}
-                    className="pl-10"
-                    disabled={isLoading}
-                    autoComplete="given-name"
-                  />
-                </div>
+      <div className="w-full max-w-md animate-scale-in relative z-10">
+        <Card className="shadow-2xl border-0 backdrop-blur-sm bg-card/95">
+          <CardHeader className="text-center pb-2">
+            {/* Workmate Logo */}
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="achternaam">Achternaam</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="achternaam"
-                    type="text"
-                    placeholder="de Vries"
-                    value={achternaam}
-                    onChange={(e) => setAchternaam(e.target.value)}
-                    className="pl-10"
-                    disabled={isLoading}
-                    autoComplete="family-name"
-                  />
-                </div>
-              </div>
+              <span className="text-2xl font-bold text-foreground">Workmate</span>
             </div>
+            <CardTitle className="text-2xl font-bold">Account aanmaken</CardTitle>
+            <CardDescription className="text-base">Maak een nieuw account aan om te beginnen</CardDescription>
+          </CardHeader>
 
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label htmlFor="register-email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="register-email"
-                  type="email"
-                  placeholder="naam@bedrijf.nl"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  disabled={isLoading}
-                  autoComplete="email"
-                />
-              </div>
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="register-password">Wachtwoord</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="register-password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Minimaal 6 tekens"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              {/* Password Strength Indicator */}
-              {password.length > 0 && (
-                <div className="space-y-1">
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((level) => (
-                      <div
-                        key={level}
-                        className={`h-1.5 flex-1 rounded-full transition-colors ${
-                          level <= passwordStrength.score
-                            ? passwordStrength.color
-                            : 'bg-gray-200 dark:bg-gray-700'
-                        }`}
-                      />
-                    ))}
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="voornaam">Voornaam</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="voornaam"
+                      type="text"
+                      placeholder="Jan"
+                      value={voornaam}
+                      onChange={(e) => setVoornaam(e.target.value)}
+                      className="pl-10 h-11"
+                      disabled={isLoading}
+                      autoComplete="given-name"
+                    />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Sterkte: {passwordStrength.label}
-                  </p>
                 </div>
-              )}
-            </div>
-
-            {/* Confirm Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Bevestig Wachtwoord</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="confirm-password"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Herhaal je wachtwoord"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`pl-10 pr-10 ${
-                    !passwordsMatch ? 'border-red-500 focus-visible:ring-red-500' : ''
-                  }`}
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  tabIndex={-1}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
+                <div className="space-y-2">
+                  <Label htmlFor="achternaam">Achternaam</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="achternaam"
+                      type="text"
+                      placeholder="de Vries"
+                      value={achternaam}
+                      onChange={(e) => setAchternaam(e.target.value)}
+                      className="pl-10 h-11"
+                      disabled={isLoading}
+                      autoComplete="family-name"
+                    />
+                  </div>
+                </div>
               </div>
-              {!passwordsMatch && (
-                <p className="text-xs text-red-500">Wachtwoorden komen niet overeen</p>
-              )}
-            </div>
 
-            {/* Terms Checkbox */}
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="terms"
-                checked={agreeTerms}
-                onCheckedChange={(checked) => setAgreeTerms(checked as boolean)}
-                disabled={isLoading}
-                className="mt-0.5"
-              />
-              <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-snug">
-                Ik ga akkoord met de{' '}
-                <span className="text-blue-600 hover:underline dark:text-blue-400 cursor-pointer">
-                  algemene voorwaarden
-                </span>
-              </Label>
-            </div>
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="register-email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="register-email"
+                    type="email"
+                    placeholder="naam@bedrijf.nl"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 h-11"
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
 
-            {/* Register Button */}
-            <Button type="submit" className="w-full" disabled={isLoading || !agreeTerms}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Account aanmaken...
-                </>
-              ) : (
-                'Account aanmaken'
-              )}
-            </Button>
+              {/* Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="register-password">Wachtwoord</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="register-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Minimaal 6 tekens"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10 h-11"
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {/* Password Strength Indicator */}
+                {password.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <div
+                          key={level}
+                          className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                            level <= passwordStrength.score
+                              ? passwordStrength.color
+                              : 'bg-muted'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Sterkte: {passwordStrength.label}
+                    </p>
+                  </div>
+                )}
+              </div>
 
-            {/* Login Link */}
-            <p className="text-center text-sm text-muted-foreground">
-              Al een account?{' '}
-              <Link
-                to="/login"
-                className="text-blue-600 hover:text-blue-700 hover:underline font-medium dark:text-blue-400"
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Bevestig Wachtwoord</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Herhaal je wachtwoord"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`pl-10 pr-10 h-11 ${
+                      !passwordsMatch ? 'border-destructive focus-visible:ring-destructive' : ''
+                    }`}
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {!passwordsMatch && (
+                  <p className="text-xs text-destructive">Wachtwoorden komen niet overeen</p>
+                )}
+              </div>
+
+              {/* Terms Checkbox */}
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="terms"
+                  checked={agreeTerms}
+                  onCheckedChange={(checked) => setAgreeTerms(checked as boolean)}
+                  disabled={isLoading}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-snug">
+                  Ik ga akkoord met de{' '}
+                  <span className="text-primary hover:underline cursor-pointer">
+                    algemene voorwaarden
+                  </span>
+                </Label>
+              </div>
+
+              {/* Register Button */}
+              <Button
+                type="submit"
+                className="w-full h-11 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 transition-all duration-200"
+                disabled={isLoading || !agreeTerms}
               >
-                Inloggen
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Account aanmaken...
+                  </>
+                ) : (
+                  'Account aanmaken'
+                )}
+              </Button>
+
+              {/* Login Link */}
+              <p className="text-center text-sm text-muted-foreground">
+                Al een account?{' '}
+                <Link
+                  to="/login"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Inloggen
+                </Link>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

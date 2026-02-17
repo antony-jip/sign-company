@@ -80,7 +80,9 @@ export function CalendarMiniWidget() {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-pink-500 to-rose-400 shadow-md">
+            <Calendar className="h-4 w-4 text-white" />
+          </div>
           <span>Kalender</span>
         </CardTitle>
       </CardHeader>
@@ -123,8 +125,8 @@ export function CalendarMiniWidget() {
                 className={cn(
                   'relative flex flex-col items-center justify-center h-8 rounded-md text-sm transition-colors',
                   isTodayDate
-                    ? 'bg-blue-600 text-white font-bold'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold shadow-sm'
+                    : 'text-foreground/80 hover:bg-muted/60'
                 )}
               >
                 {format(day, 'd')}

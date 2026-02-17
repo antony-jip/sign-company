@@ -2,50 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================================
+   WORKMATE DESIGN SYSTEM
+   A premium, distinctive UI built for professionals.
+   ================================================================ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core palette - warm & sophisticated */
+    --background: 220 20% 97%;
+    --foreground: 224 40% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 40% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --popover-foreground: 224 40% 10%;
+    --primary: 240 80% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 224 40% 10%;
+    --muted: 220 16% 93%;
+    --muted-foreground: 220 10% 46%;
+    --accent: 262 70% 58%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 16% 90%;
+    --input: 220 16% 90%;
+    --ring: 240 80% 58%;
+    --radius: 0.75rem;
+
+    /* Custom design tokens */
+    --wm-gradient-start: #6366f1;
+    --wm-gradient-mid: #8b5cf6;
+    --wm-gradient-end: #a855f7;
+    --wm-sidebar-bg: 230 25% 12%;
+    --wm-sidebar-hover: 230 20% 18%;
+    --wm-sidebar-active: 240 80% 58%;
+    --wm-glass: rgba(255, 255, 255, 0.72);
+    --wm-glass-border: rgba(255, 255, 255, 0.3);
+    --wm-shadow-color: 220 60% 50%;
+    --wm-glow: 0 0 40px rgba(99, 102, 241, 0.15);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background: 228 24% 6%;
+    --foreground: 220 20% 95%;
+    --card: 228 22% 9%;
+    --card-foreground: 220 20% 95%;
+    --popover: 228 22% 9%;
+    --popover-foreground: 220 20% 95%;
+    --primary: 240 76% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 228 18% 14%;
+    --secondary-foreground: 220 20% 95%;
+    --muted: 228 16% 14%;
+    --muted-foreground: 220 12% 56%;
+    --accent: 262 65% 62%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 228 16% 14%;
+    --input: 228 16% 14%;
+    --ring: 240 76% 65%;
+
+    --wm-sidebar-bg: 230 28% 7%;
+    --wm-sidebar-hover: 230 22% 12%;
+    --wm-glass: rgba(15, 17, 25, 0.82);
+    --wm-glass-border: rgba(255, 255, 255, 0.06);
+    --wm-glow: 0 0 40px rgba(99, 102, 241, 0.12);
   }
 }
 
@@ -54,40 +78,371 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
 
-/* Custom scrollbar */
+/* ================================================================
+   SCROLLBAR
+   ================================================================ */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 3px;
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 10px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--muted-foreground) / 0.35);
 }
 
-/* Typing indicator animation for AI chat */
+/* ================================================================
+   CUSTOM ANIMATIONS
+   ================================================================ */
+
+/* Fade in up — for page content */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* Fade in — simple opacity */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Slide in from left — sidebar items */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.25s ease-out forwards;
+}
+
+/* Scale in — modals, dropdowns */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Subtle float — for hero elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Shimmer — loading skeleton */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted-foreground) / 0.08) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Gradient rotate — for accent borders */
+@keyframes gradientRotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+
+/* Pulse glow */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.25); }
+  50% { box-shadow: 0 0 20px 4px rgba(99, 102, 241, 0.15); }
+}
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+/* Typing indicator */
 @keyframes bounce {
   0%, 60%, 100% { transform: translateY(0); }
   30% { transform: translateY(-4px); }
 }
-
 .typing-dot {
   animation: bounce 1.4s infinite ease-in-out;
 }
-
 .typing-dot:nth-child(1) { animation-delay: 0s; }
 .typing-dot:nth-child(2) { animation-delay: 0.2s; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ================================================================
+   GLASSMORPHISM
+   ================================================================ */
+.wm-glass {
+  background: var(--wm-glass);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--wm-glass-border);
+}
+
+.wm-glass-subtle {
+  background: var(--wm-glass);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+}
+
+/* ================================================================
+   SIDEBAR STYLING
+   ================================================================ */
+.wm-sidebar {
+  background: hsl(var(--wm-sidebar-bg));
+}
+
+.wm-sidebar-item {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wm-sidebar-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, var(--wm-gradient-start), var(--wm-gradient-end));
+  transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wm-sidebar-item.active::before {
+  height: 60%;
+}
+
+.wm-sidebar-item.active {
+  background: hsl(var(--wm-sidebar-hover));
+}
+
+/* ================================================================
+   CARD ENHANCEMENTS
+   ================================================================ */
+.wm-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid hsl(var(--border));
+}
+
+.wm-card:hover {
+  border-color: hsl(var(--primary) / 0.2);
+  box-shadow:
+    0 4px 24px -4px hsl(var(--wm-shadow-color) / 0.08),
+    0 0 0 1px hsl(var(--primary) / 0.05);
+  transform: translateY(-1px);
+}
+
+/* Stat card gradient borders */
+.wm-stat-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wm-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--stat-accent, linear-gradient(90deg, var(--wm-gradient-start), var(--wm-gradient-end)));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.wm-stat-card:hover::after {
+  opacity: 1;
+}
+
+.wm-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 32px -8px hsl(var(--wm-shadow-color) / 0.12),
+    0 0 0 1px hsl(var(--border));
+}
+
+/* ================================================================
+   GRADIENT BACKGROUNDS
+   ================================================================ */
+.wm-mesh-gradient {
+  background:
+    radial-gradient(at 20% 80%, rgba(99, 102, 241, 0.12) 0, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(139, 92, 246, 0.08) 0, transparent 50%),
+    radial-gradient(at 40% 40%, rgba(168, 85, 247, 0.06) 0, transparent 50%),
+    hsl(var(--background));
+}
+
+.dark .wm-mesh-gradient {
+  background:
+    radial-gradient(at 20% 80%, rgba(99, 102, 241, 0.06) 0, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(139, 92, 246, 0.04) 0, transparent 50%),
+    radial-gradient(at 40% 40%, rgba(168, 85, 247, 0.03) 0, transparent 50%),
+    hsl(var(--background));
+}
+
+.wm-gradient-text {
+  background: linear-gradient(135deg, var(--wm-gradient-start), var(--wm-gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Login page animated gradient */
+.wm-login-bg {
+  background: linear-gradient(-45deg, #1e1b4b, #312e81, #4338ca, #6366f1, #7c3aed, #5b21b6);
+  background-size: 400% 400%;
+  animation: loginGradient 15s ease infinite;
+}
+
+@keyframes loginGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ================================================================
+   QUICK ACTION BUTTONS
+   ================================================================ */
+.wm-quick-action {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wm-quick-action::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.03),
+    hsl(var(--accent) / 0.03)
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.wm-quick-action:hover::before {
+  opacity: 1;
+}
+
+.wm-quick-action:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px -8px hsl(var(--wm-shadow-color) / 0.15);
+}
+
+.wm-quick-action:hover .wm-action-icon {
+  transform: scale(1.1);
+}
+
+.wm-action-icon {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ================================================================
+   NOTIFICATION DOT
+   ================================================================ */
+.wm-notification-dot {
+  position: relative;
+}
+.wm-notification-dot::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid hsl(var(--background));
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* ================================================================
+   ACTIVE NAV PILL
+   ================================================================ */
+.wm-nav-pill {
+  position: relative;
+  z-index: 1;
+}
+
+.wm-nav-pill.active {
+  color: white !important;
+}
+
+.wm-nav-pill.active .wm-nav-bg {
+  opacity: 1;
+}
+
+.wm-nav-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--wm-gradient-start), var(--wm-gradient-end));
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: -1;
+}
+
+/* ================================================================
+   UTILITY CLASSES
+   ================================================================ */
+.wm-border-gradient {
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+
+.wm-border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--wm-gradient-start), var(--wm-gradient-end));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Stagger children animation */
+.wm-stagger > * {
+  opacity: 0;
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+.wm-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.wm-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.wm-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.wm-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.wm-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.wm-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.wm-stagger > *:nth-child(7) { animation-delay: 0.35s; }
+.wm-stagger > *:nth-child(8) { animation-delay: 0.4s; }

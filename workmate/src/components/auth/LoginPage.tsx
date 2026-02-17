@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import { Mail, Lock, Eye, EyeOff, Globe, Loader2 } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Globe, Loader2, Sparkles } from 'lucide-react'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -40,146 +40,159 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-700 p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0">
-        <CardHeader className="text-center pb-2">
-          {/* Workmate Logo */}
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">W</span>
-            </div>
-            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">Workmate</span>
-          </div>
-          <CardTitle className="text-2xl font-bold">Welkom terug</CardTitle>
-          <CardDescription className="text-base">Log in op je account</CardDescription>
-        </CardHeader>
+    <div className="min-h-screen flex items-center justify-center wm-login-bg p-4 relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/20 rounded-full animate-float" />
+        <div className="absolute top-3/4 right-1/4 w-1.5 h-1.5 bg-white/15 rounded-full animate-float" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 right-1/3 w-1 h-1 bg-white/10 rounded-full animate-float" style={{ animationDelay: '2s' }} />
+      </div>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="naam@bedrijf.nl"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  disabled={isLoading}
-                  autoComplete="email"
-                />
+      <div className="w-full max-w-md animate-scale-in relative z-10">
+        <Card className="shadow-2xl border-0 backdrop-blur-sm bg-card/95">
+          <CardHeader className="text-center pb-2">
+            {/* Workmate Logo */}
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
+              <span className="text-2xl font-bold text-foreground">Workmate</span>
             </div>
+            <CardTitle className="text-2xl font-bold">Welkom terug</CardTitle>
+            <CardDescription className="text-base">Log in op je account</CardDescription>
+          </CardHeader>
 
-            {/* Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Wachtwoord</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Voer je wachtwoord in"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
-                  disabled={isLoading}
-                  autoComplete="current-password"
-                />
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="naam@bedrijf.nl"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 h-11"
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="password">Wachtwoord</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Voer je wachtwoord in"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10 h-11"
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    disabled={isLoading}
+                  />
+                  <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+                    Onthoud mij
+                  </Label>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  tabIndex={-1}
+                  onClick={() => toast.info('Wachtwoord reset is nog niet geconfigureerd. Neem contact op met de beheerder.')}
+                  className="text-sm text-primary hover:underline font-medium"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  Wachtwoord vergeten?
                 </button>
               </div>
-            </div>
 
-            {/* Remember Me */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              {/* Login Button */}
+              <Button
+                type="submit"
+                className="w-full h-11 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 transition-all duration-200"
                 disabled={isLoading}
-              />
-              <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                Onthoud mij
-              </Label>
-            </div>
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Bezig met inloggen...
+                  </>
+                ) : (
+                  'Inloggen'
+                )}
+              </Button>
 
-            {/* Login Button */}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Bezig met inloggen...
-                </>
-              ) : (
-                'Inloggen'
-              )}
-            </Button>
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">of</span>
+                </div>
+              </div>
 
-            {/* Forgot Password */}
-            <div className="text-center">
-              <button
+              {/* Google Login */}
+              <Button
                 type="button"
-                onClick={() => toast.info('Wachtwoord reset is nog niet geconfigureerd. Neem contact op met de beheerder.')}
-                className="text-sm text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
+                variant="outline"
+                className="w-full h-11"
+                disabled={isLoading}
+                onClick={() => toast.info('Google login is nog niet geconfigureerd')}
               >
-                Wachtwoord vergeten?
-              </button>
-            </div>
+                <Globe className="mr-2 h-4 w-4" />
+                Inloggen met Google
+              </Button>
 
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">of</span>
-              </div>
-            </div>
+              {/* Register Link */}
+              <p className="text-center text-sm text-muted-foreground">
+                Nog geen account?{' '}
+                <Link
+                  to="/register"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Registreer
+                </Link>
+              </p>
 
-            {/* Google Login */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              disabled={isLoading}
-              onClick={() => toast.info('Google login is nog niet geconfigureerd')}
-            >
-              <Globe className="mr-2 h-4 w-4" />
-              Inloggen met Google
-            </Button>
-
-            {/* Register Link */}
-            <p className="text-center text-sm text-muted-foreground">
-              Nog geen account?{' '}
-              <Link
-                to="/register"
-                className="text-blue-600 hover:text-blue-700 hover:underline font-medium dark:text-blue-400"
-              >
-                Registreer
-              </Link>
-            </p>
-
-            {/* Demo Mode Notice */}
-            <p className="text-center text-xs text-muted-foreground mt-4">
-              Demo modus: gebruik elk email/wachtwoord als Supabase niet geconfigureerd is
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+              {/* Demo Mode Notice */}
+              <p className="text-center text-xs text-muted-foreground/60 mt-4">
+                Demo modus: gebruik elk email/wachtwoord als Supabase niet geconfigureerd is
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

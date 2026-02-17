@@ -9,7 +9,7 @@ export function AppLayout() {
   const { isCollapsed } = useSidebar()
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
+    <div className="flex h-screen overflow-hidden wm-mesh-gradient">
       <Sidebar />
       <div
         className={cn(
@@ -18,7 +18,7 @@ export function AppLayout() {
       >
         <Header />
         <main className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-6 max-w-[1600px] mx-auto w-full">
+          <div className="p-4 md:p-6 max-w-[1600px] mx-auto w-full animate-fade-in-up">
             <Outlet />
           </div>
         </main>

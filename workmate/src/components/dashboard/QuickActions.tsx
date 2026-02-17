@@ -1,73 +1,66 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { FolderPlus, FilePlus, UserPlus, Upload, Newspaper, Mail } from 'lucide-react'
+import { FolderPlus, FilePlus, UserPlus, Upload, Newspaper, Mail, ArrowUpRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface QuickAction {
   label: string
+  description: string
   icon: LucideIcon
   href: string
-  iconBg: string
-  iconColor: string
-  hoverBorder: string
+  gradient: string
 }
 
 const actions: QuickAction[] = [
   {
     label: 'Nieuw Project',
+    description: 'Start een project',
     icon: FolderPlus,
     href: '/projecten/nieuw',
-    iconBg: 'bg-blue-100 dark:bg-blue-900/50',
-    iconColor: 'text-blue-600 dark:text-blue-400',
-    hoverBorder: 'hover:border-blue-300 dark:hover:border-blue-700',
+    gradient: 'from-blue-500 to-cyan-400',
   },
   {
     label: 'Nieuwe Offerte',
+    description: 'Maak een offerte',
     icon: FilePlus,
     href: '/offertes/nieuw',
-    iconBg: 'bg-green-100 dark:bg-green-900/50',
-    iconColor: 'text-green-600 dark:text-green-400',
-    hoverBorder: 'hover:border-green-300 dark:hover:border-green-700',
+    gradient: 'from-emerald-500 to-teal-400',
   },
   {
     label: 'Nieuwe Klant',
+    description: 'Voeg klant toe',
     icon: UserPlus,
     href: '/klanten',
-    iconBg: 'bg-purple-100 dark:bg-purple-900/50',
-    iconColor: 'text-purple-600 dark:text-purple-400',
-    hoverBorder: 'hover:border-purple-300 dark:hover:border-purple-700',
+    gradient: 'from-violet-500 to-purple-400',
   },
   {
     label: 'Nieuwsbrief',
+    description: 'Verstuur campagne',
     icon: Newspaper,
     href: '/nieuwsbrieven',
-    iconBg: 'bg-teal-100 dark:bg-teal-900/50',
-    iconColor: 'text-teal-600 dark:text-teal-400',
-    hoverBorder: 'hover:border-teal-300 dark:hover:border-teal-700',
+    gradient: 'from-teal-500 to-emerald-400',
   },
   {
     label: 'Data Import',
+    description: 'Importeer gegevens',
     icon: Upload,
     href: '/importeren',
-    iconBg: 'bg-orange-100 dark:bg-orange-900/50',
-    iconColor: 'text-orange-600 dark:text-orange-400',
-    hoverBorder: 'hover:border-orange-300 dark:hover:border-orange-700',
+    gradient: 'from-amber-500 to-orange-400',
   },
   {
     label: 'Email',
+    description: 'Stuur een email',
     icon: Mail,
     href: '/email',
-    iconBg: 'bg-indigo-100 dark:bg-indigo-900/50',
-    iconColor: 'text-indigo-600 dark:text-indigo-400',
-    hoverBorder: 'hover:border-indigo-300 dark:hover:border-indigo-700',
+    gradient: 'from-indigo-500 to-blue-400',
   },
 ]
 
 export function QuickActions() {
   return (
     <div>
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+      <h2 className="text-lg font-semibold text-foreground mb-3">
         Snelle Acties
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -75,18 +68,20 @@ export function QuickActions() {
           const Icon = action.icon
           return (
             <Link key={action.label} to={action.href}>
-              <Card
-                className={`cursor-pointer transition-all duration-200 hover:shadow-md ${action.hoverBorder}`}
-              >
-                <CardContent className="p-4 flex flex-col items-center justify-center gap-3 text-center">
-                  <div
-                    className={`flex items-center justify-center h-12 w-12 rounded-full ${action.iconBg}`}
-                  >
-                    <Icon className={`h-6 w-6 ${action.iconColor}`} />
+              <Card className="wm-quick-action cursor-pointer group overflow-hidden border-border/50">
+                <CardContent className="p-4 flex flex-col items-center justify-center gap-3 text-center relative">
+                  <div className={`wm-action-icon flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br ${action.gradient} shadow-md`}>
+                    <Icon className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {action.label}
-                  </span>
+                  <div>
+                    <span className="text-sm font-medium text-foreground block">
+                      {action.label}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground hidden sm:block">
+                      {action.description}
+                    </span>
+                  </div>
+                  <ArrowUpRight className="absolute top-3 right-3 w-3.5 h-3.5 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                 </CardContent>
               </Card>
             </Link>
