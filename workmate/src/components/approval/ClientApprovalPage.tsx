@@ -7,11 +7,18 @@ import {
   FileText,
   FileImage,
   File,
-  Download,
   Eye,
   Building2,
   Clock,
   Receipt,
+  Mail,
+  Send,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  X,
+  ZoomIn,
 } from 'lucide-react'
 import {
   getTekeningGoedkeuringByToken,
@@ -29,6 +36,10 @@ function getFileIcon(type: string) {
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
     return <FileImage className="h-10 w-10 text-purple-500" />
   return <File className="h-10 w-10 text-gray-400" />
+}
+
+function isImageType(type: string): boolean {
+  return type.includes('image') || type.includes('jpeg') || type.includes('png') || type.includes('svg') || type.includes('webp')
 }
 
 function formatFileSize(bytes: number): string {
@@ -54,6 +65,19 @@ function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; kort
   return bruto - bruto * (item.korting_percentage / 100)
 }
 
+// Progress stepper statuses
+const stappen = [
+  { key: 'verzonden', label: 'Verstuurd', icon: Send },
+  { key: 'bekeken', label: 'Bekeken', icon: Eye },
+  { key: 'besluit', label: 'Besluit', icon: CheckCircle2 },
+]
+
+function getStapIndex(status: string): number {
+  if (status === 'verzonden') return 0
+  if (status === 'bekeken') return 1
+  return 2
+}
+
 export function ClientApprovalPage() {
   const { token } = useParams<{ token: string }>()
   const [goedkeuring, setGoedkeuring] = useState<TekeningGoedkeuring | null>(null)
@@ -68,6 +92,9 @@ export function ClientApprovalPage() {
   const [revisieOpmerkingen, setRevisieOpmerkingen] = useState('')
   const [goedgekeurdDoor, setGoedgekeurdDoor] = useState('')
   const [activeTab, setActiveTab] = useState<'tekeningen' | 'offerte'>('tekeningen')
+  const [showBericht, setShowBericht] = useState(false)
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
     if (!token) return
@@ -135,7 +162,8 @@ export function ClientApprovalPage() {
         goedgekeurd_door: goedgekeurdDoor.trim(),
         goedgekeurd_op: new Date().toISOString(),
       } : null)
-      toast.success('Tekening(en) goedgekeurd! Bedankt.')
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 4000)
     } catch (err) {
       console.error('Fout bij goedkeuren:', err)
       toast.error('Er ging iets mis. Probeer het opnieuw.')
@@ -175,8 +203,8 @@ export function ClientApprovalPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <Toaster position="top-center" richColors />
         <div className="text-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto" />
-          <p className="text-gray-500 mt-4">Laden...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto" />
+          <p className="text-gray-500 mt-4 text-sm">Even geduld, we laden alles voor u...</p>
         </div>
       </div>
     )
@@ -200,8 +228,8 @@ export function ClientApprovalPage() {
     )
   }
 
-  // Already decided
   const isDecided = goedkeuring.status === 'goedgekeurd' || goedkeuring.status === 'revisie'
+  const currentStap = getStapIndex(goedkeuring.status)
 
   // Offerte totals
   const offerteSubtotaal = offerteItems.reduce((sum, item) => sum + calculateLineTotaal(item), 0)
@@ -217,24 +245,152 @@ export function ClientApprovalPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       <Toaster position="top-center" richColors />
 
+      {/* Success Animation Overlay */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-10 text-center max-w-sm mx-4 animate-in zoom-in-95">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="h-10 w-10 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Goedgekeurd!</h2>
+            <p className="text-gray-500">
+              Bedankt voor uw goedkeuring. We gaan direct aan de slag!
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setPreviewDoc(null)}>
+          <div className="relative max-w-4xl max-h-[90vh] w-full" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setPreviewDoc(null)}
+              className="absolute -top-3 -right-3 z-10 h-8 w-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100">
+                <p className="font-medium text-gray-900 text-sm">{previewDoc.naam}</p>
+              </div>
+              {isImageType(previewDoc.type) ? (
+                <div className="bg-gray-50 p-4 flex items-center justify-center min-h-[300px]">
+                  <div className="text-center">
+                    <FileImage className="h-20 w-20 text-purple-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">Afbeelding preview</p>
+                    <p className="text-xs text-gray-400 mt-1">{previewDoc.naam} ({formatFileSize(previewDoc.grootte)})</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-8 flex items-center justify-center min-h-[300px]">
+                  <div className="text-center">
+                    {getFileIcon(previewDoc.type)}
+                    <p className="text-sm text-gray-500 mt-3">{previewDoc.naam}</p>
+                    <p className="text-xs text-gray-400 mt-1">{formatFileSize(previewDoc.grootte)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-5">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center flex-shrink-0">
-              <Building2 className="h-5 w-5 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center flex-shrink-0">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">Tekening Goedkeuring</h1>
+                {project && (
+                  <p className="text-sm text-gray-500">Project: {project.naam}</p>
+                )}
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">Tekening Goedkeuring</h1>
-              {project && (
-                <p className="text-sm text-gray-500">Project: {project.naam}</p>
-              )}
-            </div>
+            {goedkeuring.revisie_nummer > 1 && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-medium">
+                Revisie {goedkeuring.revisie_nummer}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* Progress Stepper */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+          <div className="flex items-center justify-between relative">
+            {/* Connection line */}
+            <div className="absolute top-5 left-[10%] right-[10%] h-0.5 bg-gray-200" />
+            <div
+              className="absolute top-5 left-[10%] h-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-700"
+              style={{ width: `${currentStap >= 2 ? 80 : currentStap * 40}%` }}
+            />
+
+            {stappen.map((stap, index) => {
+              const Icon = stap.icon
+              const isActive = index <= currentStap
+              const isCurrent = index === currentStap
+
+              // Voor stap 3 (besluit): toon specifiek icoon op basis van status
+              let StapIcon = Icon
+              let activeColor = 'bg-blue-600'
+              if (index === 2 && goedkeuring.status === 'goedgekeurd') {
+                StapIcon = CheckCircle2
+                activeColor = 'bg-green-600'
+              } else if (index === 2 && goedkeuring.status === 'revisie') {
+                StapIcon = RotateCcw
+                activeColor = 'bg-amber-500'
+              }
+
+              return (
+                <div key={stap.key} className="relative flex flex-col items-center z-10 flex-1">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-500 ${
+                    isActive
+                      ? `${activeColor} text-white shadow-lg ${isCurrent ? 'ring-4 ring-blue-100 scale-110' : ''}`
+                      : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    <StapIcon className="h-5 w-5" />
+                  </div>
+                  <span className={`text-xs mt-2 font-medium ${
+                    isActive ? 'text-gray-900' : 'text-gray-400'
+                  }`}>
+                    {index === 2 && goedkeuring.status === 'goedgekeurd' ? 'Goedgekeurd' :
+                     index === 2 && goedkeuring.status === 'revisie' ? 'Revisie' : stap.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Original Message */}
+        {goedkeuring.email_bericht && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <button
+              onClick={() => setShowBericht(!showBericht)}
+              className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <MessageSquare className="h-4 w-4 text-blue-500" />
+                Bericht van het bedrijf
+              </div>
+              {showBericht ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+            </button>
+            {showBericht && (
+              <div className="px-5 pb-4 border-t border-gray-100">
+                <div className="bg-blue-50/50 rounded-xl p-4 mt-3">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{goedkeuring.email_bericht}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Status Banner */}
         {isDecided && (
           <div className={`rounded-xl p-5 ${
@@ -244,9 +400,13 @@ export function ClientApprovalPage() {
           }`}>
             <div className="flex items-center gap-3">
               {goedkeuring.status === 'goedgekeurd' ? (
-                <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0" />
+                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                </div>
               ) : (
-                <RotateCcw className="h-6 w-6 text-amber-600 flex-shrink-0" />
+                <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <RotateCcw className="h-5 w-5 text-amber-600" />
+                </div>
               )}
               <div>
                 <h2 className={`font-semibold ${
@@ -257,7 +417,7 @@ export function ClientApprovalPage() {
                     : 'Revisie aangevraagd'
                   }
                 </h2>
-                <p className={`text-sm ${
+                <p className={`text-sm mt-0.5 ${
                   goedkeuring.status === 'goedgekeurd' ? 'text-green-600' : 'text-amber-600'
                 }`}>
                   {goedkeuring.status === 'goedgekeurd'
@@ -313,31 +473,54 @@ export function ClientApprovalPage() {
                 <p className="text-gray-500 text-center py-8">Geen bestanden gevonden.</p>
               ) : (
                 documenten.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center gap-4 bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex-shrink-0">
-                      {getFileIcon(doc.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{doc.naam}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-gray-500">{formatFileSize(doc.grootte)}</span>
-                        <span className="text-xs text-gray-400">{doc.type}</span>
-                        <span className="text-xs text-gray-400">{formatDate(doc.created_at)}</span>
-                      </div>
-                    </div>
-                    <button
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex-shrink-0"
+                  <div key={doc.id} className="space-y-0">
+                    <div
+                      className="flex items-center gap-4 bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition-colors cursor-pointer"
+                      onClick={() => setPreviewDoc(doc)}
                     >
-                      <Eye className="h-3.5 w-3.5" />
-                      Bekijk
-                    </button>
+                      <div className="flex-shrink-0">
+                        {getFileIcon(doc.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{doc.naam}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-gray-500">{formatFileSize(doc.grootte)}</span>
+                          <span className="text-xs text-gray-400">{formatDate(doc.created_at)}</span>
+                          {isImageType(doc.type) && (
+                            <span className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                              <ZoomIn className="h-3 w-3" />
+                              Preview
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex-shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPreviewDoc(doc)
+                        }}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        Bekijk
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
             </div>
+
+            {/* Summary bar */}
+            {documenten.length > 0 && (
+              <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  {documenten.length} bestand{documenten.length > 1 ? 'en' : ''} ter goedkeuring
+                </span>
+                <span className="text-xs text-gray-400">
+                  Totaal {formatFileSize(documenten.reduce((sum, d) => sum + d.grootte, 0))}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -372,7 +555,7 @@ export function ClientApprovalPage() {
                 </thead>
                 <tbody>
                   {offerteItems.map((item, index) => (
-                    <tr key={item.id} className="border-b border-gray-100">
+                    <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50/50">
                       <td className="py-2.5 px-1 text-gray-400">{index + 1}</td>
                       <td className="py-2.5 px-1 text-gray-900">{item.beschrijving}</td>
                       <td className="py-2.5 px-1 text-right text-gray-700">{item.aantal}</td>
@@ -422,11 +605,13 @@ export function ClientApprovalPage() {
         {/* Approval Actions */}
         {!isDecided && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-4">
-            <h2 className="font-semibold text-gray-900">Uw beoordeling</h2>
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-blue-600" />
+              Uw beoordeling
+            </h2>
 
             {!showRevisieForm ? (
               <>
-                {/* Goedkeuren */}
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -437,7 +622,7 @@ export function ClientApprovalPage() {
                       value={goedgekeurdDoor}
                       onChange={e => setGoedgekeurdDoor(e.target.value)}
                       placeholder="Uw volledige naam..."
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -445,7 +630,7 @@ export function ClientApprovalPage() {
                     <button
                       onClick={handleGoedkeuren}
                       disabled={isSubmitting || !goedgekeurdDoor.trim()}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all shadow-lg shadow-green-200 disabled:shadow-none"
                     >
                       <CheckCircle2 className="h-5 w-5" />
                       {isSubmitting ? 'Bezig...' : 'Goedkeuren'}
@@ -453,7 +638,7 @@ export function ClientApprovalPage() {
                     <button
                       onClick={() => setShowRevisieForm(true)}
                       disabled={isSubmitting}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white font-medium rounded-xl transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-400 text-white font-medium rounded-xl transition-all shadow-lg shadow-amber-200 disabled:shadow-none"
                     >
                       <RotateCcw className="h-5 w-5" />
                       Revisie Aanvragen
@@ -463,7 +648,6 @@ export function ClientApprovalPage() {
               </>
             ) : (
               <>
-                {/* Revisie Form */}
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -474,8 +658,11 @@ export function ClientApprovalPage() {
                       onChange={e => setRevisieOpmerkingen(e.target.value)}
                       placeholder="Beschrijf zo duidelijk mogelijk wat er aangepast moet worden..."
                       rows={4}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
                     />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Tip: wees zo specifiek mogelijk, verwijs naar bestands- of itemnamen.
+                    </p>
                   </div>
                   <div className="flex gap-3">
                     <button
@@ -487,7 +674,7 @@ export function ClientApprovalPage() {
                     <button
                       onClick={handleRevisie}
                       disabled={isSubmitting || !revisieOpmerkingen.trim()}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all"
                     >
                       <RotateCcw className="h-5 w-5" />
                       {isSubmitting ? 'Verzenden...' : 'Revisie Versturen'}
@@ -500,11 +687,15 @@ export function ClientApprovalPage() {
         )}
 
         {/* Footer */}
-        <div className="text-center py-4">
+        <div className="text-center py-4 space-y-1">
           <p className="text-xs text-gray-400">
-            {goedkeuring.revisie_nummer > 1 && `Revisie ${goedkeuring.revisie_nummer} · `}
             Verstuurd op {formatDate(goedkeuring.created_at)}
           </p>
+          {klant && (
+            <p className="text-xs text-gray-300">
+              {klant.bedrijfsnaam || klant.contactpersoon}
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -29,6 +29,9 @@ import {
   Pencil,
   Paperclip,
   ExternalLink,
+  Trash2,
+  RefreshCw,
+  CheckCheck,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -60,6 +63,7 @@ import {
   getOffertesByProject,
   updateOfferte,
   createDocument,
+  deleteDocument,
   createTekeningGoedkeuring,
   getTekeningGoedkeuringen,
   getKlant,
@@ -465,13 +469,26 @@ export function ProjectDetail() {
 
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Receipt className="h-3.5 w-3.5 text-blue-300" />
-                  <span className="text-[10px] text-indigo-200/80 uppercase tracking-wider font-medium">Offertes</span>
+                  <CheckCircle2 className="h-3.5 w-3.5 text-blue-300" />
+                  <span className="text-[10px] text-indigo-200/80 uppercase tracking-wider font-medium">Goedkeuring</span>
                 </div>
-                <p className="text-xl font-bold">{projectOffertes.length}</p>
-                <p className="text-[10px] mt-0.5 text-indigo-200/60">
-                  {projectOffertes.filter(o => o.status === 'goedgekeurd').length} goedgekeurd
-                </p>
+                {goedkeuringen.length > 0 ? (
+                  <>
+                    <p className="text-xl font-bold">
+                      {goedkeuringen.filter(g => g.status === 'goedgekeurd').length}/{goedkeuringen.length}
+                    </p>
+                    <p className="text-[10px] mt-0.5 text-indigo-200/60">
+                      {goedkeuringen.some(g => g.status === 'revisie')
+                        ? `${goedkeuringen.filter(g => g.status === 'revisie').length} revisie(s)`
+                        : 'goedgekeurd'}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xl font-bold">-</p>
+                    <p className="text-[10px] mt-0.5 text-indigo-200/60">nog niet verstuurd</p>
+                  </>
+                )}
               </div>
 
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
@@ -721,7 +738,7 @@ export function ProjectDetail() {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 pt-1">
+                    <div className="flex items-center gap-2 pt-1 flex-wrap">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -740,6 +757,26 @@ export function ProjectDetail() {
                         <ExternalLink className="h-3 w-3 mr-1" />
                         Openen
                       </Button>
+                      {gk.status === 'revisie' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-amber-700 dark:text-amber-400 hover:text-amber-900"
+                          onClick={() => {
+                            // Pre-fill verstuur dialog for re-sending revised drawings
+                            setSelectedDocIds(gk.document_ids)
+                            setSelectedOfferteId(gk.offerte_id || '')
+                            setVerstuurOnderwerp(`Revisie - ${project.naam}`)
+                            setVerstuurBericht(
+                              `Beste ${klant?.contactpersoon || project.klant_naam || 'klant'},\n\nHierbij ontvangt u de aangepaste tekening(en) voor het project "${project.naam}".\n\nWij hebben de volgende aanpassingen verwerkt:\n- ${gk.revisie_opmerkingen}\n\nGraag ontvangen wij opnieuw uw goedkeuring.\n\nMet vriendelijke groet`
+                            )
+                            setVerstuurOpen(true)
+                          }}
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Opnieuw versturen
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1061,6 +1098,25 @@ export function ProjectDetail() {
                           </Badge>
                         </div>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600"
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          try {
+                            await deleteDocument(doc.id)
+                            toast.success(`"${doc.naam}" verwijderd`)
+                            await fetchDocumenten()
+                          } catch (err) {
+                            console.error('Fout bij verwijderen:', err)
+                            toast.error('Kon bestand niet verwijderen')
+                          }
+                        }}
+                        title="Verwijderen"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -1093,10 +1149,29 @@ export function ProjectDetail() {
           <div className="space-y-5 py-4">
             {/* Bestanden selectie */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Paperclip className="h-4 w-4 text-blue-600" />
-                Selecteer bestanden
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Paperclip className="h-4 w-4 text-blue-600" />
+                  Selecteer bestanden
+                </Label>
+                {projectDocumenten.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => {
+                      if (selectedDocIds.length === projectDocumenten.length) {
+                        setSelectedDocIds([])
+                      } else {
+                        setSelectedDocIds(projectDocumenten.map(d => d.id))
+                      }
+                    }}
+                  >
+                    <CheckCheck className="h-3 w-3 mr-1" />
+                    {selectedDocIds.length === projectDocumenten.length ? 'Deselecteer' : 'Selecteer alles'}
+                  </Button>
+                )}
+              </div>
               <div className="space-y-1.5 max-h-48 overflow-y-auto border rounded-lg p-2">
                 {projectDocumenten.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-3">

@@ -21,6 +21,8 @@ import {
   Trash2,
   FileText,
   Pencil,
+  Copy,
+  ArrowUpDown,
 } from 'lucide-react'
 import {
   getOfferte,
@@ -55,6 +57,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
 
   // Editable offerte fields
   const [titel, setTitel] = useState('')
+  const [status, setStatus] = useState('')
   const [notities, setNotities] = useState('')
   const [voorwaarden, setVoorwaarden] = useState('')
   const [geldigTot, setGeldigTot] = useState('')
@@ -69,6 +72,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
       if (offerteData) {
         setOfferte(offerteData)
         setTitel(offerteData.titel)
+        setStatus(offerteData.status || 'concept')
         setNotities(offerteData.notities || '')
         setVoorwaarden(offerteData.voorwaarden || '')
         setGeldigTot(offerteData.geldig_tot || '')
@@ -129,6 +133,23 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
     })
   }
 
+  const handleDuplicateItem = (index: number) => {
+    const source = items[index]
+    const newItem: EditableItem = {
+      ...source,
+      id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      beschrijving: `${source.beschrijving} (kopie)`,
+      volgorde: items.length + 1,
+      _isNew: true,
+      _deleted: false,
+    }
+    setItems(prev => {
+      const updated = [...prev]
+      updated.splice(index + 1, 0, newItem)
+      return updated
+    })
+  }
+
   const calculateTotals = () => {
     const activeItems = items.filter(i => !i._deleted)
     const subtotaal = activeItems.reduce((sum, item) => {
@@ -152,6 +173,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
       // Update offerte
       await updateOfferte(offerte.id, {
         titel,
+        status,
         notities,
         voorwaarden,
         geldig_tot: geldigTot,
@@ -227,14 +249,28 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
         ) : (
           <div className="space-y-6 py-4">
             {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-2">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-3 space-y-2">
                 <Label>Titel</Label>
                 <Input value={titel} onChange={e => setTitel(e.target.value)} placeholder="Offerte titel..." />
               </div>
               <div className="space-y-2">
                 <Label>Nummer</Label>
                 <Input value={offerte?.nummer || ''} readOnly className="bg-gray-50 dark:bg-gray-800" />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <select
+                  value={status}
+                  onChange={e => setStatus(e.target.value)}
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white h-9"
+                >
+                  <option value="concept">Concept</option>
+                  <option value="verzonden">Verzonden</option>
+                  <option value="bekeken">Bekeken</option>
+                  <option value="goedgekeurd">Goedgekeurd</option>
+                  <option value="afgewezen">Afgewezen</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <Label>Geldig tot</Label>
@@ -324,14 +360,26 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                               <span className="text-sm font-bold text-foreground whitespace-nowrap">
                                 {formatCurrency(item.totaal)}
                               </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                                onClick={() => handleRemoveItem(index)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                              <div className="flex items-center gap-0.5">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-indigo-600"
+                                  onClick={() => handleDuplicateItem(index)}
+                                  title="Dupliceer regel"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                                  onClick={() => handleRemoveItem(index)}
+                                  title="Verwijder regel"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
