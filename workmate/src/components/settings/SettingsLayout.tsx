@@ -7,6 +7,14 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Settings,
   User,
@@ -22,11 +30,18 @@ import {
   EyeOff,
   Sun,
   Moon,
+  Sliders,
+  Bell,
+  Plus,
+  Trash2,
+  GripVertical,
+  Save,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { getProfile, updateProfile } from '@/services/supabaseService'
+import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
+import type { AppSettings, PipelineStap } from '@/types'
 import { toast } from 'sonner'
 
 export function SettingsLayout() {
@@ -50,7 +65,7 @@ export function SettingsLayout() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="profiel" className="gap-2">
             <User className="w-4 h-4 hidden sm:inline" />
             Profiel
@@ -58,6 +73,14 @@ export function SettingsLayout() {
           <TabsTrigger value="bedrijf" className="gap-2">
             <Building2 className="w-4 h-4 hidden sm:inline" />
             Bedrijf
+          </TabsTrigger>
+          <TabsTrigger value="aanpassingen" className="gap-2">
+            <Sliders className="w-4 h-4 hidden sm:inline" />
+            Aanpassingen
+          </TabsTrigger>
+          <TabsTrigger value="meldingen" className="gap-2">
+            <Bell className="w-4 h-4 hidden sm:inline" />
+            Meldingen
           </TabsTrigger>
           <TabsTrigger value="integraties" className="gap-2">
             <Puzzle className="w-4 h-4 hidden sm:inline" />
@@ -78,6 +101,12 @@ export function SettingsLayout() {
         </TabsContent>
         <TabsContent value="bedrijf">
           <BedrijfTab />
+        </TabsContent>
+        <TabsContent value="aanpassingen">
+          <AanpassingenTab />
+        </TabsContent>
+        <TabsContent value="meldingen">
+          <MeldingenTab />
         </TabsContent>
         <TabsContent value="integraties">
           <IntegratiesTab />
@@ -457,6 +486,673 @@ function BedrijfTab() {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+// ============ AANPASSINGEN TAB ============
+
+const BRANCHE_PRESETS: { key: AppSettings['branche_preset']; label: string; beschrijving: string }[] = [
+  { key: 'sign_company', label: 'Reclame & Signbedrijf', beschrijving: 'Borden, wraps, lichtreclame, belettering' },
+  { key: 'bouw', label: 'Bouw & Renovatie', beschrijving: 'Aannemerij, verbouwing, installatie' },
+  { key: 'ict', label: 'ICT & Software', beschrijving: 'Webdev, consultancy, managed services' },
+  { key: 'marketing', label: 'Marketing & Reclame', beschrijving: 'Campagnes, design, branding' },
+  { key: 'detailhandel', label: 'Detailhandel', beschrijving: 'Winkel, webshop, groothandel' },
+  { key: 'horeca', label: 'Horeca', beschrijving: 'Restaurant, catering, evenementen' },
+  { key: 'zorg', label: 'Zorg & Welzijn', beschrijving: 'Thuiszorg, praktijk, coaching' },
+  { key: 'custom', label: 'Aangepast', beschrijving: 'Stel alles zelf in' },
+]
+
+const KLEUR_OPTIES = [
+  '#2563eb', '#7c3aed', '#059669', '#dc2626', '#d97706',
+  '#0891b2', '#4f46e5', '#be185d', '#1d4ed8', '#15803d',
+]
+
+function AanpassingenTab() {
+  const { user } = useAuth()
+  const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Local form state
+  const [branchePreset, setBranchePreset] = useState<AppSettings['branche_preset']>('sign_company')
+  const [branche, setBranche] = useState('')
+  const [valuta, setValuta] = useState('EUR')
+  const [standaardBtw, setStandaardBtw] = useState('21')
+  const [offertePrefix, setOffertePrefix] = useState('OFF')
+  const [offerteGeldigheid, setOfferteGeldigheid] = useState('30')
+  const [autoFollowUp, setAutoFollowUp] = useState(true)
+  const [followUpDagen, setFollowUpDagen] = useState('7')
+  const [emailHandtekening, setEmailHandtekening] = useState('')
+  const [primaireKleur, setPrimaireKleur] = useState('#2563eb')
+  const [secundaireKleur, setSecundaireKleur] = useState('#7c3aed')
+  const [pipelineStappen, setPipelineStappen] = useState<PipelineStap[]>([])
+  const [toonConversieRate, setToonConversieRate] = useState(true)
+  const [toonDagenOpen, setToonDagenOpen] = useState(true)
+  const [toonFollowUpIndicatoren, setToonFollowUpIndicatoren] = useState(true)
+
+  const loadSettings = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      setIsLoading(true)
+      const data = await getAppSettings(user.id)
+      setSettings(data)
+      setBranchePreset(data.branche_preset)
+      setBranche(data.branche)
+      setValuta(data.valuta)
+      setStandaardBtw(String(data.standaard_btw))
+      setOffertePrefix(data.offerte_prefix)
+      setOfferteGeldigheid(String(data.offerte_geldigheid_dagen))
+      setAutoFollowUp(data.auto_follow_up)
+      setFollowUpDagen(String(data.follow_up_dagen))
+      setEmailHandtekening(data.email_handtekening)
+      setPrimaireKleur(data.primaire_kleur)
+      setSecundaireKleur(data.secundaire_kleur)
+      setPipelineStappen(data.pipeline_stappen)
+      setToonConversieRate(data.toon_conversie_rate)
+      setToonDagenOpen(data.toon_dagen_open)
+      setToonFollowUpIndicatoren(data.toon_follow_up_indicatoren)
+    } catch (err) {
+      console.error('Fout bij laden instellingen:', err)
+      toast.error('Kon instellingen niet laden')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  const handleBrancheChange = (preset: AppSettings['branche_preset']) => {
+    setBranchePreset(preset)
+    const found = BRANCHE_PRESETS.find((b) => b.key === preset)
+    if (found && preset !== 'custom') {
+      setBranche(found.label)
+    }
+  }
+
+  const handleAddPipelineStap = () => {
+    const newStap: PipelineStap = {
+      key: `custom_${Date.now()}`,
+      label: 'Nieuwe stap',
+      kleur: 'blue',
+      volgorde: pipelineStappen.length,
+      actief: true,
+    }
+    setPipelineStappen([...pipelineStappen, newStap])
+  }
+
+  const handleRemovePipelineStap = (index: number) => {
+    const stap = pipelineStappen[index]
+    if (['concept', 'goedgekeurd', 'afgewezen'].includes(stap.key)) {
+      toast.error('Deze standaard stap kan niet worden verwijderd')
+      return
+    }
+    setPipelineStappen(pipelineStappen.filter((_, i) => i !== index))
+  }
+
+  const handleUpdatePipelineStap = (index: number, updates: Partial<PipelineStap>) => {
+    setPipelineStappen(
+      pipelineStappen.map((stap, i) => (i === index ? { ...stap, ...updates } : stap))
+    )
+  }
+
+  const handleSave = async () => {
+    if (!user?.id) return
+    try {
+      setIsSaving(true)
+      await updateAppSettings(user.id, {
+        branche_preset: branchePreset,
+        branche,
+        valuta,
+        valuta_symbool: valuta === 'EUR' ? '\u20AC' : valuta === 'USD' ? '$' : valuta === 'GBP' ? '\u00A3' : valuta,
+        standaard_btw: parseFloat(standaardBtw) || 21,
+        offerte_prefix: offertePrefix,
+        offerte_geldigheid_dagen: parseInt(offerteGeldigheid) || 30,
+        auto_follow_up: autoFollowUp,
+        follow_up_dagen: parseInt(followUpDagen) || 7,
+        email_handtekening: emailHandtekening,
+        primaire_kleur: primaireKleur,
+        secundaire_kleur: secundaireKleur,
+        pipeline_stappen: pipelineStappen,
+        toon_conversie_rate: toonConversieRate,
+        toon_dagen_open: toonDagenOpen,
+        toon_follow_up_indicatoren: toonFollowUpIndicatoren,
+      })
+      toast.success('Aanpassingen opgeslagen')
+    } catch (err) {
+      console.error('Fout bij opslaan aanpassingen:', err)
+      toast.error('Kon aanpassingen niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center text-gray-500 dark:text-gray-400">
+          Instellingen laden...
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Branche Selectie */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sliders className="w-5 h-5" />
+            Branche & Sector
+          </CardTitle>
+          <CardDescription>
+            Kies uw branche voor geoptimaliseerde instellingen en terminologie
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {BRANCHE_PRESETS.map((preset) => (
+              <button
+                key={preset.key}
+                onClick={() => handleBrancheChange(preset.key)}
+                className={`p-3 rounded-xl border-2 text-left transition-all duration-200 ${
+                  branchePreset === preset.key
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 shadow-sm'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{preset.label}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{preset.beschrijving}</p>
+              </button>
+            ))}
+          </div>
+          {branchePreset === 'custom' && (
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="custom-branche">Aangepaste branche naam</Label>
+              <Input
+                id="custom-branche"
+                value={branche}
+                onChange={(e) => setBranche(e.target.value)}
+                placeholder="Bijv. Grafische Vormgeving"
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Offerte & Valuta Instellingen */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Offerte Instellingen</CardTitle>
+          <CardDescription>Configureer standaardwaarden voor offertes en facturatie</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="valuta">Valuta</Label>
+              <Select value={valuta} onValueChange={setValuta}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                  <SelectItem value="USD">Dollar (USD)</SelectItem>
+                  <SelectItem value="GBP">Pond (GBP)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="standaard-btw">Standaard BTW %</Label>
+              <Input
+                id="standaard-btw"
+                type="number"
+                min="0"
+                max="100"
+                value={standaardBtw}
+                onChange={(e) => setStandaardBtw(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="offerte-geldigheid">Geldigheid (dagen)</Label>
+              <Input
+                id="offerte-geldigheid"
+                type="number"
+                min="1"
+                value={offerteGeldigheid}
+                onChange={(e) => setOfferteGeldigheid(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="offerte-prefix">Offerte Prefix</Label>
+              <Input
+                id="offerte-prefix"
+                value={offertePrefix}
+                onChange={(e) => setOffertePrefix(e.target.value.toUpperCase())}
+                placeholder="OFF"
+                maxLength={5}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Voorbeeld: {offertePrefix}-2026-0001
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Automatische Follow-up</Label>
+              <div className="flex items-center gap-4">
+                <Switch
+                  checked={autoFollowUp}
+                  onCheckedChange={setAutoFollowUp}
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {autoFollowUp ? 'Actief' : 'Uit'}
+                </span>
+                {autoFollowUp && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">na</span>
+                    <Input
+                      type="number"
+                      min="1"
+                      className="w-20"
+                      value={followUpDagen}
+                      onChange={(e) => setFollowUpDagen(e.target.value)}
+                    />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">dagen</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pipeline Aanpassing */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Pipeline Stappen</CardTitle>
+          <CardDescription>Pas de offerte pipeline stappen aan voor uw workflow</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            {pipelineStappen.map((stap, index) => (
+              <div
+                key={stap.key}
+                className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
+              >
+                <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{
+                    backgroundColor:
+                      stap.kleur === 'gray' ? '#9ca3af' :
+                      stap.kleur === 'blue' ? '#3b82f6' :
+                      stap.kleur === 'purple' ? '#8b5cf6' :
+                      stap.kleur === 'green' ? '#22c55e' :
+                      stap.kleur === 'red' ? '#ef4444' :
+                      stap.kleur === 'orange' ? '#f97316' :
+                      stap.kleur === 'teal' ? '#14b8a6' :
+                      '#6b7280'
+                  }}
+                />
+                <Input
+                  value={stap.label}
+                  onChange={(e) => handleUpdatePipelineStap(index, { label: e.target.value })}
+                  className="flex-1 h-8"
+                />
+                <Select
+                  value={stap.kleur}
+                  onValueChange={(v) => handleUpdatePipelineStap(index, { kleur: v })}
+                >
+                  <SelectTrigger className="w-28 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gray">Grijs</SelectItem>
+                    <SelectItem value="blue">Blauw</SelectItem>
+                    <SelectItem value="purple">Paars</SelectItem>
+                    <SelectItem value="green">Groen</SelectItem>
+                    <SelectItem value="red">Rood</SelectItem>
+                    <SelectItem value="orange">Oranje</SelectItem>
+                    <SelectItem value="teal">Teal</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Switch
+                  checked={stap.actief}
+                  onCheckedChange={(checked) => handleUpdatePipelineStap(index, { actief: checked })}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemovePipelineStap(index)}
+                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <Button variant="outline" size="sm" onClick={handleAddPipelineStap} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Stap Toevoegen
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Branding */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Branding & Kleuren</CardTitle>
+          <CardDescription>Pas de visuele identiteit aan voor offertes en communicatie</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <Label>Primaire kleur</Label>
+              <div className="flex flex-wrap gap-2">
+                {KLEUR_OPTIES.map((kleur) => (
+                  <button
+                    key={`prim-${kleur}`}
+                    onClick={() => setPrimaireKleur(kleur)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      primaireKleur === kleur
+                        ? 'border-gray-900 dark:border-white scale-110 shadow-lg'
+                        : 'border-transparent hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: kleur }}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={primaireKleur}
+                  onChange={(e) => setPrimaireKleur(e.target.value)}
+                  className="w-10 h-8 p-0 border-0 cursor-pointer"
+                />
+                <Input
+                  value={primaireKleur}
+                  onChange={(e) => setPrimaireKleur(e.target.value)}
+                  className="w-24 h-8 font-mono text-xs"
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Label>Secundaire kleur</Label>
+              <div className="flex flex-wrap gap-2">
+                {KLEUR_OPTIES.map((kleur) => (
+                  <button
+                    key={`sec-${kleur}`}
+                    onClick={() => setSecundaireKleur(kleur)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      secundaireKleur === kleur
+                        ? 'border-gray-900 dark:border-white scale-110 shadow-lg'
+                        : 'border-transparent hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: kleur }}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={secundaireKleur}
+                  onChange={(e) => setSecundaireKleur(e.target.value)}
+                  className="w-10 h-8 p-0 border-0 cursor-pointer"
+                />
+                <Input
+                  value={secundaireKleur}
+                  onChange={(e) => setSecundaireKleur(e.target.value)}
+                  className="w-24 h-8 font-mono text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Voorbeeld</p>
+            <div className="flex items-center gap-3">
+              <div
+                className="px-4 py-2 rounded-lg text-white text-sm font-medium"
+                style={{ backgroundColor: primaireKleur }}
+              >
+                Primaire Knop
+              </div>
+              <div
+                className="px-4 py-2 rounded-lg text-white text-sm font-medium"
+                style={{ backgroundColor: secundaireKleur }}
+              >
+                Secundaire Knop
+              </div>
+              <div
+                className="px-3 py-1 rounded-full text-xs font-medium"
+                style={{ backgroundColor: primaireKleur + '20', color: primaireKleur }}
+              >
+                Badge
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Email Handtekening */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Email Handtekening</CardTitle>
+          <CardDescription>Wordt automatisch toegevoegd aan uitgaande emails</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Textarea
+            value={emailHandtekening}
+            onChange={(e) => setEmailHandtekening(e.target.value)}
+            placeholder="Met vriendelijke groet,&#10;&#10;Jan de Vries&#10;Sales Manager&#10;Uw Bedrijf B.V.&#10;Tel: 020-1234567"
+            rows={5}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Dashboard Weergave */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Dashboard Weergave</CardTitle>
+          <CardDescription>Bepaal welke indicatoren u wilt zien in de pipeline en dashboard</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Conversie rate tonen</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Percentage goedgekeurde offertes</p>
+            </div>
+            <Switch checked={toonConversieRate} onCheckedChange={setToonConversieRate} />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Dagen open tonen</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Hoeveel dagen een offerte al openstaat</p>
+            </div>
+            <Switch checked={toonDagenOpen} onCheckedChange={setToonDagenOpen} />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Follow-up indicatoren</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Bel- en follow-up iconen op offerte kaarten</p>
+            </div>
+            <Switch checked={toonFollowUpIndicatoren} onCheckedChange={setToonFollowUpIndicatoren} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+          <Save className="w-4 h-4" />
+          {isSaving ? 'Opslaan...' : 'Alle Aanpassingen Opslaan'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ============ MELDINGEN TAB ============
+
+function MeldingenTab() {
+  const { user } = useAuth()
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const [meldingFollowUp, setMeldingFollowUp] = useState(true)
+  const [meldingVerlopen, setMeldingVerlopen] = useState(true)
+  const [meldingNieuweOfferte, setMeldingNieuweOfferte] = useState(true)
+  const [meldingStatusWijziging, setMeldingStatusWijziging] = useState(true)
+
+  const loadSettings = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      setIsLoading(true)
+      const data = await getAppSettings(user.id)
+      setMeldingFollowUp(data.melding_follow_up)
+      setMeldingVerlopen(data.melding_verlopen)
+      setMeldingNieuweOfferte(data.melding_nieuwe_offerte)
+      setMeldingStatusWijziging(data.melding_status_wijziging)
+    } catch (err) {
+      console.error('Fout bij laden meldingen:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  const handleSave = async () => {
+    if (!user?.id) return
+    try {
+      setIsSaving(true)
+      await updateAppSettings(user.id, {
+        melding_follow_up: meldingFollowUp,
+        melding_verlopen: meldingVerlopen,
+        melding_nieuwe_offerte: meldingNieuweOfferte,
+        melding_status_wijziging: meldingStatusWijziging,
+      })
+      toast.success('Meldingsinstellingen opgeslagen')
+    } catch (err) {
+      console.error('Fout bij opslaan meldingen:', err)
+      toast.error('Kon meldingsinstellingen niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center text-gray-500 dark:text-gray-400">
+          Meldingsinstellingen laden...
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="w-5 h-5" />
+            Melding Voorkeuren
+          </CardTitle>
+          <CardDescription>
+            Configureer welke meldingen u wilt ontvangen
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Follow-up herinneringen */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <Bell className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Follow-up Herinneringen
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Ontvang meldingen wanneer een follow-up is gepland of achterstallig
+                </p>
+              </div>
+            </div>
+            <Switch checked={meldingFollowUp} onCheckedChange={setMeldingFollowUp} />
+          </div>
+
+          {/* Verlopen offertes */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Verlopen Offertes
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Waarschuwing wanneer offertes hun geldigheidsdatum naderen of overschrijden
+                </p>
+              </div>
+            </div>
+            <Switch checked={meldingVerlopen} onCheckedChange={setMeldingVerlopen} />
+          </div>
+
+          {/* Nieuwe offerte bevestiging */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Nieuwe Offerte Bevestiging
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Bevestiging wanneer een nieuwe offerte is aangemaakt
+                </p>
+              </div>
+            </div>
+            <Switch checked={meldingNieuweOfferte} onCheckedChange={setMeldingNieuweOfferte} />
+          </div>
+
+          {/* Status wijzigingen */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <Settings className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Status Wijzigingen
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Melding wanneer een offerte van status verandert (bijv. bekeken, goedgekeurd)
+                </p>
+              </div>
+            </div>
+            <Switch checked={meldingStatusWijziging} onCheckedChange={setMeldingStatusWijziging} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+          <Save className="w-4 h-4" />
+          {isSaving ? 'Opslaan...' : 'Meldingen Opslaan'}
+        </Button>
+      </div>
+    </div>
   )
 }
 

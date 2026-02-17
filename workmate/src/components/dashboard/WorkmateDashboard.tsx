@@ -6,6 +6,7 @@ import { AIInsightWidget } from './AIInsightWidget'
 import { PriorityTasks } from './PriorityTasks'
 import { CalendarMiniWidget } from './CalendarMiniWidget'
 import { EmailCommunicationHub } from './EmailCommunicationHub'
+import { SalesFollowUpWidget } from './SalesFollowUpWidget'
 
 export function WorkmateDashboard() {
   const { user } = useAuth()
@@ -30,6 +31,7 @@ export function WorkmateDashboard() {
           <PriorityTasks />
         </div>
         <div className="space-y-6">
+          <SalesFollowUpWidget />
           <AIInsightWidget />
           <CalendarMiniWidget />
           <EmailCommunicationHub />

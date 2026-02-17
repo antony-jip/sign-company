@@ -29,6 +29,7 @@ import { WorkmateAIChat } from '@/components/ai/WorkmateAIChat'
 import { SettingsLayout } from '@/components/settings/SettingsLayout'
 import { DataImportLayout } from '@/components/import/DataImportLayout'
 import { NewsletterBuilder } from '@/components/newsletter/NewsletterBuilder'
+import { CommandPalette } from '@/components/shared/CommandPalette'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -43,6 +44,8 @@ function AppContent() {
   }
 
   return (
+    <>
+    <CommandPalette />
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -72,6 +75,7 @@ function AppContent() {
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </>
   )
 }
 

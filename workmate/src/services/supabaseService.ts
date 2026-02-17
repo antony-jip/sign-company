@@ -14,6 +14,7 @@ import type {
   AIChat,
   Profile,
   Nieuwsbrief,
+  AppSettings,
 } from '@/types'
 
 // ============ HELPERS ============
@@ -1037,6 +1038,108 @@ export async function deleteNieuwsbrief(id: string): Promise<void> {
   }
   const items = getLocalData<Nieuwsbrief>('nieuwsbrieven')
   setLocalData('nieuwsbrieven', items.filter((n) => n.id !== id))
+}
+
+// ============ APP SETTINGS ============
+
+const DEFAULT_PIPELINE_STAPPEN = [
+  { key: 'concept', label: 'Concept', kleur: 'gray', volgorde: 0, actief: true },
+  { key: 'verzonden', label: 'Verzonden', kleur: 'blue', volgorde: 1, actief: true },
+  { key: 'bekeken', label: 'Bekeken', kleur: 'purple', volgorde: 2, actief: true },
+  { key: 'goedgekeurd', label: 'Goedgekeurd', kleur: 'green', volgorde: 3, actief: true },
+  { key: 'afgewezen', label: 'Afgewezen', kleur: 'red', volgorde: 4, actief: true },
+]
+
+export function getDefaultAppSettings(userId: string): AppSettings {
+  return {
+    id: userId,
+    user_id: userId,
+    branche: 'Reclame & Signbedrijf',
+    branche_preset: 'sign_company',
+    valuta: 'EUR',
+    valuta_symbool: '\u20AC',
+    standaard_btw: 21,
+    pipeline_stappen: DEFAULT_PIPELINE_STAPPEN,
+    offerte_geldigheid_dagen: 30,
+    offerte_prefix: 'OFF',
+    offerte_volgnummer: 1,
+    auto_follow_up: true,
+    follow_up_dagen: 7,
+    melding_follow_up: true,
+    melding_verlopen: true,
+    melding_nieuwe_offerte: true,
+    melding_status_wijziging: true,
+    email_handtekening: '',
+    primaire_kleur: '#2563eb',
+    secundaire_kleur: '#7c3aed',
+    toon_conversie_rate: true,
+    toon_dagen_open: true,
+    toon_follow_up_indicatoren: true,
+    dashboard_widgets: ['follow_ups', 'pipeline', 'kpi', 'kalender'],
+    created_at: now(),
+    updated_at: now(),
+  }
+}
+
+export async function getAppSettings(userId: string): Promise<AppSettings> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+    if (error) {
+      if (error.code === 'PGRST116') return getDefaultAppSettings(userId)
+      throw error
+    }
+    return data
+  }
+  const settings = getLocalData<AppSettings>('app_settings')
+  const found = settings.find((s) => s.user_id === userId)
+  return found || getDefaultAppSettings(userId)
+}
+
+export async function updateAppSettings(userId: string, updates: Partial<AppSettings>): Promise<AppSettings> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data: existing } = await supabase
+      .from('app_settings')
+      .select('id')
+      .eq('user_id', userId)
+      .single()
+
+    if (existing) {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .update({ ...updates, updated_at: now() })
+        .eq('user_id', userId)
+        .select()
+        .single()
+      if (error) throw error
+      return data
+    } else {
+      const defaults = getDefaultAppSettings(userId)
+      const { data, error } = await supabase
+        .from('app_settings')
+        .insert({ ...defaults, ...updates })
+        .select()
+        .single()
+      if (error) throw error
+      return data
+    }
+  }
+
+  const settings = getLocalData<AppSettings>('app_settings')
+  const index = settings.findIndex((s) => s.user_id === userId)
+  if (index === -1) {
+    const defaults = getDefaultAppSettings(userId)
+    const newSettings: AppSettings = { ...defaults, ...updates, updated_at: now() }
+    settings.push(newSettings)
+    setLocalData('app_settings', settings)
+    return newSettings
+  }
+  settings[index] = { ...settings[index], ...updates, updated_at: now() }
+  setLocalData('app_settings', settings)
+  return settings[index]
 }
 
 export async function updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile> {

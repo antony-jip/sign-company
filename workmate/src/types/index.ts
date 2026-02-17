@@ -85,6 +85,12 @@ export interface Offerte {
   geldig_tot: string;
   notities: string;
   voorwaarden: string;
+  follow_up_datum?: string;
+  follow_up_notitie?: string;
+  laatste_contact?: string;
+  follow_up_status?: 'geen' | 'gepland' | 'achterstallig' | 'afgerond';
+  contact_pogingen?: number;
+  prioriteit?: 'laag' | 'medium' | 'hoog' | 'urgent';
   created_at: string;
   updated_at: string;
 }
@@ -212,6 +218,51 @@ export interface Nieuwsbrief {
   gepland_op?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface AppSettings {
+  id: string;
+  user_id: string;
+  // Branche / Industry
+  branche: string;
+  branche_preset: 'sign_company' | 'bouw' | 'ict' | 'marketing' | 'detailhandel' | 'horeca' | 'zorg' | 'custom';
+  // Valuta & BTW
+  valuta: string;
+  valuta_symbool: string;
+  standaard_btw: number;
+  // Pipeline aanpassing
+  pipeline_stappen: PipelineStap[];
+  // Offerte instellingen
+  offerte_geldigheid_dagen: number;
+  offerte_prefix: string;
+  offerte_volgnummer: number;
+  auto_follow_up: boolean;
+  follow_up_dagen: number;
+  // Meldingen
+  melding_follow_up: boolean;
+  melding_verlopen: boolean;
+  melding_nieuwe_offerte: boolean;
+  melding_status_wijziging: boolean;
+  // Email handtekening
+  email_handtekening: string;
+  // Branding
+  primaire_kleur: string;
+  secundaire_kleur: string;
+  // Weergave
+  toon_conversie_rate: boolean;
+  toon_dagen_open: boolean;
+  toon_follow_up_indicatoren: boolean;
+  dashboard_widgets: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PipelineStap {
+  key: string;
+  label: string;
+  kleur: string;
+  volgorde: number;
+  actief: boolean;
 }
 
 export type SortDirection = 'asc' | 'desc';
