@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   FolderKanban,
   Users,
   FileText,
   PiggyBank,
-  TrendingUp,
+  ArrowUpRight,
   type LucideIcon,
 } from 'lucide-react'
 import { getProjecten, getKlanten, getOffertes } from '@/services/supabaseService'
@@ -16,9 +16,53 @@ interface StatCard {
   title: string
   value: string
   subtitle: string
+  change?: string
   icon: LucideIcon
   gradient: string
-  accentColor: string
+  shadowColor: string
+}
+
+// Animated counter hook
+function useAnimatedCounter(target: number, duration: number = 800): number {
+  const [count, setCount] = useState(0)
+  const prevTarget = useRef(0)
+
+  useEffect(() => {
+    if (target === prevTarget.current) return
+    prevTarget.current = target
+
+    const startTime = Date.now()
+    const startValue = count
+
+    function tick() {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setCount(Math.round(startValue + (target - startValue) * eased))
+      if (progress < 1) requestAnimationFrame(tick)
+    }
+
+    requestAnimationFrame(tick)
+  }, [target, duration])
+
+  return count
+}
+
+// Sparkline SVG decoration
+function Sparkline() {
+  const points = '0,20 15,16 30,18 45,10 60,14 75,6 90,8 100,4'
+  return (
+    <svg className="absolute bottom-0 right-0 w-24 h-10 opacity-[0.06]" viewBox="0 0 100 24" preserveAspectRatio="none">
+      <polyline
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  )
 }
 
 export function StatisticsCards() {
@@ -41,23 +85,27 @@ export function StatisticsCards() {
   const actieveProjecten = projecten.filter(
     (p) => p.status === 'actief' || p.status === 'in-review'
   ).length
-
   const totaalKlanten = klanten.length
-
   const openstaandeOffertes = offertes
     .filter((o) => o.status === 'verzonden' || o.status === 'bekeken' || o.status === 'concept')
     .reduce((sum, o) => sum + o.totaal, 0)
+  const goedgekeurdeOffertes = offertes
+    .filter((o) => o.status === 'goedgekeurd')
+    .reduce((sum, o) => sum + o.totaal, 0)
+
+  const animProjecten = useAnimatedCounter(loading ? 0 : actieveProjecten)
+  const animKlanten = useAnimatedCounter(loading ? 0 : totaalKlanten)
 
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="overflow-hidden">
-            <CardContent className="p-6 h-[120px]">
+            <CardContent className="p-5 h-[130px]">
               <div className="space-y-3">
-                <div className="h-3 w-24 animate-shimmer rounded" />
-                <div className="h-7 w-16 animate-shimmer rounded" />
-                <div className="h-2.5 w-20 animate-shimmer rounded" />
+                <div className="h-3 w-20 animate-shimmer rounded-md" />
+                <div className="h-8 w-14 animate-shimmer rounded-md" />
+                <div className="h-2.5 w-24 animate-shimmer rounded-md" />
               </div>
             </CardContent>
           </Card>
@@ -66,42 +114,39 @@ export function StatisticsCards() {
     )
   }
 
-  const goedgekeurdeOffertes = offertes
-    .filter((o) => o.status === 'goedgekeurd')
-    .reduce((sum, o) => sum + o.totaal, 0)
-
   const stats: StatCard[] = [
     {
       title: 'Actieve Projecten',
-      value: actieveProjecten.toString(),
+      value: animProjecten.toString(),
       subtitle: `${projecten.length} totaal`,
+      change: projecten.length > 0 ? `${Math.round((actieveProjecten / projecten.length) * 100)}%` : undefined,
       icon: FolderKanban,
       gradient: 'from-blue-500 to-cyan-400',
-      accentColor: 'text-blue-500',
+      shadowColor: 'shadow-blue-500/20',
     },
     {
       title: 'Totaal Klanten',
-      value: totaalKlanten.toString(),
+      value: animKlanten.toString(),
       subtitle: `${klanten.filter((k) => k.status === 'actief').length} actief`,
       icon: Users,
       gradient: 'from-emerald-500 to-teal-400',
-      accentColor: 'text-emerald-500',
+      shadowColor: 'shadow-emerald-500/20',
     },
     {
-      title: 'Openstaande Offertes',
+      title: 'Open Offertes',
       value: formatCurrency(openstaandeOffertes),
       subtitle: `${offertes.filter((o) => ['verzonden', 'bekeken', 'concept'].includes(o.status)).length} offertes`,
       icon: FileText,
       gradient: 'from-violet-500 to-purple-400',
-      accentColor: 'text-violet-500',
+      shadowColor: 'shadow-violet-500/20',
     },
     {
-      title: 'Goedgekeurde Offertes',
+      title: 'Goedgekeurd',
       value: formatCurrency(goedgekeurdeOffertes),
       subtitle: `${offertes.filter((o) => o.status === 'goedgekeurd').length} goedgekeurd`,
       icon: PiggyBank,
       gradient: 'from-amber-500 to-orange-400',
-      accentColor: 'text-amber-500',
+      shadowColor: 'shadow-amber-500/20',
     },
   ]
 
@@ -111,30 +156,30 @@ export function StatisticsCards() {
         const Icon = stat.icon
 
         return (
-          <Card
-            key={stat.title}
-            className="wm-stat-card cursor-default group overflow-hidden"
-          >
-            <CardContent className="p-6 relative">
-              {/* Gradient accent line */}
-              <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${stat.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+          <Card key={stat.title} className="wm-stat-card cursor-default group overflow-hidden">
+            <CardContent className="p-5 relative">
+              <Sparkline />
 
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
-                  </p>
-                  <p className="text-2xl font-bold text-foreground tracking-tight">
-                    {stat.value}
-                  </p>
-                </div>
-                <div className={`flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
-                  <Icon className="h-5 w-5 text-white" />
+              <div className="flex items-start justify-between mb-4">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                  {stat.title}
+                </p>
+                <div className={`wm-stat-icon flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br ${stat.gradient} ${stat.shadowColor} shadow-lg`}>
+                  <Icon className="h-[18px] w-[18px] text-white" />
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-1.5">
-                <TrendingUp className={`h-3.5 w-3.5 ${stat.accentColor}`} />
+              <p className="text-3xl font-bold text-foreground tracking-tight">
+                {stat.value}
+              </p>
+
+              <div className="mt-3 flex items-center gap-2">
+                {stat.change && (
+                  <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                    <ArrowUpRight className="w-3 h-3" />
+                    {stat.change}
+                  </span>
+                )}
                 <span className="text-xs text-muted-foreground">
                   {stat.subtitle}
                 </span>
