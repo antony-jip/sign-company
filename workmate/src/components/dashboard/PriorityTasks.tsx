@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ListTodo } from 'lucide-react'
+import { ListTodo, CheckCircle2 } from 'lucide-react'
 import { mockTaken, mockProjecten } from '@/data/mockData'
 import { formatDate, getPriorityColor, getStatusColor } from '@/lib/utils'
 
@@ -13,6 +14,8 @@ const priorityOrder: Record<string, number> = {
 }
 
 export function PriorityTasks() {
+  const navigate = useNavigate()
+
   const topTasks = useMemo(() => {
     const projectMap = new Map(
       mockProjecten.map((p) => [p.id, p.naam])
@@ -41,6 +44,13 @@ export function PriorityTasks() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {topTasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+            <CheckCircle2 className="w-10 h-10 mb-3 opacity-30" />
+            <p className="text-sm font-medium">Geen openstaande taken</p>
+            <p className="text-xs mt-1">Alle taken zijn afgerond.</p>
+          </div>
+        ) : (
         <div className="space-y-1">
           {/* Table header */}
           <div className="grid grid-cols-[80px_1fr_140px_100px_90px] gap-3 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-gray-800">
@@ -55,6 +65,7 @@ export function PriorityTasks() {
           {topTasks.map((task) => (
             <div
               key={task.id}
+              onClick={() => navigate(`/projecten/${task.project_id}`)}
               className="grid grid-cols-[80px_1fr_140px_100px_90px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 cursor-pointer"
             >
               {/* Priority badge */}
@@ -98,6 +109,7 @@ export function PriorityTasks() {
             </div>
           ))}
         </div>
+        )}
       </CardContent>
     </Card>
   )

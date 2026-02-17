@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem('workmate_theme')
-    return (stored as Theme) || 'light'
+    return stored === 'dark' ? 'dark' : 'light'
   })
 
   useEffect(() => {

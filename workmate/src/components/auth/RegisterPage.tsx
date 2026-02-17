@@ -49,6 +49,11 @@ export function RegisterPage() {
       return
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Voer een geldig emailadres in')
+      return
+    }
+
     if (password.length < 6) {
       toast.error('Wachtwoord moet minimaal 6 tekens zijn')
       return

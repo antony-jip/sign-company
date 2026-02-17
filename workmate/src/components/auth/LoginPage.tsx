@@ -131,12 +131,13 @@ export function LoginPage() {
 
             {/* Forgot Password */}
             <div className="text-center">
-              <Link
-                to="/login"
+              <button
+                type="button"
+                onClick={() => toast.info('Wachtwoord reset is nog niet geconfigureerd. Neem contact op met de beheerder.')}
                 className="text-sm text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
               >
                 Wachtwoord vergeten?
-              </Link>
+              </button>
             </div>
 
             {/* Divider */}

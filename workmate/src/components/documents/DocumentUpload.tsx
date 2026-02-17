@@ -22,6 +22,8 @@ import { Upload, X, FileText, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createDocument } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
+import { useAuth } from '@/contexts/AuthContext'
+import { toast } from 'sonner'
 
 interface DocumentUploadProps {
   open: boolean
@@ -39,6 +41,7 @@ const folderOptions = [
 ]
 
 export function DocumentUpload({ open, onOpenChange }: DocumentUploadProps) {
+  const { user } = useAuth()
   const [files, setFiles] = useState<File[]>([])
   const [folder, setFolder] = useState('Ontwerpen')
   const [tags, setTags] = useState<string[]>([])
@@ -113,7 +116,7 @@ export function DocumentUpload({ open, onOpenChange }: DocumentUploadProps) {
         await uploadFile(file, storagePath)
 
         await createDocument({
-          user_id: 'u1',
+          user_id: user?.id || 'demo',
           project_id: null,
           klant_id: null,
           naam: file.name,
@@ -127,12 +130,14 @@ export function DocumentUpload({ open, onOpenChange }: DocumentUploadProps) {
         })
       }
 
+      toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} geüpload`)
       setFiles([])
       setTags([])
       setTagInput('')
       onOpenChange(false)
     } catch (error) {
       console.error('Upload fout:', error)
+      toast.error('Uploaden mislukt. Probeer het opnieuw.')
     } finally {
       setIsUploading(false)
     }

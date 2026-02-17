@@ -4,6 +4,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Calculator, RotateCcw, PlusCircle } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
@@ -22,13 +29,14 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
   const [uurtarief, setUurtarief] = useState<number>(0)
   const [materiaalkosten, setMateriaalkosten] = useState<number>(0)
   const [margePercentage, setMargePercentage] = useState<number>(15)
+  const [btwPercentage, setBtwPercentage] = useState<number>(21)
 
   const berekening = useMemo(() => {
     const arbeidskosten = uren * uurtarief
     const kosten = arbeidskosten + materiaalkosten
     const margeBedrag = kosten * (margePercentage / 100)
     const subtotaal = kosten + margeBedrag
-    const btw = subtotaal * 0.21
+    const btw = subtotaal * (btwPercentage / 100)
     const totaal = subtotaal + btw
 
     return {
@@ -39,13 +47,14 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
       btw,
       totaal,
     }
-  }, [uren, uurtarief, materiaalkosten, margePercentage])
+  }, [uren, uurtarief, materiaalkosten, margePercentage, btwPercentage])
 
   const handleClear = () => {
     setUren(0)
     setUurtarief(0)
     setMateriaalkosten(0)
     setMargePercentage(15)
+    setBtwPercentage(21)
   }
 
   const handleAddToOfferte = () => {
@@ -130,6 +139,20 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
           </div>
         </div>
 
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">BTW Tarief</Label>
+          <Select value={String(btwPercentage)} onValueChange={(v) => setBtwPercentage(parseInt(v))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="21">21% (standaard)</SelectItem>
+              <SelectItem value="9">9% (verlaagd)</SelectItem>
+              <SelectItem value="0">0% (vrijgesteld)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <Separator />
 
         {/* Calculated Results */}
@@ -164,7 +187,7 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">BTW (21%)</span>
+            <span className="text-gray-600 dark:text-gray-400">BTW ({btwPercentage}%)</span>
             <span className="font-medium text-gray-900 dark:text-gray-100">
               {formatCurrency(berekening.btw)}
             </span>

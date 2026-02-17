@@ -127,7 +127,7 @@ export function FinancialLayout() {
             Financieel Overzicht
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Beheer uw financiele administratie en instellingen
+            Beheer uw financi&euml;le administratie en instellingen
           </p>
         </div>
       </div>

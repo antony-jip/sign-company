@@ -931,7 +931,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem('workmate_language')
-    return (stored as Language) || 'nl'
+    return stored === 'en' ? 'en' : 'nl'
   })
 
   useEffect(() => {

@@ -60,9 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await signOut()
-    setUser(null)
-    setSession(null)
+    try {
+      await signOut()
+    } finally {
+      setUser(null)
+      setSession(null)
+    }
   }
 
   return (

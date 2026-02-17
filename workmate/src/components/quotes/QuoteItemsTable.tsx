@@ -106,7 +106,7 @@ export function QuoteItemsTable({
                     <Input
                       type="number"
                       value={item.aantal || ''}
-                      onChange={(e) => onUpdateItem(item.id, 'aantal', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => onUpdateItem(item.id, 'aantal', Math.max(0, parseFloat(e.target.value) || 0))}
                       min={0}
                       step={1}
                       className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 text-right"
@@ -116,7 +116,7 @@ export function QuoteItemsTable({
                     <Input
                       type="number"
                       value={item.eenheidsprijs || ''}
-                      onChange={(e) => onUpdateItem(item.id, 'eenheidsprijs', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => onUpdateItem(item.id, 'eenheidsprijs', Math.max(0, parseFloat(e.target.value) || 0))}
                       min={0}
                       step={0.01}
                       className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 text-right"
@@ -141,7 +141,7 @@ export function QuoteItemsTable({
                     <Input
                       type="number"
                       value={item.korting_percentage || ''}
-                      onChange={(e) => onUpdateItem(item.id, 'korting_percentage', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => onUpdateItem(item.id, 'korting_percentage', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
                       min={0}
                       max={100}
                       step={0.5}

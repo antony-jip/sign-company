@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import {
   ArrowLeft,
   Plus,
@@ -87,6 +88,11 @@ function formatFileSize(bytes: number): string {
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const [takenWeergave, setTakenWeergave] = useState<'board' | 'tabel'>('board')
+  const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
+  const [nieuweTaakTitel, setNieuweTaakTitel] = useState('')
+  const [nieuweTaakBeschrijving, setNieuweTaakBeschrijving] = useState('')
+  const [nieuweTaakToegewezen, setNieuweTaakToegewezen] = useState('')
+  const [nieuweTaakDeadline, setNieuweTaakDeadline] = useState('')
 
   const project = useMemo(() => mockProjecten.find((p) => p.id === id), [id])
   const klant = useMemo(
@@ -352,7 +358,15 @@ export function ProjectDetail() {
                 Tabel
               </Button>
             </div>
-            <Dialog>
+            <Dialog open={nieuweTaakOpen} onOpenChange={(open) => {
+              setNieuweTaakOpen(open)
+              if (!open) {
+                setNieuweTaakTitel('')
+                setNieuweTaakBeschrijving('')
+                setNieuweTaakToegewezen('')
+                setNieuweTaakDeadline('')
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Plus className="mr-1.5 h-4 w-4" />
@@ -369,30 +383,56 @@ export function ProjectDetail() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="taak-titel">Titel</Label>
-                    <Input id="taak-titel" placeholder="Titel van de taak..." />
+                    <Input
+                      id="taak-titel"
+                      placeholder="Titel van de taak..."
+                      value={nieuweTaakTitel}
+                      onChange={(e) => setNieuweTaakTitel(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="taak-beschrijving">Beschrijving</Label>
-                    <Input id="taak-beschrijving" placeholder="Beschrijving..." />
+                    <Input
+                      id="taak-beschrijving"
+                      placeholder="Beschrijving..."
+                      value={nieuweTaakBeschrijving}
+                      onChange={(e) => setNieuweTaakBeschrijving(e.target.value)}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="taak-toegewezen">Toegewezen aan</Label>
-                      <Input id="taak-toegewezen" placeholder="Naam..." />
+                      <Input
+                        id="taak-toegewezen"
+                        placeholder="Naam..."
+                        value={nieuweTaakToegewezen}
+                        onChange={(e) => setNieuweTaakToegewezen(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="taak-deadline">Deadline</Label>
-                      <Input id="taak-deadline" type="date" />
+                      <Input
+                        id="taak-deadline"
+                        type="date"
+                        value={nieuweTaakDeadline}
+                        onChange={(e) => setNieuweTaakDeadline(e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
                 <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">Annuleren</Button>
-                  </DialogClose>
-                  <DialogClose asChild>
-                    <Button>Taak toevoegen</Button>
-                  </DialogClose>
+                  <Button variant="outline" onClick={() => setNieuweTaakOpen(false)}>
+                    Annuleren
+                  </Button>
+                  <Button
+                    disabled={!nieuweTaakTitel.trim()}
+                    onClick={() => {
+                      toast.success(`Taak "${nieuweTaakTitel}" toegevoegd (demo)`)
+                      setNieuweTaakOpen(false)
+                    }}
+                  >
+                    Taak toevoegen
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -483,7 +523,7 @@ export function ProjectDetail() {
                 {projectDocumenten.length} bestanden
               </p>
             </div>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => toast.info('Upload functionaliteit binnenkort beschikbaar')}>
               <Upload className="mr-1.5 h-4 w-4" />
               Uploaden
             </Button>
@@ -522,8 +562,8 @@ export function ProjectDetail() {
                           >
                             {doc.status}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {doc.map}
+                          <span className="text-xs text-muted-foreground capitalize">
+                            {doc.type}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">

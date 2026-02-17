@@ -1,4 +1,5 @@
 import React from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { StatisticsCards } from './StatisticsCards'
 import { QuickActions } from './QuickActions'
 import { AIInsightWidget } from './AIInsightWidget'
@@ -7,6 +8,9 @@ import { CalendarMiniWidget } from './CalendarMiniWidget'
 import { EmailCommunicationHub } from './EmailCommunicationHub'
 
 export function WorkmateDashboard() {
+  const { user } = useAuth()
+  const userName = user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
+
   return (
     <div className="space-y-6">
       <div>
@@ -14,7 +18,7 @@ export function WorkmateDashboard() {
           Dashboard
         </h1>
         <p className="text-gray-500 dark:text-gray-400">
-          Welkom terug! Hier is je overzicht.
+          Welkom terug{userName ? `, ${userName}` : ''}! Hier is je overzicht.
         </p>
       </div>
 

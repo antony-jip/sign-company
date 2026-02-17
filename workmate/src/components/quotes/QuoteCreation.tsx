@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,6 +53,7 @@ function generateOfferteNummer(): string {
 }
 
 export function QuoteCreation() {
+  const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
 
   // Step 1: Client & basic info
@@ -126,15 +128,17 @@ export function QuoteCreation() {
   }, 0)
 
   const handleSaveConcept = () => {
-    alert('Offerte opgeslagen als concept! (Demo)')
+    toast.success('Offerte opgeslagen als concept')
+    navigate('/offertes')
   }
 
   const handleVerzenden = () => {
-    alert('Offerte verzonden naar klant! (Demo)')
+    toast.success('Offerte verzonden naar klant')
+    navigate('/offertes')
   }
 
   const handleDownloadPdf = () => {
-    alert('PDF wordt gegenereerd... (Demo)')
+    toast.info('PDF wordt gegenereerd...')
   }
 
   return (

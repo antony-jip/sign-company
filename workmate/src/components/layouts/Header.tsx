@@ -2,11 +2,12 @@ import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Search, Sun, Moon, Bell, Globe, User, Settings, LogOut,
-  ChevronDown
+  ChevronDown, X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { Button } from '@/components/ui/button'
 
 const routeTitles: Record<string, string> = {
@@ -33,19 +34,19 @@ function getPageTitle(pathname: string): string {
 export function Header() {
   const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
+  const { language, setLanguage } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [notificationOpen, setNotificationOpen] = useState(false)
-  const [language, setLanguage] = useState<'nl' | 'en'>('nl')
   const userMenuRef = React.useRef<HTMLDivElement>(null)
   const notificationRef = React.useRef<HTMLDivElement>(null)
 
   const pageTitle = getPageTitle(location.pathname)
 
-  // Close menus when clicking outside
+  // Close menus when clicking outside or pressing Escape
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -55,32 +56,27 @@ export function Header() {
         setNotificationOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  // Close menus on Escape
-  React.useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setUserMenuOpen(false)
         setNotificationOpen(false)
       }
     }
+    document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
   }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      // Search functionality can be extended later
-      console.log('Searching for:', searchQuery)
-    }
+    // Search functionality placeholder - can be extended later
   }
 
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === 'nl' ? 'en' : 'nl'))
+    setLanguage(language === 'nl' ? 'en' : 'nl')
   }
 
   const userInitial = (
@@ -131,9 +127,10 @@ export function Header() {
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="mr-2 p-0.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Zoekopdracht wissen"
             >
-              <span className="text-xs font-medium">ESC</span>
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
@@ -190,7 +187,10 @@ export function Header() {
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                   Notificaties
                 </h3>
-                <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                <button
+                  onClick={() => setNotificationOpen(false)}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                >
                   Alles gelezen
                 </button>
               </div>
@@ -230,7 +230,13 @@ export function Header() {
                 </div>
               </div>
               <div className="px-4 py-2.5 border-t border-gray-200 dark:border-gray-700">
-                <button className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium w-full text-center">
+                <button
+                  onClick={() => {
+                    setNotificationOpen(false)
+                    navigate('/instellingen')
+                  }}
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium w-full text-center"
+                >
                   Alle notificaties bekijken
                 </button>
               </div>

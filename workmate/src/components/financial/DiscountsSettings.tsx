@@ -285,12 +285,13 @@ export function DiscountsSettings() {
                   min={0}
                   step={form.type === 'percentage' ? 0.5 : 1}
                   value={form.waarde}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const val = Math.max(0, parseFloat(e.target.value) || 0)
                     setForm((prev) => ({
                       ...prev,
-                      waarde: parseFloat(e.target.value) || 0,
+                      waarde: prev.type === 'percentage' ? Math.min(100, val) : val,
                     }))
-                  }
+                  }}
                 />
               </div>
             </div>

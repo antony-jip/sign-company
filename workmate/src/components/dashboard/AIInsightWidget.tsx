@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,6 +18,7 @@ interface AIInsight {
   iconColor: string
   iconBg: string
   actionLabel: string
+  href: string
 }
 
 const insights: AIInsight[] = [
@@ -27,6 +29,7 @@ const insights: AIInsight[] = [
     iconColor: 'text-green-600 dark:text-green-400',
     iconBg: 'bg-green-50 dark:bg-green-900/30',
     actionLabel: 'Bekijk project',
+    href: '/projecten',
   },
   {
     id: '2',
@@ -35,6 +38,7 @@ const insights: AIInsight[] = [
     iconColor: 'text-orange-600 dark:text-orange-400',
     iconBg: 'bg-orange-50 dark:bg-orange-900/30',
     actionLabel: 'Bekijk offertes',
+    href: '/offertes',
   },
   {
     id: '3',
@@ -43,10 +47,13 @@ const insights: AIInsight[] = [
     iconColor: 'text-blue-600 dark:text-blue-400',
     iconBg: 'bg-blue-50 dark:bg-blue-900/30',
     actionLabel: 'Neem contact op',
+    href: '/klanten',
   },
 ]
 
 export function AIInsightWidget() {
+  const navigate = useNavigate()
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -76,6 +83,7 @@ export function AIInsightWidget() {
                   variant="link"
                   size="sm"
                   className="h-auto p-0 mt-1 text-xs font-medium"
+                  onClick={() => navigate(insight.href)}
                 >
                   {insight.actionLabel}
                   <ArrowRight className="h-3 w-3 ml-1" />

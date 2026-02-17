@@ -38,8 +38,6 @@ const mockResponses = [
   `Zeker! Hier is mijn analyse:\n\nUw bedrijf presteert goed op dit moment. De omzet is stabiel en u heeft een gezonde mix van verschillende type projecten. Een paar aanbevelingen:\n\n- **Diversificatie**: Overweeg meer evenement-gerelateerde signing aan te bieden\n- **Klantretentie**: Uw bestaande klanten zijn tevreden, bouw hierop voort\n- **Groei**: Er liggen kansen in digitale displays en LED-signage\n\nWilt u meer details over een van deze suggesties?`,
 ]
 
-let responseIndex = 0
-
 export function WorkmateAIChat() {
   const [activeTab, setActiveTab] = useState('chat')
 
@@ -98,6 +96,7 @@ function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const responseIndexRef = useRef(0)
   const aiConfigured = isAIConfigured()
 
   const scrollToBottom = () => {
@@ -143,8 +142,8 @@ function ChatInterface() {
       } else {
         // Mock response with delay
         await new Promise((resolve) => setTimeout(resolve, 1500))
-        response = mockResponses[responseIndex % mockResponses.length]
-        responseIndex++
+        response = mockResponses[responseIndexRef.current % mockResponses.length]
+        responseIndexRef.current++
       }
 
       const assistantMessage: ChatMessage = {

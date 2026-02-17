@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Mail, ArrowRight } from 'lucide-react'
 import { mockEmails } from '@/data/mockData'
@@ -37,6 +37,8 @@ const avatarColors = [
 ]
 
 export function EmailCommunicationHub() {
+  const navigate = useNavigate()
+
   const recentUnread = useMemo(() => {
     return [...mockEmails]
       .filter((e) => !e.gelezen)
@@ -77,6 +79,10 @@ export function EmailCommunicationHub() {
             return (
               <div
                 key={email.id}
+                onClick={() => navigate('/email')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && navigate('/email')}
                 className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 cursor-pointer"
               >
                 {/* Avatar */}

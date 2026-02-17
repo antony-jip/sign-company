@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createKlant, updateKlant } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import type { Klant } from '@/types'
 
@@ -62,6 +63,7 @@ const initialFormData: FormData = {
 }
 
 export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditClientProps) {
+  const { user } = useAuth()
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const [saving, setSaving] = useState(false)
@@ -128,7 +130,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         .filter((t) => t.length > 0)
 
       const klantData = {
-        user_id: 'u1',
+        user_id: user?.id || 'demo',
         bedrijfsnaam: formData.bedrijfsnaam.trim(),
         contactpersoon: formData.contactpersoon.trim(),
         email: formData.email.trim(),

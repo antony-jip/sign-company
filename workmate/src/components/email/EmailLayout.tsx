@@ -109,21 +109,23 @@ export function EmailLayout() {
   }
 
   const handleToggleStar = (email: Email) => {
+    const newStarred = !email.starred
     setEmails((prev) =>
-      prev.map((e) => (e.id === email.id ? { ...e, starred: !e.starred } : e))
+      prev.map((e) => (e.id === email.id ? { ...e, starred: newStarred } : e))
     )
-    if (selectedEmail?.id === email.id) {
-      setSelectedEmail({ ...email, starred: !email.starred })
-    }
+    setSelectedEmail((prev) =>
+      prev?.id === email.id ? { ...prev, starred: newStarred } : prev
+    )
   }
 
   const handleToggleRead = (email: Email) => {
+    const newGelezen = !email.gelezen
     setEmails((prev) =>
-      prev.map((e) => (e.id === email.id ? { ...e, gelezen: !e.gelezen } : e))
+      prev.map((e) => (e.id === email.id ? { ...e, gelezen: newGelezen } : e))
     )
-    if (selectedEmail?.id === email.id) {
-      setSelectedEmail({ ...email, gelezen: !email.gelezen })
-    }
+    setSelectedEmail((prev) =>
+      prev?.id === email.id ? { ...prev, gelezen: newGelezen } : prev
+    )
   }
 
   const handleDelete = (email: Email) => {

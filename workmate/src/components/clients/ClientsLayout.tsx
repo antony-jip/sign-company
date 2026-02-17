@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -64,9 +65,8 @@ export function ClientsLayout() {
   }, [searchQuery, statusFilter])
 
   function handleClientSaved(klant: Klant) {
-    // In a real app this would refresh the data from the backend.
-    // For the mock data version, the user can reload the page.
     setAddDialogOpen(false)
+    toast.success(`Klant "${klant.bedrijfsnaam}" opgeslagen`)
   }
 
   return (

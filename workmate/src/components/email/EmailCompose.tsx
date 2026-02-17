@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -117,6 +117,13 @@ export function EmailCompose({
   const [body, setBody] = useState(defaultBody)
   const [template, setTemplate] = useState('none')
   const [isSending, setIsSending] = useState(false)
+
+  // Sync state when defaults change (reply/forward)
+  useEffect(() => {
+    setTo(defaultTo)
+    setSubject(defaultSubject)
+    setBody(defaultBody)
+  }, [defaultTo, defaultSubject, defaultBody])
 
   const handleTemplateChange = (value: string) => {
     setTemplate(value)
