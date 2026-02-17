@@ -14,15 +14,9 @@ import {
   File,
   CalendarDays,
   Users,
-  DollarSign,
   TrendingUp,
-  Clock,
   Target,
   Briefcase,
-  ArrowUpRight,
-  CheckCircle2,
-  Circle,
-  Timer,
   Eye,
   Send,
   Mail,
@@ -31,8 +25,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -52,12 +44,10 @@ import {
   getPriorityColor,
   getInitials,
 } from '@/lib/utils'
-import { getProject, getTakenByProject, getDocumenten, createTaak, getOffertesByProject, createOfferte, createOfferteItem, updateOfferte, getKlant } from '@/services/supabaseService'
+import { getProject, getTakenByProject, getDocumenten, createTaak, getOffertesByProject, createOfferte, createOfferteItem, updateOfferte } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { ProjectTasksTable } from './ProjectTasksTable'
-import { TimelineView } from './TimelineView'
-import { TeamAvailability } from './TeamAvailability'
 import type { Taak, Project, Document, Offerte } from '@/types'
 
 const statusLabels: Record<string, string> = {
@@ -315,189 +305,10 @@ export function ProjectDetail() {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
-      <Tabs defaultValue="overzicht" className="space-y-4">
-        <TabsList className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200/80 dark:border-gray-700/80 p-1 h-auto">
-          <TabsTrigger value="overzicht" className="text-sm px-4 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-            Overzicht
-          </TabsTrigger>
-          <TabsTrigger value="taken" className="text-sm px-4 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-            Taken ({takenTotaal})
-          </TabsTrigger>
-          <TabsTrigger value="team" className="text-sm px-4 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-            Team ({project.team_leden.length})
-          </TabsTrigger>
-          <TabsTrigger value="tijdlijn" className="text-sm px-4 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-            Tijdlijn
-          </TabsTrigger>
-          <TabsTrigger value="offertes" className="text-sm px-4 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-            Offertes ({projectOffertes.length})
-          </TabsTrigger>
-          <TabsTrigger value="bestanden" className="text-sm px-4 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-            Bestanden ({projectDocumenten.length})
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ────────────── Overzicht Tab ────────────── */}
-        <TabsContent value="overzicht" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left column: Project details */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Beschrijving */}
-              {project.beschrijving && (
-                <Card className="border-gray-200/80 dark:border-gray-700/80">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                        <FileText className="h-3.5 w-3.5 text-white" />
-                      </div>
-                      Beschrijving
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-foreground leading-relaxed">{project.beschrijving}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Taken overzicht */}
-              <Card className="border-gray-200/80 dark:border-gray-700/80">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-white" />
-                      </div>
-                      Taken
-                    </CardTitle>
-                    <span className="text-sm text-muted-foreground font-medium">{takenKlaar}/{takenTotaal} afgerond</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Status verdeling */}
-                  <div className="grid grid-cols-4 gap-3">
-                    {taakStatusKolommen.map((kolom) => {
-                      const count = projectTaken.filter(t => t.status === kolom.key).length
-                      return (
-                        <div key={kolom.key} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 text-center">
-                          <div className={`h-1.5 w-8 mx-auto rounded-full bg-gradient-to-r ${kolom.bgKleur} mb-2`} />
-                          <p className="text-lg font-bold text-foreground">{count}</p>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{kolom.label}</p>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Voortgangsbalk */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-muted-foreground">
-                        {takenTotaal > 0 ? Math.round((takenKlaar / takenTotaal) * 100) : 0}% afgerond
-                      </span>
-                    </div>
-                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-emerald-400 to-green-500"
-                        style={{ width: `${takenTotaal > 0 ? (takenKlaar / takenTotaal) * 100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Recente taken */}
-                  {projectTaken.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Recente taken</p>
-                      {projectTaken.slice(0, 5).map((taak) => (
-                        <div key={taak.id} className="flex items-center gap-3 py-1.5">
-                          {taak.status === 'klaar' ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                          ) : taak.status === 'bezig' ? (
-                            <Timer className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                          ) : taak.status === 'review' ? (
-                            <Eye className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                          ) : (
-                            <Circle className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          )}
-                          <span className={`text-sm flex-1 truncate ${taak.status === 'klaar' ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                            {taak.titel}
-                          </span>
-                          <Badge className={`${getPriorityColor(taak.prioriteit)} text-[10px] px-1.5 py-0`}>
-                            {taak.prioriteit}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right column: Info sidebar */}
-            <div className="space-y-6">
-              <Card className="border-gray-200/80 dark:border-gray-700/80">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                      <Briefcase className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    Projectgegevens
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <InfoRow label="Klant" value={project.klant_naam || 'Onbekend'} />
-                    <InfoRow label="Status">
-                      <Badge className={getStatusColor(project.status)}>
-                        {statusLabels[project.status]}
-                      </Badge>
-                    </InfoRow>
-                    <InfoRow label="Prioriteit">
-                      <Badge className={getPriorityColor(project.prioriteit)}>
-                        {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
-                      </Badge>
-                    </InfoRow>
-                    <InfoRow label="Startdatum" value={formatDate(project.start_datum)} />
-                    <InfoRow label="Einddatum" value={formatDate(project.eind_datum)} />
-                    <InfoRow label="Teamleden" value={`${project.team_leden.length} personen`} />
-                    <InfoRow label="Voortgang" value={`${project.voortgang}%`} />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Team preview */}
-              {project.team_leden.length > 0 && (
-                <Card className="border-gray-200/80 dark:border-gray-700/80">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                        <Users className="h-3.5 w-3.5 text-white" />
-                      </div>
-                      Team
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {project.team_leden.map((lid, i) => (
-                        <div
-                          key={lid}
-                          className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-1.5"
-                        >
-                          <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
-                            {getInitials(lid)}
-                          </div>
-                          <span className="text-xs font-medium text-foreground">{lid}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* ────────────── Taken Tab ────────────── */}
-        <TabsContent value="taken" className="space-y-4">
+      {/* ── Main Layout: Taken + Sidebar ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ────────────── Taken (hoofdcontent) ────────────── */}
+        <div className="lg:col-span-2 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <Button
@@ -624,7 +435,7 @@ export function ProjectDetail() {
 
           {/* Board View */}
           {takenWeergave === 'board' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               {taakStatusKolommen.map((kolom) => {
                 const kolomTaken = projectTaken.filter((t) => t.status === kolom.key)
 
@@ -665,330 +476,340 @@ export function ProjectDetail() {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
+        </div>
 
-        {/* ────────────── Team Tab ────────────── */}
-        <TabsContent value="team" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Projectteam</h2>
-              <p className="text-sm text-muted-foreground">
-                {project.team_leden.length} teamleden toegewezen
-              </p>
-            </div>
-          </div>
-          <TeamAvailability teamLeden={project.team_leden} />
-        </TabsContent>
-
-        {/* ────────────── Offertes Tab ────────────── */}
-        <TabsContent value="offertes" className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Offertes</h2>
-              <p className="text-sm text-muted-foreground">
-                {projectOffertes.length} offerte{projectOffertes.length !== 1 ? 's' : ''} voor dit project
-              </p>
-            </div>
-            <Dialog open={nieuweOfferteOpen} onOpenChange={(open) => {
-              setNieuweOfferteOpen(open)
-              if (!open) {
-                setOfferteTitel('')
-                setOfferteNotities('')
-                setOfferteItems([{ beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw }])
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0">
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Nieuwe Offerte
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Nieuwe offerte aanmaken</DialogTitle>
-                  <DialogDescription>
-                    Maak een offerte aan voor project "{project.naam}" ({project.klant_naam}).
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="offerte-titel">Titel</Label>
-                    <Input
-                      id="offerte-titel"
-                      placeholder="bijv. Gevelreclame nieuwe locatie"
-                      value={offerteTitel}
-                      onChange={(e) => setOfferteTitel(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>Offerte items</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setOfferteItems([...offerteItems, { beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw }])}
-                      >
-                        <Plus className="h-3.5 w-3.5 mr-1" />
-                        Item
-                      </Button>
+        {/* ────────────── Rechter Sidebar ────────────── */}
+        <div className="space-y-6">
+          {/* ── Team ── */}
+          <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                  <Users className="h-3.5 w-3.5 text-white" />
+                </div>
+                Team
+                <span className="text-xs text-muted-foreground font-normal ml-auto">{project.team_leden.length} leden</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {project.team_leden.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Geen teamleden toegewezen.</p>
+              ) : (
+                <div className="space-y-2">
+                  {project.team_leden.map((lid) => (
+                    <div
+                      key={lid}
+                      className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2"
+                    >
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                        {getInitials(lid)}
+                      </div>
+                      <span className="text-sm font-medium text-foreground truncate">{lid}</span>
                     </div>
-                    {offerteItems.map((item, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-2 items-end bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
-                        <div className="col-span-5 space-y-1">
-                          {index === 0 && <Label className="text-xs text-muted-foreground">Beschrijving</Label>}
-                          <Input
-                            placeholder="Beschrijving..."
-                            value={item.beschrijving}
-                            onChange={(e) => {
-                              const updated = [...offerteItems]
-                              updated[index] = { ...updated[index], beschrijving: e.target.value }
-                              setOfferteItems(updated)
-                            }}
-                          />
-                        </div>
-                        <div className="col-span-2 space-y-1">
-                          {index === 0 && <Label className="text-xs text-muted-foreground">Aantal</Label>}
-                          <Input
-                            type="number"
-                            min="1"
-                            value={item.aantal}
-                            onChange={(e) => {
-                              const updated = [...offerteItems]
-                              updated[index] = { ...updated[index], aantal: Number(e.target.value) || 1 }
-                              setOfferteItems(updated)
-                            }}
-                          />
-                        </div>
-                        <div className="col-span-3 space-y-1">
-                          {index === 0 && <Label className="text-xs text-muted-foreground">Prijs</Label>}
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Offertes ── */}
+          <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                    <Receipt className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Offertes
+                  <span className="text-xs text-muted-foreground font-normal">{projectOffertes.length}</span>
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => setNieuweOfferteOpen(true)}
+                  title="Nieuwe offerte"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {projectOffertes.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">Geen offertes</p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-indigo-600 dark:text-indigo-400 mt-1 h-auto p-0"
+                    onClick={() => setNieuweOfferteOpen(true)}
+                  >
+                    Eerste offerte aanmaken
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {projectOffertes.map((offerte) => (
+                    <div
+                      key={offerte.id}
+                      className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground truncate">{offerte.titel}</p>
+                        <Badge className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0 flex-shrink-0`}>
+                          {offerte.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
+                        <span className="text-sm font-bold text-foreground">{formatCurrency(offerte.totaal)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 pt-0.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => navigate(`/offertes/${offerte.id}`)}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          Bekijk
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => {
+                            setEmailOfferteId(offerte.id)
+                            setEmailOnderwerp(`Offerte ${offerte.nummer} - ${offerte.titel}`)
+                            setEmailBericht(
+                              `Beste ${project.klant_naam || 'klant'},\n\nHierbij ontvangt u onze offerte "${offerte.titel}" (${offerte.nummer}) ter waarde van ${formatCurrency(offerte.totaal)}.\n\nDeze offerte is geldig tot ${formatDate(offerte.geldig_tot)}.\n\nMocht u vragen hebben, neem dan gerust contact met ons op.\n\nMet vriendelijke groet`
+                            )
+                            setEmailOfferteOpen(true)
+                          }}
+                        >
+                          <Mail className="h-3 w-3 mr-1" />
+                          Mail
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Offerte aanmaken dialog */}
+          <Dialog open={nieuweOfferteOpen} onOpenChange={(open) => {
+            setNieuweOfferteOpen(open)
+            if (!open) {
+              setOfferteTitel('')
+              setOfferteNotities('')
+              setOfferteItems([{ beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw }])
+            }
+          }}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Nieuwe offerte aanmaken</DialogTitle>
+                <DialogDescription>
+                  Maak een offerte aan voor project "{project.naam}" ({project.klant_naam}).
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="offerte-titel">Titel</Label>
+                  <Input
+                    id="offerte-titel"
+                    placeholder="bijv. Gevelreclame nieuwe locatie"
+                    value={offerteTitel}
+                    onChange={(e) => setOfferteTitel(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Offerte items</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setOfferteItems([...offerteItems, { beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw }])}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Item
+                    </Button>
+                  </div>
+                  {offerteItems.map((item, index) => (
+                    <div key={index} className="grid grid-cols-12 gap-2 items-end bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
+                      <div className="col-span-5 space-y-1">
+                        {index === 0 && <Label className="text-xs text-muted-foreground">Beschrijving</Label>}
+                        <Input
+                          placeholder="Beschrijving..."
+                          value={item.beschrijving}
+                          onChange={(e) => {
+                            const updated = [...offerteItems]
+                            updated[index] = { ...updated[index], beschrijving: e.target.value }
+                            setOfferteItems(updated)
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-2 space-y-1">
+                        {index === 0 && <Label className="text-xs text-muted-foreground">Aantal</Label>}
+                        <Input
+                          type="number"
+                          min="1"
+                          value={item.aantal}
+                          onChange={(e) => {
+                            const updated = [...offerteItems]
+                            updated[index] = { ...updated[index], aantal: Number(e.target.value) || 1 }
+                            setOfferteItems(updated)
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-3 space-y-1">
+                        {index === 0 && <Label className="text-xs text-muted-foreground">Prijs</Label>}
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={item.eenheidsprijs || ''}
+                          onChange={(e) => {
+                            const updated = [...offerteItems]
+                            updated[index] = { ...updated[index], eenheidsprijs: Number(e.target.value) || 0 }
+                            setOfferteItems(updated)
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-2 flex items-end gap-1">
+                        <div className="flex-1 space-y-1">
+                          {index === 0 && <Label className="text-xs text-muted-foreground">BTW%</Label>}
                           <Input
                             type="number"
                             min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={item.eenheidsprijs || ''}
+                            value={item.btw_percentage}
                             onChange={(e) => {
                               const updated = [...offerteItems]
-                              updated[index] = { ...updated[index], eenheidsprijs: Number(e.target.value) || 0 }
+                              updated[index] = { ...updated[index], btw_percentage: Number(e.target.value) || 0 }
                               setOfferteItems(updated)
                             }}
                           />
                         </div>
-                        <div className="col-span-2 flex items-end gap-1">
-                          <div className="flex-1 space-y-1">
-                            {index === 0 && <Label className="text-xs text-muted-foreground">BTW%</Label>}
-                            <Input
-                              type="number"
-                              min="0"
-                              value={item.btw_percentage}
-                              onChange={(e) => {
-                                const updated = [...offerteItems]
-                                updated[index] = { ...updated[index], btw_percentage: Number(e.target.value) || 0 }
-                                setOfferteItems(updated)
-                              }}
-                            />
-                          </div>
-                          {offerteItems.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500 hover:text-red-700 px-2"
-                              onClick={() => setOfferteItems(offerteItems.filter((_, i) => i !== index))}
-                            >
-                              &times;
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Totaal preview */}
-                    <div className="flex justify-end pt-2">
-                      <div className="text-right space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          Subtotaal: <span className="font-semibold text-foreground">
-                            {formatCurrency(offerteItems.reduce((sum, i) => sum + i.aantal * i.eenheidsprijs, 0))}
-                          </span>
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          BTW: <span className="font-semibold text-foreground">
-                            {formatCurrency(offerteItems.reduce((sum, i) => sum + (i.aantal * i.eenheidsprijs * i.btw_percentage / 100), 0))}
-                          </span>
-                        </p>
-                        <p className="text-base font-bold text-foreground">
-                          Totaal: {formatCurrency(
-                            offerteItems.reduce((sum, i) => sum + i.aantal * i.eenheidsprijs * (1 + i.btw_percentage / 100), 0)
-                          )}
-                        </p>
+                        {offerteItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 px-2"
+                            onClick={() => setOfferteItems(offerteItems.filter((_, i) => i !== index))}
+                          >
+                            &times;
+                          </Button>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  ))}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="offerte-notities">Notities (optioneel)</Label>
-                    <Textarea
-                      id="offerte-notities"
-                      placeholder="Extra notities voor deze offerte..."
-                      value={offerteNotities}
-                      onChange={(e) => setOfferteNotities(e.target.value)}
-                      rows={3}
-                    />
+                  {/* Totaal preview */}
+                  <div className="flex justify-end pt-2">
+                    <div className="text-right space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        Subtotaal: <span className="font-semibold text-foreground">
+                          {formatCurrency(offerteItems.reduce((sum, i) => sum + i.aantal * i.eenheidsprijs, 0))}
+                        </span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        BTW: <span className="font-semibold text-foreground">
+                          {formatCurrency(offerteItems.reduce((sum, i) => sum + (i.aantal * i.eenheidsprijs * i.btw_percentage / 100), 0))}
+                        </span>
+                      </p>
+                      <p className="text-base font-bold text-foreground">
+                        Totaal: {formatCurrency(
+                          offerteItems.reduce((sum, i) => sum + i.aantal * i.eenheidsprijs * (1 + i.btw_percentage / 100), 0)
+                        )}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setNieuweOfferteOpen(false)}>
-                    Annuleren
-                  </Button>
-                  <Button
-                    disabled={!offerteTitel.trim() || offerteItems.every(i => !i.beschrijving.trim()) || isOfferteOpslaan}
-                    className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
-                    onClick={async () => {
-                      setIsOfferteOpslaan(true)
-                      try {
-                        const validItems = offerteItems.filter(i => i.beschrijving.trim())
-                        const subtotaal = validItems.reduce((sum, i) => sum + i.aantal * i.eenheidsprijs, 0)
-                        const btwBedrag = validItems.reduce((sum, i) => sum + (i.aantal * i.eenheidsprijs * i.btw_percentage / 100), 0)
-                        const year = new Date().getFullYear()
-                        const num = String(Math.floor(Math.random() * 900) + 100)
-                        const nummer = `${offertePrefix}-${year}-${num}`
-                        const geldigTot = new Date()
-                        geldigTot.setDate(geldigTot.getDate() + offerteGeldigheidDagen)
 
-                        const newOfferte = await createOfferte({
-                          user_id: user?.id || 'demo',
-                          klant_id: project.klant_id,
-                          project_id: id!,
-                          nummer,
-                          titel: offerteTitel.trim(),
-                          status: 'concept',
-                          subtotaal,
-                          btw_bedrag: btwBedrag,
-                          totaal: subtotaal + btwBedrag,
-                          geldig_tot: geldigTot.toISOString().split('T')[0],
-                          notities: offerteNotities,
-                          voorwaarden: '',
-                        })
-
-                        await Promise.all(
-                          validItems.map((item, index) =>
-                            createOfferteItem({
-                              offerte_id: newOfferte.id,
-                              beschrijving: item.beschrijving,
-                              aantal: item.aantal,
-                              eenheidsprijs: item.eenheidsprijs,
-                              btw_percentage: item.btw_percentage,
-                              korting_percentage: 0,
-                              totaal: item.aantal * item.eenheidsprijs,
-                              volgorde: index + 1,
-                            })
-                          )
-                        )
-
-                        toast.success(`Offerte "${offerteTitel}" aangemaakt`)
-                        setNieuweOfferteOpen(false)
-                        setOfferteTitel('')
-                        setOfferteNotities('')
-                        setOfferteItems([{ beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw }])
-                        await fetchOffertes()
-                      } catch (err) {
-                        console.error('Fout bij aanmaken offerte:', err)
-                        toast.error('Kon offerte niet aanmaken')
-                      } finally {
-                        setIsOfferteOpslaan(false)
-                      }
-                    }}
-                  >
-                    {isOfferteOpslaan ? 'Opslaan...' : 'Offerte aanmaken'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {/* Offertes lijst */}
-          {projectOffertes.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="py-16 text-center">
-                <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
-                  <Receipt className="h-8 w-8 text-muted-foreground opacity-40" />
+                <div className="space-y-2">
+                  <Label htmlFor="offerte-notities">Notities (optioneel)</Label>
+                  <Textarea
+                    id="offerte-notities"
+                    placeholder="Extra notities voor deze offerte..."
+                    value={offerteNotities}
+                    onChange={(e) => setOfferteNotities(e.target.value)}
+                    rows={3}
+                  />
                 </div>
-                <h3 className="text-lg font-medium text-foreground">Geen offertes</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Er zijn nog geen offertes aangemaakt voor dit project.
-                </p>
-                <Button
-                  size="sm"
-                  className="mt-4 bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
-                  onClick={() => setNieuweOfferteOpen(true)}
-                >
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Eerste offerte aanmaken
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setNieuweOfferteOpen(false)}>
+                  Annuleren
                 </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {projectOffertes.map((offerte) => (
-                <Card
-                  key={offerte.id}
-                  className="hover:shadow-md transition-all duration-200 border-gray-200/80 dark:border-gray-700/80"
+                <Button
+                  disabled={!offerteTitel.trim() || offerteItems.every(i => !i.beschrijving.trim()) || isOfferteOpslaan}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
+                  onClick={async () => {
+                    setIsOfferteOpslaan(true)
+                    try {
+                      const validItems = offerteItems.filter(i => i.beschrijving.trim())
+                      const subtotaal = validItems.reduce((sum, i) => sum + i.aantal * i.eenheidsprijs, 0)
+                      const btwBedrag = validItems.reduce((sum, i) => sum + (i.aantal * i.eenheidsprijs * i.btw_percentage / 100), 0)
+                      const year = new Date().getFullYear()
+                      const num = String(Math.floor(Math.random() * 900) + 100)
+                      const nummer = `${offertePrefix}-${year}-${num}`
+                      const geldigTot = new Date()
+                      geldigTot.setDate(geldigTot.getDate() + offerteGeldigheidDagen)
+
+                      const newOfferte = await createOfferte({
+                        user_id: user?.id || 'demo',
+                        klant_id: project.klant_id,
+                        project_id: id!,
+                        nummer,
+                        titel: offerteTitel.trim(),
+                        status: 'concept',
+                        subtotaal,
+                        btw_bedrag: btwBedrag,
+                        totaal: subtotaal + btwBedrag,
+                        geldig_tot: geldigTot.toISOString().split('T')[0],
+                        notities: offerteNotities,
+                        voorwaarden: '',
+                      })
+
+                      await Promise.all(
+                        validItems.map((item, index) =>
+                          createOfferteItem({
+                            offerte_id: newOfferte.id,
+                            beschrijving: item.beschrijving,
+                            aantal: item.aantal,
+                            eenheidsprijs: item.eenheidsprijs,
+                            btw_percentage: item.btw_percentage,
+                            korting_percentage: 0,
+                            totaal: item.aantal * item.eenheidsprijs,
+                            volgorde: index + 1,
+                          })
+                        )
+                      )
+
+                      toast.success(`Offerte "${offerteTitel}" aangemaakt`)
+                      setNieuweOfferteOpen(false)
+                      setOfferteTitel('')
+                      setOfferteNotities('')
+                      setOfferteItems([{ beschrijving: '', aantal: 1, eenheidsprijs: 0, btw_percentage: standaardBtw }])
+                      await fetchOffertes()
+                    } catch (err) {
+                      console.error('Fout bij aanmaken offerte:', err)
+                      toast.error('Kon offerte niet aanmaken')
+                    } finally {
+                      setIsOfferteOpslaan(false)
+                    }
+                  }}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center flex-shrink-0">
-                          <Receipt className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground truncate">{offerte.titel}</p>
-                            <Badge className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0`}>
-                              {offerte.status}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
-                            <span className="text-xs text-muted-foreground">Geldig tot: {formatDate(offerte.geldig_tot)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                        <p className="text-lg font-bold text-foreground">{formatCurrency(offerte.totaal)}</p>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/offertes/${offerte.id}`)}
-                            title="Bekijken"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEmailOfferteId(offerte.id)
-                              setEmailOnderwerp(`Offerte ${offerte.nummer} - ${offerte.titel}`)
-                              setEmailBericht(
-                                `Beste ${project.klant_naam || 'klant'},\n\nHierbij ontvangt u onze offerte "${offerte.titel}" (${offerte.nummer}) ter waarde van ${formatCurrency(offerte.totaal)}.\n\nDeze offerte is geldig tot ${formatDate(offerte.geldig_tot)}.\n\nMocht u vragen hebben, neem dan gerust contact met ons op.\n\nMet vriendelijke groet`
-                              )
-                              setEmailOfferteOpen(true)
-                            }}
-                            title="Verstuur via e-mail"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                  {isOfferteOpslaan ? 'Opslaan...' : 'Offerte aanmaken'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Email offerte dialog */}
           <Dialog open={emailOfferteOpen} onOpenChange={(open) => {
@@ -1047,7 +868,6 @@ export function ProjectDetail() {
                   onClick={async () => {
                     setIsEmailVerzenden(true)
                     try {
-                      // Update offerte status naar 'verzonden'
                       if (emailOfferteId) {
                         await updateOfferte(emailOfferteId, { status: 'verzonden' })
                       }
@@ -1071,126 +891,82 @@ export function ProjectDetail() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </TabsContent>
 
-        {/* ────────────── Tijdlijn Tab ────────────── */}
-        <TabsContent value="tijdlijn" className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Projecttijdlijn</h2>
-            <p className="text-sm text-muted-foreground">
-              {formatDate(project.start_datum)} tot {formatDate(project.eind_datum)}
-            </p>
-          </div>
+          {/* ── Bestanden (drag & drop) ── */}
           <Card className="border-gray-200/80 dark:border-gray-700/80">
-            <CardContent className="p-6">
-              <TimelineView
-                taken={projectTaken}
-                projectStart={project.start_datum}
-                projectEind={project.eind_datum}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ────────────── Bestanden Tab ────────────── */}
-        <TabsContent value="bestanden" className="space-y-4">
-          {/* Drag & drop zone */}
-          <div
-            className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-200 ${
-              isDragging
-                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30'
-                : 'border-gray-300 dark:border-gray-700 hover:border-indigo-400'
-            }`}
-            onDragOver={(e) => {
-              e.preventDefault()
-              setIsDragging(true)
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault()
-              setIsDragging(false)
-              const files = Array.from(e.dataTransfer.files)
-              if (files.length > 0) {
-                toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} ontvangen: ${files.map(f => f.name).join(', ')}`)
-              }
-            }}
-          >
-            <div className="flex flex-col items-center gap-3">
-              <div className={`h-14 w-14 rounded-2xl flex items-center justify-center transition-colors ${
-                isDragging
-                  ? 'bg-indigo-100 dark:bg-indigo-900/50'
-                  : 'bg-gray-100 dark:bg-gray-800'
-              }`}>
-                <Upload className={`h-7 w-7 transition-colors ${
-                  isDragging
-                    ? 'text-indigo-600 dark:text-indigo-400'
-                    : 'text-muted-foreground opacity-60'
-                }`} />
-              </div>
-              <div>
-                <p className={`text-sm font-medium ${isDragging ? 'text-indigo-600 dark:text-indigo-400' : 'text-foreground'}`}>
-                  {isDragging ? 'Laat los om te uploaden' : 'Sleep bestanden hierheen'}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  of klik om bestanden te selecteren
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {projectDocumenten.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="py-12 text-center">
-                <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3">
-                  <FileText className="h-7 w-7 text-muted-foreground opacity-40" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                  <FileText className="h-3.5 w-3.5 text-white" />
                 </div>
-                <h3 className="text-base font-medium text-foreground">Geen bestanden</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Sleep bestanden naar het vak hierboven om ze toe te voegen.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {projectDocumenten.map((doc) => (
-                <Card
-                  key={doc.id}
-                  className="hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border-gray-200/80 dark:border-gray-700/80 cursor-pointer group"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-200">
+                Bestanden
+                <span className="text-xs text-muted-foreground font-normal ml-auto">{projectDocumenten.length}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Drag & drop zone */}
+              <div
+                className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 ${
+                  isDragging
+                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30'
+                    : 'border-gray-300 dark:border-gray-700 hover:border-indigo-400'
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setIsDragging(true)
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  setIsDragging(false)
+                  const files = Array.from(e.dataTransfer.files)
+                  if (files.length > 0) {
+                    toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} ontvangen: ${files.map(f => f.name).join(', ')}`)
+                  }
+                }}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Upload className={`h-5 w-5 transition-colors ${
+                    isDragging
+                      ? 'text-indigo-600 dark:text-indigo-400'
+                      : 'text-muted-foreground opacity-60'
+                  }`} />
+                  <p className={`text-xs font-medium ${isDragging ? 'text-indigo-600 dark:text-indigo-400' : 'text-muted-foreground'}`}>
+                    {isDragging ? 'Laat los om te uploaden' : 'Sleep bestanden hierheen'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Bestandenlijst */}
+              {projectDocumenten.length > 0 && (
+                <div className="space-y-2">
+                  {projectDocumenten.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 group hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                      <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
                         {getFileIcon(doc.type)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {doc.naam}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {formatFileSize(doc.grootte)}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge
-                            className={`${getStatusColor(doc.status)} text-[10px] px-1.5 py-0`}
-                          >
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.grootte)}</span>
+                          <Badge className={`${getStatusColor(doc.status)} text-[9px] px-1 py-0`}>
                             {doc.status}
                           </Badge>
-                          <span className="text-xs text-muted-foreground capitalize">
-                            {doc.type}
-                          </span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDate(doc.created_at)}
-                        </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }
