@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,8 +8,14 @@ import {
   AlertTriangle,
   Clock,
   ArrowRight,
+  Users,
+  FileText,
+  FolderKanban,
+  Loader2,
   type LucideIcon,
 } from 'lucide-react'
+import { getProjecten, getOffertes, getKlanten, getTaken } from '@/services/supabaseService'
+import type { Project, Offerte, Klant, Taak } from '@/types'
 
 interface AIInsight {
   id: string
@@ -21,38 +27,165 @@ interface AIInsight {
   href: string
 }
 
-const insights: AIInsight[] = [
-  {
-    id: '1',
-    message: "Project 'Website Redesign' loopt 2 dagen voor op schema",
-    icon: CheckCircle,
-    iconColor: 'text-green-600 dark:text-green-400',
-    iconBg: 'bg-green-50 dark:bg-green-900/30',
-    actionLabel: 'Bekijk project',
-    href: '/projecten',
-  },
-  {
-    id: '2',
-    message: '3 offertes verlopen binnen 7 dagen - actie vereist',
-    icon: AlertTriangle,
-    iconColor: 'text-orange-600 dark:text-orange-400',
-    iconBg: 'bg-orange-50 dark:bg-orange-900/30',
-    actionLabel: 'Bekijk offertes',
-    href: '/offertes',
-  },
-  {
-    id: '3',
-    message: 'Klant TechNova heeft 30 dagen geen contact gehad',
-    icon: Clock,
-    iconColor: 'text-blue-600 dark:text-blue-400',
-    iconBg: 'bg-blue-50 dark:bg-blue-900/30',
-    actionLabel: 'Neem contact op',
-    href: '/klanten',
-  },
-]
-
 export function AIInsightWidget() {
   const navigate = useNavigate()
+  const [projecten, setProjecten] = useState<Project[]>([])
+  const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [klanten, setKlanten] = useState<Klant[]>([])
+  const [taken, setTaken] = useState<Taak[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([getProjecten(), getOffertes(), getKlanten(), getTaken()])
+      .then(([p, o, k, t]) => {
+        setProjecten(p)
+        setOffertes(o)
+        setKlanten(k)
+        setTaken(t)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  const insights = useMemo(() => {
+    const items: AIInsight[] = []
+    const now = new Date()
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+    // Check for expiring offertes
+    const expiringOffertes = offertes.filter((o) => {
+      if (o.status === 'goedgekeurd' || o.status === 'afgewezen') return false
+      const geldigTot = new Date(o.geldig_tot)
+      return geldigTot <= sevenDaysFromNow && geldigTot >= now
+    })
+    if (expiringOffertes.length > 0) {
+      items.push({
+        id: 'expiring-quotes',
+        message: `${expiringOffertes.length} offerte${expiringOffertes.length > 1 ? 's' : ''} verlo${expiringOffertes.length > 1 ? 'pen' : 'opt'} binnen 7 dagen`,
+        icon: AlertTriangle,
+        iconColor: 'text-orange-600 dark:text-orange-400',
+        iconBg: 'bg-orange-50 dark:bg-orange-900/30',
+        actionLabel: 'Bekijk offertes',
+        href: '/offertes',
+      })
+    }
+
+    // Check for overdue tasks
+    const overdueTaken = taken.filter((t) => {
+      if (t.status === 'klaar') return false
+      return new Date(t.deadline) < now
+    })
+    if (overdueTaken.length > 0) {
+      items.push({
+        id: 'overdue-tasks',
+        message: `${overdueTaken.length} ta${overdueTaken.length > 1 ? 'ken' : 'ak'} ${overdueTaken.length > 1 ? 'zijn' : 'is'} verlopen en ${overdueTaken.length > 1 ? 'vereisen' : 'vereist'} actie`,
+        icon: Clock,
+        iconColor: 'text-red-600 dark:text-red-400',
+        iconBg: 'bg-red-50 dark:bg-red-900/30',
+        actionLabel: 'Bekijk taken',
+        href: '/taken',
+      })
+    }
+
+    // Check for active projects nearing deadline
+    const nearDeadlineProjects = projecten.filter((p) => {
+      if (p.status === 'afgerond') return false
+      const deadline = new Date(p.eind_datum)
+      return deadline <= sevenDaysFromNow && deadline >= now
+    })
+    if (nearDeadlineProjects.length > 0) {
+      items.push({
+        id: 'deadline-projects',
+        message: `${nearDeadlineProjects.length} project${nearDeadlineProjects.length > 1 ? 'en naderen hun' : ' nadert zijn'} deadline`,
+        icon: FolderKanban,
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        iconBg: 'bg-blue-50 dark:bg-blue-900/30',
+        actionLabel: 'Bekijk projecten',
+        href: '/projecten',
+      })
+    }
+
+    // Show completed projects
+    const completedProjects = projecten.filter((p) => p.status === 'afgerond')
+    if (completedProjects.length > 0) {
+      items.push({
+        id: 'completed-projects',
+        message: `${completedProjects.length} project${completedProjects.length > 1 ? 'en' : ''} succesvol afgerond`,
+        icon: CheckCircle,
+        iconColor: 'text-green-600 dark:text-green-400',
+        iconBg: 'bg-green-50 dark:bg-green-900/30',
+        actionLabel: 'Bekijk projecten',
+        href: '/projecten',
+      })
+    }
+
+    // Show total klanten count
+    if (klanten.length > 0) {
+      const actieveKlanten = klanten.filter((k) => k.status === 'actief').length
+      items.push({
+        id: 'active-clients',
+        message: `${actieveKlanten} actieve klant${actieveKlanten !== 1 ? 'en' : ''} in uw portfolio`,
+        icon: Users,
+        iconColor: 'text-green-600 dark:text-green-400',
+        iconBg: 'bg-green-50 dark:bg-green-900/30',
+        actionLabel: 'Bekijk klanten',
+        href: '/klanten',
+      })
+    }
+
+    // Show pending offertes
+    const pendingOffertes = offertes.filter((o) => o.status === 'verzonden' || o.status === 'bekeken')
+    if (pendingOffertes.length > 0) {
+      items.push({
+        id: 'pending-quotes',
+        message: `${pendingOffertes.length} offerte${pendingOffertes.length > 1 ? 's' : ''} wacht${pendingOffertes.length > 1 ? 'en' : ''} op reactie`,
+        icon: FileText,
+        iconColor: 'text-purple-600 dark:text-purple-400',
+        iconBg: 'bg-purple-50 dark:bg-purple-900/30',
+        actionLabel: 'Bekijk offertes',
+        href: '/offertes',
+      })
+    }
+
+    // If no data at all, show getting-started insights
+    if (items.length === 0) {
+      if (klanten.length === 0) {
+        items.push({
+          id: 'no-clients',
+          message: 'Begin met het toevoegen van uw eerste klant',
+          icon: Users,
+          iconColor: 'text-blue-600 dark:text-blue-400',
+          iconBg: 'bg-blue-50 dark:bg-blue-900/30',
+          actionLabel: 'Klanten beheren',
+          href: '/klanten',
+        })
+      }
+      if (projecten.length === 0) {
+        items.push({
+          id: 'no-projects',
+          message: 'Maak uw eerste project aan om aan de slag te gaan',
+          icon: FolderKanban,
+          iconColor: 'text-green-600 dark:text-green-400',
+          iconBg: 'bg-green-50 dark:bg-green-900/30',
+          actionLabel: 'Nieuw project',
+          href: '/projecten/nieuw',
+        })
+      }
+      if (offertes.length === 0) {
+        items.push({
+          id: 'no-quotes',
+          message: 'Stel uw eerste offerte op voor een klant',
+          icon: FileText,
+          iconColor: 'text-purple-600 dark:text-purple-400',
+          iconBg: 'bg-purple-50 dark:bg-purple-900/30',
+          actionLabel: 'Nieuwe offerte',
+          href: '/offertes/nieuw',
+        })
+      }
+    }
+
+    return items.slice(0, 4)
+  }, [projecten, offertes, klanten, taken])
 
   return (
     <Card>
@@ -65,33 +198,43 @@ export function AIInsightWidget() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {insights.map((insight) => {
-          const Icon = insight.icon
-          return (
-            <div
-              key={insight.id}
-              className={`flex items-start gap-3 rounded-lg p-3 ${insight.iconBg} transition-colors duration-150`}
-            >
-              <Icon
-                className={`h-5 w-5 mt-0.5 flex-shrink-0 ${insight.iconColor}`}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
-                  {insight.message}
-                </p>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="h-auto p-0 mt-1 text-xs font-medium"
-                  onClick={() => navigate(insight.href)}
-                >
-                  {insight.actionLabel}
-                  <ArrowRight className="h-3 w-3 ml-1" />
-                </Button>
+        {loading ? (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          </div>
+        ) : insights.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            Geen inzichten beschikbaar
+          </p>
+        ) : (
+          insights.map((insight) => {
+            const Icon = insight.icon
+            return (
+              <div
+                key={insight.id}
+                className={`flex items-start gap-3 rounded-lg p-3 ${insight.iconBg} transition-colors duration-150`}
+              >
+                <Icon
+                  className={`h-5 w-5 mt-0.5 flex-shrink-0 ${insight.iconColor}`}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
+                    {insight.message}
+                  </p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 mt-1 text-xs font-medium"
+                    onClick={() => navigate(insight.href)}
+                  >
+                    {insight.actionLabel}
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })
+        )}
       </CardContent>
     </Card>
   )

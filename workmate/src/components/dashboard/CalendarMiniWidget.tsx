@@ -144,12 +144,16 @@ export function CalendarMiniWidget() {
         </div>
 
         {/* Upcoming events */}
-        {upcomingEvents.length > 0 && (
-          <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Aankomende afspraken
+        <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Aankomende afspraken
+          </p>
+          {upcomingEvents.length === 0 ? (
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">
+              Geen aankomende afspraken
             </p>
-            {upcomingEvents.map((event) => {
+          ) : (
+            upcomingEvents.map((event) => {
               const eventDate = parseISO(event.start_datum)
               return (
                 <div
@@ -173,9 +177,9 @@ export function CalendarMiniWidget() {
                   </div>
                 </div>
               )
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
         </>)}
       </CardContent>
     </Card>

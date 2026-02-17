@@ -1,0 +1,245 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createProject, getKlanten } from '@/services/supabaseService';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { ArrowLeft, Save } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const ProjectCreate = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [klanten, setKlanten] = useState<{ id: string; naam: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [naam, setNaam] = useState('');
+  const [beschrijving, setBeschrijving] = useState('');
+  const [klantId, setKlantId] = useState('');
+  const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold'>('gepland');
+  const [prioriteit, setPrioriteit] = useState<'laag' | 'medium' | 'hoog' | 'kritiek'>('medium');
+  const [startDatum, setStartDatum] = useState(() => new Date().toISOString().split('T')[0]);
+  const [eindDatum, setEindDatum] = useState('');
+  const [budget, setBudget] = useState('');
+  const [teamLeden, setTeamLeden] = useState('');
+
+  useEffect(() => {
+    const fetchKlanten = async () => {
+      try {
+        const data = await getKlanten();
+        setKlanten(data);
+      } catch (error) {
+        console.error('Fout bij ophalen klanten:', error);
+      }
+    };
+    fetchKlanten();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!naam.trim()) {
+      toast.error('Projectnaam is verplicht');
+      return;
+    }
+
+    if (!user) {
+      toast.error('Je moet ingelogd zijn om een project aan te maken');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const teamLedenArray = teamLeden
+        .split(',')
+        .map((lid) => lid.trim())
+        .filter((lid) => lid.length > 0);
+
+      const selectedKlant = klanten.find((k) => k.id === klantId);
+
+      await createProject({
+        user_id: user.id,
+        klant_id: klantId,
+        klant_naam: selectedKlant?.naam || '',
+        naam: naam.trim(),
+        beschrijving: beschrijving.trim(),
+        status,
+        prioriteit,
+        start_datum: startDatum,
+        eind_datum: eindDatum,
+        budget: parseFloat(budget) || 0,
+        besteed: 0,
+        voortgang: 0,
+        team_leden: teamLedenArray,
+      });
+
+      toast.success('Project succesvol aangemaakt');
+      navigate('/projecten');
+    } catch (error) {
+      console.error('Fout bij aanmaken project:', error);
+      toast.error('Er is iets misgegaan bij het aanmaken van het project');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/projecten')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-bold">Nieuw Project</h1>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Projectgegevens</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="naam">Projectnaam *</Label>
+              <Input
+                id="naam"
+                value={naam}
+                onChange={(e) => setNaam(e.target.value)}
+                placeholder="Voer de projectnaam in"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="beschrijving">Beschrijving</Label>
+              <Textarea
+                id="beschrijving"
+                value={beschrijving}
+                onChange={(e) => setBeschrijving(e.target.value)}
+                placeholder="Beschrijf het project..."
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="klant">Klant</Label>
+              <Select value={klantId} onValueChange={setKlantId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecteer een klant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {klanten.map((klant) => (
+                    <SelectItem key={klant.id} value={klant.id}>
+                      {klant.naam}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gepland">Gepland</SelectItem>
+                    <SelectItem value="actief">Actief</SelectItem>
+                    <SelectItem value="in-review">In Review</SelectItem>
+                    <SelectItem value="afgerond">Afgerond</SelectItem>
+                    <SelectItem value="on-hold">On Hold</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="prioriteit">Prioriteit</Label>
+                <Select value={prioriteit} onValueChange={(value: typeof prioriteit) => setPrioriteit(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="laag">Laag</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hoog">Hoog</SelectItem>
+                    <SelectItem value="kritiek">Kritiek</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="startDatum">Startdatum</Label>
+                <Input
+                  id="startDatum"
+                  type="date"
+                  value={startDatum}
+                  onChange={(e) => setStartDatum(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="eindDatum">Einddatum</Label>
+                <Input
+                  id="eindDatum"
+                  type="date"
+                  value={eindDatum}
+                  onChange={(e) => setEindDatum(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="budget">Budget (&euro;)</Label>
+              <Input
+                id="budget"
+                type="number"
+                min="0"
+                step="0.01"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="teamLeden">Team leden</Label>
+              <Input
+                id="teamLeden"
+                value={teamLeden}
+                onChange={(e) => setTeamLeden(e.target.value)}
+                placeholder="Naam 1, Naam 2, Naam 3"
+              />
+              <p className="text-sm text-muted-foreground">
+                Voer teamleden in, gescheiden door komma's
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button type="submit" disabled={loading}>
+                <Save className="h-4 w-4 mr-2" />
+                {loading ? 'Opslaan...' : 'Project Opslaan'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ProjectCreate;

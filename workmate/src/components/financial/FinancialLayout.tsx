@@ -30,20 +30,7 @@ import { GeneralLedgerSettings } from './GeneralLedgerSettings'
 import { VATCodesSettings } from './VATCodesSettings'
 import { DiscountsSettings } from './DiscountsSettings'
 
-const maandData = [
-  { maand: 'Jan', omzet: 32000, kosten: 18000 },
-  { maand: 'Feb', omzet: 28000, kosten: 15000 },
-  { maand: 'Mrt', omzet: 45000, kosten: 22000 },
-  { maand: 'Apr', omzet: 38000, kosten: 20000 },
-  { maand: 'Mei', omzet: 52000, kosten: 25000 },
-  { maand: 'Jun', omzet: 41000, kosten: 21000 },
-  { maand: 'Jul', omzet: 35000, kosten: 19000 },
-  { maand: 'Aug', omzet: 29000, kosten: 16000 },
-  { maand: 'Sep', omzet: 48000, kosten: 24000 },
-  { maand: 'Okt', omzet: 55000, kosten: 28000 },
-  { maand: 'Nov', omzet: 47000, kosten: 23000 },
-  { maand: 'Dec', omzet: 42000, kosten: 20000 },
-]
+const MAAND_LABELS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
 
 const PIE_COLORS = ['#3B82F6', '#EF4444']
 
@@ -90,6 +77,18 @@ export function FinancialLayout() {
       ),
     [offertes]
   )
+
+  // Distribute grootboek saldo evenly across months for chart display
+  const maandData = useMemo(() => {
+    if (grootboek.length === 0) return []
+    const omzetPerMaand = totaleOmzet / 12
+    const kostenPerMaand = totaleKosten / 12
+    return MAAND_LABELS.map((maand) => ({
+      maand,
+      omzet: Math.round(omzetPerMaand),
+      kosten: Math.round(kostenPerMaand),
+    }))
+  }, [grootboek, totaleOmzet, totaleKosten])
 
   const pieData = [
     { name: 'Inkomsten', value: totaleOmzet },
@@ -189,6 +188,13 @@ export function FinancialLayout() {
                 <CardTitle className="text-lg">Maandelijks Overzicht</CardTitle>
               </CardHeader>
               <CardContent>
+                {maandData.length === 0 ? (
+                  <div className="h-[350px] flex items-center justify-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Voeg grootboekrekeningen toe om het overzicht te zien
+                    </p>
+                  </div>
+                ) : (
                 <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={maandData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -227,6 +233,7 @@ export function FinancialLayout() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
+                )}
               </CardContent>
             </Card>
 

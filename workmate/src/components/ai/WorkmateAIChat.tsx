@@ -24,19 +24,6 @@ const suggesties = [
   'Project status samenvatting',
 ]
 
-const mockResponses = [
-  `Natuurlijk kan ik u daarmee helpen! Op basis van de beschikbare gegevens zie ik dat u momenteel meerdere actieve projecten heeft. Het project "Kantoor Signing Pakket" voor Van Dijk Architecten heeft het grootste budget en verloopt goed. Ik raad aan om de voortgang van het "Website Redesign" project nauwlettend in de gaten te houden, aangezien de deadline nadert.`,
-
-  `Goed dat u dat vraagt! Hier zijn enkele belangrijke punten om rekening mee te houden:\n\n1. **Planning**: Zorg dat alle deadlines realistisch zijn en houd rekening met onvoorziene vertragingen.\n2. **Communicatie**: Regelmatig contact met uw klanten voorkomt misverstanden.\n3. **Budget**: Houd uw uitgaven nauwkeurig bij om overschrijdingen te voorkomen.\n\nKan ik u ergens specifiek mee helpen?`,
-
-  `Ik heb een overzicht voor u samengesteld:\n\n- **Actieve projecten**: 3 projecten lopen momenteel\n- **Openstaande taken**: Er zijn diverse taken die nog afgerond moeten worden\n- **Offertes**: Er staan meerdere offertes open bij klanten\n\nWilt u dat ik dieper inga op een van deze onderwerpen?`,
-
-  `Bedankt voor uw vraag! Als professioneel sign-bedrijf is het belangrijk om:\n\n- Heldere communicatie te onderhouden met al uw klanten\n- Materiaalkosten en arbeidstijd nauwkeurig bij te houden\n- Regelmatig de voortgang van lopende projecten te evalueren\n\nIk sta klaar om u te assisteren met al uw zakelijke behoeften. Wat kan ik voor u doen?`,
-
-  `Dat is een uitstekende vraag! Laat me u helpen met een gestructureerde aanpak:\n\n**Prioriteiten deze week:**\n1. Wireframes goedkeuring afronden\n2. Technische tekeningen voor gevelreclame completeren\n3. Content planning voor social media campagne opstarten\n\n**Aandachtspunten:**\n- Budget bewaking bij het Kantoor Signing project\n- Follow-up bij openstaande offertes\n\nZal ik een van deze punten verder uitwerken?`,
-
-  `Zeker! Hier is mijn analyse:\n\nUw bedrijf presteert goed op dit moment. De omzet is stabiel en u heeft een gezonde mix van verschillende type projecten. Een paar aanbevelingen:\n\n- **Diversificatie**: Overweeg meer evenement-gerelateerde signing aan te bieden\n- **Klantretentie**: Uw bestaande klanten zijn tevreden, bouw hierop voort\n- **Groei**: Er liggen kansen in digitale displays en LED-signage\n\nWilt u meer details over een van deze suggesties?`,
-]
 
 export function WorkmateAIChat() {
   const [activeTab, setActiveTab] = useState('chat')
@@ -96,7 +83,6 @@ function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const responseIndexRef = useRef(0)
   const aiConfigured = isAIConfigured()
 
   const scrollToBottom = () => {
@@ -125,26 +111,19 @@ function ChatInterface() {
     try {
       let response: string
 
-      if (aiConfigured) {
-        const chatHistory = messages
-          .filter((m) => m.id !== 'welcome')
-          .map((m) => ({
-            role: m.rol === 'user' ? ('user' as const) : ('assistant' as const),
-            content: m.bericht,
-          }))
+      const chatHistory = messages
+        .filter((m) => m.id !== 'welcome')
+        .map((m) => ({
+          role: m.rol === 'user' ? ('user' as const) : ('assistant' as const),
+          content: m.bericht,
+        }))
 
-        chatHistory.push({ role: 'user', content: trimmed })
+      chatHistory.push({ role: 'user', content: trimmed })
 
-        response = await chatCompletion(
-          chatHistory,
-          'Je bent een behulpzame AI-assistent voor een Nederlands sign-bedrijf genaamd Workmate. Communiceer altijd in het Nederlands. Wees professioneel, behulpzaam en beknopt.'
-        )
-      } else {
-        // Mock response with delay
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-        response = mockResponses[responseIndexRef.current % mockResponses.length]
-        responseIndexRef.current++
-      }
+      response = await chatCompletion(
+        chatHistory,
+        'Je bent een behulpzame AI-assistent voor een Nederlands sign-bedrijf genaamd Workmate. Communiceer altijd in het Nederlands. Wees professioneel, behulpzaam en beknopt.'
+      )
 
       const assistantMessage: ChatMessage = {
         id: `msg-${Date.now()}-response`,

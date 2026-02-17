@@ -31,14 +31,13 @@ import { getKlant, getProjectenByKlant, getEmails, getDocumenten, updateKlant } 
 import { AddEditClient } from './AddEditClient'
 import type { Klant, Project, Email, Document as DocType } from '@/types'
 
-// Mock activity data for the timeline
-const mockActivities = [
-  { id: 'a1', type: 'project', beschrijving: 'Project gestart', datum: '2025-02-15T10:00:00Z', icon: FolderKanban },
-  { id: 'a2', type: 'offerte', beschrijving: 'Offerte verzonden', datum: '2025-02-10T14:00:00Z', icon: FileText },
-  { id: 'a3', type: 'email', beschrijving: 'Email ontvangen', datum: '2025-02-08T09:30:00Z', icon: Mail },
-  { id: 'a4', type: 'meeting', beschrijving: 'Klantoverleg gehad', datum: '2025-02-05T11:00:00Z', icon: Calendar },
-  { id: 'a5', type: 'document', beschrijving: 'Document gedeeld', datum: '2025-02-01T16:00:00Z', icon: FileIcon },
-]
+interface Activity {
+  id: string
+  type: string
+  beschrijving: string
+  datum: string
+  icon: React.ElementType
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -81,6 +80,41 @@ export function ClientProfile() {
       setIsLoading(false)
     })
   }, [id])
+
+  // Build activity timeline from real data
+  const activities: Activity[] = useMemo(() => {
+    const items: Activity[] = []
+    clientProjecten.forEach((p) => {
+      items.push({
+        id: `proj-${p.id}`,
+        type: 'project',
+        beschrijving: `Project "${p.naam}" ${p.status === 'afgerond' ? 'afgerond' : 'gestart'}`,
+        datum: p.created_at,
+        icon: FolderKanban,
+      })
+    })
+    clientEmails.forEach((e) => {
+      items.push({
+        id: `email-${e.id}`,
+        type: 'email',
+        beschrijving: `Email: ${e.onderwerp}`,
+        datum: e.datum,
+        icon: Mail,
+      })
+    })
+    clientDocumenten.forEach((d) => {
+      items.push({
+        id: `doc-${d.id}`,
+        type: 'document',
+        beschrijving: `Document "${d.naam}" ${d.status === 'definitief' ? 'definitief gemaakt' : 'toegevoegd'}`,
+        datum: d.updated_at || d.created_at,
+        icon: FileIcon,
+      })
+    })
+    return items
+      .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+      .slice(0, 10)
+  }, [clientProjecten, clientEmails, clientDocumenten])
 
   if (isLoading) {
     return (
@@ -288,29 +322,35 @@ export function ClientProfile() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockActivities.map((activity, index) => {
-                    const Icon = activity.icon
-                    return (
-                      <div key={activity.id} className="flex gap-3">
-                        <div className="relative flex flex-col items-center">
-                          <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                            <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  {activities.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                      Nog geen activiteiten voor deze klant
+                    </p>
+                  ) : (
+                    activities.map((activity, index) => {
+                      const Icon = activity.icon
+                      return (
+                        <div key={activity.id} className="flex gap-3">
+                          <div className="relative flex flex-col items-center">
+                            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            {index < activities.length - 1 && (
+                              <div className="w-px flex-1 bg-gray-200 dark:bg-gray-700 mt-1" />
+                            )}
                           </div>
-                          {index < mockActivities.length - 1 && (
-                            <div className="w-px flex-1 bg-gray-200 dark:bg-gray-700 mt-1" />
-                          )}
+                          <div className="pb-4">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {activity.beschrijving}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatDateTime(activity.datum)}
+                            </p>
+                          </div>
                         </div>
-                        <div className="pb-4">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {activity.beschrijving}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatDateTime(activity.datum)}
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })
+                  )}
                 </div>
               </CardContent>
             </Card>

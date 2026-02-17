@@ -14,6 +14,7 @@ import { RegisterPage } from '@/components/auth/RegisterPage'
 import { WorkmateDashboard } from '@/components/dashboard/WorkmateDashboard'
 import { ProjectsList } from '@/components/projects/ProjectsList'
 import { ProjectDetail } from '@/components/projects/ProjectDetail'
+import { ProjectCreate } from '@/components/projects/ProjectCreate'
 import { ClientsLayout } from '@/components/clients/ClientsLayout'
 import { ClientProfile } from '@/components/clients/ClientProfile'
 import { QuotesPipeline } from '@/components/quotes/QuotesPipeline'
@@ -50,6 +51,7 @@ function AppContent() {
       }>
         <Route index element={<WorkmateDashboard />} />
         <Route path="projecten" element={<ProjectsList />} />
+        <Route path="projecten/nieuw" element={<ProjectCreate />} />
         <Route path="projecten/:id" element={<ProjectDetail />} />
         <Route path="klanten" element={<ClientsLayout />} />
         <Route path="klanten/:id" element={<ClientProfile />} />

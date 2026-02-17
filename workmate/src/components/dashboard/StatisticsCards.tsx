@@ -5,8 +5,6 @@ import {
   Users,
   FileText,
   PiggyBank,
-  TrendingUp,
-  TrendingDown,
   Loader2,
   type LucideIcon,
 } from 'lucide-react'
@@ -17,8 +15,7 @@ import { formatCurrency } from '@/lib/utils'
 interface StatCard {
   title: string
   value: string
-  trend: number
-  trendLabel: string
+  subtitle: string
   icon: LucideIcon
   iconBg: string
   iconColor: string
@@ -65,12 +62,15 @@ export function StatisticsCards() {
     )
   }
 
+  const goedgekeurdeOffertes = offertes
+    .filter((o) => o.status === 'goedgekeurd')
+    .reduce((sum, o) => sum + o.totaal, 0)
+
   const stats: StatCard[] = [
     {
       title: 'Actieve Projecten',
       value: actieveProjecten.toString(),
-      trend: 12,
-      trendLabel: 'vs. vorige maand',
+      subtitle: `${projecten.length} totaal`,
       icon: FolderKanban,
       iconBg: 'bg-blue-100 dark:bg-blue-900/50',
       iconColor: 'text-blue-600 dark:text-blue-400',
@@ -78,8 +78,7 @@ export function StatisticsCards() {
     {
       title: 'Totaal Klanten',
       value: totaalKlanten.toString(),
-      trend: 3,
-      trendLabel: 'vs. vorige maand',
+      subtitle: `${klanten.filter((k) => k.status === 'actief').length} actief`,
       icon: Users,
       iconBg: 'bg-green-100 dark:bg-green-900/50',
       iconColor: 'text-green-600 dark:text-green-400',
@@ -87,17 +86,15 @@ export function StatisticsCards() {
     {
       title: 'Openstaande Offertes',
       value: formatCurrency(openstaandeOffertes),
-      trend: -2,
-      trendLabel: 'vs. vorige maand',
+      subtitle: `${offertes.filter((o) => ['verzonden', 'bekeken', 'concept'].includes(o.status)).length} offertes`,
       icon: FileText,
       iconBg: 'bg-purple-100 dark:bg-purple-900/50',
       iconColor: 'text-purple-600 dark:text-purple-400',
     },
     {
-      title: 'Omzet Deze Maand',
-      value: formatCurrency(47250),
-      trend: 8,
-      trendLabel: 'vs. vorige maand',
+      title: 'Goedgekeurde Offertes',
+      value: formatCurrency(goedgekeurdeOffertes),
+      subtitle: `${offertes.filter((o) => o.status === 'goedgekeurd').length} goedgekeurd`,
       icon: PiggyBank,
       iconBg: 'bg-orange-100 dark:bg-orange-900/50',
       iconColor: 'text-orange-600 dark:text-orange-400',
@@ -108,8 +105,6 @@ export function StatisticsCards() {
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       {stats.map((stat) => {
         const Icon = stat.icon
-        const isPositive = stat.trend >= 0
-        const TrendIcon = isPositive ? TrendingUp : TrendingDown
 
         return (
           <Card
@@ -133,22 +128,9 @@ export function StatisticsCards() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-1.5">
-                <div
-                  className={`flex items-center gap-0.5 text-sm font-medium ${
-                    isPositive
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
-                  }`}
-                >
-                  <TrendIcon className="h-4 w-4" />
-                  <span>
-                    {isPositive ? '+' : ''}
-                    {stat.trend}%
-                  </span>
-                </div>
+              <div className="mt-4">
                 <span className="text-xs text-gray-400 dark:text-gray-500">
-                  {stat.trendLabel}
+                  {stat.subtitle}
                 </span>
               </div>
             </CardContent>
