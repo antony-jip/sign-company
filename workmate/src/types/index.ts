@@ -377,4 +377,39 @@ export interface OfferteTemplateRegel {
   korting_percentage: number;
 }
 
+// ============ TEKENING GOEDKEURING SYSTEEM ============
+
+/**
+ * Een tekening/bestand dat naar de klant gestuurd is ter goedkeuring.
+ * De klant kan via een unieke link de tekening bekijken, goedkeuren of revisie aanvragen.
+ */
+export interface TekeningGoedkeuring {
+  id: string;
+  user_id: string;
+  project_id: string;
+  klant_id: string;
+  // De documenten die ter goedkeuring zijn gestuurd
+  document_ids: string[];
+  // Optioneel: offerte meesturen
+  offerte_id?: string;
+  // Unieke token voor klant-link (zonder login)
+  token: string;
+  // Status van de goedkeuring
+  status: 'verzonden' | 'bekeken' | 'goedgekeurd' | 'revisie';
+  // Email details
+  email_aan: string;
+  email_onderwerp: string;
+  email_bericht: string;
+  // Klant feedback bij revisie
+  revisie_opmerkingen?: string;
+  // Klant naam bij goedkeuring
+  goedgekeurd_door?: string;
+  goedgekeurd_op?: string;
+  // Revisie historie
+  revisie_nummer: number;
+  vorige_goedkeuring_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type SortDirection = 'asc' | 'desc';

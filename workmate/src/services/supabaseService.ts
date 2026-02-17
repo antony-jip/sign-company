@@ -18,6 +18,7 @@ import type {
   CalculatieProduct,
   CalculatieTemplate,
   OfferteTemplate,
+  TekeningGoedkeuring,
 } from '@/types'
 
 // ============ HELPERS ============
@@ -1322,6 +1323,112 @@ export async function deleteOfferteTemplate(id: string): Promise<void> {
   }
   const templates = getLocalData<OfferteTemplate>('offerte_templates')
   setLocalData('offerte_templates', templates.filter((t) => t.id !== id))
+}
+
+// ============ TEKENING GOEDKEURINGEN ============
+
+function generateToken(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+export async function getTekeningGoedkeuringen(projectId: string): Promise<TekeningGoedkeuring[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('tekening_goedkeuringen')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const items = getLocalData<TekeningGoedkeuring>('tekening_goedkeuringen')
+  return items.filter((g) => g.project_id === projectId).sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export async function getTekeningGoedkeuringByToken(token: string): Promise<TekeningGoedkeuring | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('tekening_goedkeuringen')
+      .select('*')
+      .eq('token', token)
+      .single()
+    if (error) return null
+    return data
+  }
+  const items = getLocalData<TekeningGoedkeuring>('tekening_goedkeuringen')
+  return items.find((g) => g.token === token) || null
+}
+
+export async function createTekeningGoedkeuring(
+  goedkeuring: Omit<TekeningGoedkeuring, 'id' | 'token' | 'created_at' | 'updated_at'>
+): Promise<TekeningGoedkeuring> {
+  const token = generateToken()
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('tekening_goedkeuringen')
+      .insert({ ...goedkeuring, token })
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<TekeningGoedkeuring>('tekening_goedkeuringen')
+  const newItem: TekeningGoedkeuring = {
+    ...goedkeuring,
+    id: generateId(),
+    token,
+    created_at: now(),
+    updated_at: now(),
+  } as TekeningGoedkeuring
+  items.push(newItem)
+  setLocalData('tekening_goedkeuringen', items)
+  return newItem
+}
+
+export async function updateTekeningGoedkeuring(
+  id: string,
+  updates: Partial<TekeningGoedkeuring>
+): Promise<TekeningGoedkeuring> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('tekening_goedkeuringen')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<TekeningGoedkeuring>('tekening_goedkeuringen')
+  const index = items.findIndex((g) => g.id === id)
+  if (index === -1) throw new Error('Tekening goedkeuring niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('tekening_goedkeuringen', items)
+  return items[index]
+}
+
+export async function updateTekeningGoedkeuringByToken(
+  token: string,
+  updates: Partial<TekeningGoedkeuring>
+): Promise<TekeningGoedkeuring> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('tekening_goedkeuringen')
+      .update({ ...updates, updated_at: now() })
+      .eq('token', token)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<TekeningGoedkeuring>('tekening_goedkeuringen')
+  const index = items.findIndex((g) => g.token === token)
+  if (index === -1) throw new Error('Tekening goedkeuring niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('tekening_goedkeuringen', items)
+  return items[index]
 }
 
 // ============ APP SETTINGS ============

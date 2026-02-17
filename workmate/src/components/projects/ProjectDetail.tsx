@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -21,6 +21,14 @@ import {
   Send,
   Mail,
   Receipt,
+  CheckCircle2,
+  RotateCcw,
+  Clock,
+  Link2,
+  Copy,
+  Pencil,
+  Paperclip,
+  ExternalLink,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -44,11 +52,23 @@ import {
   getPriorityColor,
   getInitials,
 } from '@/lib/utils'
-import { getProject, getTakenByProject, getDocumenten, createTaak, getOffertesByProject, updateOfferte } from '@/services/supabaseService'
+import {
+  getProject,
+  getTakenByProject,
+  getDocumenten,
+  createTaak,
+  getOffertesByProject,
+  updateOfferte,
+  createDocument,
+  createTekeningGoedkeuring,
+  getTekeningGoedkeuringen,
+  getKlant,
+} from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { ProjectTasksTable } from './ProjectTasksTable'
-import type { Taak, Project, Document, Offerte } from '@/types'
+import { ProjectOfferteEditor } from './ProjectOfferteEditor'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant } from '@/types'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -58,6 +78,13 @@ const statusLabels: Record<string, string> = {
   'on-hold': 'On-hold',
 }
 
+const goedkeuringStatusLabels: Record<string, string> = {
+  verzonden: 'Verzonden',
+  bekeken: 'Bekeken',
+  goedgekeurd: 'Goedgekeurd',
+  revisie: 'Revisie gevraagd',
+}
+
 const taakStatusKolommen: Array<{ key: string; label: string; kleur: string; bgKleur: string }> = [
   { key: 'todo', label: 'Todo', kleur: 'border-t-gray-400', bgKleur: 'from-gray-400 to-gray-500' },
   { key: 'bezig', label: 'Bezig', kleur: 'border-t-blue-500', bgKleur: 'from-blue-400 to-blue-600' },
@@ -65,17 +92,17 @@ const taakStatusKolommen: Array<{ key: string; label: string; kleur: string; bgK
   { key: 'klaar', label: 'Klaar', kleur: 'border-t-green-500', bgKleur: 'from-emerald-400 to-green-600' },
 ]
 
-function getFileIcon(type: string) {
-  if (type.includes('pdf')) return <FileText className="h-8 w-8 text-red-500" />
+function getFileIcon(type: string, size: string = 'h-8 w-8') {
+  if (type.includes('pdf')) return <FileText className={`${size} text-red-500`} />
   if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv'))
-    return <FileSpreadsheet className="h-8 w-8 text-green-600" />
+    return <FileSpreadsheet className={`${size} text-green-600`} />
   if (type.includes('zip') || type.includes('archive'))
-    return <FileArchive className="h-8 w-8 text-yellow-600" />
+    return <FileArchive className={`${size} text-yellow-600`} />
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
-    return <FileImage className="h-8 w-8 text-purple-500" />
+    return <FileImage className={`${size} text-purple-500`} />
   if (type.includes('illustrator') || type.includes('acad'))
-    return <File className="h-8 w-8 text-orange-500" />
-  return <File className="h-8 w-8 text-gray-400" />
+    return <File className={`${size} text-orange-500`} />
+  return <File className={`${size} text-gray-400`} />
 }
 
 function formatFileSize(bytes: number): string {
@@ -85,11 +112,30 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
+function getGoedkeuringStatusIcon(status: string) {
+  switch (status) {
+    case 'goedgekeurd': return <CheckCircle2 className="h-4 w-4 text-green-600" />
+    case 'revisie': return <RotateCcw className="h-4 w-4 text-amber-600" />
+    case 'bekeken': return <Eye className="h-4 w-4 text-purple-600" />
+    default: return <Clock className="h-4 w-4 text-blue-600" />
+  }
+}
+
+function getGoedkeuringStatusColor(status: string) {
+  switch (status) {
+    case 'goedgekeurd': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+    case 'revisie': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300'
+    case 'bekeken': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+    default: return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+  }
+}
+
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { offertePrefix, offerteGeldigheidDagen, standaardBtw } = useAppSettings()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [takenWeergave, setTakenWeergave] = useState<'board' | 'tabel'>('board')
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
   const [nieuweTaakTitel, setNieuweTaakTitel] = useState('')
@@ -98,16 +144,20 @@ export function ProjectDetail() {
   const [nieuweTaakDeadline, setNieuweTaakDeadline] = useState('')
 
   const [project, setProject] = useState<Project | null>(null)
+  const [klant, setKlant] = useState<Klant | null>(null)
   const [projectTaken, setProjectTaken] = useState<Taak[]>([])
   const [projectDocumenten, setProjectDocumenten] = useState<Document[]>([])
   const [projectOffertes, setProjectOffertes] = useState<Offerte[]>([])
+  const [goedkeuringen, setGoedkeuringen] = useState<TekeningGoedkeuring[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
+
+  // Offerte editor state
+  const [editOfferteId, setEditOfferteId] = useState<string | null>(null)
 
   // Offerte aanmaken - navigeert naar de volledige offerte-pagina
   const openNieuweOfferte = () => {
     if (!project) return
-    // Navigeer naar offerte-aanmaakpagina met project- en klantinfo als query params
     const params = new URLSearchParams({
       project_id: id || '',
       klant_id: project.klant_id || '',
@@ -116,7 +166,15 @@ export function ProjectDetail() {
     navigate(`/offertes/nieuw?${params.toString()}`)
   }
 
-  // Email offerte state
+  // ── Verstuur naar klant dialog ──
+  const [verstuurOpen, setVerstuurOpen] = useState(false)
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([])
+  const [selectedOfferteId, setSelectedOfferteId] = useState<string>('')
+  const [verstuurOnderwerp, setVerstuurOnderwerp] = useState('')
+  const [verstuurBericht, setVerstuurBericht] = useState('')
+  const [isVersturen, setIsVersturen] = useState(false)
+
+  // Email offerte state (simple offerte mail)
   const [emailOfferteOpen, setEmailOfferteOpen] = useState(false)
   const [emailOnderwerp, setEmailOnderwerp] = useState('')
   const [emailBericht, setEmailBericht] = useState('')
@@ -143,21 +201,49 @@ export function ProjectDetail() {
     }
   }, [id])
 
+  const fetchDocumenten = useCallback(async () => {
+    if (!id) return
+    try {
+      const allDocs = await getDocumenten()
+      setProjectDocumenten(allDocs.filter((d) => d.project_id === id))
+    } catch (err) {
+      console.error('Fout bij ophalen documenten:', err)
+    }
+  }, [id])
+
+  const fetchGoedkeuringen = useCallback(async () => {
+    if (!id) return
+    try {
+      const gk = await getTekeningGoedkeuringen(id)
+      setGoedkeuringen(gk)
+    } catch (err) {
+      console.error('Fout bij ophalen goedkeuringen:', err)
+    }
+  }, [id])
+
   useEffect(() => {
     async function fetchData() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
           getOffertesByProject(id),
+          getTekeningGoedkeuringen(id),
         ])
         setProject(projectData)
         setProjectTaken(takenData)
         setProjectDocumenten(allDocumenten.filter((d) => d.project_id === id))
         setProjectOffertes(offertesData)
+        setGoedkeuringen(goedkeuringenData)
+
+        // Fetch klant data
+        if (projectData?.klant_id) {
+          const klantData = await getKlant(projectData.klant_id)
+          setKlant(klantData)
+        }
       } catch (err) {
         console.error('Fout bij ophalen projectgegevens:', err)
         toast.error('Kon projectgegevens niet laden')
@@ -167,6 +253,98 @@ export function ProjectDetail() {
     }
     fetchData()
   }, [id])
+
+  // ── File upload handler ──
+  const handleFileUpload = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files)
+    if (fileArray.length === 0) return
+
+    for (const file of fileArray) {
+      try {
+        await createDocument({
+          user_id: user?.id || 'demo',
+          project_id: id || null,
+          klant_id: project?.klant_id || null,
+          naam: file.name,
+          type: file.type || 'application/octet-stream',
+          grootte: file.size,
+          map: 'Tekeningen',
+          storage_path: `projects/${id}/${file.name}`,
+          status: 'concept',
+          tags: ['tekening'],
+          gedeeld_met: [],
+        })
+      } catch (err) {
+        console.error(`Fout bij uploaden ${file.name}:`, err)
+        toast.error(`Kon "${file.name}" niet uploaden`)
+      }
+    }
+    toast.success(`${fileArray.length} bestand${fileArray.length > 1 ? 'en' : ''} geüpload`)
+    await fetchDocumenten()
+  }
+
+  // ── Verstuur naar klant ──
+  const openVerstuurDialog = () => {
+    if (!project || !klant) {
+      toast.error('Klantgegevens niet beschikbaar')
+      return
+    }
+    setSelectedDocIds([])
+    setSelectedOfferteId('')
+    setVerstuurOnderwerp(`Tekeningen - ${project.naam}`)
+    setVerstuurBericht(
+      `Beste ${klant.contactpersoon || project.klant_naam || 'klant'},\n\nBijgaand ontvangt u de tekening(en) voor het project "${project.naam}".\n\nGraag ontvangen wij uw goedkeuring of eventuele opmerkingen via de link in deze e-mail.\n\nMet vriendelijke groet`
+    )
+    setVerstuurOpen(true)
+  }
+
+  const handleVerstuurNaarKlant = async () => {
+    if (!project || !klant || selectedDocIds.length === 0) {
+      toast.error('Selecteer minimaal één bestand om te versturen')
+      return
+    }
+    setIsVersturen(true)
+    try {
+      const gk = await createTekeningGoedkeuring({
+        user_id: user?.id || 'demo',
+        project_id: id!,
+        klant_id: project.klant_id,
+        document_ids: selectedDocIds,
+        offerte_id: selectedOfferteId || undefined,
+        status: 'verzonden',
+        email_aan: klant.email,
+        email_onderwerp: verstuurOnderwerp,
+        email_bericht: verstuurBericht,
+        revisie_nummer: 1,
+      })
+
+      // Update offerte status if attached
+      if (selectedOfferteId) {
+        await updateOfferte(selectedOfferteId, { status: 'verzonden' })
+      }
+
+      toast.success('Tekeningen verstuurd naar klant! Goedkeuringslink aangemaakt.')
+      setVerstuurOpen(false)
+      await Promise.all([fetchGoedkeuringen(), fetchOffertes()])
+    } catch (err) {
+      console.error('Fout bij versturen:', err)
+      toast.error('Kon niet versturen naar klant')
+    } finally {
+      setIsVersturen(false)
+    }
+  }
+
+  const toggleDocSelection = (docId: string) => {
+    setSelectedDocIds(prev =>
+      prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId]
+    )
+  }
+
+  const copyApprovalLink = (token: string) => {
+    const link = `${window.location.origin}/goedkeuring/${token}`
+    navigator.clipboard.writeText(link)
+    toast.success('Link gekopieerd naar klembord')
+  }
 
   if (isLoading) {
     return (
@@ -215,6 +393,20 @@ export function ProjectDetail() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {/* ── Hidden file input ── */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files) {
+            handleFileUpload(e.target.files)
+            e.target.value = ''
+          }
+        }}
+      />
+
       {/* ── Back + Header ── */}
       <div>
         <Button variant="ghost" size="sm" asChild className="mb-4 text-muted-foreground hover:text-foreground">
@@ -479,6 +671,81 @@ export function ProjectDetail() {
               </CardContent>
             </Card>
           )}
+
+          {/* ── Goedkeuringen Sectie ── */}
+          {goedkeuringen.length > 0 && (
+            <Card className="border-gray-200/80 dark:border-gray-700/80">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Klant Goedkeuringen
+                  <span className="text-xs text-muted-foreground font-normal">{goedkeuringen.length}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {goedkeuringen.map((gk) => (
+                  <div
+                    key={gk.id}
+                    className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getGoedkeuringStatusIcon(gk.status)}
+                        <span className="text-sm font-medium text-foreground">
+                          {gk.document_ids.length} bestand(en)
+                          {gk.offerte_id && ' + offerte'}
+                        </span>
+                      </div>
+                      <Badge className={`${getGoedkeuringStatusColor(gk.status)} text-[10px] px-2`}>
+                        {goedkeuringStatusLabels[gk.status] || gk.status}
+                      </Badge>
+                    </div>
+
+                    <div className="text-xs text-muted-foreground">
+                      Verstuurd naar {gk.email_aan} op {formatDate(gk.created_at)}
+                      {gk.revisie_nummer > 1 && ` (revisie ${gk.revisie_nummer})`}
+                    </div>
+
+                    {gk.status === 'goedgekeurd' && gk.goedgekeurd_door && (
+                      <div className="bg-green-50 dark:bg-green-950/30 rounded-lg px-3 py-2 text-xs text-green-700 dark:text-green-400">
+                        Goedgekeurd door <strong>{gk.goedgekeurd_door}</strong>
+                        {gk.goedgekeurd_op && ` op ${formatDate(gk.goedgekeurd_op)}`}
+                      </div>
+                    )}
+
+                    {gk.status === 'revisie' && gk.revisie_opmerkingen && (
+                      <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                        <strong>Revisie opmerkingen:</strong> {gk.revisie_opmerkingen}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => copyApprovalLink(gk.token)}
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Link kopiëren
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => window.open(`/goedkeuring/${gk.token}`, '_blank')}
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Openen
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* ────────────── Rechter Sidebar ────────────── */}
@@ -567,7 +834,7 @@ export function ProjectDetail() {
                         <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
                         <span className="text-sm font-bold text-foreground">{formatCurrency(offerte.totaal)}</span>
                       </div>
-                      <div className="flex items-center gap-1 pt-0.5">
+                      <div className="flex items-center gap-1 pt-0.5 flex-wrap">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -576,6 +843,15 @@ export function ProjectDetail() {
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           Bekijk
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => setEditOfferteId(offerte.id)}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Bewerk
                         </Button>
                         <Button
                           variant="ghost"
@@ -601,6 +877,16 @@ export function ProjectDetail() {
             </CardContent>
           </Card>
 
+          {/* Offerte Editor Dialog */}
+          {editOfferteId && (
+            <ProjectOfferteEditor
+              offerteId={editOfferteId}
+              open={!!editOfferteId}
+              onClose={() => setEditOfferteId(null)}
+              onSaved={fetchOffertes}
+            />
+          )}
+
           {/* Email offerte dialog */}
           <Dialog open={emailOfferteOpen} onOpenChange={(open) => {
             setEmailOfferteOpen(open)
@@ -625,7 +911,7 @@ export function ProjectDetail() {
                   <Label htmlFor="email-aan">Aan</Label>
                   <Input
                     id="email-aan"
-                    value={project.klant_naam || 'Klant'}
+                    value={klant?.email || project.klant_naam || 'Klant'}
                     readOnly
                     className="bg-gray-50 dark:bg-gray-800"
                   />
@@ -682,25 +968,51 @@ export function ProjectDetail() {
             </DialogContent>
           </Dialog>
 
-          {/* ── Bestanden (drag & drop) ── */}
+          {/* ── Bestanden (drag & drop + upload button) ── */}
           <Card className="border-gray-200/80 dark:border-gray-700/80">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                  <FileText className="h-3.5 w-3.5 text-white" />
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <FileText className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Bestanden
+                  <span className="text-xs text-muted-foreground font-normal">{projectDocumenten.length}</span>
+                </CardTitle>
+                <div className="flex items-center gap-1">
+                  {projectDocumenten.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={openVerstuurDialog}
+                      title="Verstuur naar klant"
+                    >
+                      <Send className="h-3.5 w-3.5 mr-1" />
+                      Verstuur
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Bestand uploaden"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-                Bestanden
-                <span className="text-xs text-muted-foreground font-normal ml-auto">{projectDocumenten.length}</span>
-              </CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Drag & drop zone */}
               <div
-                className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 ${
+                className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 cursor-pointer ${
                   isDragging
                     ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30'
                     : 'border-gray-300 dark:border-gray-700 hover:border-indigo-400'
                 }`}
+                onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => {
                   e.preventDefault()
                   setIsDragging(true)
@@ -711,7 +1023,7 @@ export function ProjectDetail() {
                   setIsDragging(false)
                   const files = Array.from(e.dataTransfer.files)
                   if (files.length > 0) {
-                    toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} ontvangen: ${files.map(f => f.name).join(', ')}`)
+                    handleFileUpload(files)
                   }
                 }}
               >
@@ -722,7 +1034,7 @@ export function ProjectDetail() {
                       : 'text-muted-foreground opacity-60'
                   }`} />
                   <p className={`text-xs font-medium ${isDragging ? 'text-indigo-600 dark:text-indigo-400' : 'text-muted-foreground'}`}>
-                    {isDragging ? 'Laat los om te uploaden' : 'Sleep bestanden hierheen'}
+                    {isDragging ? 'Laat los om te uploaden' : 'Sleep bestanden of klik om te uploaden'}
                   </p>
                 </div>
               </div>
@@ -757,6 +1069,136 @@ export function ProjectDetail() {
           </Card>
         </div>
       </div>
+
+      {/* ── Verstuur naar klant dialog ── */}
+      <Dialog open={verstuurOpen} onOpenChange={(open) => {
+        setVerstuurOpen(open)
+        if (!open) {
+          setSelectedDocIds([])
+          setSelectedOfferteId('')
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-indigo-600" />
+              Verstuur naar klant ter goedkeuring
+            </DialogTitle>
+            <DialogDescription>
+              Selecteer bestanden en eventueel een offerte om naar {klant?.contactpersoon || project.klant_naam || 'de klant'} te versturen.
+              De klant ontvangt een link om de bestanden te bekijken en goed te keuren of revisie aan te vragen.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-4">
+            {/* Bestanden selectie */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Paperclip className="h-4 w-4 text-blue-600" />
+                Selecteer bestanden
+              </Label>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto border rounded-lg p-2">
+                {projectDocumenten.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-3">
+                    Geen bestanden. Upload eerst bestanden.
+                  </p>
+                ) : (
+                  projectDocumenten.map((doc) => (
+                    <label
+                      key={doc.id}
+                      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                        selectedDocIds.includes(doc.id)
+                          ? 'bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800'
+                          : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedDocIds.includes(doc.id)}
+                        onChange={() => toggleDocSelection(doc.id)}
+                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <div className="flex-shrink-0">
+                        {getFileIcon(doc.type, 'h-5 w-5')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{doc.naam}</p>
+                        <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.grootte)}</span>
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+              {selectedDocIds.length > 0 && (
+                <p className="text-xs text-indigo-600">{selectedDocIds.length} bestand(en) geselecteerd</p>
+              )}
+            </div>
+
+            {/* Offerte bijvoegen */}
+            {projectOffertes.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-amber-600" />
+                  Offerte bijvoegen (optioneel)
+                </Label>
+                <select
+                  value={selectedOfferteId}
+                  onChange={e => setSelectedOfferteId(e.target.value)}
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="">Geen offerte bijvoegen</option>
+                  {projectOffertes.map(o => (
+                    <option key={o.id} value={o.id}>
+                      {o.nummer} - {o.titel} ({formatCurrency(o.totaal)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label>Aan</Label>
+              <Input
+                value={klant?.email || project.klant_naam || ''}
+                readOnly
+                className="bg-gray-50 dark:bg-gray-800"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Onderwerp</Label>
+              <Input
+                value={verstuurOnderwerp}
+                onChange={e => setVerstuurOnderwerp(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bericht</Label>
+              <Textarea
+                value={verstuurBericht}
+                onChange={e => setVerstuurBericht(e.target.value)}
+                rows={6}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVerstuurOpen(false)}>
+              Annuleren
+            </Button>
+            <Button
+              disabled={isVersturen || selectedDocIds.length === 0 || !verstuurOnderwerp.trim()}
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
+              onClick={handleVerstuurNaarKlant}
+            >
+              <Send className="mr-1.5 h-4 w-4" />
+              {isVersturen ? 'Versturen...' : `Verstuur (${selectedDocIds.length} bestanden)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

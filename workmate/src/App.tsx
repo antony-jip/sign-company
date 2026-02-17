@@ -31,6 +31,7 @@ import { SettingsLayout } from '@/components/settings/SettingsLayout'
 import { DataImportLayout } from '@/components/import/DataImportLayout'
 import { NewsletterBuilder } from '@/components/newsletter/NewsletterBuilder'
 import { CommandPalette } from '@/components/shared/CommandPalette'
+import { ClientApprovalPage } from '@/components/approval/ClientApprovalPage'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -50,6 +51,8 @@ function AppContent() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      {/* Publieke route - klant goedkeuring (geen login vereist) */}
+      <Route path="/goedkeuring/:token" element={<ClientApprovalPage />} />
       <Route path="/" element={
         <ProtectedRoute>
           <AppLayout />
