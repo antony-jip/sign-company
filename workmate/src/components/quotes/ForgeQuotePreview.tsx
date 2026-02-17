@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { getOfferte, getOfferteItems, getKlant, updateOfferte } from '@/services/supabaseService'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import type { Offerte, OfferteItem, Klant } from '@/types'
@@ -34,6 +35,12 @@ function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; kort
 
 export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: ForgeQuotePreviewProps) {
   const { id } = useParams<{ id: string }>()
+  const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, pipelineStappen, valuta } = useAppSettings()
+
+  // Parse address components from combined string
+  const adresParts = bedrijfsAdres ? bedrijfsAdres.split(', ') : []
+  const companyStraat = adresParts[0] || ''
+  const companyPostcodeStad = adresParts.length >= 3 ? `${adresParts[1]} ${adresParts[2]}` : adresParts[1] || ''
 
   // State for service-layer data (used when accessed via route, i.e. no props)
   const [fetchedOfferte, setFetchedOfferte] = useState<Offerte | null>(null)
@@ -134,7 +141,13 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         fetchedOfferte,
         fetchedItems,
         fetchedKlant || {},
-        {}
+        {
+          bedrijfsnaam: bedrijfsnaam || 'Uw Bedrijf',
+          bedrijfs_adres: bedrijfsAdres || '',
+          kvk_nummer: kvkNummer || '',
+          btw_nummer: btwNummer || '',
+          primaireKleur: primaireKleur || '#2563eb',
+        }
       )
       doc.save(`${fetchedOfferte.nummer}.pdf`)
       toast.success('PDF gedownload')
@@ -191,11 +204,18 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               onChange={(e) => handleStatusUpdate(e.target.value as Offerte['status'])}
               className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             >
-              <option value="concept">Concept</option>
-              <option value="verzonden">Verzonden</option>
-              <option value="bekeken">Bekeken</option>
-              <option value="goedgekeurd">Goedgekeurd</option>
-              <option value="afgewezen">Afgewezen</option>
+              {(pipelineStappen && pipelineStappen.length > 0
+                ? pipelineStappen.filter(s => s.actief).sort((a, b) => a.volgorde - b.volgorde)
+                : [
+                    { key: 'concept', label: 'Concept' },
+                    { key: 'verzonden', label: 'Verzonden' },
+                    { key: 'bekeken', label: 'Bekeken' },
+                    { key: 'goedgekeurd', label: 'Goedgekeurd' },
+                    { key: 'afgewezen', label: 'Afgewezen' },
+                  ]
+              ).map(stap => (
+                <option key={stap.key} value={stap.key}>{stap.label}</option>
+              ))}
             </select>
           </div>
           <button
@@ -217,14 +237,14 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           <div className="flex justify-between items-start">
             {/* Company Logo & Info */}
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                <span className="text-white font-bold text-2xl">W</span>
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-md flex-shrink-0" style={{ backgroundColor: primaireKleur }}>
+                <span className="text-white font-bold text-2xl">{(bedrijfsnaam || 'W')[0].toUpperCase()}</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Workmate</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign Company B.V.</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Industrieweg 42</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">1234 AB Amsterdam</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{bedrijfsnaam || 'Uw Bedrijf'}</h2>
+                {companyStraat && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{companyStraat}</p>}
+                {companyPostcodeStad && <p className="text-sm text-gray-500 dark:text-gray-400">{companyPostcodeStad}</p>}
+                {kvkNummer && <p className="text-sm text-gray-500 dark:text-gray-400">KVK: {kvkNummer}</p>}
               </div>
             </div>
 
@@ -396,8 +416,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             <div className="border-t-2 border-gray-300 dark:border-gray-600 pt-3 mt-2">
               <div className="flex justify-between">
                 <span className="text-lg font-bold text-gray-900 dark:text-white">Totaal</span>
-                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                  {formatCurrency(totaal)}
+                <span className="text-lg font-bold" style={{ color: primaireKleur }}>
+                  {formatCurrency(totaal, valuta)}
                 </span>
               </div>
             </div>
@@ -431,7 +451,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           {/* Footer */}
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4 text-center">
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              Sign Company B.V. | KVK: 12345678 | BTW: NL123456789B01 | IBAN: NL00 ABCD 0123 4567 89
+              {[bedrijfsnaam, kvkNummer ? `KVK: ${kvkNummer}` : null, btwNummer ? `BTW: ${btwNummer}` : null].filter(Boolean).join(' | ')}
             </p>
           </div>
         </div>

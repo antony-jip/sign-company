@@ -40,7 +40,10 @@ import {
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
+import { isSupabaseConfigured } from '@/services/supabaseClient'
+import supabase from '@/services/supabaseClient'
 import type { AppSettings, PipelineStap } from '@/types'
 import { toast } from 'sonner'
 
@@ -126,6 +129,7 @@ export function SettingsLayout() {
 
 function ProfielTab() {
   const { user } = useAuth()
+  const { refreshProfile } = useAppSettings()
   const [voornaam, setVoornaam] = useState('')
   const [achternaam, setAchternaam] = useState('')
   const [email, setEmail] = useState('')
@@ -193,6 +197,7 @@ function ProfielTab() {
         achternaam,
         telefoon,
       })
+      await refreshProfile()
       toast.success('Profiel succesvol opgeslagen')
     } catch (err) {
       console.error('Fout bij opslaan profiel:', err)
@@ -296,6 +301,7 @@ function ProfielTab() {
 
 function BedrijfTab() {
   const { user } = useAuth()
+  const { refreshProfile } = useAppSettings()
   const [bedrijfsnaam, setBedrijfsnaam] = useState('')
   const [adres, setAdres] = useState('')
   const [postcode, setPostcode] = useState('')
@@ -370,6 +376,7 @@ function BedrijfTab() {
         kvk_nummer: kvkNummer,
         btw_nummer: btwNummer,
       })
+      await refreshProfile()
       toast.success('Bedrijfsgegevens succesvol opgeslagen')
     } catch (err) {
       console.error('Fout bij opslaan bedrijfsgegevens:', err)
@@ -509,6 +516,7 @@ const KLEUR_OPTIES = [
 
 function AanpassingenTab() {
   const { user } = useAuth()
+  const { refreshSettings } = useAppSettings()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -619,6 +627,7 @@ function AanpassingenTab() {
         toon_dagen_open: toonDagenOpen,
         toon_follow_up_indicatoren: toonFollowUpIndicatoren,
       })
+      await refreshSettings()
       toast.success('Aanpassingen opgeslagen')
     } catch (err) {
       console.error('Fout bij opslaan aanpassingen:', err)
@@ -1002,6 +1011,7 @@ function AanpassingenTab() {
 
 function MeldingenTab() {
   const { user } = useAuth()
+  const { refreshSettings } = useAppSettings()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -1040,6 +1050,7 @@ function MeldingenTab() {
         melding_nieuwe_offerte: meldingNieuweOfferte,
         melding_status_wijziging: meldingStatusWijziging,
       })
+      await refreshSettings()
       toast.success('Meldingsinstellingen opgeslagen')
     } catch (err) {
       console.error('Fout bij opslaan meldingen:', err)
@@ -1159,12 +1170,34 @@ function MeldingenTab() {
 // ============ INTEGRATIES TAB ============
 
 function IntegratiesTab() {
-  const [openaiKey, setOpenaiKey] = useState('')
+  const [openaiKey, setOpenaiKey] = useState(() => {
+    return localStorage.getItem('workmate_openai_key') || ''
+  })
   const [showKey, setShowKey] = useState(false)
+  const [isSavingKey, setIsSavingKey] = useState(false)
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
   const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
-  const openaiConfigured = !!(import.meta.env.VITE_OPENAI_API_KEY && import.meta.env.VITE_OPENAI_API_KEY !== 'your-openai-api-key-here')
+  const openaiFromEnv = import.meta.env.VITE_OPENAI_API_KEY && import.meta.env.VITE_OPENAI_API_KEY !== 'your-openai-api-key-here'
+  const openaiFromStorage = !!localStorage.getItem('workmate_openai_key')
+  const openaiConfigured = !!openaiFromEnv || openaiFromStorage
+
+  const handleSaveOpenAIKey = () => {
+    setIsSavingKey(true)
+    try {
+      if (openaiKey.trim()) {
+        localStorage.setItem('workmate_openai_key', openaiKey.trim())
+        toast.success('OpenAI API key opgeslagen. De AI-functionaliteit is nu beschikbaar.')
+      } else {
+        localStorage.removeItem('workmate_openai_key')
+        toast.success('OpenAI API key verwijderd.')
+      }
+    } catch (err) {
+      toast.error('Kon API key niet opslaan')
+    } finally {
+      setIsSavingKey(false)
+    }
+  }
 
   const integrations = [
     {
@@ -1177,7 +1210,7 @@ function IntegratiesTab() {
           <span className="text-green-700 dark:text-green-400 font-bold text-sm">SB</span>
         </div>
       ),
-      details: supabaseConnected ? `URL: ${supabaseUrl.substring(0, 30)}...` : undefined,
+      details: supabaseConnected ? `URL: ${supabaseUrl.substring(0, 30)}...` : 'Demo modus actief - data wordt lokaal opgeslagen',
     },
     {
       id: 'gmail',
@@ -1267,11 +1300,10 @@ function IntegratiesTab() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        toast.info('API key wordt opgeslagen in de omgevingsvariabelen. Herstart de applicatie om de wijziging door te voeren.')
-                      }}
+                      onClick={handleSaveOpenAIKey}
+                      disabled={isSavingKey}
                     >
-                      Opslaan
+                      {isSavingKey ? 'Opslaan...' : 'Opslaan'}
                     </Button>
                   </div>
                 )}
@@ -1282,7 +1314,7 @@ function IntegratiesTab() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => toast.info('Gmail integratie wordt binnenkort beschikbaar')}
+                      onClick={() => toast.info('Gmail integratie vereist een Google Cloud project met OAuth2 credentials. Zie het PVA voor instructies.')}
                     >
                       Verbind Gmail
                     </Button>
@@ -1305,8 +1337,10 @@ function BeveiligingTab() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPasswords, setShowPasswords] = useState(false)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
+  const [isChanging, setIsChanging] = useState(false)
+  const { user } = useAuth()
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error('Vul alle wachtwoordvelden in')
       return
@@ -1335,13 +1369,51 @@ function BeveiligingTab() {
       toast.error('Nieuw wachtwoord moet verschillen van het huidige wachtwoord')
       return
     }
-    // Password change requires Supabase auth connection
-    toast.info('Wachtwoord wijzigen is beschikbaar wanneer Supabase is geconfigureerd', {
-      description: 'Configureer uw Supabase-verbinding in de instellingen om wachtwoorden te beheren.',
-    })
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
+
+    setIsChanging(true)
+    try {
+      if (isSupabaseConfigured() && supabase) {
+        // First verify current password by re-signing in
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user?.email || '',
+          password: currentPassword,
+        })
+        if (signInError) {
+          toast.error('Huidig wachtwoord is onjuist')
+          return
+        }
+        // Now update the password
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: newPassword,
+        })
+        if (updateError) {
+          toast.error(`Kon wachtwoord niet wijzigen: ${updateError.message}`)
+          return
+        }
+        toast.success('Wachtwoord succesvol gewijzigd')
+      } else {
+        // Demo mode - update password in localStorage
+        const storedUser = localStorage.getItem('workmate_demo_user')
+        if (storedUser) {
+          const userData = JSON.parse(storedUser)
+          const storedPw = localStorage.getItem('workmate_demo_password') || 'demo'
+          if (currentPassword !== storedPw) {
+            toast.error('Huidig wachtwoord is onjuist (standaard: "demo")')
+            return
+          }
+          localStorage.setItem('workmate_demo_password', newPassword)
+          toast.success('Wachtwoord succesvol gewijzigd (demo modus)')
+        }
+      }
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      console.error('Error changing password:', err)
+      toast.error('Er is een fout opgetreden bij het wijzigen van het wachtwoord')
+    } finally {
+      setIsChanging(false)
+    }
   }
 
   return (
@@ -1397,7 +1469,9 @@ function BeveiligingTab() {
               />
             </div>
           </div>
-          <Button onClick={handleChangePassword}>Wachtwoord Wijzigen</Button>
+          <Button onClick={handleChangePassword} disabled={isChanging}>
+            {isChanging ? 'Wijzigen...' : 'Wachtwoord Wijzigen'}
+          </Button>
         </CardContent>
       </Card>
 

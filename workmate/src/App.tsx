@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
+import { AppSettingsProvider } from '@/contexts/AppSettingsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
@@ -85,12 +86,14 @@ function App() {
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
-            <SidebarProvider>
-              <ErrorBoundary>
-                <Toaster position="top-right" richColors />
-                <AppContent />
-              </ErrorBoundary>
-            </SidebarProvider>
+            <AppSettingsProvider>
+              <SidebarProvider>
+                <ErrorBoundary>
+                  <Toaster position="top-right" richColors />
+                  <AppContent />
+                </ErrorBoundary>
+              </SidebarProvider>
+            </AppSettingsProvider>
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>

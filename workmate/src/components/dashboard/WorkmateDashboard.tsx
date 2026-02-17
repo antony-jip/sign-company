@@ -1,5 +1,6 @@
 import React from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { StatisticsCards } from './StatisticsCards'
 import { QuickActions } from './QuickActions'
 import { AIInsightWidget } from './AIInsightWidget'
@@ -10,7 +11,8 @@ import { SalesFollowUpWidget } from './SalesFollowUpWidget'
 
 export function WorkmateDashboard() {
   const { user } = useAuth()
-  const userName = user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
+  const { profile, toonFollowUpIndicatoren, toonConversieRate } = useAppSettings()
+  const userName = profile?.voornaam || user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
 
   return (
     <div className="space-y-6">
@@ -31,7 +33,7 @@ export function WorkmateDashboard() {
           <PriorityTasks />
         </div>
         <div className="space-y-6">
-          <SalesFollowUpWidget />
+          {toonFollowUpIndicatoren && <SalesFollowUpWidget />}
           <AIInsightWidget />
           <CalendarMiniWidget />
           <EmailCommunicationHub />

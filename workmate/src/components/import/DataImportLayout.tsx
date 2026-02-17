@@ -30,6 +30,7 @@ import {
   Info,
 } from 'lucide-react'
 import { createKlant } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Klant } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -218,6 +219,7 @@ function downloadCSV(filename: string, headers: string[], sampleRow: string[]) {
 // ---------------------------------------------------------------------------
 
 export function DataImportLayout() {
+  const { user } = useAuth()
   // State
   const [step, setStep] = useState<ImportStep>('select-type')
   const [importType, setImportType] = useState<ImportType | null>(null)

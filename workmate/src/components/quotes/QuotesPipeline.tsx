@@ -28,6 +28,7 @@ import {
   Users,
 } from 'lucide-react'
 import { getOffertes, updateOfferte } from '@/services/supabaseService'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Offerte } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
@@ -35,13 +36,23 @@ type ViewMode = 'pipeline' | 'lijst'
 type SortOption = 'newest' | 'oldest' | 'highest' | 'expiring'
 type PriorityFilter = 'alle' | 'laag' | 'medium' | 'hoog' | 'urgent'
 
-const STATUS_COLUMNS = [
-  { key: 'concept' as const, label: 'Concept', color: 'from-slate-500/10 to-slate-500/5', accent: 'bg-slate-400 dark:bg-slate-500', headerBg: 'bg-slate-50/80 dark:bg-slate-800/50' },
-  { key: 'verzonden' as const, label: 'Verzonden', color: 'from-blue-500/10 to-blue-500/5', accent: 'bg-blue-400 dark:bg-blue-500', headerBg: 'bg-blue-50/80 dark:bg-blue-900/30' },
-  { key: 'bekeken' as const, label: 'Bekeken', color: 'from-violet-500/10 to-violet-500/5', accent: 'bg-violet-400 dark:bg-violet-500', headerBg: 'bg-violet-50/80 dark:bg-violet-900/30' },
-  { key: 'goedgekeurd' as const, label: 'Goedgekeurd', color: 'from-emerald-500/10 to-emerald-500/5', accent: 'bg-emerald-400 dark:bg-emerald-500', headerBg: 'bg-emerald-50/80 dark:bg-emerald-900/30' },
-  { key: 'afgewezen' as const, label: 'Afgewezen', color: 'from-red-500/10 to-red-500/5', accent: 'bg-red-400 dark:bg-red-500', headerBg: 'bg-red-50/80 dark:bg-red-900/30' },
-] as const
+const DEFAULT_STATUS_COLUMNS = [
+  { key: 'concept', label: 'Concept', color: 'from-slate-500/10 to-slate-500/5', accent: 'bg-slate-400 dark:bg-slate-500', headerBg: 'bg-slate-50/80 dark:bg-slate-800/50' },
+  { key: 'verzonden', label: 'Verzonden', color: 'from-blue-500/10 to-blue-500/5', accent: 'bg-blue-400 dark:bg-blue-500', headerBg: 'bg-blue-50/80 dark:bg-blue-900/30' },
+  { key: 'bekeken', label: 'Bekeken', color: 'from-violet-500/10 to-violet-500/5', accent: 'bg-violet-400 dark:bg-violet-500', headerBg: 'bg-violet-50/80 dark:bg-violet-900/30' },
+  { key: 'goedgekeurd', label: 'Goedgekeurd', color: 'from-emerald-500/10 to-emerald-500/5', accent: 'bg-emerald-400 dark:bg-emerald-500', headerBg: 'bg-emerald-50/80 dark:bg-emerald-900/30' },
+  { key: 'afgewezen', label: 'Afgewezen', color: 'from-red-500/10 to-red-500/5', accent: 'bg-red-400 dark:bg-red-500', headerBg: 'bg-red-50/80 dark:bg-red-900/30' },
+]
+
+const KLEUR_TO_STYLE: Record<string, { color: string; accent: string; headerBg: string }> = {
+  gray: { color: 'from-slate-500/10 to-slate-500/5', accent: 'bg-slate-400 dark:bg-slate-500', headerBg: 'bg-slate-50/80 dark:bg-slate-800/50' },
+  blue: { color: 'from-blue-500/10 to-blue-500/5', accent: 'bg-blue-400 dark:bg-blue-500', headerBg: 'bg-blue-50/80 dark:bg-blue-900/30' },
+  purple: { color: 'from-violet-500/10 to-violet-500/5', accent: 'bg-violet-400 dark:bg-violet-500', headerBg: 'bg-violet-50/80 dark:bg-violet-900/30' },
+  green: { color: 'from-emerald-500/10 to-emerald-500/5', accent: 'bg-emerald-400 dark:bg-emerald-500', headerBg: 'bg-emerald-50/80 dark:bg-emerald-900/30' },
+  red: { color: 'from-red-500/10 to-red-500/5', accent: 'bg-red-400 dark:bg-red-500', headerBg: 'bg-red-50/80 dark:bg-red-900/30' },
+  orange: { color: 'from-orange-500/10 to-orange-500/5', accent: 'bg-orange-400 dark:bg-orange-500', headerBg: 'bg-orange-50/80 dark:bg-orange-900/30' },
+  teal: { color: 'from-teal-500/10 to-teal-500/5', accent: 'bg-teal-400 dark:bg-teal-500', headerBg: 'bg-teal-50/80 dark:bg-teal-900/30' },
+}
 
 const PRIORITY_COLORS: Record<string, string> = {
   laag: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
@@ -91,6 +102,7 @@ function isThisMonth(dateStr: string): boolean {
 }
 
 export function QuotesPipeline() {
+  const { pipelineStappen, toonConversieRate, toonDagenOpen, toonFollowUpIndicatoren, valuta } = useAppSettings()
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -98,6 +110,20 @@ export function QuotesPipeline() {
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('alle')
   const [sortOption, setSortOption] = useState<SortOption>('newest')
+
+  // Build pipeline columns from settings
+  const STATUS_COLUMNS = useMemo(() => {
+    if (pipelineStappen && pipelineStappen.length > 0) {
+      return pipelineStappen
+        .filter(stap => stap.actief)
+        .sort((a, b) => a.volgorde - b.volgorde)
+        .map(stap => {
+          const styles = KLEUR_TO_STYLE[stap.kleur] || KLEUR_TO_STYLE.gray
+          return { key: stap.key, label: stap.label, ...styles }
+        })
+    }
+    return DEFAULT_STATUS_COLUMNS
+  }, [pipelineStappen])
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [followUpOpen, setFollowUpOpen] = useState<string | null>(null)

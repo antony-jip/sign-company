@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { getKlanten, createOfferte, createOfferteItem } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant } from '@/types'
 import { generateOffertePDF } from '@/services/pdfService'
 import { formatCurrency } from '@/lib/utils'
@@ -49,15 +50,16 @@ const steps = [
   { number: 3, label: 'Preview', icon: Eye },
 ]
 
-function generateOfferteNummer(): string {
+function generateOfferteNummer(prefix: string = 'OFF'): string {
   const year = new Date().getFullYear()
   const num = String(Math.floor(Math.random() * 900) + 100)
-  return `OFF-${year}-${num}`
+  return `${prefix}-${year}-${num}`
 }
 
 export function QuoteCreation() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { offertePrefix, offerteGeldigheidDagen, standaardBtw, valuta, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, profile } = useAppSettings()
   const [currentStep, setCurrentStep] = useState(1)
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -79,10 +81,10 @@ export function QuoteCreation() {
   const [offerteTitel, setOfferteTitel] = useState('')
   const [geldigTot, setGeldigTot] = useState(() => {
     const d = new Date()
-    d.setDate(d.getDate() + 30)
+    d.setDate(d.getDate() + offerteGeldigheidDagen)
     return d.toISOString().split('T')[0]
   })
-  const [offerteNummer] = useState(generateOfferteNummer)
+  const [offerteNummer] = useState(() => generateOfferteNummer(offertePrefix))
 
   // Step 2: Items
   const [items, setItems] = useState<QuoteLineItem[]>([])
@@ -110,7 +112,7 @@ export function QuoteCreation() {
       beschrijving: '',
       aantal: 1,
       eenheidsprijs: 0,
-      btw_percentage: 21,
+      btw_percentage: standaardBtw,
       korting_percentage: 0,
       totaal: 0,
     }
@@ -245,7 +247,13 @@ export function QuoteCreation() {
         volgorde: index + 1,
         created_at: new Date().toISOString(),
       }))
-      const doc = generateOffertePDF(offerteData, offerteItems, selectedKlant, {})
+      const doc = generateOffertePDF(offerteData, offerteItems, selectedKlant, {
+        bedrijfsnaam: bedrijfsnaam || 'Uw Bedrijf',
+        bedrijfs_adres: bedrijfsAdres || '',
+        kvk_nummer: kvkNummer || '',
+        btw_nummer: btwNummer || '',
+        primaireKleur: primaireKleur || '#2563eb',
+      })
       doc.save(`${offerteNummer}.pdf`)
       toast.success('PDF gedownload')
     } catch (err) {

@@ -2,7 +2,25 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { Offerte, OfferteItem, Klant, Profile } from '@/types'
 
+// Extended profile type for PDF with branding
+interface PdfBedrijfsProfiel extends Partial<Profile> {
+  primaireKleur?: string
+}
+
 // ============ HELPERS ============
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.substring(0, 2), 16)
+  const g = parseInt(h.substring(2, 4), 16)
+  const b = parseInt(h.substring(4, 6), 16)
+  return [isNaN(r) ? 41 : r, isNaN(g) ? 65 : g, isNaN(b) ? 122 : b]
+}
+
+function getBrandColor(profiel: PdfBedrijfsProfiel): [number, number, number] {
+  if (profiel.primaireKleur) return hexToRgb(profiel.primaireKleur)
+  return [41, 65, 122] // default dark blue
+}
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('nl-NL', {
@@ -23,16 +41,17 @@ function formatDate(dateString: string): string {
 
 function addHeader(
   doc: jsPDF,
-  bedrijfsProfiel: Partial<Profile>,
+  bedrijfsProfiel: PdfBedrijfsProfiel,
   title: string,
   nummer: string
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth()
+  const brand = getBrandColor(bedrijfsProfiel)
 
   // Company name / logo area
   doc.setFontSize(22)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(41, 65, 122) // Dark blue
+  doc.setTextColor(...brand)
   doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', 20, 30)
 
   // Company details (right side)
@@ -66,14 +85,14 @@ function addHeader(
 
   // Divider line
   const lineY = 42
-  doc.setDrawColor(41, 65, 122)
+  doc.setDrawColor(...brand)
   doc.setLineWidth(0.5)
   doc.line(20, lineY, pageWidth - 20, lineY)
 
   // Document title and number
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(41, 65, 122)
+  doc.setTextColor(...brand)
   doc.text(title, 20, lineY + 12)
 
   doc.setFontSize(10)
@@ -92,7 +111,7 @@ function addClientInfo(
 ): number {
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(41, 65, 122)
+  doc.setTextColor(60, 60, 60)
   doc.text('Aan:', 20, startY)
 
   doc.setFont('helvetica', 'normal')
@@ -161,8 +180,9 @@ export function generateOffertePDF(
   offerte: Offerte,
   items: OfferteItem[],
   klant: Partial<Klant>,
-  bedrijfsProfiel: Partial<Profile>
+  bedrijfsProfiel: PdfBedrijfsProfiel
 ): jsPDF {
+  const brand = getBrandColor(bedrijfsProfiel)
   const doc = new jsPDF()
 
   // Header
@@ -205,7 +225,7 @@ export function generateOffertePDF(
     body: tableBody,
     theme: 'striped',
     headStyles: {
-      fillColor: [41, 65, 122],
+      fillColor: brand,
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 9,
@@ -249,13 +269,13 @@ export function generateOffertePDF(
   totalsY += 7
 
   // Total line
-  doc.setDrawColor(41, 65, 122)
+  doc.setDrawColor(...brand)
   doc.setLineWidth(0.5)
   doc.line(totalsX, totalsY - 2, pageWidth - 20, totalsY - 2)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(12)
-  doc.setTextColor(41, 65, 122)
+  doc.setTextColor(...brand)
   doc.text('Totaal:', totalsX, totalsY + 5)
   doc.text(formatCurrency(offerte.totaal), pageWidth - 20, totalsY + 5, { align: 'right' })
 
@@ -264,7 +284,7 @@ export function generateOffertePDF(
   if (offerte.notities) {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(41, 65, 122)
+    doc.setTextColor(...brand)
     doc.text('Opmerkingen:', 20, totalsY)
     totalsY += 6
 
@@ -280,7 +300,7 @@ export function generateOffertePDF(
   if (offerte.voorwaarden) {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(41, 65, 122)
+    doc.setTextColor(...brand)
     doc.text('Voorwaarden:', 20, totalsY)
     totalsY += 6
 
@@ -313,9 +333,10 @@ export function generateFactuurPDF(
   },
   items: OfferteItem[],
   klant: Partial<Klant>,
-  bedrijfsProfiel: Partial<Profile>
+  bedrijfsProfiel: PdfBedrijfsProfiel
 ): jsPDF {
   const doc = new jsPDF()
+  const brand = getBrandColor(bedrijfsProfiel)
 
   // Header
   let y = addHeader(doc, bedrijfsProfiel, 'Factuur', factuurData.nummer)
@@ -356,7 +377,7 @@ export function generateFactuurPDF(
     body: tableBody,
     theme: 'striped',
     headStyles: {
-      fillColor: [41, 65, 122],
+      fillColor: brand,
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 9,
@@ -398,13 +419,13 @@ export function generateFactuurPDF(
   doc.text(formatCurrency(factuurData.btw_bedrag), pageWidth - 20, totalsY, { align: 'right' })
   totalsY += 7
 
-  doc.setDrawColor(41, 65, 122)
+  doc.setDrawColor(...brand)
   doc.setLineWidth(0.5)
   doc.line(totalsX, totalsY - 2, pageWidth - 20, totalsY - 2)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(12)
-  doc.setTextColor(41, 65, 122)
+  doc.setTextColor(...brand)
   doc.text('Totaal:', totalsX, totalsY + 5)
   doc.text(formatCurrency(factuurData.totaal), pageWidth - 20, totalsY + 5, { align: 'right' })
 
@@ -413,7 +434,7 @@ export function generateFactuurPDF(
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(41, 65, 122)
+  doc.setTextColor(...brand)
   doc.text('Betaalinformatie:', 20, totalsY)
   totalsY += 6
 
@@ -432,7 +453,7 @@ export function generateFactuurPDF(
     totalsY += splitPayment.length * 5 + 8
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(41, 65, 122)
+    doc.setTextColor(...brand)
     doc.text('Opmerkingen:', 20, totalsY)
     totalsY += 6
 
@@ -466,16 +487,17 @@ export function generateRapportPDF(
     samenvatting?: string
   },
   type: 'project' | 'financieel' | 'klant' | 'algemeen' = 'algemeen',
-  bedrijfsProfiel?: Partial<Profile>
+  bedrijfsProfiel?: PdfBedrijfsProfiel
 ): jsPDF {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
   const profile = bedrijfsProfiel || {}
+  const brand = getBrandColor(profile)
 
   // Header
   doc.setFontSize(22)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(41, 65, 122)
+  doc.setTextColor(...brand)
   doc.text(profile.bedrijfsnaam || 'Rapport', 20, 30)
 
   // Type label
@@ -492,14 +514,14 @@ export function generateRapportPDF(
   doc.text(typeLabels[type], 20, 38)
 
   // Divider
-  doc.setDrawColor(41, 65, 122)
+  doc.setDrawColor(...brand)
   doc.setLineWidth(0.5)
   doc.line(20, 42, pageWidth - 20, 42)
 
   // Title
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(41, 65, 122)
+  doc.setTextColor(...brand)
   doc.text(data.titel, 20, 54)
 
   // Date
@@ -514,7 +536,7 @@ export function generateRapportPDF(
   if (data.samenvatting) {
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(41, 65, 122)
+    doc.setTextColor(...brand)
     doc.text('Samenvatting', 20, y)
     y += 7
 
@@ -537,7 +559,7 @@ export function generateRapportPDF(
     // Section heading
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(41, 65, 122)
+    doc.setTextColor(...brand)
     doc.text(sectie.kop, 20, y)
     y += 7
 
@@ -557,7 +579,7 @@ export function generateRapportPDF(
         body: sectie.tabel.rijen,
         theme: 'striped',
         headStyles: {
-          fillColor: [41, 65, 122],
+          fillColor: brand,
           textColor: [255, 255, 255],
           fontStyle: 'bold',
           fontSize: 8,

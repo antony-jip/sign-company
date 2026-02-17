@@ -19,6 +19,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Send, Paperclip, Sparkles, ChevronDown, ChevronUp, Clock, CalendarClock } from 'lucide-react'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { createEmail } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface EmailComposeProps {
   open: boolean
@@ -112,11 +115,20 @@ export function EmailCompose({
   defaultBody = '',
   onSend,
 }: EmailComposeProps) {
+  const { emailHandtekening, bedrijfsnaam } = useAppSettings()
+  const { user } = useAuth()
+
   const [to, setTo] = useState(defaultTo)
   const [cc, setCc] = useState('')
   const [showCc, setShowCc] = useState(false)
   const [subject, setSubject] = useState(defaultSubject)
-  const [body, setBody] = useState(defaultBody)
+  const [body, setBody] = useState(() => {
+    // Append signature if available
+    if (emailHandtekening && !defaultBody) {
+      return `\n\n--\n${emailHandtekening}`
+    }
+    return defaultBody
+  })
   const [template, setTemplate] = useState('none')
   const [isSending, setIsSending] = useState(false)
   const [scheduledAt, setScheduledAt] = useState('')
@@ -150,7 +162,8 @@ export function EmailCompose({
     if (value !== 'none' && emailTemplates[value]) {
       const tmpl = emailTemplates[value]
       if (tmpl.onderwerp && !subject) setSubject(tmpl.onderwerp)
-      setBody(tmpl.body)
+      const signature = emailHandtekening ? `\n\n--\n${emailHandtekening}` : ''
+      setBody(tmpl.body + signature)
     }
   }
 
@@ -220,8 +233,23 @@ export function EmailCompose({
     setIsSending(true)
 
     try {
-      // Simulate sending
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      // Save to email storage
+      await createEmail({
+        user_id: user?.id || 'demo',
+        gmail_id: '',
+        van: user?.email || 'ik@' + (bedrijfsnaam || 'bedrijf').toLowerCase().replace(/\s/g, '') + '.nl',
+        aan: to.trim(),
+        onderwerp: subject.trim(),
+        inhoud: body,
+        datum: new Date().toISOString(),
+        gelezen: true,
+        starred: false,
+        labels: ['verzonden'],
+        bijlagen: 0,
+        map: 'verzonden',
+        scheduled_at: scheduledAt || undefined,
+      })
+
       onSend?.({ to: to.trim(), subject: subject.trim(), body, scheduledAt: scheduledAt || undefined })
       resetAndClose()
     } catch (error) {
