@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Search, ArrowUpDown, ArrowUp, ArrowDown, FolderKanban } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -19,8 +19,9 @@ import {
   getStatusColor,
   getPriorityColor,
 } from '@/lib/utils'
-import { mockProjecten, mockKlanten } from '@/data/mockData'
-import type { SortDirection } from '@/types'
+import { getProjecten, getKlanten, createProject, deleteProject } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
+import type { Project, Klant, SortDirection } from '@/types'
 
 type SortField = 'naam' | 'deadline' | 'budget' | 'voortgang' | 'status'
 
@@ -57,17 +58,40 @@ const statusWaarde: Record<string, number> = {
   afgerond: 5,
 }
 
-function getKlantNaam(klantId: string): string {
-  const klant = mockKlanten.find((k) => k.id === klantId)
-  return klant ? klant.bedrijfsnaam : 'Onbekend'
-}
-
 export function ProjectsList() {
+  const { user } = useAuth()
+  const [projecten, setProjecten] = useState<Project[]>([])
+  const [klanten, setKlanten] = useState<Klant[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
   const [prioriteitFilter, setPrioriteitFilter] = useState('alle')
   const [sortField, setSortField] = useState<SortField>('naam')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true)
+        const [projectenData, klantenData] = await Promise.all([
+          getProjecten(),
+          getKlanten(),
+        ])
+        setProjecten(projectenData)
+        setKlanten(klantenData)
+      } catch (error) {
+        console.error('Fout bij ophalen data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  function getKlantNaam(klantId: string): string {
+    const klant = klanten.find((k) => k.id === klantId)
+    return klant ? klant.bedrijfsnaam : 'Onbekend'
+  }
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -79,12 +103,12 @@ export function ProjectsList() {
   }
 
   const gefilterdeProjecten = useMemo(() => {
-    let projecten = [...mockProjecten]
+    let result = [...projecten]
 
     // Search filter
     if (zoekterm.trim()) {
       const term = zoekterm.toLowerCase()
-      projecten = projecten.filter(
+      result = result.filter(
         (p) =>
           p.naam.toLowerCase().includes(term) ||
           getKlantNaam(p.klant_id).toLowerCase().includes(term)
@@ -93,16 +117,16 @@ export function ProjectsList() {
 
     // Status filter
     if (statusFilter !== 'alle') {
-      projecten = projecten.filter((p) => p.status === statusFilter)
+      result = result.filter((p) => p.status === statusFilter)
     }
 
     // Priority filter
     if (prioriteitFilter !== 'alle') {
-      projecten = projecten.filter((p) => p.prioriteit === prioriteitFilter)
+      result = result.filter((p) => p.prioriteit === prioriteitFilter)
     }
 
     // Sorting
-    projecten.sort((a, b) => {
+    result.sort((a, b) => {
       let comparison = 0
 
       switch (sortField) {
@@ -126,8 +150,8 @@ export function ProjectsList() {
       return sortDirection === 'asc' ? comparison : -comparison
     })
 
-    return projecten
-  }, [zoekterm, statusFilter, prioriteitFilter, sortField, sortDirection])
+    return result
+  }, [projecten, klanten, zoekterm, statusFilter, prioriteitFilter, sortField, sortDirection])
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
@@ -140,6 +164,14 @@ export function ProjectsList() {
     )
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -147,7 +179,7 @@ export function ProjectsList() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Projecten</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {gefilterdeProjecten.length} van {mockProjecten.length} projecten
+            {gefilterdeProjecten.length} van {projecten.length} projecten
           </p>
         </div>
         <Button asChild>

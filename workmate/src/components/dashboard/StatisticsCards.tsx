@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   FolderKanban,
@@ -7,9 +7,11 @@ import {
   PiggyBank,
   TrendingUp,
   TrendingDown,
+  Loader2,
   type LucideIcon,
 } from 'lucide-react'
-import { mockProjecten, mockKlanten, mockOffertes } from '@/data/mockData'
+import { getProjecten, getKlanten, getOffertes } from '@/services/supabaseService'
+import type { Project, Klant, Offerte } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
 interface StatCard {
@@ -23,15 +25,45 @@ interface StatCard {
 }
 
 export function StatisticsCards() {
-  const actieveProjecten = mockProjecten.filter(
+  const [projecten, setProjecten] = useState<Project[]>([])
+  const [klanten, setKlanten] = useState<Klant[]>([])
+  const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([getProjecten(), getKlanten(), getOffertes()])
+      .then(([p, k, o]) => {
+        setProjecten(p)
+        setKlanten(k)
+        setOffertes(o)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  const actieveProjecten = projecten.filter(
     (p) => p.status === 'actief' || p.status === 'in-review'
   ).length
 
-  const totaalKlanten = mockKlanten.length
+  const totaalKlanten = klanten.length
 
-  const openstaandeOffertes = mockOffertes
+  const openstaandeOffertes = offertes
     .filter((o) => o.status === 'verzonden' || o.status === 'bekeken' || o.status === 'concept')
     .reduce((sum, o) => sum + o.totaal, 0)
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="hover:shadow-md transition-shadow duration-200">
+            <CardContent className="p-6 flex items-center justify-center h-[120px]">
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
 
   const stats: StatCard[] = [
     {

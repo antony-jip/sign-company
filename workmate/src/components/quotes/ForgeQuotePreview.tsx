@@ -1,7 +1,9 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
-import { mockOffertes, mockKlanten, mockOfferteItems } from '@/data/mockData'
+import { getOfferte, getOfferteItems, getKlant, updateOfferte } from '@/services/supabaseService'
+import { generateOffertePDF } from '@/services/pdfService'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 
@@ -33,39 +35,125 @@ function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; kort
 export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: ForgeQuotePreviewProps) {
   const { id } = useParams<{ id: string }>()
 
-  // Determine the data source: props or mock data by route param
+  // State for service-layer data (used when accessed via route, i.e. no props)
+  const [fetchedOfferte, setFetchedOfferte] = useState<Offerte | null>(null)
+  const [fetchedKlant, setFetchedKlant] = useState<Klant | null>(null)
+  const [fetchedItems, setFetchedItems] = useState<OfferteItem[]>([])
+  const [isLoading, setIsLoading] = useState(!propOfferte && !!id)
+
+  // Fetch data from service layer when accessed via route (no props provided)
+  useEffect(() => {
+    if (propOfferte || !id) return
+
+    let cancelled = false
+
+    async function fetchData() {
+      setIsLoading(true)
+      try {
+        const offerte = await getOfferte(id!)
+        if (cancelled) return
+
+        if (!offerte) {
+          setFetchedOfferte(null)
+          setIsLoading(false)
+          return
+        }
+
+        setFetchedOfferte(offerte)
+
+        const [klant, items] = await Promise.all([
+          getKlant(offerte.klant_id),
+          getOfferteItems(offerte.id),
+        ])
+
+        if (cancelled) return
+
+        setFetchedKlant(klant)
+        setFetchedItems(items)
+      } catch (err) {
+        console.error('Failed to load offerte data:', err)
+        toast.error('Kon offerte niet laden')
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    fetchData()
+    return () => { cancelled = true }
+  }, [id, propOfferte])
+
+  // Determine the data source: props (inline usage) or fetched state (route usage)
   let offerteData: typeof propOfferte | undefined = propOfferte
   let itemsData: typeof propItems | undefined = propItems
-  let klant: Klant | undefined
+  let klant: Klant | undefined | null
 
-  if (!offerteData && id) {
-    const found = mockOffertes.find((o) => o.id === id)
-    if (found) {
-      offerteData = {
-        nummer: found.nummer,
-        titel: found.titel,
-        status: found.status,
-        klant_id: found.klant_id,
-        geldig_tot: found.geldig_tot,
-        notities: found.notities,
-        voorwaarden: found.voorwaarden,
-        created_at: found.created_at,
-      }
-      itemsData = mockOfferteItems
-        .filter((i) => i.offerte_id === found.id)
-        .sort((a, b) => a.volgorde - b.volgorde)
-        .map((i) => ({
-          beschrijving: i.beschrijving,
-          aantal: i.aantal,
-          eenheidsprijs: i.eenheidsprijs,
-          btw_percentage: i.btw_percentage,
-          korting_percentage: i.korting_percentage,
-        }))
+  if (!offerteData && fetchedOfferte) {
+    offerteData = {
+      nummer: fetchedOfferte.nummer,
+      titel: fetchedOfferte.titel,
+      status: fetchedOfferte.status,
+      klant_id: fetchedOfferte.klant_id,
+      geldig_tot: fetchedOfferte.geldig_tot,
+      notities: fetchedOfferte.notities,
+      voorwaarden: fetchedOfferte.voorwaarden,
+      created_at: fetchedOfferte.created_at,
+    }
+    itemsData = fetchedItems.map((i) => ({
+      beschrijving: i.beschrijving,
+      aantal: i.aantal,
+      eenheidsprijs: i.eenheidsprijs,
+      btw_percentage: i.btw_percentage,
+      korting_percentage: i.korting_percentage,
+    }))
+    klant = fetchedKlant
+  }
+
+  if (offerteData && !klant && propOfferte) {
+    // When used inline via props, klant is not available from service layer
+    klant = undefined
+  }
+
+  // Handle status update via service layer
+  async function handleStatusUpdate(newStatus: Offerte['status']) {
+    if (!fetchedOfferte?.id) return
+    try {
+      const updated = await updateOfferte(fetchedOfferte.id, { status: newStatus })
+      setFetchedOfferte(updated)
+      toast.success(`Status bijgewerkt naar "${newStatus}"`)
+    } catch (err) {
+      console.error('Failed to update offerte status:', err)
+      toast.error('Kon status niet bijwerken')
     }
   }
 
-  if (offerteData) {
-    klant = mockKlanten.find((k) => k.id === offerteData!.klant_id)
+  // Handle PDF download
+  function handleDownloadPDF() {
+    if (!fetchedOfferte || !fetchedItems.length) return
+    try {
+      const doc = generateOffertePDF(
+        fetchedOfferte,
+        fetchedItems,
+        fetchedKlant || {},
+        {}
+      )
+      doc.save(`${fetchedOfferte.nummer}.pdf`)
+      toast.success('PDF gedownload')
+    } catch (err) {
+      console.error('Failed to generate PDF:', err)
+      toast.error('Kon PDF niet genereren')
+    }
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <p className="text-gray-500 dark:text-gray-400">Offerte laden...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!offerteData) {
@@ -93,6 +181,35 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Action bar - only shown when accessed via route (service data available) */}
+      {fetchedOfferte && (
+        <div className="flex items-center justify-between mb-4 px-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Status:</span>
+            <select
+              value={offerteData.status}
+              onChange={(e) => handleStatusUpdate(e.target.value as Offerte['status'])}
+              className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            >
+              <option value="concept">Concept</option>
+              <option value="verzonden">Verzonden</option>
+              <option value="bekeken">Bekeken</option>
+              <option value="goedgekeurd">Goedgekeurd</option>
+              <option value="afgewezen">Afgewezen</option>
+            </select>
+          </div>
+          <button
+            onClick={handleDownloadPDF}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Download PDF
+          </button>
+        </div>
+      )}
+
       {/* A4-like document */}
       <div className="bg-white dark:bg-gray-900 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header */}

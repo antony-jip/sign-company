@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   format,
   addMonths,
@@ -31,7 +31,27 @@ import {
   MapPin,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { mockEvents } from '@/data/mockData'
+import { getEvents, createEvent, updateEvent, deleteEvent } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
+import { toast } from 'sonner'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { MonthView } from './MonthView'
 import { WeekView } from './WeekView'
 import { DayView } from './DayView'
@@ -84,10 +104,95 @@ function getEventTypeLabel(type: CalendarEvent['type']): string {
   }
 }
 
+const defaultFormState = {
+  titel: '',
+  beschrijving: '',
+  start_datum: '',
+  eind_datum: '',
+  type: 'meeting' as CalendarEvent['type'],
+  locatie: '',
+  kleur: '#3b82f6',
+}
+
 export function CalendarLayout() {
+  const { user } = useAuth()
   const [viewMode, setViewMode] = useState<ViewMode>('maand')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [newEventOpen, setNewEventOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [formData, setFormData] = useState(defaultFormState)
+
+  const fetchEvents = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const data = await getEvents()
+      setEvents(data)
+    } catch (error) {
+      console.error('Failed to fetch events:', error)
+      toast.error('Kon evenementen niet laden')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchEvents()
+  }, [fetchEvents])
+
+  const handleOpenNewEvent = () => {
+    // Pre-fill start/end with selected date or today
+    const base = selectedDate || new Date()
+    const startDate = new Date(base)
+    startDate.setHours(9, 0, 0, 0)
+    const endDate = new Date(base)
+    endDate.setHours(10, 0, 0, 0)
+
+    setFormData({
+      ...defaultFormState,
+      start_datum: format(startDate, "yyyy-MM-dd'T'HH:mm"),
+      eind_datum: format(endDate, "yyyy-MM-dd'T'HH:mm"),
+    })
+    setNewEventOpen(true)
+  }
+
+  const handleSaveEvent = async () => {
+    if (!formData.titel.trim()) {
+      toast.error('Vul een titel in')
+      return
+    }
+    if (!formData.start_datum || !formData.eind_datum) {
+      toast.error('Vul start- en einddatum in')
+      return
+    }
+
+    try {
+      setIsSaving(true)
+      await createEvent({
+        user_id: user?.id || 'demo',
+        project_id: null,
+        titel: formData.titel.trim(),
+        beschrijving: formData.beschrijving.trim(),
+        start_datum: new Date(formData.start_datum).toISOString(),
+        eind_datum: new Date(formData.eind_datum).toISOString(),
+        type: formData.type,
+        locatie: formData.locatie.trim(),
+        deelnemers: [],
+        kleur: formData.kleur,
+        herhaling: '',
+      })
+      toast.success('Evenement aangemaakt')
+      setNewEventOpen(false)
+      await fetchEvents()
+    } catch (error) {
+      console.error('Failed to create event:', error)
+      toast.error('Kon evenement niet aanmaken')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   // Navigation handlers
   const handlePrev = () => {
@@ -153,14 +258,14 @@ export function CalendarLayout() {
   // Upcoming events for sidebar
   const upcomingEvents = useMemo(() => {
     const now = new Date()
-    return [...mockEvents]
+    return [...events]
       .filter((e) => parseISO(e.start_datum) >= now)
       .sort(
         (a, b) =>
           parseISO(a.start_datum).getTime() - parseISO(b.start_datum).getTime()
       )
       .slice(0, 5)
-  }, [])
+  }, [events])
 
   // Mini calendar data for sidebar
   const miniCalendarDays = useMemo(() => {
@@ -172,7 +277,7 @@ export function CalendarLayout() {
   }, [currentDate])
 
   const miniCalendarHasEvent = (day: Date) => {
-    return mockEvents.some((event) => isSameDay(parseISO(event.start_datum), day))
+    return events.some((event) => isSameDay(parseISO(event.start_datum), day))
   }
 
   return (
@@ -187,7 +292,7 @@ export function CalendarLayout() {
             Plan en beheer uw afspraken en deadlines
           </p>
         </div>
-        <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+        <Button className="gap-2 bg-blue-600 hover:bg-blue-700" onClick={handleOpenNewEvent}>
           <Plus className="w-4 h-4" />
           Nieuw Event
         </Button>
@@ -256,24 +361,35 @@ export function CalendarLayout() {
           {/* Calendar view */}
           <Card className="overflow-hidden">
             <div className="h-[calc(100vh-340px)] min-h-[480px]">
-              {viewMode === 'maand' && (
-                <MonthView
-                  currentDate={currentDate}
-                  selectedDate={selectedDate}
-                  events={mockEvents}
-                  onSelectDate={handleSelectDate}
-                />
-              )}
-              {viewMode === 'week' && (
-                <WeekView
-                  currentDate={currentDate}
-                  selectedDate={selectedDate}
-                  events={mockEvents}
-                  onSelectDate={handleSelectDate}
-                />
-              )}
-              {viewMode === 'dag' && (
-                <DayView currentDate={currentDate} events={mockEvents} />
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-muted-foreground">Agenda laden...</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {viewMode === 'maand' && (
+                    <MonthView
+                      currentDate={currentDate}
+                      selectedDate={selectedDate}
+                      events={events}
+                      onSelectDate={handleSelectDate}
+                    />
+                  )}
+                  {viewMode === 'week' && (
+                    <WeekView
+                      currentDate={currentDate}
+                      selectedDate={selectedDate}
+                      events={events}
+                      onSelectDate={handleSelectDate}
+                    />
+                  )}
+                  {viewMode === 'dag' && (
+                    <DayView currentDate={currentDate} events={events} />
+                  )}
+                </>
               )}
             </div>
           </Card>
@@ -423,6 +539,155 @@ export function CalendarLayout() {
           </Card>
         </div>
       </div>
+
+      {/* New Event Dialog */}
+      <Dialog open={newEventOpen} onOpenChange={setNewEventOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Nieuw Evenement</DialogTitle>
+            <DialogDescription>
+              Vul de gegevens in om een nieuw evenement aan te maken.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            {/* Titel */}
+            <div className="grid gap-2">
+              <Label htmlFor="event-titel">Titel *</Label>
+              <Input
+                id="event-titel"
+                placeholder="Naam van het evenement"
+                value={formData.titel}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, titel: e.target.value }))
+                }
+              />
+            </div>
+
+            {/* Beschrijving */}
+            <div className="grid gap-2">
+              <Label htmlFor="event-beschrijving">Beschrijving</Label>
+              <Textarea
+                id="event-beschrijving"
+                placeholder="Optionele beschrijving"
+                value={formData.beschrijving}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    beschrijving: e.target.value,
+                  }))
+                }
+                rows={3}
+              />
+            </div>
+
+            {/* Start en Eind datum */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="event-start">Startdatum *</Label>
+                <Input
+                  id="event-start"
+                  type="datetime-local"
+                  value={formData.start_datum}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      start_datum: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="event-eind">Einddatum *</Label>
+                <Input
+                  id="event-eind"
+                  type="datetime-local"
+                  value={formData.eind_datum}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      eind_datum: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Type en Locatie */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Type</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value: CalendarEvent['type']) =>
+                    setFormData((prev) => ({ ...prev, type: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecteer type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="meeting">Vergadering</SelectItem>
+                    <SelectItem value="deadline">Deadline</SelectItem>
+                    <SelectItem value="herinnering">Herinnering</SelectItem>
+                    <SelectItem value="persoonlijk">Persoonlijk</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="event-locatie">Locatie</Label>
+                <Input
+                  id="event-locatie"
+                  placeholder="Bijv. Kantoor, Online"
+                  value={formData.locatie}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      locatie: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Kleur */}
+            <div className="grid gap-2">
+              <Label htmlFor="event-kleur">Kleur</Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="event-kleur"
+                  type="color"
+                  className="w-12 h-10 p-1 cursor-pointer"
+                  value={formData.kleur}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, kleur: e.target.value }))
+                  }
+                />
+                <span className="text-sm text-muted-foreground">
+                  {formData.kleur}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setNewEventOpen(false)}
+              disabled={isSaving}
+            >
+              Annuleren
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSaveEvent}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Opslaan...' : 'Opslaan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

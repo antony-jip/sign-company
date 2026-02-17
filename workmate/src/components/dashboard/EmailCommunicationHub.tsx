@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Mail, ArrowRight } from 'lucide-react'
-import { mockEmails } from '@/data/mockData'
+import { Mail, ArrowRight, Loader2 } from 'lucide-react'
+import { getEmails } from '@/services/supabaseService'
+import type { Email } from '@/types'
 import { getInitials, cn } from '@/lib/utils'
 
 function timeAgo(dateStr: string): string {
@@ -38,16 +39,25 @@ const avatarColors = [
 
 export function EmailCommunicationHub() {
   const navigate = useNavigate()
+  const [emails, setEmails] = useState<Email[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getEmails()
+      .then(setEmails)
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
 
   const recentUnread = useMemo(() => {
-    return [...mockEmails]
+    return [...emails]
       .filter((e) => !e.gelezen)
       .sort(
         (a, b) =>
           new Date(b.datum).getTime() - new Date(a.datum).getTime()
       )
       .slice(0, 3)
-  }, [])
+  }, [emails])
 
   return (
     <Card>
@@ -65,7 +75,11 @@ export function EmailCommunicationHub() {
         </div>
       </CardHeader>
       <CardContent className="space-y-1">
-        {recentUnread.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          </div>
+        ) : recentUnread.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
             Geen ongelezen berichten
           </p>

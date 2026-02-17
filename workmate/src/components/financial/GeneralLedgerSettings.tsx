@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,7 +20,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Plus, Pencil, Trash2, ArrowUpDown } from 'lucide-react'
-import { mockGrootboek } from '@/data/mockData'
+import { getGrootboek, createGrootboekRekening, updateGrootboekRekening, deleteGrootboekRekening } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import { formatCurrency } from '@/lib/utils'
 import type { Grootboek } from '@/types'
 import { toast } from 'sonner'
@@ -51,13 +52,31 @@ const emptyForm: Omit<Grootboek, 'id' | 'user_id' | 'created_at'> = {
 }
 
 export function GeneralLedgerSettings() {
-  const [accounts, setAccounts] = useState<Grootboek[]>(mockGrootboek)
+  const { user } = useAuth()
+  const [accounts, setAccounts] = useState<Grootboek[]>([])
+  const [loading, setLoading] = useState(true)
   const [filterCategorie, setFilterCategorie] = useState<Categorie>('alle')
   const [sortField, setSortField] = useState<SortField>('code')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await getGrootboek()
+      setAccounts(data)
+    } catch (error) {
+      toast.error('Fout bij ophalen grootboekrekeningen')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const filteredAccounts = useMemo(() => {
     let result = [...accounts]
@@ -110,43 +129,49 @@ export function GeneralLedgerSettings() {
     setDialogOpen(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.code.trim() || !form.naam.trim()) {
       toast.error('Vul alle verplichte velden in')
       return
     }
 
-    if (editingId) {
-      setAccounts((prev) =>
-        prev.map((a) =>
-          a.id === editingId
-            ? { ...a, code: form.code, naam: form.naam, categorie: form.categorie, saldo: form.saldo }
-            : a
-        )
-      )
-      toast.success('Rekening bijgewerkt')
-    } else {
-      const newAccount: Grootboek = {
-        id: `gb-${Date.now()}`,
-        user_id: 'u1',
-        code: form.code,
-        naam: form.naam,
-        categorie: form.categorie,
-        saldo: form.saldo,
-        created_at: new Date().toISOString(),
+    try {
+      if (editingId) {
+        await updateGrootboekRekening(editingId, {
+          code: form.code,
+          naam: form.naam,
+          categorie: form.categorie,
+          saldo: form.saldo,
+        })
+        toast.success('Rekening bijgewerkt')
+      } else {
+        await createGrootboekRekening({
+          user_id: user?.id ?? '',
+          code: form.code,
+          naam: form.naam,
+          categorie: form.categorie,
+          saldo: form.saldo,
+        })
+        toast.success('Rekening aangemaakt')
       }
-      setAccounts((prev) => [...prev, newAccount])
-      toast.success('Rekening aangemaakt')
-    }
 
-    setDialogOpen(false)
-    setEditingId(null)
-    setForm(emptyForm)
+      setDialogOpen(false)
+      setEditingId(null)
+      setForm(emptyForm)
+      await fetchData()
+    } catch (error) {
+      toast.error('Fout bij opslaan rekening')
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setAccounts((prev) => prev.filter((a) => a.id !== id))
-    toast.success('Rekening verwijderd')
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteGrootboekRekening(id)
+      toast.success('Rekening verwijderd')
+      await fetchData()
+    } catch (error) {
+      toast.error('Fout bij verwijderen rekening')
+    }
   }
 
   return (
@@ -178,114 +203,122 @@ export function GeneralLedgerSettings() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4">
-                  <button
-                    onClick={() => toggleSort('code')}
-                    className="flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                  >
-                    Code
-                    <ArrowUpDown className="w-3 h-3" />
-                  </button>
-                </th>
-                <th className="text-left py-3 px-4">
-                  <button
-                    onClick={() => toggleSort('naam')}
-                    className="flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                  >
-                    Naam
-                    <ArrowUpDown className="w-3 h-3" />
-                  </button>
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Categorie
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Saldo
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Acties
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAccounts.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
-                    Geen grootboekrekeningen gevonden
-                  </td>
-                </tr>
-              ) : (
-                filteredAccounts.map((account) => (
-                  <tr
-                    key={account.id}
-                    className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                  >
-                    <td className="py-3 px-4 font-mono text-xs text-gray-600 dark:text-gray-400">
-                      {account.code}
-                    </td>
-                    <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
-                      {account.naam}
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge className={categorieColors[account.categorie]}>
-                        {categorieLabels[account.categorie]}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(account.saldo)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-blue-600"
-                          onClick={() => openEdit(account)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-red-600"
-                          onClick={() => handleDelete(account.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Category Totals */}
-        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            Totalen per categorie
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {Object.entries(categoryTotals).map(([cat, total]) => (
-              <div
-                key={cat}
-                className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
-              >
-                <Badge className={categorieColors[cat]}>
-                  {categorieLabels[cat]}
-                </Badge>
-                <span className="font-semibold text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(total)}
-                </span>
-              </div>
-            ))}
+        {loading ? (
+          <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+            Laden...
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4">
+                      <button
+                        onClick={() => toggleSort('code')}
+                        className="flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                      >
+                        Code
+                        <ArrowUpDown className="w-3 h-3" />
+                      </button>
+                    </th>
+                    <th className="text-left py-3 px-4">
+                      <button
+                        onClick={() => toggleSort('naam')}
+                        className="flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                      >
+                        Naam
+                        <ArrowUpDown className="w-3 h-3" />
+                      </button>
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                      Categorie
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                      Saldo
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                      Acties
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAccounts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                        Geen grootboekrekeningen gevonden
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAccounts.map((account) => (
+                      <tr
+                        key={account.id}
+                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <td className="py-3 px-4 font-mono text-xs text-gray-600 dark:text-gray-400">
+                          {account.code}
+                        </td>
+                        <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
+                          {account.naam}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge className={categorieColors[account.categorie]}>
+                            {categorieLabels[account.categorie]}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">
+                          {formatCurrency(account.saldo)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-gray-400 hover:text-blue-600"
+                              onClick={() => openEdit(account)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-gray-400 hover:text-red-600"
+                              onClick={() => handleDelete(account.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Category Totals */}
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                Totalen per categorie
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {Object.entries(categoryTotals).map(([cat, total]) => (
+                  <div
+                    key={cat}
+                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                  >
+                    <Badge className={categorieColors[cat]}>
+                      {categorieLabels[cat]}
+                    </Badge>
+                    <span className="font-semibold text-sm text-gray-900 dark:text-white">
+                      {formatCurrency(total)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </CardContent>
 
       {/* Dialog for New / Edit */}

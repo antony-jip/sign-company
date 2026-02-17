@@ -26,6 +26,7 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
+  onSend?: (data: { to: string; subject: string; body: string }) => void
 }
 
 const emailTemplates: Record<string, { onderwerp: string; body: string }> = {
@@ -109,6 +110,7 @@ export function EmailCompose({
   defaultTo = '',
   defaultSubject = '',
   defaultBody = '',
+  onSend,
 }: EmailComposeProps) {
   const [to, setTo] = useState(defaultTo)
   const [cc, setCc] = useState('')
@@ -146,6 +148,7 @@ export function EmailCompose({
     try {
       // Simulate sending
       await new Promise((resolve) => setTimeout(resolve, 800))
+      onSend?.({ to: to.trim(), subject: subject.trim(), body })
       resetAndClose()
     } catch (error) {
       console.error('Verzenden mislukt:', error)

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
-import { mockBtwCodes } from '@/data/mockData'
+import { getBtwCodes, createBtwCode, updateBtwCode, deleteBtwCode } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import type { BtwCode } from '@/types'
 import { toast } from 'sonner'
 
@@ -25,10 +26,28 @@ const emptyForm: Omit<BtwCode, 'id' | 'user_id' | 'created_at'> = {
 }
 
 export function VATCodesSettings() {
-  const [btwCodes, setBtwCodes] = useState<BtwCode[]>(mockBtwCodes)
+  const { user } = useAuth()
+  const [btwCodes, setBtwCodes] = useState<BtwCode[]>([])
+  const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await getBtwCodes()
+      setBtwCodes(data)
+    } catch (error) {
+      toast.error('Fout bij ophalen BTW codes')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const openNew = () => {
     setForm(emptyForm)
@@ -47,55 +66,60 @@ export function VATCodesSettings() {
     setDialogOpen(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.code.trim() || !form.omschrijving.trim()) {
       toast.error('Vul alle verplichte velden in')
       return
     }
 
-    if (editingId) {
-      setBtwCodes((prev) =>
-        prev.map((b) =>
-          b.id === editingId
-            ? {
-                ...b,
-                code: form.code,
-                omschrijving: form.omschrijving,
-                percentage: form.percentage,
-                actief: form.actief,
-              }
-            : b
-        )
-      )
-      toast.success('BTW code bijgewerkt')
-    } else {
-      const newBtw: BtwCode = {
-        id: `btw-${Date.now()}`,
-        user_id: 'u1',
-        code: form.code,
-        omschrijving: form.omschrijving,
-        percentage: form.percentage,
-        actief: form.actief,
-        created_at: new Date().toISOString(),
+    try {
+      if (editingId) {
+        await updateBtwCode(editingId, {
+          code: form.code,
+          omschrijving: form.omschrijving,
+          percentage: form.percentage,
+          actief: form.actief,
+        })
+        toast.success('BTW code bijgewerkt')
+      } else {
+        await createBtwCode({
+          user_id: user?.id ?? '',
+          code: form.code,
+          omschrijving: form.omschrijving,
+          percentage: form.percentage,
+          actief: form.actief,
+        })
+        toast.success('BTW code aangemaakt')
       }
-      setBtwCodes((prev) => [...prev, newBtw])
-      toast.success('BTW code aangemaakt')
+
+      setDialogOpen(false)
+      setEditingId(null)
+      setForm(emptyForm)
+      await fetchData()
+    } catch (error) {
+      toast.error('Fout bij opslaan BTW code')
     }
-
-    setDialogOpen(false)
-    setEditingId(null)
-    setForm(emptyForm)
   }
 
-  const handleDelete = (id: string) => {
-    setBtwCodes((prev) => prev.filter((b) => b.id !== id))
-    toast.success('BTW code verwijderd')
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteBtwCode(id)
+      toast.success('BTW code verwijderd')
+      await fetchData()
+    } catch (error) {
+      toast.error('Fout bij verwijderen BTW code')
+    }
   }
 
-  const handleToggleActief = (id: string) => {
-    setBtwCodes((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, actief: !b.actief } : b))
-    )
+  const handleToggleActief = async (id: string) => {
+    try {
+      const btw = btwCodes.find((b) => b.id === id)
+      if (!btw) return
+      await updateBtwCode(id, { actief: !btw.actief })
+      await fetchData()
+    } catch (error) {
+      toast.error('Fout bij bijwerken BTW code')
+    }
   }
 
   return (
@@ -115,83 +139,89 @@ export function VATCodesSettings() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Code
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Omschrijving
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Percentage
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Actief
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Acties
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {btwCodes.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
-                    Geen BTW codes gevonden
-                  </td>
+        {loading ? (
+          <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+            Laden...
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Code
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Omschrijving
+                  </th>
+                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Percentage
+                  </th>
+                  <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Actief
+                  </th>
+                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Acties
+                  </th>
                 </tr>
-              ) : (
-                btwCodes.map((btw) => (
-                  <tr
-                    key={btw.id}
-                    className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                  >
-                    <td className="py-3 px-4 font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      {btw.code}
-                    </td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-white">
-                      {btw.omschrijving}
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">
-                      {btw.percentage}%
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex justify-center">
-                        <Switch
-                          checked={btw.actief}
-                          onCheckedChange={() => handleToggleActief(btw.id)}
-                        />
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-blue-600"
-                          onClick={() => openEdit(btw)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-red-600"
-                          onClick={() => handleDelete(btw.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+              </thead>
+              <tbody>
+                {btwCodes.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                      Geen BTW codes gevonden
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  btwCodes.map((btw) => (
+                    <tr
+                      key={btw.id}
+                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                      <td className="py-3 px-4 font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        {btw.code}
+                      </td>
+                      <td className="py-3 px-4 text-gray-900 dark:text-white">
+                        {btw.omschrijving}
+                      </td>
+                      <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">
+                        {btw.percentage}%
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex justify-center">
+                          <Switch
+                            checked={btw.actief}
+                            onCheckedChange={() => handleToggleActief(btw.id)}
+                          />
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-400 hover:text-blue-600"
+                            onClick={() => openEdit(btw)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-400 hover:text-red-600"
+                            onClick={() => handleDelete(btw.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </CardContent>
 
       {/* Dialog for New / Edit */}

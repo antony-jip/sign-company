@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ListTodo, CheckCircle2 } from 'lucide-react'
-import { mockTaken, mockProjecten } from '@/data/mockData'
+import { ListTodo, CheckCircle2, Loader2 } from 'lucide-react'
+import { getTaken, getProjecten } from '@/services/supabaseService'
+import type { Taak, Project } from '@/types'
 import { formatDate, getPriorityColor, getStatusColor } from '@/lib/utils'
 
 const priorityOrder: Record<string, number> = {
@@ -15,13 +16,26 @@ const priorityOrder: Record<string, number> = {
 
 export function PriorityTasks() {
   const navigate = useNavigate()
+  const [taken, setTaken] = useState<Taak[]>([])
+  const [projecten, setProjecten] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([getTaken(), getProjecten()])
+      .then(([t, p]) => {
+        setTaken(t)
+        setProjecten(p)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
 
   const topTasks = useMemo(() => {
     const projectMap = new Map(
-      mockProjecten.map((p) => [p.id, p.naam])
+      projecten.map((p) => [p.id, p.naam])
     )
 
-    return [...mockTaken]
+    return [...taken]
       .filter((t) => t.status !== 'klaar')
       .sort(
         (a, b) =>
@@ -33,7 +47,7 @@ export function PriorityTasks() {
         ...task,
         projectNaam: projectMap.get(task.project_id) ?? 'Onbekend project',
       }))
-  }, [])
+  }, [taken, projecten])
 
   return (
     <Card>
@@ -44,7 +58,11 @@ export function PriorityTasks() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {topTasks.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          </div>
+        ) : topTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
             <CheckCircle2 className="w-10 h-10 mb-3 opacity-30" />
             <p className="text-sm font-medium">Geen openstaande taken</p>

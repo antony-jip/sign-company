@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -27,9 +27,9 @@ import {
   Paperclip,
 } from 'lucide-react'
 import { cn, getStatusColor, getPriorityColor, formatDate, formatCurrency, formatDateTime } from '@/lib/utils'
-import { mockKlanten, mockProjecten, mockEmails, mockDocumenten } from '@/data/mockData'
+import { getKlant, getProjectenByKlant, getEmails, getDocumenten, updateKlant } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
-import type { Klant } from '@/types'
+import type { Klant, Project, Email, Document as DocType } from '@/types'
 
 // Mock activity data for the timeline
 const mockActivities = [
@@ -50,29 +50,47 @@ export function ClientProfile() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [klant, setKlant] = useState<Klant | null>(() =>
-    mockKlanten.find((k) => k.id === id) || null
-  )
+  const [klant, setKlant] = useState<Klant | null>(null)
+  const [clientProjecten, setClientProjecten] = useState<Project[]>([])
+  const [clientEmails, setClientEmails] = useState<Email[]>([])
+  const [clientDocumenten, setClientDocumenten] = useState<DocType[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const clientProjecten = useMemo(
-    () => mockProjecten.filter((p) => p.klant_id === id),
-    [id]
-  )
+  useEffect(() => {
+    if (!id) return
+    setIsLoading(true)
+    Promise.all([
+      getKlant(id),
+      getProjectenByKlant(id),
+      getEmails(),
+      getDocumenten(),
+    ]).then(([klantData, projecten, allEmails, allDocs]) => {
+      setKlant(klantData)
+      setClientProjecten(projecten)
+      if (klantData) {
+        const email = klantData.email.toLowerCase()
+        setClientEmails(
+          allEmails.filter(
+            (e) =>
+              e.van.toLowerCase().includes(email) ||
+              e.aan.toLowerCase().includes(email)
+          )
+        )
+      }
+      setClientDocumenten(allDocs.filter((d) => d.klant_id === id))
+      setIsLoading(false)
+    })
+  }, [id])
 
-  const clientEmails = useMemo(() => {
-    if (!klant) return []
-    const email = klant.email.toLowerCase()
-    return mockEmails.filter(
-      (e) =>
-        e.van.toLowerCase().includes(email) ||
-        e.aan.toLowerCase().includes(email)
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <p className="text-lg text-gray-500 dark:text-gray-400">
+          Laden...
+        </p>
+      </div>
     )
-  }, [klant, id])
-
-  const clientDocumenten = useMemo(
-    () => mockDocumenten.filter((d) => d.klant_id === id),
-    [id]
-  )
+  }
 
   if (!klant) {
     return (

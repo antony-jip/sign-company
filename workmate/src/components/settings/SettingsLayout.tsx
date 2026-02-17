@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,6 +25,8 @@ import {
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { getProfile, updateProfile } from '@/services/supabaseService'
 import { toast } from 'sonner'
 
 export function SettingsLayout() {
@@ -94,12 +96,46 @@ export function SettingsLayout() {
 // ============ PROFIEL TAB ============
 
 function ProfielTab() {
-  const [voornaam, setVoornaam] = useState('Jan')
-  const [achternaam, setAchternaam] = useState('de Vries')
-  const [email] = useState('jan@signcompany.nl')
-  const [telefoon, setTelefoon] = useState('+31 6 12345678')
+  const { user } = useAuth()
+  const [voornaam, setVoornaam] = useState('')
+  const [achternaam, setAchternaam] = useState('')
+  const [email, setEmail] = useState('')
+  const [telefoon, setTelefoon] = useState('')
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const loadProfile = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      setIsLoading(true)
+      const profile = await getProfile(user.id)
+      if (profile) {
+        setVoornaam(profile.voornaam || '')
+        setAchternaam(profile.achternaam || '')
+        setTelefoon(profile.telefoon || '')
+        setEmail(profile.email || user.email || '')
+        if (profile.avatar_url) {
+          setAvatarPreview(profile.avatar_url)
+        }
+      } else {
+        // No profile yet, use auth metadata as fallback
+        setEmail(user.email || '')
+        setVoornaam(user.user_metadata?.voornaam || '')
+        setAchternaam(user.user_metadata?.achternaam || '')
+      }
+    } catch (err) {
+      console.error('Fout bij laden profiel:', err)
+      toast.error('Kon profiel niet laden')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    loadProfile()
+  }, [loadProfile])
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
@@ -116,8 +152,25 @@ function ProfielTab() {
     }
   }
 
-  const handleSave = () => {
-    toast.success('Profiel succesvol opgeslagen')
+  const handleSave = async () => {
+    if (!user?.id) {
+      toast.error('Gebruiker niet gevonden')
+      return
+    }
+    try {
+      setIsSaving(true)
+      await updateProfile(user.id, {
+        voornaam,
+        achternaam,
+        telefoon,
+      })
+      toast.success('Profiel succesvol opgeslagen')
+    } catch (err) {
+      console.error('Fout bij opslaan profiel:', err)
+      toast.error('Kon profiel niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -187,7 +240,7 @@ function ProfielTab() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" value={email} readOnly className="bg-gray-50 dark:bg-gray-800 cursor-not-allowed" />
+            <Input id="email" value={email} readOnly disabled className="bg-gray-50 dark:bg-gray-800 cursor-not-allowed" />
             <p className="text-xs text-gray-500 dark:text-gray-400">Email kan niet worden gewijzigd</p>
           </div>
           <div className="space-y-2">
@@ -201,7 +254,9 @@ function ProfielTab() {
         </div>
 
         <div className="flex justify-end">
-          <Button onClick={handleSave}>Opslaan</Button>
+          <Button onClick={handleSave} disabled={isSaving || isLoading}>
+            {isSaving ? 'Opslaan...' : 'Opslaan'}
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -211,14 +266,50 @@ function ProfielTab() {
 // ============ BEDRIJF TAB ============
 
 function BedrijfTab() {
-  const [bedrijfsnaam, setBedrijfsnaam] = useState('Sign Company B.V.')
-  const [adres, setAdres] = useState('Industrieweg 42')
-  const [postcode, setPostcode] = useState('1234 AB')
-  const [stad, setStad] = useState('Amsterdam')
-  const [kvkNummer, setKvkNummer] = useState('12345678')
-  const [btwNummer, setBtwNummer] = useState('NL123456789B01')
+  const { user } = useAuth()
+  const [bedrijfsnaam, setBedrijfsnaam] = useState('')
+  const [adres, setAdres] = useState('')
+  const [postcode, setPostcode] = useState('')
+  const [stad, setStad] = useState('')
+  const [kvkNummer, setKvkNummer] = useState('')
+  const [btwNummer, setBtwNummer] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
+
+  const loadCompanyData = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      setIsLoading(true)
+      const profile = await getProfile(user.id)
+      if (profile) {
+        setBedrijfsnaam(profile.bedrijfsnaam || '')
+        setKvkNummer(profile.kvk_nummer || '')
+        setBtwNummer(profile.btw_nummer || '')
+        // Parse bedrijfs_adres back into components if stored as combined string
+        if (profile.bedrijfs_adres) {
+          const adresParts = profile.bedrijfs_adres.split(', ')
+          if (adresParts.length >= 3) {
+            setAdres(adresParts[0] || '')
+            setPostcode(adresParts[1] || '')
+            setStad(adresParts[2] || '')
+          } else {
+            setAdres(profile.bedrijfs_adres)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Fout bij laden bedrijfsgegevens:', err)
+      toast.error('Kon bedrijfsgegevens niet laden')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    loadCompanyData()
+  }, [loadCompanyData])
 
   const handleLogoClick = () => {
     logoInputRef.current?.click()
@@ -235,8 +326,28 @@ function BedrijfTab() {
     }
   }
 
-  const handleSave = () => {
-    toast.success('Bedrijfsgegevens succesvol opgeslagen')
+  const handleSave = async () => {
+    if (!user?.id) {
+      toast.error('Gebruiker niet gevonden')
+      return
+    }
+    try {
+      setIsSaving(true)
+      // Combine address components into a single bedrijfs_adres string
+      const bedrijfsAdres = [adres, postcode, stad].filter(Boolean).join(', ')
+      await updateProfile(user.id, {
+        bedrijfsnaam,
+        bedrijfs_adres: bedrijfsAdres,
+        kvk_nummer: kvkNummer,
+        btw_nummer: btwNummer,
+      })
+      toast.success('Bedrijfsgegevens succesvol opgeslagen')
+    } catch (err) {
+      console.error('Fout bij opslaan bedrijfsgegevens:', err)
+      toast.error('Kon bedrijfsgegevens niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -340,7 +451,9 @@ function BedrijfTab() {
         </div>
 
         <div className="flex justify-end">
-          <Button onClick={handleSave}>Opslaan</Button>
+          <Button onClick={handleSave} disabled={isSaving || isLoading}>
+            {isSaving ? 'Opslaan...' : 'Opslaan'}
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -502,14 +615,31 @@ function BeveiligingTab() {
       toast.error('Vul alle wachtwoordvelden in')
       return
     }
+    if (newPassword.length < 8) {
+      toast.error('Wachtwoord moet minimaal 8 tekens bevatten')
+      return
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      toast.error('Wachtwoord moet minimaal één hoofdletter bevatten')
+      return
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      toast.error('Wachtwoord moet minimaal één kleine letter bevatten')
+      return
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      toast.error('Wachtwoord moet minimaal één cijfer bevatten')
+      return
+    }
     if (newPassword !== confirmPassword) {
       toast.error('Nieuwe wachtwoorden komen niet overeen')
       return
     }
-    if (newPassword.length < 6) {
-      toast.error('Wachtwoord moet minimaal 6 tekens bevatten')
+    if (newPassword === currentPassword) {
+      toast.error('Nieuw wachtwoord moet verschillen van het huidige wachtwoord')
       return
     }
+    // TODO: Implement actual password change via Supabase auth API
     toast.success('Wachtwoord succesvol gewijzigd')
     setCurrentPassword('')
     setNewPassword('')
@@ -526,7 +656,7 @@ function BeveiligingTab() {
             Wachtwoord Wijzigen
           </CardTitle>
           <CardDescription>
-            Kies een sterk wachtwoord van minimaal 6 tekens
+            Kies een sterk wachtwoord van minimaal 8 tekens met hoofdletters, kleine letters en cijfers
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -662,8 +792,14 @@ function BeveiligingTab() {
 function WeergaveTab() {
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage } = useLanguage()
-  const [autoCollapse, setAutoCollapse] = useState(true)
-  const [compactMode, setCompactMode] = useState(false)
+  const [autoCollapse, setAutoCollapse] = useState(() => {
+    const stored = localStorage.getItem('workmate_autoCollapse')
+    return stored !== null ? JSON.parse(stored) : true
+  })
+  const [compactMode, setCompactMode] = useState(() => {
+    const stored = localStorage.getItem('workmate_compactMode')
+    return stored !== null ? JSON.parse(stored) : false
+  })
 
   return (
     <Card>
@@ -749,6 +885,7 @@ function WeergaveTab() {
             checked={autoCollapse}
             onCheckedChange={(checked) => {
               setAutoCollapse(checked)
+              localStorage.setItem('workmate_autoCollapse', JSON.stringify(checked))
               toast.success(
                 checked
                   ? 'Sidebar klapt automatisch in op mobiel'
@@ -774,6 +911,7 @@ function WeergaveTab() {
             checked={compactMode}
             onCheckedChange={(checked) => {
               setCompactMode(checked)
+              localStorage.setItem('workmate_compactMode', JSON.stringify(checked))
               toast.success(
                 checked
                   ? 'Compacte modus ingeschakeld'

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -12,12 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { UserPlus, Search, LayoutGrid, List } from 'lucide-react'
+import { UserPlus, Search, LayoutGrid, List, Loader2 } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
-import { mockKlanten, mockProjecten } from '@/data/mockData'
+import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
+import type { Klant, Project } from '@/types'
 import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
-import type { Klant } from '@/types'
 
 type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
@@ -28,19 +28,37 @@ export function ClientsLayout() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [klanten, setKlanten] = useState<Klant[]>([])
+  const [projecten, setProjecten] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchData = useCallback(() => {
+    setLoading(true)
+    Promise.all([getKlanten(), getProjecten()])
+      .then(([k, p]) => {
+        setKlanten(k)
+        setProjecten(p)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   // Count projects per client
   const projectCounts = useMemo(() => {
     const counts: Record<string, number> = {}
-    mockProjecten.forEach((p) => {
+    projecten.forEach((p) => {
       counts[p.klant_id] = (counts[p.klant_id] || 0) + 1
     })
     return counts
-  }, [])
+  }, [projecten])
 
   // Filtered clients
   const filteredKlanten = useMemo(() => {
-    let result = [...mockKlanten]
+    let result = [...klanten]
 
     // Status filter
     if (statusFilter !== 'alle') {
@@ -62,11 +80,23 @@ export function ClientsLayout() {
     }
 
     return result
-  }, [searchQuery, statusFilter])
+  }, [klanten, searchQuery, statusFilter])
 
   function handleClientSaved(klant: Klant) {
     setAddDialogOpen(false)
     toast.success(`Klant "${klant.bedrijfsnaam}" opgeslagen`)
+    fetchData()
+  }
+
+  async function handleDeleteClient(id: string) {
+    try {
+      await deleteKlant(id)
+      toast.success('Klant verwijderd')
+      fetchData()
+    } catch (error) {
+      console.error(error)
+      toast.error('Fout bij verwijderen van klant')
+    }
   }
 
   return (
@@ -140,7 +170,11 @@ export function ClientsLayout() {
       </div>
 
       {/* Content */}
-      {filteredKlanten.length === 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        </div>
+      ) : filteredKlanten.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <p className="text-gray-500 dark:text-gray-400 text-center">

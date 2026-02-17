@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,8 +17,9 @@ import {
   StarOff,
   Tag,
   Paperclip,
+  Loader2,
 } from 'lucide-react'
-import { mockEmails } from '@/data/mockData'
+import { getEmails, updateEmail, deleteEmail, createEmail } from '@/services/supabaseService'
 import { formatDateTime } from '@/lib/utils'
 import { cn, truncate } from '@/lib/utils'
 import { EmailReader } from './EmailReader'
@@ -71,7 +72,15 @@ export function EmailLayout() {
     subject?: string
     body?: string
   }>({})
-  const [emails, setEmails] = useState<Email[]>(mockEmails)
+  const [emails, setEmails] = useState<Email[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    getEmails()
+      .then((data) => setEmails(data))
+      .catch((err) => console.error('Emails ophalen mislukt:', err))
+      .finally(() => setIsLoading(false))
+  }, [])
 
   const unreadCount = useMemo(
     () => emails.filter((e) => e.map === 'inbox' && !e.gelezen).length,
@@ -105,6 +114,9 @@ export function EmailLayout() {
       setEmails((prev) =>
         prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
       )
+      updateEmail(email.id, { gelezen: true }).catch((err) =>
+        console.error('Gelezen status bijwerken mislukt:', err)
+      )
     }
   }
 
@@ -116,6 +128,9 @@ export function EmailLayout() {
     setSelectedEmail((prev) =>
       prev?.id === email.id ? { ...prev, starred: newStarred } : prev
     )
+    updateEmail(email.id, { starred: newStarred }).catch((err) =>
+      console.error('Ster status bijwerken mislukt:', err)
+    )
   }
 
   const handleToggleRead = (email: Email) => {
@@ -126,16 +141,25 @@ export function EmailLayout() {
     setSelectedEmail((prev) =>
       prev?.id === email.id ? { ...prev, gelezen: newGelezen } : prev
     )
+    updateEmail(email.id, { gelezen: newGelezen }).catch((err) =>
+      console.error('Gelezen status bijwerken mislukt:', err)
+    )
   }
 
   const handleDelete = (email: Email) => {
     if (email.map === 'prullenbak') {
       setEmails((prev) => prev.filter((e) => e.id !== email.id))
+      deleteEmail(email.id).catch((err) =>
+        console.error('Email definitief verwijderen mislukt:', err)
+      )
     } else {
       setEmails((prev) =>
         prev.map((e) =>
           e.id === email.id ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e
         )
+      )
+      updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch((err) =>
+        console.error('Email naar prullenbak verplaatsen mislukt:', err)
       )
     }
     if (selectedEmail?.id === email.id) {
@@ -167,6 +191,26 @@ export function EmailLayout() {
     setComposeOpen(true)
   }
 
+  const handleSendEmail = (data: { to: string; subject: string; body: string }) => {
+    const newEmail: Omit<Email, 'id' | 'created_at'> = {
+      user_id: '',
+      gmail_id: '',
+      van: 'ik@signcompany.nl',
+      aan: data.to,
+      onderwerp: data.subject,
+      inhoud: data.body,
+      datum: new Date().toISOString(),
+      gelezen: true,
+      starred: false,
+      labels: ['verzonden'],
+      bijlagen: 0,
+      map: 'verzonden',
+    }
+    createEmail(newEmail)
+      .then((saved) => setEmails((prev) => [saved, ...prev]))
+      .catch((err) => console.error('Email opslaan mislukt:', err))
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -174,6 +218,14 @@ export function EmailLayout() {
         <h1 className="text-2xl font-bold tracking-tight">Email</h1>
       </div>
 
+      {isLoading ? (
+        <Card className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 text-muted-foreground">
+            <Loader2 className="w-8 h-8 animate-spin" />
+            <p className="text-sm font-medium">Emails laden...</p>
+          </div>
+        </Card>
+      ) : (
       <Card className="flex-1 flex overflow-hidden">
         {/* Left panel - Folders */}
         <div className="w-52 border-r flex-shrink-0 flex flex-col">
@@ -351,6 +403,7 @@ export function EmailLayout() {
           />
         </div>
       </Card>
+      )}
 
       {/* Compose dialog */}
       <EmailCompose
@@ -359,6 +412,7 @@ export function EmailLayout() {
         defaultTo={composeDefaults.to}
         defaultSubject={composeDefaults.subject}
         defaultBody={composeDefaults.body}
+        onSend={handleSendEmail}
       />
     </div>
   )

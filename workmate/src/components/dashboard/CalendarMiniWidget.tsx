@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Clock } from 'lucide-react'
+import { Calendar, Clock, Loader2 } from 'lucide-react'
 import {
   format,
   startOfMonth,
@@ -12,13 +12,23 @@ import {
   parseISO,
 } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { mockEvents } from '@/data/mockData'
+import { getEvents } from '@/services/supabaseService'
+import type { CalendarEvent } from '@/types'
 import { cn } from '@/lib/utils'
 
 const WEEKDAY_LABELS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo']
 
 export function CalendarMiniWidget() {
   const today = new Date()
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getEvents()
+      .then(setEvents)
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
 
   const { daysInMonth, startOffset, eventDates, upcomingEvents } =
     useMemo(() => {
@@ -32,7 +42,7 @@ export function CalendarMiniWidget() {
 
       // Collect dates that have events
       const dates = new Set<string>()
-      mockEvents.forEach((event) => {
+      events.forEach((event) => {
         const eventDate = parseISO(event.start_datum)
         // Only include events in the current month
         if (
@@ -44,7 +54,7 @@ export function CalendarMiniWidget() {
       })
 
       // Upcoming events (from today onwards, sorted, take 3)
-      const upcoming = [...mockEvents]
+      const upcoming = [...events]
         .filter((e) => parseISO(e.start_datum) >= today)
         .sort(
           (a, b) =>
@@ -59,7 +69,7 @@ export function CalendarMiniWidget() {
         eventDates: dates,
         upcomingEvents: upcoming,
       }
-    }, [])
+    }, [events])
 
   const monthTitle = format(today, 'MMMM yyyy', { locale: nl })
   // Capitalize first letter
@@ -75,6 +85,11 @@ export function CalendarMiniWidget() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          </div>
+        ) : (<>
         {/* Month header */}
         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
           {formattedMonth}
@@ -161,6 +176,7 @@ export function CalendarMiniWidget() {
             })}
           </div>
         )}
+        </>)}
       </CardContent>
     </Card>
   )

@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText, Files,
   Mail, Calendar, PiggyBank, Bot, Settings, ChevronLeft,
-  ChevronRight, LogOut, Menu, X
+  ChevronRight, LogOut, Menu, X, CheckSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -13,10 +13,11 @@ import { Button } from '@/components/ui/button'
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
+  { label: 'Taken', icon: CheckSquare, path: '/taken' },
   { label: 'Klanten', icon: Users, path: '/klanten' },
   { label: 'Offertes', icon: FileText, path: '/offertes' },
   { label: 'Documenten', icon: Files, path: '/documenten' },
-  { label: 'Email', icon: Mail, path: '/email', badge: 3 },
+  { label: 'Email', icon: Mail, path: '/email' },
   { label: 'Kalender', icon: Calendar, path: '/kalender' },
   { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
   { label: 'AI Assistent', icon: Bot, path: '/ai' },

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -37,11 +37,12 @@ import {
   getPriorityColor,
   getInitials,
 } from '@/lib/utils'
-import { mockProjecten, mockKlanten, mockTaken, mockDocumenten } from '@/data/mockData'
+import { getProject, getTakenByProject, getDocumenten, createTaak, updateTaak, updateProject } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { TimelineView } from './TimelineView'
 import { TeamAvailability } from './TeamAvailability'
-import type { Taak } from '@/types'
+import type { Taak, Project, Document } from '@/types'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -87,6 +88,7 @@ function formatFileSize(bytes: number): string {
 
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
   const [takenWeergave, setTakenWeergave] = useState<'board' | 'tabel'>('board')
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
   const [nieuweTaakTitel, setNieuweTaakTitel] = useState('')
@@ -94,19 +96,65 @@ export function ProjectDetail() {
   const [nieuweTaakToegewezen, setNieuweTaakToegewezen] = useState('')
   const [nieuweTaakDeadline, setNieuweTaakDeadline] = useState('')
 
-  const project = useMemo(() => mockProjecten.find((p) => p.id === id), [id])
-  const klant = useMemo(
-    () => (project ? mockKlanten.find((k) => k.id === project.klant_id) : undefined),
-    [project]
-  )
-  const projectTaken = useMemo(
-    () => (project ? mockTaken.filter((t) => t.project_id === project.id) : []),
-    [project]
-  )
-  const projectDocumenten = useMemo(
-    () => (project ? mockDocumenten.filter((d) => d.project_id === project.id) : []),
-    [project]
-  )
+  const [project, setProject] = useState<Project | null>(null)
+  const [projectTaken, setProjectTaken] = useState<Taak[]>([])
+  const [projectDocumenten, setProjectDocumenten] = useState<Document[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchTaken = useCallback(async () => {
+    if (!id) return
+    try {
+      const taken = await getTakenByProject(id)
+      setProjectTaken(taken)
+    } catch (err) {
+      console.error('Fout bij ophalen taken:', err)
+    }
+  }, [id])
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!id) return
+      setIsLoading(true)
+      try {
+        const [projectData, takenData, allDocumenten] = await Promise.all([
+          getProject(id),
+          getTakenByProject(id),
+          getDocumenten(),
+        ])
+        setProject(projectData)
+        setProjectTaken(takenData)
+        setProjectDocumenten(allDocumenten.filter((d) => d.project_id === id))
+      } catch (err) {
+        console.error('Fout bij ophalen projectgegevens:', err)
+        toast.error('Kon projectgegevens niet laden')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchData()
+  }, [id])
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" asChild>
+          <Link to="/projecten">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Terug naar projecten
+          </Link>
+        </Button>
+        <Card>
+          <CardContent className="py-16 text-center">
+            <div className="animate-pulse space-y-3">
+              <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded mx-auto" />
+              <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mx-auto" />
+            </div>
+            <p className="text-sm text-muted-foreground mt-4">Project laden...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   if (!project) {
     return (
@@ -147,7 +195,7 @@ export function ProjectDetail() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">{project.naam}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {klant?.bedrijfsnaam || 'Onbekende klant'}
+              {project.klant_naam || 'Onbekende klant'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -186,7 +234,7 @@ export function ProjectDetail() {
                       Klant
                     </p>
                     <p className="text-sm font-medium text-foreground mt-1">
-                      {klant?.bedrijfsnaam || 'Onbekend'}
+                      {project.klant_naam || 'Onbekend'}
                     </p>
                   </div>
                   <div>
@@ -426,9 +474,31 @@ export function ProjectDetail() {
                   </Button>
                   <Button
                     disabled={!nieuweTaakTitel.trim()}
-                    onClick={() => {
-                      toast.success(`Taak "${nieuweTaakTitel}" toegevoegd (demo)`)
-                      setNieuweTaakOpen(false)
+                    onClick={async () => {
+                      try {
+                        await createTaak({
+                          user_id: user?.id || 'demo',
+                          project_id: id!,
+                          titel: nieuweTaakTitel.trim(),
+                          beschrijving: nieuweTaakBeschrijving.trim(),
+                          status: 'todo',
+                          prioriteit: 'medium',
+                          toegewezen_aan: nieuweTaakToegewezen.trim(),
+                          deadline: nieuweTaakDeadline || new Date().toISOString().split('T')[0],
+                          geschatte_tijd: 0,
+                          bestede_tijd: 0,
+                        })
+                        toast.success(`Taak "${nieuweTaakTitel}" toegevoegd`)
+                        setNieuweTaakOpen(false)
+                        setNieuweTaakTitel('')
+                        setNieuweTaakBeschrijving('')
+                        setNieuweTaakToegewezen('')
+                        setNieuweTaakDeadline('')
+                        await fetchTaken()
+                      } catch (err) {
+                        console.error('Fout bij aanmaken taak:', err)
+                        toast.error('Kon taak niet aanmaken')
+                      }
                     }}
                   >
                     Taak toevoegen

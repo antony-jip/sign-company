@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,7 +21,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
-import { mockKortingen } from '@/data/mockData'
+import { getKortingen, createKorting, updateKorting, deleteKorting } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Korting } from '@/types'
 import { toast } from 'sonner'
 
@@ -44,10 +45,28 @@ const emptyForm: Omit<Korting, 'id' | 'user_id' | 'created_at'> = {
 }
 
 export function DiscountsSettings() {
-  const [kortingen, setKortingen] = useState<Korting[]>(mockKortingen)
+  const { user } = useAuth()
+  const [kortingen, setKortingen] = useState<Korting[]>([])
+  const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await getKortingen()
+      setKortingen(data)
+    } catch (error) {
+      toast.error('Fout bij ophalen kortingen')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const openNew = () => {
     setForm(emptyForm)
@@ -67,57 +86,62 @@ export function DiscountsSettings() {
     setDialogOpen(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.naam.trim()) {
       toast.error('Vul een naam in voor de korting')
       return
     }
 
-    if (editingId) {
-      setKortingen((prev) =>
-        prev.map((k) =>
-          k.id === editingId
-            ? {
-                ...k,
-                naam: form.naam,
-                type: form.type,
-                waarde: form.waarde,
-                voorwaarden: form.voorwaarden,
-                actief: form.actief,
-              }
-            : k
-        )
-      )
-      toast.success('Korting bijgewerkt')
-    } else {
-      const newKorting: Korting = {
-        id: `kort-${Date.now()}`,
-        user_id: 'u1',
-        naam: form.naam,
-        type: form.type,
-        waarde: form.waarde,
-        voorwaarden: form.voorwaarden,
-        actief: form.actief,
-        created_at: new Date().toISOString(),
+    try {
+      if (editingId) {
+        await updateKorting(editingId, {
+          naam: form.naam,
+          type: form.type,
+          waarde: form.waarde,
+          voorwaarden: form.voorwaarden,
+          actief: form.actief,
+        })
+        toast.success('Korting bijgewerkt')
+      } else {
+        await createKorting({
+          user_id: user?.id ?? '',
+          naam: form.naam,
+          type: form.type,
+          waarde: form.waarde,
+          voorwaarden: form.voorwaarden,
+          actief: form.actief,
+        })
+        toast.success('Korting aangemaakt')
       }
-      setKortingen((prev) => [...prev, newKorting])
-      toast.success('Korting aangemaakt')
+
+      setDialogOpen(false)
+      setEditingId(null)
+      setForm(emptyForm)
+      await fetchData()
+    } catch (error) {
+      toast.error('Fout bij opslaan korting')
     }
-
-    setDialogOpen(false)
-    setEditingId(null)
-    setForm(emptyForm)
   }
 
-  const handleDelete = (id: string) => {
-    setKortingen((prev) => prev.filter((k) => k.id !== id))
-    toast.success('Korting verwijderd')
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteKorting(id)
+      toast.success('Korting verwijderd')
+      await fetchData()
+    } catch (error) {
+      toast.error('Fout bij verwijderen korting')
+    }
   }
 
-  const handleToggleActief = (id: string) => {
-    setKortingen((prev) =>
-      prev.map((k) => (k.id === id ? { ...k, actief: !k.actief } : k))
-    )
+  const handleToggleActief = async (id: string) => {
+    try {
+      const korting = kortingen.find((k) => k.id === id)
+      if (!korting) return
+      await updateKorting(id, { actief: !korting.actief })
+      await fetchData()
+    } catch (error) {
+      toast.error('Fout bij bijwerken korting')
+    }
   }
 
   const formatWaarde = (korting: Korting) => {
@@ -144,91 +168,97 @@ export function DiscountsSettings() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Naam
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Type
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Waarde
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400 hidden md:table-cell">
-                  Voorwaarden
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Actief
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Acties
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {kortingen.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
-                    Geen kortingen gevonden
-                  </td>
+        {loading ? (
+          <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+            Laden...
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Naam
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Type
+                  </th>
+                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Waarde
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                    Voorwaarden
+                  </th>
+                  <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Actief
+                  </th>
+                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    Acties
+                  </th>
                 </tr>
-              ) : (
-                kortingen.map((korting) => (
-                  <tr
-                    key={korting.id}
-                    className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                  >
-                    <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
-                      {korting.naam}
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge className={typeColors[korting.type]}>
-                        {typeLabels[korting.type]}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">
-                      {formatWaarde(korting)}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400 hidden md:table-cell max-w-[250px] truncate">
-                      {korting.voorwaarden || '-'}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex justify-center">
-                        <Switch
-                          checked={korting.actief}
-                          onCheckedChange={() => handleToggleActief(korting.id)}
-                        />
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-blue-600"
-                          onClick={() => openEdit(korting)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-red-600"
-                          onClick={() => handleDelete(korting.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+              </thead>
+              <tbody>
+                {kortingen.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                      Geen kortingen gevonden
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  kortingen.map((korting) => (
+                    <tr
+                      key={korting.id}
+                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                      <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
+                        {korting.naam}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge className={typeColors[korting.type]}>
+                          {typeLabels[korting.type]}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">
+                        {formatWaarde(korting)}
+                      </td>
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 hidden md:table-cell max-w-[250px] truncate">
+                        {korting.voorwaarden || '-'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex justify-center">
+                          <Switch
+                            checked={korting.actief}
+                            onCheckedChange={() => handleToggleActief(korting.id)}
+                          />
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-400 hover:text-blue-600"
+                            onClick={() => openEdit(korting)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-400 hover:text-red-600"
+                            onClick={() => handleDelete(korting.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </CardContent>
 
       {/* Dialog for New / Edit */}

@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Plus, FileText } from 'lucide-react'
-import { mockOffertes, mockKlanten } from '@/data/mockData'
+import { Plus, FileText, Loader2 } from 'lucide-react'
+import { getOffertes, updateOfferte, deleteOfferte } from '@/services/supabaseService'
+import type { Offerte } from '@/types'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 
 const statusColumns = [
@@ -23,32 +24,84 @@ const headerAccentColors: Record<string, string> = {
   afgewezen: 'border-red-400 dark:border-red-500',
 }
 
-function getKlantNaam(klantId: string): string {
-  const klant = mockKlanten.find((k) => k.id === klantId)
-  return klant?.bedrijfsnaam || 'Onbekende klant'
-}
-
 export function QuotesPipeline() {
+  const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadOffertes = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const data = await getOffertes()
+      setOffertes(data)
+    } catch (err) {
+      console.error('Fout bij ophalen offertes:', err)
+      setError('Kan offertes niet laden. Probeer opnieuw.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadOffertes()
+  }, [loadOffertes])
+
+  const handleStatusChange = useCallback(async (offerteId: string, newStatus: Offerte['status']) => {
+    try {
+      const updated = await updateOfferte(offerteId, { status: newStatus })
+      setOffertes((prev) =>
+        prev.map((o) => (o.id === offerteId ? { ...o, ...updated } : o))
+      )
+    } catch (err) {
+      console.error('Fout bij bijwerken offerte status:', err)
+    }
+  }, [])
+
   // Group offertes by status
   const offertesByStatus = statusColumns.reduce(
     (acc, col) => {
-      acc[col.key] = mockOffertes.filter((o) => o.status === col.key)
+      acc[col.key] = offertes.filter((o) => o.status === col.key)
       return acc
     },
-    {} as Record<string, typeof mockOffertes>
+    {} as Record<string, Offerte[]>
   )
 
   // Summary stats
   const summaryStats = statusColumns.map((col) => {
-    const offertes = offertesByStatus[col.key]
+    const colOffertes = offertesByStatus[col.key]
     return {
       label: col.label,
-      count: offertes.length,
-      totaal: offertes.reduce((sum, o) => sum + o.totaal, 0),
+      count: colOffertes.length,
+      totaal: colOffertes.reduce((sum, o) => sum + o.totaal, 0),
     }
   })
 
-  const totaalAlleOffertes = mockOffertes.reduce((sum, o) => sum + o.totaal, 0)
+  const totaalAlleOffertes = offertes.reduce((sum, o) => sum + o.totaal, 0)
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <p className="text-sm text-gray-500 dark:text-gray-400">Offertes laden...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <Button variant="outline" onClick={loadOffertes}>
+            Opnieuw proberen
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -57,7 +110,7 @@ export function QuotesPipeline() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Offertes</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {mockOffertes.length} offertes | Totaalwaarde: {formatCurrency(totaalAlleOffertes)}
+            {offertes.length} offertes | Totaalwaarde: {formatCurrency(totaalAlleOffertes)}
           </p>
         </div>
         <Link to="/offertes/nieuw">
@@ -71,8 +124,8 @@ export function QuotesPipeline() {
       {/* Pipeline Columns */}
       <div className="grid grid-cols-5 gap-4 min-h-[500px]">
         {statusColumns.map((col) => {
-          const offertes = offertesByStatus[col.key]
-          const colTotaal = offertes.reduce((sum, o) => sum + o.totaal, 0)
+          const colOffertes = offertesByStatus[col.key]
+          const colTotaal = colOffertes.reduce((sum, o) => sum + o.totaal, 0)
 
           return (
             <div
@@ -88,7 +141,7 @@ export function QuotesPipeline() {
                     {col.label}
                   </h3>
                   <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                    {offertes.length}
+                    {colOffertes.length}
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
@@ -98,7 +151,7 @@ export function QuotesPipeline() {
 
               {/* Column Cards */}
               <div className="flex-1 p-3 space-y-3 overflow-y-auto">
-                {offertes.length === 0 && (
+                {colOffertes.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <FileText className="h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" />
                     <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -107,7 +160,7 @@ export function QuotesPipeline() {
                   </div>
                 )}
 
-                {offertes.map((offerte) => (
+                {colOffertes.map((offerte) => (
                   <Link
                     key={offerte.id}
                     to={`/offertes/${offerte.id}`}
@@ -124,7 +177,7 @@ export function QuotesPipeline() {
 
                         {/* Klant */}
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {offerte.klant_naam || getKlantNaam(offerte.klant_id)}
+                          {offerte.klant_naam || 'Onbekende klant'}
                         </p>
 
                         {/* Titel */}

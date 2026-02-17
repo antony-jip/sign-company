@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,7 +26,10 @@ import {
   Eye,
   Search,
 } from 'lucide-react'
-import { mockKlanten } from '@/data/mockData'
+import { getKlanten, createOfferte, createOfferteItem } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
+import type { Klant } from '@/types'
+import { generateOffertePDF } from '@/services/pdfService'
 import { formatCurrency } from '@/lib/utils'
 import { QuoteItemsTable, type QuoteLineItem } from './QuoteItemsTable'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
@@ -54,7 +57,21 @@ function generateOfferteNummer(): string {
 
 export function QuoteCreation() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [currentStep, setCurrentStep] = useState(1)
+  const [klanten, setKlanten] = useState<Klant[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    getKlanten()
+      .then((data) => setKlanten(data))
+      .catch((err) => {
+        console.error('Failed to fetch klanten:', err)
+        toast.error('Kon klanten niet laden')
+      })
+      .finally(() => setIsLoading(false))
+  }, [])
 
   // Step 1: Client & basic info
   const [selectedKlantId, setSelectedKlantId] = useState('')
@@ -73,18 +90,18 @@ export function QuoteCreation() {
   const [voorwaarden, setVoorwaarden] = useState(DEFAULT_VOORWAARDEN)
 
   // Computed
-  const selectedKlant = mockKlanten.find((k) => k.id === selectedKlantId)
+  const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
 
   const filteredKlanten = useMemo(() => {
-    if (!klantSearch) return mockKlanten
+    if (!klantSearch) return klanten
     const search = klantSearch.toLowerCase()
-    return mockKlanten.filter(
+    return klanten.filter(
       (k) =>
         k.bedrijfsnaam.toLowerCase().includes(search) ||
         k.contactpersoon.toLowerCase().includes(search) ||
         k.email.toLowerCase().includes(search)
     )
-  }, [klantSearch])
+  }, [klantSearch, klanten])
 
   // Item handlers
   const handleAddItem = () => {
@@ -127,18 +144,114 @@ export function QuoteCreation() {
     return sum + (bruto - bruto * (item.korting_percentage / 100))
   }, 0)
 
+  const saveOfferte = async (status: 'concept' | 'verzonden') => {
+    if (isSaving) return
+    setIsSaving(true)
+    try {
+      const btwBedrag = items.reduce((sum, item) => {
+        const bruto = item.aantal * item.eenheidsprijs
+        const netto = bruto - bruto * (item.korting_percentage / 100)
+        return sum + netto * (item.btw_percentage / 100)
+      }, 0)
+
+      const newOfferte = await createOfferte({
+        user_id: user?.id || 'demo',
+        klant_id: selectedKlantId,
+        nummer: offerteNummer,
+        titel: offerteTitel,
+        status,
+        subtotaal,
+        btw_bedrag: btwBedrag,
+        totaal: subtotaal + btwBedrag,
+        geldig_tot: geldigTot,
+        notities,
+        voorwaarden,
+      })
+
+      await Promise.all(
+        items.map((item, index) =>
+          createOfferteItem({
+            offerte_id: newOfferte.id,
+            beschrijving: item.beschrijving,
+            aantal: item.aantal,
+            eenheidsprijs: item.eenheidsprijs,
+            btw_percentage: item.btw_percentage,
+            korting_percentage: item.korting_percentage,
+            totaal: item.totaal,
+            volgorde: index + 1,
+          })
+        )
+      )
+
+      toast.success(
+        status === 'concept'
+          ? 'Offerte opgeslagen als concept'
+          : 'Offerte verzonden naar klant'
+      )
+      navigate('/offertes')
+    } catch (err) {
+      console.error('Failed to save offerte:', err)
+      toast.error('Kon offerte niet opslaan. Probeer het opnieuw.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const handleSaveConcept = () => {
-    toast.success('Offerte opgeslagen als concept')
-    navigate('/offertes')
+    saveOfferte('concept')
   }
 
   const handleVerzenden = () => {
-    toast.success('Offerte verzonden naar klant')
-    navigate('/offertes')
+    saveOfferte('verzonden')
   }
 
   const handleDownloadPdf = () => {
-    toast.info('PDF wordt gegenereerd...')
+    if (!selectedKlant) {
+      toast.error('Selecteer eerst een klant')
+      return
+    }
+    try {
+      toast.info('PDF wordt gegenereerd...')
+      const btwBedrag = items.reduce((sum, item) => {
+        const bruto = item.aantal * item.eenheidsprijs
+        const netto = bruto - bruto * (item.korting_percentage / 100)
+        return sum + netto * (item.btw_percentage / 100)
+      }, 0)
+      const offerteData = {
+        id: '',
+        user_id: user?.id || 'demo',
+        klant_id: selectedKlantId,
+        nummer: offerteNummer,
+        titel: offerteTitel,
+        status: 'concept' as const,
+        subtotaal,
+        btw_bedrag: btwBedrag,
+        totaal: subtotaal + btwBedrag,
+        geldig_tot: geldigTot,
+        notities,
+        voorwaarden,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      const offerteItems = items.map((item, index) => ({
+        id: item.id,
+        offerte_id: '',
+        beschrijving: item.beschrijving,
+        aantal: item.aantal,
+        eenheidsprijs: item.eenheidsprijs,
+        btw_percentage: item.btw_percentage,
+        korting_percentage: item.korting_percentage,
+        totaal: item.totaal,
+        volgorde: index + 1,
+        created_at: new Date().toISOString(),
+      }))
+      const doc = generateOffertePDF(offerteData, offerteItems, selectedKlant, {})
+      doc.save(`${offerteNummer}.pdf`)
+      toast.success('PDF gedownload')
+    } catch (err) {
+      console.error('Failed to generate PDF:', err)
+      toast.error('Kon PDF niet genereren')
+    }
   }
 
   return (
@@ -428,13 +541,13 @@ export function QuoteCreation() {
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </Button>
-              <Button variant="secondary" onClick={handleSaveConcept}>
+              <Button variant="secondary" onClick={handleSaveConcept} disabled={isSaving}>
                 <Save className="h-4 w-4 mr-2" />
-                Opslaan als Concept
+                {isSaving ? 'Opslaan...' : 'Opslaan als Concept'}
               </Button>
-              <Button onClick={handleVerzenden}>
+              <Button onClick={handleVerzenden} disabled={isSaving}>
                 <Send className="h-4 w-4 mr-2" />
-                Verzenden
+                {isSaving ? 'Verzenden...' : 'Verzenden'}
               </Button>
             </div>
           </div>

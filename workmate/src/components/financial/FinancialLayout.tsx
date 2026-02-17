@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +23,8 @@ import {
   Cell,
   Legend,
 } from 'recharts'
-import { mockGrootboek, mockOffertes } from '@/data/mockData'
+import { getGrootboek, getOffertes } from '@/services/supabaseService'
+import type { Grootboek, Offerte } from '@/types'
 import { formatCurrency, getStatusColor } from '@/lib/utils'
 import { GeneralLedgerSettings } from './GeneralLedgerSettings'
 import { VATCodesSettings } from './VATCodesSettings'
@@ -52,31 +53,42 @@ function formatTooltipValue(value: number) {
 
 export function FinancialLayout() {
   const [activeTab, setActiveTab] = useState('overzicht')
+  const [grootboek, setGrootboek] = useState<Grootboek[]>([])
+  const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([getGrootboek(), getOffertes()]).then(([gb, off]) => {
+      setGrootboek(gb)
+      setOffertes(off)
+      setIsLoading(false)
+    })
+  }, [])
 
   const totaleOmzet = useMemo(
     () =>
-      mockGrootboek
+      grootboek
         .filter((g) => g.categorie === 'omzet')
         .reduce((sum, g) => sum + g.saldo, 0),
-    []
+    [grootboek]
   )
 
   const totaleKosten = useMemo(
     () =>
-      mockGrootboek
+      grootboek
         .filter((g) => g.categorie === 'kosten')
         .reduce((sum, g) => sum + g.saldo, 0),
-    []
+    [grootboek]
   )
 
   const winst = totaleOmzet - totaleKosten
 
   const openstaandeOffertes = useMemo(
     () =>
-      mockOffertes.filter(
+      offertes.filter(
         (o) => o.status === 'verzonden' || o.status === 'bekeken' || o.status === 'concept'
       ),
-    []
+    [offertes]
   )
 
   const pieData = [

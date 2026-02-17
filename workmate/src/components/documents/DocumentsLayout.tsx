@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,7 +22,7 @@ import {
   File,
 } from 'lucide-react'
 import { cn, formatDate, getStatusColor } from '@/lib/utils'
-import { mockDocumenten } from '@/data/mockData'
+import { getDocumenten, deleteDocument } from '@/services/supabaseService'
 import { DocumentFolders } from './DocumentFolders'
 import { DocumentsPipeline } from './DocumentsPipeline'
 import { DocumentUpload } from './DocumentUpload'
@@ -96,9 +96,18 @@ export function DocumentsLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [uploadOpen, setUploadOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [documenten, setDocumenten] = useState<Document[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    getDocumenten().then((d) => {
+      setDocumenten(d)
+      setIsLoading(false)
+    })
+  }, [])
 
   const filteredDocuments = useMemo(() => {
-    let docs = [...mockDocumenten]
+    let docs = [...documenten]
 
     // Filter by folder
     docs = filterByFolder(docs, activeFolder)
@@ -118,7 +127,7 @@ export function DocumentsLayout() {
     }
 
     return docs
-  }, [activeFolder, typeFilter, searchQuery])
+  }, [documenten, activeFolder, typeFilter, searchQuery])
 
   const handleUploadZoneClick = () => {
     setUploadOpen(true)
@@ -142,7 +151,7 @@ export function DocumentsLayout() {
             <DocumentFolders
               activeFolder={activeFolder}
               onFolderChange={setActiveFolder}
-              documents={mockDocumenten}
+              documents={documenten}
             />
           </Card>
         </div>
