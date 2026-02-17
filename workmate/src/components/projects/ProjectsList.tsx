@@ -1,6 +1,21 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, ArrowUpDown, ArrowUp, ArrowDown, FolderKanban } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  FolderKanban,
+  TrendingUp,
+  Clock,
+  DollarSign,
+  AlertTriangle,
+  CheckCircle2,
+  Briefcase,
+  ArrowUpRight,
+  CalendarDays,
+  Users,
+  BarChart3,
+  Filter,
+} from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,11 +34,9 @@ import {
   getStatusColor,
   getPriorityColor,
 } from '@/lib/utils'
-import { getProjecten, getKlanten, createProject, deleteProject } from '@/services/supabaseService'
+import { getProjecten, getKlanten } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Project, Klant, SortDirection } from '@/types'
-
-type SortField = 'naam' | 'deadline' | 'budget' | 'voortgang' | 'status'
+import type { Project, Klant } from '@/types'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle statussen' },
@@ -50,12 +63,12 @@ const statusLabels: Record<string, string> = {
   'on-hold': 'On-hold',
 }
 
-const statusWaarde: Record<string, number> = {
-  'on-hold': 1,
-  gepland: 2,
-  actief: 3,
-  'in-review': 4,
-  afgerond: 5,
+const statusIcons: Record<string, React.ReactNode> = {
+  gepland: <Clock className="h-3 w-3" />,
+  actief: <TrendingUp className="h-3 w-3" />,
+  'in-review': <BarChart3 className="h-3 w-3" />,
+  afgerond: <CheckCircle2 className="h-3 w-3" />,
+  'on-hold': <AlertTriangle className="h-3 w-3" />,
 }
 
 export function ProjectsList() {
@@ -66,8 +79,7 @@ export function ProjectsList() {
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
   const [prioriteitFilter, setPrioriteitFilter] = useState('alle')
-  const [sortField, setSortField] = useState<SortField>('naam')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [weergave, setWeergave] = useState<'grid' | 'list'>('grid')
 
   useEffect(() => {
     async function fetchData() {
@@ -93,19 +105,9 @@ export function ProjectsList() {
     return klant ? klant.bedrijfsnaam : 'Onbekend'
   }
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDirection('asc')
-    }
-  }
-
   const gefilterdeProjecten = useMemo(() => {
     let result = [...projecten]
 
-    // Search filter
     if (zoekterm.trim()) {
       const term = zoekterm.toLowerCase()
       result = result.filter(
@@ -115,54 +117,40 @@ export function ProjectsList() {
       )
     }
 
-    // Status filter
     if (statusFilter !== 'alle') {
       result = result.filter((p) => p.status === statusFilter)
     }
 
-    // Priority filter
     if (prioriteitFilter !== 'alle') {
       result = result.filter((p) => p.prioriteit === prioriteitFilter)
     }
 
-    // Sorting
+    // Sort: active first, then by progress descending
     result.sort((a, b) => {
-      let comparison = 0
-
-      switch (sortField) {
-        case 'naam':
-          comparison = a.naam.localeCompare(b.naam, 'nl')
-          break
-        case 'deadline':
-          comparison = new Date(a.eind_datum).getTime() - new Date(b.eind_datum).getTime()
-          break
-        case 'budget':
-          comparison = a.budget - b.budget
-          break
-        case 'voortgang':
-          comparison = a.voortgang - b.voortgang
-          break
-        case 'status':
-          comparison = (statusWaarde[a.status] || 0) - (statusWaarde[b.status] || 0)
-          break
-      }
-
-      return sortDirection === 'asc' ? comparison : -comparison
+      const statusOrder: Record<string, number> = { actief: 0, 'in-review': 1, gepland: 2, 'on-hold': 3, afgerond: 4 }
+      const statusDiff = (statusOrder[a.status] ?? 5) - (statusOrder[b.status] ?? 5)
+      if (statusDiff !== 0) return statusDiff
+      return b.voortgang - a.voortgang
     })
 
     return result
-  }, [projecten, klanten, zoekterm, statusFilter, prioriteitFilter, sortField, sortDirection])
+  }, [projecten, klanten, zoekterm, statusFilter, prioriteitFilter])
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="ml-1 h-3 w-3 opacity-40" />
-    }
-    return sortDirection === 'asc' ? (
-      <ArrowUp className="ml-1 h-3 w-3" />
-    ) : (
-      <ArrowDown className="ml-1 h-3 w-3" />
-    )
-  }
+  // Briefing stats
+  const briefing = useMemo(() => {
+    const actief = projecten.filter((p) => p.status === 'actief').length
+    const afgerond = projecten.filter((p) => p.status === 'afgerond').length
+    const overdue = projecten.filter(
+      (p) => new Date(p.eind_datum) < new Date() && p.status !== 'afgerond'
+    ).length
+    const totaalBudget = projecten.reduce((sum, p) => sum + p.budget, 0)
+    const totaalBesteed = projecten.reduce((sum, p) => sum + p.besteed, 0)
+    const gemiddeldeVoortgang = projecten.length > 0
+      ? Math.round(projecten.reduce((sum, p) => sum + p.voortgang, 0) / projecten.length)
+      : 0
+
+    return { actief, afgerond, overdue, totaalBudget, totaalBesteed, gemiddeldeVoortgang }
+  }, [projecten])
 
   if (isLoading) {
     return (
@@ -173,16 +161,21 @@ export function ProjectsList() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 animate-fade-in-up">
+      {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Projecten</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {gefilterdeProjecten.length} van {projecten.length} projecten
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <FolderKanban className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Projecten</h1>
+            <p className="text-sm text-muted-foreground">
+              {gefilterdeProjecten.length} van {projecten.length} projecten
+            </p>
+          </div>
         </div>
-        <Button asChild>
+        <Button asChild className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 border-0">
           <Link to="/projecten/nieuw">
             <Plus className="mr-2 h-4 w-4" />
             Nieuw Project
@@ -190,211 +183,281 @@ export function ProjectsList() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Zoek op projectnaam of klant..."
-                value={zoekterm}
-                onChange={(e) => setZoekterm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOpties.map((optie) => (
-                  <SelectItem key={optie.value} value={optie.value}>
-                    {optie.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={prioriteitFilter} onValueChange={setPrioriteitFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Prioriteit" />
-              </SelectTrigger>
-              <SelectContent>
-                {prioriteitOpties.map((optie) => (
-                  <SelectItem key={optie.value} value={optie.value}>
-                    {optie.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* ── Project Briefing ── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 text-white">
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-400 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-400 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+        </div>
 
-      {/* Table */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-4">
+            <Briefcase className="h-5 w-5 text-indigo-300" />
+            <h2 className="text-lg font-semibold text-white">Project Briefing</h2>
+            <span className="text-xs text-indigo-300/70 ml-auto">
+              {new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {/* Totaal */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <FolderKanban className="h-4 w-4 text-indigo-300" />
+                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Totaal</span>
+              </div>
+              <p className="text-2xl font-bold">{projecten.length}</p>
+              <p className="text-xs text-indigo-200/60 mt-0.5">projecten</p>
+            </div>
+
+            {/* Actief */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="h-4 w-4 text-green-400" />
+                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Actief</span>
+              </div>
+              <p className="text-2xl font-bold text-green-400">{briefing.actief}</p>
+              <p className="text-xs text-indigo-200/60 mt-0.5">lopend</p>
+            </div>
+
+            {/* Afgerond */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Klaar</span>
+              </div>
+              <p className="text-2xl font-bold text-emerald-400">{briefing.afgerond}</p>
+              <p className="text-xs text-indigo-200/60 mt-0.5">afgerond</p>
+            </div>
+
+            {/* Verlopen */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="h-4 w-4 text-amber-400" />
+                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Verlopen</span>
+              </div>
+              <p className={`text-2xl font-bold ${briefing.overdue > 0 ? 'text-amber-400' : 'text-white'}`}>
+                {briefing.overdue}
+              </p>
+              <p className="text-xs text-indigo-200/60 mt-0.5">over deadline</p>
+            </div>
+
+            {/* Budget */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <DollarSign className="h-4 w-4 text-blue-300" />
+                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Budget</span>
+              </div>
+              <p className="text-xl font-bold">{formatCurrency(briefing.totaalBudget)}</p>
+              <p className="text-xs text-indigo-200/60 mt-0.5">
+                {formatCurrency(briefing.totaalBesteed)} besteed
+              </p>
+            </div>
+
+            {/* Voortgang */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <BarChart3 className="h-4 w-4 text-violet-300" />
+                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Voortgang</span>
+              </div>
+              <p className="text-2xl font-bold">{briefing.gemiddeldeVoortgang}%</p>
+              <div className="mt-1.5 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full transition-all duration-700"
+                  style={{ width: `${briefing.gemiddeldeVoortgang}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Filters ── */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Zoek op project of klant..."
+            value={zoekterm}
+            onChange={(e) => setZoekterm(e.target.value)}
+            className="pl-9 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-gray-200/80"
+          />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
+            <Filter className="h-3.5 w-3.5" />
+            <span>Filter:</span>
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[150px] h-9 text-sm bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOpties.map((optie) => (
+                <SelectItem key={optie.value} value={optie.value}>
+                  {optie.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={prioriteitFilter} onValueChange={setPrioriteitFilter}>
+            <SelectTrigger className="w-[150px] h-9 text-sm bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+              <SelectValue placeholder="Prioriteit" />
+            </SelectTrigger>
+            <SelectContent>
+              {prioriteitOpties.map((optie) => (
+                <SelectItem key={optie.value} value={optie.value}>
+                  {optie.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* ── Project Cards ── */}
       {gefilterdeProjecten.length === 0 ? (
-        <Card>
+        <Card className="border-dashed">
           <CardContent className="py-16 text-center">
-            <FolderKanban className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-40" />
+            <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+              <FolderKanban className="h-8 w-8 text-muted-foreground opacity-40" />
+            </div>
             <h3 className="text-lg font-medium text-foreground">Geen projecten gevonden</h3>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1 mb-4">
               Pas je zoekcriteria aan of maak een nieuw project aan.
             </p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/projecten/nieuw">
+                <Plus className="mr-2 h-4 w-4" />
+                Nieuw Project
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                  <th className="text-left py-3 px-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 font-semibold text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                      onClick={() => handleSort('naam')}
-                    >
-                      Naam
-                      <SortIcon field="naam" />
-                    </Button>
-                  </th>
-                  <th className="text-left py-3 px-4">
-                    <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      Klant
-                    </span>
-                  </th>
-                  <th className="text-left py-3 px-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 font-semibold text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                      onClick={() => handleSort('status')}
-                    >
-                      Status
-                      <SortIcon field="status" />
-                    </Button>
-                  </th>
-                  <th className="text-left py-3 px-4 hidden lg:table-cell">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 font-semibold text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                      onClick={() => handleSort('voortgang')}
-                    >
-                      Voortgang
-                      <SortIcon field="voortgang" />
-                    </Button>
-                  </th>
-                  <th className="text-left py-3 px-4 hidden md:table-cell">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 font-semibold text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                      onClick={() => handleSort('deadline')}
-                    >
-                      Deadline
-                      <SortIcon field="deadline" />
-                    </Button>
-                  </th>
-                  <th className="text-left py-3 px-4 hidden xl:table-cell">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 font-semibold text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                      onClick={() => handleSort('budget')}
-                    >
-                      Budget
-                      <SortIcon field="budget" />
-                    </Button>
-                  </th>
-                  <th className="text-left py-3 px-4 hidden sm:table-cell">
-                    <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                      Prioriteit
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {gefilterdeProjecten.map((project) => {
-                  const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
-                  const isOverdue =
-                    new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {gefilterdeProjecten.map((project, index) => {
+            const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
+            const isOverdue = new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
+            const budgetPercentage = project.budget > 0 ? Math.round((project.besteed / project.budget) * 100) : 0
+            const budgetOverschrijding = project.besteed > project.budget
+            const daysLeft = Math.ceil((new Date(project.eind_datum).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
 
-                  return (
-                    <tr
-                      key={project.id}
-                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150"
-                    >
-                      {/* Naam */}
-                      <td className="py-3 px-4">
-                        <Link
-                          to={`/projecten/${project.id}`}
-                          className="font-medium text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors duration-150"
-                        >
+            return (
+              <Link
+                key={project.id}
+                to={`/projecten/${project.id}`}
+                className="group block"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <Card className="h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-0.5 border-gray-200/80 dark:border-gray-700/80 relative">
+                  {/* Top accent line */}
+                  <div className={`absolute top-0 left-0 right-0 h-0.5 ${
+                    project.status === 'actief' ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
+                    project.status === 'afgerond' ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
+                    project.status === 'in-review' ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
+                    project.status === 'on-hold' ? 'bg-gradient-to-r from-orange-400 to-red-500' :
+                    'bg-gradient-to-r from-indigo-400 to-purple-500'
+                  }`} />
+
+                  <CardContent className="p-5">
+                    {/* Header: naam + badges */}
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                           {project.naam}
-                        </Link>
-                      </td>
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {klantNaam}
+                        </p>
+                      </div>
+                      <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 flex-shrink-0 mt-1" />
+                    </div>
 
-                      {/* Klant */}
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-foreground">{klantNaam}</span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-4">
-                        <Badge className={getStatusColor(project.status)}>
-                          {statusLabels[project.status] || project.status}
+                    {/* Status + Prioriteit badges */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <Badge className={`${getStatusColor(project.status)} text-xs flex items-center gap-1`}>
+                        {statusIcons[project.status]}
+                        {statusLabels[project.status] || project.status}
+                      </Badge>
+                      <Badge className={`${getPriorityColor(project.prioriteit)} text-xs`}>
+                        {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
+                      </Badge>
+                      {isOverdue && (
+                        <Badge className="bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 text-xs">
+                          Verlopen
                         </Badge>
-                      </td>
+                      )}
+                    </div>
 
-                      {/* Voortgang */}
-                      <td className="py-3 px-4 hidden lg:table-cell">
-                        <div className="flex items-center gap-2 min-w-[120px]">
-                          <Progress value={project.voortgang} className="h-2 flex-1" />
-                          <span className="text-xs text-muted-foreground font-medium w-8 text-right">
-                            {project.voortgang}%
-                          </span>
-                        </div>
-                      </td>
+                    {/* Voortgang */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs text-muted-foreground font-medium">Voortgang</span>
+                        <span className="text-xs font-semibold text-foreground">{project.voortgang}%</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            project.voortgang >= 100
+                              ? 'bg-gradient-to-r from-emerald-400 to-green-500'
+                              : project.voortgang >= 60
+                              ? 'bg-gradient-to-r from-indigo-400 to-purple-500'
+                              : project.voortgang >= 30
+                              ? 'bg-gradient-to-r from-blue-400 to-indigo-500'
+                              : 'bg-gradient-to-r from-gray-300 to-gray-400'
+                          }`}
+                          style={{ width: `${project.voortgang}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Info grid */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {/* Budget */}
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2.5">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">Budget</p>
+                        <p className="font-semibold text-foreground text-sm">{formatCurrency(project.budget)}</p>
+                        <p className={`text-[10px] mt-0.5 ${budgetOverschrijding ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}>
+                          {budgetPercentage}% besteed
+                        </p>
+                      </div>
 
                       {/* Deadline */}
-                      <td className="py-3 px-4 hidden md:table-cell">
-                        <span
-                          className={`text-sm ${
-                            isOverdue
-                              ? 'text-red-600 dark:text-red-400 font-medium'
-                              : 'text-foreground'
-                          }`}
-                        >
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2.5">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">Deadline</p>
+                        <p className={`font-semibold text-sm ${isOverdue ? 'text-red-500' : 'text-foreground'}`}>
                           {formatDate(project.eind_datum)}
-                          {isOverdue && (
-                            <span className="block text-xs text-red-500 mt-0.5">Verlopen</span>
-                          )}
-                        </span>
-                      </td>
+                        </p>
+                        <p className={`text-[10px] mt-0.5 ${isOverdue ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                          {isOverdue
+                            ? `${Math.abs(daysLeft)} dagen verlopen`
+                            : project.status === 'afgerond'
+                            ? 'Afgerond'
+                            : `${daysLeft} dagen resterend`}
+                        </p>
+                      </div>
+                    </div>
 
-                      {/* Budget */}
-                      <td className="py-3 px-4 hidden xl:table-cell">
-                        <span className="text-sm text-foreground font-medium">
-                          {formatCurrency(project.budget)}
-                        </span>
-                      </td>
-
-                      {/* Prioriteit */}
-                      <td className="py-3 px-4 hidden sm:table-cell">
-                        <Badge className={getPriorityColor(project.prioriteit)}>
-                          {project.prioriteit.charAt(0).toUpperCase() +
-                            project.prioriteit.slice(1)}
-                        </Badge>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                    {/* Footer: team + period */}
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <CalendarDays className="h-3 w-3" />
+                        <span>{formatDate(project.start_datum)} — {formatDate(project.eind_datum)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Users className="h-3 w-3" />
+                        <span>{project.team_leden.length}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
       )}
     </div>
   )
