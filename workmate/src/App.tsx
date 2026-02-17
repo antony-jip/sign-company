@@ -27,6 +27,8 @@ import { FinancialLayout } from '@/components/financial/FinancialLayout'
 import { TasksLayout } from '@/components/tasks/TasksLayout'
 import { WorkmateAIChat } from '@/components/ai/WorkmateAIChat'
 import { SettingsLayout } from '@/components/settings/SettingsLayout'
+import { DataImportLayout } from '@/components/import/DataImportLayout'
+import { NewsletterBuilder } from '@/components/newsletter/NewsletterBuilder'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -63,6 +65,8 @@ function AppContent() {
         <Route path="kalender" element={<CalendarLayout />} />
         <Route path="financieel" element={<FinancialLayout />} />
         <Route path="taken" element={<TasksLayout />} />
+        <Route path="nieuwsbrieven" element={<NewsletterBuilder />} />
+        <Route path="importeren" element={<DataImportLayout />} />
         <Route path="ai" element={<WorkmateAIChat />} />
         <Route path="instellingen" element={<SettingsLayout />} />
       </Route>

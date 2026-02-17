@@ -13,6 +13,7 @@ import type {
   Korting,
   AIChat,
   Profile,
+  Nieuwsbrief,
 } from '@/types'
 
 // ============ HELPERS ============
@@ -957,6 +958,85 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   }
   const profiles = getLocalData<Profile>('profiles')
   return profiles.find((p) => p.id === userId) || null
+}
+
+// ============ NIEUWSBRIEVEN ============
+
+export async function getNieuwsbrieven(): Promise<Nieuwsbrief[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('nieuwsbrieven')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Nieuwsbrief>('nieuwsbrieven')
+}
+
+export async function getNieuwsbrief(id: string): Promise<Nieuwsbrief | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('nieuwsbrieven')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Nieuwsbrief>('nieuwsbrieven')
+  return items.find((n) => n.id === id) || null
+}
+
+export async function createNieuwsbrief(nieuwsbrief: Omit<Nieuwsbrief, 'id' | 'created_at' | 'updated_at'>): Promise<Nieuwsbrief> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('nieuwsbrieven')
+      .insert(nieuwsbrief)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Nieuwsbrief>('nieuwsbrieven')
+  const newItem: Nieuwsbrief = {
+    ...nieuwsbrief,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as Nieuwsbrief
+  items.push(newItem)
+  setLocalData('nieuwsbrieven', items)
+  return newItem
+}
+
+export async function updateNieuwsbrief(id: string, updates: Partial<Nieuwsbrief>): Promise<Nieuwsbrief> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('nieuwsbrieven')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Nieuwsbrief>('nieuwsbrieven')
+  const index = items.findIndex((n) => n.id === id)
+  if (index === -1) throw new Error('Nieuwsbrief niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('nieuwsbrieven', items)
+  return items[index]
+}
+
+export async function deleteNieuwsbrief(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('nieuwsbrieven').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Nieuwsbrief>('nieuwsbrieven')
+  setLocalData('nieuwsbrieven', items.filter((n) => n.id !== id))
 }
 
 export async function updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile> {

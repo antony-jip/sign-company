@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText, Files,
   Mail, Calendar, PiggyBank, Bot, Settings, ChevronLeft,
-  ChevronRight, LogOut, Menu, X, CheckSquare
+  ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -18,8 +18,10 @@ const navItems = [
   { label: 'Offertes', icon: FileText, path: '/offertes' },
   { label: 'Documenten', icon: Files, path: '/documenten' },
   { label: 'Email', icon: Mail, path: '/email' },
+  { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
   { label: 'Kalender', icon: Calendar, path: '/kalender' },
   { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
+  { label: 'Importeren', icon: Upload, path: '/importeren' },
   { label: 'AI Assistent', icon: Bot, path: '/ai' },
   { label: 'Instellingen', icon: Settings, path: '/instellingen' },
 ]

@@ -133,6 +133,7 @@ export interface Email {
   labels: string[];
   bijlagen: number;
   map: string;
+  scheduled_at?: string;
   created_at: string;
 }
 
@@ -197,6 +198,20 @@ export interface NavItem {
   icon: string;
   path: string;
   badge?: number;
+}
+
+export interface Nieuwsbrief {
+  id: string;
+  user_id: string;
+  naam: string;
+  onderwerp: string;
+  html_inhoud: string;
+  ontvangers: string[];
+  status: 'concept' | 'gepland' | 'verzonden';
+  verzonden_op?: string;
+  gepland_op?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export type SortDirection = 'asc' | 'desc';

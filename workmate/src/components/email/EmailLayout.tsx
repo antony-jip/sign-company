@@ -18,6 +18,7 @@ import {
   Tag,
   Paperclip,
   Loader2,
+  Clock,
 } from 'lucide-react'
 import { getEmails, updateEmail, deleteEmail, createEmail } from '@/services/supabaseService'
 import { formatDateTime } from '@/lib/utils'
@@ -26,7 +27,7 @@ import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
 import type { Email } from '@/types'
 
-type EmailFolder = 'inbox' | 'verzonden' | 'concepten' | 'prullenbak'
+type EmailFolder = 'inbox' | 'verzonden' | 'concepten' | 'gepland' | 'prullenbak'
 
 interface FolderConfig {
   id: EmailFolder
@@ -37,6 +38,7 @@ interface FolderConfig {
 const folders: FolderConfig[] = [
   { id: 'inbox', label: 'Inbox', icon: Inbox },
   { id: 'verzonden', label: 'Verzonden', icon: Send },
+  { id: 'gepland', label: 'Gepland', icon: Clock },
   { id: 'concepten', label: 'Concepten', icon: FileEdit },
   { id: 'prullenbak', label: 'Prullenbak', icon: Trash2 },
 ]
@@ -191,7 +193,8 @@ export function EmailLayout() {
     setComposeOpen(true)
   }
 
-  const handleSendEmail = (data: { to: string; subject: string; body: string }) => {
+  const handleSendEmail = (data: { to: string; subject: string; body: string; scheduledAt?: string }) => {
+    const isScheduled = !!data.scheduledAt
     const newEmail: Omit<Email, 'id' | 'created_at'> = {
       user_id: '',
       gmail_id: '',
@@ -199,12 +202,13 @@ export function EmailLayout() {
       aan: data.to,
       onderwerp: data.subject,
       inhoud: data.body,
-      datum: new Date().toISOString(),
+      datum: isScheduled ? data.scheduledAt! : new Date().toISOString(),
       gelezen: true,
       starred: false,
-      labels: ['verzonden'],
+      labels: isScheduled ? ['gepland'] : ['verzonden'],
       bijlagen: 0,
-      map: 'verzonden',
+      map: isScheduled ? 'gepland' : 'verzonden',
+      scheduled_at: data.scheduledAt,
     }
     createEmail(newEmail)
       .then((saved) => setEmails((prev) => [saved, ...prev]))
@@ -247,8 +251,11 @@ export function EmailLayout() {
               {folders.map((folder) => {
                 const isActive = selectedFolder === folder.id
                 const Icon = folder.icon
+                const scheduledCount = emails.filter((e) => e.map === 'gepland').length
                 const count =
-                  folder.id === 'inbox' ? unreadCount : undefined
+                  folder.id === 'inbox' ? unreadCount
+                    : folder.id === 'gepland' ? (scheduledCount > 0 ? scheduledCount : undefined)
+                    : undefined
 
                 return (
                   <button

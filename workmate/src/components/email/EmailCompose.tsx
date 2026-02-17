@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Send, Paperclip, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
+import { Send, Paperclip, Sparkles, ChevronDown, ChevronUp, Clock, CalendarClock } from 'lucide-react'
 
 interface EmailComposeProps {
   open: boolean
@@ -26,7 +26,7 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
-  onSend?: (data: { to: string; subject: string; body: string }) => void
+  onSend?: (data: { to: string; subject: string; body: string; scheduledAt?: string }) => void
 }
 
 const emailTemplates: Record<string, { onderwerp: string; body: string }> = {
@@ -119,6 +119,11 @@ export function EmailCompose({
   const [body, setBody] = useState(defaultBody)
   const [template, setTemplate] = useState('none')
   const [isSending, setIsSending] = useState(false)
+  const [scheduledAt, setScheduledAt] = useState('')
+  const [showScheduleDropdown, setShowScheduleDropdown] = useState(false)
+  const [scheduleOption, setScheduleOption] = useState<string>('now')
+  const [customDate, setCustomDate] = useState('')
+  const [customTime, setCustomTime] = useState('09:00')
 
   // Sync state when defaults change (reply/forward)
   useEffect(() => {
@@ -136,6 +141,62 @@ export function EmailCompose({
     }
   }
 
+  const getNextMonday = () => {
+    const now = new Date()
+    const dayOfWeek = now.getDay()
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek
+    const nextMonday = new Date(now)
+    nextMonday.setDate(now.getDate() + daysUntilMonday)
+    return nextMonday
+  }
+
+  const handleScheduleSelect = (option: string) => {
+    setScheduleOption(option)
+
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(now.getDate() + 1)
+    const tomorrowStr = tomorrow.toISOString().split('T')[0]
+
+    switch (option) {
+      case 'now':
+        setScheduledAt('')
+        break
+      case 'tomorrow-9':
+        setScheduledAt(`${tomorrowStr}T09:00`)
+        break
+      case 'tomorrow-14':
+        setScheduledAt(`${tomorrowStr}T14:00`)
+        break
+      case 'next-monday': {
+        const monday = getNextMonday()
+        const mondayStr = monday.toISOString().split('T')[0]
+        setScheduledAt(`${mondayStr}T09:00`)
+        break
+      }
+      case 'custom':
+        // Will be set via custom inputs
+        if (customDate && customTime) {
+          setScheduledAt(`${customDate}T${customTime}`)
+        } else {
+          setScheduledAt('')
+        }
+        break
+    }
+
+    if (option !== 'custom') {
+      setShowScheduleDropdown(false)
+    }
+  }
+
+  const handleCustomDateTimeChange = (date: string, time: string) => {
+    setCustomDate(date)
+    setCustomTime(time)
+    if (date && time) {
+      setScheduledAt(`${date}T${time}`)
+    }
+  }
+
   const handleAiGenerate = () => {
     // Placeholder for AI generation
     alert('Configureer OpenAI API key voor AI tekst generatie')
@@ -148,7 +209,7 @@ export function EmailCompose({
     try {
       // Simulate sending
       await new Promise((resolve) => setTimeout(resolve, 800))
-      onSend?.({ to: to.trim(), subject: subject.trim(), body })
+      onSend?.({ to: to.trim(), subject: subject.trim(), body, scheduledAt: scheduledAt || undefined })
       resetAndClose()
     } catch (error) {
       console.error('Verzenden mislukt:', error)
@@ -164,6 +225,11 @@ export function EmailCompose({
     setSubject(defaultSubject)
     setBody(defaultBody)
     setTemplate('none')
+    setScheduledAt('')
+    setShowScheduleDropdown(false)
+    setScheduleOption('now')
+    setCustomDate('')
+    setCustomTime('09:00')
     onOpenChange(false)
   }
 
@@ -275,14 +341,115 @@ export function EmailCompose({
             <Button variant="outline" onClick={resetAndClose}>
               Annuleren
             </Button>
-            <Button
-              onClick={handleSend}
-              disabled={!to.trim() || !subject.trim() || isSending}
-              className="gap-2"
-            >
-              <Send className="w-4 h-4" />
-              {isSending ? 'Verzenden...' : 'Verzenden'}
-            </Button>
+            <div className="relative">
+              <div className="flex">
+                <Button
+                  onClick={handleSend}
+                  disabled={!to.trim() || !subject.trim() || isSending}
+                  className="gap-2 rounded-r-none"
+                >
+                  {scheduledAt ? (
+                    <>
+                      <Clock className="w-4 h-4" />
+                      {isSending ? 'Inplannen...' : 'Inplannen'}
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      {isSending ? 'Verzenden...' : 'Verzenden'}
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="default"
+                  size="icon"
+                  className="rounded-l-none border-l border-l-primary-foreground/20 px-2"
+                  onClick={() => setShowScheduleDropdown(!showScheduleDropdown)}
+                  type="button"
+                >
+                  <CalendarClock className="w-4 h-4" />
+                </Button>
+              </div>
+              {showScheduleDropdown && (
+                <div className="absolute right-0 bottom-full mb-2 w-72 rounded-md border bg-popover p-2 shadow-md z-50">
+                  <div className="space-y-1">
+                    <button
+                      type="button"
+                      className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent ${scheduleOption === 'now' ? 'bg-accent font-medium' : ''}`}
+                      onClick={() => handleScheduleSelect('now')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Send className="w-4 h-4" />
+                        Nu verzenden
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent ${scheduleOption === 'tomorrow-9' ? 'bg-accent font-medium' : ''}`}
+                      onClick={() => handleScheduleSelect('tomorrow-9')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Morgen 09:00
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent ${scheduleOption === 'tomorrow-14' ? 'bg-accent font-medium' : ''}`}
+                      onClick={() => handleScheduleSelect('tomorrow-14')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Morgen 14:00
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent ${scheduleOption === 'next-monday' ? 'bg-accent font-medium' : ''}`}
+                      onClick={() => handleScheduleSelect('next-monday')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <CalendarClock className="w-4 h-4" />
+                        Volgende week maandag 09:00
+                      </div>
+                    </button>
+                    <div className="border-t my-1" />
+                    <button
+                      type="button"
+                      className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent ${scheduleOption === 'custom' ? 'bg-accent font-medium' : ''}`}
+                      onClick={() => handleScheduleSelect('custom')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <CalendarClock className="w-4 h-4" />
+                        Aangepaste datum/tijd
+                      </div>
+                    </button>
+                    {scheduleOption === 'custom' && (
+                      <div className="px-3 py-2 space-y-2">
+                        <div>
+                          <Label className="text-xs">Datum</Label>
+                          <Input
+                            type="date"
+                            value={customDate}
+                            onChange={(e) => handleCustomDateTimeChange(e.target.value, customTime)}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Tijd</Label>
+                          <Input
+                            type="time"
+                            value={customTime}
+                            onChange={(e) => handleCustomDateTimeChange(customDate, e.target.value)}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </DialogFooter>
       </DialogContent>

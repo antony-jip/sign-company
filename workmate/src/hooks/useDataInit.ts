@@ -12,6 +12,7 @@ const storageKeys = [
   'workmate_grootboek',
   'workmate_btw_codes',
   'workmate_kortingen',
+  'workmate_nieuwsbrieven',
 ]
 
 export function useDataInit() {
