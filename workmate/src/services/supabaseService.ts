@@ -1,0 +1,1001 @@
+import supabase, { isSupabaseConfigured } from './supabaseClient'
+import type {
+  Klant,
+  Project,
+  Taak,
+  Offerte,
+  OfferteItem,
+  Document,
+  Email,
+  CalendarEvent,
+  Grootboek,
+  BtwCode,
+  Korting,
+  AIChat,
+  Profile,
+} from '@/types'
+
+// ============ HELPERS ============
+
+function getLocalData<T>(key: string): T[] {
+  const data = localStorage.getItem(`workmate_${key}`)
+  return data ? JSON.parse(data) : []
+}
+
+function setLocalData<T>(key: string, data: T[]): void {
+  localStorage.setItem(`workmate_${key}`, JSON.stringify(data))
+}
+
+function generateId(): string {
+  return crypto.randomUUID()
+}
+
+function now(): string {
+  return new Date().toISOString()
+}
+
+// ============ KLANTEN ============
+
+export async function getKlanten(): Promise<Klant[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('klanten')
+      .select('*')
+      .order('bedrijfsnaam')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Klant>('klanten')
+}
+
+export async function getKlant(id: string): Promise<Klant | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('klanten')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data
+  }
+  const klanten = getLocalData<Klant>('klanten')
+  return klanten.find((k) => k.id === id) || null
+}
+
+export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'updated_at'>): Promise<Klant> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('klanten')
+      .insert(klant)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const klanten = getLocalData<Klant>('klanten')
+  const newKlant: Klant = {
+    ...klant,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as Klant
+  klanten.push(newKlant)
+  setLocalData('klanten', klanten)
+  return newKlant
+}
+
+export async function updateKlant(id: string, updates: Partial<Klant>): Promise<Klant> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('klanten')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const klanten = getLocalData<Klant>('klanten')
+  const index = klanten.findIndex((k) => k.id === id)
+  if (index === -1) throw new Error('Klant niet gevonden')
+  klanten[index] = { ...klanten[index], ...updates, updated_at: now() }
+  setLocalData('klanten', klanten)
+  return klanten[index]
+}
+
+export async function deleteKlant(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('klanten').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const klanten = getLocalData<Klant>('klanten')
+  setLocalData('klanten', klanten.filter((k) => k.id !== id))
+}
+
+// ============ PROJECTEN ============
+
+export async function getProjecten(): Promise<Project[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('projecten')
+      .select('*, klanten(bedrijfsnaam)')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data || []).map((p: any) => ({
+      ...p,
+      klant_naam: p.klanten?.bedrijfsnaam || '',
+    }))
+  }
+  const projecten = getLocalData<Project>('projecten')
+  const klanten = getLocalData<Klant>('klanten')
+  return projecten.map((p) => ({
+    ...p,
+    klant_naam: klanten.find((k) => k.id === p.klant_id)?.bedrijfsnaam || '',
+  }))
+}
+
+export async function getProject(id: string): Promise<Project | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('projecten')
+      .select('*, klanten(bedrijfsnaam)')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data ? { ...data, klant_naam: data.klanten?.bedrijfsnaam || '' } : null
+  }
+  const projecten = getLocalData<Project>('projecten')
+  const klanten = getLocalData<Klant>('klanten')
+  const project = projecten.find((p) => p.id === id)
+  if (!project) return null
+  return { ...project, klant_naam: klanten.find((k) => k.id === project.klant_id)?.bedrijfsnaam || '' }
+}
+
+export async function getProjectenByKlant(klantId: string): Promise<Project[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('projecten')
+      .select('*')
+      .eq('klant_id', klantId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const projecten = getLocalData<Project>('projecten')
+  return projecten.filter((p) => p.klant_id === klantId)
+}
+
+export async function createProject(project: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'klant_naam'>): Promise<Project> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('projecten')
+      .insert(project)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const projecten = getLocalData<Project>('projecten')
+  const newProject: Project = {
+    ...project,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as Project
+  projecten.push(newProject)
+  setLocalData('projecten', projecten)
+  return newProject
+}
+
+export async function updateProject(id: string, updates: Partial<Project>): Promise<Project> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('projecten')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const projecten = getLocalData<Project>('projecten')
+  const index = projecten.findIndex((p) => p.id === id)
+  if (index === -1) throw new Error('Project niet gevonden')
+  projecten[index] = { ...projecten[index], ...updates, updated_at: now() }
+  setLocalData('projecten', projecten)
+  return projecten[index]
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('projecten').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const projecten = getLocalData<Project>('projecten')
+  setLocalData('projecten', projecten.filter((p) => p.id !== id))
+}
+
+// ============ TAKEN ============
+
+export async function getTaken(): Promise<Taak[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('taken')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Taak>('taken')
+}
+
+export async function getTaak(id: string): Promise<Taak | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('taken')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data
+  }
+  const taken = getLocalData<Taak>('taken')
+  return taken.find((t) => t.id === id) || null
+}
+
+export async function getTakenByProject(projectId: string): Promise<Taak[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('taken')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const taken = getLocalData<Taak>('taken')
+  return taken.filter((t) => t.project_id === projectId)
+}
+
+export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated_at'>): Promise<Taak> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('taken')
+      .insert(taak)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const taken = getLocalData<Taak>('taken')
+  const newTaak: Taak = {
+    ...taak,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as Taak
+  taken.push(newTaak)
+  setLocalData('taken', taken)
+  return newTaak
+}
+
+export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Taak> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('taken')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const taken = getLocalData<Taak>('taken')
+  const index = taken.findIndex((t) => t.id === id)
+  if (index === -1) throw new Error('Taak niet gevonden')
+  taken[index] = { ...taken[index], ...updates, updated_at: now() }
+  setLocalData('taken', taken)
+  return taken[index]
+}
+
+export async function deleteTaak(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('taken').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const taken = getLocalData<Taak>('taken')
+  setLocalData('taken', taken.filter((t) => t.id !== id))
+}
+
+// ============ OFFERTES ============
+
+export async function getOffertes(): Promise<Offerte[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offertes')
+      .select('*, klanten(bedrijfsnaam)')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data || []).map((o: any) => ({
+      ...o,
+      klant_naam: o.klanten?.bedrijfsnaam || '',
+    }))
+  }
+  const offertes = getLocalData<Offerte>('offertes')
+  const klanten = getLocalData<Klant>('klanten')
+  return offertes.map((o) => ({
+    ...o,
+    klant_naam: klanten.find((k) => k.id === o.klant_id)?.bedrijfsnaam || '',
+  }))
+}
+
+export async function getOfferte(id: string): Promise<Offerte | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offertes')
+      .select('*, klanten(bedrijfsnaam)')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data ? { ...data, klant_naam: data.klanten?.bedrijfsnaam || '' } : null
+  }
+  const offertes = getLocalData<Offerte>('offertes')
+  const klanten = getLocalData<Klant>('klanten')
+  const offerte = offertes.find((o) => o.id === id)
+  if (!offerte) return null
+  return { ...offerte, klant_naam: klanten.find((k) => k.id === offerte.klant_id)?.bedrijfsnaam || '' }
+}
+
+export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' | 'updated_at' | 'klant_naam'>): Promise<Offerte> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offertes')
+      .insert(offerte)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const offertes = getLocalData<Offerte>('offertes')
+  const newOfferte: Offerte = {
+    ...offerte,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as Offerte
+  offertes.push(newOfferte)
+  setLocalData('offertes', offertes)
+  return newOfferte
+}
+
+export async function updateOfferte(id: string, updates: Partial<Offerte>): Promise<Offerte> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offertes')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const offertes = getLocalData<Offerte>('offertes')
+  const index = offertes.findIndex((o) => o.id === id)
+  if (index === -1) throw new Error('Offerte niet gevonden')
+  offertes[index] = { ...offertes[index], ...updates, updated_at: now() }
+  setLocalData('offertes', offertes)
+  return offertes[index]
+}
+
+export async function deleteOfferte(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('offertes').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const offertes = getLocalData<Offerte>('offertes')
+  setLocalData('offertes', offertes.filter((o) => o.id !== id))
+}
+
+// ============ OFFERTE ITEMS ============
+
+export async function getOfferteItems(offerteId: string): Promise<OfferteItem[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_items')
+      .select('*')
+      .eq('offerte_id', offerteId)
+      .order('volgorde')
+    if (error) throw error
+    return data || []
+  }
+  const items = getLocalData<OfferteItem>('offerte_items')
+  return items
+    .filter((i) => i.offerte_id === offerteId)
+    .sort((a, b) => a.volgorde - b.volgorde)
+}
+
+export async function createOfferteItem(item: Omit<OfferteItem, 'id' | 'created_at'>): Promise<OfferteItem> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_items')
+      .insert(item)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<OfferteItem>('offerte_items')
+  const newItem: OfferteItem = {
+    ...item,
+    id: generateId(),
+    created_at: now(),
+  } as OfferteItem
+  items.push(newItem)
+  setLocalData('offerte_items', items)
+  return newItem
+}
+
+export async function updateOfferteItem(id: string, updates: Partial<OfferteItem>): Promise<OfferteItem> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_items')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<OfferteItem>('offerte_items')
+  const index = items.findIndex((i) => i.id === id)
+  if (index === -1) throw new Error('Offerte item niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('offerte_items', items)
+  return items[index]
+}
+
+export async function deleteOfferteItem(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('offerte_items').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<OfferteItem>('offerte_items')
+  setLocalData('offerte_items', items.filter((i) => i.id !== id))
+}
+
+// ============ DOCUMENTEN ============
+
+export async function getDocumenten(): Promise<Document[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('documenten')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Document>('documenten')
+}
+
+export async function getDocument(id: string): Promise<Document | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('documenten')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data
+  }
+  const documenten = getLocalData<Document>('documenten')
+  return documenten.find((d) => d.id === id) || null
+}
+
+export async function createDocument(document: Omit<Document, 'id' | 'created_at' | 'updated_at'>): Promise<Document> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('documenten')
+      .insert(document)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const documenten = getLocalData<Document>('documenten')
+  const newDoc: Document = {
+    ...document,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as Document
+  documenten.push(newDoc)
+  setLocalData('documenten', documenten)
+  return newDoc
+}
+
+export async function updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('documenten')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const documenten = getLocalData<Document>('documenten')
+  const index = documenten.findIndex((d) => d.id === id)
+  if (index === -1) throw new Error('Document niet gevonden')
+  documenten[index] = { ...documenten[index], ...updates, updated_at: now() }
+  setLocalData('documenten', documenten)
+  return documenten[index]
+}
+
+export async function deleteDocument(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('documenten').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const documenten = getLocalData<Document>('documenten')
+  setLocalData('documenten', documenten.filter((d) => d.id !== id))
+}
+
+// ============ EMAILS ============
+
+export async function getEmails(): Promise<Email[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('emails')
+      .select('*')
+      .order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Email>('emails')
+}
+
+export async function getEmail(id: string): Promise<Email | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('emails')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data
+  }
+  const emails = getLocalData<Email>('emails')
+  return emails.find((e) => e.id === id) || null
+}
+
+export async function createEmail(email: Omit<Email, 'id' | 'created_at'>): Promise<Email> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('emails')
+      .insert(email)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const emails = getLocalData<Email>('emails')
+  const newEmail: Email = {
+    ...email,
+    id: generateId(),
+    created_at: now(),
+  } as Email
+  emails.push(newEmail)
+  setLocalData('emails', emails)
+  return newEmail
+}
+
+export async function updateEmail(id: string, updates: Partial<Email>): Promise<Email> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('emails')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const emails = getLocalData<Email>('emails')
+  const index = emails.findIndex((e) => e.id === id)
+  if (index === -1) throw new Error('Email niet gevonden')
+  emails[index] = { ...emails[index], ...updates }
+  setLocalData('emails', emails)
+  return emails[index]
+}
+
+export async function deleteEmail(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('emails').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const emails = getLocalData<Email>('emails')
+  setLocalData('emails', emails.filter((e) => e.id !== id))
+}
+
+// ============ EVENTS (CALENDAR) ============
+
+export async function getEvents(): Promise<CalendarEvent[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('start_datum', { ascending: true })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<CalendarEvent>('events')
+}
+
+export async function getEvent(id: string): Promise<CalendarEvent | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data
+  }
+  const events = getLocalData<CalendarEvent>('events')
+  return events.find((e) => e.id === id) || null
+}
+
+export async function createEvent(event: Omit<CalendarEvent, 'id' | 'created_at' | 'updated_at'>): Promise<CalendarEvent> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('events')
+      .insert(event)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const events = getLocalData<CalendarEvent>('events')
+  const newEvent: CalendarEvent = {
+    ...event,
+    id: generateId(),
+    created_at: now(),
+    updated_at: now(),
+  } as CalendarEvent
+  events.push(newEvent)
+  setLocalData('events', events)
+  return newEvent
+}
+
+export async function updateEvent(id: string, updates: Partial<CalendarEvent>): Promise<CalendarEvent> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('events')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const events = getLocalData<CalendarEvent>('events')
+  const index = events.findIndex((e) => e.id === id)
+  if (index === -1) throw new Error('Event niet gevonden')
+  events[index] = { ...events[index], ...updates, updated_at: now() }
+  setLocalData('events', events)
+  return events[index]
+}
+
+export async function deleteEvent(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('events').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const events = getLocalData<CalendarEvent>('events')
+  setLocalData('events', events.filter((e) => e.id !== id))
+}
+
+// ============ GROOTBOEK ============
+
+export async function getGrootboek(): Promise<Grootboek[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('grootboek')
+      .select('*')
+      .order('code')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Grootboek>('grootboek')
+}
+
+export async function createGrootboekRekening(rekening: Omit<Grootboek, 'id' | 'created_at'>): Promise<Grootboek> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('grootboek')
+      .insert(rekening)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const grootboek = getLocalData<Grootboek>('grootboek')
+  const newRekening: Grootboek = {
+    ...rekening,
+    id: generateId(),
+    created_at: now(),
+  } as Grootboek
+  grootboek.push(newRekening)
+  setLocalData('grootboek', grootboek)
+  return newRekening
+}
+
+export async function updateGrootboekRekening(id: string, updates: Partial<Grootboek>): Promise<Grootboek> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('grootboek')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const grootboek = getLocalData<Grootboek>('grootboek')
+  const index = grootboek.findIndex((g) => g.id === id)
+  if (index === -1) throw new Error('Grootboekrekening niet gevonden')
+  grootboek[index] = { ...grootboek[index], ...updates }
+  setLocalData('grootboek', grootboek)
+  return grootboek[index]
+}
+
+export async function deleteGrootboekRekening(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('grootboek').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const grootboek = getLocalData<Grootboek>('grootboek')
+  setLocalData('grootboek', grootboek.filter((g) => g.id !== id))
+}
+
+// ============ BTW CODES ============
+
+export async function getBtwCodes(): Promise<BtwCode[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('btw_codes')
+      .select('*')
+      .order('code')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<BtwCode>('btw_codes')
+}
+
+export async function createBtwCode(btwCode: Omit<BtwCode, 'id' | 'created_at'>): Promise<BtwCode> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('btw_codes')
+      .insert(btwCode)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const codes = getLocalData<BtwCode>('btw_codes')
+  const newCode: BtwCode = {
+    ...btwCode,
+    id: generateId(),
+    created_at: now(),
+  } as BtwCode
+  codes.push(newCode)
+  setLocalData('btw_codes', codes)
+  return newCode
+}
+
+export async function updateBtwCode(id: string, updates: Partial<BtwCode>): Promise<BtwCode> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('btw_codes')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const codes = getLocalData<BtwCode>('btw_codes')
+  const index = codes.findIndex((c) => c.id === id)
+  if (index === -1) throw new Error('BTW code niet gevonden')
+  codes[index] = { ...codes[index], ...updates }
+  setLocalData('btw_codes', codes)
+  return codes[index]
+}
+
+export async function deleteBtwCode(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('btw_codes').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const codes = getLocalData<BtwCode>('btw_codes')
+  setLocalData('btw_codes', codes.filter((c) => c.id !== id))
+}
+
+// ============ KORTINGEN ============
+
+export async function getKortingen(): Promise<Korting[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('kortingen')
+      .select('*')
+      .order('naam')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Korting>('kortingen')
+}
+
+export async function createKorting(korting: Omit<Korting, 'id' | 'created_at'>): Promise<Korting> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('kortingen')
+      .insert(korting)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const kortingen = getLocalData<Korting>('kortingen')
+  const newKorting: Korting = {
+    ...korting,
+    id: generateId(),
+    created_at: now(),
+  } as Korting
+  kortingen.push(newKorting)
+  setLocalData('kortingen', kortingen)
+  return newKorting
+}
+
+export async function updateKorting(id: string, updates: Partial<Korting>): Promise<Korting> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('kortingen')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const kortingen = getLocalData<Korting>('kortingen')
+  const index = kortingen.findIndex((k) => k.id === id)
+  if (index === -1) throw new Error('Korting niet gevonden')
+  kortingen[index] = { ...kortingen[index], ...updates }
+  setLocalData('kortingen', kortingen)
+  return kortingen[index]
+}
+
+export async function deleteKorting(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('kortingen').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const kortingen = getLocalData<Korting>('kortingen')
+  setLocalData('kortingen', kortingen.filter((k) => k.id !== id))
+}
+
+// ============ AI CHATS ============
+
+export async function getAIChats(): Promise<AIChat[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('ai_chats')
+      .select('*')
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<AIChat>('ai_chats')
+}
+
+export async function createAIChat(chat: Omit<AIChat, 'id' | 'created_at'>): Promise<AIChat> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('ai_chats')
+      .insert(chat)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const chats = getLocalData<AIChat>('ai_chats')
+  const newChat: AIChat = {
+    ...chat,
+    id: generateId(),
+    created_at: now(),
+  } as AIChat
+  chats.push(newChat)
+  setLocalData('ai_chats', chats)
+  return newChat
+}
+
+export async function deleteAIChats(): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('ai_chats').delete().neq('id', '')
+    if (error) throw error
+    return
+  }
+  setLocalData('ai_chats', [])
+}
+
+// ============ PROFILES ============
+
+export async function getProfile(userId: string): Promise<Profile | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+    if (error) {
+      if (error.code === 'PGRST116') return null // not found
+      throw error
+    }
+    return data
+  }
+  const profiles = getLocalData<Profile>('profiles')
+  return profiles.find((p) => p.id === userId) || null
+}
+
+export async function updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', userId)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const profiles = getLocalData<Profile>('profiles')
+  const index = profiles.findIndex((p) => p.id === userId)
+  if (index === -1) {
+    // Create profile if not found in localStorage
+    const newProfile: Profile = {
+      id: userId,
+      voornaam: '',
+      achternaam: '',
+      email: '',
+      telefoon: '',
+      avatar_url: '',
+      bedrijfsnaam: '',
+      bedrijfs_adres: '',
+      kvk_nummer: '',
+      btw_nummer: '',
+      taal: 'nl',
+      theme: 'light',
+      created_at: now(),
+      updated_at: now(),
+      ...updates,
+    }
+    profiles.push(newProfile)
+    setLocalData('profiles', profiles)
+    return newProfile
+  }
+  profiles[index] = { ...profiles[index], ...updates, updated_at: now() }
+  setLocalData('profiles', profiles)
+  return profiles[index]
+}

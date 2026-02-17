@@ -1,0 +1,89 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { signIn, signUp, signOut, getSession, onAuthStateChange } from '@/services/authService'
+
+interface User {
+  id: string
+  email: string
+  user_metadata?: {
+    voornaam?: string
+    achternaam?: string
+  }
+}
+
+interface AuthContextType {
+  user: User | null
+  session: any | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string, metadata?: { voornaam?: string; achternaam?: string }) => Promise<void>
+  logout: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<any | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Check existing session
+    getSession().then(({ session, user }) => {
+      setSession(session)
+      setUser(user)
+      setIsLoading(false)
+    }).catch(() => setIsLoading(false))
+
+    // Listen for auth changes
+    const { data } = onAuthStateChange((event, session) => {
+      setSession(session)
+      setUser(session?.user || null)
+      setIsLoading(false)
+    })
+
+    return () => {
+      data?.subscription?.unsubscribe()
+    }
+  }, [])
+
+  const login = async (email: string, password: string) => {
+    const data = await signIn(email, password)
+    setUser(data.user as User)
+    setSession(data.session)
+  }
+
+  const register = async (email: string, password: string, metadata?: { voornaam?: string; achternaam?: string }) => {
+    const data = await signUp(email, password, metadata)
+    setUser(data.user as User)
+    setSession(data.session)
+  }
+
+  const logout = async () => {
+    await signOut()
+    setUser(null)
+    setSession(null)
+  }
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      session,
+      isAuthenticated: !!user,
+      isLoading,
+      login,
+      register,
+      logout,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
