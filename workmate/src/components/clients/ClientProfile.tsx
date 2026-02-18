@@ -1,11 +1,26 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Label } from '@/components/ui/label'
 import {
   ArrowLeft,
   Pencil,
@@ -21,39 +36,89 @@ import {
   Tag,
   StickyNote,
   User,
+  Users,
   Hash,
   FileIcon,
   Star,
   Paperclip,
+  Plus,
+  Download,
+  Trash2,
+  CreditCard,
+  MessageSquare,
+  MoreHorizontal,
+  ChevronDown,
+  CalendarPlus,
+  Receipt,
 } from 'lucide-react'
-import { cn, getStatusColor, getPriorityColor, formatDate, formatCurrency, formatDateTime } from '@/lib/utils'
-import { getKlant, getProjectenByKlant, getEmails, getDocumenten, updateKlant } from '@/services/supabaseService'
+import { toast } from 'sonner'
+import {
+  cn,
+  getStatusColor,
+  getPriorityColor,
+  formatDate,
+  formatCurrency,
+  formatDateTime,
+} from '@/lib/utils'
+import { exportCSV, exportExcel } from '@/lib/export'
+import {
+  getKlant,
+  getProjectenByKlant,
+  getEmails,
+  getDocumenten,
+  getOffertes,
+  updateKlant,
+} from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
-import type { Klant, Project, Email, Document as DocType } from '@/types'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon } from '@/types'
 
-interface Activity {
-  id: string
-  type: string
-  beschrijving: string
-  datum: string
-  icon: React.ElementType
+function getStatusBarColor(status: string): string {
+  switch (status) {
+    case 'actief': return 'bg-green-500'
+    case 'gepland': return 'bg-indigo-500'
+    case 'in-review': return 'bg-amber-500'
+    case 'afgerond': return 'bg-emerald-500'
+    case 'on-hold': return 'bg-red-500'
+    default: return 'bg-gray-400'
+  }
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+function getStatusBorderColor(status: string): string {
+  switch (status) {
+    case 'actief': return 'border-l-green-500'
+    case 'gepland': return 'border-l-indigo-500'
+    case 'in-review': return 'border-l-amber-500'
+    case 'afgerond': return 'border-l-emerald-500'
+    case 'on-hold': return 'border-l-red-500'
+    default: return 'border-l-gray-400'
+  }
+}
+
+const statusLabels: Record<string, string> = {
+  gepland: 'Gepland',
+  actief: 'Actief',
+  'in-review': 'In review',
+  afgerond: 'Afgerond',
+  'on-hold': 'On-hold',
 }
 
 export function ClientProfile() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [contactDialogOpen, setContactDialogOpen] = useState(false)
   const [klant, setKlant] = useState<Klant | null>(null)
   const [clientProjecten, setClientProjecten] = useState<Project[]>([])
   const [clientEmails, setClientEmails] = useState<Email[]>([])
   const [clientDocumenten, setClientDocumenten] = useState<DocType[]>([])
+  const [clientOffertes, setClientOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('projecten')
+  const [notitie, setNotitie] = useState('')
+  const [savingNotitie, setSavingNotitie] = useState(false)
+  // Contact person form
+  const [editingContact, setEditingContact] = useState<Contactpersoon | null>(null)
+  const [contactForm, setContactForm] = useState({ naam: '', functie: '', email: '', telefoon: '' })
 
   useEffect(() => {
     if (!id) return
@@ -63,9 +128,11 @@ export function ClientProfile() {
       getProjectenByKlant(id),
       getEmails(),
       getDocumenten(),
-    ]).then(([klantData, projecten, allEmails, allDocs]) => {
+      getOffertes(),
+    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes]) => {
       setKlant(klantData)
       setClientProjecten(projecten)
+      setNotitie(klantData?.notities || '')
       if (klantData) {
         const email = klantData.email.toLowerCase()
         setClientEmails(
@@ -75,53 +142,103 @@ export function ClientProfile() {
               e.aan.toLowerCase().includes(email)
           )
         )
+        setClientOffertes(
+          allOffertes.filter((o) => o.klant_id === id)
+        )
       }
       setClientDocumenten(allDocs.filter((d) => d.klant_id === id))
       setIsLoading(false)
     })
   }, [id])
 
-  // Build activity timeline from real data
-  const activities: Activity[] = useMemo(() => {
-    const items: Activity[] = []
-    clientProjecten.forEach((p) => {
-      items.push({
-        id: `proj-${p.id}`,
-        type: 'project',
-        beschrijving: `Project "${p.naam}" ${p.status === 'afgerond' ? 'afgerond' : 'gestart'}`,
-        datum: p.created_at,
-        icon: FolderKanban,
-      })
+  async function handleSaveNotitie() {
+    if (!klant) return
+    setSavingNotitie(true)
+    try {
+      const updated = await updateKlant(klant.id, { notities: notitie })
+      setKlant(updated)
+      toast.success('Notitie opgeslagen')
+    } catch {
+      toast.error('Fout bij opslaan notitie')
+    } finally {
+      setSavingNotitie(false)
+    }
+  }
+
+  function openAddContact() {
+    setEditingContact(null)
+    setContactForm({ naam: '', functie: '', email: '', telefoon: '' })
+    setContactDialogOpen(true)
+  }
+
+  function openEditContact(contact: Contactpersoon) {
+    setEditingContact(contact)
+    setContactForm({
+      naam: contact.naam,
+      functie: contact.functie,
+      email: contact.email,
+      telefoon: contact.telefoon,
     })
-    clientEmails.forEach((e) => {
-      items.push({
-        id: `email-${e.id}`,
-        type: 'email',
-        beschrijving: `Email: ${e.onderwerp}`,
-        datum: e.datum,
-        icon: Mail,
-      })
-    })
-    clientDocumenten.forEach((d) => {
-      items.push({
-        id: `doc-${d.id}`,
-        type: 'document',
-        beschrijving: `Document "${d.naam}" ${d.status === 'definitief' ? 'definitief gemaakt' : 'toegevoegd'}`,
-        datum: d.updated_at || d.created_at,
-        icon: FileIcon,
-      })
-    })
-    return items
-      .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
-      .slice(0, 10)
-  }, [clientProjecten, clientEmails, clientDocumenten])
+    setContactDialogOpen(true)
+  }
+
+  async function handleSaveContact() {
+    if (!klant || !contactForm.naam.trim()) return
+    const currentContacts = klant.contactpersonen || []
+
+    if (editingContact) {
+      // Update existing
+      const updated = currentContacts.map((c) =>
+        c.id === editingContact.id
+          ? { ...c, naam: contactForm.naam.trim(), functie: contactForm.functie.trim(), email: contactForm.email.trim(), telefoon: contactForm.telefoon.trim() }
+          : c
+      )
+      try {
+        const updatedKlant = await updateKlant(klant.id, { contactpersonen: updated })
+        setKlant(updatedKlant)
+        toast.success('Contactpersoon bijgewerkt')
+      } catch {
+        toast.error('Fout bij bijwerken')
+      }
+    } else {
+      // Add new
+      const newContact: Contactpersoon = {
+        id: crypto.randomUUID(),
+        naam: contactForm.naam.trim(),
+        functie: contactForm.functie.trim(),
+        email: contactForm.email.trim(),
+        telefoon: contactForm.telefoon.trim(),
+        is_primair: currentContacts.length === 0,
+      }
+      try {
+        const updatedKlant = await updateKlant(klant.id, {
+          contactpersonen: [...currentContacts, newContact],
+        })
+        setKlant(updatedKlant)
+        toast.success('Contactpersoon toegevoegd')
+      } catch {
+        toast.error('Fout bij toevoegen')
+      }
+    }
+    setContactDialogOpen(false)
+  }
+
+  async function handleDeleteContact(contactId: string) {
+    if (!klant) return
+    const updated = (klant.contactpersonen || []).filter((c) => c.id !== contactId)
+    try {
+      const updatedKlant = await updateKlant(klant.id, { contactpersonen: updated })
+      setKlant(updatedKlant)
+      toast.success('Contactpersoon verwijderd')
+    } catch {
+      toast.error('Fout bij verwijderen')
+    }
+  }
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <p className="text-lg text-gray-500 dark:text-gray-400">
-          Laden...
-        </p>
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     )
   }
@@ -144,246 +261,666 @@ export function ClientProfile() {
     setKlant(updatedKlant)
   }
 
+  const contactpersonen = klant.contactpersonen || []
+  const tabs = [
+    { key: 'projecten', label: 'Projecten', count: clientProjecten.length, icon: FolderKanban },
+    { key: 'offertes', label: 'Offertes', count: clientOffertes.length, icon: FileText },
+    { key: 'communicatie', label: 'Communicatie', count: clientEmails.length, icon: Mail },
+    { key: 'documenten', label: 'Documenten', count: clientDocumenten.length, icon: FileIcon },
+  ]
+
   return (
-    <div className="space-y-6">
-      {/* Back button + Header */}
-      <div className="space-y-4">
+    <div className="space-y-6 animate-fade-in-up">
+      {/* ── Header ── */}
+      <div className="flex items-start gap-4">
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={() => navigate('/klanten')}
-          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 -ml-2"
+          className="mt-1 flex-shrink-0"
         >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Terug naar klanten
+          <ArrowLeft className="w-5 h-5" />
         </Button>
-
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-              <Building2 className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {klant.bedrijfsnaam}
-                </h1>
-                <Badge className={cn('capitalize', getStatusColor(klant.status))}>
-                  {klant.status}
-                </Badge>
-              </div>
-              <p className="text-gray-500 dark:text-gray-400">
-                {klant.contactpersoon}
-              </p>
-            </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {klant.bedrijfsnaam}
+            </h1>
+            <Badge className={cn('capitalize', getStatusColor(klant.status))}>
+              {klant.status}
+            </Badge>
+            <button
+              onClick={() => setEditDialogOpen(true)}
+              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title="Bewerken"
+            >
+              <Pencil className="w-4 h-4 text-gray-400" />
+            </button>
           </div>
-          <Button onClick={() => setEditDialogOpen(true)}>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Aangemaakt op: {formatDate(klant.created_at)}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Toevoegen dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25 border-0">
+                Toevoegen
+                <ChevronDown className="w-4 h-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer"
+                onClick={() => navigate(`/projecten/nieuw?klant=${id}`)}
+              >
+                <FolderKanban className="w-4 h-4 text-indigo-500" />
+                Project
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer"
+                onClick={() => navigate(`/offertes/nieuw?klant=${id}`)}
+              >
+                <FileText className="w-4 h-4 text-blue-500" />
+                Offerte
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer"
+                onClick={() => navigate(`/kalender?nieuw=true&klant=${id}`)}
+              >
+                <CalendarPlus className="w-4 h-4 text-green-500" />
+                Afspraak
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer"
+                onClick={() => openAddContact()}
+              >
+                <Users className="w-4 h-4 text-amber-500" />
+                Contactpersoon
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
             <Pencil className="w-4 h-4 mr-2" />
             Bewerken
           </Button>
         </div>
       </div>
 
-      {/* Contact info summary */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
-                <a
-                  href={`mailto:${klant.email}`}
-                  className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate block"
-                >
-                  {klant.email}
-                </a>
-              </div>
-            </div>
-            {klant.telefoon && (
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Telefoon</p>
-                  <a
-                    href={`tel:${klant.telefoon}`}
-                    className="text-sm font-medium text-gray-900 dark:text-white hover:underline"
+      {/* ── Info Cards Row ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        {/* Contactpersonen */}
+        <Card className="border-gray-200 dark:border-gray-800">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Users className="w-4 h-4 text-blue-500" />
+              Contactpersonen ({contactpersonen.length})
+            </CardTitle>
+            <button
+              onClick={openAddContact}
+              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title="Contactpersoon toevoegen"
+            >
+              <Plus className="w-4 h-4 text-gray-400 hover:text-blue-500" />
+            </button>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {contactpersonen.length > 0 ? (
+              <div className="space-y-2">
+                {contactpersonen.slice(0, 2).map((cp) => (
+                  <div
+                    key={cp.id}
+                    className="flex items-center justify-between group cursor-pointer"
+                    onClick={() => openEditContact(cp)}
                   >
-                    {klant.telefoon}
-                  </a>
-                </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {cp.naam}
+                        {cp.is_primair && (
+                          <span className="ml-1.5 text-[10px] text-blue-500 font-normal">primair</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {cp.email || cp.telefoon || cp.functie || '—'}
+                      </p>
+                    </div>
+                    <Pencil className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  </div>
+                ))}
+                {contactpersonen.length > 2 && (
+                  <button
+                    onClick={() => setActiveTab('contactpersonen')}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Bekijk alle contactpersonen
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div>
+                {/* Show primary contact from klant */}
+                <p className="text-sm font-medium text-foreground">{klant.contactpersoon}</p>
+                <p className="text-xs text-muted-foreground">{klant.email}</p>
+                <button
+                  onClick={openAddContact}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 block"
+                >
+                  + Contactpersoon toevoegen
+                </button>
               </div>
             )}
-            {klant.stad && (
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Locatie</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {klant.stad}
-                  </p>
-                </div>
-              </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact info */}
+        <Card className="border-gray-200 dark:border-gray-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-green-500" />
+              Adresgegevens
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-1">
+            {klant.adres && <p className="text-sm text-foreground">{klant.adres}</p>}
+            <p className="text-sm text-foreground">
+              {[klant.postcode, klant.stad].filter(Boolean).join(' ')}
+            </p>
+            {klant.land && <p className="text-sm text-muted-foreground">{klant.land}</p>}
+            {klant.telefoon && (
+              <p className="text-sm text-foreground">{klant.telefoon}</p>
             )}
             {klant.website && (
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                  <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Website</p>
-                  <a
-                    href={klant.website.startsWith('http') ? klant.website : `https://${klant.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate block"
-                  >
-                    {klant.website}
-                  </a>
-                </div>
+              <a
+                href={klant.website.startsWith('http') ? klant.website : `https://${klant.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline block mt-1"
+              >
+                {klant.website}
+              </a>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Financieel */}
+        <Card className="border-gray-200 dark:border-gray-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-purple-500" />
+              Financieel
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            {klant.btw_nummer && (
+              <div>
+                <p className="text-xs text-muted-foreground">BTW</p>
+                <p className="text-sm font-medium text-foreground">{klant.btw_nummer}</p>
               </div>
             )}
+            {klant.kvk_nummer && (
+              <div>
+                <p className="text-xs text-muted-foreground">KvK</p>
+                <p className="text-sm font-medium text-foreground">{klant.kvk_nummer}</p>
+              </div>
+            )}
+            {!klant.btw_nummer && !klant.kvk_nummer && (
+              <p className="text-sm text-muted-foreground">Geen financiele gegevens</p>
+            )}
+            <button
+              onClick={() => setEditDialogOpen(true)}
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Bewerk financiele gegevens
+            </button>
+          </CardContent>
+        </Card>
+
+        {/* Opmerking / Quick note */}
+        <Card className="border-gray-200 dark:border-gray-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-amber-500" />
+              Opmerking
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-sm text-foreground line-clamp-3">
+              {klant.notities || <span className="text-muted-foreground italic">Geen opmerkingen</span>}
+            </p>
+            <button
+              onClick={() => setActiveTab('notities')}
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 block"
+            >
+              Bewerk opmerking
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Main Content Area ── */}
+      <div className="flex flex-col xl:flex-row gap-6">
+        {/* Left: Tabs + Content */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Tab bar */}
+          <div className="flex items-center gap-1 flex-wrap">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    activeTab === tab.key
+                      ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span className={cn(
+                      'text-xs px-1.5 py-0.5 rounded-full',
+                      activeTab === tab.key
+                        ? 'bg-white/20 text-white'
+                        : 'bg-background text-muted-foreground'
+                    )}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Tabs */}
-      <Tabs defaultValue="overzicht" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overzicht">Overzicht</TabsTrigger>
-          <TabsTrigger value="projecten">
-            Projecten
-            {clientProjecten.length > 0 && (
-              <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0">
-                {clientProjecten.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="communicatie">
-            Communicatie
-            {clientEmails.length > 0 && (
-              <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0">
-                {clientEmails.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="documenten">
-            Documenten
-            {clientDocumenten.length > 0 && (
-              <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0">
-                {clientDocumenten.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ===================== OVERZICHT TAB ===================== */}
-        <TabsContent value="overzicht" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Client details */}
+          {/* ════════ PROJECTEN TAB ════════ */}
+          {activeTab === 'projecten' && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  Bedrijfsgegevens
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <DetailRow icon={User} label="Contactpersoon" value={klant.contactpersoon} />
-                  <DetailRow icon={Mail} label="Email" value={klant.email} />
-                  <DetailRow icon={Phone} label="Telefoon" value={klant.telefoon} />
-                  <DetailRow icon={MapPin} label="Adres" value={[klant.adres, klant.postcode, klant.stad].filter(Boolean).join(', ')} />
-                  <DetailRow icon={Globe} label="Website" value={klant.website} />
-                  <DetailRow icon={Hash} label="KvK Nummer" value={klant.kvk_nummer} />
-                  <DetailRow icon={Hash} label="BTW Nummer" value={klant.btw_nummer} />
-                  <DetailRow
-                    icon={Calendar}
-                    label="Klant sinds"
-                    value={formatDate(klant.created_at)}
-                  />
+              {clientProjecten.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <FolderKanban className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Geen projecten voor deze klant</p>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Omschrijving</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">PM</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Deadline</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waarde</th>
+                        <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Downloads</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {clientProjecten
+                        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                        .map((project) => {
+                          const isOverdue = new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
+                          const daysLeft = Math.ceil((new Date(project.eind_datum).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+
+                          return (
+                            <tr
+                              key={project.id}
+                              className={cn(
+                                'hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors border-l-4',
+                                getStatusBorderColor(project.status)
+                              )}
+                              onClick={() => navigate(`/projecten/${project.id}`)}
+                            >
+                              {/* Status */}
+                              <td className="py-3 px-4">
+                                <Badge className={cn('text-xs', getStatusColor(project.status))}>
+                                  {statusLabels[project.status] || project.status}
+                                </Badge>
+                              </td>
+
+                              {/* Omschrijving */}
+                              <td className="py-3 px-4">
+                                <div>
+                                  <p className="text-sm font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                    {project.naam}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {formatDate(project.start_datum)}
+                                  </p>
+                                </div>
+                              </td>
+
+                              {/* PM */}
+                              <td className="py-3 px-4 hidden md:table-cell">
+                                {project.team_leden.length > 0 ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
+                                      <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                                        {project.team_leden[0].charAt(0).toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <span className="text-sm text-foreground truncate max-w-[120px]">
+                                      {project.team_leden[0]}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">—</span>
+                                )}
+                              </td>
+
+                              {/* Deadline */}
+                              <td className="py-3 px-4 hidden lg:table-cell">
+                                <span className={cn(
+                                  'text-sm',
+                                  isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-foreground'
+                                )}>
+                                  {formatDate(project.eind_datum)}
+                                </span>
+                                {project.status !== 'afgerond' && (
+                                  <p className={cn(
+                                    'text-[10px] mt-0.5',
+                                    isOverdue ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-500' : 'text-muted-foreground'
+                                  )}>
+                                    {isOverdue ? `${Math.abs(daysLeft)}d verlopen` : `${daysLeft}d resterend`}
+                                  </p>
+                                )}
+                              </td>
+
+                              {/* Waarde */}
+                              <td className="py-3 px-4 text-right">
+                                <span className="text-sm font-semibold text-foreground">
+                                  {formatCurrency(project.budget)}
+                                </span>
+                              </td>
+
+                              {/* Downloads */}
+                              <td className="py-3 px-4 text-center">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    const headers = ['Veld', 'Waarde']
+                                    const rows = [
+                                      { Veld: 'Project', Waarde: project.naam },
+                                      { Veld: 'Klant', Waarde: klant!.bedrijfsnaam },
+                                      { Veld: 'Status', Waarde: statusLabels[project.status] || project.status },
+                                      { Veld: 'Budget', Waarde: formatCurrency(project.budget) },
+                                      { Veld: 'Besteed', Waarde: formatCurrency(project.besteed) },
+                                      { Veld: 'Voortgang', Waarde: project.voortgang + '%' },
+                                      { Veld: 'Start', Waarde: formatDate(project.start_datum) },
+                                      { Veld: 'Deadline', Waarde: formatDate(project.eind_datum) },
+                                    ]
+                                    exportCSV(project.naam.replace(/\s+/g, '-').toLowerCase(), headers, rows)
+                                  }}
+                                  className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors inline-flex"
+                                  title="Download CSV"
+                                >
+                                  <FileText className="w-4 h-4 text-muted-foreground hover:text-blue-600" />
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                    </tbody>
+                  </table>
                 </div>
-              </CardContent>
+              )}
             </Card>
+          )}
 
-            {/* Activity timeline */}
+          {/* ════════ OFFERTES TAB ════════ */}
+          {activeTab === 'offertes' && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Recente Activiteiten
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {activities.length === 0 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                      Nog geen activiteiten voor deze klant
-                    </p>
-                  ) : (
-                    activities.map((activity, index) => {
-                      const Icon = activity.icon
-                      return (
-                        <div key={activity.id} className="flex gap-3">
-                          <div className="relative flex flex-col items-center">
-                            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                              <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            {index < activities.length - 1 && (
-                              <div className="w-px flex-1 bg-gray-200 dark:bg-gray-700 mt-1" />
-                            )}
-                          </div>
-                          <div className="pb-4">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              {activity.beschrijving}
+              {clientOffertes.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Geen offertes voor deze klant</p>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Totaal</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Geldig tot</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {clientOffertes.map((offerte) => (
+                        <tr
+                          key={offerte.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                          onClick={() => navigate(`/offertes/${offerte.id}`)}
+                        >
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                              {offerte.nummer}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-sm text-foreground">{offerte.titel}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge className={cn('text-xs capitalize', getStatusColor(offerte.status))}>
+                              {offerte.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <span className="text-sm font-semibold text-foreground">
+                              {formatCurrency(offerte.totaal)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 hidden md:table-cell">
+                            <span className="text-sm text-muted-foreground">
+                              {formatDate(offerte.geldig_tot)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ════════ COMMUNICATIE TAB ════════ */}
+          {activeTab === 'communicatie' && (
+            <div className="space-y-2">
+              {clientEmails.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Mail className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-muted-foreground">Geen emailcommunicatie gevonden</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                clientEmails.map((email) => (
+                  <Card
+                    key={email.id}
+                    className={cn(
+                      'cursor-pointer hover:shadow-md transition-shadow',
+                      !email.gelezen && 'border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20'
+                    )}
+                  >
+                    <CardContent className="py-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className={cn(
+                              'text-sm truncate',
+                              !email.gelezen
+                                ? 'font-semibold text-foreground'
+                                : 'font-medium text-muted-foreground'
+                            )}>
+                              {email.onderwerp}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatDateTime(activity.datum)}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {email.starred && (
+                                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                              )}
+                              {email.bijlagen > 0 && (
+                                <div className="flex items-center gap-1 text-xs text-gray-400">
+                                  <Paperclip className="w-3.5 h-3.5" />
+                                  {email.bijlagen}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Van: {email.van} &middot; {formatDateTime(email.datum)}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">
+                            {email.inhoud}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* ════════ DOCUMENTEN TAB ════════ */}
+          {activeTab === 'documenten' && (
+            <div>
+              {clientDocumenten.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <FileIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-muted-foreground">Geen documenten gevonden</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {clientDocumenten.map((doc) => (
+                    <Card key={doc.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                            <FileIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{doc.naam}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {doc.map} &middot; {formatDate(doc.updated_at)}
                             </p>
                           </div>
                         </div>
-                      )
-                    })
-                  )}
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                          <Badge className={cn('text-xs capitalize', getStatusColor(doc.status))}>
+                            {doc.status}
+                          </Badge>
+                          {doc.tags.length > 0 && (
+                            <div className="flex gap-1">
+                              {doc.tags.slice(0, 2).map((tag) => (
+                                <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 font-normal">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </div>
+          )}
 
-          {/* Tags + Notes row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Tags */}
+          {/* ════════ CONTACTPERSONEN TAB (hidden tab) ════════ */}
+          {activeTab === 'contactpersonen' && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  Tags
+                  <Users className="w-4 h-4" />
+                  Alle Contactpersonen ({contactpersonen.length})
                 </CardTitle>
+                <Button size="sm" onClick={openAddContact}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Toevoegen
+                </Button>
               </CardHeader>
               <CardContent>
-                {klant.tags.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {klant.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-sm">
-                        {tag}
-                      </Badge>
-                    ))}
+                {contactpersonen.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">Nog geen contactpersonen toegevoegd</p>
+                    <Button size="sm" variant="outline" className="mt-3" onClick={openAddContact}>
+                      <Plus className="w-4 h-4 mr-1" />
+                      Eerste contactpersoon toevoegen
+                    </Button>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Geen tags toegevoegd
-                  </p>
+                  <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {contactpersonen.map((cp) => (
+                      <div key={cp.id} className="py-3 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                              {cp.naam.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                              {cp.naam}
+                              {cp.is_primair && (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Primair</Badge>
+                              )}
+                              {cp.functie && (
+                                <span className="text-xs text-muted-foreground font-normal">({cp.functie})</span>
+                              )}
+                            </p>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                              {cp.email && (
+                                <span className="flex items-center gap-1">
+                                  <Mail className="w-3 h-3" />
+                                  {cp.email}
+                                </span>
+                              )}
+                              {cp.telefoon && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="w-3 h-3" />
+                                  {cp.telefoon}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => openEditContact(cp)}
+                            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            title="Bewerken"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteContact(cp.id)}
+                            className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Verwijderen"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
+          )}
 
-            {/* Notes */}
+          {/* ════════ NOTITIES TAB (hidden tab) ════════ */}
+          {activeTab === 'notities' && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
@@ -391,230 +928,208 @@ export function ClientProfile() {
                   Notities
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {klant.notities ? (
-                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                    {klant.notities}
-                  </p>
-                ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Geen notities
-                  </p>
-                )}
+              <CardContent className="space-y-3">
+                <Textarea
+                  value={notitie}
+                  onChange={(e) => setNotitie(e.target.value)}
+                  placeholder="Notities over deze klant..."
+                  rows={8}
+                  className="min-h-[200px]"
+                />
+                <Button onClick={handleSaveNotitie} disabled={savingNotitie} size="sm">
+                  {savingNotitie ? 'Opslaan...' : 'Opslaan'}
+                </Button>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
+          )}
+        </div>
 
-        {/* ===================== PROJECTEN TAB ===================== */}
-        <TabsContent value="projecten" className="space-y-4">
-          {clientProjecten.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FolderKanban className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  Geen projecten voor deze klant
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {clientProjecten.map((project) => (
-                <Card
-                  key={project.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/projecten/${project.id}`)}
+        {/* Right Sidebar */}
+        <div className="w-full xl:w-80 flex-shrink-0 space-y-4">
+          {/* Notities */}
+          <Card className="border-gray-200 dark:border-gray-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <StickyNote className="w-4 h-4 text-amber-500" />
+                Notities
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-3">
+              <Textarea
+                value={notitie}
+                onChange={(e) => setNotitie(e.target.value)}
+                placeholder="Notities over deze klant..."
+                rows={5}
+                className="text-sm"
+              />
+              <Button onClick={handleSaveNotitie} disabled={savingNotitie} size="sm" className="w-full">
+                {savingNotitie ? 'Opslaan...' : 'Opslaan'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Tags */}
+          <Card className="border-gray-200 dark:border-gray-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Tag className="w-4 h-4 text-green-500" />
+                Tags
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {klant.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {klant.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Geen tags toegevoegd</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Export */}
+          <Card className="border-gray-200 dark:border-gray-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Download className="w-4 h-4 text-blue-500" />
+                Exporteren
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-1.5 justify-start"
+                onClick={() => {
+                  const headers = ['Veld', 'Waarde']
+                  const rows = [
+                    { Veld: 'Bedrijfsnaam', Waarde: klant.bedrijfsnaam },
+                    { Veld: 'Contactpersoon', Waarde: klant.contactpersoon },
+                    { Veld: 'Email', Waarde: klant.email },
+                    { Veld: 'Telefoon', Waarde: klant.telefoon },
+                    { Veld: 'Adres', Waarde: [klant.adres, klant.postcode, klant.stad].filter(Boolean).join(', ') },
+                    { Veld: 'KvK', Waarde: klant.kvk_nummer },
+                    { Veld: 'BTW', Waarde: klant.btw_nummer },
+                    { Veld: 'Status', Waarde: klant.status },
+                    { Veld: 'Tags', Waarde: klant.tags.join(', ') },
+                  ]
+                  exportCSV(klant.bedrijfsnaam.replace(/\s+/g, '-').toLowerCase(), headers, rows)
+                }}
+              >
+                <Download className="w-4 h-4" />
+                Klantgegevens CSV
+              </Button>
+              {clientProjecten.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5 justify-start"
+                  onClick={() => {
+                    const headers = ['Project', 'Status', 'Budget', 'Besteed', 'Voortgang', 'Deadline']
+                    const rows = clientProjecten.map((p) => ({
+                      Project: p.naam,
+                      Status: statusLabels[p.status] || p.status,
+                      Budget: p.budget,
+                      Besteed: p.besteed,
+                      Voortgang: p.voortgang + '%',
+                      Deadline: formatDate(p.eind_datum),
+                    }))
+                    exportExcel(
+                      `${klant.bedrijfsnaam.replace(/\s+/g, '-').toLowerCase()}-projecten`,
+                      headers,
+                      rows,
+                      'Projecten'
+                    )
+                  }}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-base">{project.naam}</CardTitle>
-                      <Badge className={cn('capitalize flex-shrink-0', getStatusColor(project.status))}>
-                        {project.status}
-                      </Badge>
-                    </div>
-                    {project.beschrijving && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                        {project.beschrijving}
-                      </p>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Voortgang</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{project.voortgang}%</span>
-                      </div>
-                      <Progress value={project.voortgang} className="h-2" />
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-4">
-                        <span className="text-gray-500 dark:text-gray-400">
-                          {formatDate(project.start_datum)} - {formatDate(project.eind_datum)}
-                        </span>
-                      </div>
-                      <Badge className={cn('capitalize text-xs', getPriorityColor(project.prioriteit))}>
-                        {project.prioriteit}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-100 dark:border-gray-800">
-                      <span className="text-gray-500 dark:text-gray-400">Budget</span>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {formatCurrency(project.besteed)} / {formatCurrency(project.budget)}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+                  <FileText className="w-4 h-4" />
+                  Projecten Excel
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-        {/* ===================== COMMUNICATIE TAB ===================== */}
-        <TabsContent value="communicatie" className="space-y-4">
-          {clientEmails.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Mail className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  Geen emailcommunicatie gevonden
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {clientEmails.map((email) => (
-                <Card
-                  key={email.id}
-                  className={cn(
-                    'cursor-pointer hover:shadow-md transition-shadow',
-                    !email.gelezen && 'border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20'
-                  )}
-                >
-                  <CardContent className="py-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className={cn(
-                            'text-sm truncate',
-                            !email.gelezen
-                              ? 'font-semibold text-gray-900 dark:text-white'
-                              : 'font-medium text-gray-700 dark:text-gray-300'
-                          )}>
-                            {email.onderwerp}
-                          </p>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {email.starred && (
-                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                            )}
-                            {email.bijlagen > 0 && (
-                              <div className="flex items-center gap-1 text-xs text-gray-400">
-                                <Paperclip className="w-3.5 h-3.5" />
-                                {email.bijlagen}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          Van: {email.van} &middot; {formatDateTime(email.datum)}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1.5 line-clamp-2">
-                          {email.inhoud}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* ===================== DOCUMENTEN TAB ===================== */}
-        <TabsContent value="documenten" className="space-y-4">
-          {clientDocumenten.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  Geen documenten gevonden
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {clientDocumenten.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                        <FileIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={doc.naam}>
-                          {doc.naam}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          {formatFileSize(doc.grootte)} &middot; {doc.map}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                      <Badge className={cn('text-xs capitalize', getStatusColor(doc.status))}>
-                        {doc.status}
-                      </Badge>
-                      <span className="text-xs text-gray-400 dark:text-gray-500">
-                        {formatDate(doc.updated_at)}
-                      </span>
-                    </div>
-                    {doc.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {doc.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 font-normal">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Edit dialog */}
+      {/* ── Dialogs ── */}
       <AddEditClient
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         klant={klant}
         onSaved={handleKlantSaved}
       />
-    </div>
-  )
-}
 
-// Helper component for detail rows
-function DetailRow({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ElementType
-  label: string
-  value: string
-}) {
-  if (!value) return null
-  return (
-    <div className="flex items-start gap-2.5">
-      <Icon className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
-      <div className="min-w-0">
-        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-        <p className="text-sm text-gray-900 dark:text-white break-words">{value}</p>
-      </div>
+      {/* Contact person dialog */}
+      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingContact ? 'Contactpersoon bewerken' : 'Contactpersoon toevoegen'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingContact
+                ? 'Pas de gegevens van de contactpersoon aan.'
+                : 'Voeg een nieuwe contactpersoon toe aan dit bedrijf.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cp-naam">Naam <span className="text-red-500">*</span></Label>
+                <Input
+                  id="cp-naam"
+                  value={contactForm.naam}
+                  onChange={(e) => setContactForm((f) => ({ ...f, naam: e.target.value }))}
+                  placeholder="Volledige naam"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cp-functie">Functie</Label>
+                <Input
+                  id="cp-functie"
+                  value={contactForm.functie}
+                  onChange={(e) => setContactForm((f) => ({ ...f, functie: e.target.value }))}
+                  placeholder="Bijv. Directeur, Inkoper"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cp-email">Email</Label>
+                <Input
+                  id="cp-email"
+                  type="email"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
+                  placeholder="email@bedrijf.nl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cp-telefoon">Telefoon</Label>
+                <Input
+                  id="cp-telefoon"
+                  type="tel"
+                  value={contactForm.telefoon}
+                  onChange={(e) => setContactForm((f) => ({ ...f, telefoon: e.target.value }))}
+                  placeholder="+31 6 12345678"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setContactDialogOpen(false)}>
+              Annuleren
+            </Button>
+            <Button onClick={handleSaveContact} disabled={!contactForm.naam.trim()}>
+              {editingContact ? 'Bijwerken' : 'Toevoegen'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

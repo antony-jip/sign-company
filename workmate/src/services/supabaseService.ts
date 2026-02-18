@@ -42,6 +42,10 @@ function now(): string {
 
 // ============ KLANTEN ============
 
+function ensureContactpersonen(klant: any): Klant {
+  return { ...klant, contactpersonen: klant.contactpersonen || [] }
+}
+
 export async function getKlanten(): Promise<Klant[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
@@ -49,9 +53,9 @@ export async function getKlanten(): Promise<Klant[]> {
       .select('*')
       .order('bedrijfsnaam')
     if (error) throw error
-    return data || []
+    return (data || []).map(ensureContactpersonen)
   }
-  return getLocalData<Klant>('klanten')
+  return getLocalData<Klant>('klanten').map(ensureContactpersonen)
 }
 
 export async function getKlant(id: string): Promise<Klant | null> {
@@ -62,10 +66,11 @@ export async function getKlant(id: string): Promise<Klant | null> {
       .eq('id', id)
       .single()
     if (error) throw error
-    return data
+    return data ? ensureContactpersonen(data) : null
   }
   const klanten = getLocalData<Klant>('klanten')
-  return klanten.find((k) => k.id === id) || null
+  const found = klanten.find((k) => k.id === id)
+  return found ? ensureContactpersonen(found) : null
 }
 
 export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'updated_at'>): Promise<Klant> {

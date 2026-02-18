@@ -34,6 +34,7 @@ import {
   getStatusColor,
   getPriorityColor,
 } from '@/lib/utils'
+import { exportCSV, exportExcel } from '@/lib/export'
 import { getProjecten, getKlanten } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant } from '@/types'
@@ -331,39 +332,53 @@ export function ProjectsList() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Export button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => {
-              const csv = [
-                ['Project', 'Klant', 'Status', 'Prioriteit', 'Budget', 'Besteed', 'Voortgang', 'Deadline'].join(';'),
-                ...gefilterdeProjecten.map((p) =>
-                  [
-                    p.naam,
-                    p.klant_naam || getKlantNaam(p.klant_id),
-                    statusLabels[p.status] || p.status,
-                    p.prioriteit,
-                    p.budget,
-                    p.besteed,
-                    p.voortgang + '%',
-                    formatDate(p.eind_datum),
-                  ].join(';')
-                ),
-              ].join('\n')
-              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = `projecten-export-${new Date().toISOString().split('T')[0]}.csv`
-              a.click()
-              URL.revokeObjectURL(url)
-            }}
-          >
-            <Download className="w-4 h-4" />
-            Exporteren
-          </Button>
+          {/* Export buttons */}
+          <div className="flex items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-r-none border-r-0"
+              onClick={() => {
+                const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Budget', 'Besteed', 'Voortgang', 'Deadline']
+                const rows = gefilterdeProjecten.map((p) => ({
+                  Project: p.naam,
+                  Klant: p.klant_naam || getKlantNaam(p.klant_id),
+                  Status: statusLabels[p.status] || p.status,
+                  Prioriteit: p.prioriteit,
+                  Budget: p.budget,
+                  Besteed: p.besteed,
+                  Voortgang: p.voortgang + '%',
+                  Deadline: formatDate(p.eind_datum),
+                }))
+                exportCSV(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows)
+              }}
+            >
+              <Download className="w-4 h-4" />
+              CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-l-none"
+              onClick={() => {
+                const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Budget', 'Besteed', 'Voortgang', 'Deadline']
+                const rows = gefilterdeProjecten.map((p) => ({
+                  Project: p.naam,
+                  Klant: p.klant_naam || getKlantNaam(p.klant_id),
+                  Status: statusLabels[p.status] || p.status,
+                  Prioriteit: p.prioriteit,
+                  Budget: p.budget,
+                  Besteed: p.besteed,
+                  Voortgang: p.voortgang,
+                  Deadline: formatDate(p.eind_datum),
+                }))
+                exportExcel(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Projecten')
+              }}
+            >
+              <FileText className="w-4 h-4" />
+              Excel
+            </Button>
+          </div>
 
           {/* View toggle */}
           <div className="flex items-center border rounded-md bg-background">

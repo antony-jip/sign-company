@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import { UserPlus, Search, LayoutGrid, List, Loader2, ArrowUpDown } from 'lucide-react'
+import { UserPlus, Search, LayoutGrid, List, Loader2, ArrowUpDown, Download, FileText } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
+import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
 import type { Klant, Project } from '@/types'
 import { ClientCard } from './ClientCard'
@@ -146,7 +147,7 @@ export function ClientsLayout() {
         </Button>
       </div>
 
-      {/* Search + View toggle */}
+      {/* Search + Export + View toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -156,6 +157,63 @@ export function ClientsLayout() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Export buttons */}
+          <div className="flex items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-r-none border-r-0 h-9"
+              onClick={() => {
+                const headers = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'KvK', 'BTW', 'Status', 'Tags']
+                const rows = filteredKlanten.map((k) => ({
+                  Bedrijfsnaam: k.bedrijfsnaam,
+                  Contactpersoon: k.contactpersoon,
+                  Email: k.email,
+                  Telefoon: k.telefoon,
+                  Adres: k.adres,
+                  Postcode: k.postcode,
+                  Stad: k.stad,
+                  Website: k.website,
+                  KvK: k.kvk_nummer,
+                  BTW: k.btw_nummer,
+                  Status: k.status,
+                  Tags: k.tags.join(', '),
+                }))
+                exportCSV(`klanten-${new Date().toISOString().split('T')[0]}`, headers, rows)
+              }}
+            >
+              <Download className="w-4 h-4" />
+              CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-l-none h-9"
+              onClick={() => {
+                const headers = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'KvK', 'BTW', 'Status', 'Tags']
+                const rows = filteredKlanten.map((k) => ({
+                  Bedrijfsnaam: k.bedrijfsnaam,
+                  Contactpersoon: k.contactpersoon,
+                  Email: k.email,
+                  Telefoon: k.telefoon,
+                  Adres: k.adres,
+                  Postcode: k.postcode,
+                  Stad: k.stad,
+                  Website: k.website,
+                  KvK: k.kvk_nummer,
+                  BTW: k.btw_nummer,
+                  Status: k.status,
+                  Tags: k.tags.join(', '),
+                }))
+                exportExcel(`klanten-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Klanten')
+              }}
+            >
+              <FileText className="w-4 h-4" />
+              Excel
+            </Button>
+          </div>
         </div>
         <div className="flex items-center border rounded-md bg-background">
           <Button

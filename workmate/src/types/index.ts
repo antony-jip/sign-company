@@ -15,6 +15,15 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface Contactpersoon {
+  id: string;
+  naam: string;
+  functie: string;
+  email: string;
+  telefoon: string;
+  is_primair: boolean;
+}
+
 export interface Klant {
   id: string;
   user_id: string;
@@ -32,6 +41,7 @@ export interface Klant {
   status: 'actief' | 'inactief' | 'prospect';
   tags: string[];
   notities: string;
+  contactpersonen: Contactpersoon[];
   created_at: string;
   updated_at: string;
 }
