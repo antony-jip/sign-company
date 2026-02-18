@@ -423,3 +423,121 @@ export interface TekeningGoedkeuring {
 }
 
 export type SortDirection = 'asc' | 'desc';
+
+// ============ FACTUREN SYSTEEM ============
+
+export interface Factuur {
+  id: string;
+  user_id: string;
+  klant_id: string;
+  klant_naam?: string;
+  offerte_id?: string;
+  project_id?: string;
+  nummer: string;
+  titel: string;
+  status: 'concept' | 'verzonden' | 'betaald' | 'vervallen' | 'gecrediteerd';
+  subtotaal: number;
+  btw_bedrag: number;
+  totaal: number;
+  betaald_bedrag: number;
+  factuurdatum: string;
+  vervaldatum: string;
+  betaaldatum?: string;
+  betalingsherinnering_verzonden?: boolean;
+  notities: string;
+  voorwaarden: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FactuurItem {
+  id: string;
+  factuur_id: string;
+  beschrijving: string;
+  aantal: number;
+  eenheidsprijs: number;
+  btw_percentage: number;
+  korting_percentage: number;
+  totaal: number;
+  volgorde: number;
+  created_at: string;
+}
+
+// ============ TIJDREGISTRATIE ============
+
+export interface Tijdregistratie {
+  id: string;
+  user_id: string;
+  project_id: string;
+  project_naam?: string;
+  taak_id?: string;
+  medewerker_id?: string;
+  medewerker_naam?: string;
+  omschrijving: string;
+  datum: string;
+  start_tijd: string;
+  eind_tijd: string;
+  duur_minuten: number;
+  uurtarief: number;
+  facturabel: boolean;
+  gefactureerd: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============ MEDEWERKERS ============
+
+export interface Medewerker {
+  id: string;
+  user_id: string;
+  naam: string;
+  email: string;
+  telefoon: string;
+  functie: string;
+  afdeling: string;
+  avatar_url: string;
+  uurtarief: number;
+  status: 'actief' | 'inactief';
+  rol: 'admin' | 'medewerker' | 'monteur' | 'verkoop' | 'productie';
+  vaardigheden: string[];
+  start_datum: string;
+  notities: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============ NOTIFICATIES ============
+
+export interface Notificatie {
+  id: string;
+  user_id: string;
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'algemeen';
+  titel: string;
+  bericht: string;
+  link?: string;
+  gelezen: boolean;
+  created_at: string;
+}
+
+// ============ MONTAGE PLANNING ============
+
+export interface MontageAfspraak {
+  id: string;
+  user_id: string;
+  project_id: string;
+  project_naam?: string;
+  klant_id: string;
+  klant_naam?: string;
+  titel: string;
+  beschrijving: string;
+  datum: string;
+  start_tijd: string;
+  eind_tijd: string;
+  locatie: string;
+  monteurs: string[];
+  status: 'gepland' | 'onderweg' | 'bezig' | 'afgerond' | 'uitgesteld';
+  materialen: string[];
+  notities: string;
+  created_at: string;
+  updated_at: string;
+}

@@ -30,6 +30,12 @@ import { WorkmateAIChat } from '@/components/ai/WorkmateAIChat'
 import { SettingsLayout } from '@/components/settings/SettingsLayout'
 import { DataImportLayout } from '@/components/import/DataImportLayout'
 import { NewsletterBuilder } from '@/components/newsletter/NewsletterBuilder'
+import { FacturenLayout } from '@/components/invoices/FacturenLayout'
+import { RapportagesLayout } from '@/components/reports/RapportagesLayout'
+import { TijdregistratieLayout } from '@/components/timetracking/TijdregistratieLayout'
+import { NacalculatieLayout } from '@/components/nacalculatie/NacalculatieLayout'
+import { MontagePlanningLayout } from '@/components/montage/MontagePlanningLayout'
+import { TeamLayout } from '@/components/team/TeamLayout'
 import { CommandPalette } from '@/components/shared/CommandPalette'
 import { ClientApprovalPage } from '@/components/approval/ClientApprovalPage'
 import { useDataInit } from '@/hooks/useDataInit'
@@ -72,6 +78,12 @@ function AppContent() {
         <Route path="kalender" element={<CalendarLayout />} />
         <Route path="financieel" element={<FinancialLayout />} />
         <Route path="taken" element={<TasksLayout />} />
+        <Route path="facturen" element={<FacturenLayout />} />
+        <Route path="rapportages" element={<RapportagesLayout />} />
+        <Route path="tijdregistratie" element={<TijdregistratieLayout />} />
+        <Route path="nacalculatie" element={<NacalculatieLayout />} />
+        <Route path="montage" element={<MontagePlanningLayout />} />
+        <Route path="team" element={<TeamLayout />} />
         <Route path="nieuwsbrieven" element={<NewsletterBuilder />} />
         <Route path="importeren" element={<DataImportLayout />} />
         <Route path="ai" element={<WorkmateAIChat />} />

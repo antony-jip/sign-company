@@ -19,6 +19,12 @@ import type {
   CalculatieTemplate,
   OfferteTemplate,
   TekeningGoedkeuring,
+  Factuur,
+  FactuurItem,
+  Tijdregistratie,
+  Medewerker,
+  Notificatie,
+  MontageAfspraak,
 } from '@/types'
 
 // ============ HELPERS ============
@@ -1586,4 +1592,277 @@ export async function updateProfile(userId: string, updates: Partial<Profile>): 
   profiles[index] = { ...profiles[index], ...updates, updated_at: now() }
   setLocalData('profiles', profiles)
   return profiles[index]
+}
+
+// ============ FACTUREN ============
+
+export async function getFacturen(): Promise<Factuur[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('facturen').select('*').order('factuurdatum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Factuur>('facturen')
+}
+
+export async function getFactuur(id: string): Promise<Factuur> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('facturen').select('*').eq('id', id).single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Factuur>('facturen')
+  const item = items.find((f) => f.id === id)
+  if (!item) throw new Error('Factuur niet gevonden')
+  return item
+}
+
+export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'>): Promise<Factuur> {
+  const newFactuur: Factuur = { ...factuur, id: generateId(), created_at: now(), updated_at: now() } as Factuur
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('facturen').insert(newFactuur).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Factuur>('facturen')
+  items.push(newFactuur)
+  setLocalData('facturen', items)
+  return newFactuur
+}
+
+export async function updateFactuur(id: string, updates: Partial<Factuur>): Promise<Factuur> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('facturen').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Factuur>('facturen')
+  const index = items.findIndex((f) => f.id === id)
+  if (index === -1) throw new Error('Factuur niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('facturen', items)
+  return items[index]
+}
+
+export async function deleteFactuur(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('facturen').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Factuur>('facturen')
+  setLocalData('facturen', items.filter((f) => f.id !== id))
+}
+
+export async function getFactuurItems(factuurId: string): Promise<FactuurItem[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('factuur_items').select('*').eq('factuur_id', factuurId).order('volgorde')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<FactuurItem>('factuur_items').filter((i) => i.factuur_id === factuurId)
+}
+
+export async function createFactuurItem(item: Omit<FactuurItem, 'id' | 'created_at'>): Promise<FactuurItem> {
+  const newItem: FactuurItem = { ...item, id: generateId(), created_at: now() } as FactuurItem
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('factuur_items').insert(newItem).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<FactuurItem>('factuur_items')
+  items.push(newItem)
+  setLocalData('factuur_items', items)
+  return newItem
+}
+
+// ============ TIJDREGISTRATIE ============
+
+export async function getTijdregistraties(): Promise<Tijdregistratie[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('tijdregistraties').select('*').order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Tijdregistratie>('tijdregistraties')
+}
+
+export async function createTijdregistratie(entry: Omit<Tijdregistratie, 'id' | 'created_at' | 'updated_at'>): Promise<Tijdregistratie> {
+  const newEntry: Tijdregistratie = { ...entry, id: generateId(), created_at: now(), updated_at: now() } as Tijdregistratie
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('tijdregistraties').insert(newEntry).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Tijdregistratie>('tijdregistraties')
+  items.push(newEntry)
+  setLocalData('tijdregistraties', items)
+  return newEntry
+}
+
+export async function updateTijdregistratie(id: string, updates: Partial<Tijdregistratie>): Promise<Tijdregistratie> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('tijdregistraties').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Tijdregistratie>('tijdregistraties')
+  const index = items.findIndex((t) => t.id === id)
+  if (index === -1) throw new Error('Tijdregistratie niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('tijdregistraties', items)
+  return items[index]
+}
+
+export async function deleteTijdregistratie(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('tijdregistraties').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Tijdregistratie>('tijdregistraties')
+  setLocalData('tijdregistraties', items.filter((t) => t.id !== id))
+}
+
+// ============ MEDEWERKERS ============
+
+export async function getMedewerkers(): Promise<Medewerker[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('medewerkers').select('*').order('naam')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Medewerker>('medewerkers')
+}
+
+export async function createMedewerker(mw: Omit<Medewerker, 'id' | 'created_at' | 'updated_at'>): Promise<Medewerker> {
+  const newMw: Medewerker = { ...mw, id: generateId(), created_at: now(), updated_at: now() } as Medewerker
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('medewerkers').insert(newMw).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Medewerker>('medewerkers')
+  items.push(newMw)
+  setLocalData('medewerkers', items)
+  return newMw
+}
+
+export async function updateMedewerker(id: string, updates: Partial<Medewerker>): Promise<Medewerker> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('medewerkers').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Medewerker>('medewerkers')
+  const index = items.findIndex((m) => m.id === id)
+  if (index === -1) throw new Error('Medewerker niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('medewerkers', items)
+  return items[index]
+}
+
+export async function deleteMedewerker(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('medewerkers').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Medewerker>('medewerkers')
+  setLocalData('medewerkers', items.filter((m) => m.id !== id))
+}
+
+// ============ NOTIFICATIES ============
+
+export async function getNotificaties(): Promise<Notificatie[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('notificaties').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Notificatie>('notificaties')
+}
+
+export async function createNotificatie(notif: Omit<Notificatie, 'id' | 'created_at'>): Promise<Notificatie> {
+  const newNotif: Notificatie = { ...notif, id: generateId(), created_at: now() } as Notificatie
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('notificaties').insert(newNotif).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Notificatie>('notificaties')
+  items.unshift(newNotif)
+  setLocalData('notificaties', items)
+  return newNotif
+}
+
+export async function markNotificatieGelezen(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    await supabase.from('notificaties').update({ gelezen: true }).eq('id', id)
+    return
+  }
+  const items = getLocalData<Notificatie>('notificaties')
+  const index = items.findIndex((n) => n.id === id)
+  if (index !== -1) {
+    items[index].gelezen = true
+    setLocalData('notificaties', items)
+  }
+}
+
+export async function markAlleNotificatiesGelezen(): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    await supabase.from('notificaties').update({ gelezen: true }).eq('gelezen', false)
+    return
+  }
+  const items = getLocalData<Notificatie>('notificaties')
+  items.forEach((n) => (n.gelezen = true))
+  setLocalData('notificaties', items)
+}
+
+// ============ MONTAGE PLANNING ============
+
+export async function getMontageAfspraken(): Promise<MontageAfspraak[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('montage_afspraken').select('*').order('datum', { ascending: true })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<MontageAfspraak>('montage_afspraken')
+}
+
+export async function createMontageAfspraak(afspraak: Omit<MontageAfspraak, 'id' | 'created_at' | 'updated_at'>): Promise<MontageAfspraak> {
+  const newAfspraak: MontageAfspraak = { ...afspraak, id: generateId(), created_at: now(), updated_at: now() } as MontageAfspraak
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('montage_afspraken').insert(newAfspraak).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<MontageAfspraak>('montage_afspraken')
+  items.push(newAfspraak)
+  setLocalData('montage_afspraken', items)
+  return newAfspraak
+}
+
+export async function updateMontageAfspraak(id: string, updates: Partial<MontageAfspraak>): Promise<MontageAfspraak> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('montage_afspraken').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<MontageAfspraak>('montage_afspraken')
+  const index = items.findIndex((a) => a.id === id)
+  if (index === -1) throw new Error('Montage afspraak niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('montage_afspraken', items)
+  return items[index]
+}
+
+export async function deleteMontageAfspraak(id: string): Promise<void> {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('montage_afspraken').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<MontageAfspraak>('montage_afspraken')
+  setLocalData('montage_afspraken', items.filter((a) => a.id !== id))
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  Search, Sun, Moon, Bell, Globe, User, Settings, LogOut,
+  Search, Sun, Moon, User, Settings, LogOut,
   ChevronDown, X, Command
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -9,16 +9,23 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Button } from '@/components/ui/button'
+import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 
 const routeTitles: Record<string, string> = {
   '/': 'Dashboard',
   '/projecten': 'Projecten',
   '/klanten': 'Klanten',
   '/offertes': 'Offertes',
+  '/facturen': 'Facturen',
   '/documenten': 'Documenten',
   '/email': 'Email',
   '/kalender': 'Kalender',
+  '/montage': 'Montage Planning',
+  '/tijdregistratie': 'Tijdregistratie',
   '/financieel': 'Financieel',
+  '/rapportages': 'Rapportages',
+  '/nacalculatie': 'Nacalculatie',
+  '/team': 'Team',
   '/ai': 'AI Assistent',
   '/instellingen': 'Instellingen',
 }
@@ -38,9 +45,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [notificationOpen, setNotificationOpen] = useState(false)
   const userMenuRef = React.useRef<HTMLDivElement>(null)
-  const notificationRef = React.useRef<HTMLDivElement>(null)
 
   const pageTitle = getPageTitle(location.pathname)
 
@@ -49,14 +54,10 @@ export function Header() {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false)
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setNotificationOpen(false)
-      }
     }
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setUserMenuOpen(false)
-        setNotificationOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -165,83 +166,7 @@ export function Header() {
         </Button>
 
         {/* Notifications */}
-        <div ref={notificationRef} className="relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200 wm-notification-dot"
-            onClick={() => {
-              setNotificationOpen(!notificationOpen)
-              setUserMenuOpen(false)
-            }}
-            title="Notificaties"
-          >
-            <Bell className="w-4 h-4" />
-          </Button>
-
-          {/* Notification dropdown */}
-          {notificationOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-black/10 z-50 overflow-hidden animate-scale-in">
-              <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-foreground">
-                  Notificaties
-                </h3>
-                <button
-                  onClick={() => setNotificationOpen(false)}
-                  className="text-xs text-primary hover:underline font-medium"
-                >
-                  Alles gelezen
-                </button>
-              </div>
-              <div className="max-h-80 overflow-y-auto">
-                <div className="px-4 py-3 hover:bg-muted/50 border-l-2 border-primary transition-colors cursor-pointer">
-                  <p className="text-sm text-foreground font-medium">
-                    Nieuwe offerte goedgekeurd
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Klant De Vries B.V. heeft offerte #2024-015 goedgekeurd
-                  </p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">
-                    2 minuten geleden
-                  </p>
-                </div>
-                <div className="px-4 py-3 hover:bg-muted/50 border-l-2 border-transparent transition-colors cursor-pointer">
-                  <p className="text-sm text-foreground/80">
-                    Project deadline nadert
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Project &quot;Lichtreclame Bakkerij Jansen&quot; deadline over 2 dagen
-                  </p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">
-                    1 uur geleden
-                  </p>
-                </div>
-                <div className="px-4 py-3 hover:bg-muted/50 border-l-2 border-transparent transition-colors cursor-pointer">
-                  <p className="text-sm text-foreground/80">
-                    3 nieuwe emails ontvangen
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Je hebt ongelezen berichten in je inbox
-                  </p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">
-                    3 uur geleden
-                  </p>
-                </div>
-              </div>
-              <div className="px-4 py-2.5 border-t border-border/60">
-                <button
-                  onClick={() => {
-                    setNotificationOpen(false)
-                    navigate('/instellingen')
-                  }}
-                  className="text-sm text-primary hover:underline font-medium w-full text-center"
-                >
-                  Alle notificaties bekijken
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <NotificatieCenter />
 
         {/* Separator */}
         <div className="hidden md:block w-px h-6 bg-border/60 mx-1.5" />

@@ -4,7 +4,8 @@ import {
   LayoutDashboard, FolderKanban, Users, FileText, Files,
   Mail, Calendar, PiggyBank, Bot, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload,
-  Sparkles, type LucideIcon
+  Sparkles, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
+  type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -37,7 +38,16 @@ const navSections: NavSection[] = [
       { label: 'Taken', icon: CheckSquare, path: '/taken' },
       { label: 'Klanten', icon: Users, path: '/klanten' },
       { label: 'Offertes', icon: FileText, path: '/offertes' },
+      { label: 'Facturen', icon: Receipt, path: '/facturen' },
       { label: 'Documenten', icon: Files, path: '/documenten' },
+    ],
+  },
+  {
+    section: 'Planning',
+    items: [
+      { label: 'Kalender', icon: Calendar, path: '/kalender' },
+      { label: 'Montage', icon: Wrench, path: '/montage' },
+      { label: 'Tijdregistratie', icon: Clock, path: '/tijdregistratie' },
     ],
   },
   {
@@ -45,13 +55,15 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
       { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
-      { label: 'Kalender', icon: Calendar, path: '/kalender' },
     ],
   },
   {
     section: 'Beheer',
     items: [
       { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
+      { label: 'Rapportages', icon: BarChart3, path: '/rapportages' },
+      { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
+      { label: 'Team', icon: UsersRound, path: '/team' },
       { label: 'Importeren', icon: Upload, path: '/importeren' },
       { label: 'AI Assistent', icon: Bot, path: '/ai' },
       { label: 'Instellingen', icon: Settings, path: '/instellingen' },
