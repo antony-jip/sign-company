@@ -26,6 +26,7 @@ interface ContactSidebarProps {
   senderCompany?: string
   onAddCustomer: (email: string) => void
   onSubscribeNewsletter: (email: string) => void
+  width?: number
 }
 
 function getAvatarColor(name: string): string {
@@ -95,9 +96,13 @@ export function ContactSidebar({
   senderCompany,
   onAddCustomer,
   onSubscribeNewsletter,
+  width,
 }: ContactSidebarProps) {
   return (
-    <div className="w-[280px] xl:w-[310px] border-l flex-shrink-0 flex flex-col bg-muted/30">
+    <div
+      className="flex-shrink-0 flex flex-col bg-muted/30"
+      style={{ width: width ?? 290 }}
+    >
       <ScrollArea className="flex-1">
         <div className="p-4">
           {/* Contact Header */}

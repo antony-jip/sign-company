@@ -17,6 +17,7 @@ import {
   Clock,
   Archive,
   Send,
+  ArrowLeft,
 } from 'lucide-react'
 import { formatDateTime, getInitials } from '@/lib/utils'
 import type { Email } from '@/types'
@@ -29,6 +30,7 @@ interface EmailReaderProps {
   onReply?: (email: Email) => void
   onForward?: (email: Email) => void
   onArchive?: (email: Email) => void
+  onBack?: () => void
 }
 
 function extractSenderName(from: string): string {
@@ -68,6 +70,7 @@ export function EmailReader({
   onReply,
   onForward,
   onArchive,
+  onBack,
 }: EmailReaderProps) {
   const [quickReply, setQuickReply] = useState('')
 
@@ -91,6 +94,17 @@ export function EmailReader({
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b flex-shrink-0">
+        {/* Back button */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Terug naar overzicht
+          </button>
+        )}
+
         {/* Subject + actions */}
         <div className="flex items-start justify-between gap-4 mb-1">
           <div className="flex-1 min-w-0">

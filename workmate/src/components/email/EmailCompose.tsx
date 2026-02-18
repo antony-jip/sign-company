@@ -276,7 +276,7 @@ export function EmailCompose({
 
   return (
     <Dialog open={open} onOpenChange={resetAndClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Nieuwe email</DialogTitle>
           <DialogDescription>
@@ -364,7 +364,7 @@ export function EmailCompose({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Schrijf uw bericht hier..."
-              className="min-h-[200px] resize-y"
+              className="min-h-[300px] resize-y"
             />
           </div>
         </div>

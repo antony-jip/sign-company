@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,7 @@ import {
   ArrowUpDown,
   SlidersHorizontal,
   Archive,
+  GripVertical,
 } from 'lucide-react'
 import { getEmails, getKlanten, createKlant, updateEmail, deleteEmail, createEmail } from '@/services/supabaseService'
 import { formatDateTime, cn, truncate } from '@/lib/utils'
@@ -117,6 +118,62 @@ export function EmailLayout() {
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [filter, setFilter] = useState<FilterType>('alle')
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null)
+
+  // Resizable panels
+  const [listWidth, setListWidth] = useState(384) // default ~w-96
+  const [contactWidth, setContactWidth] = useState(290)
+  const isDraggingList = useRef(false)
+  const isDraggingContact = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const handleMouseDown = useCallback((panel: 'list' | 'contact') => {
+    if (panel === 'list') {
+      isDraggingList.current = true
+    } else {
+      isDraggingContact.current = true
+    }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return
+
+      if (isDraggingList.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        const folderWidth = 208 // w-52
+        const newWidth = e.clientX - rect.left - folderWidth
+        setListWidth(Math.max(250, Math.min(newWidth, 600)))
+      }
+
+      if (isDraggingContact.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        const newWidth = rect.right - e.clientX
+        setContactWidth(Math.max(200, Math.min(newWidth, 450)))
+      }
+    }
+
+    const handleMouseUp = () => {
+      if (isDraggingList.current || isDraggingContact.current) {
+        isDraggingList.current = false
+        isDraggingContact.current = false
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
+
+  const handleBack = useCallback(() => {
+    setSelectedEmail(null)
+  }, [])
 
   // Load emails - fallback to demo data if empty
   useEffect(() => {
@@ -440,7 +497,7 @@ export function EmailLayout() {
           </div>
         </Card>
       ) : (
-      <Card className="flex-1 flex overflow-hidden">
+      <Card className="flex-1 flex overflow-hidden" ref={containerRef}>
         {/* Left panel - Folders */}
         <div className="w-52 border-r flex-shrink-0 flex flex-col">
           <div className="p-3">
@@ -515,7 +572,7 @@ export function EmailLayout() {
         </div>
 
         {/* Middle panel - Email list */}
-        <div className="w-80 lg:w-96 border-r flex-shrink-0 flex flex-col">
+        <div className="flex-shrink-0 flex flex-col" style={{ width: listWidth }}>
           {/* Search */}
           <div className="p-3 border-b">
             <div className="relative">
@@ -702,6 +759,18 @@ export function EmailLayout() {
           </ScrollArea>
         </div>
 
+        {/* Resize handle - list/reader */}
+        <div
+          onMouseDown={() => handleMouseDown('list')}
+          className="w-1.5 flex-shrink-0 cursor-col-resize bg-border hover:bg-blue-400 active:bg-blue-500 transition-colors relative group"
+          title="Sleep om te vergroten/verkleinen"
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <GripVertical className="w-3 h-3 text-muted-foreground" />
+          </div>
+        </div>
+
         {/* Right panel - Email reader + Contact sidebar */}
         <div className="flex-1 flex min-w-0">
           <div className="flex-1 min-w-0">
@@ -713,19 +782,34 @@ export function EmailLayout() {
               onReply={handleReply}
               onForward={handleForward}
               onArchive={handleArchive}
+              onBack={selectedEmail ? handleBack : undefined}
             />
           </div>
 
           {/* Contact sidebar - only visible when email selected */}
           {selectedEmail && (
-            <ContactSidebar
-              contact={selectedContact}
-              senderName={selectedSenderName}
-              senderEmail={selectedSenderEmail}
-              senderCompany={selectedSenderCompany}
-              onAddCustomer={handleAddCustomer}
-              onSubscribeNewsletter={handleSubscribeNewsletter}
-            />
+            <>
+              {/* Resize handle - reader/contact */}
+              <div
+                onMouseDown={() => handleMouseDown('contact')}
+                className="w-1.5 flex-shrink-0 cursor-col-resize bg-border hover:bg-blue-400 active:bg-blue-500 transition-colors relative group"
+                title="Sleep om te vergroten/verkleinen"
+              >
+                <div className="absolute inset-y-0 -left-1 -right-1" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <GripVertical className="w-3 h-3 text-muted-foreground" />
+                </div>
+              </div>
+              <ContactSidebar
+                contact={selectedContact}
+                senderName={selectedSenderName}
+                senderEmail={selectedSenderEmail}
+                senderCompany={selectedSenderCompany}
+                onAddCustomer={handleAddCustomer}
+                onSubscribeNewsletter={handleSubscribeNewsletter}
+                width={contactWidth}
+              />
+            </>
           )}
         </div>
       </Card>
