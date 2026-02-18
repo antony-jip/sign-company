@@ -27,6 +27,7 @@ import { formatDateTime, cn, truncate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { ContactSidebar } from './ContactSidebar'
+import type { ConversationParticipant } from './ContactSidebar'
 import { EmailCompose } from './EmailCompose'
 import { demoEmails, demoContacts, getContactByEmail, extractEmailAddress } from '@/data/email-demo-data'
 import type { EmailContact } from '@/data/email-demo-data'
@@ -303,6 +304,30 @@ export function EmailLayout() {
   const selectedSenderCompany = useMemo(() => {
     return selectedContact?.company
   }, [selectedContact])
+
+  const conversationParticipants = useMemo((): ConversationParticipant[] => {
+    if (!selectedEmail) return []
+    const participants: ConversationParticipant[] = []
+    const seen = new Set<string>()
+
+    // From (sender)
+    const fromName = extractSenderName(selectedEmail.van)
+    const fromEmail = extractEmailAddress(selectedEmail.van)
+    if (!seen.has(fromEmail)) {
+      seen.add(fromEmail)
+      participants.push({ name: fromName, email: fromEmail, role: 'van' })
+    }
+
+    // To (recipient)
+    const toName = extractSenderName(selectedEmail.aan)
+    const toEmail = extractEmailAddress(selectedEmail.aan)
+    if (!seen.has(toEmail)) {
+      seen.add(toEmail)
+      participants.push({ name: toName, email: toEmail, role: 'aan' })
+    }
+
+    return participants
+  }, [selectedEmail])
 
   // Handlers
   const handleSelectEmail = (email: Email) => {
@@ -805,6 +830,7 @@ export function EmailLayout() {
                 senderName={selectedSenderName}
                 senderEmail={selectedSenderEmail}
                 senderCompany={selectedSenderCompany}
+                participants={conversationParticipants}
                 onAddCustomer={handleAddCustomer}
                 onSubscribeNewsletter={handleSubscribeNewsletter}
                 width={contactWidth}

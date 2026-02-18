@@ -1,11 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Reply,
+  ReplyAll,
   Forward,
   Trash2,
   Star,
@@ -18,8 +20,13 @@ import {
   Archive,
   Send,
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  MoreHorizontal,
+  Tag,
+  Plus,
 } from 'lucide-react'
-import { formatDateTime, getInitials } from '@/lib/utils'
+import { formatDateTime, getInitials, cn } from '@/lib/utils'
 import type { Email } from '@/types'
 
 interface EmailReaderProps {
@@ -47,6 +54,7 @@ function getAvatarColor(name: string): string {
   const colors = [
     'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500',
     'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-pink-500',
+    'bg-teal-500', 'bg-orange-500',
   ]
   const index = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length
   return colors[index]
@@ -72,7 +80,9 @@ export function EmailReader({
   onArchive,
   onBack,
 }: EmailReaderProps) {
-  const [quickReply, setQuickReply] = useState('')
+  const [replyOpen, setReplyOpen] = useState(false)
+  const [replyText, setReplyText] = useState('')
+  const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set([0]))
 
   if (!email) {
     return (
@@ -90,89 +100,108 @@ export function EmailReader({
   const senderInitials = getInitials(senderName)
   const visibleLabels = email.labels.filter((l) => l !== 'verzonden' && l !== 'prullenbak' && l !== 'gepland')
 
+  const toggleMessage = (index: number) => {
+    setExpandedMessages((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b flex-shrink-0">
-        {/* Back button */}
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+      {/* ── Top Toolbar (Pipedrive-style) ── */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Terug
+            </button>
+          )}
+          {onBack && <Separator orientation="vertical" className="h-5 mx-1" />}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 h-8 text-xs"
+            onClick={() => onArchive?.(email)}
           >
-            <ArrowLeft className="w-4 h-4" />
-            Terug naar overzicht
-          </button>
-        )}
-
-        {/* Subject + actions */}
-        <div className="flex items-start justify-between gap-4 mb-1">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold leading-tight">{email.onderwerp}</h2>
-            {/* Labels */}
-            {visibleLabels.length > 0 && (
-              <div className="flex gap-1.5 mt-1.5">
-                {visibleLabels.map((label) => (
-                  <Badge
-                    key={label}
-                    variant="secondary"
-                    className={`text-[10px] px-1.5 h-4 ${getLabelColor(label)}`}
-                  >
-                    {label}
-                  </Badge>
-                ))}
-              </div>
+            <Archive className="w-3.5 h-3.5" />
+            Archief
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+            onClick={() => onDelete?.(email)}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Verwijderen
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 h-8 text-xs"
+            onClick={() => onToggleRead?.(email)}
+          >
+            {email.gelezen ? (
+              <>
+                <MailOpen className="w-3.5 h-3.5" />
+                Markeer als ongelezen
+              </>
+            ) : (
+              <>
+                <Mail className="w-3.5 h-3.5" />
+                Markeer als gelezen
+              </>
             )}
-          </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8"
-              onClick={() => onToggleStar?.(email)}
-              title={email.starred ? 'Ster verwijderen' : 'Ster toevoegen'}
-            >
-              {email.starred ? (
-                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-              ) : (
-                <StarOff className="w-4 h-4 text-muted-foreground" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8"
-              onClick={() => onToggleRead?.(email)}
-              title={email.gelezen ? 'Markeer als ongelezen' : 'Markeer als gelezen'}
-            >
-              {email.gelezen ? (
-                <MailOpen className="w-4 h-4 text-muted-foreground" />
-              ) : (
-                <Mail className="w-4 h-4 text-blue-500" />
-              )}
-            </Button>
-          </div>
+          </Button>
         </div>
+      </div>
 
-        {/* Sender info */}
-        <div className="mt-3 flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm ${getAvatarColor(senderName)}`}>
-            {senderInitials}
-          </div>
+      {/* ── Subject Header ── */}
+      <div className="px-6 pt-5 pb-4 border-b flex-shrink-0">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">{senderName}</span>
-              <span className="text-xs text-muted-foreground">
-                &lt;{extractSenderEmail(email.van)}&gt;
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              Aan: {email.aan}
+            <h2 className="text-xl font-bold text-foreground leading-tight">{email.onderwerp}</h2>
+
+            {/* Labels + "Label toevoegen" */}
+            <div className="flex items-center gap-2 mt-2">
+              {visibleLabels.map((label) => (
+                <Badge
+                  key={label}
+                  variant="secondary"
+                  className={`text-xs uppercase tracking-wider font-semibold px-2 py-0.5 ${getLabelColor(label)}`}
+                >
+                  {label}
+                </Badge>
+              ))}
+              <button className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                <Tag className="w-3 h-3" />
+                Label toevoegen
+              </button>
             </div>
           </div>
-          <span className="text-xs text-muted-foreground flex-shrink-0">
-            {formatDateTime(email.datum)}
-          </span>
+
+          {/* Star */}
+          <button
+            onClick={() => onToggleStar?.(email)}
+            className="mt-1 flex-shrink-0"
+            title={email.starred ? 'Ster verwijderen' : 'Ster toevoegen'}
+          >
+            {email.starred ? (
+              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+            ) : (
+              <Star className="w-5 h-5 text-gray-300 hover:text-yellow-400 transition-colors" />
+            )}
+          </button>
         </div>
 
         {/* Scheduled indicator */}
@@ -185,103 +214,213 @@ export function EmailReader({
             </span>
           </div>
         )}
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 mt-3">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onReply?.(email)}>
-            <Reply className="w-3.5 h-3.5" />
-            Beantwoorden
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onForward?.(email)}>
-            <Forward className="w-3.5 h-3.5" />
-            Doorsturen
-          </Button>
-          {onArchive && (
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onArchive(email)}>
-              <Archive className="w-3.5 h-3.5" />
-              Archiveren
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-            onClick={() => onDelete?.(email)}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Verwijderen
-          </Button>
-        </div>
       </div>
 
-      {/* Email body */}
+      {/* ── Thread / Conversation View ── */}
       <ScrollArea className="flex-1">
-        <div className="p-6">
-          <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-sm leading-relaxed">
-            {email.inhoud}
-          </div>
-        </div>
+        <div className="divide-y">
+          {/* Main email message (thread style) */}
+          {[email].map((msg, index) => {
+            const msgSenderName = extractSenderName(msg.van)
+            const msgSenderInitials = getInitials(msgSenderName)
+            const isExpanded = expandedMessages.has(index)
 
-        {/* Attachments */}
-        {email.bijlagen > 0 && (
-          <div className="px-6 pb-6">
-            <Separator className="mb-4" />
-            <div className="flex items-center gap-2 mb-3">
-              <Paperclip className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">
-                {email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {Array.from({ length: email.bijlagen }).map((_, i) => (
+            return (
+              <div key={msg.id + '-' + index} className="group">
+                {/* Message header - always visible */}
                 <div
-                  key={i}
-                  className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors"
+                  className="flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => toggleMessage(index)}
                 >
-                  <div className="w-8 h-8 rounded bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">
-                    PDF
+                  {/* Avatar */}
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${getAvatarColor(msgSenderName)}`}>
+                    {msgSenderInitials}
                   </div>
-                  <div>
-                    <span className="text-sm font-medium">Bijlage {i + 1}</span>
-                    <p className="text-[10px] text-muted-foreground">PDF document</p>
+
+                  {/* Sender info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">{msgSenderName}</span>
+                      <span className="text-xs text-muted-foreground">
+                        &lt;{extractSenderEmail(msg.van)}&gt;
+                      </span>
+                    </div>
+                    {!isExpanded && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {msg.inhoud.split('\n')[0].substring(0, 100)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Date + actions */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs text-muted-foreground">
+                      {formatDateTime(msg.datum)}
+                    </span>
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    )}
                   </div>
                 </div>
-              ))}
+
+                {/* Expanded message content */}
+                {isExpanded && (
+                  <div className="px-6 pb-4">
+                    {/* To info */}
+                    <div className="ml-12 mb-4 text-xs text-muted-foreground">
+                      Aan: {msg.aan}
+                    </div>
+
+                    {/* Email body */}
+                    <div className="ml-12 prose prose-sm dark:prose-invert max-w-none">
+                      <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                        {msg.inhoud}
+                      </div>
+                    </div>
+
+                    {/* Attachments */}
+                    {msg.bijlagen > 0 && (
+                      <div className="ml-12 mt-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {msg.bijlagen} bijlage{msg.bijlagen > 1 ? 'n' : ''}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {Array.from({ length: msg.bijlagen }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors"
+                            >
+                              <div className="w-8 h-8 rounded bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">
+                                PDF
+                              </div>
+                              <div>
+                                <span className="text-xs font-medium">Bijlage {i + 1}</span>
+                                <p className="text-[10px] text-muted-foreground">PDF document</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Per-message action buttons */}
+                    <div className="ml-12 mt-4 flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onReply?.(msg)
+                        }}
+                      >
+                        <Reply className="w-3.5 h-3.5" />
+                        Beantwoorden
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onReply?.(msg)
+                        }}
+                      >
+                        <ReplyAll className="w-3.5 h-3.5" />
+                        Allen beantwoorden
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onForward?.(msg)
+                        }}
+                      >
+                        <Forward className="w-3.5 h-3.5" />
+                        Doorsturen
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </ScrollArea>
+
+      {/* ── Reply Box (Pipedrive-style) ── */}
+      <div className="border-t flex-shrink-0">
+        {!replyOpen ? (
+          <div className="p-4">
+            <button
+              onClick={() => setReplyOpen(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all text-sm text-muted-foreground"
+            >
+              <Reply className="w-4 h-4" />
+              Klik hier om te antwoorden...
+            </button>
+          </div>
+        ) : (
+          <div className="p-4 space-y-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Reply className="w-3.5 h-3.5" />
+              <span>Beantwoorden aan <strong className="text-foreground">{senderName}</strong></span>
+            </div>
+            <Textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Schrijf je antwoord..."
+              className="min-h-[120px] resize-y"
+              autoFocus
+            />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-xs text-muted-foreground"
+                >
+                  <Paperclip className="w-3.5 h-3.5" />
+                  Bijlage
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setReplyOpen(false)
+                    setReplyText('')
+                  }}
+                >
+                  Annuleren
+                </Button>
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={!replyText.trim()}
+                  onClick={() => {
+                    if (replyText.trim()) {
+                      onReply?.(email)
+                      setReplyText('')
+                      setReplyOpen(false)
+                    }
+                  }}
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  Verstuur
+                </Button>
+              </div>
             </div>
           </div>
         )}
-      </ScrollArea>
-
-      {/* Quick reply */}
-      <div className="border-t p-3 flex-shrink-0 bg-muted/30">
-        <div className="flex items-center gap-2">
-          <Input
-            value={quickReply}
-            onChange={(e) => setQuickReply(e.target.value)}
-            placeholder="Snel antwoorden..."
-            className="flex-1 h-9"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && quickReply.trim()) {
-                onReply?.(email)
-                setQuickReply('')
-              }
-            }}
-          />
-          <Button
-            size="sm"
-            className="gap-1.5"
-            disabled={!quickReply.trim()}
-            onClick={() => {
-              if (quickReply.trim()) {
-                onReply?.(email)
-                setQuickReply('')
-              }
-            }}
-          >
-            <Send className="w-3.5 h-3.5" />
-            Verstuur
-          </Button>
-        </div>
       </div>
     </div>
   )
