@@ -370,8 +370,9 @@ export function EmailLayout() {
       ) : (
         <Card className="flex-1 flex overflow-hidden">
 
-          {/* ═══ Column 1: Email List ═══ */}
-          <div className="w-[380px] flex-shrink-0 flex flex-col border-r">
+          {/* ═══ Column 1: Email List (hidden when reading/composing) ═══ */}
+          {viewMode === 'idle' && (
+          <div className="flex-1 flex flex-col">
             {/* Search + Compose */}
             <div className="p-3 flex items-center gap-2">
               <div className="relative flex-1">
@@ -567,8 +568,10 @@ export function EmailLayout() {
               )}
             </ScrollArea>
           </div>
+          )}
 
-          {/* ═══ Column 2: Content Area ═══ */}
+          {/* ═══ Content Area (full width when reading/composing) ═══ */}
+          {viewMode !== 'idle' && (
           <div className="flex-1 min-w-0 flex flex-col">
             {viewMode === 'composing' ? (
               <EmailCompose
@@ -589,21 +592,11 @@ export function EmailLayout() {
                 onArchive={handleArchive}
                 onBack={handleBack}
               />
-            ) : (
-              /* Empty state */
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <div className="w-20 h-20 rounded-full bg-muted/60 flex items-center justify-center mb-5">
-                  <Inbox className="w-9 h-9 opacity-30" />
-                </div>
-                <p className="text-lg font-semibold text-foreground/60">Selecteer een email</p>
-                <p className="text-sm mt-1.5 text-muted-foreground/70">
-                  Of klik op <strong>Nieuw</strong> om een email te schrijven.
-                </p>
-              </div>
-            )}
+            ) : null}
           </div>
+          )}
 
-          {/* ═══ Column 3: CRM Sidebar ═══ */}
+          {/* ═══ CRM Sidebar (only when reading/composing) ═══ */}
           {showSidebar && (
             <div className="border-l">
               <ContactSidebar
