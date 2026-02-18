@@ -21,7 +21,10 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  Type,
+  Bold,
+  Italic,
+  Underline,
+  List,
   PenTool,
   ImageIcon,
   Link2,
@@ -98,11 +101,6 @@ function getAvatarColor(name: string): string {
   return colors[index]
 }
 
-function buildQuotedContent(email: Email): string {
-  const senderName = extractSenderName(email.van)
-  return `\n\n\n---\nOp ${formatDateTime(email.datum)} schreef ${senderName}:\n\n${email.inhoud}`
-}
-
 // ═════════════════════════════════════════════════════════════════════
 // ─── Email Reader ────────────────────────────────────────────────────
 // ═════════════════════════════════════════════════════════════════════
@@ -150,8 +148,7 @@ export function EmailReader({
   // ── Open reply editor ──
   const openReply = (mode: ReplyMode) => {
     if (!email) return
-    const senderEmail = extractSenderEmail(email.van)
-    const senderName = extractSenderName(email.van)
+    const senderAddr = extractSenderEmail(email.van)
 
     setReplyMode(mode)
     setShowCcBcc(false)
@@ -159,19 +156,21 @@ export function EmailReader({
     setShowSchedule(false)
     setShowQuoted(false)
 
+    const quoted = `\n\nOp ${formatDateTime(email.datum)} schreef ${extractSenderName(email.van)}:\n\n${email.inhoud}`
+
     if (mode === 'reply') {
-      setReplyTo(senderEmail)
+      setReplyTo(senderAddr)
       setReplyCc('')
       setReplyBcc('')
       setReplySubject(`Re: ${email.onderwerp}`)
-      setQuotedContent(buildQuotedContent(email))
+      setQuotedContent(quoted)
       setReplyBody('')
     } else if (mode === 'reply-all') {
-      setReplyTo(senderEmail)
+      setReplyTo(senderAddr)
       setReplyCc(email.aan !== 'ik@signcompany.nl' ? email.aan : '')
       setReplyBcc('')
       setReplySubject(`Re: ${email.onderwerp}`)
-      setQuotedContent(buildQuotedContent(email))
+      setQuotedContent(quoted)
       setReplyBody('')
     } else if (mode === 'forward') {
       setReplyTo('')
@@ -179,7 +178,7 @@ export function EmailReader({
       setReplyBcc('')
       setReplySubject(`Fwd: ${email.onderwerp}`)
       setQuotedContent(
-        `\n\n\n---\nDoorgestuurd bericht\nVan: ${email.van}\nDatum: ${formatDateTime(email.datum)}\nOnderwerp: ${email.onderwerp}\nAan: ${email.aan}\n\n${email.inhoud}`
+        `\n\n---------- Doorgestuurd bericht ----------\nVan: ${email.van}\nDatum: ${formatDateTime(email.datum)}\nOnderwerp: ${email.onderwerp}\nAan: ${email.aan}\n\n${email.inhoud}`
       )
       setReplyBody('')
     }
@@ -204,14 +203,6 @@ export function EmailReader({
     if (!email || !replyTo.trim()) return
     setIsSending(true)
 
-    // Build full body with signature and quoted content
-    let fullBody = replyBody
-    if (showSignature) {
-      fullBody += `\n\n${DEFAULT_SIGNATURE}`
-    }
-    fullBody += quotedContent
-
-    // Use the parent handler
     if (replyMode === 'forward') {
       onForward?.(email)
     } else {
@@ -244,130 +235,106 @@ export function EmailReader({
   const senderInitials = getInitials(senderName)
   const avatarColor = getAvatarColor(senderName)
 
+  // ═════════════════════════════════════════════════════════════════
+  // ─── Render ────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════
+
   return (
     <div className="flex flex-col h-full">
-      {/* ── Toolbar ── */}
-      <div className="flex items-center gap-1 px-4 py-2 border-b bg-muted/20 flex-shrink-0">
-        {onBack && (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 h-8 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700"
-              onClick={onBack}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Terug
-            </Button>
-            <Separator orientation="vertical" className="h-5 mx-1" />
-          </>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 h-8 text-xs"
-          onClick={() => onArchive?.(email)}
-        >
-          <Archive className="w-3.5 h-3.5" />
-          Archief
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-          onClick={() => onDelete?.(email)}
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          Verwijderen
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 h-8 text-xs"
-          onClick={() => onToggleRead?.(email)}
-        >
-          {email.gelezen ? (
+      {/* ── Top toolbar ── */}
+      <div className="flex items-center justify-between px-5 py-2.5 border-b bg-muted/20 flex-shrink-0">
+        <div className="flex items-center gap-1">
+          {onBack && (
             <>
-              <MailOpen className="w-3.5 h-3.5" />
-              Ongelezen
-            </>
-          ) : (
-            <>
-              <Mail className="w-3.5 h-3.5" />
-              Gelezen
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 h-8 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                onClick={onBack}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Terug
+              </Button>
+              <Separator orientation="vertical" className="h-5 mx-1.5" />
             </>
           )}
-        </Button>
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => onArchive?.(email)}>
+            <Archive className="w-3.5 h-3.5" /> Archief
+          </Button>
+          <Button
+            variant="ghost" size="sm"
+            className="gap-1.5 h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+            onClick={() => onDelete?.(email)}
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Verwijderen
+          </Button>
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => onToggleRead?.(email)}>
+            {email.gelezen ? <><MailOpen className="w-3.5 h-3.5" /> Ongelezen</> : <><Mail className="w-3.5 h-3.5" /> Gelezen</>}
+          </Button>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => openReply('reply')}>
+            <Reply className="w-3.5 h-3.5" /> Beantwoorden
+          </Button>
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => openReply('forward')}>
+            <Forward className="w-3.5 h-3.5" /> Doorsturen
+          </Button>
+        </div>
       </div>
 
-      {/* ── Scrollable content area ── */}
+      {/* ── Email content + Reply editor ── */}
       <ScrollArea className="flex-1">
-        <div className="px-6 pt-5 pb-6 max-w-3xl">
-          {/* Subject + Star */}
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <h2 className="text-xl font-bold text-foreground leading-tight">
-              {email.onderwerp}
-            </h2>
-            <button
-              onClick={() => onToggleStar?.(email)}
-              className="mt-0.5 flex-shrink-0"
-              title={email.starred ? 'Ster verwijderen' : 'Ster toevoegen'}
-            >
-              {email.starred ? (
-                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-              ) : (
-                <Star className="w-5 h-5 text-gray-300 hover:text-yellow-400 transition-colors dark:text-gray-600" />
-              )}
+        {/* ── Email message ── */}
+        <div className="px-8 pt-6 pb-4">
+          {/* Subject */}
+          <div className="flex items-start justify-between gap-4 mb-5">
+            <h1 className="text-2xl font-bold text-foreground leading-snug">{email.onderwerp}</h1>
+            <button onClick={() => onToggleStar?.(email)} className="mt-1 flex-shrink-0">
+              {email.starred
+                ? <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                : <Star className="w-5 h-5 text-gray-300 hover:text-yellow-400 transition-colors dark:text-gray-600" />
+              }
             </button>
           </div>
 
-          {/* Scheduled indicator */}
+          {/* Scheduled badge */}
           {email.scheduled_at && email.map === 'gepland' && (
-            <div className="mb-4 flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+            <div className="mb-5 inline-flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
               <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <span className="text-sm text-purple-700 dark:text-purple-300">
-                Ingepland voor verzending op{' '}
-                <strong>{formatDateTime(email.scheduled_at)}</strong>
+                Ingepland: <strong>{formatDateTime(email.scheduled_at)}</strong>
               </span>
             </div>
           )}
 
-          {/* Sender info */}
-          <div className="flex items-center gap-3 mb-1">
+          {/* Sender row */}
+          <div className="flex items-center gap-3.5 mb-6">
             <div className={cn(
-              'w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0',
+              'w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0',
               avatarColor
             )}>
               {senderInitials}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">{senderName}</span>
-                <span className="text-xs text-muted-foreground">
-                  &lt;{senderEmail}&gt;
-                </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[15px] font-semibold text-foreground">{senderName}</span>
+                <span className="text-xs text-muted-foreground">&lt;{senderEmail}&gt;</span>
               </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                {formatDateTime(email.datum)}
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                <span>{formatDateTime(email.datum)}</span>
+                <span>Aan: {email.aan}</span>
               </div>
             </div>
           </div>
 
-          {/* To line */}
-          <div className="text-xs text-muted-foreground mb-6 ml-[52px]">
-            Aan: {email.aan}
-          </div>
-
-          {/* ── Email body ── */}
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-              {email.inhoud}
-            </div>
+          {/* Body */}
+          <div className="whitespace-pre-wrap text-[15px] leading-[1.7] text-foreground/90 mb-6">
+            {email.inhoud}
           </div>
 
           {/* Attachments */}
           {email.bijlagen > 0 && (
-            <div className="mt-6 pt-4 border-t">
+            <div className="pt-5 border-t mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Paperclip className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-muted-foreground">
@@ -378,14 +345,14 @@ export function EmailReader({
                 {Array.from({ length: email.bijlagen }).map((_, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2.5 px-3 py-2.5 bg-muted/60 rounded-lg hover:bg-muted cursor-pointer transition-colors border border-border/50"
+                    className="flex items-center gap-3 px-4 py-3 bg-muted/40 rounded-xl hover:bg-muted/70 cursor-pointer transition-colors border border-border/40"
                   >
-                    <div className="w-9 h-9 rounded bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">
+                    <div className="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">
                       PDF
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-foreground">Bijlage {i + 1}</p>
-                      <p className="text-[10px] text-muted-foreground">PDF document</p>
+                      <p className="text-sm font-medium text-foreground">Bijlage {i + 1}</p>
+                      <p className="text-xs text-muted-foreground">PDF document</p>
                     </div>
                   </div>
                 ))}
@@ -394,148 +361,192 @@ export function EmailReader({
           )}
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* ── Reply / Forward Editor ───────────────────────────────────── */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <div className="px-6 pb-6 max-w-3xl">
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* ── Reply / Forward Section ─────────────────────────────── */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        <div className="px-8 pb-8">
           {!replyMode ? (
-            /* ── Collapsed action buttons ── */
-            <div className="border rounded-lg overflow-hidden">
-              <div className="flex items-center divide-x">
-                <button
-                  onClick={() => openReply('reply')}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 hover:bg-muted/40 transition-colors text-sm text-muted-foreground"
-                >
-                  <Reply className="w-4 h-4" />
-                  <span>Beantwoorden</span>
-                </button>
-                <button
-                  onClick={() => openReply('reply-all')}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 hover:bg-muted/40 transition-colors text-sm text-muted-foreground"
-                >
-                  <ReplyAll className="w-4 h-4" />
-                  <span>Allen beantwoorden</span>
-                </button>
-                <button
-                  onClick={() => openReply('forward')}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 hover:bg-muted/40 transition-colors text-sm text-muted-foreground"
-                >
-                  <Forward className="w-4 h-4" />
-                  <span>Doorsturen</span>
-                </button>
-              </div>
+            /* ── Quick action bar ── */
+            <div className="flex items-center gap-3 pt-5 border-t">
+              <button
+                onClick={() => openReply('reply')}
+                className="flex items-center gap-2.5 px-5 py-3 rounded-xl border border-border/60 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all text-sm font-medium text-muted-foreground hover:text-blue-700 dark:hover:text-blue-400"
+              >
+                <Reply className="w-4 h-4" />
+                Beantwoorden
+              </button>
+              <button
+                onClick={() => openReply('reply-all')}
+                className="flex items-center gap-2.5 px-5 py-3 rounded-xl border border-border/60 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all text-sm font-medium text-muted-foreground hover:text-blue-700 dark:hover:text-blue-400"
+              >
+                <ReplyAll className="w-4 h-4" />
+                Allen beantwoorden
+              </button>
+              <button
+                onClick={() => openReply('forward')}
+                className="flex items-center gap-2.5 px-5 py-3 rounded-xl border border-border/60 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all text-sm font-medium text-muted-foreground hover:text-blue-700 dark:hover:text-blue-400"
+              >
+                <Forward className="w-4 h-4" />
+                Doorsturen
+              </button>
             </div>
           ) : (
-            /* ── Expanded email reply editor ── */
-            <div className="border rounded-lg overflow-hidden bg-background shadow-sm">
-              {/* Reply header with mode indicator */}
-              <div className="flex items-center justify-between px-4 py-2.5 bg-muted/30 border-b">
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  {replyMode === 'reply' && <Reply className="w-4 h-4 text-blue-600" />}
-                  {replyMode === 'reply-all' && <ReplyAll className="w-4 h-4 text-blue-600" />}
-                  {replyMode === 'forward' && <Forward className="w-4 h-4 text-blue-600" />}
-                  {replyMode === 'reply' && 'Beantwoorden'}
-                  {replyMode === 'reply-all' && 'Allen beantwoorden'}
-                  {replyMode === 'forward' && 'Doorsturen'}
+            /* ═══ Full-width reply editor ═══ */
+            <div className="border border-border/60 rounded-2xl overflow-hidden shadow-sm bg-background">
+              {/* ── Header bar ── */}
+              <div className="flex items-center justify-between px-6 py-3 bg-gradient-to-r from-blue-50 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/20 border-b border-border/40">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-blue-700 dark:text-blue-300">
+                    {replyMode === 'reply' && <><Reply className="w-4 h-4" /> Beantwoorden</>}
+                    {replyMode === 'reply-all' && <><ReplyAll className="w-4 h-4" /> Allen beantwoorden</>}
+                    {replyMode === 'forward' && <><Forward className="w-4 h-4" /> Doorsturen</>}
+                  </div>
+                  {replyMode !== 'forward' && (
+                    <button
+                      onClick={() => openReply(replyMode === 'reply' ? 'reply-all' : 'reply')}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-white/60 dark:hover:bg-white/10"
+                    >
+                      {replyMode === 'reply' ? 'Allen beantwoorden' : 'Beantwoorden'}
+                    </button>
+                  )}
                 </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={closeReply}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-white/60 dark:hover:bg-white/10" onClick={closeReply}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
 
-              {/* ── Email fields ── */}
-              <div className="px-4 space-y-0">
-                {/* Aan */}
-                <div className="flex items-center gap-2 py-2 border-b">
-                  <span className="text-xs font-medium text-muted-foreground w-16">Aan</span>
+              {/* ── Address fields ── */}
+              <div className="px-6">
+                <div className="flex items-center gap-3 py-2.5 border-b border-border/30">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20">Aan</span>
                   <Input
                     value={replyTo}
                     onChange={(e) => setReplyTo(e.target.value)}
-                    placeholder="email@voorbeeld.nl"
-                    className="border-0 shadow-none h-8 focus-visible:ring-0 px-0 text-sm"
+                    placeholder="Ontvanger email..."
+                    className="border-0 shadow-none h-9 focus-visible:ring-0 px-0 text-sm font-medium"
                   />
                   {!showCcBcc && (
                     <button
                       onClick={() => setShowCcBcc(true)}
-                      className="text-xs text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap"
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:hover:text-blue-300 whitespace-nowrap px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                     >
-                      CC/BCC
+                      CC / BCC
                     </button>
                   )}
                 </div>
 
-                {/* CC */}
                 {showCcBcc && (
                   <>
-                    <div className="flex items-center gap-2 py-2 border-b">
-                      <span className="text-xs font-medium text-muted-foreground w-16">CC</span>
+                    <div className="flex items-center gap-3 py-2.5 border-b border-border/30">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20">CC</span>
                       <Input
                         value={replyCc}
                         onChange={(e) => setReplyCc(e.target.value)}
                         placeholder="CC ontvangers..."
-                        className="border-0 shadow-none h-8 focus-visible:ring-0 px-0 text-sm"
+                        className="border-0 shadow-none h-9 focus-visible:ring-0 px-0 text-sm"
                       />
                     </div>
-                    <div className="flex items-center gap-2 py-2 border-b">
-                      <span className="text-xs font-medium text-muted-foreground w-16">BCC</span>
+                    <div className="flex items-center gap-3 py-2.5 border-b border-border/30">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20">BCC</span>
                       <Input
                         value={replyBcc}
                         onChange={(e) => setReplyBcc(e.target.value)}
                         placeholder="BCC ontvangers..."
-                        className="border-0 shadow-none h-8 focus-visible:ring-0 px-0 text-sm"
+                        className="border-0 shadow-none h-9 focus-visible:ring-0 px-0 text-sm"
                       />
                     </div>
                   </>
                 )}
 
-                {/* Onderwerp */}
-                <div className="flex items-center gap-2 py-2 border-b">
-                  <span className="text-xs font-medium text-muted-foreground w-16">Onderwerp</span>
+                <div className="flex items-center gap-3 py-2.5 border-b border-border/30">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20">Onderwerp</span>
                   <Input
                     value={replySubject}
                     onChange={(e) => setReplySubject(e.target.value)}
-                    placeholder="Onderwerp..."
-                    className="border-0 shadow-none h-8 focus-visible:ring-0 px-0 text-sm"
+                    className="border-0 shadow-none h-9 focus-visible:ring-0 px-0 text-sm font-medium"
                   />
                 </div>
               </div>
 
-              {/* ── Body editor ── */}
-              <div className="px-4 pt-3">
+              {/* ── Formatting toolbar ── */}
+              <div className="px-6 py-2 border-b border-border/30 flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Vet">
+                  <Bold className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Cursief">
+                  <Italic className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Onderstrepen">
+                  <Underline className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <Separator orientation="vertical" className="h-5 mx-1" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Lijst">
+                  <List className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <Separator orientation="vertical" className="h-5 mx-1" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Bijlage">
+                  <Paperclip className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Afbeelding">
+                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Link">
+                  <Link2 className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Emoji">
+                  <Smile className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <div className="flex-1" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'h-8 gap-1.5 text-xs rounded-lg',
+                    showSignature ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-muted-foreground'
+                  )}
+                  onClick={() => setShowSignature(!showSignature)}
+                >
+                  <PenTool className="w-3.5 h-3.5" />
+                  Handtekening
+                </Button>
+              </div>
+
+              {/* ── Message body ── */}
+              <div className="px-6 pt-4">
                 <Textarea
                   ref={replyBodyRef}
                   value={replyBody}
                   onChange={(e) => setReplyBody(e.target.value)}
-                  placeholder="Schrijf je antwoord..."
-                  className="min-h-[140px] resize-y border-0 shadow-none focus-visible:ring-0 px-0 text-sm leading-relaxed"
+                  placeholder="Schrijf je bericht..."
+                  className="min-h-[180px] resize-none border-0 shadow-none focus-visible:ring-0 px-0 text-[15px] leading-[1.7]"
                 />
               </div>
 
-              {/* ── Signature preview ── */}
+              {/* ── Signature ── */}
               {showSignature && (
-                <div className="px-4 pb-2">
-                  <div className="border-t border-dashed pt-3">
-                    <div className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                <div className="px-6 pb-3">
+                  <div className="border-l-2 border-blue-300 dark:border-blue-700 pl-4 py-1">
+                    <div className="text-sm text-muted-foreground/80 whitespace-pre-wrap leading-relaxed">
                       {DEFAULT_SIGNATURE}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ── Quoted content toggle ── */}
+              {/* ── Quoted content ── */}
               {quotedContent && (
-                <div className="px-4 pb-3">
+                <div className="px-6 pb-4">
                   <button
                     onClick={() => setShowQuoted(!showQuoted)}
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-lg hover:bg-muted/60"
                   >
                     <MoreHorizontal className="w-4 h-4" />
-                    {showQuoted ? 'Geciteerde tekst verbergen' : 'Geciteerde tekst tonen'}
-                    {showQuoted ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {showQuoted ? 'Verberg origineel' : 'Toon origineel bericht'}
+                    {showQuoted ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
                   {showQuoted && (
-                    <div className="mt-2 pl-3 border-l-2 border-muted-foreground/20">
-                      <div className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    <div className="mt-3 pl-4 border-l-2 border-muted-foreground/15 py-1">
+                      <div className="text-sm text-muted-foreground/70 whitespace-pre-wrap leading-relaxed">
                         {quotedContent}
                       </div>
                     </div>
@@ -543,78 +554,26 @@ export function EmailReader({
                 </div>
               )}
 
-              {/* ── Formatting toolbar ── */}
-              <div className="px-4 py-2 border-t border-b flex items-center gap-0.5">
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="Opmaak">
-                  <Type className="w-3.5 h-3.5 text-muted-foreground" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="Bijlage toevoegen">
-                  <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="Afbeelding invoegen">
-                  <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="Link invoegen">
-                  <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="Emoji">
-                  <Smile className="w-3.5 h-3.5 text-muted-foreground" />
-                </Button>
-                <Separator orientation="vertical" className="h-4 mx-1" />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    'h-7 gap-1.5 text-[11px]',
-                    showSignature ? 'text-blue-600' : 'text-muted-foreground'
-                  )}
-                  onClick={() => setShowSignature(!showSignature)}
-                  title="Handtekening aan/uit"
-                >
-                  <PenTool className="w-3.5 h-3.5" />
-                  Handtekening
-                </Button>
-              </div>
-
-              {/* ── Send actions ── */}
-              <div className="flex items-center justify-between px-4 py-3 bg-muted/10">
-                <div className="flex items-center gap-1.5">
-                  {/* Switch reply mode */}
-                  {replyMode !== 'forward' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs text-muted-foreground"
-                      onClick={() => openReply(replyMode === 'reply' ? 'reply-all' : 'reply')}
-                    >
-                      {replyMode === 'reply' ? (
-                        <><ReplyAll className="w-3.5 h-3.5" /> Allen beantwoorden</>
-                      ) : (
-                        <><Reply className="w-3.5 h-3.5" /> Beantwoorden</>
-                      )}
-                    </Button>
-                  )}
+              {/* ── Send bar ── */}
+              <div className="flex items-center justify-between px-6 py-4 bg-muted/20 border-t border-border/30">
+                <div className="flex items-center gap-2">
                   <Button
-                    variant="ghost"
-                    size="sm"
+                    variant="ghost" size="sm"
                     className="h-8 gap-1.5 text-xs text-muted-foreground"
-                    onClick={() => {
-                      closeReply()
-                      onDelete?.(email)
-                    }}
+                    onClick={() => { closeReply(); onDelete?.(email) }}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Verwijderen
                   </Button>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {/* Schedule indicator */}
+                <div className="flex items-center gap-3">
+                  {/* Scheduled badge */}
                   {scheduledAt && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-md text-xs text-purple-700 dark:text-purple-300">
-                      <Clock className="w-3 h-3" />
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 rounded-lg text-xs font-medium text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                      <Clock className="w-3.5 h-3.5" />
                       Ingepland
-                      <button onClick={() => setScheduledAt('')} className="ml-1 hover:text-purple-900">
+                      <button onClick={() => setScheduledAt('')} className="ml-0.5 hover:text-purple-900 dark:hover:text-purple-100">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -625,22 +584,26 @@ export function EmailReader({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 gap-1.5 text-xs"
+                      className="h-9 gap-2 text-xs rounded-lg border-border/60"
                       onClick={() => setShowSchedule(!showSchedule)}
                     >
-                      <Clock className="w-3.5 h-3.5" />
+                      <Clock className="w-4 h-4" />
                       Inplannen
+                      <ChevronDown className="w-3 h-3 opacity-50" />
                     </Button>
                     {showSchedule && (
-                      <div className="absolute right-0 bottom-full mb-1 w-52 rounded-lg border bg-popover shadow-lg z-50 py-1">
+                      <div className="absolute right-0 bottom-full mb-2 w-56 rounded-xl border bg-popover shadow-xl z-50 py-1.5 overflow-hidden">
+                        <div className="px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                          Verzending plannen
+                        </div>
                         {scheduleOptions.map((opt) => (
                           <button
                             key={opt.value}
                             onClick={() => { setScheduledAt(opt.value); setShowSchedule(false) }}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2"
+                            className="w-full text-left px-3 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2.5 transition-colors"
                           >
-                            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                            {opt.label}
+                            <Clock className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium">{opt.label}</span>
                           </button>
                         ))}
                       </div>
@@ -652,10 +615,10 @@ export function EmailReader({
                     onClick={handleSendReply}
                     disabled={!replyTo.trim() || isSending}
                     size="sm"
-                    className="gap-1.5 h-8"
+                    className="h-9 gap-2 px-5 rounded-lg text-sm font-semibold shadow-sm"
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    {scheduledAt ? 'Inplannen' : 'Verstuur'}
+                    <Send className="w-4 h-4" />
+                    {scheduledAt ? 'Inplannen' : 'Versturen'}
                   </Button>
                 </div>
               </div>
