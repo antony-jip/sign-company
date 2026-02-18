@@ -1,10 +1,8 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import {
   Search,
   Pencil,
@@ -13,23 +11,17 @@ import {
   FileEdit,
   Trash2,
   Star,
-  Tag,
   Paperclip,
   Loader2,
   Clock,
-  ArrowUpDown,
   SlidersHorizontal,
-  Archive,
-  GripVertical,
 } from 'lucide-react'
-import { getEmails, getKlanten, createKlant, updateEmail, deleteEmail, createEmail } from '@/services/supabaseService'
-import { formatDateTime, cn, truncate } from '@/lib/utils'
+import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail } from '@/services/supabaseService'
+import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
-import { ContactSidebar } from './ContactSidebar'
-import type { ConversationParticipant } from './ContactSidebar'
 import { EmailCompose } from './EmailCompose'
-import { demoEmails, demoContacts, getContactByEmail, extractEmailAddress } from '@/data/email-demo-data'
+import { demoEmails, demoContacts, extractEmailAddress } from '@/data/email-demo-data'
 import type { EmailContact } from '@/data/email-demo-data'
 import type { Email, Klant } from '@/types'
 
@@ -38,33 +30,43 @@ type SortField = 'datum' | 'van' | 'onderwerp'
 type SortDir = 'asc' | 'desc'
 type FilterType = 'alle' | 'ongelezen' | 'met-ster' | 'bijlagen'
 
-interface FolderConfig {
+interface FolderTab {
   id: EmailFolder
   label: string
   icon: React.ElementType
 }
 
-const folders: FolderConfig[] = [
+const folderTabs: FolderTab[] = [
   { id: 'inbox', label: 'Inbox', icon: Inbox },
   { id: 'verzonden', label: 'Verzonden', icon: Send },
-  { id: 'gepland', label: 'Gepland', icon: Clock },
   { id: 'concepten', label: 'Concepten', icon: FileEdit },
+  { id: 'gepland', label: 'Gepland', icon: Clock },
   { id: 'prullenbak', label: 'Prullenbak', icon: Trash2 },
 ]
 
-const labelConfig: { name: string; color: string }[] = [
-  { name: 'offerte', color: 'bg-blue-400' },
-  { name: 'klant', color: 'bg-emerald-400' },
-  { name: 'project', color: 'bg-violet-400' },
-  { name: 'leverancier', color: 'bg-amber-400' },
-]
+const labelColors: Record<string, string> = {
+  offerte: 'bg-blue-400',
+  klant: 'bg-emerald-400',
+  project: 'bg-violet-400',
+  leverancier: 'bg-amber-400',
+}
 
 function extractSenderName(from: string): string {
   const match = from.match(/^([^<]+)/)
   return match ? match[1].trim() : from
 }
 
-function formatShortDate(dateStr: string, isScheduled?: boolean): string {
+function getAvatarColor(name: string): string {
+  const colors = [
+    'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500',
+    'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-pink-500',
+    'bg-teal-500', 'bg-orange-500',
+  ]
+  const index = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length
+  return colors[index]
+}
+
+function formatShortDate(dateStr: string): string {
   const date = new Date(dateStr)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
@@ -73,12 +75,12 @@ function formatShortDate(dateStr: string, isScheduled?: boolean): string {
   if (diffMs < 0) {
     const futureDays = Math.ceil(-diffMs / (1000 * 60 * 60 * 24))
     if (futureDays === 0) {
-      return `Vandaag ${date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`
+      return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
     }
     if (futureDays === 1) {
       return `Morgen ${date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`
     }
-    return date.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    return date.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' })
   }
 
   if (diffDays === 0) {
@@ -91,90 +93,21 @@ function formatShortDate(dateStr: string, isScheduled?: boolean): string {
   return date.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' })
 }
 
-function getLabelColor(label: string): string {
-  switch (label) {
-    case 'offerte': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-    case 'klant': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
-    case 'project': return 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300'
-    case 'leverancier': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
-    default: return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-  }
-}
-
 export function EmailLayout() {
   const [selectedFolder, setSelectedFolder] = useState<EmailFolder>('inbox')
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [composeOpen, setComposeOpen] = useState(false)
   const [composeDefaults, setComposeDefaults] = useState<{
-    to?: string
-    subject?: string
-    body?: string
+    to?: string; subject?: string; body?: string
   }>({})
   const [emails, setEmails] = useState<Email[]>([])
   const [contacts, setContacts] = useState<EmailContact[]>(demoContacts)
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [sortField, setSortField] = useState<SortField>('datum')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [sortField] = useState<SortField>('datum')
+  const [sortDir] = useState<SortDir>('desc')
   const [filter, setFilter] = useState<FilterType>('alle')
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null)
-
-  // Resizable panels
-  const [listWidth, setListWidth] = useState(384) // default ~w-96
-  const [contactWidth, setContactWidth] = useState(290)
-  const isDraggingList = useRef(false)
-  const isDraggingContact = useRef(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  const handleMouseDown = useCallback((panel: 'list' | 'contact') => {
-    if (panel === 'list') {
-      isDraggingList.current = true
-    } else {
-      isDraggingContact.current = true
-    }
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-  }, [])
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return
-
-      if (isDraggingList.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const folderWidth = 208 // w-52
-        const newWidth = e.clientX - rect.left - folderWidth
-        setListWidth(Math.max(250, Math.min(newWidth, 600)))
-      }
-
-      if (isDraggingContact.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const newWidth = rect.right - e.clientX
-        setContactWidth(Math.max(200, Math.min(newWidth, 450)))
-      }
-    }
-
-    const handleMouseUp = () => {
-      if (isDraggingList.current || isDraggingContact.current) {
-        isDraggingList.current = false
-        isDraggingContact.current = false
-        document.body.style.cursor = ''
-        document.body.style.userSelect = ''
-      }
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [])
-
-  const handleBack = useCallback(() => {
-    setSelectedEmail(null)
-  }, [])
 
   // Load emails - fallback to demo data if empty
   useEffect(() => {
@@ -183,15 +116,8 @@ export function EmailLayout() {
       getKlanten().catch(() => []),
     ])
       .then(([emailData, klantData]) => {
-        // Use demo data if no real emails
-        if (emailData.length === 0) {
-          setEmails(demoEmails)
-        } else {
-          setEmails(emailData)
-        }
+        setEmails(emailData.length === 0 ? demoEmails : emailData)
         setKlanten(klantData)
-
-        // Mark contacts as customer if they exist in klanten
         if (klantData.length > 0) {
           setContacts((prev) =>
             prev.map((c) => {
@@ -204,14 +130,9 @@ export function EmailLayout() {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const unreadCount = useMemo(
-    () => emails.filter((e) => e.map === 'inbox' && !e.gelezen).length,
-    [emails]
-  )
-
   const folderCounts = useMemo(() => {
     const counts: Record<string, number> = {}
-    folders.forEach((f) => {
+    folderTabs.forEach((f) => {
       if (f.id === 'inbox') {
         counts[f.id] = emails.filter((e) => e.map === 'inbox' && !e.gelezen).length
       } else if (f.id === 'concepten') {
@@ -228,7 +149,6 @@ export function EmailLayout() {
   const filteredEmails = useMemo(() => {
     let filtered = emails.filter((e) => e.map === selectedFolder)
 
-    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       filtered = filtered.filter(
@@ -240,7 +160,6 @@ export function EmailLayout() {
       )
     }
 
-    // Filter
     switch (filter) {
       case 'ongelezen':
         filtered = filtered.filter((e) => !e.gelezen)
@@ -253,12 +172,6 @@ export function EmailLayout() {
         break
     }
 
-    // Label filter
-    if (selectedLabel) {
-      filtered = filtered.filter((e) => e.labels.includes(selectedLabel))
-    }
-
-    // Sort
     return [...filtered].sort((a, b) => {
       let cmp = 0
       switch (sortField) {
@@ -274,63 +187,10 @@ export function EmailLayout() {
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [emails, selectedFolder, searchQuery, filter, selectedLabel, sortField, sortDir])
-
-  // Contact for selected email
-  const selectedContact = useMemo(() => {
-    if (!selectedEmail) return null
-    const emailAddr = selectedEmail.map === 'verzonden' || selectedEmail.map === 'concepten'
-      ? selectedEmail.aan
-      : selectedEmail.van
-    return getContactByEmail(emailAddr) || null
-  }, [selectedEmail])
-
-  const selectedSenderName = useMemo(() => {
-    if (!selectedEmail) return ''
-    const from = selectedEmail.map === 'verzonden' || selectedEmail.map === 'concepten'
-      ? selectedEmail.aan
-      : selectedEmail.van
-    return extractSenderName(from)
-  }, [selectedEmail])
-
-  const selectedSenderEmail = useMemo(() => {
-    if (!selectedEmail) return ''
-    const from = selectedEmail.map === 'verzonden' || selectedEmail.map === 'concepten'
-      ? selectedEmail.aan
-      : selectedEmail.van
-    return extractEmailAddress(from)
-  }, [selectedEmail])
-
-  const selectedSenderCompany = useMemo(() => {
-    return selectedContact?.company
-  }, [selectedContact])
-
-  const conversationParticipants = useMemo((): ConversationParticipant[] => {
-    if (!selectedEmail) return []
-    const participants: ConversationParticipant[] = []
-    const seen = new Set<string>()
-
-    // From (sender)
-    const fromName = extractSenderName(selectedEmail.van)
-    const fromEmail = extractEmailAddress(selectedEmail.van)
-    if (!seen.has(fromEmail)) {
-      seen.add(fromEmail)
-      participants.push({ name: fromName, email: fromEmail, role: 'van' })
-    }
-
-    // To (recipient)
-    const toName = extractSenderName(selectedEmail.aan)
-    const toEmail = extractEmailAddress(selectedEmail.aan)
-    if (!seen.has(toEmail)) {
-      seen.add(toEmail)
-      participants.push({ name: toName, email: toEmail, role: 'aan' })
-    }
-
-    return participants
-  }, [selectedEmail])
+  }, [emails, selectedFolder, searchQuery, filter, sortField, sortDir])
 
   // Handlers
-  const handleSelectEmail = (email: Email) => {
+  const handleSelectEmail = useCallback((email: Email) => {
     setSelectedEmail(email)
     if (!email.gelezen) {
       setEmails((prev) =>
@@ -340,9 +200,9 @@ export function EmailLayout() {
         updateEmail(email.id, { gelezen: true }).catch(() => {})
       }
     }
-  }
+  }, [])
 
-  const handleToggleStar = (email: Email) => {
+  const handleToggleStar = useCallback((email: Email) => {
     const newStarred = !email.starred
     setEmails((prev) =>
       prev.map((e) => (e.id === email.id ? { ...e, starred: newStarred } : e))
@@ -353,9 +213,9 @@ export function EmailLayout() {
     if (!email.id.startsWith('demo-')) {
       updateEmail(email.id, { starred: newStarred }).catch(() => {})
     }
-  }
+  }, [])
 
-  const handleToggleRead = (email: Email) => {
+  const handleToggleRead = useCallback((email: Email) => {
     const newGelezen = !email.gelezen
     setEmails((prev) =>
       prev.map((e) => (e.id === email.id ? { ...e, gelezen: newGelezen } : e))
@@ -366,15 +226,15 @@ export function EmailLayout() {
     if (!email.id.startsWith('demo-')) {
       updateEmail(email.id, { gelezen: newGelezen }).catch(() => {})
     }
-  }
+  }, [])
 
-  const handleArchive = (email: Email) => {
+  const handleArchive = useCallback((email: Email) => {
     setEmails((prev) => prev.filter((e) => e.id !== email.id))
-    if (selectedEmail?.id === email.id) setSelectedEmail(null)
+    setSelectedEmail((prev) => (prev?.id === email.id ? null : prev))
     toast.success('Email gearchiveerd')
-  }
+  }, [])
 
-  const handleDelete = (email: Email) => {
+  const handleDelete = useCallback((email: Email) => {
     if (email.map === 'prullenbak') {
       setEmails((prev) => prev.filter((e) => e.id !== email.id))
       if (!email.id.startsWith('demo-')) {
@@ -390,11 +250,11 @@ export function EmailLayout() {
         updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
       }
     }
-    if (selectedEmail?.id === email.id) setSelectedEmail(null)
+    setSelectedEmail((prev) => (prev?.id === email.id ? null : prev))
     toast.success('Email verwijderd')
-  }
+  }, [])
 
-  const handleReply = (email: Email) => {
+  const handleReply = useCallback((email: Email) => {
     const senderEmail = email.van.match(/<([^>]+)>/)?.[1] || email.van
     setComposeDefaults({
       to: senderEmail,
@@ -402,23 +262,23 @@ export function EmailLayout() {
       body: `\n\n---\nOp ${formatDateTime(email.datum)} schreef ${extractSenderName(email.van)}:\n\n${email.inhoud}`,
     })
     setComposeOpen(true)
-  }
+  }, [])
 
-  const handleForward = (email: Email) => {
+  const handleForward = useCallback((email: Email) => {
     setComposeDefaults({
       to: '',
       subject: `Fwd: ${email.onderwerp}`,
       body: `\n\n---\nDoorgestuurd bericht\nVan: ${email.van}\nDatum: ${formatDateTime(email.datum)}\nOnderwerp: ${email.onderwerp}\n\n${email.inhoud}`,
     })
     setComposeOpen(true)
-  }
+  }, [])
 
-  const handleCompose = () => {
+  const handleCompose = useCallback(() => {
     setComposeDefaults({})
     setComposeOpen(true)
-  }
+  }, [])
 
-  const handleSendEmail = (data: { to: string; subject: string; body: string; scheduledAt?: string }) => {
+  const handleSendEmail = useCallback((data: { to: string; subject: string; body: string; scheduledAt?: string }) => {
     const isScheduled = !!data.scheduledAt
     const newEmail: Omit<Email, 'id' | 'created_at'> = {
       user_id: '',
@@ -447,65 +307,17 @@ export function EmailLayout() {
       .catch(() => {
         toast.error('Email kon niet worden verzonden')
       })
-  }
+  }, [])
 
-  const handleSort = (field: SortField) => {
-    if (field === sortField) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortField(field)
-      setSortDir('desc')
-    }
-  }
-
-  const handleAddCustomer = (email: string) => {
-    const contact = contacts.find((c) => c.email === email)
-    if (!contact) return
-
-    // Update local contact state
-    setContacts((prev) =>
-      prev.map((c) => (c.email === email ? { ...c, isCustomer: true } : c))
-    )
-
-    // Try to create in Supabase
-    createKlant({
-      user_id: '',
-      bedrijfsnaam: contact.company || contact.name,
-      contactpersoon: contact.name,
-      email: contact.email,
-      telefoon: contact.phone || '',
-      adres: '',
-      postcode: '',
-      stad: '',
-      land: 'Nederland',
-      website: '',
-      kvk_nummer: '',
-      btw_nummer: '',
-      status: 'actief',
-      tags: contact.tags,
-      notities: contact.notes || '',
-    }).catch(() => {})
-
-    toast.success('Contact toegevoegd aan klantenbestand!')
-  }
-
-  const handleSubscribeNewsletter = (email: string) => {
-    setContacts((prev) => {
-      const existing = prev.find((c) => c.email === email)
-      if (existing) {
-        return prev.map((c) => (c.email === email ? { ...c, subscribedNewsletter: true } : c))
-      }
-      return prev
-    })
-    toast.success('Contact geabonneerd op nieuwsbrief!')
-  }
-
-  const handleFolderChange = (folder: EmailFolder) => {
+  const handleFolderChange = useCallback((folder: EmailFolder) => {
     setSelectedFolder(folder)
     setSelectedEmail(null)
     setFilter('alle')
-    setSelectedLabel(null)
-  }
+  }, [])
+
+  const handleBack = useCallback(() => {
+    setSelectedEmail(null)
+  }, [])
 
   return (
     <div className="h-full flex flex-col">
@@ -522,282 +334,219 @@ export function EmailLayout() {
           </div>
         </Card>
       ) : (
-      <Card className="flex-1 flex overflow-hidden" ref={containerRef}>
-        {/* Left panel - Folders */}
-        <div className="w-52 border-r flex-shrink-0 flex flex-col">
-          <div className="p-3">
-            <Button
-              onClick={handleCompose}
-              className="w-full gap-2"
-              size="sm"
-            >
-              <Pencil className="w-4 h-4" />
-              Opstellen
-            </Button>
-          </div>
+        <Card className="flex-1 flex overflow-hidden">
+          {/* ── Panel 1: Email List ── */}
+          <div className="w-[400px] flex-shrink-0 flex flex-col border-r">
+            {/* Search + Compose */}
+            <div className="p-3 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Zoek emails..."
+                  className="pl-9 h-9"
+                />
+              </div>
+              <Button onClick={handleCompose} size="sm" className="gap-1.5 h-9 flex-shrink-0">
+                <Pencil className="w-3.5 h-3.5" />
+                Opstellen
+              </Button>
+            </div>
 
-          <Separator />
-
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-0.5">
-              {folders.map((folder) => {
-                const isActive = selectedFolder === folder.id
-                const Icon = folder.icon
-                const count = folderCounts[folder.id]
-
+            {/* Folder tabs - horizontal */}
+            <div className="px-3 pb-2 flex items-center gap-1 overflow-x-auto">
+              {folderTabs.map((tab) => {
+                const isActive = selectedFolder === tab.id
+                const count = folderCounts[tab.id]
                 return (
                   <button
-                    key={folder.id}
-                    onClick={() => handleFolderChange(folder.id)}
+                    key={tab.id}
+                    onClick={() => handleFolderChange(tab.id)}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
                       isActive
-                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                        : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     )}
                   >
-                    <Icon className={cn('w-4 h-4', isActive && 'text-blue-600 dark:text-blue-400')} />
-                    <span className="flex-1 text-left">{folder.label}</span>
+                    <tab.icon className="w-3.5 h-3.5" />
+                    {tab.label}
                     {count > 0 && (
-                      <Badge className="bg-blue-600 text-white text-[10px] px-1.5 min-w-[20px] h-5 flex items-center justify-center">
+                      <span className={cn(
+                        'text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center',
+                        isActive
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-muted-foreground/20 text-muted-foreground'
+                      )}>
                         {count}
-                      </Badge>
+                      </span>
                     )}
                   </button>
                 )
               })}
             </div>
 
-            <Separator className="my-2" />
-
-            <div className="p-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
-                Labels
-              </p>
-              {labelConfig.map((label) => (
-                <button
-                  key={label.name}
-                  onClick={() => {
-                    setSelectedLabel(selectedLabel === label.name ? null : label.name)
-                    setSelectedFolder('inbox')
-                  }}
-                  className={cn(
-                    'w-full flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors',
-                    selectedLabel === label.name
-                      ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-medium'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  )}
-                >
-                  <span className={`w-2.5 h-2.5 rounded-full ${label.color}`} />
-                  <span className="capitalize">{label.name}</span>
-                </button>
-              ))}
+            {/* Filter chips */}
+            <div className="px-3 pb-2 flex items-center gap-1 border-b">
+              {(['alle', 'ongelezen', 'met-ster', 'bijlagen'] as FilterType[]).map((f) => {
+                const labels: Record<FilterType, string> = {
+                  alle: 'Alle',
+                  ongelezen: 'Ongelezen',
+                  'met-ster': 'Met ster',
+                  bijlagen: 'Bijlagen',
+                }
+                return (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors',
+                      filter === f
+                        ? 'bg-foreground text-background'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    )}
+                  >
+                    {labels[f]}
+                  </button>
+                )
+              })}
             </div>
-          </ScrollArea>
-        </div>
 
-        {/* Middle panel - Email list */}
-        <div className="flex-shrink-0 flex flex-col" style={{ width: listWidth }}>
-          {/* Search */}
-          <div className="p-3 border-b">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Zoek emails..."
-                className="pl-9 h-9"
-              />
-            </div>
-          </div>
-
-          {/* Filter & Sort toolbar */}
-          <div className="px-3 py-2 border-b flex items-center gap-1 overflow-x-auto">
-            {(['alle', 'ongelezen', 'met-ster', 'bijlagen'] as FilterType[]).map((f) => {
-              const labels: Record<FilterType, string> = {
-                alle: 'Alle',
-                ongelezen: 'Ongelezen',
-                'met-ster': 'Met ster',
-                bijlagen: 'Bijlagen',
-              }
-              return (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={cn(
-                    'px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
-                    filter === f
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            {/* Email list */}
+            <ScrollArea className="flex-1">
+              {filteredEmails.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                  {selectedFolder === 'gepland' ? (
+                    <>
+                      <Clock className="w-10 h-10 mb-3 opacity-20" />
+                      <p className="text-sm font-medium">Geen ingeplande emails</p>
+                      <p className="text-xs mt-1 opacity-70">Plan een email in via Opstellen.</p>
+                    </>
+                  ) : filter !== 'alle' ? (
+                    <>
+                      <SlidersHorizontal className="w-10 h-10 mb-3 opacity-20" />
+                      <p className="text-sm font-medium">Geen resultaten</p>
+                      <p className="text-xs mt-1 opacity-70">Probeer een ander filter.</p>
+                    </>
+                  ) : (
+                    <>
+                      <Inbox className="w-10 h-10 mb-3 opacity-20" />
+                      <p className="text-sm font-medium">Geen emails</p>
+                      <p className="text-xs mt-1 opacity-70">Deze map is leeg.</p>
+                    </>
                   )}
-                >
-                  {labels[f]}
-                </button>
-              )
-            })}
-          </div>
+                </div>
+              ) : (
+                <div>
+                  {filteredEmails.map((email) => {
+                    const isSelected = selectedEmail?.id === email.id
+                    const isUnread = !email.gelezen
+                    const displayName = email.map === 'verzonden' || email.map === 'concepten'
+                      ? extractSenderName(email.aan)
+                      : extractSenderName(email.van)
+                    const initials = getInitials(displayName)
+                    const avatarColor = getAvatarColor(displayName)
+                    const visibleLabels = email.labels.filter(
+                      (l) => l !== 'verzonden' && l !== 'prullenbak' && l !== 'gepland'
+                    )
 
-          {/* Sort options */}
-          <div className="px-3 py-1.5 border-b flex items-center gap-2 text-xs text-muted-foreground">
-            <ArrowUpDown className="w-3 h-3" />
-            <span>Sorteer:</span>
-            {([
-              { field: 'datum' as SortField, label: 'Datum' },
-              { field: 'van' as SortField, label: 'Afzender' },
-              { field: 'onderwerp' as SortField, label: 'Onderwerp' },
-            ]).map(({ field, label }) => (
-              <button
-                key={field}
-                onClick={() => handleSort(field)}
-                className={cn(
-                  'px-1.5 py-0.5 rounded transition-colors',
-                  sortField === field
-                    ? 'text-blue-700 dark:text-blue-300 font-medium'
-                    : 'hover:text-foreground'
-                )}
-              >
-                {label}
-                {sortField === field && (
-                  <span className="ml-0.5">{sortDir === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Email list */}
-          <ScrollArea className="flex-1">
-            {filteredEmails.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                {selectedFolder === 'gepland' ? (
-                  <>
-                    <Clock className="w-10 h-10 mb-3 opacity-30" />
-                    <p className="text-sm font-medium">Geen ingeplande emails</p>
-                    <p className="text-xs mt-1">Plan een email in via de opstelknop.</p>
-                  </>
-                ) : filter !== 'alle' ? (
-                  <>
-                    <SlidersHorizontal className="w-10 h-10 mb-3 opacity-30" />
-                    <p className="text-sm font-medium">Geen resultaten</p>
-                    <p className="text-xs mt-1">Probeer een ander filter.</p>
-                  </>
-                ) : (
-                  <>
-                    <Inbox className="w-10 h-10 mb-3 opacity-30" />
-                    <p className="text-sm font-medium">Geen emails</p>
-                    <p className="text-xs mt-1">Deze map is leeg.</p>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="divide-y">
-                {filteredEmails.map((email) => {
-                  const isSelected = selectedEmail?.id === email.id
-                  const isUnread = !email.gelezen
-                  const displayName = email.map === 'verzonden' || email.map === 'concepten'
-                    ? extractSenderName(email.aan)
-                    : extractSenderName(email.van)
-
-                  return (
-                    <div
-                      key={email.id}
-                      onClick={() => handleSelectEmail(email)}
-                      className={cn(
-                        'flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors group',
-                        isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/20'
-                          : 'hover:bg-muted/50',
-                        isUnread && 'border-l-2 border-l-blue-500'
-                      )}
-                    >
-                      {/* Unread dot + Star */}
-                      <div className="flex flex-col items-center gap-1.5 pt-0.5">
-                        {isUnread && (
-                          <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                    return (
+                      <div
+                        key={email.id}
+                        onClick={() => handleSelectEmail(email)}
+                        className={cn(
+                          'relative flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors group border-b border-border/50',
+                          isSelected
+                            ? 'bg-blue-50/80 dark:bg-blue-900/20'
+                            : 'hover:bg-muted/40',
+                          isUnread && 'border-l-[3px] border-l-blue-500'
                         )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleToggleStar(email)
-                          }}
-                          className="flex-shrink-0"
-                        >
-                          {email.starred ? (
-                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                          ) : (
-                            <Star className="w-4 h-4 text-gray-300 group-hover:text-gray-400 dark:text-gray-600" />
-                          )}
-                        </button>
-                      </div>
+                      >
+                        {/* Avatar */}
+                        <div className={cn(
+                          'w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 mt-0.5',
+                          avatarColor
+                        )}>
+                          {initials}
+                        </div>
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className={cn(
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          {/* Row 1: Name + Time */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={cn(
                               'text-sm truncate',
-                              isUnread ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'
-                            )}
-                          >
-                            {displayName}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground flex-shrink-0 flex items-center gap-1">
-                            {email.scheduled_at && email.map === 'gepland' && (
-                              <Clock className="w-3 h-3 text-purple-500" />
-                            )}
-                            {formatShortDate(email.scheduled_at || email.datum, !!email.scheduled_at)}
-                          </span>
-                        </div>
-                        <p
-                          className={cn(
-                            'text-sm truncate mt-0.5',
-                            isUnread ? 'font-semibold' : 'text-foreground'
-                          )}
-                        >
-                          {email.onderwerp}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {truncate(email.inhoud.replace(/\n/g, ' '), 80)}
-                        </p>
+                              isUnread ? 'font-bold text-foreground' : 'font-medium text-foreground/80'
+                            )}>
+                              {displayName}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground flex-shrink-0 flex items-center gap-1">
+                              {email.scheduled_at && email.map === 'gepland' && (
+                                <Clock className="w-3 h-3 text-purple-500" />
+                              )}
+                              {formatShortDate(email.scheduled_at || email.datum)}
+                            </span>
+                          </div>
 
-                        {/* Labels + attachment indicator */}
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          {email.labels.filter((l) => l !== 'verzonden' && l !== 'prullenbak' && l !== 'gepland').slice(0, 2).map((label) => (
-                            <Badge
-                              key={label}
-                              variant="secondary"
-                              className={`text-[10px] px-1.5 py-0 h-4 ${getLabelColor(label)}`}
-                            >
-                              {label}
-                            </Badge>
-                          ))}
-                          <div className="flex-1" />
+                          {/* Row 2: Subject */}
+                          <p className={cn(
+                            'text-[13px] truncate mt-0.5',
+                            isUnread ? 'font-semibold text-foreground' : 'text-foreground/70'
+                          )}>
+                            {email.onderwerp}
+                          </p>
+
+                          {/* Row 3: Preview */}
+                          <p className="text-xs text-muted-foreground truncate mt-0.5 leading-relaxed">
+                            {truncate(email.inhoud.replace(/\n/g, ' '), 90)}
+                          </p>
+
+                          {/* Row 4: Label dots */}
+                          {visibleLabels.length > 0 && (
+                            <div className="flex items-center gap-1.5 mt-1.5">
+                              {visibleLabels.slice(0, 3).map((label) => (
+                                <span
+                                  key={label}
+                                  className={cn(
+                                    'w-2 h-2 rounded-full flex-shrink-0',
+                                    labelColors[label] || 'bg-gray-400'
+                                  )}
+                                  title={label}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right side actions */}
+                        <div className="flex flex-col items-center gap-1.5 flex-shrink-0 pt-0.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleToggleStar(email)
+                            }}
+                            className="p-0.5"
+                          >
+                            {email.starred ? (
+                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                            ) : (
+                              <Star className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity dark:text-gray-600" />
+                            )}
+                          </button>
                           {email.bijlagen > 0 && (
-                            <Paperclip className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                            <Paperclip className="w-3.5 h-3.5 text-muted-foreground/60" />
                           )}
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </ScrollArea>
-        </div>
-
-        {/* Resize handle - list/reader */}
-        <div
-          onMouseDown={() => handleMouseDown('list')}
-          className="w-1.5 flex-shrink-0 cursor-col-resize bg-border hover:bg-blue-400 active:bg-blue-500 transition-colors relative group"
-          title="Sleep om te vergroten/verkleinen"
-        >
-          <div className="absolute inset-y-0 -left-1 -right-1" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <GripVertical className="w-3 h-3 text-muted-foreground" />
+                    )
+                  })}
+                </div>
+              )}
+            </ScrollArea>
           </div>
-        </div>
 
-        {/* Right panel - Email reader + Contact sidebar */}
-        <div className="flex-1 flex min-w-0">
+          {/* ── Panel 2: Email Reader ── */}
           <div className="flex-1 min-w-0">
             <EmailReader
               email={selectedEmail}
@@ -807,38 +556,10 @@ export function EmailLayout() {
               onReply={handleReply}
               onForward={handleForward}
               onArchive={handleArchive}
-              onBack={selectedEmail ? handleBack : undefined}
+              onBack={handleBack}
             />
           </div>
-
-          {/* Contact sidebar - only visible when email selected */}
-          {selectedEmail && (
-            <>
-              {/* Resize handle - reader/contact */}
-              <div
-                onMouseDown={() => handleMouseDown('contact')}
-                className="w-1.5 flex-shrink-0 cursor-col-resize bg-border hover:bg-blue-400 active:bg-blue-500 transition-colors relative group"
-                title="Sleep om te vergroten/verkleinen"
-              >
-                <div className="absolute inset-y-0 -left-1 -right-1" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <GripVertical className="w-3 h-3 text-muted-foreground" />
-                </div>
-              </div>
-              <ContactSidebar
-                contact={selectedContact}
-                senderName={selectedSenderName}
-                senderEmail={selectedSenderEmail}
-                senderCompany={selectedSenderCompany}
-                participants={conversationParticipants}
-                onAddCustomer={handleAddCustomer}
-                onSubscribeNewsletter={handleSubscribeNewsletter}
-                width={contactWidth}
-              />
-            </>
-          )}
-        </div>
-      </Card>
+        </Card>
       )}
 
       {/* Compose dialog */}
