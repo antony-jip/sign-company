@@ -18,15 +18,14 @@ import {
   Archive,
   Send,
   ArrowLeft,
-  CalendarClock,
   X,
   ChevronDown,
   ChevronUp,
   Type,
-  Signature,
-  Image,
+  PenTool,
+  ImageIcon,
   Link2,
-  SmilePlus,
+  Smile,
   MoreHorizontal,
 } from 'lucide-react'
 import { formatDateTime, getInitials, cn } from '@/lib/utils'
@@ -553,13 +552,13 @@ export function EmailReader({
                   <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" title="Afbeelding invoegen">
-                  <Image className="w-3.5 h-3.5 text-muted-foreground" />
+                  <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" title="Link invoegen">
                   <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" title="Emoji">
-                  <SmilePlus className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Smile className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
                 <Separator orientation="vertical" className="h-4 mx-1" />
                 <Button
@@ -572,7 +571,7 @@ export function EmailReader({
                   onClick={() => setShowSignature(!showSignature)}
                   title="Handtekening aan/uit"
                 >
-                  <Signature className="w-3.5 h-3.5" />
+                  <PenTool className="w-3.5 h-3.5" />
                   Handtekening
                 </Button>
               </div>
@@ -629,7 +628,7 @@ export function EmailReader({
                       className="h-8 gap-1.5 text-xs"
                       onClick={() => setShowSchedule(!showSchedule)}
                     >
-                      <CalendarClock className="w-3.5 h-3.5" />
+                      <Clock className="w-3.5 h-3.5" />
                       Inplannen
                     </Button>
                     {showSchedule && (

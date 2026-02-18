@@ -9,7 +9,6 @@ import {
   Clock,
   ChevronDown,
   FileText,
-  CalendarClock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -292,7 +291,7 @@ export function EmailCompose({
               className="h-8 gap-1.5 text-xs"
               onClick={() => setShowSchedule(!showSchedule)}
             >
-              <CalendarClock className="w-3.5 h-3.5" />
+              <Clock className="w-3.5 h-3.5" />
               Inplannen
             </Button>
             {showSchedule && (
