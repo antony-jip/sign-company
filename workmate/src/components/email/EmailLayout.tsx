@@ -21,13 +21,14 @@ import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
-import { demoEmails, demoContacts, extractEmailAddress } from '@/data/email-demo-data'
+import { ContactSidebar } from './ContactSidebar'
+import { demoEmails, demoContacts, getContactByEmail, extractEmailAddress } from '@/data/email-demo-data'
 import type { EmailContact } from '@/data/email-demo-data'
 import type { Email, Klant } from '@/types'
 
+// ─── Types ───────────────────────────────────────────────────────────
+
 type EmailFolder = 'inbox' | 'verzonden' | 'concepten' | 'gepland' | 'prullenbak'
-type SortField = 'datum' | 'van' | 'onderwerp'
-type SortDir = 'asc' | 'desc'
 type FilterType = 'alle' | 'ongelezen' | 'met-ster' | 'bijlagen'
 
 interface FolderTab {
@@ -51,9 +52,16 @@ const labelColors: Record<string, string> = {
   leverancier: 'bg-amber-400',
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────
+
 function extractSenderName(from: string): string {
   const match = from.match(/^([^<]+)/)
   return match ? match[1].trim() : from
+}
+
+function extractSenderEmail(from: string): string {
+  const match = from.match(/<([^>]+)>/)
+  return match ? match[1] : from
 }
 
 function getAvatarColor(name: string): string {
@@ -74,42 +82,41 @@ function formatShortDate(dateStr: string): string {
 
   if (diffMs < 0) {
     const futureDays = Math.ceil(-diffMs / (1000 * 60 * 60 * 24))
-    if (futureDays === 0) {
-      return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
-    }
-    if (futureDays === 1) {
-      return `Morgen ${date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`
-    }
+    if (futureDays === 0) return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+    if (futureDays === 1) return `Morgen ${date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`
     return date.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' })
   }
 
-  if (diffDays === 0) {
-    return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
-  }
+  if (diffDays === 0) return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
   if (diffDays === 1) return 'Gisteren'
-  if (diffDays < 7) {
-    return date.toLocaleDateString('nl-NL', { weekday: 'short' })
-  }
+  if (diffDays < 7) return date.toLocaleDateString('nl-NL', { weekday: 'short' })
   return date.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' })
 }
 
+// ═════════════════════════════════════════════════════════════════════
+// ─── Main Layout ─────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════
+
+type ViewMode = 'idle' | 'reading' | 'composing'
+
 export function EmailLayout() {
+  // ── State ──
+  const [viewMode, setViewMode] = useState<ViewMode>('idle')
   const [selectedFolder, setSelectedFolder] = useState<EmailFolder>('inbox')
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [composeOpen, setComposeOpen] = useState(false)
-  const [composeDefaults, setComposeDefaults] = useState<{
-    to?: string; subject?: string; body?: string
-  }>({})
+  const [filter, setFilter] = useState<FilterType>('alle')
   const [emails, setEmails] = useState<Email[]>([])
   const [contacts, setContacts] = useState<EmailContact[]>(demoContacts)
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [sortField] = useState<SortField>('datum')
-  const [sortDir] = useState<SortDir>('desc')
-  const [filter, setFilter] = useState<FilterType>('alle')
 
-  // Load emails - fallback to demo data if empty
+  // Compose defaults (for reply/forward)
+  const [composeDefaults, setComposeDefaults] = useState<{
+    to?: string; subject?: string; body?: string
+  }>({})
+
+  // ── Load data ──
   useEffect(() => {
     Promise.all([
       getEmails().catch(() => []),
@@ -130,6 +137,7 @@ export function EmailLayout() {
       .finally(() => setIsLoading(false))
   }, [])
 
+  // ── Folder counts ──
   const folderCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     folderTabs.forEach((f) => {
@@ -146,6 +154,7 @@ export function EmailLayout() {
     return counts
   }, [emails])
 
+  // ── Filtered + sorted emails ──
   const filteredEmails = useMemo(() => {
     let filtered = emails.filter((e) => e.map === selectedFolder)
 
@@ -161,37 +170,44 @@ export function EmailLayout() {
     }
 
     switch (filter) {
-      case 'ongelezen':
-        filtered = filtered.filter((e) => !e.gelezen)
-        break
-      case 'met-ster':
-        filtered = filtered.filter((e) => e.starred)
-        break
-      case 'bijlagen':
-        filtered = filtered.filter((e) => e.bijlagen > 0)
-        break
+      case 'ongelezen': filtered = filtered.filter((e) => !e.gelezen); break
+      case 'met-ster': filtered = filtered.filter((e) => e.starred); break
+      case 'bijlagen': filtered = filtered.filter((e) => e.bijlagen > 0); break
     }
 
-    return [...filtered].sort((a, b) => {
-      let cmp = 0
-      switch (sortField) {
-        case 'datum':
-          cmp = new Date(a.datum).getTime() - new Date(b.datum).getTime()
-          break
-        case 'van':
-          cmp = extractSenderName(a.van).localeCompare(extractSenderName(b.van))
-          break
-        case 'onderwerp':
-          cmp = a.onderwerp.localeCompare(b.onderwerp)
-          break
-      }
-      return sortDir === 'asc' ? cmp : -cmp
-    })
-  }, [emails, selectedFolder, searchQuery, filter, sortField, sortDir])
+    return [...filtered].sort((a, b) =>
+      new Date(b.datum).getTime() - new Date(a.datum).getTime()
+    )
+  }, [emails, selectedFolder, searchQuery, filter])
 
-  // Handlers
+  // ── Current contact (for CRM sidebar) ──
+  const currentContact = useMemo<EmailContact | null>(() => {
+    if (viewMode === 'reading' && selectedEmail) {
+      const emailAddr = extractEmailAddress(selectedEmail.van)
+      return getContactByEmail(emailAddr) || null
+    }
+    if (viewMode === 'composing' && composeDefaults.to) {
+      return getContactByEmail(composeDefaults.to) || null
+    }
+    return null
+  }, [viewMode, selectedEmail, composeDefaults.to])
+
+  const currentSenderName = useMemo(() => {
+    if (viewMode === 'reading' && selectedEmail) return extractSenderName(selectedEmail.van)
+    if (viewMode === 'composing' && composeDefaults.to) return composeDefaults.to
+    return ''
+  }, [viewMode, selectedEmail, composeDefaults.to])
+
+  const currentSenderEmail = useMemo(() => {
+    if (viewMode === 'reading' && selectedEmail) return extractSenderEmail(selectedEmail.van)
+    if (viewMode === 'composing' && composeDefaults.to) return composeDefaults.to
+    return ''
+  }, [viewMode, selectedEmail, composeDefaults.to])
+
+  // ── Handlers ──
   const handleSelectEmail = useCallback((email: Email) => {
     setSelectedEmail(email)
+    setViewMode('reading')
     if (!email.gelezen) {
       setEmails((prev) =>
         prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
@@ -230,16 +246,15 @@ export function EmailLayout() {
 
   const handleArchive = useCallback((email: Email) => {
     setEmails((prev) => prev.filter((e) => e.id !== email.id))
-    setSelectedEmail((prev) => (prev?.id === email.id ? null : prev))
+    setSelectedEmail(null)
+    setViewMode('idle')
     toast.success('Email gearchiveerd')
   }, [])
 
   const handleDelete = useCallback((email: Email) => {
     if (email.map === 'prullenbak') {
       setEmails((prev) => prev.filter((e) => e.id !== email.id))
-      if (!email.id.startsWith('demo-')) {
-        deleteEmail(email.id).catch(() => {})
-      }
+      if (!email.id.startsWith('demo-')) deleteEmail(email.id).catch(() => {})
     } else {
       setEmails((prev) =>
         prev.map((e) =>
@@ -250,7 +265,8 @@ export function EmailLayout() {
         updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
       }
     }
-    setSelectedEmail((prev) => (prev?.id === email.id ? null : prev))
+    setSelectedEmail(null)
+    setViewMode('idle')
     toast.success('Email verwijderd')
   }, [])
 
@@ -261,7 +277,7 @@ export function EmailLayout() {
       subject: `Re: ${email.onderwerp}`,
       body: `\n\n---\nOp ${formatDateTime(email.datum)} schreef ${extractSenderName(email.van)}:\n\n${email.inhoud}`,
     })
-    setComposeOpen(true)
+    setViewMode('composing')
   }, [])
 
   const handleForward = useCallback((email: Email) => {
@@ -270,12 +286,13 @@ export function EmailLayout() {
       subject: `Fwd: ${email.onderwerp}`,
       body: `\n\n---\nDoorgestuurd bericht\nVan: ${email.van}\nDatum: ${formatDateTime(email.datum)}\nOnderwerp: ${email.onderwerp}\n\n${email.inhoud}`,
     })
-    setComposeOpen(true)
+    setViewMode('composing')
   }, [])
 
   const handleCompose = useCallback(() => {
     setComposeDefaults({})
-    setComposeOpen(true)
+    setViewMode('composing')
+    setSelectedEmail(null)
   }, [])
 
   const handleSendEmail = useCallback((data: { to: string; subject: string; body: string; scheduledAt?: string }) => {
@@ -298,34 +315,51 @@ export function EmailLayout() {
     createEmail(newEmail)
       .then((saved) => {
         setEmails((prev) => [saved, ...prev])
-        if (isScheduled) {
-          toast.success('Email ingepland', { description: `Wordt verzonden op ${formatDateTime(data.scheduledAt!)}` })
-        } else {
-          toast.success('Email verzonden')
-        }
+        toast.success(isScheduled ? 'Email ingepland' : 'Email verzonden')
       })
-      .catch(() => {
-        toast.error('Email kon niet worden verzonden')
-      })
+      .catch(() => toast.error('Email kon niet worden verzonden'))
+    setViewMode('idle')
   }, [])
+
+  const handleCancelCompose = useCallback(() => {
+    setViewMode(selectedEmail ? 'reading' : 'idle')
+  }, [selectedEmail])
 
   const handleFolderChange = useCallback((folder: EmailFolder) => {
     setSelectedFolder(folder)
     setSelectedEmail(null)
+    setViewMode('idle')
     setFilter('alle')
   }, [])
 
   const handleBack = useCallback(() => {
     setSelectedEmail(null)
+    setViewMode('idle')
   }, [])
+
+  const handleAddCustomer = useCallback((email: string) => {
+    setContacts((prev) =>
+      prev.map((c) => c.email === email ? { ...c, isCustomer: true } : c)
+    )
+    toast.success('Toegevoegd aan klanten')
+  }, [])
+
+  const handleSubscribeNewsletter = useCallback((email: string) => {
+    setContacts((prev) =>
+      prev.map((c) => c.email === email ? { ...c, subscribedNewsletter: true } : c)
+    )
+    toast.success('Geabonneerd op nieuwsbrief')
+  }, [])
+
+  // ── Show CRM sidebar? ──
+  const showSidebar = viewMode === 'reading' || (viewMode === 'composing' && !!composeDefaults.to)
+
+  // ═════════════════════════════════════════════════════════════════
+  // ─── Render ────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold tracking-tight">Email</h1>
-      </div>
-
       {isLoading ? (
         <Card className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
@@ -335,8 +369,9 @@ export function EmailLayout() {
         </Card>
       ) : (
         <Card className="flex-1 flex overflow-hidden">
-          {/* ── Panel 1: Email List ── */}
-          <div className="w-[400px] flex-shrink-0 flex flex-col border-r">
+
+          {/* ═══ Column 1: Email List ═══ */}
+          <div className="w-[380px] flex-shrink-0 flex flex-col border-r">
             {/* Search + Compose */}
             <div className="p-3 flex items-center gap-2">
               <div className="relative flex-1">
@@ -350,11 +385,11 @@ export function EmailLayout() {
               </div>
               <Button onClick={handleCompose} size="sm" className="gap-1.5 h-9 flex-shrink-0">
                 <Pencil className="w-3.5 h-3.5" />
-                Opstellen
+                Nieuw
               </Button>
             </div>
 
-            {/* Folder tabs - horizontal */}
+            {/* Folder tabs */}
             <div className="px-3 pb-2 flex items-center gap-1 overflow-x-auto">
               {folderTabs.map((tab) => {
                 const isActive = selectedFolder === tab.id
@@ -421,26 +456,23 @@ export function EmailLayout() {
                     <>
                       <Clock className="w-10 h-10 mb-3 opacity-20" />
                       <p className="text-sm font-medium">Geen ingeplande emails</p>
-                      <p className="text-xs mt-1 opacity-70">Plan een email in via Opstellen.</p>
                     </>
                   ) : filter !== 'alle' ? (
                     <>
                       <SlidersHorizontal className="w-10 h-10 mb-3 opacity-20" />
                       <p className="text-sm font-medium">Geen resultaten</p>
-                      <p className="text-xs mt-1 opacity-70">Probeer een ander filter.</p>
                     </>
                   ) : (
                     <>
                       <Inbox className="w-10 h-10 mb-3 opacity-20" />
                       <p className="text-sm font-medium">Geen emails</p>
-                      <p className="text-xs mt-1 opacity-70">Deze map is leeg.</p>
                     </>
                   )}
                 </div>
               ) : (
                 <div>
                   {filteredEmails.map((email) => {
-                    const isSelected = selectedEmail?.id === email.id
+                    const isSelected = selectedEmail?.id === email.id && viewMode === 'reading'
                     const isUnread = !email.gelezen
                     const displayName = email.map === 'verzonden' || email.map === 'concepten'
                       ? extractSenderName(email.aan)
@@ -473,7 +505,6 @@ export function EmailLayout() {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          {/* Row 1: Name + Time */}
                           <div className="flex items-center justify-between gap-2">
                             <span className={cn(
                               'text-sm truncate',
@@ -488,21 +519,15 @@ export function EmailLayout() {
                               {formatShortDate(email.scheduled_at || email.datum)}
                             </span>
                           </div>
-
-                          {/* Row 2: Subject */}
                           <p className={cn(
                             'text-[13px] truncate mt-0.5',
                             isUnread ? 'font-semibold text-foreground' : 'text-foreground/70'
                           )}>
                             {email.onderwerp}
                           </p>
-
-                          {/* Row 3: Preview */}
-                          <p className="text-xs text-muted-foreground truncate mt-0.5 leading-relaxed">
-                            {truncate(email.inhoud.replace(/\n/g, ' '), 90)}
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {truncate(email.inhoud.replace(/\n/g, ' '), 80)}
                           </p>
-
-                          {/* Row 4: Label dots */}
                           {visibleLabels.length > 0 && (
                             <div className="flex items-center gap-1.5 mt-1.5">
                               {visibleLabels.slice(0, 3).map((label) => (
@@ -519,13 +544,10 @@ export function EmailLayout() {
                           )}
                         </div>
 
-                        {/* Right side actions */}
+                        {/* Star + attachment */}
                         <div className="flex flex-col items-center gap-1.5 flex-shrink-0 pt-0.5">
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleToggleStar(email)
-                            }}
+                            onClick={(e) => { e.stopPropagation(); handleToggleStar(email) }}
                             className="p-0.5"
                           >
                             {email.starred ? (
@@ -546,31 +568,57 @@ export function EmailLayout() {
             </ScrollArea>
           </div>
 
-          {/* ── Panel 2: Email Reader ── */}
-          <div className="flex-1 min-w-0">
-            <EmailReader
-              email={selectedEmail}
-              onToggleStar={handleToggleStar}
-              onToggleRead={handleToggleRead}
-              onDelete={handleDelete}
-              onReply={handleReply}
-              onForward={handleForward}
-              onArchive={handleArchive}
-              onBack={handleBack}
-            />
+          {/* ═══ Column 2: Content Area ═══ */}
+          <div className="flex-1 min-w-0 flex flex-col">
+            {viewMode === 'composing' ? (
+              <EmailCompose
+                defaultTo={composeDefaults.to}
+                defaultSubject={composeDefaults.subject}
+                defaultBody={composeDefaults.body}
+                onSend={handleSendEmail}
+                onCancel={handleCancelCompose}
+              />
+            ) : viewMode === 'reading' && selectedEmail ? (
+              <EmailReader
+                email={selectedEmail}
+                onToggleStar={handleToggleStar}
+                onToggleRead={handleToggleRead}
+                onDelete={handleDelete}
+                onReply={handleReply}
+                onForward={handleForward}
+                onArchive={handleArchive}
+                onBack={handleBack}
+              />
+            ) : (
+              /* Empty state */
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <div className="w-20 h-20 rounded-full bg-muted/60 flex items-center justify-center mb-5">
+                  <Inbox className="w-9 h-9 opacity-30" />
+                </div>
+                <p className="text-lg font-semibold text-foreground/60">Selecteer een email</p>
+                <p className="text-sm mt-1.5 text-muted-foreground/70">
+                  Of klik op <strong>Nieuw</strong> om een email te schrijven.
+                </p>
+              </div>
+            )}
           </div>
+
+          {/* ═══ Column 3: CRM Sidebar ═══ */}
+          {showSidebar && (
+            <div className="border-l">
+              <ContactSidebar
+                contact={currentContact}
+                senderName={currentSenderName}
+                senderEmail={currentSenderEmail}
+                senderCompany={currentContact?.company}
+                onAddCustomer={handleAddCustomer}
+                onSubscribeNewsletter={handleSubscribeNewsletter}
+                width={280}
+              />
+            </div>
+          )}
         </Card>
       )}
-
-      {/* Compose dialog */}
-      <EmailCompose
-        open={composeOpen}
-        onOpenChange={setComposeOpen}
-        defaultTo={composeDefaults.to}
-        defaultSubject={composeDefaults.subject}
-        defaultBody={composeDefaults.body}
-        onSend={handleSendEmail}
-      />
     </div>
   )
 }
