@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+// Tabs removed - using custom left sidebar navigation
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
@@ -66,6 +66,31 @@ import {
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
 
+const settingsTabs = [
+  { id: 'profiel', label: 'Profiel', icon: User, description: 'Uw persoonlijke gegevens' },
+  { id: 'bedrijf', label: 'Bedrijf', icon: Building2, description: 'Bedrijfsinformatie en logo' },
+  { id: 'calculatie', label: 'Calculatie', icon: Calculator, description: 'Producten, marges en eenheden' },
+  { id: 'aanpassingen', label: 'Aanpassingen', icon: Sliders, description: 'Pipeline, statussen en workflows' },
+  { id: 'meldingen', label: 'Meldingen', icon: Bell, description: 'E-mail en pushnotificaties' },
+  { id: 'integraties', label: 'Integraties', icon: Puzzle, description: 'Koppelingen met externe diensten' },
+  { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
+  { id: 'weergave', label: 'Weergave', icon: Palette, description: 'Thema, taal en lay-out' },
+] as const
+
+function renderTabContent(tabId: string) {
+  switch (tabId) {
+    case 'profiel': return <ProfielTab />
+    case 'bedrijf': return <BedrijfTab />
+    case 'calculatie': return <CalculatieTab />
+    case 'aanpassingen': return <AanpassingenTab />
+    case 'meldingen': return <MeldingenTab />
+    case 'integraties': return <IntegratiesTab />
+    case 'beveiliging': return <BeveiligingTab />
+    case 'weergave': return <WeergaveTab />
+    default: return null
+  }
+}
+
 export function SettingsLayout() {
   const [activeTab, setActiveTab] = useState('profiel')
 
@@ -86,67 +111,46 @@ export function SettingsLayout() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8">
-          <TabsTrigger value="profiel" className="gap-2">
-            <User className="w-4 h-4 hidden sm:inline" />
-            Profiel
-          </TabsTrigger>
-          <TabsTrigger value="bedrijf" className="gap-2">
-            <Building2 className="w-4 h-4 hidden sm:inline" />
-            Bedrijf
-          </TabsTrigger>
-          <TabsTrigger value="calculatie" className="gap-2">
-            <Calculator className="w-4 h-4 hidden sm:inline" />
-            Calculatie
-          </TabsTrigger>
-          <TabsTrigger value="aanpassingen" className="gap-2">
-            <Sliders className="w-4 h-4 hidden sm:inline" />
-            Aanpassingen
-          </TabsTrigger>
-          <TabsTrigger value="meldingen" className="gap-2">
-            <Bell className="w-4 h-4 hidden sm:inline" />
-            Meldingen
-          </TabsTrigger>
-          <TabsTrigger value="integraties" className="gap-2">
-            <Puzzle className="w-4 h-4 hidden sm:inline" />
-            Integraties
-          </TabsTrigger>
-          <TabsTrigger value="beveiliging" className="gap-2">
-            <Shield className="w-4 h-4 hidden sm:inline" />
-            Beveiliging
-          </TabsTrigger>
-          <TabsTrigger value="weergave" className="gap-2">
-            <Palette className="w-4 h-4 hidden sm:inline" />
-            Weergave
-          </TabsTrigger>
-        </TabsList>
+      {/* Two-column layout: sidebar nav + content */}
+      <div className="flex gap-6 min-h-[calc(100vh-12rem)]">
+        {/* Left sidebar navigation */}
+        <nav className="w-56 flex-shrink-0">
+          <Card className="sticky top-6">
+            <div className="p-2 space-y-0.5">
+              {settingsTabs.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 ${
+                      isActive
+                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
+                    <div className="min-w-0">
+                      <span className={`text-sm block truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                        {tab.label}
+                      </span>
+                      <span className={`text-[11px] block truncate ${isActive ? 'text-blue-600/70 dark:text-blue-400/70' : 'text-gray-400 dark:text-gray-500'}`}>
+                        {tab.description}
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </Card>
+        </nav>
 
-        <TabsContent value="profiel">
-          <ProfielTab />
-        </TabsContent>
-        <TabsContent value="bedrijf">
-          <BedrijfTab />
-        </TabsContent>
-        <TabsContent value="calculatie">
-          <CalculatieTab />
-        </TabsContent>
-        <TabsContent value="aanpassingen">
-          <AanpassingenTab />
-        </TabsContent>
-        <TabsContent value="meldingen">
-          <MeldingenTab />
-        </TabsContent>
-        <TabsContent value="integraties">
-          <IntegratiesTab />
-        </TabsContent>
-        <TabsContent value="beveiliging">
-          <BeveiligingTab />
-        </TabsContent>
-        <TabsContent value="weergave">
-          <WeergaveTab />
-        </TabsContent>
-      </Tabs>
+        {/* Right content area */}
+        <div className="flex-1 min-w-0">
+          {renderTabContent(activeTab)}
+        </div>
+      </div>
     </div>
   )
 }
