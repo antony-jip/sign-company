@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
@@ -17,9 +18,51 @@ import {
   Archive,
   Send,
   ArrowLeft,
+  CalendarClock,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Type,
+  Signature,
+  Image,
+  Link2,
+  SmilePlus,
+  MoreHorizontal,
 } from 'lucide-react'
 import { formatDateTime, getInitials, cn } from '@/lib/utils'
 import type { Email } from '@/types'
+
+// ─── Default signature ──────────────────────────────────────────────
+
+const DEFAULT_SIGNATURE = `Met vriendelijke groet,
+
+Sign Company
+T: +31 (0)20 123 4567
+E: info@signcompany.nl
+W: www.signcompany.nl`
+
+// ─── Schedule helpers ───────────────────────────────────────────────
+
+function getScheduleOptions() {
+  const now = new Date()
+  const tomorrow = new Date(now)
+  tomorrow.setDate(now.getDate() + 1)
+  const tomorrowStr = tomorrow.toISOString().split('T')[0]
+
+  const dayOfWeek = now.getDay()
+  const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek
+  const nextMonday = new Date(now)
+  nextMonday.setDate(now.getDate() + daysUntilMonday)
+  const mondayStr = nextMonday.toISOString().split('T')[0]
+
+  return [
+    { label: 'Morgen 09:00', value: `${tomorrowStr}T09:00` },
+    { label: 'Morgen 14:00', value: `${tomorrowStr}T14:00` },
+    { label: 'Maandag 09:00', value: `${mondayStr}T09:00` },
+  ]
+}
+
+// ─── Types ──────────────────────────────────────────────────────────
 
 interface EmailReaderProps {
   email: Email | null
@@ -31,6 +74,10 @@ interface EmailReaderProps {
   onArchive?: (email: Email) => void
   onBack?: () => void
 }
+
+type ReplyMode = 'reply' | 'reply-all' | 'forward'
+
+// ─── Helpers ────────────────────────────────────────────────────────
 
 function extractSenderName(from: string): string {
   const match = from.match(/^([^<]+)/)
@@ -52,6 +99,15 @@ function getAvatarColor(name: string): string {
   return colors[index]
 }
 
+function buildQuotedContent(email: Email): string {
+  const senderName = extractSenderName(email.van)
+  return `\n\n\n---\nOp ${formatDateTime(email.datum)} schreef ${senderName}:\n\n${email.inhoud}`
+}
+
+// ═════════════════════════════════════════════════════════════════════
+// ─── Email Reader ────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════
+
 export function EmailReader({
   email,
   onToggleStar,
@@ -62,10 +118,114 @@ export function EmailReader({
   onArchive,
   onBack,
 }: EmailReaderProps) {
-  const [replyExpanded, setReplyExpanded] = useState(false)
-  const [replyText, setReplyText] = useState('')
+  // ── Reply state ──
+  const [replyMode, setReplyMode] = useState<ReplyMode | null>(null)
+  const [replyTo, setReplyTo] = useState('')
+  const [replyCc, setReplyCc] = useState('')
+  const [replyBcc, setReplyBcc] = useState('')
+  const [replySubject, setReplySubject] = useState('')
+  const [replyBody, setReplyBody] = useState('')
+  const [showCcBcc, setShowCcBcc] = useState(false)
+  const [showSignature, setShowSignature] = useState(true)
+  const [scheduledAt, setScheduledAt] = useState('')
+  const [showSchedule, setShowSchedule] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const [showQuoted, setShowQuoted] = useState(false)
+  const [quotedContent, setQuotedContent] = useState('')
 
-  // Empty state
+  const scheduleRef = useRef<HTMLDivElement>(null)
+  const replyBodyRef = useRef<HTMLTextAreaElement>(null)
+
+  // Close schedule dropdown on outside click
+  useEffect(() => {
+    if (!showSchedule) return
+    function handleClick(e: MouseEvent) {
+      if (scheduleRef.current && !scheduleRef.current.contains(e.target as Node)) {
+        setShowSchedule(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showSchedule])
+
+  // ── Open reply editor ──
+  const openReply = (mode: ReplyMode) => {
+    if (!email) return
+    const senderEmail = extractSenderEmail(email.van)
+    const senderName = extractSenderName(email.van)
+
+    setReplyMode(mode)
+    setShowCcBcc(false)
+    setScheduledAt('')
+    setShowSchedule(false)
+    setShowQuoted(false)
+
+    if (mode === 'reply') {
+      setReplyTo(senderEmail)
+      setReplyCc('')
+      setReplyBcc('')
+      setReplySubject(`Re: ${email.onderwerp}`)
+      setQuotedContent(buildQuotedContent(email))
+      setReplyBody('')
+    } else if (mode === 'reply-all') {
+      setReplyTo(senderEmail)
+      setReplyCc(email.aan !== 'ik@signcompany.nl' ? email.aan : '')
+      setReplyBcc('')
+      setReplySubject(`Re: ${email.onderwerp}`)
+      setQuotedContent(buildQuotedContent(email))
+      setReplyBody('')
+    } else if (mode === 'forward') {
+      setReplyTo('')
+      setReplyCc('')
+      setReplyBcc('')
+      setReplySubject(`Fwd: ${email.onderwerp}`)
+      setQuotedContent(
+        `\n\n\n---\nDoorgestuurd bericht\nVan: ${email.van}\nDatum: ${formatDateTime(email.datum)}\nOnderwerp: ${email.onderwerp}\nAan: ${email.aan}\n\n${email.inhoud}`
+      )
+      setReplyBody('')
+    }
+
+    setTimeout(() => replyBodyRef.current?.focus(), 100)
+  }
+
+  const closeReply = () => {
+    setReplyMode(null)
+    setReplyTo('')
+    setReplyCc('')
+    setReplyBcc('')
+    setReplySubject('')
+    setReplyBody('')
+    setQuotedContent('')
+    setScheduledAt('')
+    setShowSchedule(false)
+    setShowCcBcc(false)
+  }
+
+  const handleSendReply = () => {
+    if (!email || !replyTo.trim()) return
+    setIsSending(true)
+
+    // Build full body with signature and quoted content
+    let fullBody = replyBody
+    if (showSignature) {
+      fullBody += `\n\n${DEFAULT_SIGNATURE}`
+    }
+    fullBody += quotedContent
+
+    // Use the parent handler
+    if (replyMode === 'forward') {
+      onForward?.(email)
+    } else {
+      onReply?.(email)
+    }
+
+    setIsSending(false)
+    closeReply()
+  }
+
+  const scheduleOptions = getScheduleOptions()
+
+  // ── Empty state ──
   if (!email) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
@@ -235,101 +395,273 @@ export function EmailReader({
           )}
         </div>
 
-        {/* ── Inline Reply Box ── */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* ── Reply / Forward Editor ───────────────────────────────────── */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
         <div className="px-6 pb-6 max-w-3xl">
-          <div className="border rounded-lg overflow-hidden">
-            {!replyExpanded ? (
-              /* Collapsed state */
-              <button
-                onClick={() => setReplyExpanded(true)}
-                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/40 transition-colors text-sm text-muted-foreground"
-              >
-                <Reply className="w-4 h-4" />
-                <span>Klik hier om te antwoorden...</span>
-              </button>
-            ) : (
-              /* Expanded state */
-              <div className="p-4 space-y-3">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Reply className="w-3.5 h-3.5" />
-                  <span>
-                    Beantwoorden aan{' '}
-                    <strong className="text-foreground">{senderName}</strong>
-                  </span>
+          {!replyMode ? (
+            /* ── Collapsed action buttons ── */
+            <div className="border rounded-lg overflow-hidden">
+              <div className="flex items-center divide-x">
+                <button
+                  onClick={() => openReply('reply')}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 hover:bg-muted/40 transition-colors text-sm text-muted-foreground"
+                >
+                  <Reply className="w-4 h-4" />
+                  <span>Beantwoorden</span>
+                </button>
+                <button
+                  onClick={() => openReply('reply-all')}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 hover:bg-muted/40 transition-colors text-sm text-muted-foreground"
+                >
+                  <ReplyAll className="w-4 h-4" />
+                  <span>Allen beantwoorden</span>
+                </button>
+                <button
+                  onClick={() => openReply('forward')}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 hover:bg-muted/40 transition-colors text-sm text-muted-foreground"
+                >
+                  <Forward className="w-4 h-4" />
+                  <span>Doorsturen</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* ── Expanded email reply editor ── */
+            <div className="border rounded-lg overflow-hidden bg-background shadow-sm">
+              {/* Reply header with mode indicator */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-muted/30 border-b">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  {replyMode === 'reply' && <Reply className="w-4 h-4 text-blue-600" />}
+                  {replyMode === 'reply-all' && <ReplyAll className="w-4 h-4 text-blue-600" />}
+                  {replyMode === 'forward' && <Forward className="w-4 h-4 text-blue-600" />}
+                  {replyMode === 'reply' && 'Beantwoorden'}
+                  {replyMode === 'reply-all' && 'Allen beantwoorden'}
+                  {replyMode === 'forward' && 'Doorsturen'}
                 </div>
-                <Textarea
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Schrijf je antwoord..."
-                  className="min-h-[120px] resize-y border-0 shadow-none focus-visible:ring-0 px-0"
-                  autoFocus
-                />
-                <div className="flex items-center justify-between pt-1">
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 h-8 text-xs text-muted-foreground"
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={closeReply}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* ── Email fields ── */}
+              <div className="px-4 space-y-0">
+                {/* Aan */}
+                <div className="flex items-center gap-2 py-2 border-b">
+                  <span className="text-xs font-medium text-muted-foreground w-16">Aan</span>
+                  <Input
+                    value={replyTo}
+                    onChange={(e) => setReplyTo(e.target.value)}
+                    placeholder="email@voorbeeld.nl"
+                    className="border-0 shadow-none h-8 focus-visible:ring-0 px-0 text-sm"
+                  />
+                  {!showCcBcc && (
+                    <button
+                      onClick={() => setShowCcBcc(true)}
+                      className="text-xs text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap"
                     >
-                      <Paperclip className="w-3.5 h-3.5" />
-                      Bijlage
-                    </Button>
-                    <Separator orientation="vertical" className="h-4 mx-1" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 h-8 text-xs text-muted-foreground"
-                      onClick={() => onReply?.(email)}
-                    >
-                      <ReplyAll className="w-3.5 h-3.5" />
-                      Allen
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 h-8 text-xs text-muted-foreground"
-                      onClick={() => {
-                        setReplyExpanded(false)
-                        setReplyText('')
-                        onForward?.(email)
-                      }}
-                    >
-                      <Forward className="w-3.5 h-3.5" />
-                      Doorsturen
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => {
-                        setReplyExpanded(false)
-                        setReplyText('')
-                      }}
-                    >
-                      Annuleren
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="gap-1.5 h-8"
-                      disabled={!replyText.trim()}
-                      onClick={() => {
-                        if (replyText.trim()) {
-                          onReply?.(email)
-                          setReplyText('')
-                          setReplyExpanded(false)
-                        }
-                      }}
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      Verstuur
-                    </Button>
-                  </div>
+                      CC/BCC
+                    </button>
+                  )}
+                </div>
+
+                {/* CC */}
+                {showCcBcc && (
+                  <>
+                    <div className="flex items-center gap-2 py-2 border-b">
+                      <span className="text-xs font-medium text-muted-foreground w-16">CC</span>
+                      <Input
+                        value={replyCc}
+                        onChange={(e) => setReplyCc(e.target.value)}
+                        placeholder="CC ontvangers..."
+                        className="border-0 shadow-none h-8 focus-visible:ring-0 px-0 text-sm"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 py-2 border-b">
+                      <span className="text-xs font-medium text-muted-foreground w-16">BCC</span>
+                      <Input
+                        value={replyBcc}
+                        onChange={(e) => setReplyBcc(e.target.value)}
+                        placeholder="BCC ontvangers..."
+                        className="border-0 shadow-none h-8 focus-visible:ring-0 px-0 text-sm"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Onderwerp */}
+                <div className="flex items-center gap-2 py-2 border-b">
+                  <span className="text-xs font-medium text-muted-foreground w-16">Onderwerp</span>
+                  <Input
+                    value={replySubject}
+                    onChange={(e) => setReplySubject(e.target.value)}
+                    placeholder="Onderwerp..."
+                    className="border-0 shadow-none h-8 focus-visible:ring-0 px-0 text-sm"
+                  />
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* ── Body editor ── */}
+              <div className="px-4 pt-3">
+                <Textarea
+                  ref={replyBodyRef}
+                  value={replyBody}
+                  onChange={(e) => setReplyBody(e.target.value)}
+                  placeholder="Schrijf je antwoord..."
+                  className="min-h-[140px] resize-y border-0 shadow-none focus-visible:ring-0 px-0 text-sm leading-relaxed"
+                />
+              </div>
+
+              {/* ── Signature preview ── */}
+              {showSignature && (
+                <div className="px-4 pb-2">
+                  <div className="border-t border-dashed pt-3">
+                    <div className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                      {DEFAULT_SIGNATURE}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Quoted content toggle ── */}
+              {quotedContent && (
+                <div className="px-4 pb-3">
+                  <button
+                    onClick={() => setShowQuoted(!showQuoted)}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                    {showQuoted ? 'Geciteerde tekst verbergen' : 'Geciteerde tekst tonen'}
+                    {showQuoted ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                  {showQuoted && (
+                    <div className="mt-2 pl-3 border-l-2 border-muted-foreground/20">
+                      <div className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                        {quotedContent}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Formatting toolbar ── */}
+              <div className="px-4 py-2 border-t border-b flex items-center gap-0.5">
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Opmaak">
+                  <Type className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Bijlage toevoegen">
+                  <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Afbeelding invoegen">
+                  <Image className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Link invoegen">
+                  <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Emoji">
+                  <SmilePlus className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+                <Separator orientation="vertical" className="h-4 mx-1" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'h-7 gap-1.5 text-[11px]',
+                    showSignature ? 'text-blue-600' : 'text-muted-foreground'
+                  )}
+                  onClick={() => setShowSignature(!showSignature)}
+                  title="Handtekening aan/uit"
+                >
+                  <Signature className="w-3.5 h-3.5" />
+                  Handtekening
+                </Button>
+              </div>
+
+              {/* ── Send actions ── */}
+              <div className="flex items-center justify-between px-4 py-3 bg-muted/10">
+                <div className="flex items-center gap-1.5">
+                  {/* Switch reply mode */}
+                  {replyMode !== 'forward' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs text-muted-foreground"
+                      onClick={() => openReply(replyMode === 'reply' ? 'reply-all' : 'reply')}
+                    >
+                      {replyMode === 'reply' ? (
+                        <><ReplyAll className="w-3.5 h-3.5" /> Allen beantwoorden</>
+                      ) : (
+                        <><Reply className="w-3.5 h-3.5" /> Beantwoorden</>
+                      )}
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs text-muted-foreground"
+                    onClick={() => {
+                      closeReply()
+                      onDelete?.(email)
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Verwijderen
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Schedule indicator */}
+                  {scheduledAt && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-md text-xs text-purple-700 dark:text-purple-300">
+                      <Clock className="w-3 h-3" />
+                      Ingepland
+                      <button onClick={() => setScheduledAt('')} className="ml-1 hover:text-purple-900">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Schedule dropdown */}
+                  <div className="relative" ref={scheduleRef}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() => setShowSchedule(!showSchedule)}
+                    >
+                      <CalendarClock className="w-3.5 h-3.5" />
+                      Inplannen
+                    </Button>
+                    {showSchedule && (
+                      <div className="absolute right-0 bottom-full mb-1 w-52 rounded-lg border bg-popover shadow-lg z-50 py-1">
+                        {scheduleOptions.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => { setScheduledAt(opt.value); setShowSchedule(false) }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2"
+                          >
+                            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Send button */}
+                  <Button
+                    onClick={handleSendReply}
+                    disabled={!replyTo.trim() || isSending}
+                    size="sm"
+                    className="gap-1.5 h-8"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    {scheduledAt ? 'Inplannen' : 'Verstuur'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>
