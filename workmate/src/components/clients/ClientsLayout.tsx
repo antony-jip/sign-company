@@ -5,14 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { UserPlus, Search, LayoutGrid, List, Loader2 } from 'lucide-react'
+import { UserPlus, Search, LayoutGrid, List, Loader2, ArrowUpDown } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
 import type { Klant, Project } from '@/types'
@@ -21,6 +14,8 @@ import { AddEditClient } from './AddEditClient'
 
 type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
+type SortField = 'bedrijfsnaam' | 'contactpersoon' | 'stad' | 'status' | 'created_at'
+type SortDir = 'asc' | 'desc'
 
 export function ClientsLayout() {
   const navigate = useNavigate()
@@ -31,6 +26,8 @@ export function ClientsLayout() {
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [sortField, setSortField] = useState<SortField>('bedrijfsnaam')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   const fetchData = useCallback(() => {
     setLoading(true)
@@ -56,7 +53,7 @@ export function ClientsLayout() {
     return counts
   }, [projecten])
 
-  // Filtered clients
+  // Filtered + sorted clients
   const filteredKlanten = useMemo(() => {
     let result = [...klanten]
 
@@ -79,8 +76,40 @@ export function ClientsLayout() {
       )
     }
 
+    // Sort
+    result.sort((a, b) => {
+      let cmp = 0
+      switch (sortField) {
+        case 'bedrijfsnaam':
+          cmp = a.bedrijfsnaam.localeCompare(b.bedrijfsnaam, 'nl')
+          break
+        case 'contactpersoon':
+          cmp = a.contactpersoon.localeCompare(b.contactpersoon, 'nl')
+          break
+        case 'stad':
+          cmp = (a.stad || '').localeCompare(b.stad || '', 'nl')
+          break
+        case 'status':
+          cmp = a.status.localeCompare(b.status, 'nl')
+          break
+        case 'created_at':
+          cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          break
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+
     return result
-  }, [klanten, searchQuery, statusFilter])
+  }, [klanten, searchQuery, statusFilter, sortField, sortDir])
+
+  function handleSort(field: SortField) {
+    if (field === sortField) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
 
   function handleClientSaved(klant: Klant) {
     setAddDialogOpen(false)
@@ -117,9 +146,8 @@ export function ClientsLayout() {
         </Button>
       </div>
 
-      {/* Filters bar */}
+      {/* Search + View toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
@@ -129,24 +157,6 @@ export function ClientsLayout() {
             className="pl-10"
           />
         </div>
-
-        {/* Status filter */}
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as StatusFilter)}
-        >
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="alle">Alle statussen</SelectItem>
-            <SelectItem value="actief">Actief</SelectItem>
-            <SelectItem value="inactief">Inactief</SelectItem>
-            <SelectItem value="prospect">Prospect</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* View toggle */}
         <div className="flex items-center border rounded-md bg-background">
           <Button
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -166,6 +176,74 @@ export function ClientsLayout() {
           >
             <List className="w-4 h-4" />
           </Button>
+        </div>
+      </div>
+
+      {/* Filter pills + Sort toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        {/* Status filter pills */}
+        <div className="flex items-center gap-1.5">
+          {(['alle', 'actief', 'inactief', 'prospect'] as StatusFilter[]).map((f) => {
+            const labels: Record<StatusFilter, string> = {
+              alle: 'Alle',
+              actief: 'Actief',
+              inactief: 'Inactief',
+              prospect: 'Prospect',
+            }
+            const counts: Record<StatusFilter, number> = {
+              alle: klanten.length,
+              actief: klanten.filter((k) => k.status === 'actief').length,
+              inactief: klanten.filter((k) => k.status === 'inactief').length,
+              prospect: klanten.filter((k) => k.status === 'prospect').length,
+            }
+            return (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                  statusFilter === f
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                {labels[f]}
+                {counts[f] > 0 && (
+                  <span className="ml-1.5 text-[10px] opacity-70">{counts[f]}</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="h-4 w-px bg-border hidden sm:block" />
+
+        {/* Sort toolbar */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <ArrowUpDown className="w-3 h-3" />
+          <span>Sorteer:</span>
+          {([
+            { field: 'bedrijfsnaam' as SortField, label: 'Naam' },
+            { field: 'stad' as SortField, label: 'Stad' },
+            { field: 'status' as SortField, label: 'Status' },
+            { field: 'created_at' as SortField, label: 'Datum' },
+          ]).map(({ field, label }) => (
+            <button
+              key={field}
+              onClick={() => handleSort(field)}
+              className={cn(
+                'px-1.5 py-0.5 rounded transition-colors',
+                sortField === field
+                  ? 'text-blue-700 dark:text-blue-300 font-medium'
+                  : 'hover:text-foreground'
+              )}
+            >
+              {label}
+              {sortField === field && (
+                <span className="ml-0.5">{sortDir === 'asc' ? '↑' : '↓'}</span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 

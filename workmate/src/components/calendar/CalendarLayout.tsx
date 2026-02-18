@@ -542,7 +542,7 @@ export function CalendarLayout() {
 
       {/* New Event Dialog */}
       <Dialog open={newEventOpen} onOpenChange={setNewEventOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Nieuw Evenement</DialogTitle>
             <DialogDescription>

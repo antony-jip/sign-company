@@ -469,9 +469,8 @@ export function TasksLayout() {
         </Button>
       </div>
 
-      {/* Filters bar */}
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3">
-        {/* Search */}
+      {/* Search + View toggle */}
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
@@ -481,60 +480,6 @@ export function TasksLayout() {
             className="pl-10"
           />
         </div>
-
-        {/* Status filter */}
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as StatusFilter)}
-        >
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="alle">Alle statussen</SelectItem>
-            <SelectItem value="todo">Todo</SelectItem>
-            <SelectItem value="bezig">Bezig</SelectItem>
-            <SelectItem value="review">Review</SelectItem>
-            <SelectItem value="klaar">Klaar</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Priority filter */}
-        <Select
-          value={prioriteitFilter}
-          onValueChange={(value) => setPrioriteitFilter(value as PrioriteitFilter)}
-        >
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="Prioriteit" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="alle">Alle prioriteiten</SelectItem>
-            <SelectItem value="kritiek">Kritiek</SelectItem>
-            <SelectItem value="hoog">Hoog</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="laag">Laag</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Assigned person filter */}
-        <Select
-          value={persoonFilter}
-          onValueChange={(value) => setPersoonFilter(value)}
-        >
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Toegewezen aan" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="alle">Alle personen</SelectItem>
-            {uniquePersonen.map((persoon) => (
-              <SelectItem key={persoon} value={persoon}>
-                {persoon}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* View toggle */}
         <div className="flex items-center border rounded-md bg-background">
           <Button
             variant={viewMode === 'kanban' ? 'default' : 'ghost'}
@@ -555,6 +500,117 @@ export function TasksLayout() {
             <List className="w-4 h-4" />
           </Button>
         </div>
+      </div>
+
+      {/* Filter pills */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        {/* Status pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(['alle', 'todo', 'bezig', 'review', 'klaar'] as StatusFilter[]).map((f) => {
+            const labels: Record<StatusFilter, string> = {
+              alle: 'Alle',
+              todo: 'Todo',
+              bezig: 'Bezig',
+              review: 'Review',
+              klaar: 'Klaar',
+            }
+            const dotColors: Record<StatusFilter, string> = {
+              alle: '',
+              todo: 'bg-gray-500',
+              bezig: 'bg-blue-500',
+              review: 'bg-purple-500',
+              klaar: 'bg-green-500',
+            }
+            const count = f === 'alle' ? taken.length : taken.filter((t) => t.status === f).length
+            return (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
+                  statusFilter === f
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                {dotColors[f] && <span className={cn('w-2 h-2 rounded-full', dotColors[f])} />}
+                {labels[f]}
+                {count > 0 && <span className="text-[10px] opacity-70">{count}</span>}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="h-4 w-px bg-border hidden sm:block" />
+
+        {/* Priority pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(['alle', 'kritiek', 'hoog', 'medium', 'laag'] as PrioriteitFilter[]).map((f) => {
+            const labels: Record<PrioriteitFilter, string> = {
+              alle: 'Alle',
+              kritiek: 'Kritiek',
+              hoog: 'Hoog',
+              medium: 'Medium',
+              laag: 'Laag',
+            }
+            const dotColors: Record<PrioriteitFilter, string> = {
+              alle: '',
+              kritiek: 'bg-red-500',
+              hoog: 'bg-orange-500',
+              medium: 'bg-yellow-500',
+              laag: 'bg-green-500',
+            }
+            return (
+              <button
+                key={f}
+                onClick={() => setPrioriteitFilter(f)}
+                className={cn(
+                  'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
+                  prioriteitFilter === f
+                    ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                {dotColors[f] && <span className={cn('w-2 h-2 rounded-full', dotColors[f])} />}
+                {labels[f]}
+              </button>
+            )
+          })}
+        </div>
+
+        {uniquePersonen.length > 0 && (
+          <>
+            <div className="h-4 w-px bg-border hidden sm:block" />
+            {/* Person filter pills */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={() => setPersoonFilter('alle')}
+                className={cn(
+                  'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                  persoonFilter === 'alle'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                Iedereen
+              </button>
+              {uniquePersonen.slice(0, 5).map((persoon) => (
+                <button
+                  key={persoon}
+                  onClick={() => setPersoonFilter(persoon)}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                    persoonFilter === persoon
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  )}
+                >
+                  {persoon}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Content */}
@@ -1103,7 +1159,7 @@ function TaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {editingTaak ? 'Taak bewerken' : 'Nieuwe taak'}

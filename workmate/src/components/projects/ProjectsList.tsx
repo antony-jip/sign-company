@@ -14,20 +14,13 @@ import {
   CalendarDays,
   Users,
   BarChart3,
-  Filter,
+  ArrowUpDown,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   formatCurrency,
   formatDate,
@@ -80,6 +73,8 @@ export function ProjectsList() {
   const [statusFilter, setStatusFilter] = useState('alle')
   const [prioriteitFilter, setPrioriteitFilter] = useState('alle')
   const [weergave, setWeergave] = useState<'grid' | 'list'>('grid')
+  const [sortField, setSortField] = useState<'naam' | 'voortgang' | 'budget' | 'eind_datum'>('eind_datum')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
     async function fetchData() {
@@ -125,16 +120,37 @@ export function ProjectsList() {
       result = result.filter((p) => p.prioriteit === prioriteitFilter)
     }
 
-    // Sort: active first, then by progress descending
+    // Sort
     result.sort((a, b) => {
-      const statusOrder: Record<string, number> = { actief: 0, 'in-review': 1, gepland: 2, 'on-hold': 3, afgerond: 4 }
-      const statusDiff = (statusOrder[a.status] ?? 5) - (statusOrder[b.status] ?? 5)
-      if (statusDiff !== 0) return statusDiff
-      return b.voortgang - a.voortgang
+      let cmp = 0
+      switch (sortField) {
+        case 'naam':
+          cmp = a.naam.localeCompare(b.naam, 'nl')
+          break
+        case 'voortgang':
+          cmp = a.voortgang - b.voortgang
+          break
+        case 'budget':
+          cmp = a.budget - b.budget
+          break
+        case 'eind_datum':
+          cmp = new Date(a.eind_datum).getTime() - new Date(b.eind_datum).getTime()
+          break
+      }
+      return sortDir === 'asc' ? cmp : -cmp
     })
 
     return result
-  }, [projecten, klanten, zoekterm, statusFilter, prioriteitFilter])
+  }, [projecten, klanten, zoekterm, statusFilter, prioriteitFilter, sortField, sortDir])
+
+  function handleSort(field: typeof sortField) {
+    if (field === sortField) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
 
   // Briefing stats
   const briefing = useMemo(() => {
@@ -273,46 +289,91 @@ export function ProjectsList() {
         </div>
       </div>
 
-      {/* ── Filters ── */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Zoek op project of klant..."
-            value={zoekterm}
-            onChange={(e) => setZoekterm(e.target.value)}
-            className="pl-9 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-gray-200/80"
-          />
+      {/* ── Search ── */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Zoek op project of klant..."
+          value={zoekterm}
+          onChange={(e) => setZoekterm(e.target.value)}
+          className="pl-9 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-gray-200/80"
+        />
+      </div>
+
+      {/* ── Filter pills + Sort ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        {/* Status pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {statusOpties.map((optie) => {
+            const count = optie.value === 'alle'
+              ? projecten.length
+              : projecten.filter((p) => p.status === optie.value).length
+            return (
+              <button
+                key={optie.value}
+                onClick={() => setStatusFilter(optie.value)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                  statusFilter === optie.value
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                {optie.label}
+                {count > 0 && <span className="ml-1.5 text-[10px] opacity-70">{count}</span>}
+              </button>
+            )
+          })}
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
-            <Filter className="h-3.5 w-3.5" />
-            <span>Filter:</span>
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px] h-9 text-sm bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOpties.map((optie) => (
-                <SelectItem key={optie.value} value={optie.value}>
-                  {optie.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={prioriteitFilter} onValueChange={setPrioriteitFilter}>
-            <SelectTrigger className="w-[150px] h-9 text-sm bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-              <SelectValue placeholder="Prioriteit" />
-            </SelectTrigger>
-            <SelectContent>
-              {prioriteitOpties.map((optie) => (
-                <SelectItem key={optie.value} value={optie.value}>
-                  {optie.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+        <div className="h-4 w-px bg-border hidden sm:block" />
+
+        {/* Priority pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {prioriteitOpties.map((optie) => (
+            <button
+              key={optie.value}
+              onClick={() => setPrioriteitFilter(optie.value)}
+              className={cn(
+                'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                prioriteitFilter === optie.value
+                  ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              )}
+            >
+              {optie.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="h-4 w-px bg-border hidden sm:block" />
+
+        {/* Sort toolbar */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <ArrowUpDown className="w-3 h-3" />
+          <span>Sorteer:</span>
+          {([
+            { field: 'naam' as const, label: 'Naam' },
+            { field: 'voortgang' as const, label: 'Voortgang' },
+            { field: 'budget' as const, label: 'Budget' },
+            { field: 'eind_datum' as const, label: 'Deadline' },
+          ]).map(({ field, label }) => (
+            <button
+              key={field}
+              onClick={() => handleSort(field)}
+              className={cn(
+                'px-1.5 py-0.5 rounded transition-colors',
+                sortField === field
+                  ? 'text-blue-700 dark:text-blue-300 font-medium'
+                  : 'hover:text-foreground'
+              )}
+            >
+              {label}
+              {sortField === field && (
+                <span className="ml-0.5">{sortDir === 'asc' ? '↑' : '↓'}</span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 

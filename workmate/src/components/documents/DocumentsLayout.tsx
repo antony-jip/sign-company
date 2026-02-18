@@ -4,13 +4,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Search,
   Upload,
   Grid3X3,
@@ -169,20 +162,24 @@ export function DocumentsLayout() {
             </p>
           </div>
 
-          {/* Filters bar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+          {/* Search + View toggle */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-3">
             {/* Mobile folder selector */}
-            <div className="lg:hidden">
-              <Select value={activeFolder} onValueChange={setActiveFolder}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {['Alle', 'Projecten', 'Klanten', 'Templates', 'Archief'].map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="lg:hidden flex items-center gap-1.5 flex-wrap">
+              {['Alle', 'Projecten', 'Klanten', 'Templates', 'Archief'].map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setActiveFolder(f)}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                    activeFolder === f
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  )}
+                >
+                  {f}
+                </button>
+              ))}
             </div>
 
             <div className="relative flex-1 max-w-sm">
@@ -194,19 +191,6 @@ export function DocumentsLayout() {
                 className="pl-9"
               />
             </div>
-
-            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="alle">Alle types</SelectItem>
-                <SelectItem value="pdf">PDF</SelectItem>
-                <SelectItem value="docx">DOCX</SelectItem>
-                <SelectItem value="xlsx">XLSX</SelectItem>
-                <SelectItem value="afbeelding">Afbeelding</SelectItem>
-              </SelectContent>
-            </Select>
 
             <div className="flex items-center border rounded-lg overflow-hidden">
               <Button
@@ -237,6 +221,41 @@ export function DocumentsLayout() {
                 <Columns3 className="w-4 h-4" />
               </Button>
             </div>
+          </div>
+
+          {/* Type filter pills */}
+          <div className="flex items-center gap-1.5 mb-4">
+            {(['alle', 'pdf', 'docx', 'xlsx', 'afbeelding'] as TypeFilter[]).map((f) => {
+              const labels: Record<TypeFilter, string> = {
+                alle: 'Alle types',
+                pdf: 'PDF',
+                docx: 'DOCX',
+                xlsx: 'XLSX',
+                afbeelding: 'Afbeeldingen',
+              }
+              const dotColors: Record<TypeFilter, string> = {
+                alle: '',
+                pdf: 'bg-red-500',
+                docx: 'bg-blue-500',
+                xlsx: 'bg-green-500',
+                afbeelding: 'bg-purple-500',
+              }
+              return (
+                <button
+                  key={f}
+                  onClick={() => setTypeFilter(f)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
+                    typeFilter === f
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  )}
+                >
+                  {dotColors[f] && <span className={cn('w-2 h-2 rounded-full', dotColors[f])} />}
+                  {labels[f]}
+                </button>
+              )
+            })}
           </div>
 
           {/* Content */}

@@ -152,7 +152,7 @@ export function DocumentUpload({ open, onOpenChange }: DocumentUploadProps) {
 
   return (
     <Dialog open={open} onOpenChange={resetAndClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Documenten uploaden</DialogTitle>
           <DialogDescription>
