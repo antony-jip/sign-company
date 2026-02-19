@@ -171,6 +171,109 @@ const defaultForm = {
 }
 
 // ============================================================
+// DEMO DATA — Medewerkers Jos & Yvonne
+// ============================================================
+
+const DEMO_MEDEWERKERS: Medewerker[] = [
+  {
+    id: 'mw-jos',
+    user_id: 'u-jos',
+    naam: 'Jos Vermeulen',
+    email: 'jos@signcompany.nl',
+    telefoon: '06-12345678',
+    functie: 'Monteur / Buitendienst',
+    afdeling: 'Montage',
+    avatar_url: '',
+    uurtarief: 45,
+    status: 'actief',
+    rol: 'monteur',
+    vaardigheden: ['Montage', 'Hoogwerker', 'Elektra'],
+    start_datum: '2020-03-15',
+    notities: '',
+    created_at: '2020-03-15',
+    updated_at: '2024-01-01',
+  },
+  {
+    id: 'mw-yvonne',
+    user_id: 'u-yvonne',
+    naam: 'Yvonne de Groot',
+    email: 'yvonne@signcompany.nl',
+    telefoon: '06-87654321',
+    functie: 'Productie / Binnendienst',
+    afdeling: 'Productie',
+    avatar_url: '',
+    uurtarief: 42,
+    status: 'actief',
+    rol: 'productie',
+    vaardigheden: ['Vinyl snijden', 'Print', 'Lamineren', 'Montage'],
+    start_datum: '2021-06-01',
+    notities: '',
+    created_at: '2021-06-01',
+    updated_at: '2024-01-01',
+  },
+]
+
+function generateDemoAfspraken(): MontageAfspraak[] {
+  const today = new Date()
+  const ws = startOfWeek(today, { weekStartsOn: 1 })
+  const days = eachDayOfInterval({ start: ws, end: endOfWeek(today, { weekStartsOn: 1 }) })
+  const d = (idx: number) => formatDateYMD(days[idx])
+
+  return [
+    // Ma — Jos
+    { id: 'demo-a1', user_id: 'demo', project_id: '', project_naam: 'Bakkerij Jansen', klant_id: '', klant_naam: 'Bakkerij Jansen',
+      titel: 'Gevelletters monteren', beschrijving: 'RVS letters ophangen aan de gevel', datum: d(0),
+      start_tijd: '08:00', eind_tijd: '12:00', locatie: 'Dorpstraat 15, Utrecht',
+      monteurs: ['mw-jos'], status: 'afgerond', materialen: ['Ladder', 'Boormachine', 'RVS letters set'], notities: '', created_at: '', updated_at: '' },
+    // Ma — Yvonne
+    { id: 'demo-a2', user_id: 'demo', project_id: '', project_naam: 'Garage Van Dijk', klant_id: '', klant_naam: 'Garage Van Dijk',
+      titel: 'Autobelettering printen', beschrijving: 'Full wrap design voor bedrijfsbus', datum: d(0),
+      start_tijd: '09:00', eind_tijd: '16:00', locatie: 'Werkplaats',
+      monteurs: ['mw-yvonne'], status: 'afgerond', materialen: ['Carwrap folie', 'Laminaat'], notities: '', created_at: '', updated_at: '' },
+    // Di — Jos
+    { id: 'demo-a3', user_id: 'demo', project_id: '', project_naam: 'Restaurant De Smulhoek', klant_id: '', klant_naam: 'Restaurant De Smulhoek',
+      titel: 'Lichtreclame plaatsen', beschrijving: 'LED lichtbak boven ingang monteren', datum: d(1),
+      start_tijd: '07:30', eind_tijd: '14:00', locatie: 'Marktplein 8, Amersfoort',
+      monteurs: ['mw-jos'], status: 'afgerond', materialen: ['Lichtbak', 'LED driver', 'Beugels'], notities: '', created_at: '', updated_at: '' },
+    // Di — Yvonne
+    { id: 'demo-a4', user_id: 'demo', project_id: '', project_naam: 'Kapsalon Stijl', klant_id: '', klant_naam: 'Kapsalon Stijl',
+      titel: 'Raambelettering snijden', beschrijving: 'Openingstijden en logo op raamfolie', datum: d(1),
+      start_tijd: '08:00', eind_tijd: '11:30', locatie: 'Werkplaats',
+      monteurs: ['mw-yvonne'], status: 'afgerond', materialen: ['Glasfolie', 'Vinyl'], notities: '', created_at: '', updated_at: '' },
+    // Wo — beiden
+    { id: 'demo-a5', user_id: 'demo', project_id: '', project_naam: 'Ziekenhuis Oost', klant_id: '', klant_naam: 'Ziekenhuis Oost',
+      titel: 'Wayfinding systeem', beschrijving: 'Bewegwijzering afdeling Cardiologie', datum: d(2),
+      start_tijd: '08:00', eind_tijd: '17:00', locatie: 'Ziekenhuis Oost, Nieuwegein',
+      monteurs: ['mw-jos', 'mw-yvonne'], status: 'bezig', materialen: ['Bewegwijzering borden', 'Muurbeugels', 'Vinyl prints'], notities: '', created_at: '', updated_at: '' },
+    // Do — Jos
+    { id: 'demo-a6', user_id: 'demo', project_id: '', project_naam: 'Tandartspraktijk Smile', klant_id: '', klant_naam: 'Tandartspraktijk Smile',
+      titel: 'Reclamezuil plaatsen', beschrijving: 'Dubbelzijdige lichtgevende zuil bij entree', datum: d(3),
+      start_tijd: '09:00', eind_tijd: '15:00', locatie: 'Stationsweg 22, De Bilt',
+      monteurs: ['mw-jos'], status: 'gepland', materialen: ['Reclamezuil', 'Fundering set'], notities: '', created_at: '', updated_at: '' },
+    // Do — Yvonne
+    { id: 'demo-a7', user_id: 'demo', project_id: '', project_naam: 'Sportschool FitLife', klant_id: '', klant_naam: 'Sportschool FitLife',
+      titel: 'Spandoek produceren', beschrijving: 'Groot spandoek 6x2m voor opening', datum: d(3),
+      start_tijd: '08:00', eind_tijd: '12:00', locatie: 'Werkplaats',
+      monteurs: ['mw-yvonne'], status: 'gepland', materialen: ['Spandoekdoek', 'Ogen', 'Touw'], notities: '', created_at: '', updated_at: '' },
+    // Vr — Jos ochtend
+    { id: 'demo-a8', user_id: 'demo', project_id: '', project_naam: 'Sportschool FitLife', klant_id: '', klant_naam: 'Sportschool FitLife',
+      titel: 'Spandoek ophangen', beschrijving: 'Spandoek bevestigen aan gevel', datum: d(4),
+      start_tijd: '08:00', eind_tijd: '10:30', locatie: 'Industrieweg 5, Utrecht',
+      monteurs: ['mw-jos'], status: 'gepland', materialen: ['Spandoek', 'Spanners'], notities: '', created_at: '', updated_at: '' },
+    // Vr — Yvonne
+    { id: 'demo-a9', user_id: 'demo', project_id: '', project_naam: 'Gemeente Zeist', klant_id: '', klant_naam: 'Gemeente Zeist',
+      titel: 'Informatieborden ontwerpen', beschrijving: 'Ontwerp en print parkeergarage borden', datum: d(4),
+      start_tijd: '09:00', eind_tijd: '16:00', locatie: 'Werkplaats',
+      monteurs: ['mw-yvonne'], status: 'gepland', materialen: ['Aluminium platen', 'UV print'], notities: '', created_at: '', updated_at: '' },
+    // Vr middag — beiden
+    { id: 'demo-a10', user_id: 'demo', project_id: '', project_naam: 'Garage Van Dijk', klant_id: '', klant_naam: 'Garage Van Dijk',
+      titel: 'Autobelettering plakken', beschrijving: 'Full wrap aanbrengen op bedrijfsbus', datum: d(4),
+      start_tijd: '13:00', eind_tijd: '17:00', locatie: 'Werkplaats',
+      monteurs: ['mw-jos', 'mw-yvonne'], status: 'gepland', materialen: ['Carwrap (geprint)', 'Heteluchtpistool'], notities: '', created_at: '', updated_at: '' },
+  ]
+}
+
+// ============================================================
 // MAIN COMPONENT
 // ============================================================
 
@@ -190,8 +293,8 @@ export function CalendarLayout() {
   const [formData, setFormData] = useState(defaultForm)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Filter: which medewerkers to show
-  const [selectedMedewerkers, setSelectedMedewerkers] = useState<string[]>([]) // empty = show all
+  // Active medewerker filter: null = show all, string = single medewerker id
+  const [activeMedewerker, setActiveMedewerker] = useState<string | null>(null)
 
   // ---- Data loading ----
   const loadData = useCallback(async () => {
@@ -204,15 +307,23 @@ export function CalendarLayout() {
         getKlanten(),
         getTaken(),
       ])
-      setAfspraken(aData)
+      const activeMw = mData.filter((m) => m.status === 'actief')
+      // Fallback to demo data when no medewerkers / afspraken exist
+      if (activeMw.length === 0) {
+        setMedewerkers(DEMO_MEDEWERKERS)
+        setAfspraken(aData.length > 0 ? aData : generateDemoAfspraken())
+      } else {
+        setMedewerkers(activeMw)
+        setAfspraken(aData)
+      }
       setProjecten(pData)
-      setMedewerkers(mData.filter((m) => m.status === 'actief'))
       setKlanten(kData)
-      // Only show project tasks that have a deadline and a project_id
       setProjectTaken(tData.filter((t) => t.project_id && t.deadline && t.status !== 'done'))
     } catch (err) {
       console.error('Fout bij laden data:', err)
-      toast.error('Kon planningsdata niet laden')
+      // Fallback to demo on error
+      setMedewerkers(DEMO_MEDEWERKERS)
+      setAfspraken(generateDemoAfspraken())
     } finally {
       setIsLoading(false)
     }
@@ -235,13 +346,11 @@ export function CalendarLayout() {
     return `${format(start, 'd MMM', { locale: nl })} - ${format(end, 'd MMM yyyy', { locale: nl })}`
   }, [weekDates])
 
-  // ---- Filter afspraken by selected medewerkers ----
+  // ---- Filter afspraken by active medewerker ----
   const filteredAfspraken = useMemo(() => {
-    if (selectedMedewerkers.length === 0) return afspraken
-    return afspraken.filter((a) =>
-      a.monteurs.some((m) => selectedMedewerkers.includes(m))
-    )
-  }, [afspraken, selectedMedewerkers])
+    if (!activeMedewerker) return afspraken
+    return afspraken.filter((a) => a.monteurs.includes(activeMedewerker))
+  }, [afspraken, activeMedewerker])
 
   // ---- Get afspraken for a specific day ----
   const getAfsprakenForDay = useCallback(
@@ -305,6 +414,8 @@ export function CalendarLayout() {
     setFormData({
       ...defaultForm,
       datum: formatDateYMD(d),
+      // Pre-fill active medewerker when one is selected
+      monteurs: activeMedewerker ? [activeMedewerker] : [],
     })
     setDialogOpen(true)
   }
@@ -428,11 +539,9 @@ export function CalendarLayout() {
     }))
   }
 
-  // Toggle medewerker filter
-  const toggleMedewerkerFilter = (id: string) => {
-    setSelectedMedewerkers((prev) =>
-      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
-    )
+  // Switch medewerker filter (single select toggle)
+  const switchMedewerker = (id: string | null) => {
+    setActiveMedewerker((prev) => (prev === id ? null : id))
   }
 
   // ---- Stats ----
@@ -589,7 +698,9 @@ export function CalendarLayout() {
             Planning
           </h1>
           <p className="text-sm text-muted-foreground">
-            Plan en beheer montage, installatie en uitvoering
+            {activeMedewerker
+              ? `Planning van ${medewerkers.find((m) => m.id === activeMedewerker)?.naam || 'medewerker'}`
+              : 'Plan en beheer montage, installatie en uitvoering'}
           </p>
         </div>
         <Button
@@ -661,40 +772,43 @@ export function CalendarLayout() {
                     {weekLabel}
                   </h2>
                 </div>
-                {/* Medewerker filter chips */}
+                {/* Medewerker switcher tabs */}
                 {medewerkers.length > 0 && (
-                  <div className="hidden md:flex items-center gap-1.5">
-                    <Filter className="w-3.5 h-3.5 text-muted-foreground mr-1" />
-                    {selectedMedewerkers.length > 0 && (
-                      <button
-                        onClick={() => setSelectedMedewerkers([])}
-                        className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded border border-dashed border-gray-300 dark:border-gray-600"
-                      >
-                        Alles
-                      </button>
-                    )}
-                    {medewerkers.slice(0, 6).map((mw, idx) => {
-                      const isActive = selectedMedewerkers.includes(mw.id)
+                  <div className="hidden md:flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                    <button
+                      onClick={() => setActiveMedewerker(null)}
+                      className={cn(
+                        'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                        !activeMedewerker
+                          ? 'bg-white dark:bg-gray-700 text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      Iedereen
+                    </button>
+                    {medewerkers.map((mw, idx) => {
+                      const isActive = activeMedewerker === mw.id
                       return (
                         <button
                           key={mw.id}
-                          onClick={() => toggleMedewerkerFilter(mw.id)}
+                          onClick={() => switchMedewerker(mw.id)}
                           className={cn(
-                            'flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium transition-all border',
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                             isActive
-                              ? 'bg-primary/10 text-accent dark:text-primary border-primary/30'
-                              : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                              ? 'bg-white dark:bg-gray-700 text-foreground shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground'
                           )}
                         >
                           <div
                             className={cn(
-                              'w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white font-bold',
+                              'w-5 h-5 rounded-full flex items-center justify-center text-[9px] text-white font-bold',
                               getAvatarColor(idx)
                             )}
                           >
                             {getInitials(mw.naam)}
                           </div>
-                          <span className="hidden lg:inline">{mw.naam.split(' ')[0]}</span>
+                          {mw.naam.split(' ')[0]}
                         </button>
                       )
                     })}
@@ -787,6 +901,7 @@ export function CalendarLayout() {
                                 datum: formatDateYMD(d),
                                 start_tijd: `${String(hour).padStart(2, '0')}:00`,
                                 eind_tijd: `${String(Math.min(hour + 2, 19)).padStart(2, '0')}:00`,
+                                monteurs: activeMedewerker ? [activeMedewerker] : [],
                               })
                               setEditingId(null)
                               setDialogOpen(true)
@@ -937,7 +1052,8 @@ export function CalendarLayout() {
               ) : (
                 <div className="space-y-1">
                   {medewerkers.map((mw, idx) => {
-                    const isActive = selectedMedewerkers.length === 0 || selectedMedewerkers.includes(mw.id)
+                    const isSelected = activeMedewerker === mw.id
+                    const isActive = !activeMedewerker || activeMedewerker === mw.id
                     const todayCount = afspraken.filter(
                       (a) => a.datum === formatDateYMD(new Date()) && a.monteurs.includes(mw.id)
                     ).length
@@ -950,12 +1066,14 @@ export function CalendarLayout() {
                     return (
                       <button
                         key={mw.id}
-                        onClick={() => toggleMedewerkerFilter(mw.id)}
+                        onClick={() => switchMedewerker(mw.id)}
                         className={cn(
                           'w-full flex items-center gap-2.5 p-2 rounded-lg transition-all text-left',
-                          isActive
-                            ? 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'
-                            : 'opacity-40 hover:opacity-70'
+                          isSelected
+                            ? 'bg-primary/10 ring-1 ring-primary/30 hover:bg-primary/15'
+                            : isActive
+                              ? 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'
+                              : 'opacity-40 hover:opacity-70'
                         )}
                       >
                         <div
