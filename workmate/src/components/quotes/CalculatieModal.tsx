@@ -183,6 +183,11 @@ export function CalculatieModal({
   // ---- Template laden ----
 
   const laadTemplate = useCallback((template: CalculatieTemplate) => {
+    // Waarschuw als er al regels zijn
+    if (regels.length > 0 && regels.some((r) => r.product_naam.trim())) {
+      const confirmed = window.confirm('Let op: dit vervangt alle huidige calculatie-regels. Doorgaan?')
+      if (!confirmed) return
+    }
     // Geef elke regel een nieuw ID zodat er geen conflicten zijn
     const nieuweRegels = template.regels.map((r) => ({
       ...r,
@@ -193,7 +198,7 @@ export function CalculatieModal({
       setBeschrijving(template.beschrijving)
     }
     setShowTemplates(false)
-  }, [beschrijving])
+  }, [beschrijving, regels])
 
   // ---- Berekeningen ----
 

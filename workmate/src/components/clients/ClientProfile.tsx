@@ -138,8 +138,8 @@ export function ClientProfile() {
         setClientEmails(
           allEmails.filter(
             (e) =>
-              e.van.toLowerCase().includes(email) ||
-              e.aan.toLowerCase().includes(email)
+              (e.van?.toLowerCase()?.includes(email) ?? false) ||
+              (e.aan?.toLowerCase()?.includes(email) ?? false)
           )
         )
         setClientOffertes(

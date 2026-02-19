@@ -243,7 +243,7 @@ export function ProjectDetail() {
       const offerteItems = await getOfferteItems(offerte.id)
 
       // Create factuur
-      const factuurNummer = `FAC-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100)}`
+      const factuurNummer = `FAC-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`
       const vervaldatum = new Date()
       vervaldatum.setDate(vervaldatum.getDate() + 30)
 

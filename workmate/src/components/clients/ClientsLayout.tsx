@@ -119,6 +119,8 @@ export function ClientsLayout() {
   }
 
   async function handleDeleteClient(id: string) {
+    const confirmed = window.confirm('Weet je zeker dat je deze klant wilt verwijderen? Dit kan niet ongedaan worden.')
+    if (!confirmed) return
     try {
       await deleteKlant(id)
       toast.success('Klant verwijderd')

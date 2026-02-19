@@ -712,6 +712,8 @@ export function MontagePlanningLayout() {
   }
 
   async function handleDelete(afspraakId: string) {
+    const confirmed = window.confirm('Weet je zeker dat je deze montage-afspraak wilt verwijderen?')
+    if (!confirmed) return
     try {
       await deleteMontageAfspraak(afspraakId).catch(() => null);
       setAfspraken((prev) => prev.filter((a) => a.id !== afspraakId));

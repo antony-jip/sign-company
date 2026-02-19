@@ -311,6 +311,8 @@ function CalculatieTab() {
   }
 
   const handleDeleteProduct = async (id: string) => {
+    const confirmed = window.confirm('Weet je zeker dat je dit product wilt verwijderen?')
+    if (!confirmed) return
     try {
       await deleteCalculatieProduct(id)
       setProducten((prev) => prev.filter((p) => p.id !== id))
