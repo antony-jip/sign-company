@@ -468,12 +468,24 @@ export function ProjectDetail() {
 
       {/* ── Back + Header ── */}
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-4 text-muted-foreground hover:text-foreground">
-          <Link to="/projecten">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Terug naar projecten
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3 mb-4">
+          <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+            <Link to="/projecten">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Projecten
+            </Link>
+          </Button>
+          {klant && (
+            <>
+              <span className="text-muted-foreground text-xs">/</span>
+              <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+                <Link to={`/klanten/${klant.id}`}>
+                  {klant.bedrijfsnaam}
+                </Link>
+              </Button>
+            </>
+          )}
+        </div>
 
         {/* Project Hero Banner */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 text-white">
@@ -515,6 +527,15 @@ export function ProjectDetail() {
                     : <Sparkles className="h-4 w-4 mr-1.5" />
                   }
                   AI Analyse
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/facturen?klant=${project.klant_id}`)}
+                  className="h-8 px-3 text-emerald-200 hover:text-white hover:bg-white/10 border border-white/10"
+                >
+                  <Receipt className="h-4 w-4 mr-1.5" />
+                  Factuur
                 </Button>
               </div>
             </div>

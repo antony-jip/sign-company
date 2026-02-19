@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
-import { getOfferte, getOfferteItems, getKlant, updateOfferte } from '@/services/supabaseService'
+import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
+import { Receipt, ArrowLeft, ExternalLink } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 
 interface ForgeQuotePreviewProps {
@@ -35,6 +36,7 @@ function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; kort
 
 export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: ForgeQuotePreviewProps) {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, pipelineStappen, valuta } = useAppSettings()
 
   // Parse address components from combined string
@@ -127,6 +129,19 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       const updated = await updateOfferte(fetchedOfferte.id, { status: newStatus })
       setFetchedOfferte(updated)
       toast.success(`Status bijgewerkt naar "${newStatus}"`)
+
+      // Auto-activate project when quote is approved
+      if (newStatus === 'goedgekeurd' && fetchedOfferte.project_id) {
+        try {
+          const project = await getProject(fetchedOfferte.project_id)
+          if (project && project.status === 'gepland') {
+            await updateProject(project.id, { status: 'actief' })
+            toast.success(`Project "${project.naam}" is nu actief`)
+          }
+        } catch {
+          // Non-critical: don't block the status update
+        }
+      }
     } catch (err) {
       console.error('Failed to update offerte status:', err)
       toast.error('Kon status niet bijwerken')
@@ -197,36 +212,82 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       {/* Action bar - only shown when accessed via route (service data available) */}
       {fetchedOfferte && (
         <div className="flex items-center justify-between mb-4 px-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Status:</span>
-            <select
-              value={offerteData.status}
-              onChange={(e) => handleStatusUpdate(e.target.value as Offerte['status'])}
-              className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          <div className="flex items-center gap-3">
+            {/* Back navigation */}
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
             >
-              {(pipelineStappen && pipelineStappen.length > 0
-                ? pipelineStappen.filter(s => s.actief).sort((a, b) => a.volgorde - b.volgorde)
-                : [
-                    { key: 'concept', label: 'Concept' },
-                    { key: 'verzonden', label: 'Verzonden' },
-                    { key: 'bekeken', label: 'Bekeken' },
-                    { key: 'goedgekeurd', label: 'Goedgekeurd' },
-                    { key: 'afgewezen', label: 'Afgewezen' },
-                  ]
-              ).map(stap => (
-                <option key={stap.key} value={stap.key}>{stap.label}</option>
-              ))}
-            </select>
+              <ArrowLeft className="h-4 w-4" />
+              Terug
+            </button>
+
+            {/* Breadcrumb links */}
+            {fetchedKlant && (
+              <button
+                onClick={() => navigate(`/klanten/${fetchedKlant.id}`)}
+                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                {fetchedKlant.bedrijfsnaam}
+                <ExternalLink className="h-3 w-3" />
+              </button>
+            )}
+            {fetchedOfferte.project_id && (
+              <button
+                onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
+                className="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                Bekijk project
+                <ExternalLink className="h-3 w-3" />
+              </button>
+            )}
+
+            <div className="h-4 w-px bg-gray-300 dark:bg-gray-600" />
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Status:</span>
+              <select
+                value={offerteData.status}
+                onChange={(e) => handleStatusUpdate(e.target.value as Offerte['status'])}
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                {(pipelineStappen && pipelineStappen.length > 0
+                  ? pipelineStappen.filter(s => s.actief).sort((a, b) => a.volgorde - b.volgorde)
+                  : [
+                      { key: 'concept', label: 'Concept' },
+                      { key: 'verzonden', label: 'Verzonden' },
+                      { key: 'bekeken', label: 'Bekeken' },
+                      { key: 'goedgekeurd', label: 'Goedgekeurd' },
+                      { key: 'afgewezen', label: 'Afgewezen' },
+                    ]
+                ).map(stap => (
+                  <option key={stap.key} value={stap.key}>{stap.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <button
-            onClick={handleDownloadPDF}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Download PDF
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Factureer button - only for goedgekeurde offertes */}
+            {fetchedOfferte.status === 'goedgekeurd' && (
+              <button
+                onClick={() => navigate(`/facturen?convert_offerte=${fetchedOfferte.id}`)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+              >
+                <Receipt className="h-4 w-4" />
+                Factureer
+              </button>
+            )}
+            <button
+              onClick={handleDownloadPDF}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Download PDF
+            </button>
+          </div>
         </div>
       )}
 

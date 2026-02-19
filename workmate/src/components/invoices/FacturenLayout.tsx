@@ -69,6 +69,7 @@ import { sendEmail } from '@/services/gmailService'
 import { factuurHerinneringTemplate, factuurVerzendTemplate } from '@/services/emailTemplateService'
 import { generateFactuurPDF } from '@/services/pdfService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useSearchParams } from 'react-router-dom'
 
 // ============ TYPES ============
 
@@ -88,6 +89,8 @@ interface LineItem {
 
 interface FactuurFormData {
   klant_id: string
+  offerte_id?: string
+  project_id?: string
   titel: string
   factuurdatum: string
   vervaldatum: string
@@ -391,6 +394,9 @@ export function FacturenLayout() {
     items: [createEmptyLineItem()],
   })
 
+  // URL params for workflow integration
+  const [searchParams, setSearchParams] = useSearchParams()
+
   // ============ DATA LOADING ============
 
   useEffect(() => {
@@ -422,6 +428,31 @@ export function FacturenLayout() {
     }
     loadData()
   }, [])
+
+  // Handle URL-based workflow triggers (e.g. from quote detail or client profile)
+  useEffect(() => {
+    if (isLoading) return // Wait for data to load first
+
+    const convertOfferteId = searchParams.get('convert_offerte')
+    const klantId = searchParams.get('klant')
+
+    if (convertOfferteId && offertes.length > 0) {
+      const offerte = offertes.find((o) => o.id === convertOfferteId)
+      if (offerte) {
+        handleConvertOfferte(offerte)
+        // Clear the param so it doesn't re-trigger
+        setSearchParams({}, { replace: true })
+      }
+    } else if (klantId && klanten.length > 0) {
+      // Pre-fill klant and open create dialog
+      const klant = klanten.find((k) => k.id === klantId)
+      if (klant) {
+        setFormData((prev) => ({ ...prev, klant_id: klantId }))
+        setCreateDialogOpen(true)
+        setSearchParams({}, { replace: true })
+      }
+    }
+  }, [isLoading, searchParams, offertes, klanten, handleConvertOfferte, setSearchParams])
 
   // ============ COMPUTED VALUES ============
 
@@ -613,6 +644,8 @@ export function FacturenLayout() {
           user_id: '',
           klant_id: formData.klant_id,
           klant_naam: selectedKlant?.bedrijfsnaam || '',
+          offerte_id: formData.offerte_id,
+          project_id: formData.project_id,
           nummer,
           titel: formData.titel,
           status: 'concept',
@@ -806,6 +839,8 @@ export function FacturenLayout() {
 
       setFormData({
         klant_id: offerte.klant_id,
+        offerte_id: offerte.id,
+        project_id: offerte.project_id || undefined,
         titel: offerte.titel,
         factuurdatum: getTodayString(),
         vervaldatum: getDefaultVervaldatum(getTodayString()),
@@ -1265,9 +1300,13 @@ export function FacturenLayout() {
                       </button>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                      <a
+                        href={`/klanten/${factuur.klant_id}`}
+                        className="text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {factuur.klant_naam || 'Onbekende klant'}
-                      </span>
+                      </a>
                     </td>
                     <td className="px-4 py-3 max-w-[220px]">
                       <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">
@@ -1386,7 +1425,12 @@ export function FacturenLayout() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Klant</p>
-                  <p className="text-sm font-medium">{viewingFactuur.klant_naam || 'Onbekende klant'}</p>
+                  <a
+                    href={`/klanten/${viewingFactuur.klant_id}`}
+                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    {viewingFactuur.klant_naam || 'Onbekende klant'}
+                  </a>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Status</p>
@@ -1419,6 +1463,30 @@ export function FacturenLayout() {
                   </div>
                 )}
               </div>
+
+              {/* Cross-entity links */}
+              {(viewingFactuur.offerte_id || viewingFactuur.project_id) && (
+                <div className="flex items-center gap-3 text-xs">
+                  {viewingFactuur.offerte_id && (
+                    <a
+                      href={`/offertes/${viewingFactuur.offerte_id}`}
+                      className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      <FileInput className="h-3 w-3" />
+                      Bekijk offerte
+                    </a>
+                  )}
+                  {viewingFactuur.project_id && (
+                    <a
+                      href={`/projecten/${viewingFactuur.project_id}`}
+                      className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      <FileText className="h-3 w-3" />
+                      Bekijk project
+                    </a>
+                  )}
+                </div>
+              )}
 
               <Separator />
 

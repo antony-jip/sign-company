@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { FolderPlus, FilePlus, UserPlus, Upload, Newspaper, Mail, ArrowUpRight } from 'lucide-react'
+import { FolderPlus, FilePlus, UserPlus, Receipt, Calendar, Mail, ArrowUpRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface QuickAction {
@@ -35,18 +35,18 @@ const actions: QuickAction[] = [
     gradient: 'from-violet-500 to-purple-400',
   },
   {
-    label: 'Nieuwsbrief',
-    description: 'Verstuur campagne',
-    icon: Newspaper,
-    href: '/nieuwsbrieven',
-    gradient: 'from-teal-500 to-emerald-400',
+    label: 'Nieuwe Factuur',
+    description: 'Maak een factuur',
+    icon: Receipt,
+    href: '/facturen',
+    gradient: 'from-amber-500 to-orange-400',
   },
   {
-    label: 'Data Import',
-    description: 'Importeer gegevens',
-    icon: Upload,
-    href: '/importeren',
-    gradient: 'from-amber-500 to-orange-400',
+    label: 'Planning',
+    description: 'Bekijk kalender',
+    icon: Calendar,
+    href: '/kalender',
+    gradient: 'from-teal-500 to-emerald-400',
   },
   {
     label: 'Email',

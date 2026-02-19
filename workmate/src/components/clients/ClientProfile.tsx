@@ -327,6 +327,13 @@ export function ClientProfile() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="gap-2 cursor-pointer"
+                onClick={() => navigate(`/facturen?klant=${id}`)}
+              >
+                <Receipt className="w-4 h-4 text-emerald-500" />
+                Factuur
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer"
                 onClick={() => navigate(`/kalender?nieuw=true&klant=${id}`)}
               >
                 <CalendarPlus className="w-4 h-4 text-green-500" />
