@@ -151,6 +151,69 @@ function minutesToPx(minutes: number, hourHeight: number): number {
   return (minutes / 60) * hourHeight
 }
 
+// Overlap detection: assigns column index + total columns per event
+type LayoutInfo = { colIndex: number; totalCols: number }
+
+function computeOverlapLayout(events: MontageAfspraak[]): Map<string, LayoutInfo> {
+  const result = new Map<string, LayoutInfo>()
+  if (events.length === 0) return result
+
+  // Sort by start time, then by longer duration first
+  const sorted = [...events].sort((a, b) => {
+    const diff = timeToMinutes(a.start_tijd) - timeToMinutes(b.start_tijd)
+    if (diff !== 0) return diff
+    return (timeToMinutes(b.eind_tijd) - timeToMinutes(b.start_tijd)) -
+           (timeToMinutes(a.eind_tijd) - timeToMinutes(a.start_tijd))
+  })
+
+  // Group overlapping events into clusters
+  const clusters: MontageAfspraak[][] = []
+  let currentCluster: MontageAfspraak[] = []
+  let clusterEnd = 0
+
+  for (const event of sorted) {
+    const start = timeToMinutes(event.start_tijd)
+    const end = timeToMinutes(event.eind_tijd)
+    if (currentCluster.length === 0 || start < clusterEnd) {
+      currentCluster.push(event)
+      clusterEnd = Math.max(clusterEnd, end)
+    } else {
+      clusters.push(currentCluster)
+      currentCluster = [event]
+      clusterEnd = end
+    }
+  }
+  if (currentCluster.length > 0) clusters.push(currentCluster)
+
+  // Assign columns within each cluster
+  for (const cluster of clusters) {
+    const columns: MontageAfspraak[][] = []
+    for (const event of cluster) {
+      const eventStart = timeToMinutes(event.start_tijd)
+      let placed = false
+      for (let c = 0; c < columns.length; c++) {
+        const lastInCol = columns[c][columns[c].length - 1]
+        if (timeToMinutes(lastInCol.eind_tijd) <= eventStart) {
+          columns[c].push(event)
+          placed = true
+          break
+        }
+      }
+      if (!placed) {
+        columns.push([event])
+      }
+    }
+    const totalCols = columns.length
+    columns.forEach((col, colIndex) => {
+      col.forEach((event) => {
+        result.set(event.id, { colIndex, totalCols })
+      })
+    })
+  }
+
+  return result
+}
+
 // ============================================================
 // DEFAULT FORM STATE
 // ============================================================
@@ -595,7 +658,11 @@ export function CalendarLayout() {
   const HOUR_HEIGHT = 56
 
   // ---- Render: Afspraak card in the week grid ----
-  const renderAfspraakCard = (afspraak: MontageAfspraak, isOverlay = false) => {
+  const renderAfspraakCard = (
+    afspraak: MontageAfspraak,
+    isOverlay = false,
+    layout?: LayoutInfo
+  ) => {
     const cfg = STATUS_CONFIG[afspraak.status]
     const startMin = timeToMinutes(afspraak.start_tijd)
     const endMin = timeToMinutes(afspraak.eind_tijd)
@@ -604,39 +671,66 @@ export function CalendarLayout() {
     const height = Math.max(minutesToPx(duration, HOUR_HEIGHT), 28)
 
     if (isOverlay) {
+      const colIndex = layout?.colIndex ?? 0
+      const totalCols = layout?.totalCols ?? 1
+      const widthPercent = 100 / totalCols
+      const leftPercent = colIndex * widthPercent
+      const isNarrow = totalCols > 1
+
+      // Show medewerker name in narrow cards for clarity
+      const monteurName = isNarrow && afspraak.monteurs.length > 0
+        ? medewerkers.find((m) => m.id === afspraak.monteurs[0])?.naam.split(' ')[0]
+        : null
+
       return (
         <div
           key={afspraak.id}
           className={cn(
-            'absolute left-0 right-1 rounded-md border px-2 py-1 cursor-pointer transition-all hover:shadow-md hover:z-20 overflow-hidden',
+            'absolute rounded-md border cursor-pointer transition-all hover:shadow-md hover:z-20 overflow-hidden',
             cfg.bgColor,
             cfg.borderColor
           )}
-          style={{ top: `${topOffset}px`, height: `${height}px` }}
+          style={{
+            top: `${topOffset}px`,
+            height: `${height}px`,
+            left: `calc(${leftPercent}% + 2px)`,
+            width: `calc(${widthPercent}% - 4px)`,
+          }}
           onClick={() => openEditDialog(afspraak)}
         >
-          <div className="flex items-start gap-1 min-h-0">
-            <div className={cn('w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0', cfg.darkBg)} />
-            <div className="flex-1 min-w-0">
-              <p className={cn('text-[11px] font-semibold truncate leading-tight', cfg.color)}>
-                {afspraak.titel}
-              </p>
-              {height > 36 && (
-                <p className="text-[10px] text-muted-foreground truncate">
-                  {afspraak.start_tijd} - {afspraak.eind_tijd}
+          <div className={cn('h-full px-1.5 py-1', isNarrow && 'px-1')}>
+            <div className="flex items-start gap-1 min-h-0">
+              <div className={cn('w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0', cfg.darkBg)} />
+              <div className="flex-1 min-w-0">
+                <p className={cn(
+                  'font-semibold truncate leading-tight',
+                  cfg.color,
+                  isNarrow ? 'text-[10px]' : 'text-[11px]'
+                )}>
+                  {afspraak.titel}
                 </p>
-              )}
-              {height > 52 && afspraak.locatie && (
-                <p className="text-[10px] text-muted-foreground truncate flex items-center gap-0.5">
-                  <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-                  {afspraak.locatie}
-                </p>
-              )}
-              {height > 68 && afspraak.monteurs.length > 0 && (
-                <div className="mt-0.5">
-                  {renderMonteurAvatars(afspraak.monteurs)}
-                </div>
-              )}
+                {monteurName && height > 28 && (
+                  <p className="text-[9px] text-muted-foreground truncate font-medium">
+                    {monteurName}
+                  </p>
+                )}
+                {height > 36 && (
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {afspraak.start_tijd} - {afspraak.eind_tijd}
+                  </p>
+                )}
+                {!isNarrow && height > 52 && afspraak.locatie && (
+                  <p className="text-[10px] text-muted-foreground truncate flex items-center gap-0.5">
+                    <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+                    {afspraak.locatie}
+                  </p>
+                )}
+                {!isNarrow && height > 68 && afspraak.monteurs.length > 0 && (
+                  <div className="mt-0.5">
+                    {renderMonteurAvatars(afspraak.monteurs)}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -932,11 +1026,12 @@ export function CalendarLayout() {
                   <div /> {/* time label spacer */}
                   {weekDates.map((date) => {
                     const dayAfspraken = getAfsprakenForDay(date)
+                    const overlapLayout = computeOverlapLayout(dayAfspraken)
                     return (
                       <div key={date.toISOString()} className="relative border-l border-transparent" style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}>
                         {dayAfspraken.map((afspraak) => (
-                          <div key={afspraak.id} className="pointer-events-auto px-0.5">
-                            {renderAfspraakCard(afspraak, true)}
+                          <div key={afspraak.id} className="pointer-events-auto">
+                            {renderAfspraakCard(afspraak, true, overlapLayout.get(afspraak.id))}
                           </div>
                         ))}
                       </div>
