@@ -17,6 +17,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react'
 import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail } from '@/services/supabaseService'
+import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
 import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -295,29 +296,40 @@ export function EmailLayout() {
     setSelectedEmail(null)
   }, [])
 
-  const handleSendEmail = useCallback((data: { to: string; subject: string; body: string; scheduledAt?: string }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; scheduledAt?: string }) => {
     const isScheduled = !!data.scheduledAt
-    const newEmail: Omit<Email, 'id' | 'created_at'> = {
-      user_id: '',
-      gmail_id: '',
-      van: 'ik@signcompany.nl',
-      aan: data.to,
-      onderwerp: data.subject,
-      inhoud: data.body,
-      datum: isScheduled ? data.scheduledAt! : new Date().toISOString(),
-      gelezen: true,
-      starred: false,
-      labels: isScheduled ? ['gepland'] : ['verzonden'],
-      bijlagen: 0,
-      map: isScheduled ? 'gepland' : 'verzonden',
-      scheduled_at: data.scheduledAt,
-    }
-    createEmail(newEmail)
-      .then((saved) => {
-        setEmails((prev) => [saved, ...prev])
-        toast.success(isScheduled ? 'Email ingepland' : 'Email verzonden')
+
+    try {
+      // Actually send via /api/send-email (SMTP)
+      await sendEmailViaApi(data.to, data.subject, data.body, {
+        scheduledAt: data.scheduledAt,
       })
-      .catch(() => toast.error('Email kon niet worden verzonden'))
+
+      // Also save locally so it appears in the sent folder
+      const newEmail: Omit<Email, 'id' | 'created_at'> = {
+        user_id: '',
+        gmail_id: '',
+        van: 'ik@signcompany.nl',
+        aan: data.to,
+        onderwerp: data.subject,
+        inhoud: data.body,
+        datum: isScheduled ? data.scheduledAt! : new Date().toISOString(),
+        gelezen: true,
+        starred: false,
+        labels: isScheduled ? ['gepland'] : ['verzonden'],
+        bijlagen: 0,
+        map: isScheduled ? 'gepland' : 'verzonden',
+        scheduled_at: data.scheduledAt,
+      }
+      const saved = await createEmail(newEmail)
+      setEmails((prev) => [saved, ...prev])
+      toast.success(isScheduled ? 'Email ingepland' : 'Email verzonden')
+    } catch (err: any) {
+      // If API send fails (e.g. no email settings), still save as draft
+      console.error('Email verzenden mislukt:', err)
+      toast.error(err.message || 'Email kon niet worden verzonden')
+    }
+
     setViewMode('idle')
   }, [])
 

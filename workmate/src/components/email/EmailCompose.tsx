@@ -44,8 +44,9 @@ import {
   FileText,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { createEmail } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
+import { generateEmailDraft } from '@/services/aiService'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 interface EmailComposeProps {
@@ -344,8 +345,20 @@ export function EmailCompose({
     }
   }
 
-  const handleAiGenerate = () => {
-    alert('Configureer OpenAI API key voor AI tekst generatie')
+  const handleAiGenerate = async () => {
+    try {
+      const draft = await generateEmailDraft({
+        onderwerp: subject || undefined,
+        doel: subject || 'zakelijke email',
+      })
+      if (editorRef.current) {
+        editorRef.current.innerText = draft
+        setEditorEmpty(false)
+      }
+      toast.success('AI tekst gegenereerd')
+    } catch (err: any) {
+      toast.error(err.message || 'AI generatie mislukt')
+    }
   }
 
   const handleSend = async () => {
@@ -355,22 +368,8 @@ export function EmailCompose({
     try {
       const body = editorRef.current?.innerText || ''
 
-      await createEmail({
-        user_id: user?.id || 'demo',
-        gmail_id: '',
-        van: user?.email || 'ik@' + (bedrijfsnaam || 'bedrijf').toLowerCase().replace(/\s/g, '') + '.nl',
-        aan: to.trim(),
-        onderwerp: subject.trim(),
-        inhoud: body,
-        datum: new Date().toISOString(),
-        gelezen: true,
-        starred: false,
-        labels: ['verzonden'],
-        bijlagen: attachments.length,
-        map: scheduledAt ? 'gepland' : 'verzonden',
-        scheduled_at: scheduledAt || undefined,
-      })
-
+      // Delegate actual sending + saving to parent via onSend callback
+      // Parent (EmailLayout) handles /api/send-email + createEmail
       onSend?.({ to: to.trim(), subject: subject.trim(), body, scheduledAt: scheduledAt || undefined })
       resetAndClose()
     } catch (error) {
