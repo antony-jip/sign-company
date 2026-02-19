@@ -406,9 +406,14 @@ export function TasksLayout() {
     }
   }
 
-  // Quick add for a specific day column
+  // Quick add for a specific day column (unscheduled)
   async function handleDayQuickAdd(day: Date, title: string) {
     await handleQuickAdd(title, 'medium', toDateStr(day), '')
+  }
+
+  // Quick add for a specific day + hour
+  async function handleDayHourQuickAdd(day: Date, hour: number, title: string) {
+    await handleQuickAdd(title, 'medium', toDateTimeStr(day, hour), '')
   }
 
   // === RENDER ===
@@ -549,6 +554,7 @@ export function TasksLayout() {
                   onEdit={openEditDialog}
                   onDelete={handleDeleteDirect}
                   onQuickAdd={(title) => handleDayQuickAdd(day, title)}
+                  onQuickAddAtTime={(hour, title) => handleDayHourQuickAdd(day, hour, title)}
                 />
               )
             })}
@@ -667,7 +673,7 @@ function DayColumn({
   day, dayIndex, isToday, isPast, tasks, projectMap, nowLineTop,
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
-  onToggle, onEdit, onDelete, onQuickAdd,
+  onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime,
 }: {
   day: Date
   dayIndex: number
@@ -686,10 +692,14 @@ function DayColumn({
   onEdit: (taak: Taak) => void
   onDelete: (taak: Taak) => void
   onQuickAdd: (title: string) => void
+  onQuickAddAtTime: (hour: number, title: string) => void
 }) {
   const [addTitle, setAddTitle] = useState('')
   const [isAdding, setIsAdding] = useState(false)
+  const [addingAtHour, setAddingAtHour] = useState<number | null>(null)
+  const [hourAddTitle, setHourAddTitle] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const hourInputRef = useRef<HTMLInputElement>(null)
 
   // Separate scheduled and unscheduled tasks
   const scheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline) !== null)
@@ -724,19 +734,20 @@ function DayColumn({
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
         const isDropHere = dropTarget?.dayIndex === dayIndex && dropTarget?.hour === hour
+        const isAddingHere = addingAtHour === hour
         return (
           <div
             key={hour}
             style={{ height: HOUR_HEIGHT }}
             className={cn(
-              'border-b border-border/30 transition-colors duration-150',
+              'group/hour border-b border-border/30 transition-colors duration-150 relative',
               isDropHere && 'bg-[#58B09C]/10'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
             onDrop={(e) => handleDrop(e, hour)}
             onDragLeave={handleDragLeave}
           >
-            {/* Drop indicator line */}
+            {/* Drop indicator */}
             {isDropHere && (
               <div className="h-full flex items-start pt-1 px-1 pointer-events-none">
                 <div className="w-full rounded-md border-2 border-dashed border-[#58B09C]/40 h-10 flex items-center justify-center">
@@ -744,6 +755,38 @@ function DayColumn({
                   <span className="text-[10px] text-[#58B09C]/60 font-medium">{String(hour).padStart(2, '0')}:00</span>
                 </div>
               </div>
+            )}
+
+            {/* Inline add at this hour */}
+            {isAddingHere && (
+              <div className="absolute inset-x-1 top-1 z-30">
+                <input
+                  ref={hourInputRef}
+                  value={hourAddTitle}
+                  onChange={(e) => setHourAddTitle(e.target.value)}
+                  placeholder={`Taak om ${String(hour).padStart(2, '0')}:00...`}
+                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#58B09C]/50 bg-card shadow-lg focus:outline-none focus:border-[#58B09C] focus:ring-2 focus:ring-[#58B09C]/20 text-foreground placeholder:text-muted-foreground/40 transition-all"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && hourAddTitle.trim()) {
+                      onQuickAddAtTime(hour, hourAddTitle.trim())
+                      setHourAddTitle('')
+                      setAddingAtHour(null)
+                    }
+                    if (e.key === 'Escape') { setAddingAtHour(null); setHourAddTitle('') }
+                  }}
+                  onBlur={() => { if (!hourAddTitle.trim()) { setAddingAtHour(null); setHourAddTitle('') } }}
+                />
+              </div>
+            )}
+
+            {/* Plus button per hour slot */}
+            {!isDropHere && !isAddingHere && (
+              <button
+                onClick={() => { setAddingAtHour(hour); setHourAddTitle(''); setTimeout(() => hourInputRef.current?.focus(), 50) }}
+                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-md text-muted-foreground/25 hover:text-[#58B09C] hover:bg-[#58B09C]/10 transition-all duration-200"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
             )}
           </div>
         )
