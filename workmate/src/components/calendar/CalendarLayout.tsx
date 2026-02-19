@@ -922,7 +922,7 @@ export function CalendarLayout() {
                 </div>
               </div>
             ) : (
-              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 420px)', minHeight: '400px' }}>
+              <div className="overflow-auto relative" style={{ maxHeight: 'calc(100vh - 420px)', minHeight: '400px' }}>
                 <div className="grid grid-cols-[50px_repeat(7,1fr)] min-w-[700px]">
                   {/* Header row: day labels */}
                   <div className="sticky top-0 z-10 bg-card border-b border-gray-200 dark:border-gray-700" />
