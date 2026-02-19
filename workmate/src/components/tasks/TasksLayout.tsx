@@ -90,7 +90,6 @@ const EMPTY_FORM: TaakFormData = {
 }
 
 export function TasksLayout() {
-  const navigate = useNavigate()
   const { user } = useAuth()
 
   const [taken, setTaken] = useState<Taak[]>([])
