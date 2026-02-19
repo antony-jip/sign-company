@@ -31,39 +31,39 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  CalendarDays,
   Loader2,
   CheckCircle2,
   Circle,
-  ChevronDown,
-  ChevronRight,
   ChevronLeft,
+  ChevronRight,
   Flag,
   Hash,
-  Inbox,
-  Search,
   X,
-  Calendar,
 } from 'lucide-react'
-import { cn, formatDate } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten } from '@/services/supabaseService'
 import type { Taak, Project } from '@/types'
 
 type TaakStatus = Taak['status']
 type TaakPrioriteit = Taak['prioriteit']
-type ViewSection = 'week' | 'inbox' | 'project'
 
-const PRIORITEIT_ORDER: Record<string, number> = {
-  kritiek: 4, hoog: 3, medium: 2, laag: 1,
+const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 2, laag: 1 }
+
+const PRIORITEIT_COLORS: Record<TaakPrioriteit, string> = {
+  kritiek: 'border-l-red-500 bg-red-50 dark:bg-red-950/30',
+  hoog: 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/30',
+  medium: 'border-l-sky-500 bg-sky-50 dark:bg-sky-950/30',
+  laag: 'border-l-slate-300 bg-slate-50 dark:bg-slate-800/30',
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
   kritiek: 'text-red-500', hoog: 'text-orange-500', medium: 'text-yellow-500', laag: 'text-muted-foreground/30',
 }
 
-const DAY_NAMES = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag']
-const DAY_NAMES_SHORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
+const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
+const MONTH_NAMES = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 7) // 07:00 - 19:00
 
 interface TaakFormData {
   titel: string
@@ -82,6 +82,8 @@ const EMPTY_FORM: TaakFormData = {
   toegewezen_aan: '', deadline: '', geschatte_tijd: 0, bestede_tijd: 0, project_id: '',
 }
 
+// === HELPERS ===
+
 function getMonday(d: Date): Date {
   const date = new Date(d)
   const day = date.getDay()
@@ -95,17 +97,11 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
-function formatDayHeader(date: Date, today: Date): string {
-  if (isSameDay(date, today)) return 'Vandaag'
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  if (isSameDay(date, tomorrow)) return 'Morgen'
-  return `${DAY_NAMES[date.getDay()]} ${date.getDate()}`
+function toDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function formatShortDate(date: Date): string {
-  return `${date.getDate()} ${['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][date.getMonth()]}`
-}
+// === MAIN COMPONENT ===
 
 export function TasksLayout() {
   const { user } = useAuth()
@@ -114,15 +110,10 @@ export function TasksLayout() {
   const [projecten, setProjecten] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // View state
-  const [activeView, setActiveView] = useState<ViewSection>('week')
-  const [activeProjectId, setActiveProjectId] = useState<string>('')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [weekOffset, setWeekOffset] = useState(0)
   const [showCompleted, setShowCompleted] = useState(false)
-  const [showSearch, setShowSearch] = useState(false)
-  const [weekOffset, setWeekOffset] = useState(0) // 0 = this week, 1 = next week, etc.
 
-  // FAB quick-add state
+  // FAB state
   const [fabOpen, setFabOpen] = useState(false)
   const [fabTitle, setFabTitle] = useState('')
   const [fabPriority, setFabPriority] = useState<TaakPrioriteit>('medium')
@@ -130,19 +121,24 @@ export function TasksLayout() {
   const [fabProjectId, setFabProjectId] = useState('')
   const fabInputRef = useRef<HTMLInputElement>(null)
 
-  // Edit dialog state
+  // Edit
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingTaak, setEditingTaak] = useState<Taak | null>(null)
   const [formData, setFormData] = useState<TaakFormData>(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Delete state
+  // Delete
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingTaak, setDeletingTaak] = useState<Taak | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Projects sidebar
-  const [projectsExpanded, setProjectsExpanded] = useState(true)
+  // Now-line timer
+  const [nowMinutes, setNowMinutes] = useState(() => {
+    const n = new Date()
+    return n.getHours() * 60 + n.getMinutes()
+  })
+
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -160,11 +156,28 @@ export function TasksLayout() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Focus FAB input when opened
+  // Update now-line every minute
   useEffect(() => {
-    if (fabOpen) {
-      setTimeout(() => fabInputRef.current?.focus(), 100)
+    const interval = setInterval(() => {
+      const n = new Date()
+      setNowMinutes(n.getHours() * 60 + n.getMinutes())
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Scroll to current time on load
+  useEffect(() => {
+    if (!isLoading && scrollRef.current) {
+      const nowHour = new Date().getHours()
+      const targetHour = Math.max(7, nowHour - 1)
+      const hourHeight = 64 // h-16 = 64px
+      scrollRef.current.scrollTop = (targetHour - 7) * hourHeight
     }
+  }, [isLoading])
+
+  // Focus FAB input
+  useEffect(() => {
+    if (fabOpen) setTimeout(() => fabInputRef.current?.focus(), 100)
   }, [fabOpen])
 
   const projectMap = useMemo(() => {
@@ -173,7 +186,6 @@ export function TasksLayout() {
     return map
   }, [projecten])
 
-  // Week days
   const today = useMemo(() => {
     const d = new Date()
     d.setHours(0, 0, 0, 0)
@@ -190,12 +202,12 @@ export function TasksLayout() {
     })
   }, [today, weekOffset])
 
-  // Tasks grouped by day for week view
+  // Tasks grouped by day key
   const tasksByDay = useMemo(() => {
     const map = new Map<string, Taak[]>()
-    weekDays.forEach((d) => { map.set(d.toDateString(), []) })
+    weekDays.forEach((d) => map.set(d.toDateString(), []))
 
-    const activeTaken = taken.filter((t) => t.status !== 'klaar' || showCompleted)
+    const activeTaken = showCompleted ? taken : taken.filter((t) => t.status !== 'klaar')
 
     activeTaken.forEach((t) => {
       if (!t.deadline) return
@@ -207,7 +219,7 @@ export function TasksLayout() {
       }
     })
 
-    // Sort each day by priority
+    // Sort each day by priority desc
     map.forEach((tasks) => {
       tasks.sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
     })
@@ -215,79 +227,32 @@ export function TasksLayout() {
     return map
   }, [taken, weekDays, showCompleted])
 
-  // Overdue tasks (before this week)
-  const overdueTasks = useMemo(() => {
-    const firstDay = weekDays[0]
-    return taken
-      .filter((t) => {
-        if (t.status === 'klaar' || !t.deadline) return false
-        const d = new Date(t.deadline)
-        d.setHours(0, 0, 0, 0)
-        return d < firstDay
-      })
-      .sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
-  }, [taken, weekDays])
-
-  // Tasks without deadline
-  const noDateTasks = useMemo(() => {
-    return taken
-      .filter((t) => !t.deadline && (t.status !== 'klaar' || showCompleted))
-      .sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
-  }, [taken, showCompleted])
-
-  // Inbox / project filtered tasks
-  const filteredTaken = useMemo(() => {
-    let result = [...taken]
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim()
-      result = result.filter(
-        (t) =>
-          t.titel.toLowerCase().includes(q) ||
-          t.beschrijving.toLowerCase().includes(q) ||
-          (projectMap[t.project_id] || '').toLowerCase().includes(q)
-      )
+  // Week range label
+  const weekLabel = useMemo(() => {
+    const first = weekDays[0]
+    const last = weekDays[6]
+    if (first.getMonth() === last.getMonth()) {
+      return `${first.getDate()} – ${last.getDate()} ${MONTH_NAMES[first.getMonth()]}`
     }
+    return `${first.getDate()} ${MONTH_NAMES[first.getMonth()]} – ${last.getDate()} ${MONTH_NAMES[last.getMonth()]}`
+  }, [weekDays])
 
-    if (activeView === 'project') {
-      result = result.filter((t) => t.project_id === activeProjectId)
-    }
+  // Now-line position (percentage within the grid)
+  const nowLineTop = useMemo(() => {
+    const startMin = 7 * 60
+    const endMin = 20 * 60
+    const totalMin = endMin - startMin
+    const offset = nowMinutes - startMin
+    if (offset < 0 || offset > totalMin) return null
+    return (offset / totalMin) * 100
+  }, [nowMinutes])
 
-    if (!showCompleted) {
-      result = result.filter((t) => t.status !== 'klaar')
-    }
-
-    result.sort((a, b) => {
-      const aOverdue = a.deadline && new Date(a.deadline) < today && a.status !== 'klaar' ? 1 : 0
-      const bOverdue = b.deadline && new Date(b.deadline) < today && b.status !== 'klaar' ? 1 : 0
-      if (aOverdue !== bOverdue) return bOverdue - aOverdue
-      const prioDiff = (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0)
-      if (prioDiff !== 0) return prioDiff
-      if (a.deadline && b.deadline) return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
-      if (a.deadline) return -1
-      if (b.deadline) return 1
-      return 0
-    })
-
-    return result
-  }, [taken, activeView, activeProjectId, showCompleted, searchQuery, projectMap, today])
-
-  const completedCount = useMemo(() => taken.filter((t) => t.status === 'klaar').length, [taken])
-
-  const projectTaskCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    taken.forEach((t) => {
-      if (t.status !== 'klaar' && t.project_id) {
-        counts[t.project_id] = (counts[t.project_id] || 0) + 1
-      }
-    })
-    return counts
-  }, [taken])
+  const isCurrentWeek = weekOffset === 0
 
   // === HANDLERS ===
 
   async function handleQuickAdd(title: string, priority: TaakPrioriteit, deadline: string, projectId: string) {
-    if (!title.trim()) return
+    if (!title.trim()) return false
     try {
       const newTaak = await createTaak({
         user_id: user?.id || '',
@@ -380,6 +345,11 @@ export function TasksLayout() {
     } finally { setIsDeleting(false) }
   }
 
+  // Quick add for a specific day column
+  async function handleDayQuickAdd(day: Date, title: string) {
+    await handleQuickAdd(title, 'medium', toDateStr(day), '')
+  }
+
   // === RENDER ===
 
   if (isLoading) {
@@ -391,222 +361,133 @@ export function TasksLayout() {
     )
   }
 
-  const weekLabel = weekOffset === 0
-    ? 'Deze week'
-    : weekOffset === 1
-    ? 'Volgende week'
-    : `${formatShortDate(weekDays[0])} - ${formatShortDate(weekDays[6])}`
-
   return (
     <>
-      <div className="flex gap-6 min-h-[calc(100vh-120px)]">
-        {/* Sidebar */}
-        <aside className="hidden md:flex flex-col w-52 flex-shrink-0">
-          <nav className="space-y-1">
-            <SidebarItem
-              icon={<Calendar className="w-4 h-4" />}
-              label="Week"
-              active={activeView === 'week' && !searchQuery}
-              onClick={() => { setActiveView('week'); setSearchQuery(''); setShowSearch(false); setWeekOffset(0) }}
-            />
-            <SidebarItem
-              icon={<Inbox className="w-4 h-4" />}
-              label="Alle taken"
-              count={taken.filter((t) => t.status !== 'klaar').length}
-              active={activeView === 'inbox' && !searchQuery}
-              onClick={() => { setActiveView('inbox'); setSearchQuery(''); setShowSearch(false) }}
-            />
-          </nav>
-
-          <div className="mt-6">
-            <button
-              onClick={() => setProjectsExpanded(!projectsExpanded)}
-              className="flex items-center gap-1.5 w-full px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-            >
-              {projectsExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              Projecten
-            </button>
-            {projectsExpanded && (
-              <nav className="mt-1 space-y-0.5">
-                {projecten
-                  .filter((p) => p.status === 'actief' || p.status === 'gepland')
-                  .map((project) => (
-                    <SidebarItem
-                      key={project.id}
-                      icon={<Hash className="w-3.5 h-3.5" />}
-                      label={project.naam}
-                      count={projectTaskCounts[project.id] || 0}
-                      active={activeView === 'project' && activeProjectId === project.id && !searchQuery}
-                      onClick={() => { setActiveView('project'); setActiveProjectId(project.id); setSearchQuery(''); setShowSearch(false) }}
-                      compact
-                    />
-                  ))}
-              </nav>
-            )}
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <main className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-foreground font-display">
-                {searchQuery ? 'Zoekresultaten' : activeView === 'week' ? weekLabel : activeView === 'inbox' ? 'Alle taken' : projectMap[activeProjectId] || 'Project'}
-              </h1>
-              {/* Week navigation */}
-              {activeView === 'week' && !searchQuery && (
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset((w) => w - 1)}>
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  {weekOffset !== 0 && (
-                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setWeekOffset(0)}>
-                      Vandaag
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset((w) => w + 1)}>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost" size="icon" className="h-8 w-8"
-                onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchQuery('') }}
-              >
-                <Search className="w-4 h-4" />
+      <div className="flex flex-col h-[calc(100vh-120px)]">
+        {/* === TOP BAR === */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card flex-shrink-0">
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-bold text-foreground font-display">{weekLabel}</h1>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setWeekOffset((w) => w - 1)}>
+                <ChevronLeft className="w-4 h-4" />
               </Button>
-              {/* Mobile view selector */}
-              <div className="md:hidden">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      {activeView === 'week' ? 'Week' : activeView === 'inbox' ? 'Alle' : projectMap[activeProjectId]}
-                      <ChevronDown className="w-3 h-3 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => { setActiveView('week'); setSearchQuery('') }}>
-                      <Calendar className="w-4 h-4 mr-2" /> Week
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { setActiveView('inbox'); setSearchQuery('') }}>
-                      <Inbox className="w-4 h-4 mr-2" /> Alle taken
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {projecten.filter((p) => p.status === 'actief' || p.status === 'gepland').map((p) => (
-                      <DropdownMenuItem key={p.id} onClick={() => { setActiveView('project'); setActiveProjectId(p.id); setSearchQuery('') }}>
-                        <Hash className="w-4 h-4 mr-2" /> {p.naam}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <Button
+                variant={isCurrentWeek ? 'default' : 'outline'}
+                size="sm"
+                className={cn('h-8 text-xs px-3', isCurrentWeek && 'bg-[#58B09C] hover:bg-[#386150]')}
+                onClick={() => setWeekOffset(0)}
+              >
+                Vandaag
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setWeekOffset((w) => w + 1)}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-
-          {/* Search */}
-          {showSearch && (
-            <div className="mb-4">
-              <Input autoFocus placeholder="Zoek taken..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="max-w-md" />
-            </div>
-          )}
-
-          {/* Week view */}
-          {activeView === 'week' && !searchQuery ? (
-            <div className="space-y-1">
-              {/* Overdue */}
-              {overdueTasks.length > 0 && weekOffset <= 0 && (
-                <DaySection
-                  label="Achterstallig"
-                  isOverdue
-                  tasks={overdueTasks}
-                  projectMap={projectMap}
-                  showProject
-                  onToggle={handleToggleComplete}
-                  onEdit={openEditDialog}
-                  onDelete={(t) => { setDeletingTaak(t); setDeleteDialogOpen(true) }}
-                />
-              )}
-
-              {/* Day columns */}
-              {weekDays.map((day) => {
-                const dayTasks = tasksByDay.get(day.toDateString()) || []
-                const isToday = isSameDay(day, today)
-                return (
-                  <DaySection
-                    key={day.toDateString()}
-                    label={formatDayHeader(day, today)}
-                    sublabel={`${DAY_NAMES_SHORT[day.getDay()]} ${day.getDate()}`}
-                    isToday={isToday}
-                    tasks={dayTasks}
-                    projectMap={projectMap}
-                    showProject
-                    onToggle={handleToggleComplete}
-                    onEdit={openEditDialog}
-                    onDelete={(t) => { setDeletingTaak(t); setDeleteDialogOpen(true) }}
-                    onQuickAdd={async (title) => {
-                      const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
-                      await handleQuickAdd(title, 'medium', dateStr, '')
-                    }}
-                  />
-                )
-              })}
-
-              {/* No date tasks */}
-              {noDateTasks.length > 0 && (
-                <DaySection
-                  label="Geen datum"
-                  tasks={noDateTasks}
-                  projectMap={projectMap}
-                  showProject
-                  onToggle={handleToggleComplete}
-                  onEdit={openEditDialog}
-                  onDelete={(t) => { setDeletingTaak(t); setDeleteDialogOpen(true) }}
-                />
-              )}
-            </div>
-          ) : (
-            /* Inbox / project / search list view */
-            <div className="space-y-px">
-              {filteredTaken.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <CheckCircle2 className="w-10 h-10 mb-3 opacity-20" />
-                  <p className="text-sm font-medium">{searchQuery ? 'Geen taken gevonden' : 'Alles afgevinkt!'}</p>
-                </div>
-              ) : (
-                filteredTaken.map((taak) => (
-                  <TaskRow
-                    key={taak.id}
-                    taak={taak}
-                    projectNaam={projectMap[taak.project_id]}
-                    showProject={activeView !== 'project'}
-                    onToggle={() => handleToggleComplete(taak)}
-                    onEdit={() => openEditDialog(taak)}
-                    onDelete={() => { setDeletingTaak(taak); setDeleteDialogOpen(true) }}
-                  />
-                ))
-              )}
-            </div>
-          )}
-
-          {/* Completed toggle */}
-          {completedCount > 0 && (
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCompleted(!showCompleted)}
-              className="flex items-center gap-2 mt-4 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className={cn(
+                'text-xs px-2.5 py-1 rounded-md border transition-colors',
+                showCompleted
+                  ? 'bg-[#58B09C]/10 border-[#58B09C]/30 text-[#386150] dark:text-[#7dd3b8]'
+                  : 'border-border text-muted-foreground hover:text-foreground'
+              )}
             >
-              {showCompleted ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              {completedCount} afgeronde {completedCount === 1 ? 'taak' : 'taken'}
+              {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
             </button>
-          )}
-        </main>
+          </div>
+        </div>
+
+        {/* === DAY HEADERS === */}
+        <div className="flex border-b border-border bg-card flex-shrink-0">
+          {/* Time gutter spacer */}
+          <div className="w-14 flex-shrink-0" />
+          {/* Day columns headers */}
+          {weekDays.map((day, i) => {
+            const isToday = isSameDay(day, today)
+            const dayTasks = tasksByDay.get(day.toDateString()) || []
+            const isPast = day < today && !isToday
+            return (
+              <div
+                key={i}
+                className={cn(
+                  'flex-1 min-w-0 text-center py-2.5 border-l border-border',
+                  isToday && 'bg-[#58B09C]/5'
+                )}
+              >
+                <div className={cn(
+                  'text-[11px] uppercase tracking-wider font-medium',
+                  isToday ? 'text-[#58B09C]' : isPast ? 'text-muted-foreground/40' : 'text-muted-foreground'
+                )}>
+                  {DAY_LABELS[i]}
+                </div>
+                <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                  <span className={cn(
+                    'inline-flex items-center justify-center text-sm font-semibold',
+                    isToday
+                      ? 'w-7 h-7 rounded-full bg-[#58B09C] text-white'
+                      : isPast ? 'text-muted-foreground/40' : 'text-foreground'
+                  )}>
+                    {day.getDate()}
+                  </span>
+                  {dayTasks.length > 0 && (
+                    <span className={cn(
+                      'text-[10px] tabular-nums',
+                      isToday ? 'text-[#58B09C]' : 'text-muted-foreground/40'
+                    )}>
+                      {dayTasks.length}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* === CALENDAR GRID === */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative">
+          <div className="flex min-h-full">
+            {/* Time gutter */}
+            <div className="w-14 flex-shrink-0 relative">
+              {HOURS.map((hour) => (
+                <div key={hour} className="h-16 relative">
+                  <span className="absolute -top-2.5 right-3 text-[11px] text-muted-foreground/50 tabular-nums">
+                    {String(hour).padStart(2, '0')}:00
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Day columns with grid */}
+            {weekDays.map((day, dayIndex) => {
+              const isToday = isSameDay(day, today)
+              const dayTasks = tasksByDay.get(day.toDateString()) || []
+              const isPast = day < today && !isToday
+
+              return (
+                <DayColumn
+                  key={dayIndex}
+                  day={day}
+                  isToday={isToday}
+                  isPast={isPast}
+                  tasks={dayTasks}
+                  projectMap={projectMap}
+                  nowLineTop={isCurrentWeek && isToday ? nowLineTop : null}
+                  onToggle={handleToggleComplete}
+                  onEdit={openEditDialog}
+                  onDelete={(t) => { setDeletingTaak(t); setDeleteDialogOpen(true) }}
+                  onQuickAdd={(title) => handleDayQuickAdd(day, title)}
+                />
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* === FLOATING ACTION BUTTON === */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-        {/* Quick-add popup */}
         {fabOpen && (
           <div className="w-80 rounded-xl border border-border bg-card shadow-2xl p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
             <div className="flex items-center justify-between">
@@ -671,7 +552,6 @@ export function TasksLayout() {
           </div>
         )}
 
-        {/* FAB button */}
         <button
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
@@ -696,7 +576,7 @@ export function TasksLayout() {
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Taak verwijderen</DialogTitle>
-            <DialogDescription>Weet je zeker dat je "{deletingTaak?.titel}" wilt verwijderen?</DialogDescription>
+            <DialogDescription>Weet je zeker dat je &quot;{deletingTaak?.titel}&quot; wilt verwijderen?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>Annuleren</Button>
@@ -711,226 +591,172 @@ export function TasksLayout() {
   )
 }
 
-// === DAY SECTION (Week view) ===
+// === DAY COLUMN ===
 
-function DaySection({
-  label, sublabel, isToday, isOverdue, tasks, projectMap, showProject,
+function DayColumn({
+  day, isToday, isPast, tasks, projectMap, nowLineTop,
   onToggle, onEdit, onDelete, onQuickAdd,
 }: {
-  label: string
-  sublabel?: string
-  isToday?: boolean
-  isOverdue?: boolean
+  day: Date
+  isToday: boolean
+  isPast: boolean
   tasks: Taak[]
   projectMap: Record<string, string>
-  showProject: boolean
+  nowLineTop: number | null
   onToggle: (taak: Taak) => void
   onEdit: (taak: Taak) => void
   onDelete: (taak: Taak) => void
-  onQuickAdd?: (title: string) => void
+  onQuickAdd: (title: string) => void
 }) {
-  const [addingTitle, setAddingTitle] = useState('')
+  const [addTitle, setAddTitle] = useState('')
   const [isAdding, setIsAdding] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   return (
     <div className={cn(
-      'rounded-lg mb-2',
-      isToday && 'bg-[#58B09C]/5 border border-[#58B09C]/15',
-      isOverdue && 'bg-red-50/50 dark:bg-red-900/5 border border-red-200/30 dark:border-red-800/20',
-      !isToday && !isOverdue && 'border border-transparent'
+      'flex-1 min-w-0 border-l border-border relative',
+      isToday && 'bg-[#58B09C]/[0.02]'
     )}>
-      {/* Day header */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span className={cn(
-            'text-sm font-semibold',
-            isToday && 'text-[#386150] dark:text-[#58B09C]',
-            isOverdue && 'text-red-600 dark:text-red-400',
-            !isToday && !isOverdue && 'text-foreground'
-          )}>
-            {label}
-          </span>
-          {sublabel && !isToday && !isOverdue && (
-            <span className="text-xs text-muted-foreground/50">{sublabel}</span>
-          )}
-          {tasks.length > 0 && (
-            <span className="text-[11px] text-muted-foreground/40">{tasks.length}</span>
-          )}
-        </div>
-        {onQuickAdd && (
-          <button
-            onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-            className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 rounded text-muted-foreground/40 hover:text-[#58B09C] transition-all"
-            title="Taak toevoegen"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
+      {/* Hour grid lines */}
+      {HOURS.map((hour) => (
+        <div key={hour} className="h-16 border-b border-border/40" />
+      ))}
 
-      {/* Tasks */}
-      <div className="px-1">
+      {/* Now-line */}
+      {nowLineTop !== null && (
+        <div
+          className="absolute left-0 right-0 z-20 pointer-events-none"
+          style={{ top: `${nowLineTop}%` }}
+        >
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 flex-shrink-0" />
+            <div className="flex-1 h-[2px] bg-red-500" />
+          </div>
+        </div>
+      )}
+
+      {/* Tasks overlay */}
+      <div className="absolute inset-0 p-1 pt-2 flex flex-col gap-1 overflow-y-auto">
         {tasks.map((taak) => (
-          <TaskRow
+          <TaskCard
             key={taak.id}
             taak={taak}
             projectNaam={projectMap[taak.project_id]}
-            showProject={showProject}
-            hideDeadline={!isOverdue}
+            isPast={isPast}
             onToggle={() => onToggle(taak)}
             onEdit={() => onEdit(taak)}
             onDelete={() => onDelete(taak)}
           />
         ))}
+
+        {/* Quick add inline */}
+        {isAdding ? (
+          <div className="mx-0.5">
+            <input
+              ref={inputRef}
+              value={addTitle}
+              onChange={(e) => setAddTitle(e.target.value)}
+              placeholder="Taak..."
+              className="w-full text-xs px-2 py-1.5 rounded border border-[#58B09C]/50 bg-card focus:outline-none focus:border-[#58B09C] text-foreground placeholder:text-muted-foreground/40"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && addTitle.trim()) {
+                  onQuickAdd(addTitle.trim())
+                  setAddTitle('')
+                }
+                if (e.key === 'Escape') { setIsAdding(false); setAddTitle('') }
+              }}
+              onBlur={() => { if (!addTitle.trim()) { setIsAdding(false); setAddTitle('') } }}
+            />
+          </div>
+        ) : (
+          <button
+            onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
+            className="mx-0.5 flex items-center gap-1 px-1.5 py-1 rounded text-[11px] text-muted-foreground/30 hover:text-[#58B09C] hover:bg-[#58B09C]/5 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+          </button>
+        )}
       </div>
-
-      {/* Inline quick add per day */}
-      {isAdding && onQuickAdd && (
-        <div className="px-3 pb-2">
-          <Input
-            ref={inputRef}
-            placeholder="Taak toevoegen..."
-            value={addingTitle}
-            onChange={(e) => setAddingTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && addingTitle.trim()) {
-                onQuickAdd(addingTitle.trim())
-                setAddingTitle('')
-                // Keep open for more
-              }
-              if (e.key === 'Escape') {
-                setIsAdding(false)
-                setAddingTitle('')
-              }
-            }}
-            onBlur={() => {
-              if (!addingTitle.trim()) {
-                setIsAdding(false)
-                setAddingTitle('')
-              }
-            }}
-            className="h-8 text-sm"
-          />
-        </div>
-      )}
-
-      {/* Empty state for today */}
-      {tasks.length === 0 && !isOverdue && !isAdding && (
-        <div className="px-3 pb-2">
-          {onQuickAdd ? (
-            <button
-              onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground/40 hover:text-muted-foreground transition-colors py-1"
-            >
-              <Plus className="w-3 h-3" />
-              <span>Taak toevoegen</span>
-            </button>
-          ) : (
-            <p className="text-xs text-muted-foreground/30 py-1">Geen taken</p>
-          )}
-        </div>
-      )}
     </div>
   )
 }
 
-// === SIDEBAR ITEM ===
+// === TASK CARD ===
 
-function SidebarItem({
-  icon, label, count, active, onClick, compact = false, countColor,
+function TaskCard({
+  taak, projectNaam, isPast, onToggle, onEdit, onDelete,
 }: {
-  icon: React.ReactNode; label: string; count?: number; active: boolean
-  onClick: () => void; compact?: boolean; countColor?: string
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'flex items-center gap-2.5 w-full rounded-lg transition-colors text-left',
-        compact ? 'px-3 py-1.5 text-sm' : 'px-3 py-2 text-sm',
-        active
-          ? 'bg-[#58B09C]/10 text-[#386150] dark:text-[#7dd3b8] font-medium'
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-      )}
-    >
-      <span className={cn(active ? 'text-[#58B09C]' : 'text-muted-foreground/60')}>{icon}</span>
-      <span className="flex-1 truncate">{label}</span>
-      {count !== undefined && count > 0 && (
-        <span className={cn('text-xs tabular-nums', countColor || 'text-muted-foreground/50')}>{count}</span>
-      )}
-    </button>
-  )
-}
-
-// === TASK ROW ===
-
-function TaskRow({
-  taak, projectNaam, showProject, hideDeadline, onToggle, onEdit, onDelete,
-}: {
-  taak: Taak; projectNaam?: string; showProject: boolean; hideDeadline?: boolean
-  onToggle: () => void; onEdit: () => void; onDelete: () => void
+  taak: Taak
+  projectNaam?: string
+  isPast: boolean
+  onToggle: () => void
+  onEdit: () => void
+  onDelete: () => void
 }) {
   const isDone = taak.status === 'klaar'
-  const isOverdue = !isDone && taak.deadline && new Date(taak.deadline) < new Date()
 
   return (
-    <div className={cn(
-      'group flex items-start gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-muted/40',
-      isDone && 'opacity-50'
-    )}>
-      <button onClick={onToggle} className="mt-0.5 flex-shrink-0 transition-colors">
-        {isDone ? (
-          <CheckCircle2 className="w-5 h-5 text-[#58B09C]" />
-        ) : (
-          <Circle className={cn(
-            'w-5 h-5 hover:text-[#58B09C] transition-colors',
-            taak.prioriteit === 'kritiek' ? 'text-red-400' :
-            taak.prioriteit === 'hoog' ? 'text-orange-400' :
-            'text-muted-foreground/30'
-          )} />
-        )}
-      </button>
-
-      <div className="flex-1 min-w-0">
-        <p className={cn('text-sm text-foreground', isDone && 'line-through text-muted-foreground')}>
-          {taak.titel}
-        </p>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          {showProject && projectNaam && (
-            <span className="text-xs text-muted-foreground/60 flex items-center gap-0.5">
-              <Hash className="w-2.5 h-2.5" />{projectNaam}
-            </span>
-          )}
-          {!hideDeadline && taak.deadline && (
-            <span className={cn(
-              'text-xs flex items-center gap-0.5',
-              isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-muted-foreground/60'
-            )}>
-              <CalendarDays className="w-2.5 h-2.5" />{formatDate(taak.deadline)}
+    <div
+      className={cn(
+        'group relative rounded-md border-l-[3px] px-2 py-1.5 mx-0.5 cursor-pointer transition-all',
+        'hover:shadow-md hover:z-10',
+        isDone ? 'opacity-40 border-l-slate-300 bg-slate-50 dark:bg-slate-800/20' : PRIORITEIT_COLORS[taak.prioriteit],
+        isPast && !isDone && 'opacity-70'
+      )}
+      onClick={onEdit}
+    >
+      <div className="flex items-start gap-1.5">
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <p className={cn(
+            'text-[12px] font-medium leading-tight text-foreground',
+            isDone && 'line-through text-muted-foreground'
+          )}>
+            {taak.titel}
+          </p>
+          {projectNaam && (
+            <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5 mt-0.5">
+              <Hash className="w-2 h-2" />{projectNaam}
             </span>
           )}
         </div>
+
+        {/* Checkbox */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggle() }}
+          className="flex-shrink-0 mt-0.5"
+        >
+          {isDone ? (
+            <CheckCircle2 className="w-4 h-4 text-[#58B09C]" />
+          ) : (
+            <Circle className={cn(
+              'w-4 h-4 transition-colors hover:text-[#58B09C]',
+              taak.prioriteit === 'kritiek' ? 'text-red-400' :
+              taak.prioriteit === 'hoog' ? 'text-orange-400' :
+              'text-muted-foreground/25'
+            )} />
+          )}
+        </button>
       </div>
 
-      {!isDone && taak.prioriteit !== 'laag' && taak.prioriteit !== 'medium' && (
-        <Flag className={cn('w-3.5 h-3.5 flex-shrink-0 mt-0.5', PRIORITEIT_FLAG_COLORS[taak.prioriteit])} />
-      )}
-
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+      {/* Hover actions */}
+      <div className="absolute top-0.5 right-5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
+            <button
+              onClick={(e) => e.stopPropagation()}
+              className="p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={onEdit}>
-              <Pencil className="w-4 h-4 mr-2" />Bewerken
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit() }}>
+              <Pencil className="w-3.5 h-3.5 mr-2" />Bewerken
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600 dark:text-red-400" onClick={onDelete}>
-              <Trash2 className="w-4 h-4 mr-2" />Verwijderen
+            <DropdownMenuItem className="text-red-600 dark:text-red-400" onClick={(e) => { e.stopPropagation(); onDelete() }}>
+              <Trash2 className="w-3.5 h-3.5 mr-2" />Verwijderen
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
