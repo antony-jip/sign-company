@@ -656,7 +656,7 @@ export function WorkmateAIChat() {
                         {msg.data.type === 'metrics' && msg.data.metrics && (
                           <div className="space-y-3">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                              {msg.data.metrics.map((m, i) => (
+                              {msg.data.metrics.map((m: MetricCard, i: number) => (
                                 <MetricCardSmall key={i} metric={m} />
                               ))}
                             </div>
@@ -769,7 +769,7 @@ function QuickStat({ label, value, sub, color, icon }: {
   )
 }
 
-function MetricCardSmall({ metric }: { metric: MetricCard }) {
+function MetricCardSmall({ metric }: { key?: React.Key; metric: MetricCard }) {
   const c = getMetricColors(metric.color)
   return (
     <div className={cn('rounded-lg px-3 py-2', c.bg)}>

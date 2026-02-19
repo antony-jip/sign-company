@@ -7,6 +7,7 @@ import { cn, getStatusColor } from '@/lib/utils'
 import type { Klant } from '@/types'
 
 interface ClientCardProps {
+  key?: React.Key
   klant: Klant
   projectCount: number
 }

@@ -802,6 +802,7 @@ function KanbanView({
 // ============ KANBAN CARD ============
 
 interface KanbanCardProps {
+  key?: React.Key
   taak: Taak
   projectNaam: string
   onEdit: (taak: Taak) => void

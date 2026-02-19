@@ -105,87 +105,87 @@ function minsAgo(minutes: number): string {
   return new Date(Date.now() - minutes * 60_000).toISOString();
 }
 
-const demoNotificaties: Omit<Notificatie, "id" | "user_id">[] = [
+const demoNotificaties: Omit<Notificatie, "id" | "created_at">[] = [
   {
+    user_id: "",
     type: "offerte_bekeken",
     titel: "Offerte bekeken",
     bericht:
       "Klant Van der Berg B.V. heeft offerte OFF-2024-0892 voor gevelreclame bekeken.",
     link: "/offertes/OFF-2024-0892",
     gelezen: false,
-    created_at: minsAgo(3),
   },
   {
+    user_id: "",
     type: "betaling_ontvangen",
     titel: "Betaling ontvangen",
     bericht:
       "Betaling van \u20AC 4.250,00 ontvangen van Bakkerij Jansen voor factuur FAC-2024-0341.",
     link: "/facturen/FAC-2024-0341",
     gelezen: false,
-    created_at: minsAgo(25),
   },
   {
+    user_id: "",
     type: "deadline_nadert",
     titel: "Deadline nadert",
     bericht:
       "Project lichtreclame voor Restaurant De Gouden Leeuw moet over 2 dagen worden opgeleverd.",
     link: "/projecten/PRJ-2024-0156",
     gelezen: false,
-    created_at: minsAgo(90),
   },
   {
+    user_id: "",
     type: "factuur_vervallen",
     titel: "Factuur vervallen",
     bericht:
       "Factuur FAC-2024-0298 van \u20AC 1.875,00 voor Sportcentrum Oost is 14 dagen over de betaaltermijn.",
     link: "/facturen/FAC-2024-0298",
     gelezen: false,
-    created_at: minsAgo(180),
   },
   {
+    user_id: "",
     type: "montage_gepland",
     titel: "Montage ingepland",
     bericht:
       "Montage van reclamebord bij Autobedrijf Kuipers is ingepland op donderdag 20 februari om 09:00.",
     link: "/planning/MON-2024-0067",
     gelezen: false,
-    created_at: minsAgo(320),
   },
   {
+    user_id: "",
     type: "nieuwe_email",
     titel: "Nieuw e-mailbericht",
     bericht:
       "Nieuw bericht van info@vandelft-architecten.nl over offerte-aanvraag bewegwijzering kantoorpand.",
     link: "/berichten/MSG-2024-1102",
     gelezen: true,
-    created_at: minsAgo(600),
   },
   {
+    user_id: "",
     type: "taak_voltooid",
     titel: "Taak voltooid",
     bericht:
       "Ontwerp voor freesletters Kapsalon Stijlvol is goedgekeurd door de klant.",
     link: "/taken/TAAK-2024-0445",
     gelezen: true,
-    created_at: minsAgo(1500),
   },
   {
+    user_id: "",
     type: "offerte_verlopen",
     titel: "Offerte verlopen",
     bericht:
       "Offerte OFF-2024-0845 voor raambelettering Bloemenwinkel Flora is verlopen na 30 dagen.",
     link: "/offertes/OFF-2024-0845",
     gelezen: true,
-    created_at: minsAgo(2880),
   },
   {
+    user_id: "",
     type: "algemeen",
     titel: "Systeemmelding",
     bericht:
       "Het maandelijkse rapport voor januari 2026 is beschikbaar in het dashboard.",
     link: "/rapporten/januari-2026",
     gelezen: true,
-    created_at: minsAgo(4320),
   },
 ];
 

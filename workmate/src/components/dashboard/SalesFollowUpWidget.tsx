@@ -62,6 +62,7 @@ function FollowUpItemRow({
   item,
   accent,
 }: {
+  key?: string | number
   item: FollowUpItem
   accent: 'red' | 'orange' | 'blue'
 }) {
@@ -143,7 +144,7 @@ function FollowUpItemRow({
   )
 }
 
-function ExpiringQuoteRow({ item }: { item: ExpiringQuote }) {
+function ExpiringQuoteRow({ item }: { key?: string | number; item: ExpiringQuote }) {
   const isExpired = item.daysUntilExpiry < 0
   const daysAbs = Math.abs(item.daysUntilExpiry)
 

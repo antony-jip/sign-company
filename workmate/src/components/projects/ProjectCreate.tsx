@@ -78,12 +78,9 @@ export function ProjectCreate() {
         .map((lid) => lid.trim())
         .filter((lid) => lid.length > 0);
 
-      const selectedKlant = klanten.find((k) => k.id === klantId)
-
       await createProject({
         user_id: user.id,
         klant_id: klantId,
-        klant_naam: selectedKlant?.bedrijfsnaam || '',
         naam: naam.trim(),
         beschrijving: beschrijving.trim(),
         status,

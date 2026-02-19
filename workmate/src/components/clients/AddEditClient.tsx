@@ -145,6 +145,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         status: formData.status,
         tags: tagsArray,
         notities: formData.notities.trim(),
+        contactpersonen: [],
       }
 
       let savedKlant: Klant

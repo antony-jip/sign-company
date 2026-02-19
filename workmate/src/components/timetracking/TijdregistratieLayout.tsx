@@ -680,6 +680,7 @@ export function TijdregistratieLayout() {
   }
 
   function handleExportCSV() {
+    const headers = ["Datum", "Project", "Omschrijving", "Start", "Eind", "Duur (uur)", "Uurtarief", "Totaal", "Facturabel"];
     const exportData = sortedRegistraties.map((r) => ({
       Datum: r.datum,
       Project: r.project_naam || "",
@@ -691,11 +692,12 @@ export function TijdregistratieLayout() {
       Totaal: ((r.duur_minuten / 60) * r.uurtarief).toFixed(2),
       Facturabel: r.facturabel ? "Ja" : "Nee",
     }));
-    exportCSV(exportData, "tijdregistratie");
+    exportCSV("tijdregistratie", headers, exportData);
     toast.success("CSV gedownload");
   }
 
   function handleExportExcel() {
+    const headers = ["Datum", "Project", "Omschrijving", "Start", "Eind", "Duur (uur)", "Uurtarief", "Totaal", "Facturabel"];
     const exportData = sortedRegistraties.map((r) => ({
       Datum: r.datum,
       Project: r.project_naam || "",
@@ -707,7 +709,7 @@ export function TijdregistratieLayout() {
       Totaal: ((r.duur_minuten / 60) * r.uurtarief).toFixed(2),
       Facturabel: r.facturabel ? "Ja" : "Nee",
     }));
-    exportExcel(exportData, "tijdregistratie");
+    exportExcel("tijdregistratie", headers, exportData);
     toast.success("Excel gedownload");
   }
 

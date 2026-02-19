@@ -302,7 +302,7 @@ export function GeneralLedgerSettings() {
                 Totalen per categorie
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {Object.entries(categoryTotals).map(([cat, total]) => (
+                {Object.entries(categoryTotals).map(([cat, total]: [string, number]) => (
                   <div
                     key={cat}
                     className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"

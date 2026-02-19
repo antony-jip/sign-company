@@ -1291,7 +1291,7 @@ function InfoRow({ label, value, children }: { label: string; value?: string; ch
 
 /* ────────────── Taak Card Component ────────────── */
 
-function TaakCard({ taak }: { taak: Taak }) {
+function TaakCard({ taak }: { key?: React.Key; taak: Taak }) {
   const isOverdue = new Date(taak.deadline) < new Date() && taak.status !== 'klaar'
 
   return (

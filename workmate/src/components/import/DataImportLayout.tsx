@@ -422,6 +422,7 @@ export function DataImportLayout() {
       try {
         if (importType === 'klanten' || importType === 'contactpersonen') {
           await createKlant({
+            user_id: user?.id || '',
             bedrijfsnaam: mapped.bedrijfsnaam || '',
             contactpersoon: mapped.contactpersoon || '',
             email: mapped.email || '',
@@ -436,6 +437,7 @@ export function DataImportLayout() {
             status: (['actief', 'inactief', 'prospect'].includes(mapped.status) ? mapped.status : 'prospect') as Klant['status'],
             tags: [],
             notities: mapped.notities || '',
+            contactpersonen: [],
           })
           result.success++
         } else if (importType === 'emailadressen') {
@@ -446,6 +448,7 @@ export function DataImportLayout() {
           }
           // Import email addresses as contacts (Klant records) with prospect status
           await createKlant({
+            user_id: user?.id || '',
             bedrijfsnaam: mapped.bedrijfsnaam || '',
             contactpersoon: mapped.naam || '',
             email: mapped.email,
@@ -460,6 +463,7 @@ export function DataImportLayout() {
             status: 'prospect',
             tags: ['import', 'emaillijst'],
             notities: 'Geimporteerd via e-mailadres import',
+            contactpersonen: [],
           })
           result.success++
         }

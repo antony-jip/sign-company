@@ -734,7 +734,7 @@ function CalculatieTab() {
             </div>
           ) : (
             <div className="space-y-4">
-              {Object.entries(productenPerCategorie).map(([categorie, prods]) => (
+              {Object.entries(productenPerCategorie).map(([categorie, prods]: [string, CalculatieProduct[]]) => (
                 <div key={categorie}>
                   <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                     {categorie} ({prods.length})

@@ -183,32 +183,32 @@ function generateDemoProjecten(): Project[] {
 
 function generateDemoOffertes(): Offerte[] {
   const offertes: Offerte[] = [
-    { id: 'o1', klant_id: 'k1', klant_naam: 'Albert Heijn BV', nummer: 'OFF-2025-0012', titel: 'Gevelreclame 3 filialen', status: 'goedgekeurd', totaal: 42000, created_at: '2025-04-12T00:00:00Z' },
-    { id: 'o2', klant_id: 'k2', klant_naam: 'Gemeente Amsterdam', nummer: 'OFF-2025-0015', titel: 'Straatnaamborden Centrum', status: 'goedgekeurd', totaal: 18500, created_at: '2025-05-20T00:00:00Z' },
-    { id: 'o3', klant_id: 'k3', klant_naam: 'HEMA Nederland', nummer: 'OFF-2025-0018', titel: 'Lichtreclame rebrand', status: 'goedgekeurd', totaal: 62000, created_at: '2025-02-10T00:00:00Z' },
-    { id: 'o4', klant_id: 'k4', klant_naam: 'Rijksmuseum', nummer: 'OFF-2025-0022', titel: 'Museumroute borden', status: 'goedgekeurd', totaal: 8500, created_at: '2025-10-05T00:00:00Z' },
-    { id: 'o5', klant_id: 'k5', klant_naam: 'NS Stations', nummer: 'OFF-2025-0025', titel: 'Digitale informatieborden', status: 'goedgekeurd', totaal: 55000, created_at: '2025-08-14T00:00:00Z' },
-    { id: 'o6', klant_id: 'k6', klant_naam: 'Bol.com', nummer: 'OFF-2025-0028', titel: 'Warehouse signing', status: 'goedgekeurd', totaal: 21000, created_at: '2025-06-01T00:00:00Z' },
-    { id: 'o7', klant_id: 'k7', klant_naam: 'Ziggo Dome', nummer: 'OFF-2025-0030', titel: 'LED-displays entree', status: 'goedgekeurd', totaal: 28000, created_at: '2025-12-01T00:00:00Z' },
-    { id: 'o8', klant_id: 'k1', klant_naam: 'Albert Heijn BV', nummer: 'OFF-2026-0002', titel: 'Parkeergarage bewegwijzering', status: 'verzonden', totaal: 14500, created_at: '2026-01-10T00:00:00Z' },
-    { id: 'o9', klant_id: 'k2', klant_naam: 'Gemeente Amsterdam', nummer: 'OFF-2026-0003', titel: 'Fietsroute borden Noord', status: 'bekeken', totaal: 9800, created_at: '2026-01-22T00:00:00Z' },
-    { id: 'o10', klant_id: 'k5', klant_naam: 'NS Stations', nummer: 'OFF-2026-0005', titel: 'Stationsentree Den Haag', status: 'verzonden', totaal: 37000, created_at: '2026-02-05T00:00:00Z' },
-    { id: 'o11', klant_id: 'k3', klant_naam: 'HEMA Nederland', nummer: 'OFF-2025-0020', titel: 'Etalage displays zomer', status: 'afgewezen', totaal: 15000, created_at: '2025-07-15T00:00:00Z' },
-    { id: 'o12', klant_id: 'k4', klant_naam: 'Rijksmuseum', nummer: 'OFF-2025-0023', titel: 'Buitenreclame Museumplein', status: 'afgewezen', totaal: 32000, created_at: '2025-09-20T00:00:00Z' },
-    { id: 'o13', klant_id: 'k6', klant_naam: 'Bol.com', nummer: 'OFF-2026-0004', titel: 'Kantoor interieur signing', status: 'verzonden', totaal: 11200, created_at: '2026-02-01T00:00:00Z' },
-    { id: 'o14', klant_id: 'k7', klant_naam: 'Ziggo Dome', nummer: 'OFF-2026-0006', titel: 'VIP-lounge bewegwijzering', status: 'bekeken', totaal: 6800, created_at: '2026-02-12T00:00:00Z' },
+    { id: 'o1', user_id: 'demo-user', klant_id: 'k1', klant_naam: 'Albert Heijn BV', nummer: 'OFF-2025-0012', titel: 'Gevelreclame 3 filialen', status: 'goedgekeurd', subtotaal: 34710.74, btw_bedrag: 7289.26, totaal: 42000, geldig_tot: '2025-05-12', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2025-04-12T00:00:00Z', updated_at: '2025-04-12T00:00:00Z' },
+    { id: 'o2', user_id: 'demo-user', klant_id: 'k2', klant_naam: 'Gemeente Amsterdam', nummer: 'OFF-2025-0015', titel: 'Straatnaamborden Centrum', status: 'goedgekeurd', subtotaal: 15289.26, btw_bedrag: 3210.74, totaal: 18500, geldig_tot: '2025-06-20', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2025-05-20T00:00:00Z', updated_at: '2025-05-20T00:00:00Z' },
+    { id: 'o3', user_id: 'demo-user', klant_id: 'k3', klant_naam: 'HEMA Nederland', nummer: 'OFF-2025-0018', titel: 'Lichtreclame rebrand', status: 'goedgekeurd', subtotaal: 51239.67, btw_bedrag: 10760.33, totaal: 62000, geldig_tot: '2025-03-10', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2025-02-10T00:00:00Z', updated_at: '2025-02-10T00:00:00Z' },
+    { id: 'o4', user_id: 'demo-user', klant_id: 'k4', klant_naam: 'Rijksmuseum', nummer: 'OFF-2025-0022', titel: 'Museumroute borden', status: 'goedgekeurd', subtotaal: 7024.79, btw_bedrag: 1475.21, totaal: 8500, geldig_tot: '2025-11-05', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2025-10-05T00:00:00Z', updated_at: '2025-10-05T00:00:00Z' },
+    { id: 'o5', user_id: 'demo-user', klant_id: 'k5', klant_naam: 'NS Stations', nummer: 'OFF-2025-0025', titel: 'Digitale informatieborden', status: 'goedgekeurd', subtotaal: 45454.55, btw_bedrag: 9545.45, totaal: 55000, geldig_tot: '2025-09-14', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2025-08-14T00:00:00Z', updated_at: '2025-08-14T00:00:00Z' },
+    { id: 'o6', user_id: 'demo-user', klant_id: 'k6', klant_naam: 'Bol.com', nummer: 'OFF-2025-0028', titel: 'Warehouse signing', status: 'goedgekeurd', subtotaal: 17355.37, btw_bedrag: 3644.63, totaal: 21000, geldig_tot: '2025-07-01', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2025-06-01T00:00:00Z', updated_at: '2025-06-01T00:00:00Z' },
+    { id: 'o7', user_id: 'demo-user', klant_id: 'k7', klant_naam: 'Ziggo Dome', nummer: 'OFF-2025-0030', titel: 'LED-displays entree', status: 'goedgekeurd', subtotaal: 23140.50, btw_bedrag: 4859.50, totaal: 28000, geldig_tot: '2025-12-31', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2025-12-01T00:00:00Z', updated_at: '2025-12-01T00:00:00Z' },
+    { id: 'o8', user_id: 'demo-user', klant_id: 'k1', klant_naam: 'Albert Heijn BV', nummer: 'OFF-2026-0002', titel: 'Parkeergarage bewegwijzering', status: 'verzonden', subtotaal: 11983.47, btw_bedrag: 2516.53, totaal: 14500, geldig_tot: '2026-02-10', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2026-01-10T00:00:00Z', updated_at: '2026-01-10T00:00:00Z' },
+    { id: 'o9', user_id: 'demo-user', klant_id: 'k2', klant_naam: 'Gemeente Amsterdam', nummer: 'OFF-2026-0003', titel: 'Fietsroute borden Noord', status: 'bekeken', subtotaal: 8099.17, btw_bedrag: 1700.83, totaal: 9800, geldig_tot: '2026-02-22', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2026-01-22T00:00:00Z', updated_at: '2026-01-22T00:00:00Z' },
+    { id: 'o10', user_id: 'demo-user', klant_id: 'k5', klant_naam: 'NS Stations', nummer: 'OFF-2026-0005', titel: 'Stationsentree Den Haag', status: 'verzonden', subtotaal: 30578.51, btw_bedrag: 6421.49, totaal: 37000, geldig_tot: '2026-03-05', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2026-02-05T00:00:00Z', updated_at: '2026-02-05T00:00:00Z' },
+    { id: 'o11', user_id: 'demo-user', klant_id: 'k3', klant_naam: 'HEMA Nederland', nummer: 'OFF-2025-0020', titel: 'Etalage displays zomer', status: 'afgewezen', subtotaal: 12396.69, btw_bedrag: 2603.31, totaal: 15000, geldig_tot: '2025-08-15', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2025-07-15T00:00:00Z', updated_at: '2025-07-15T00:00:00Z' },
+    { id: 'o12', user_id: 'demo-user', klant_id: 'k4', klant_naam: 'Rijksmuseum', nummer: 'OFF-2025-0023', titel: 'Buitenreclame Museumplein', status: 'afgewezen', subtotaal: 26446.28, btw_bedrag: 5553.72, totaal: 32000, geldig_tot: '2025-10-20', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2025-09-20T00:00:00Z', updated_at: '2025-09-20T00:00:00Z' },
+    { id: 'o13', user_id: 'demo-user', klant_id: 'k6', klant_naam: 'Bol.com', nummer: 'OFF-2026-0004', titel: 'Kantoor interieur signing', status: 'verzonden', subtotaal: 9256.20, btw_bedrag: 1943.80, totaal: 11200, geldig_tot: '2026-03-01', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2026-02-01T00:00:00Z', updated_at: '2026-02-01T00:00:00Z' },
+    { id: 'o14', user_id: 'demo-user', klant_id: 'k7', klant_naam: 'Ziggo Dome', nummer: 'OFF-2026-0006', titel: 'VIP-lounge bewegwijzering', status: 'bekeken', subtotaal: 5619.83, btw_bedrag: 1180.17, totaal: 6800, geldig_tot: '2026-03-12', notities: '', voorwaarden: 'Standaard leveringsvoorwaarden.', created_at: '2026-02-12T00:00:00Z', updated_at: '2026-02-12T00:00:00Z' },
   ];
   return offertes;
 }
 
 function generateDemoTijdregistraties(): Tijdregistratie[] {
   const registraties: Tijdregistratie[] = [
-    { id: 't1', project_id: 'p1', project_naam: 'Gevelreclame filiaal Amstelveen', duur_minuten: 480, uurtarief: 85, facturabel: true, datum: '2026-01-15' },
-    { id: 't2', project_id: 'p2', project_naam: 'Wayfinding systeem Zuidas', duur_minuten: 960, uurtarief: 95, facturabel: true, datum: '2026-01-20' },
-    { id: 't3', project_id: 'p3', project_naam: 'Lichtreclame 12 filialen', duur_minuten: 1200, uurtarief: 85, facturabel: true, datum: '2025-10-10' },
-    { id: 't4', project_id: 'p4', project_naam: 'Tentoonstellingsborden zomer', duur_minuten: 360, uurtarief: 75, facturabel: true, datum: '2026-02-01' },
-    { id: 't5', project_id: 'p5', project_naam: 'Perronborden vernieuwing Utrecht', duur_minuten: 720, uurtarief: 90, facturabel: true, datum: '2026-01-25' },
-    { id: 't6', project_id: 'p1', project_naam: 'Gevelreclame filiaal Amstelveen', duur_minuten: 120, uurtarief: 85, facturabel: false, datum: '2026-02-05' },
+    { id: 't1', user_id: 'demo-user', project_id: 'p1', project_naam: 'Gevelreclame filiaal Amstelveen', omschrijving: 'Montage gevelletters', datum: '2026-01-15', start_tijd: '08:00', eind_tijd: '16:00', duur_minuten: 480, uurtarief: 85, facturabel: true, gefactureerd: false, created_at: '2026-01-15T08:00:00Z', updated_at: '2026-01-15T16:00:00Z' },
+    { id: 't2', user_id: 'demo-user', project_id: 'p2', project_naam: 'Wayfinding systeem Zuidas', omschrijving: 'Plaatsing wegwijzerborden', datum: '2026-01-20', start_tijd: '07:00', eind_tijd: '23:00', duur_minuten: 960, uurtarief: 95, facturabel: true, gefactureerd: false, created_at: '2026-01-20T07:00:00Z', updated_at: '2026-01-20T23:00:00Z' },
+    { id: 't3', user_id: 'demo-user', project_id: 'p3', project_naam: 'Lichtreclame 12 filialen', omschrijving: 'Installatie lichtreclame', datum: '2025-10-10', start_tijd: '06:00', eind_tijd: '02:00', duur_minuten: 1200, uurtarief: 85, facturabel: true, gefactureerd: true, created_at: '2025-10-10T06:00:00Z', updated_at: '2025-10-10T22:00:00Z' },
+    { id: 't4', user_id: 'demo-user', project_id: 'p4', project_naam: 'Tentoonstellingsborden zomer', omschrijving: 'Ontwerp en productie borden', datum: '2026-02-01', start_tijd: '09:00', eind_tijd: '15:00', duur_minuten: 360, uurtarief: 75, facturabel: true, gefactureerd: false, created_at: '2026-02-01T09:00:00Z', updated_at: '2026-02-01T15:00:00Z' },
+    { id: 't5', user_id: 'demo-user', project_id: 'p5', project_naam: 'Perronborden vernieuwing Utrecht', omschrijving: 'Demontage oude borden en montage nieuwe', datum: '2026-01-25', start_tijd: '07:00', eind_tijd: '19:00', duur_minuten: 720, uurtarief: 90, facturabel: true, gefactureerd: false, created_at: '2026-01-25T07:00:00Z', updated_at: '2026-01-25T19:00:00Z' },
+    { id: 't6', user_id: 'demo-user', project_id: 'p1', project_naam: 'Gevelreclame filiaal Amstelveen', omschrijving: 'Interne vergadering projectvoortgang', datum: '2026-02-05', start_tijd: '10:00', eind_tijd: '12:00', duur_minuten: 120, uurtarief: 85, facturabel: false, gefactureerd: false, created_at: '2026-02-05T10:00:00Z', updated_at: '2026-02-05T12:00:00Z' },
   ];
   return registraties;
 }
@@ -458,6 +458,7 @@ export function RapportagesLayout() {
   // ---------------------------------------------------------------------------
 
   function handleExportKlanten(type: 'csv' | 'excel') {
+    const headers = ['Klant', 'Aantal projecten', 'Totaal gefactureerd', 'Openstaand', 'Laatste factuur'];
     const data = topKlanten.map((k) => ({
       Klant: k.naam,
       'Aantal projecten': k.aantalProjecten,
@@ -466,14 +467,15 @@ export function RapportagesLayout() {
       'Laatste factuur': k.laatsteFactuur,
     }));
     if (type === 'csv') {
-      exportCSV(data, 'top-klanten');
+      exportCSV('top-klanten', headers, data);
     } else {
-      exportExcel(data, 'top-klanten');
+      exportExcel('top-klanten', headers, data);
     }
     toast.success(`Top klanten geexporteerd als ${type.toUpperCase()}`);
   }
 
   function handleExportProjecten(type: 'csv' | 'excel') {
+    const headers = ['Project', 'Klant', 'Budget', 'Besteed', 'Marge %', 'Status'];
     const data = projectWinstgevendheid.map((p) => ({
       Project: p.naam,
       Klant: p.klant_naam || p.klant_id,
@@ -483,14 +485,15 @@ export function RapportagesLayout() {
       Status: p.status,
     }));
     if (type === 'csv') {
-      exportCSV(data, 'project-winstgevendheid');
+      exportCSV('project-winstgevendheid', headers, data);
     } else {
-      exportExcel(data, 'project-winstgevendheid');
+      exportExcel('project-winstgevendheid', headers, data);
     }
     toast.success(`Projecten geexporteerd als ${type.toUpperCase()}`);
   }
 
   function handleExportOffertes(type: 'csv' | 'excel') {
+    const headers = ['Nummer', 'Titel', 'Klant', 'Status', 'Totaal', 'Datum'];
     const data = gefilterdeOffertes.map((o) => ({
       Nummer: o.nummer,
       Titel: o.titel,
@@ -500,22 +503,23 @@ export function RapportagesLayout() {
       Datum: o.created_at.split('T')[0],
     }));
     if (type === 'csv') {
-      exportCSV(data, 'offertes');
+      exportCSV('offertes', headers, data);
     } else {
-      exportExcel(data, 'offertes');
+      exportExcel('offertes', headers, data);
     }
     toast.success(`Offertes geexporteerd als ${type.toUpperCase()}`);
   }
 
   function handleExportOmzet(type: 'csv' | 'excel') {
+    const headers = ['Maand', 'Omzet'];
     const data = maandelijksOmzet.map((m) => ({
       Maand: m.maand,
       Omzet: Math.round(m.waarde * 100) / 100,
     }));
     if (type === 'csv') {
-      exportCSV(data, 'maandelijkse-omzet');
+      exportCSV('maandelijkse-omzet', headers, data);
     } else {
-      exportExcel(data, 'maandelijkse-omzet');
+      exportExcel('maandelijkse-omzet', headers, data);
     }
     toast.success(`Omzetgegevens geexporteerd als ${type.toUpperCase()}`);
   }

@@ -587,11 +587,12 @@ export function EmailLayout() {
           <div className="flex-1 min-w-0 flex flex-col">
             {viewMode === 'composing' ? (
               <EmailCompose
+                open={viewMode === 'composing'}
+                onOpenChange={(isOpen) => { if (!isOpen) handleCancelCompose() }}
                 defaultTo={composeDefaults.to}
                 defaultSubject={composeDefaults.subject}
                 defaultBody={composeDefaults.body}
                 onSend={handleSendEmail}
-                onCancel={handleCancelCompose}
               />
             ) : viewMode === 'reading' && selectedEmail ? (
               <EmailReader
