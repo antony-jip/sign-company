@@ -2582,7 +2582,8 @@ const ALL_SIDEBAR_ITEMS = [
   { label: 'Documenten', section: 'Werk' },
   { label: 'Email', section: 'Communicatie' },
   { label: 'Nieuwsbrieven', section: 'Communicatie' },
-  { label: 'Kalender', section: 'Communicatie' },
+  { label: 'Planning', section: 'Planning' },
+  { label: 'Tijdregistratie', section: 'Planning' },
   { label: 'Financieel', section: 'Beheer' },
   { label: 'Importeren', section: 'Beheer' },
   { label: 'AI Assistent', section: 'Beheer' },
@@ -2833,7 +2834,7 @@ function WeergaveTab() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Groepeer per sectie */}
-        {['Overzicht', 'Werk', 'Communicatie', 'Beheer'].map((section) => {
+        {['Overzicht', 'Werk', 'Planning', 'Communicatie', 'Beheer'].map((section) => {
           const sectionItems = ALL_SIDEBAR_ITEMS.filter((i) => i.section === section)
           return (
             <div key={section}>

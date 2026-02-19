@@ -1480,7 +1480,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     dashboard_widgets: ['follow_ups', 'pipeline', 'kpi', 'kalender'],
     sidebar_items: [
       'Dashboard', 'Projecten', 'Taken', 'Klanten', 'Offertes', 'Documenten',
-      'Email', 'Nieuwsbrieven', 'Kalender', 'Financieel', 'Importeren', 'AI Assistent', 'Instellingen',
+      'Email', 'Nieuwsbrieven', 'Planning', 'Financieel', 'Importeren', 'AI Assistent', 'Instellingen',
     ],
     calculatie_categorieen: ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig'],
     calculatie_eenheden: ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'],

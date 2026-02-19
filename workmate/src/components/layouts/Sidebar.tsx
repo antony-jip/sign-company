@@ -81,11 +81,15 @@ export function Sidebar() {
     const sidebarItems = settings.sidebar_items
     // Als sidebar_items niet is ingesteld of leeg is, toon alles
     if (!sidebarItems || sidebarItems.length === 0) return navSections
+    // Migratie: 'Kalender' → 'Planning', 'Montage' → 'Planning'
+    const normalized = sidebarItems.map((s: string) =>
+      s === 'Kalender' || s === 'Montage' ? 'Planning' : s
+    )
     return navSections
       .map((section) => ({
         ...section,
         items: section.items.filter(
-          (item) => sidebarItems.includes(item.label) || item.label === 'Instellingen'
+          (item) => normalized.includes(item.label) || item.label === 'Instellingen'
         ),
       }))
       .filter((section) => section.items.length > 0)
