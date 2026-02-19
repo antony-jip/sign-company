@@ -203,9 +203,9 @@ function avatarColor(naam: string): string {
     'bg-emerald-500',
     'bg-teal-500',
     'bg-cyan-500',
-    'bg-blue-500',
     'bg-[#58B09C]',
-    'bg-[#58B09C]',
+    'bg-[#386150]',
+    'bg-[#4A442D]',
     'bg-fuchsia-500',
   ];
   return colours[Math.abs(hash) % colours.length];

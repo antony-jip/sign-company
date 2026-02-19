@@ -351,7 +351,7 @@ export function NotificatieCenter() {
                               {formatTijdGeleden(notificatie.created_at)}
                             </span>
                             {!notificatie.gelezen && (
-                              <span className="h-2 w-2 shrink-0 rounded-full bg-blue-600" />
+                              <span className="h-2 w-2 shrink-0 rounded-full bg-[#58B09C]" />
                             )}
                           </div>
                         </div>

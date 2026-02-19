@@ -633,7 +633,7 @@ export function WorkmateAIChat() {
               <div key={msg.id}>
                 {msg.rol === 'user' ? (
                   <div className="flex justify-end">
-                    <div className="max-w-[80%] bg-blue-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm">
+                    <div className="max-w-[80%] bg-[#386150] text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm">
                       {msg.bericht}
                     </div>
                   </div>
