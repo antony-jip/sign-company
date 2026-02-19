@@ -922,151 +922,130 @@ export function CalendarLayout() {
                 </div>
               </div>
             ) : (
-              <div className="overflow-auto relative" style={{ maxHeight: 'calc(100vh - 420px)', minHeight: '400px' }}>
-                <div className="grid grid-cols-[50px_repeat(7,1fr)] min-w-[700px]">
-                  {/* Header row: day labels */}
-                  <div className="sticky top-0 z-10 bg-card border-b border-gray-200 dark:border-gray-700" />
-                  {weekDates.map((date) => {
-                    const today = isToday(date)
-                    const dayAfspraken = getAfsprakenForDay(date)
-                    return (
+              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 420px)', minHeight: '400px' }}>
+                <div className="flex min-w-[700px]">
+                  {/* ── Time column ── */}
+                  <div className="w-[50px] flex-shrink-0">
+                    {/* Sticky header spacer */}
+                    <div className="sticky top-0 z-10 bg-card border-b border-gray-200 dark:border-gray-700 h-[60px]" />
+                    {/* Hour labels */}
+                    {HOURS.map((hour) => (
                       <div
-                        key={date.toISOString()}
-                        className={cn(
-                          'sticky top-0 z-10 bg-card border-b border-l border-gray-200 dark:border-gray-700 px-2 py-2 text-center',
-                          today && 'bg-primary/5 dark:bg-primary/10'
-                        )}
-                      >
-                        <p className="text-[10px] uppercase font-medium text-muted-foreground">
-                          {format(date, 'EEE', { locale: nl })}
-                        </p>
-                        <p
-                          className={cn(
-                            'text-lg font-bold leading-tight',
-                            today ? 'text-primary' : 'text-foreground'
-                          )}
-                        >
-                          {format(date, 'd')}
-                        </p>
-                        {(dayAfspraken.length > 0 || getTasksForDay(date).length > 0) && (
-                          <div className="flex items-center gap-0.5 justify-center mt-0.5">
-                            {dayAfspraken.length > 0 && (
-                              <Badge variant="secondary" className="text-[9px] px-1 py-0">
-                                {dayAfspraken.length}
-                              </Badge>
-                            )}
-                            {getTasksForDay(date).length > 0 && (
-                              <Badge className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 border-0">
-                                {getTasksForDay(date).length}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-
-                  {/* Hour rows */}
-                  {HOURS.map((hour) => (
-                    <React.Fragment key={hour}>
-                      {/* Time label */}
-                      <div
+                        key={hour}
                         className="border-b border-gray-100 dark:border-gray-800 text-[10px] text-muted-foreground text-right pr-2 pt-1"
                         style={{ height: `${HOUR_HEIGHT}px` }}
                       >
                         {`${String(hour).padStart(2, '0')}:00`}
                       </div>
+                    ))}
+                  </div>
 
-                      {/* Day cells */}
-                      {weekDates.map((date) => {
-                        const today = isToday(date)
-                        return (
-                          <div
-                            key={`${hour}-${date.toISOString()}`}
-                            className={cn(
-                              'border-b border-l border-gray-100 dark:border-gray-800 relative group',
-                              today && 'bg-primary/[0.02] dark:bg-primary/[0.04]'
-                            )}
-                            style={{ height: `${HOUR_HEIGHT}px` }}
-                            onClick={() => {
-                              const d = new Date(date)
-                              setFormData({
-                                ...defaultForm,
-                                datum: formatDateYMD(d),
-                                start_tijd: `${String(hour).padStart(2, '0')}:00`,
-                                eind_tijd: `${String(Math.min(hour + 2, 19)).padStart(2, '0')}:00`,
-                                monteurs: activeMedewerker ? [activeMedewerker] : [],
-                              })
-                              setEditingId(null)
-                              setDialogOpen(true)
-                            }}
-                          >
-                            {/* Plus button on hover */}
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                              <Plus className="w-4 h-4 text-muted-foreground/30" />
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </React.Fragment>
-                  ))}
-                </div>
-
-                {/* Overlay: positioned afspraak cards */}
-                <div
-                  className="grid grid-cols-[50px_repeat(7,1fr)] min-w-[700px] pointer-events-none"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    paddingTop: '58px', // header height
-                  }}
-                >
-                  <div /> {/* time label spacer */}
+                  {/* ── Day columns ── */}
                   {weekDates.map((date) => {
+                    const today = isToday(date)
                     const dayAfspraken = getAfsprakenForDay(date)
                     const overlapLayout = computeOverlapLayout(dayAfspraken)
+                    const taskCount = getTasksForDay(date).length
+
                     return (
-                      <div key={date.toISOString()} className="relative border-l border-transparent" style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}>
-                        {dayAfspraken.map((afspraak) => (
-                          <div key={afspraak.id} className="pointer-events-auto">
-                            {renderAfspraakCard(afspraak, true, overlapLayout.get(afspraak.id))}
-                          </div>
-                        ))}
+                      <div key={date.toISOString()} className="flex-1 min-w-0 border-l border-gray-200 dark:border-gray-700">
+                        {/* Sticky day header */}
+                        <div
+                          className={cn(
+                            'sticky top-0 z-10 bg-card border-b border-gray-200 dark:border-gray-700 px-2 py-2 text-center h-[60px] flex flex-col items-center justify-center',
+                            today && 'bg-primary/5 dark:bg-primary/10'
+                          )}
+                        >
+                          <p className="text-[10px] uppercase font-medium text-muted-foreground">
+                            {format(date, 'EEE', { locale: nl })}
+                          </p>
+                          <p
+                            className={cn(
+                              'text-lg font-bold leading-tight',
+                              today ? 'text-primary' : 'text-foreground'
+                            )}
+                          >
+                            {format(date, 'd')}
+                          </p>
+                          {(dayAfspraken.length > 0 || taskCount > 0) && (
+                            <div className="flex items-center gap-0.5 justify-center">
+                              {dayAfspraken.length > 0 && (
+                                <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                                  {dayAfspraken.length}
+                                </Badge>
+                              )}
+                              {taskCount > 0 && (
+                                <Badge className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 border-0">
+                                  {taskCount}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Hour grid area — relative container for cards */}
+                        <div className="relative">
+                          {/* Hour cells (clickable) */}
+                          {HOURS.map((hour) => (
+                            <div
+                              key={hour}
+                              className={cn(
+                                'border-b border-gray-100 dark:border-gray-800 group cursor-pointer',
+                                today && 'bg-primary/[0.02] dark:bg-primary/[0.04]'
+                              )}
+                              style={{ height: `${HOUR_HEIGHT}px` }}
+                              onClick={() => {
+                                setFormData({
+                                  ...defaultForm,
+                                  datum: formatDateYMD(date),
+                                  start_tijd: `${String(hour).padStart(2, '0')}:00`,
+                                  eind_tijd: `${String(Math.min(hour + 2, 19)).padStart(2, '0')}:00`,
+                                  monteurs: activeMedewerker ? [activeMedewerker] : [],
+                                })
+                                setEditingId(null)
+                                setDialogOpen(true)
+                              }}
+                            >
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                <Plus className="w-4 h-4 text-muted-foreground/30" />
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Afspraak cards — positioned within this relative container */}
+                          {dayAfspraken.map((afspraak) => (
+                            <div key={afspraak.id} className="pointer-events-auto" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
+                              <div style={{ pointerEvents: 'auto' }}>
+                                {renderAfspraakCard(afspraak, true, overlapLayout.get(afspraak.id))}
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Now indicator for today */}
+                          {today && (() => {
+                            const now = new Date()
+                            const nowMin = now.getHours() * 60 + now.getMinutes()
+                            const startMin = HOURS[0] * 60
+                            const endMin = (HOURS[HOURS.length - 1] + 1) * 60
+                            if (nowMin < startMin || nowMin > endMin) return null
+                            const topPx = minutesToPx(nowMin - startMin, HOUR_HEIGHT)
+                            return (
+                              <div
+                                className="absolute left-0 right-0 pointer-events-none"
+                                style={{ top: `${topPx}px`, zIndex: 15 }}
+                              >
+                                <div className="flex items-center">
+                                  <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
+                                  <div className="flex-1 h-[2px] bg-red-500" />
+                                </div>
+                              </div>
+                            )
+                          })()}
+                        </div>
                       </div>
                     )
                   })}
                 </div>
-
-                {/* Now indicator */}
-                {weekDates.some((d) => isToday(d)) && (() => {
-                  const now = new Date()
-                  const nowMin = now.getHours() * 60 + now.getMinutes()
-                  const startMin = HOURS[0] * 60
-                  const endMin = (HOURS[HOURS.length - 1] + 1) * 60
-                  if (nowMin < startMin || nowMin > endMin) return null
-                  const topPx = minutesToPx(nowMin - startMin, HOUR_HEIGHT)
-                  const todayIdx = weekDates.findIndex((d) => isToday(d))
-                  if (todayIdx === -1) return null
-
-                  return (
-                    <div
-                      className="absolute pointer-events-none"
-                      style={{
-                        top: `${topPx + 58}px`,
-                        left: `${50 + (todayIdx * ((100 - 50 / 7) / 7))}%`,
-                        right: 0,
-                        zIndex: 15,
-                      }}
-                    >
-                      <div className="flex items-center">
-                        <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
-                        <div className="flex-1 h-[2px] bg-red-500" />
-                      </div>
-                    </div>
-                  )
-                })()}
               </div>
             )}
           </Card>
