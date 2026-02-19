@@ -25,22 +25,19 @@ import {
   FileText,
   Eye,
   Search,
-  Copy,
   Building2,
   Contact,
-  LayoutTemplate,
   FolderOpen,
   TrendingUp,
-  DollarSign,
   Percent,
   ShoppingCart,
-  Sparkles,
   X,
+  Plus,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getProjectenByKlant, createOfferte, createOfferteItem, getOfferteTemplates } from '@/services/supabaseService'
+import { getKlanten, getProjecten, createOfferte, createOfferteItem } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Project, OfferteTemplate, OfferteTemplateRegel } from '@/types'
+import type { Klant, Project } from '@/types'
 import { generateOffertePDF } from '@/services/pdfService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
@@ -58,183 +55,11 @@ const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven t
 7. Wijzigingen na akkoord kunnen tot meerkosten leiden.
 8. Garantie: 2 jaar op materiaal en constructie, 1 jaar op elektronica.`
 
-// ============================================================
-// PREMADE TEMPLATES
-// ============================================================
-
-function makeCalcItem(beschrijving: string): OfferteTemplateRegel {
-  return {
-    soort: 'tekst',
-    beschrijving,
-    extra_velden: {
-      'Aantal': '',
-      'Afmeting': '',
-      'Materiaal': '',
-      'Lay-out': '',
-      'Montage': '',
-      'Opmerking': '',
-    },
-    aantal: 0,
-    eenheidsprijs: 0,
-    btw_percentage: 0,
-    korting_percentage: 0,
-  }
-}
-
-function makePrijsRegel(beschrijving: string): OfferteTemplateRegel {
-  return {
-    soort: 'prijs',
-    beschrijving,
-    extra_velden: {},
-    aantal: 1,
-    eenheidsprijs: 0,
-    btw_percentage: 21,
-    korting_percentage: 0,
-  }
-}
-
-const PREMADE_TEMPLATES: Array<{
-  id: string
-  naam: string
-  beschrijving: string
-  icon: string
-  regels: OfferteTemplateRegel[]
-}> = [
-  {
-    id: 'tpl-textielframes',
-    naam: 'Textielframes',
-    beschrijving: 'Textielframes met print en montage',
-    icon: '🖼️',
-    regels: [
-      makeCalcItem('Textielframe'),
-      makePrijsRegel('Textielframe incl. print'),
-    ],
-  },
-  {
-    id: 'tpl-autobelettering',
-    naam: 'Autobelettering',
-    beschrijving: 'Voertuigbelettering en wrapping',
-    icon: '🚗',
-    regels: [
-      makeCalcItem('Autobelettering'),
-      makePrijsRegel('Autobelettering incl. montage'),
-    ],
-  },
-  {
-    id: 'tpl-offerte-algemeen',
-    naam: 'Offerte algemeen',
-    beschrijving: 'Standaard offerte met calculatie-item',
-    icon: '📋',
-    regels: [
-      makeCalcItem('Item 1'),
-      makePrijsRegel('Totaal item 1'),
-    ],
-  },
-  {
-    id: 'tpl-offerte-3-items',
-    naam: 'Offerte 3 items',
-    beschrijving: 'Offerte met 3 calculatie-items',
-    icon: '📦',
-    regels: [
-      makeCalcItem('Item 1'),
-      makePrijsRegel('Totaal item 1'),
-      makeCalcItem('Item 2'),
-      makePrijsRegel('Totaal item 2'),
-      makeCalcItem('Item 3'),
-      makePrijsRegel('Totaal item 3'),
-    ],
-  },
-  {
-    id: 'tpl-offerte-4-items',
-    naam: 'Offerte 4 items',
-    beschrijving: 'Offerte met 4 calculatie-items',
-    icon: '📦',
-    regels: [
-      makeCalcItem('Item 1'),
-      makePrijsRegel('Totaal item 1'),
-      makeCalcItem('Item 2'),
-      makePrijsRegel('Totaal item 2'),
-      makeCalcItem('Item 3'),
-      makePrijsRegel('Totaal item 3'),
-      makeCalcItem('Item 4'),
-      makePrijsRegel('Totaal item 4'),
-    ],
-  },
-  {
-    id: 'tpl-lichtreclame',
-    naam: 'Lichtreclame',
-    beschrijving: 'LED, neon, doosletters',
-    icon: '💡',
-    regels: [
-      makeCalcItem('Lichtreclame'),
-      makePrijsRegel('Lichtreclame incl. montage'),
-    ],
-  },
-  {
-    id: 'tpl-teksten-borden',
-    naam: 'Teksten & borden',
-    beschrijving: 'Borden, panelen en bewegwijzering',
-    icon: '🪧',
-    regels: [
-      makeCalcItem('Teksten en borden'),
-      makePrijsRegel('Teksten en borden incl. montage'),
-    ],
-  },
-  {
-    id: 'tpl-vlaggen',
-    naam: 'Vlaggen',
-    beschrijving: 'Vlaggen, banieren en beachflags',
-    icon: '🚩',
-    regels: [
-      makeCalcItem('Vlaggen'),
-      makePrijsRegel('Vlaggen incl. levering'),
-    ],
-  },
-  {
-    id: 'tpl-gevelreclame',
-    naam: 'Gevelreclame',
-    beschrijving: 'Gevelborden, letters en signing',
-    icon: '🏢',
-    regels: [
-      makeCalcItem('Gevelreclame'),
-      makePrijsRegel('Gevelreclame incl. montage'),
-    ],
-  },
-  {
-    id: 'tpl-raambelettering',
-    naam: 'Raambelettering',
-    beschrijving: 'Raamfolie, etched glass, fullcolor',
-    icon: '🪟',
-    regels: [
-      makeCalcItem('Raambelettering'),
-      makePrijsRegel('Raambelettering incl. montage'),
-    ],
-  },
-  {
-    id: 'tpl-wayfinding',
-    naam: 'Wayfinding',
-    beschrijving: 'Bewegwijzering en wayfinding systeem',
-    icon: '🧭',
-    regels: [
-      makeCalcItem('Wayfinding systeem'),
-      makePrijsRegel('Wayfinding incl. montage'),
-    ],
-  },
-  {
-    id: 'tpl-wrapping',
-    naam: 'Wrapping',
-    beschrijving: 'Full wrap, partial wrap',
-    icon: '🎨',
-    regels: [
-      makeCalcItem('Wrapping'),
-      makePrijsRegel('Wrapping incl. montage'),
-    ],
-  },
-]
+const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
 const steps = [
-  { number: 0, label: 'Klant & Template', icon: User },
-  { number: 1, label: 'Items', icon: FileText },
+  { number: 0, label: 'Klant & Details', icon: User },
+  { number: 1, label: 'Items invullen', icon: FileText },
   { number: 2, label: 'Preview', icon: Eye },
 ]
 
@@ -259,20 +84,17 @@ export function QuoteCreation() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Templates
-  const [offerteTemplates, setOfferteTemplates] = useState<OfferteTemplate[]>([])
-
   // Query params van bijv. projecten-pagina
   const paramKlantId = searchParams.get('klant_id') || ''
   const paramProjectId = searchParams.get('project_id') || ''
   const paramTitel = searchParams.get('titel') || ''
 
-  // ── Step 0: Klant + Project + Template + Details ──
+  // ── Step 0: Klant + Project + Details ──
   const [selectedKlantId, setSelectedKlantId] = useState(paramKlantId)
   const [selectedProjectId, setSelectedProjectId] = useState(paramProjectId)
   const [klantSearch, setKlantSearch] = useState('')
   const [offerteTitel, setOfferteTitel] = useState(paramTitel)
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
+  const [itemCount, setItemCount] = useState(1)
   const [contactpersoon, setContactpersoon] = useState('')
   const [geldigTot, setGeldigTot] = useState(() => {
     const d = new Date()
@@ -285,7 +107,6 @@ export function QuoteCreation() {
   const [items, setItems] = useState<QuoteLineItem[]>([])
   const [notities, setNotities] = useState('')
   const [voorwaarden, setVoorwaarden] = useState(DEFAULT_VOORWAARDEN)
-  const [showTemplateImport, setShowTemplateImport] = useState(false)
 
   // ── Computed ──
   const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
@@ -294,21 +115,6 @@ export function QuoteCreation() {
     projecten.filter((p) => p.klant_id === selectedKlantId),
     [projecten, selectedKlantId]
   )
-
-  const allTemplates = useMemo(() => {
-    const premade = PREMADE_TEMPLATES.map((t) => ({
-      id: t.id,
-      user_id: 'system',
-      naam: t.naam,
-      beschrijving: t.beschrijving,
-      regels: t.regels,
-      actief: true,
-      created_at: '',
-      updated_at: '',
-      _icon: t.icon,
-    }))
-    return [...premade, ...offerteTemplates.map((t) => ({ ...t, _icon: '📄' }))]
-  }, [offerteTemplates])
 
   const filteredKlanten = useMemo(() => {
     if (!klantSearch) return klanten
@@ -350,15 +156,10 @@ export function QuoteCreation() {
 
   // ── Data fetching ──
   useEffect(() => {
-    Promise.all([
-      getKlanten(),
-      getProjecten(),
-      getOfferteTemplates(),
-    ])
-      .then(([klantenData, projectenData, templatesData]) => {
+    Promise.all([getKlanten(), getProjecten()])
+      .then(([klantenData, projectenData]) => {
         setKlanten(klantenData)
         setProjecten(projectenData)
-        setOfferteTemplates(templatesData.filter((t) => t.actief))
       })
       .catch((err) => {
         console.error('Failed to fetch data:', err)
@@ -398,20 +199,22 @@ export function QuoteCreation() {
     }
   }, [selectedKlantId])
 
+  // ── Helper: maak een leeg calculatie-item ──
+  const createEmptyItem = (label?: string): QuoteLineItem => ({
+    id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    soort: 'prijs',
+    beschrijving: label || '',
+    extra_velden: {},
+    aantal: 1,
+    eenheidsprijs: 0,
+    btw_percentage: standaardBtw,
+    korting_percentage: 0,
+    totaal: 0,
+  })
+
   // ── Item handlers ──
-  const handleAddItem = (soort: 'prijs' | 'tekst' = 'prijs') => {
-    const newItem: QuoteLineItem = {
-      id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-      soort,
-      beschrijving: '',
-      extra_velden: {},
-      aantal: soort === 'prijs' ? 1 : 0,
-      eenheidsprijs: 0,
-      btw_percentage: soort === 'prijs' ? standaardBtw : 0,
-      korting_percentage: 0,
-      totaal: 0,
-    }
-    setItems([...items, newItem])
+  const handleAddItem = () => {
+    setItems([...items, createEmptyItem()])
   }
 
   const handleUpdateItem = (id: string, field: keyof QuoteLineItem, value: any) => {
@@ -457,56 +260,17 @@ export function QuoteCreation() {
     )
   }
 
-  // Template importeren
-  const handleImportTemplate = (template: typeof allTemplates[0]) => {
-    const regels = template.regels
-    const newItems: QuoteLineItem[] = regels.map((regel: OfferteTemplateRegel, idx: number) => ({
-      id: `tpl-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
-      soort: regel.soort,
-      beschrijving: regel.beschrijving,
-      extra_velden: { ...regel.extra_velden },
-      aantal: regel.aantal,
-      eenheidsprijs: regel.eenheidsprijs,
-      btw_percentage: regel.btw_percentage,
-      korting_percentage: regel.korting_percentage,
-      totaal: regel.soort === 'prijs'
-        ? (regel.aantal * regel.eenheidsprijs) - (regel.aantal * regel.eenheidsprijs * (regel.korting_percentage / 100))
-        : 0,
-    }))
-    setItems([...items, ...newItems])
-    setShowTemplateImport(false)
-    toast.success(`Template "${template.naam}" toegevoegd`)
-  }
-
-  // Apply template from step 0 selection
-  const handleApplyTemplate = (templateId: string) => {
-    if (!templateId || templateId === 'geen') return
-    const template = allTemplates.find((t) => t.id === templateId)
-    if (!template) return
-    const regels = template.regels
-    const newItems: QuoteLineItem[] = regels.map((regel: OfferteTemplateRegel, idx: number) => ({
-      id: `tpl-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
-      soort: regel.soort,
-      beschrijving: regel.beschrijving,
-      extra_velden: { ...regel.extra_velden },
-      aantal: regel.aantal,
-      eenheidsprijs: regel.eenheidsprijs,
-      btw_percentage: regel.btw_percentage,
-      korting_percentage: regel.korting_percentage,
-      totaal: regel.soort === 'prijs'
-        ? (regel.aantal * regel.eenheidsprijs) - (regel.aantal * regel.eenheidsprijs * (regel.korting_percentage / 100))
-        : 0,
-    }))
-    setItems(newItems)
-  }
-
   // ── Step navigation ──
   const canProceedStep0 = selectedKlantId && offerteTitel.trim().length > 0
   const canProceedStep1 = items.length > 0
 
   const handleStep0Next = () => {
-    if (selectedTemplateId && items.length === 0) {
-      handleApplyTemplate(selectedTemplateId)
+    // Genereer het gekozen aantal lege items als er nog geen items zijn
+    if (items.length === 0) {
+      const newItems: QuoteLineItem[] = Array.from({ length: itemCount }, (_, i) =>
+        createEmptyItem(`Item ${i + 1}`)
+      )
+      setItems(newItems)
     }
     setCurrentStep(1)
   }
@@ -881,69 +645,38 @@ export function QuoteCreation() {
               </CardContent>
             </Card>
 
-            {/* ── Template selectie als kaarten ── */}
+            {/* ── Hoeveel items? ── */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                    <LayoutTemplate className="h-3.5 w-3.5 text-white" />
+                    <Plus className="h-3.5 w-3.5 text-white" />
                   </div>
-                  Start met template
-                  <span className="text-xs text-muted-foreground font-normal">(optioneel)</span>
+                  Hoeveel items heeft je offerte?
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {/* Leeg beginnen */}
-                  <button
-                    onClick={() => setSelectedTemplateId('geen')}
-                    className={cn(
-                      'text-left p-3 rounded-xl border-2 transition-all',
-                      (!selectedTemplateId || selectedTemplateId === 'geen')
-                        ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
-                    )}
-                  >
-                    <div className="text-xl mb-1">📝</div>
-                    <p className="text-sm font-medium text-foreground">Leeg beginnen</p>
-                    <p className="text-[11px] text-muted-foreground">Voeg zelf items toe</p>
-                  </button>
-
-                  {/* Premade templates */}
-                  {PREMADE_TEMPLATES.map((tpl) => (
+                <p className="text-sm text-muted-foreground mb-3">
+                  Elk item is een complete prijsberekening met omschrijving en details. Je kunt later altijd nog items toevoegen of verwijderen.
+                </p>
+                <div className="flex items-center gap-2">
+                  {ITEM_COUNT_OPTIONS.map((count) => (
                     <button
-                      key={tpl.id}
-                      onClick={() => setSelectedTemplateId(tpl.id)}
+                      key={count}
+                      onClick={() => setItemCount(count)}
                       className={cn(
-                        'text-left p-3 rounded-xl border-2 transition-all',
-                        selectedTemplateId === tpl.id
-                          ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm'
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
+                        'h-12 w-12 rounded-xl text-lg font-bold transition-all border-2',
+                        itemCount === count
+                          ? 'border-primary bg-gradient-to-br from-accent to-primary text-white shadow-md scale-110'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-foreground hover:border-gray-300 dark:hover:border-gray-600'
                       )}
                     >
-                      <div className="text-xl mb-1">{tpl.icon}</div>
-                      <p className="text-sm font-medium text-foreground truncate">{tpl.naam}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{tpl.beschrijving}</p>
+                      {count}
                     </button>
                   ))}
-
-                  {/* User templates */}
-                  {offerteTemplates.map((tpl) => (
-                    <button
-                      key={tpl.id}
-                      onClick={() => setSelectedTemplateId(tpl.id)}
-                      className={cn(
-                        'text-left p-3 rounded-xl border-2 transition-all',
-                        selectedTemplateId === tpl.id
-                          ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm'
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
-                      )}
-                    >
-                      <div className="text-xl mb-1">📄</div>
-                      <p className="text-sm font-medium text-foreground truncate">{tpl.naam}</p>
-                      <p className="text-[11px] text-muted-foreground">{tpl.regels.length} regels</p>
-                    </button>
-                  ))}
+                  <span className="text-sm text-muted-foreground ml-2">
+                    {itemCount === 1 ? 'item' : 'items'}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -970,59 +703,17 @@ export function QuoteCreation() {
           <div className="space-y-5">
             <Card>
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                      <FileText className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    Offerte Items
-                  </CardTitle>
-                  {/* Template importeren knop */}
-                  {allTemplates.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowTemplateImport(!showTemplateImport)}
-                      className="gap-1.5"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      Template importeren
-                    </Button>
-                  )}
-                </div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                    <FileText className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Vul je items in
+                  <span className="text-xs text-muted-foreground font-normal ml-1">
+                    {items.length} {items.length === 1 ? 'item' : 'items'}
+                  </span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Template import panel */}
-                {showTemplateImport && (
-                  <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                        Template toevoegen aan items
-                      </h4>
-                      <Button variant="ghost" size="sm" onClick={() => setShowTemplateImport(false)}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {allTemplates.map((tpl) => (
-                        <button
-                          key={tpl.id}
-                          onClick={() => handleImportTemplate(tpl)}
-                          className="text-left p-2.5 rounded-lg border border-purple-200 dark:border-purple-800 bg-white dark:bg-gray-900 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-sm transition-all"
-                        >
-                          <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                            <span>{(tpl as any)._icon || '📄'}</span>
-                            {tpl.naam}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
-                            {tpl.regels.length} regels
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 <QuoteItemsTable
                   items={items}
                   onAddItem={handleAddItem}
