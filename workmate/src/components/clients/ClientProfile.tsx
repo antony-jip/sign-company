@@ -283,7 +283,7 @@ export function ClientProfile() {
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <h1 className="text-2xl font-bold text-[#386150] dark:text-[#58B09C] font-display">
               {klant.bedrijfsnaam}
             </h1>
             <Badge className={cn('capitalize', getStatusColor(klant.status))}>

@@ -134,7 +134,7 @@ export function ClientsLayout() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
             Klanten
           </h1>
           <Badge variant="secondary" className="text-sm font-medium">

@@ -1039,7 +1039,7 @@ export function FacturenLayout() {
             <FileText className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Facturen</h1>
+            <h1 className="text-2xl font-bold text-foreground font-display">Facturen</h1>
             <p className="text-sm text-muted-foreground">
               {filteredFacturen.length} van {facturen.length} facturen
             </p>

@@ -43,7 +43,7 @@ export function WorkmateDashboard() {
               <div className="w-2 h-2 rounded-full bg-[#58B09C] animate-pulse" />
               <span className="text-xs font-medium text-muted-foreground">{formattedDate}</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground font-display">
               {getGreeting()}{userName ? ', ' : ''}
               {userName && (
                 <span className="wm-gradient-text">{userName}</span>

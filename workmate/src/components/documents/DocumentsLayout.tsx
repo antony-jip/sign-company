@@ -130,7 +130,7 @@ export function DocumentsLayout() {
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Documenten</h1>
+        <h1 className="text-2xl font-bold tracking-tight font-display">Documenten</h1>
         <Button onClick={() => setUploadOpen(true)} className="gap-2">
           <Upload className="w-4 h-4" />
           Upload

@@ -159,12 +159,12 @@ function getInitials(naam: string): string {
 }
 
 const AVATAR_COLORS = [
-  "bg-blue-500",
   "bg-[#58B09C]",
+  "bg-[#386150]",
   "bg-teal-500",
   "bg-orange-500",
   "bg-pink-500",
-  "bg-[#58B09C]",
+  "bg-[#4A442D]",
 ];
 
 function getAvatarColor(index: number): string {
@@ -1380,7 +1380,7 @@ export function MontagePlanningLayout() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight font-display">
             Montage Planning
           </h1>
           <p className="text-muted-foreground mt-1">

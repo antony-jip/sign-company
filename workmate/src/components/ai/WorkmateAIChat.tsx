@@ -565,7 +565,7 @@ export function WorkmateAIChat() {
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">AI Assistent</h1>
+            <h1 className="text-xl font-bold text-foreground font-display">AI Assistent</h1>
             <p className="text-sm text-muted-foreground">
               Stel vragen over je bedrijfsdata
             </p>

@@ -215,7 +215,7 @@ export function ProjectsList() {
             <FolderKanban className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Projecten</h1>
+            <h1 className="text-2xl font-bold text-foreground font-display">Projecten</h1>
             <p className="text-sm text-muted-foreground">
               {gefilterdeProjecten.length} van {projecten.length} projecten
             </p>
@@ -240,7 +240,7 @@ export function ProjectsList() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-4">
             <Briefcase className="h-5 w-5 text-[#CAF7E2]" />
-            <h2 className="text-lg font-semibold text-white">Project Briefing</h2>
+            <h2 className="text-lg font-semibold text-white font-display">Project Briefing</h2>
             <span className="text-xs text-[#CAF7E2]/70 ml-auto">
               {new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </span>

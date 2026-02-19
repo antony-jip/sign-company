@@ -501,7 +501,7 @@ export function ProjectDetail() {
                   <Briefcase className="h-6 w-6 text-[#CAF7E2]" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">{project.naam}</h1>
+                  <h1 className="text-2xl font-bold text-white font-display">{project.naam}</h1>
                   <p className="text-sm text-[#CAF7E2]/70 mt-0.5 flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5" />
                     {project.klant_naam || 'Onbekende klant'}

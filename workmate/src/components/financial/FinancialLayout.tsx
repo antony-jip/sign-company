@@ -114,8 +114,8 @@ export function FinancialLayout() {
       label: 'Winst',
       value: formatCurrency(winst),
       icon: Euro,
-      color: winst >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400',
-      bg: winst >= 0 ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-red-50 dark:bg-red-900/30',
+      color: winst >= 0 ? 'text-[#386150] dark:text-[#58B09C]' : 'text-red-600 dark:text-red-400',
+      bg: winst >= 0 ? 'bg-[#58B09C]/10 dark:bg-[#58B09C]/20' : 'bg-red-50 dark:bg-red-900/30',
     },
     {
       label: 'Openstaande Offertes',
@@ -130,11 +130,11 @@ export function FinancialLayout() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-          <PiggyBank className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        <div className="p-2 bg-[#58B09C]/10 dark:bg-[#58B09C]/20 rounded-lg">
+          <PiggyBank className="w-6 h-6 text-[#386150] dark:text-[#58B09C]" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
             Financieel Overzicht
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
