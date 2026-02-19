@@ -50,6 +50,8 @@ import {
   getKlanten,
 } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
+import { nieuwsbriefWrapperTemplate } from '@/services/emailTemplateService'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Nieuwsbrief, Klant } from '@/types'
 import { cn, formatDate, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -434,6 +436,7 @@ const EMPTY_EDITOR: EditorState = {
 // ============ MAIN COMPONENT ============
 
 export function NewsletterBuilder() {
+  const { bedrijfsnaam, primaireKleur, emailHandtekening, logoUrl } = useAppSettings()
   // Data state
   const [nieuwsbrieven, setNieuwsbrieven] = useState<Nieuwsbrief[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -738,7 +741,14 @@ export function NewsletterBuilder() {
       for (let i = 0; i < recipients.length; i++) {
         setSendProgress({ sending: true, current: i + 1, total: recipients.length, failed: [...failed] })
         try {
-          await sendEmail(recipients[i], editor.onderwerp, '', { html: editor.html_inhoud })
+          const { html: wrappedHtml } = nieuwsbriefWrapperTemplate({
+            inhoud: editor.html_inhoud,
+            bedrijfsnaam: bedrijfsnaam || undefined,
+            primaireKleur: primaireKleur || undefined,
+            handtekening: emailHandtekening || undefined,
+            logoUrl: logoUrl || undefined,
+          })
+          await sendEmail(recipients[i], editor.onderwerp, '', { html: wrappedHtml })
         } catch (err) {
           console.error(`Fout bij verzenden naar ${recipients[i]}:`, err)
           failed.push(recipients[i])
@@ -779,7 +789,14 @@ export function NewsletterBuilder() {
 
     try {
       setIsSaving(true)
-      await sendEmail(email, 'Preview: ' + editor.onderwerp, '', { html: editor.html_inhoud })
+      const { html: wrappedHtml } = nieuwsbriefWrapperTemplate({
+        inhoud: editor.html_inhoud,
+        bedrijfsnaam: bedrijfsnaam || undefined,
+        primaireKleur: primaireKleur || undefined,
+        handtekening: emailHandtekening || undefined,
+        logoUrl: logoUrl || undefined,
+      })
+      await sendEmail(email, 'Preview: ' + editor.onderwerp, '', { html: wrappedHtml })
       toast.success(`Voorbeeld verzonden naar ${email}`)
       setPreviewSendDialogOpen(false)
       setPreviewEmail('')
