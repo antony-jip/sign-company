@@ -58,6 +58,7 @@ import {
   deleteCalculatieProduct,
   getCalculatieTemplates,
   createCalculatieTemplate,
+  updateCalculatieTemplate,
   deleteCalculatieTemplate,
   getOfferteTemplates,
   createOfferteTemplate,
@@ -820,9 +821,469 @@ function CalculatieTab() {
         </CardContent>
       </Card>
 
+      {/* ---- CALCULATIE TEMPLATES ---- */}
+      <CalculatieTemplatesSection producten={producten} categorieen={categorieen} eenheden={eenheden} standaardMarge={standaardMarge} />
+
       {/* ---- OFFERTE TEMPLATES ---- */}
       <OfferteTemplatesSection />
     </div>
+  )
+}
+
+// ============ CALCULATIE TEMPLATES SECTION ============
+// Pre-build calculatie templates die je kunt laden in de CalculatieModal.
+// Bijv. "Standaard gevelreclame" met voorbereiding, folie, montage, etc.
+
+function CalculatieTemplatesSection({
+  producten,
+  categorieen,
+  eenheden,
+  standaardMarge,
+}: {
+  producten: CalculatieProduct[]
+  categorieen: string[]
+  eenheden: string[]
+  standaardMarge: number
+}) {
+  const { user } = useAuth()
+  const { settings } = useAppSettings()
+  const [templates, setTemplates] = useState<CalculatieTemplate[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+
+  // Form state
+  const [tplNaam, setTplNaam] = useState('')
+  const [tplBeschrijving, setTplBeschrijving] = useState('')
+  const [tplRegels, setTplRegels] = useState<CalculatieRegel[]>([])
+
+  useEffect(() => {
+    getCalculatieTemplates()
+      .then(setTemplates)
+      .catch(console.error)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const resetForm = () => {
+    setTplNaam('')
+    setTplBeschrijving('')
+    setTplRegels([])
+    setEditId(null)
+    setShowForm(false)
+  }
+
+  const addRegel = () => {
+    setTplRegels([
+      ...tplRegels,
+      {
+        id: `cr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        product_naam: '',
+        categorie: '',
+        eenheid: 'stuks',
+        aantal: 1,
+        inkoop_prijs: 0,
+        verkoop_prijs: 0,
+        marge_percentage: standaardMarge,
+        korting_percentage: 0,
+        nacalculatie: false,
+        btw_percentage: settings.standaard_btw ?? 21,
+        notitie: '',
+      },
+    ])
+  }
+
+  const updateRegel = (id: string, updates: Partial<CalculatieRegel>) => {
+    setTplRegels(tplRegels.map((r) => {
+      if (r.id !== id) return r
+      const updated = { ...r, ...updates }
+      // Inkoop wijzigt -> herbereken verkoop
+      if ('inkoop_prijs' in updates && !('verkoop_prijs' in updates)) {
+        updated.verkoop_prijs = updated.inkoop_prijs * (1 + updated.marge_percentage / 100)
+      }
+      // Marge wijzigt -> herbereken verkoop
+      if ('marge_percentage' in updates && !('verkoop_prijs' in updates)) {
+        updated.verkoop_prijs = updated.inkoop_prijs * (1 + updated.marge_percentage / 100)
+      }
+      // Verkoop wijzigt -> herbereken marge
+      if ('verkoop_prijs' in updates && !('marge_percentage' in updates) && !('inkoop_prijs' in updates)) {
+        updated.marge_percentage = updated.inkoop_prijs > 0
+          ? ((updated.verkoop_prijs - updated.inkoop_prijs) / updated.inkoop_prijs) * 100
+          : 0
+      }
+      return updated
+    }))
+  }
+
+  const removeRegel = (id: string) => {
+    setTplRegels(tplRegels.filter((r) => r.id !== id))
+  }
+
+  const vulRegelMetProduct = (regelId: string, product: CalculatieProduct) => {
+    updateRegel(regelId, {
+      product_id: product.id,
+      product_naam: product.naam,
+      categorie: product.categorie,
+      eenheid: product.eenheid,
+      inkoop_prijs: product.inkoop_prijs,
+      verkoop_prijs: product.verkoop_prijs,
+      marge_percentage: product.standaard_marge,
+      btw_percentage: product.btw_percentage,
+    })
+  }
+
+  const handleEdit = (t: CalculatieTemplate) => {
+    setEditId(t.id)
+    setTplNaam(t.naam)
+    setTplBeschrijving(t.beschrijving)
+    setTplRegels(t.regels.map((r) => ({ ...r, id: r.id || `cr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` })))
+    setShowForm(true)
+  }
+
+  const handleSave = async () => {
+    if (!tplNaam.trim()) {
+      toast.error('Vul een template naam in')
+      return
+    }
+    try {
+      setIsSaving(true)
+      if (editId) {
+        const updated = await updateCalculatieTemplate(editId, {
+          naam: tplNaam,
+          beschrijving: tplBeschrijving,
+          regels: tplRegels,
+        })
+        setTemplates((prev) => prev.map((t) => (t.id === editId ? updated : t)))
+        toast.success('Calculatie template bijgewerkt')
+      } else {
+        const newTpl = await createCalculatieTemplate({
+          user_id: user?.id || 'demo',
+          naam: tplNaam,
+          beschrijving: tplBeschrijving,
+          regels: tplRegels,
+          actief: true,
+        })
+        setTemplates((prev) => [...prev, newTpl])
+        toast.success('Calculatie template aangemaakt')
+      }
+      resetForm()
+    } catch (err) {
+      console.error(err)
+      toast.error('Kon template niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteCalculatieTemplate(id)
+      setTemplates((prev) => prev.filter((t) => t.id !== id))
+      toast.success('Template verwijderd')
+    } catch (err) {
+      toast.error('Kon template niet verwijderen')
+    }
+  }
+
+  const handleToggleActief = async (t: CalculatieTemplate) => {
+    try {
+      const updated = await updateCalculatieTemplate(t.id, { actief: !t.actief })
+      setTemplates((prev) => prev.map((tp) => (tp.id === t.id ? updated : tp)))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // Bereken totalen voor weergave
+  const berekenTotalen = (regels: CalculatieRegel[]) => {
+    let inkoop = 0
+    let verkoop = 0
+    regels.forEach((r) => {
+      inkoop += r.aantal * r.inkoop_prijs
+      const rv = r.aantal * r.verkoop_prijs
+      verkoop += rv - rv * (r.korting_percentage / 100)
+    })
+    return { inkoop, verkoop, marge: verkoop - inkoop }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-blue-600" />
+              Calculatie Templates
+            </CardTitle>
+            <CardDescription>
+              Bouw standaard calculaties die je snel kunt laden bij het maken van een offerte.
+              Bijv. &quot;Gevelreclame&quot; met voorbereiding, folie, montage, etc.
+            </CardDescription>
+          </div>
+          <Button onClick={() => { resetForm(); setShowForm(true) }} size="sm">
+            <Plus className="h-4 w-4 mr-1.5" />
+            Template maken
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {/* ---- FORMULIER ---- */}
+        {showForm && (
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700 space-y-4">
+            <h4 className="font-medium text-sm text-gray-900 dark:text-white">
+              {editId ? 'Template bewerken' : 'Nieuwe calculatie template'}
+            </h4>
+
+            {/* Naam + beschrijving */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Template naam *</Label>
+                <Input
+                  value={tplNaam}
+                  onChange={(e) => setTplNaam(e.target.value)}
+                  placeholder="Bijv. Standaard gevelreclame"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Beschrijving</Label>
+                <Input
+                  value={tplBeschrijving}
+                  onChange={(e) => setTplBeschrijving(e.target.value)}
+                  placeholder="Korte uitleg..."
+                />
+              </div>
+            </div>
+
+            {/* Calculatie regels */}
+            <div className="space-y-2">
+              <Label className="text-xs">Calculatie regels</Label>
+
+              {tplRegels.length === 0 ? (
+                <p className="text-xs text-gray-400 italic py-2">Nog geen regels. Voeg een regel toe.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-gray-100 dark:bg-gray-800">
+                        <th className="text-left px-2 py-1.5 font-medium text-gray-500 min-w-[160px]">Product</th>
+                        <th className="text-center px-2 py-1.5 font-medium text-gray-500 w-16">Aantal</th>
+                        <th className="text-center px-2 py-1.5 font-medium text-gray-500 w-16">Eenh.</th>
+                        <th className="text-right px-2 py-1.5 font-medium text-gray-500 w-20">Inkoop</th>
+                        <th className="text-right px-2 py-1.5 font-medium text-gray-500 w-20">Verkoop</th>
+                        <th className="text-right px-2 py-1.5 font-medium text-gray-500 w-16">Marge%</th>
+                        <th className="w-8" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tplRegels.map((regel) => (
+                        <tr key={regel.id} className="border-t border-gray-100 dark:border-gray-800">
+                          <td className="px-1 py-1">
+                            <div className="flex items-center gap-1">
+                              {producten.length > 0 && (
+                                <Select
+                                  value={regel.product_id || '__custom__'}
+                                  onValueChange={(val) => {
+                                    if (val === '__custom__') {
+                                      updateRegel(regel.id, { product_id: undefined })
+                                    } else {
+                                      const p = producten.find((pr) => pr.id === val)
+                                      if (p) vulRegelMetProduct(regel.id, p)
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="border-0 bg-transparent shadow-none h-7 w-8 px-0.5 flex-shrink-0">
+                                    <Package className="h-3 w-3 text-gray-400" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__custom__">Handmatig</SelectItem>
+                                    {producten.filter(p => p.actief).map((p) => (
+                                      <SelectItem key={p.id} value={p.id}>
+                                        {p.naam} — {formatCurrency(p.verkoop_prijs)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              <Input
+                                value={regel.product_naam}
+                                onChange={(e) => updateRegel(regel.id, { product_naam: e.target.value })}
+                                placeholder="Productnaam..."
+                                className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-7 text-xs"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-1 py-1">
+                            <Input
+                              type="number"
+                              value={regel.aantal || ''}
+                              onChange={(e) => updateRegel(regel.id, { aantal: parseFloat(e.target.value) || 0 })}
+                              min={0}
+                              className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-7 text-xs text-center"
+                            />
+                          </td>
+                          <td className="px-1 py-1">
+                            <Select
+                              value={regel.eenheid}
+                              onValueChange={(v) => updateRegel(regel.id, { eenheid: v })}
+                            >
+                              <SelectTrigger className="border-0 bg-transparent shadow-none h-7 text-[10px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {eenheden.map((e) => (
+                                  <SelectItem key={e} value={e}>{e}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="px-1 py-1">
+                            <Input
+                              type="number"
+                              value={regel.inkoop_prijs || ''}
+                              onChange={(e) => updateRegel(regel.id, { inkoop_prijs: parseFloat(e.target.value) || 0 })}
+                              min={0}
+                              step={0.01}
+                              className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-7 text-xs text-right"
+                              placeholder="0,00"
+                            />
+                          </td>
+                          <td className="px-1 py-1">
+                            <Input
+                              type="number"
+                              value={regel.verkoop_prijs || ''}
+                              onChange={(e) => updateRegel(regel.id, { verkoop_prijs: parseFloat(e.target.value) || 0 })}
+                              min={0}
+                              step={0.01}
+                              className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-7 text-xs text-right"
+                              placeholder="0,00"
+                            />
+                          </td>
+                          <td className="px-1 py-1">
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                value={Math.round(regel.marge_percentage * 10) / 10 || ''}
+                                onChange={(e) => updateRegel(regel.id, { marge_percentage: parseFloat(e.target.value) || 0 })}
+                                className={`border-0 bg-transparent shadow-none focus-visible:ring-1 h-7 text-xs text-right pr-4 ${
+                                  regel.marge_percentage > 0 ? 'text-green-600 dark:text-green-400' : ''
+                                }`}
+                              />
+                              <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</span>
+                            </div>
+                          </td>
+                          <td className="px-1 py-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeRegel(regel.id)}
+                              className="h-6 w-6 text-gray-400 hover:text-red-500"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Totalen preview */}
+              {tplRegels.length > 0 && (() => {
+                const t = berekenTotalen(tplRegels)
+                return (
+                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 pt-1">
+                    <span>Inkoop: <strong className="text-gray-700 dark:text-gray-300">{formatCurrency(t.inkoop)}</strong></span>
+                    <span>Verkoop: <strong className="text-gray-700 dark:text-gray-300">{formatCurrency(t.verkoop)}</strong></span>
+                    <span>Marge: <strong className={t.marge >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>{formatCurrency(t.marge)}</strong></span>
+                  </div>
+                )
+              })()}
+
+              <Button variant="outline" size="sm" onClick={addRegel} className="border-dashed">
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Regel toevoegen
+              </Button>
+            </div>
+
+            {/* Knoppen */}
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" size="sm" onClick={resetForm}>
+                Annuleren
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={isSaving || !tplNaam.trim()}>
+                <Save className="h-4 w-4 mr-1.5" />
+                {editId ? 'Bijwerken' : 'Opslaan'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ---- TEMPLATE LIJST ---- */}
+        {isLoading ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">Laden...</p>
+        ) : templates.length === 0 ? (
+          <div className="text-center py-8">
+            <Calculator className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Nog geen calculatie templates.
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              Maak templates aan zodat je bij het maken van een offerte snel een calculatie kunt laden.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {templates.map((t) => {
+              const totalen = berekenTotalen(t.regels)
+              return (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-gray-900 dark:text-white">{t.naam}</p>
+                    {t.beschrijving && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.beschrijving}</p>
+                    )}
+                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                      <span>{t.regels.length} regel(s)</span>
+                      <span>Inkoop {formatCurrency(totalen.inkoop)}</span>
+                      <span>Verkoop {formatCurrency(totalen.verkoop)}</span>
+                      <span className={totalen.marge >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
+                        Marge {formatCurrency(totalen.marge)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Switch
+                      checked={t.actief}
+                      onCheckedChange={() => handleToggleActief(t)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(t)}
+                      className="h-7 w-7 text-gray-400 hover:text-blue-500"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(t.id)}
+                      className="h-7 w-7 text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
