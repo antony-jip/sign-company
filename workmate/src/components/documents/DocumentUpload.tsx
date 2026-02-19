@@ -116,7 +116,7 @@ export function DocumentUpload({ open, onOpenChange }: DocumentUploadProps) {
         await uploadFile(file, storagePath)
 
         await createDocument({
-          user_id: user?.id || 'demo',
+          user_id: user?.id || '',
           project_id: null,
           klant_id: null,
           naam: file.name,

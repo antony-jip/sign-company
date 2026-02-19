@@ -515,7 +515,7 @@ export function CalendarLayout() {
       const klant = klanten.find((k) => k.id === formData.klant_id)
 
       const payload = {
-        user_id: user?.id || 'demo',
+        user_id: user?.id || '',
         project_id: formData.project_id || '',
         project_naam: project?.naam || '',
         klant_id: formData.klant_id || project?.klant_id || '',

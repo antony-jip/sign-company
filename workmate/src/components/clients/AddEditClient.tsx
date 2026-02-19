@@ -122,6 +122,11 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
   async function handleSave() {
     if (!validate()) return
 
+    if (!user?.id) {
+      toast.error('Je moet ingelogd zijn om deze actie uit te voeren')
+      return
+    }
+
     setSaving(true)
     try {
       const tagsArray = formData.tags
@@ -130,7 +135,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         .filter((t) => t.length > 0)
 
       const klantData = {
-        user_id: user?.id || 'demo',
+        user_id: user.id,
         bedrijfsnaam: formData.bedrijfsnaam.trim(),
         contactpersoon: formData.contactpersoon.trim(),
         email: formData.email.trim(),

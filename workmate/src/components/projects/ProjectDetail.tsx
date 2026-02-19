@@ -248,7 +248,7 @@ export function ProjectDetail() {
       vervaldatum.setDate(vervaldatum.getDate() + 30)
 
       const newFactuur = await createFactuur({
-        user_id: user.id || 'demo',
+        user_id: user.id,
         klant_id: offerte.klant_id,
         offerte_id: offerte.id,
         project_id: id,
@@ -399,7 +399,7 @@ export function ProjectDetail() {
     for (const file of fileArray) {
       try {
         await createDocument({
-          user_id: user?.id || 'demo',
+          user_id: user?.id || '',
           project_id: id || null,
           klant_id: project?.klant_id || null,
           naam: file.name,
@@ -443,7 +443,7 @@ export function ProjectDetail() {
     setIsVersturen(true)
     try {
       const gk = await createTekeningGoedkeuring({
-        user_id: user?.id || 'demo',
+        user_id: user?.id || '',
         project_id: id!,
         klant_id: project.klant_id,
         document_ids: selectedDocIds,
@@ -870,7 +870,7 @@ export function ProjectDetail() {
                     onClick={async () => {
                       try {
                         await createTaak({
-                          user_id: user?.id || 'demo',
+                          user_id: user?.id || '',
                           project_id: id!,
                           titel: nieuweTaakTitel.trim(),
                           beschrijving: nieuweTaakBeschrijving.trim(),

@@ -1275,7 +1275,7 @@ export async function getOfferteTemplates(): Promise<OfferteTemplate[]> {
     const defaults: OfferteTemplate[] = DEFAULT_OFFERTE_TEMPLATES.map((t) => ({
       ...t,
       id: generateId(),
-      user_id: 'demo',
+      user_id: '',
       created_at: now(),
       updated_at: now(),
     }))

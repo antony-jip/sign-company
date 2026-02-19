@@ -287,7 +287,7 @@ function CalculatieTab() {
         toast.success('Product bijgewerkt')
       } else {
         const newProduct = await createCalculatieProduct({
-          user_id: user?.id || 'demo',
+          user_id: user?.id || '',
           naam: productNaam,
           categorie: productCategorie,
           eenheid: productEenheid,
@@ -957,7 +957,7 @@ function CalculatieTemplatesSection({
         toast.success('Calculatie template bijgewerkt')
       } else {
         const newTpl = await createCalculatieTemplate({
-          user_id: user?.id || 'demo',
+          user_id: user?.id || '',
           naam: tplNaam,
           beschrijving: tplBeschrijving,
           regels: tplRegels,
@@ -1369,7 +1369,7 @@ function OfferteTemplatesSection() {
         toast.success('Template bijgewerkt')
       } else {
         const newTpl = await createOfferteTemplate({
-          user_id: user?.id || 'demo',
+          user_id: user?.id || '',
           naam: tplNaam,
           beschrijving: tplBeschrijving,
           regels: tplRegels,

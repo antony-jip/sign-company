@@ -292,10 +292,14 @@ export function QuoteCreation() {
   // ── Save ──
   const saveOfferte = async (status: 'concept' | 'verzonden') => {
     if (isSaving) return
+    if (!user?.id) {
+      toast.error('Je moet ingelogd zijn om een offerte op te slaan')
+      return
+    }
     setIsSaving(true)
     try {
       const newOfferte = await createOfferte({
-        user_id: user?.id || 'demo',
+        user_id: user.id,
         klant_id: selectedKlantId,
         ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
         nummer: offerteNummer,
@@ -363,7 +367,7 @@ export function QuoteCreation() {
       toast.info('PDF wordt gegenereerd...')
       const offerteData = {
         id: '',
-        user_id: user?.id || 'demo',
+        user_id: user?.id || '',
         klant_id: selectedKlantId,
         nummer: offerteNummer,
         titel: offerteTitel,
