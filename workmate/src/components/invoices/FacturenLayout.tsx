@@ -429,31 +429,6 @@ export function FacturenLayout() {
     loadData()
   }, [])
 
-  // Handle URL-based workflow triggers (e.g. from quote detail or client profile)
-  useEffect(() => {
-    if (isLoading) return // Wait for data to load first
-
-    const convertOfferteId = searchParams.get('convert_offerte')
-    const klantId = searchParams.get('klant')
-
-    if (convertOfferteId && offertes.length > 0) {
-      const offerte = offertes.find((o) => o.id === convertOfferteId)
-      if (offerte) {
-        handleConvertOfferte(offerte)
-        // Clear the param so it doesn't re-trigger
-        setSearchParams({}, { replace: true })
-      }
-    } else if (klantId && klanten.length > 0) {
-      // Pre-fill klant and open create dialog
-      const klant = klanten.find((k) => k.id === klantId)
-      if (klant) {
-        setFormData((prev) => ({ ...prev, klant_id: klantId }))
-        setCreateDialogOpen(true)
-        setSearchParams({}, { replace: true })
-      }
-    }
-  }, [isLoading, searchParams, offertes, klanten, handleConvertOfferte, setSearchParams])
-
   // ============ COMPUTED VALUES ============
 
   const statistics = useMemo(() => {
@@ -855,6 +830,31 @@ export function FacturenLayout() {
     },
     []
   )
+
+  // Handle URL-based workflow triggers (e.g. from quote detail or client profile)
+  useEffect(() => {
+    if (isLoading) return // Wait for data to load first
+
+    const convertOfferteId = searchParams.get('convert_offerte')
+    const klantId = searchParams.get('klant')
+
+    if (convertOfferteId && offertes.length > 0) {
+      const offerte = offertes.find((o) => o.id === convertOfferteId)
+      if (offerte) {
+        handleConvertOfferte(offerte)
+        // Clear the param so it doesn't re-trigger
+        setSearchParams({}, { replace: true })
+      }
+    } else if (klantId && klanten.length > 0) {
+      // Pre-fill klant and open create dialog
+      const klant = klanten.find((k) => k.id === klantId)
+      if (klant) {
+        setFormData((prev) => ({ ...prev, klant_id: klantId }))
+        setCreateDialogOpen(true)
+        setSearchParams({}, { replace: true })
+      }
+    }
+  }, [isLoading, searchParams, offertes, klanten, handleConvertOfferte, setSearchParams])
 
   const handleAddLineItem = useCallback(() => {
     setFormData((prev) => ({
