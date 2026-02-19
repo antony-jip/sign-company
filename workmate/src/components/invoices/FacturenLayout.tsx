@@ -149,156 +149,6 @@ const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'klantnaam', label: 'Klantnaam' },
 ]
 
-// ============ DEMO DATA ============
-
-const demoFacturen: Factuur[] = [
-  {
-    id: 'demo-f-1',
-    user_id: 'demo',
-    klant_id: 'demo-k-1',
-    klant_naam: 'Bakkerij Van Dijk B.V.',
-    offerte_id: undefined,
-    project_id: undefined,
-    nummer: 'FAC-2026-001',
-    titel: 'Gevelreclame en lichtreclame bakkerij',
-    status: 'betaald',
-    subtotaal: 3450.00,
-    btw_bedrag: 724.50,
-    totaal: 4174.50,
-    betaald_bedrag: 4174.50,
-    factuurdatum: '2026-01-10',
-    vervaldatum: '2026-02-09',
-    betaaldatum: '2026-01-28',
-    betalingsherinnering_verzonden: false,
-    notities: 'Montage inclusief hoogwerker.',
-    voorwaarden: 'Betaling binnen 30 dagen na factuurdatum.',
-    created_at: '2026-01-10T09:00:00Z',
-    updated_at: '2026-01-28T14:00:00Z',
-  },
-  {
-    id: 'demo-f-2',
-    user_id: 'demo',
-    klant_id: 'demo-k-2',
-    klant_naam: 'Autobedrijf Jansen',
-    offerte_id: undefined,
-    project_id: undefined,
-    nummer: 'FAC-2026-002',
-    titel: 'Autobelettering 3x bestelbus',
-    status: 'verzonden',
-    subtotaal: 2850.00,
-    btw_bedrag: 598.50,
-    totaal: 3448.50,
-    betaald_bedrag: 0,
-    factuurdatum: '2026-02-01',
-    vervaldatum: '2026-03-03',
-    betaaldatum: undefined,
-    betalingsherinnering_verzonden: false,
-    notities: 'Wrap design inclusief.',
-    voorwaarden: 'Betaling binnen 30 dagen na factuurdatum.',
-    created_at: '2026-02-01T10:30:00Z',
-    updated_at: '2026-02-01T10:30:00Z',
-  },
-  {
-    id: 'demo-f-3',
-    user_id: 'demo',
-    klant_id: 'demo-k-3',
-    klant_naam: 'Restaurant De Gouden Leeuw',
-    offerte_id: undefined,
-    project_id: undefined,
-    nummer: 'FAC-2026-003',
-    titel: 'Terrasschermen met logo-opdruk',
-    status: 'vervallen',
-    subtotaal: 1890.00,
-    btw_bedrag: 396.90,
-    totaal: 2286.90,
-    betaald_bedrag: 0,
-    factuurdatum: '2026-01-05',
-    vervaldatum: '2026-02-04',
-    betaaldatum: undefined,
-    betalingsherinnering_verzonden: true,
-    notities: '6 terrasschermen 150x200cm.',
-    voorwaarden: 'Betaling binnen 30 dagen na factuurdatum.',
-    created_at: '2026-01-05T14:00:00Z',
-    updated_at: '2026-02-05T09:00:00Z',
-  },
-  {
-    id: 'demo-f-4',
-    user_id: 'demo',
-    klant_id: 'demo-k-4',
-    klant_naam: 'Fysiotherapie Centrum Oost',
-    offerte_id: undefined,
-    project_id: undefined,
-    nummer: 'FAC-2026-004',
-    titel: 'Raambelettering en zuil',
-    status: 'concept',
-    subtotaal: 1250.00,
-    btw_bedrag: 262.50,
-    totaal: 1512.50,
-    betaald_bedrag: 0,
-    factuurdatum: '2026-02-15',
-    vervaldatum: '2026-03-17',
-    betaaldatum: undefined,
-    betalingsherinnering_verzonden: false,
-    notities: 'Wacht op goedkeuring ontwerp.',
-    voorwaarden: 'Betaling binnen 30 dagen na factuurdatum.',
-    created_at: '2026-02-15T11:00:00Z',
-    updated_at: '2026-02-15T11:00:00Z',
-  },
-  {
-    id: 'demo-f-5',
-    user_id: 'demo',
-    klant_id: 'demo-k-5',
-    klant_naam: 'Bouwbedrijf De Vries & Zn.',
-    offerte_id: undefined,
-    project_id: undefined,
-    nummer: 'FAC-2026-005',
-    titel: 'Bouwborden en hekwerkdoeken project Zuidas',
-    status: 'betaald',
-    subtotaal: 4200.00,
-    btw_bedrag: 882.00,
-    totaal: 5082.00,
-    betaald_bedrag: 5082.00,
-    factuurdatum: '2026-02-03',
-    vervaldatum: '2026-03-05',
-    betaaldatum: '2026-02-12',
-    betalingsherinnering_verzonden: false,
-    notities: '4 bouwborden 244x122cm + 2 hekwerkdoeken.',
-    voorwaarden: 'Betaling binnen 30 dagen na factuurdatum.',
-    created_at: '2026-02-03T08:30:00Z',
-    updated_at: '2026-02-12T16:00:00Z',
-  },
-  {
-    id: 'demo-f-6',
-    user_id: 'demo',
-    klant_id: 'demo-k-1',
-    klant_naam: 'Bakkerij Van Dijk B.V.',
-    offerte_id: undefined,
-    project_id: undefined,
-    nummer: 'FAC-2025-048',
-    titel: 'Creditnota lichtreclame aanpassing',
-    status: 'gecrediteerd',
-    subtotaal: -350.00,
-    btw_bedrag: -73.50,
-    totaal: -423.50,
-    betaald_bedrag: 0,
-    factuurdatum: '2025-12-20',
-    vervaldatum: '2026-01-19',
-    betaaldatum: undefined,
-    betalingsherinnering_verzonden: false,
-    notities: 'Correctie op FAC-2025-045 wegens kleurfout.',
-    voorwaarden: '',
-    created_at: '2025-12-20T10:00:00Z',
-    updated_at: '2025-12-20T10:00:00Z',
-  },
-]
-
-const demoKlanten: Klant[] = [
-  { id: 'demo-k-1', user_id: 'demo', bedrijfsnaam: 'Bakkerij Van Dijk B.V.', contactpersoon: 'Jan van Dijk', email: 'jan@bakkerijvandijk.nl', telefoon: '020-1234567', adres: 'Kalverstraat 12', postcode: '1012 AB', stad: 'Amsterdam', land: 'Nederland', website: 'www.bakkerijvandijk.nl', kvk_nummer: '12345678', btw_nummer: 'NL123456789B01', status: 'actief', tags: ['horeca', 'vaste klant'], notities: '', contactpersonen: [], created_at: '2025-01-01T00:00:00Z', updated_at: '2025-01-01T00:00:00Z' },
-  { id: 'demo-k-2', user_id: 'demo', bedrijfsnaam: 'Autobedrijf Jansen', contactpersoon: 'Pieter Jansen', email: 'pieter@autojansen.nl', telefoon: '030-9876543', adres: 'Industrieweg 45', postcode: '3542 AE', stad: 'Utrecht', land: 'Nederland', website: 'www.autojansen.nl', kvk_nummer: '87654321', btw_nummer: 'NL987654321B01', status: 'actief', tags: ['automotive'], notities: '', contactpersonen: [], created_at: '2025-01-01T00:00:00Z', updated_at: '2025-01-01T00:00:00Z' },
-  { id: 'demo-k-3', user_id: 'demo', bedrijfsnaam: 'Restaurant De Gouden Leeuw', contactpersoon: 'Maria Goudsmit', email: 'info@goudeleeuw.nl', telefoon: '010-5551234', adres: 'Marktplein 8', postcode: '3011 DT', stad: 'Rotterdam', land: 'Nederland', website: 'www.goudenleeuw.nl', kvk_nummer: '11223344', btw_nummer: 'NL112233445B01', status: 'actief', tags: ['horeca'], notities: '', contactpersonen: [], created_at: '2025-01-01T00:00:00Z', updated_at: '2025-01-01T00:00:00Z' },
-  { id: 'demo-k-4', user_id: 'demo', bedrijfsnaam: 'Fysiotherapie Centrum Oost', contactpersoon: 'Dr. Henk Bakker', email: 'info@fysio-oost.nl', telefoon: '020-6789012', adres: 'Linnaeusstraat 92', postcode: '1093 EK', stad: 'Amsterdam', land: 'Nederland', website: 'www.fysio-oost.nl', kvk_nummer: '55667788', btw_nummer: 'NL556677889B01', status: 'actief', tags: ['zorg'], notities: '', contactpersonen: [], created_at: '2025-01-01T00:00:00Z', updated_at: '2025-01-01T00:00:00Z' },
-  { id: 'demo-k-5', user_id: 'demo', bedrijfsnaam: 'Bouwbedrijf De Vries & Zn.', contactpersoon: 'Klaas de Vries', email: 'klaas@devriesbouw.nl', telefoon: '070-3456789', adres: 'Bouwlaan 33', postcode: '2516 CK', stad: 'Den Haag', land: 'Nederland', website: 'www.devriesbouw.nl', kvk_nummer: '99887766', btw_nummer: 'NL998877665B01', status: 'actief', tags: ['bouw', 'vaste klant'], notities: '', contactpersonen: [], created_at: '2025-01-01T00:00:00Z', updated_at: '2025-01-01T00:00:00Z' },
-]
 
 // ============ HELPERS ============
 
@@ -409,17 +259,8 @@ export function FacturenLayout() {
           getOffertes().catch(() => []),
         ])
 
-        if (facturenData.length === 0) {
-          setFacturen(demoFacturen)
-        } else {
-          setFacturen(facturenData)
-        }
-
-        if (klantenData.length === 0) {
-          setKlanten(demoKlanten)
-        } else {
-          setKlanten(klantenData)
-        }
+        setFacturen(facturenData)
+        setKlanten(klantenData)
 
         setOffertes(offertesData)
       } finally {
@@ -600,18 +441,8 @@ export function FacturenLayout() {
           totaal,
         }
 
-        if (!editingFactuur.id.startsWith('demo-')) {
-          const updated = await updateFactuur(editingFactuur.id, updates)
-          setFacturen((prev) => prev.map((f) => (f.id === editingFactuur.id ? { ...f, ...updated } : f)))
-        } else {
-          setFacturen((prev) =>
-            prev.map((f) =>
-              f.id === editingFactuur.id
-                ? { ...f, ...updates, updated_at: new Date().toISOString() }
-                : f
-            )
-          )
-        }
+        const updated = await updateFactuur(editingFactuur.id, updates)
+        setFacturen((prev) => prev.map((f) => (f.id === editingFactuur.id ? { ...f, ...updated } : f)))
         toast.success('Factuur bijgewerkt')
       } else {
         const nummer = generateFactuurNummer(facturen)
@@ -652,10 +483,10 @@ export function FacturenLayout() {
           }
           setFacturen((prev) => [saved, ...prev])
         } catch {
-          // Fallback: add locally with demo ID
+          // Fallback: add locally with temporary ID
           const localFactuur: Factuur = {
             ...newFactuur,
-            id: `demo-f-${Date.now()}`,
+            id: `local-f-${Date.now()}`,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }
@@ -682,22 +513,12 @@ export function FacturenLayout() {
         betaaldatum: getTodayString(),
       }
 
-      if (!factuur.id.startsWith('demo-')) {
-        try {
-          const updated = await updateFactuur(factuur.id, updates)
-          setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
-        } catch {
-          toast.error('Kon status niet bijwerken')
-          return
-        }
-      } else {
-        setFacturen((prev) =>
-          prev.map((f) =>
-            f.id === factuur.id
-              ? { ...f, ...updates, updated_at: new Date().toISOString() }
-              : f
-          )
-        )
+      try {
+        const updated = await updateFactuur(factuur.id, updates)
+        setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
+      } catch {
+        toast.error('Kon status niet bijwerken')
+        return
       }
       toast.success(`${factuur.nummer} gemarkeerd als betaald`)
     },
@@ -717,13 +538,11 @@ export function FacturenLayout() {
         betalingsherinnering_verzonden: true,
       }
 
-      if (!factuur.id.startsWith('demo-')) {
-        try {
-          await updateFactuur(factuur.id, updates)
-        } catch {
-          toast.error('Kon herinnering niet verzenden')
-          return
-        }
+      try {
+        await updateFactuur(factuur.id, updates)
+      } catch {
+        toast.error('Kon herinnering niet verzenden')
+        return
       }
 
       // Send the actual reminder email
@@ -767,13 +586,11 @@ export function FacturenLayout() {
 
   const handleDeleteFactuur = useCallback(
     async (factuur: Factuur) => {
-      if (!factuur.id.startsWith('demo-')) {
-        try {
-          await deleteFactuur(factuur.id)
-        } catch {
-          toast.error('Kon factuur niet verwijderen')
-          return
-        }
+      try {
+        await deleteFactuur(factuur.id)
+      } catch {
+        toast.error('Kon factuur niet verwijderen')
+        return
       }
       setFacturen((prev) => prev.filter((f) => f.id !== factuur.id))
       setViewingFactuur(null)
@@ -984,21 +801,11 @@ export function FacturenLayout() {
         // Update status to 'verzonden'
         const updates: Partial<Factuur> = { status: 'verzonden' }
 
-        if (!factuur.id.startsWith('demo-')) {
-          try {
-            const updated = await updateFactuur(factuur.id, updates)
-            setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
-          } catch {
-            // Still update locally even if DB update fails
-            setFacturen((prev) =>
-              prev.map((f) =>
-                f.id === factuur.id
-                  ? { ...f, ...updates, updated_at: new Date().toISOString() }
-                  : f
-              )
-            )
-          }
-        } else {
+        try {
+          const updated = await updateFactuur(factuur.id, updates)
+          setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
+        } catch {
+          // Still update locally even if DB update fails
           setFacturen((prev) =>
             prev.map((f) =>
               f.id === factuur.id

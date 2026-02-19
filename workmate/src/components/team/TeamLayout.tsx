@@ -44,119 +44,6 @@ import type { Medewerker } from '@/types';
 import { cn, getInitials } from '@/lib/utils';
 import { toast } from 'sonner';
 
-// ---------------------------------------------------------------------------
-// Demo data -- used when the database returns no records
-// ---------------------------------------------------------------------------
-const DEMO_MEDEWERKERS: Medewerker[] = [
-  {
-    id: 'demo-1',
-    user_id: 'u-1',
-    naam: 'Jan de Vries',
-    email: 'jan@signbedrijf.nl',
-    telefoon: '06-12345678',
-    functie: 'Directeur',
-    afdeling: 'Management',
-    avatar_url: '',
-    uurtarief: 95,
-    status: 'actief',
-    rol: 'admin',
-    vaardigheden: ['Bedrijfsvoering', 'Klantenrelaties', 'Financieel beheer'],
-    start_datum: '2018-03-01',
-    notities: 'Oprichter en eigenaar van het bedrijf.',
-    created_at: '2018-03-01T00:00:00Z',
-    updated_at: '2024-11-10T00:00:00Z',
-  },
-  {
-    id: 'demo-2',
-    user_id: 'u-2',
-    naam: 'Lisa Bakker',
-    email: 'lisa@signbedrijf.nl',
-    telefoon: '06-23456789',
-    functie: 'Grafisch Ontwerper',
-    afdeling: 'Design',
-    avatar_url: '',
-    uurtarief: 65,
-    status: 'actief',
-    rol: 'productie',
-    vaardigheden: ['Adobe Illustrator', 'Sign ontwerp', 'Vinyl wrapping design', 'LED-ontwerp'],
-    start_datum: '2020-06-15',
-    notities: 'Specialist in grootformaat print en signing design.',
-    created_at: '2020-06-15T00:00:00Z',
-    updated_at: '2024-10-05T00:00:00Z',
-  },
-  {
-    id: 'demo-3',
-    user_id: 'u-3',
-    naam: 'Pieter Jansen',
-    email: 'pieter@signbedrijf.nl',
-    telefoon: '06-34567890',
-    functie: 'Monteur',
-    afdeling: 'Montage',
-    avatar_url: '',
-    uurtarief: 55,
-    status: 'actief',
-    rol: 'monteur',
-    vaardigheden: ['Hoogwerker', 'Lichtreclame montage', 'Gevelreclame', 'VCA gecertificeerd'],
-    start_datum: '2019-09-01',
-    notities: 'Ervaren monteur, rijbewijs BE.',
-    created_at: '2019-09-01T00:00:00Z',
-    updated_at: '2024-12-01T00:00:00Z',
-  },
-  {
-    id: 'demo-4',
-    user_id: 'u-4',
-    naam: 'Sanne Willems',
-    email: 'sanne@signbedrijf.nl',
-    telefoon: '06-45678901',
-    functie: 'Accountmanager',
-    afdeling: 'Verkoop',
-    avatar_url: '',
-    uurtarief: 70,
-    status: 'actief',
-    rol: 'verkoop',
-    vaardigheden: ['Klantadvies', 'Offerte opstellen', 'Signing consultancy', 'CRM'],
-    start_datum: '2021-02-01',
-    notities: 'Verantwoordelijk voor regio Zuid-Holland.',
-    created_at: '2021-02-01T00:00:00Z',
-    updated_at: '2025-01-15T00:00:00Z',
-  },
-  {
-    id: 'demo-5',
-    user_id: 'u-5',
-    naam: 'Mohammed El Amrani',
-    email: 'mohammed@signbedrijf.nl',
-    telefoon: '06-56789012',
-    functie: 'Monteur',
-    afdeling: 'Montage',
-    avatar_url: '',
-    uurtarief: 50,
-    status: 'actief',
-    rol: 'monteur',
-    vaardigheden: ['Folie plakken', 'Autobelettering', 'Raambelettering', 'VCA gecertificeerd'],
-    start_datum: '2022-04-11',
-    notities: 'Gespecialiseerd in voertuigbelettering.',
-    created_at: '2022-04-11T00:00:00Z',
-    updated_at: '2025-01-20T00:00:00Z',
-  },
-  {
-    id: 'demo-6',
-    user_id: 'u-6',
-    naam: 'Kim Mulder',
-    email: 'kim@signbedrijf.nl',
-    telefoon: '06-67890123',
-    functie: 'Productiemedewerker',
-    afdeling: 'Productie',
-    avatar_url: '',
-    uurtarief: 45,
-    status: 'inactief',
-    rol: 'productie',
-    vaardigheden: ['Freesmachine', 'Printer bediening', 'Lamineren', 'Kwaliteitscontrole'],
-    start_datum: '2023-01-09',
-    notities: 'Momenteel met zwangerschapsverlof.',
-    created_at: '2023-01-09T00:00:00Z',
-    updated_at: '2025-02-01T00:00:00Z',
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -254,13 +141,9 @@ export function TeamLayout() {
     setLoading(true);
     try {
       const data = await getMedewerkers();
-      if (data && data.length > 0) {
-        setMedewerkers(data);
-      } else {
-        setMedewerkers(DEMO_MEDEWERKERS);
-      }
+      setMedewerkers(data || []);
     } catch {
-      setMedewerkers(DEMO_MEDEWERKERS);
+      toast.error('Kon medewerkers niet laden');
     } finally {
       setLoading(false);
     }

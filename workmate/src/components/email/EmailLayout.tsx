@@ -23,7 +23,7 @@ import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
 import { ContactSidebar } from './ContactSidebar'
-import { demoEmails, demoContacts, getContactByEmail, extractEmailAddress } from '@/data/email-demo-data'
+import { getContactByEmail, extractEmailAddress } from '@/data/email-demo-data'
 import type { EmailContact } from '@/data/email-demo-data'
 import type { Email, Klant } from '@/types'
 
@@ -108,7 +108,7 @@ export function EmailLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filter, setFilter] = useState<FilterType>('alle')
   const [emails, setEmails] = useState<Email[]>([])
-  const [contacts, setContacts] = useState<EmailContact[]>(demoContacts)
+  const [contacts, setContacts] = useState<EmailContact[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -124,7 +124,7 @@ export function EmailLayout() {
       getKlanten().catch(() => []),
     ])
       .then(([emailData, klantData]) => {
-        setEmails(emailData.length === 0 ? demoEmails : emailData)
+        setEmails(emailData)
         setKlanten(klantData)
         if (klantData.length > 0) {
           setContacts((prev) =>
@@ -213,9 +213,7 @@ export function EmailLayout() {
       setEmails((prev) =>
         prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
       )
-      if (!email.id.startsWith('demo-')) {
-        updateEmail(email.id, { gelezen: true }).catch(() => {})
-      }
+      updateEmail(email.id, { gelezen: true }).catch(() => {})
     }
   }, [])
 
@@ -227,9 +225,7 @@ export function EmailLayout() {
     setSelectedEmail((prev) =>
       prev?.id === email.id ? { ...prev, starred: newStarred } : prev
     )
-    if (!email.id.startsWith('demo-')) {
-      updateEmail(email.id, { starred: newStarred }).catch(() => {})
-    }
+    updateEmail(email.id, { starred: newStarred }).catch(() => {})
   }, [])
 
   const handleToggleRead = useCallback((email: Email) => {
@@ -240,9 +236,7 @@ export function EmailLayout() {
     setSelectedEmail((prev) =>
       prev?.id === email.id ? { ...prev, gelezen: newGelezen } : prev
     )
-    if (!email.id.startsWith('demo-')) {
-      updateEmail(email.id, { gelezen: newGelezen }).catch(() => {})
-    }
+    updateEmail(email.id, { gelezen: newGelezen }).catch(() => {})
   }, [])
 
   const handleArchive = useCallback((email: Email) => {
@@ -255,16 +249,14 @@ export function EmailLayout() {
   const handleDelete = useCallback((email: Email) => {
     if (email.map === 'prullenbak') {
       setEmails((prev) => prev.filter((e) => e.id !== email.id))
-      if (!email.id.startsWith('demo-')) deleteEmail(email.id).catch(() => {})
+      deleteEmail(email.id).catch(() => {})
     } else {
       setEmails((prev) =>
         prev.map((e) =>
           e.id === email.id ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e
         )
       )
-      if (!email.id.startsWith('demo-')) {
-        updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
-      }
+      updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
     }
     setSelectedEmail(null)
     setViewMode('idle')

@@ -233,108 +233,6 @@ const defaultForm = {
   status: 'gepland' as MontageAfspraak['status'],
 }
 
-// ============================================================
-// DEMO DATA — Medewerkers Jos & Yvonne
-// ============================================================
-
-const DEMO_MEDEWERKERS: Medewerker[] = [
-  {
-    id: 'mw-jos',
-    user_id: 'u-jos',
-    naam: 'Jos Vermeulen',
-    email: 'jos@signcompany.nl',
-    telefoon: '06-12345678',
-    functie: 'Monteur / Buitendienst',
-    afdeling: 'Montage',
-    avatar_url: '',
-    uurtarief: 45,
-    status: 'actief',
-    rol: 'monteur',
-    vaardigheden: ['Montage', 'Hoogwerker', 'Elektra'],
-    start_datum: '2020-03-15',
-    notities: '',
-    created_at: '2020-03-15',
-    updated_at: '2024-01-01',
-  },
-  {
-    id: 'mw-yvonne',
-    user_id: 'u-yvonne',
-    naam: 'Yvonne de Groot',
-    email: 'yvonne@signcompany.nl',
-    telefoon: '06-87654321',
-    functie: 'Productie / Binnendienst',
-    afdeling: 'Productie',
-    avatar_url: '',
-    uurtarief: 42,
-    status: 'actief',
-    rol: 'productie',
-    vaardigheden: ['Vinyl snijden', 'Print', 'Lamineren', 'Montage'],
-    start_datum: '2021-06-01',
-    notities: '',
-    created_at: '2021-06-01',
-    updated_at: '2024-01-01',
-  },
-]
-
-function generateDemoAfspraken(): MontageAfspraak[] {
-  const today = new Date()
-  const ws = startOfWeek(today, { weekStartsOn: 1 })
-  const days = eachDayOfInterval({ start: ws, end: endOfWeek(today, { weekStartsOn: 1 }) })
-  const d = (idx: number) => formatDateYMD(days[idx])
-
-  return [
-    // Ma — Jos
-    { id: 'demo-a1', user_id: 'demo', project_id: '', project_naam: 'Bakkerij Jansen', klant_id: '', klant_naam: 'Bakkerij Jansen',
-      titel: 'Gevelletters monteren', beschrijving: 'RVS letters ophangen aan de gevel', datum: d(0),
-      start_tijd: '08:00', eind_tijd: '12:00', locatie: 'Dorpstraat 15, Utrecht',
-      monteurs: ['mw-jos'], status: 'afgerond', materialen: ['Ladder', 'Boormachine', 'RVS letters set'], notities: '', created_at: '', updated_at: '' },
-    // Ma — Yvonne
-    { id: 'demo-a2', user_id: 'demo', project_id: '', project_naam: 'Garage Van Dijk', klant_id: '', klant_naam: 'Garage Van Dijk',
-      titel: 'Autobelettering printen', beschrijving: 'Full wrap design voor bedrijfsbus', datum: d(0),
-      start_tijd: '09:00', eind_tijd: '16:00', locatie: 'Werkplaats',
-      monteurs: ['mw-yvonne'], status: 'afgerond', materialen: ['Carwrap folie', 'Laminaat'], notities: '', created_at: '', updated_at: '' },
-    // Di — Jos
-    { id: 'demo-a3', user_id: 'demo', project_id: '', project_naam: 'Restaurant De Smulhoek', klant_id: '', klant_naam: 'Restaurant De Smulhoek',
-      titel: 'Lichtreclame plaatsen', beschrijving: 'LED lichtbak boven ingang monteren', datum: d(1),
-      start_tijd: '07:30', eind_tijd: '14:00', locatie: 'Marktplein 8, Amersfoort',
-      monteurs: ['mw-jos'], status: 'afgerond', materialen: ['Lichtbak', 'LED driver', 'Beugels'], notities: '', created_at: '', updated_at: '' },
-    // Di — Yvonne
-    { id: 'demo-a4', user_id: 'demo', project_id: '', project_naam: 'Kapsalon Stijl', klant_id: '', klant_naam: 'Kapsalon Stijl',
-      titel: 'Raambelettering snijden', beschrijving: 'Openingstijden en logo op raamfolie', datum: d(1),
-      start_tijd: '08:00', eind_tijd: '11:30', locatie: 'Werkplaats',
-      monteurs: ['mw-yvonne'], status: 'afgerond', materialen: ['Glasfolie', 'Vinyl'], notities: '', created_at: '', updated_at: '' },
-    // Wo — beiden
-    { id: 'demo-a5', user_id: 'demo', project_id: '', project_naam: 'Ziekenhuis Oost', klant_id: '', klant_naam: 'Ziekenhuis Oost',
-      titel: 'Wayfinding systeem', beschrijving: 'Bewegwijzering afdeling Cardiologie', datum: d(2),
-      start_tijd: '08:00', eind_tijd: '17:00', locatie: 'Ziekenhuis Oost, Nieuwegein',
-      monteurs: ['mw-jos', 'mw-yvonne'], status: 'bezig', materialen: ['Bewegwijzering borden', 'Muurbeugels', 'Vinyl prints'], notities: '', created_at: '', updated_at: '' },
-    // Do — Jos
-    { id: 'demo-a6', user_id: 'demo', project_id: '', project_naam: 'Tandartspraktijk Smile', klant_id: '', klant_naam: 'Tandartspraktijk Smile',
-      titel: 'Reclamezuil plaatsen', beschrijving: 'Dubbelzijdige lichtgevende zuil bij entree', datum: d(3),
-      start_tijd: '09:00', eind_tijd: '15:00', locatie: 'Stationsweg 22, De Bilt',
-      monteurs: ['mw-jos'], status: 'gepland', materialen: ['Reclamezuil', 'Fundering set'], notities: '', created_at: '', updated_at: '' },
-    // Do — Yvonne
-    { id: 'demo-a7', user_id: 'demo', project_id: '', project_naam: 'Sportschool FitLife', klant_id: '', klant_naam: 'Sportschool FitLife',
-      titel: 'Spandoek produceren', beschrijving: 'Groot spandoek 6x2m voor opening', datum: d(3),
-      start_tijd: '08:00', eind_tijd: '12:00', locatie: 'Werkplaats',
-      monteurs: ['mw-yvonne'], status: 'gepland', materialen: ['Spandoekdoek', 'Ogen', 'Touw'], notities: '', created_at: '', updated_at: '' },
-    // Vr — Jos ochtend
-    { id: 'demo-a8', user_id: 'demo', project_id: '', project_naam: 'Sportschool FitLife', klant_id: '', klant_naam: 'Sportschool FitLife',
-      titel: 'Spandoek ophangen', beschrijving: 'Spandoek bevestigen aan gevel', datum: d(4),
-      start_tijd: '08:00', eind_tijd: '10:30', locatie: 'Industrieweg 5, Utrecht',
-      monteurs: ['mw-jos'], status: 'gepland', materialen: ['Spandoek', 'Spanners'], notities: '', created_at: '', updated_at: '' },
-    // Vr — Yvonne
-    { id: 'demo-a9', user_id: 'demo', project_id: '', project_naam: 'Gemeente Zeist', klant_id: '', klant_naam: 'Gemeente Zeist',
-      titel: 'Informatieborden ontwerpen', beschrijving: 'Ontwerp en print parkeergarage borden', datum: d(4),
-      start_tijd: '09:00', eind_tijd: '16:00', locatie: 'Werkplaats',
-      monteurs: ['mw-yvonne'], status: 'gepland', materialen: ['Aluminium platen', 'UV print'], notities: '', created_at: '', updated_at: '' },
-    // Vr middag — beiden
-    { id: 'demo-a10', user_id: 'demo', project_id: '', project_naam: 'Garage Van Dijk', klant_id: '', klant_naam: 'Garage Van Dijk',
-      titel: 'Autobelettering plakken', beschrijving: 'Full wrap aanbrengen op bedrijfsbus', datum: d(4),
-      start_tijd: '13:00', eind_tijd: '17:00', locatie: 'Werkplaats',
-      monteurs: ['mw-jos', 'mw-yvonne'], status: 'gepland', materialen: ['Carwrap (geprint)', 'Heteluchtpistool'], notities: '', created_at: '', updated_at: '' },
-  ]
-}
 
 // ============================================================
 // MAIN COMPONENT
@@ -371,22 +269,14 @@ export function CalendarLayout() {
         getTaken(),
       ])
       const activeMw = mData.filter((m) => m.status === 'actief')
-      // Fallback to demo data when no medewerkers / afspraken exist
-      if (activeMw.length === 0) {
-        setMedewerkers(DEMO_MEDEWERKERS)
-        setAfspraken(aData.length > 0 ? aData : generateDemoAfspraken())
-      } else {
-        setMedewerkers(activeMw)
-        setAfspraken(aData)
-      }
+      setMedewerkers(activeMw)
+      setAfspraken(aData)
       setProjecten(pData)
       setKlanten(kData)
       setProjectTaken(tData.filter((t) => t.project_id && t.deadline && t.status !== 'done'))
     } catch (err) {
       console.error('Fout bij laden data:', err)
-      // Fallback to demo on error
-      setMedewerkers(DEMO_MEDEWERKERS)
-      setAfspraken(generateDemoAfspraken())
+      toast.error('Kon planningsdata niet laden')
     } finally {
       setIsLoading(false)
     }
