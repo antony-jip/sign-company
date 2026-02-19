@@ -39,6 +39,9 @@ import {
   Flag,
   Hash,
   X,
+  GripVertical,
+  Clock,
+  Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -50,20 +53,28 @@ type TaakPrioriteit = Taak['prioriteit']
 
 const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 2, laag: 1 }
 
-const PRIORITEIT_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'border-l-red-500 bg-red-50 dark:bg-red-950/30',
-  hoog: 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/30',
-  medium: 'border-l-sky-500 bg-sky-50 dark:bg-sky-950/30',
-  laag: 'border-l-slate-300 bg-slate-50 dark:bg-slate-800/30',
+const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; accent: string }> = {
+  kritiek: { border: 'border-l-red-500', bg: 'bg-red-50/80 dark:bg-red-950/20', accent: 'text-red-600' },
+  hoog: { border: 'border-l-orange-500', bg: 'bg-orange-50/80 dark:bg-orange-950/20', accent: 'text-orange-600' },
+  medium: { border: 'border-l-sky-500', bg: 'bg-sky-50/80 dark:bg-sky-950/20', accent: 'text-sky-600' },
+  laag: { border: 'border-l-slate-300', bg: 'bg-slate-50/80 dark:bg-slate-800/20', accent: 'text-slate-500' },
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
   kritiek: 'text-red-500', hoog: 'text-orange-500', medium: 'text-yellow-500', laag: 'text-muted-foreground/30',
 }
 
+const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
+  kritiek: 'border-red-400 hover:border-red-500',
+  hoog: 'border-orange-400 hover:border-orange-500',
+  medium: 'border-slate-300 hover:border-sky-400 dark:border-slate-600',
+  laag: 'border-slate-200 hover:border-slate-400 dark:border-slate-700',
+}
+
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
 const MONTH_NAMES = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7) // 07:00 - 19:00
+const HOUR_HEIGHT = 72 // px per hour slot
 
 interface TaakFormData {
   titel: string
@@ -101,6 +112,19 @@ function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+function toDateTimeStr(d: Date, hour: number): string {
+  return `${toDateStr(d)}T${String(hour).padStart(2, '0')}:00:00`
+}
+
+function getHourFromDeadline(deadline: string): number | null {
+  if (!deadline || !deadline.includes('T')) return null
+  const timePart = deadline.split('T')[1]
+  if (!timePart) return null
+  const hour = parseInt(timePart.split(':')[0], 10)
+  if (isNaN(hour) || hour < 7 || hour > 19) return null
+  return hour
+}
+
 // === MAIN COMPONENT ===
 
 export function TasksLayout() {
@@ -131,6 +155,10 @@ export function TasksLayout() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingTaak, setDeletingTaak] = useState<Taak | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Drag state
+  const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<{ dayIndex: number; hour: number } | null>(null)
 
   // Now-line timer
   const [nowMinutes, setNowMinutes] = useState(() => {
@@ -170,8 +198,7 @@ export function TasksLayout() {
     if (!isLoading && scrollRef.current) {
       const nowHour = new Date().getHours()
       const targetHour = Math.max(7, nowHour - 1)
-      const hourHeight = 64 // h-16 = 64px
-      scrollRef.current.scrollTop = (targetHour - 7) * hourHeight
+      scrollRef.current.scrollTop = (targetHour - 7) * HOUR_HEIGHT
     }
   }, [isLoading])
 
@@ -219,9 +246,18 @@ export function TasksLayout() {
       }
     })
 
-    // Sort each day by priority desc
+    // Sort each day: scheduled tasks by hour, then unscheduled by priority
     map.forEach((tasks) => {
-      tasks.sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
+      tasks.sort((a, b) => {
+        const aHour = getHourFromDeadline(a.deadline)
+        const bHour = getHourFromDeadline(b.deadline)
+        // Scheduled tasks first, sorted by hour
+        if (aHour !== null && bHour !== null) return aHour - bHour
+        if (aHour !== null) return -1
+        if (bHour !== null) return 1
+        // Unscheduled by priority
+        return (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0)
+      })
     })
 
     return map
@@ -237,7 +273,7 @@ export function TasksLayout() {
     return `${first.getDate()} ${MONTH_NAMES[first.getMonth()]} – ${last.getDate()} ${MONTH_NAMES[last.getMonth()]}`
   }, [weekDays])
 
-  // Now-line position (percentage within the grid)
+  // Now-line position
   const nowLineTop = useMemo(() => {
     const startMin = 7 * 60
     const endMin = 20 * 60
@@ -299,6 +335,17 @@ export function TasksLayout() {
     }
   }
 
+  async function handleDeleteDirect(taak: Taak) {
+    try {
+      await deleteTaak(taak.id)
+      setTaken((prev) => prev.filter((t) => t.id !== taak.id))
+      toast.success('Taak verwijderd')
+    } catch (error) {
+      console.error('Fout bij verwijderen:', error)
+      toast.error('Kon taak niet verwijderen')
+    }
+  }
+
   function openEditDialog(taak: Taak) {
     setEditingTaak(taak)
     setFormData({
@@ -345,6 +392,20 @@ export function TasksLayout() {
     } finally { setIsDeleting(false) }
   }
 
+  // Drag & drop: move task to a new day/time
+  async function handleDropTask(taakId: string, dayIndex: number, hour: number) {
+    const day = weekDays[dayIndex]
+    const newDeadline = toDateTimeStr(day, hour)
+    try {
+      const updated = await updateTaak(taakId, { deadline: newDeadline })
+      setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      toast.success(`Verplaatst naar ${DAY_LABELS[dayIndex]} ${String(hour).padStart(2, '0')}:00`)
+    } catch (error) {
+      console.error('Fout bij verplaatsen:', error)
+      toast.error('Kon taak niet verplaatsen')
+    }
+  }
+
   // Quick add for a specific day column
   async function handleDayQuickAdd(day: Date, title: string) {
     await handleQuickAdd(title, 'medium', toDateStr(day), '')
@@ -365,22 +426,22 @@ export function TasksLayout() {
     <>
       <div className="flex flex-col h-[calc(100vh-120px)]">
         {/* === TOP BAR === */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold text-foreground font-display">{weekLabel}</h1>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setWeekOffset((w) => w - 1)}>
+            <h1 className="text-lg font-bold text-foreground tracking-tight">{weekLabel}</h1>
+            <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" onClick={() => setWeekOffset((w) => w - 1)}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
-                variant={isCurrentWeek ? 'default' : 'outline'}
+                variant={isCurrentWeek ? 'default' : 'ghost'}
                 size="sm"
-                className={cn('h-8 text-xs px-3', isCurrentWeek && 'bg-[#58B09C] hover:bg-[#386150]')}
+                className={cn('h-7 text-xs px-3 rounded-md', isCurrentWeek && 'bg-[#58B09C] hover:bg-[#4a9a88] shadow-sm')}
                 onClick={() => setWeekOffset(0)}
               >
                 Vandaag
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setWeekOffset((w) => w + 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" onClick={() => setWeekOffset((w) => w + 1)}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -389,10 +450,10 @@ export function TasksLayout() {
             <button
               onClick={() => setShowCompleted(!showCompleted)}
               className={cn(
-                'text-xs px-2.5 py-1 rounded-md border transition-colors',
+                'text-xs px-3 py-1.5 rounded-lg border transition-all duration-200',
                 showCompleted
-                  ? 'bg-[#58B09C]/10 border-[#58B09C]/30 text-[#386150] dark:text-[#7dd3b8]'
-                  : 'border-border text-muted-foreground hover:text-foreground'
+                  ? 'bg-[#58B09C]/10 border-[#58B09C]/30 text-[#386150] dark:text-[#7dd3b8] shadow-sm'
+                  : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
               )}
             >
               {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
@@ -401,7 +462,7 @@ export function TasksLayout() {
         </div>
 
         {/* === DAY HEADERS === */}
-        <div className="flex border-b border-border bg-card flex-shrink-0">
+        <div className="flex border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           {/* Time gutter spacer */}
           <div className="w-14 flex-shrink-0" />
           {/* Day columns headers */}
@@ -413,29 +474,31 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'flex-1 min-w-0 text-center py-2.5 border-l border-border',
+                  'flex-1 min-w-0 text-center py-2.5 border-l border-border/40 transition-colors',
                   isToday && 'bg-[#58B09C]/5'
                 )}
               >
                 <div className={cn(
-                  'text-[11px] uppercase tracking-wider font-medium',
-                  isToday ? 'text-[#58B09C]' : isPast ? 'text-muted-foreground/40' : 'text-muted-foreground'
+                  'text-[11px] uppercase tracking-wider font-semibold',
+                  isToday ? 'text-[#58B09C]' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
                 )}>
                   {DAY_LABELS[i]}
                 </div>
                 <div className="flex items-center justify-center gap-1.5 mt-0.5">
                   <span className={cn(
-                    'inline-flex items-center justify-center text-sm font-semibold',
+                    'inline-flex items-center justify-center text-sm font-bold transition-all',
                     isToday
-                      ? 'w-7 h-7 rounded-full bg-[#58B09C] text-white'
-                      : isPast ? 'text-muted-foreground/40' : 'text-foreground'
+                      ? 'w-8 h-8 rounded-full bg-[#58B09C] text-white shadow-sm shadow-[#58B09C]/30'
+                      : isPast ? 'text-muted-foreground/30' : 'text-foreground'
                   )}>
                     {day.getDate()}
                   </span>
                   {dayTasks.length > 0 && (
                     <span className={cn(
-                      'text-[10px] tabular-nums',
-                      isToday ? 'text-[#58B09C]' : 'text-muted-foreground/40'
+                      'text-[10px] font-medium tabular-nums px-1.5 py-0.5 rounded-full',
+                      isToday
+                        ? 'bg-[#58B09C]/15 text-[#58B09C]'
+                        : 'bg-muted/60 text-muted-foreground/50'
                     )}>
                       {dayTasks.length}
                     </span>
@@ -447,20 +510,20 @@ export function TasksLayout() {
         </div>
 
         {/* === CALENDAR GRID === */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative">
-          <div className="flex min-h-full">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background">
+          <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
             <div className="w-14 flex-shrink-0 relative">
               {HOURS.map((hour) => (
-                <div key={hour} className="h-16 relative">
-                  <span className="absolute -top-2.5 right-3 text-[11px] text-muted-foreground/50 tabular-nums">
+                <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
+                  <span className="absolute -top-2.5 right-3 text-[11px] text-muted-foreground/40 tabular-nums font-medium">
                     {String(hour).padStart(2, '0')}:00
                   </span>
                 </div>
               ))}
             </div>
 
-            {/* Day columns with grid */}
+            {/* Day columns */}
             {weekDays.map((day, dayIndex) => {
               const isToday = isSameDay(day, today)
               const dayTasks = tasksByDay.get(day.toDateString()) || []
@@ -470,14 +533,21 @@ export function TasksLayout() {
                 <DayColumn
                   key={dayIndex}
                   day={day}
+                  dayIndex={dayIndex}
                   isToday={isToday}
                   isPast={isPast}
                   tasks={dayTasks}
                   projectMap={projectMap}
                   nowLineTop={isCurrentWeek && isToday ? nowLineTop : null}
+                  draggingTaakId={draggingTaakId}
+                  dropTarget={dropTarget}
+                  onDragStart={setDraggingTaakId}
+                  onDragEnd={() => { setDraggingTaakId(null); setDropTarget(null) }}
+                  onDropTargetChange={setDropTarget}
+                  onDrop={handleDropTask}
                   onToggle={handleToggleComplete}
                   onEdit={openEditDialog}
-                  onDelete={(t) => { setDeletingTaak(t); setDeleteDialogOpen(true) }}
+                  onDelete={handleDeleteDirect}
                   onQuickAdd={(title) => handleDayQuickAdd(day, title)}
                 />
               )
@@ -489,10 +559,10 @@ export function TasksLayout() {
       {/* === FLOATING ACTION BUTTON === */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
         {fabOpen && (
-          <div className="w-80 rounded-xl border border-border bg-card shadow-2xl p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="w-80 rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/10 p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-foreground">Snel toevoegen</span>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFabOpen(false)}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => setFabOpen(false)}>
                 <X className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -505,18 +575,18 @@ export function TasksLayout() {
                 if (e.key === 'Enter' && fabTitle.trim()) handleFabAdd()
                 if (e.key === 'Escape') setFabOpen(false)
               }}
-              className="text-sm"
+              className="text-sm rounded-lg"
             />
             <div className="flex items-center gap-2 flex-wrap">
               <Input
                 type="date"
                 value={fabDeadline}
                 onChange={(e) => setFabDeadline(e.target.value)}
-                className="w-auto h-7 text-xs"
+                className="w-auto h-7 text-xs rounded-lg"
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                  <Button variant="outline" size="sm" className="h-7 text-xs gap-1 rounded-lg">
                     <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[fabPriority]}`} />
                     {fabPriority === 'medium' ? 'Prio' : fabPriority.charAt(0).toUpperCase() + fabPriority.slice(1)}
                   </Button>
@@ -531,7 +601,7 @@ export function TasksLayout() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Select value={fabProjectId || 'geen'} onValueChange={(v) => setFabProjectId(v === 'geen' ? '' : v)}>
-                <SelectTrigger className="w-auto h-7 text-xs min-w-0 max-w-[120px]">
+                <SelectTrigger className="w-auto h-7 text-xs min-w-0 max-w-[120px] rounded-lg">
                   <SelectValue placeholder="Project" />
                 </SelectTrigger>
                 <SelectContent>
@@ -543,7 +613,7 @@ export function TasksLayout() {
               </Select>
             </div>
             <Button
-              className="w-full h-8 text-sm bg-[#58B09C] hover:bg-[#386150]"
+              className="w-full h-9 text-sm bg-[#58B09C] hover:bg-[#4a9a88] rounded-lg shadow-sm"
               disabled={!fabTitle.trim()}
               onClick={handleFabAdd}
             >
@@ -555,8 +625,8 @@ export function TasksLayout() {
         <button
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
-            'flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-200',
-            'bg-[#58B09C] hover:bg-[#386150] text-white hover:shadow-xl hover:scale-105',
+            'flex items-center justify-center w-14 h-14 rounded-full shadow-lg shadow-[#58B09C]/20 transition-all duration-200',
+            'bg-[#58B09C] hover:bg-[#4a9a88] text-white hover:shadow-xl hover:shadow-[#58B09C]/30 hover:scale-105',
             fabOpen && 'rotate-45 bg-[#386150]'
           )}
         >
@@ -594,15 +664,24 @@ export function TasksLayout() {
 // === DAY COLUMN ===
 
 function DayColumn({
-  day, isToday, isPast, tasks, projectMap, nowLineTop,
+  day, dayIndex, isToday, isPast, tasks, projectMap, nowLineTop,
+  draggingTaakId, dropTarget,
+  onDragStart, onDragEnd, onDropTargetChange, onDrop,
   onToggle, onEdit, onDelete, onQuickAdd,
 }: {
   day: Date
+  dayIndex: number
   isToday: boolean
   isPast: boolean
   tasks: Taak[]
   projectMap: Record<string, string>
   nowLineTop: number | null
+  draggingTaakId: string | null
+  dropTarget: { dayIndex: number; hour: number } | null
+  onDragStart: (id: string) => void
+  onDragEnd: () => void
+  onDropTargetChange: (target: { dayIndex: number; hour: number } | null) => void
+  onDrop: (taakId: string, dayIndex: number, hour: number) => void
   onToggle: (taak: Taak) => void
   onEdit: (taak: Taak) => void
   onDelete: (taak: Taak) => void
@@ -612,15 +691,63 @@ function DayColumn({
   const [isAdding, setIsAdding] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Separate scheduled and unscheduled tasks
+  const scheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline) !== null)
+  const unscheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline) === null)
+
+  function handleDragOver(e: React.DragEvent, hour: number) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    onDropTargetChange({ dayIndex, hour })
+  }
+
+  function handleDrop(e: React.DragEvent, hour: number) {
+    e.preventDefault()
+    if (draggingTaakId) {
+      onDrop(draggingTaakId, dayIndex, hour)
+    }
+    onDragEnd()
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    const relatedTarget = e.relatedTarget as HTMLElement | null
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      onDropTargetChange(null)
+    }
+  }
+
   return (
     <div className={cn(
-      'flex-1 min-w-0 border-l border-border relative',
+      'flex-1 min-w-0 border-l border-border/40 relative',
       isToday && 'bg-[#58B09C]/[0.02]'
     )}>
-      {/* Hour grid lines */}
-      {HOURS.map((hour) => (
-        <div key={hour} className="h-16 border-b border-border/40" />
-      ))}
+      {/* Hour grid lines + drop zones */}
+      {HOURS.map((hour) => {
+        const isDropHere = dropTarget?.dayIndex === dayIndex && dropTarget?.hour === hour
+        return (
+          <div
+            key={hour}
+            style={{ height: HOUR_HEIGHT }}
+            className={cn(
+              'border-b border-border/30 transition-colors duration-150',
+              isDropHere && 'bg-[#58B09C]/10'
+            )}
+            onDragOver={(e) => handleDragOver(e, hour)}
+            onDrop={(e) => handleDrop(e, hour)}
+            onDragLeave={handleDragLeave}
+          >
+            {/* Drop indicator line */}
+            {isDropHere && (
+              <div className="h-full flex items-start pt-1 px-1 pointer-events-none">
+                <div className="w-full rounded-md border-2 border-dashed border-[#58B09C]/40 h-10 flex items-center justify-center">
+                  <Clock className="w-3 h-3 text-[#58B09C]/60 mr-1" />
+                  <span className="text-[10px] text-[#58B09C]/60 font-medium">{String(hour).padStart(2, '0')}:00</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
 
       {/* Now-line */}
       {nowLineTop !== null && (
@@ -629,53 +756,83 @@ function DayColumn({
           style={{ top: `${nowLineTop}%` }}
         >
           <div className="flex items-center">
-            <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 flex-shrink-0" />
-            <div className="flex-1 h-[2px] bg-red-500" />
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1.5 flex-shrink-0 shadow-sm shadow-red-500/30" />
+            <div className="flex-1 h-[2px] bg-red-500/80" />
           </div>
         </div>
       )}
 
-      {/* Tasks overlay */}
-      <div className="absolute inset-0 p-1 pt-2 flex flex-col gap-1 overflow-y-auto">
-        {tasks.map((taak) => (
-          <TaskCard
+      {/* Scheduled tasks - positioned at their time */}
+      {scheduledTasks.map((taak) => {
+        const hour = getHourFromDeadline(taak.deadline)!
+        const topPx = (hour - 7) * HOUR_HEIGHT + 4
+        return (
+          <div
             key={taak.id}
-            taak={taak}
-            projectNaam={projectMap[taak.project_id]}
-            isPast={isPast}
-            onToggle={() => onToggle(taak)}
-            onEdit={() => onEdit(taak)}
-            onDelete={() => onDelete(taak)}
-          />
+            className="absolute left-1 right-1 z-10"
+            style={{ top: topPx }}
+          >
+            <TaskCard
+              taak={taak}
+              projectNaam={projectMap[taak.project_id]}
+              isPast={isPast}
+              scheduled
+              onDragStart={() => onDragStart(taak.id)}
+              onDragEnd={onDragEnd}
+              onToggle={() => onToggle(taak)}
+              onEdit={() => onEdit(taak)}
+              onDelete={() => onDelete(taak)}
+            />
+          </div>
+        )
+      })}
+
+      {/* Unscheduled tasks - at top of column */}
+      <div className="absolute inset-x-0 top-0 p-1 pt-1.5 flex flex-col gap-1 z-10 pointer-events-none">
+        {unscheduledTasks.map((taak) => (
+          <div key={taak.id} className="pointer-events-auto">
+            <TaskCard
+              taak={taak}
+              projectNaam={projectMap[taak.project_id]}
+              isPast={isPast}
+              onDragStart={() => onDragStart(taak.id)}
+              onDragEnd={onDragEnd}
+              onToggle={() => onToggle(taak)}
+              onEdit={() => onEdit(taak)}
+              onDelete={() => onDelete(taak)}
+            />
+          </div>
         ))}
 
         {/* Quick add inline */}
-        {isAdding ? (
-          <div className="mx-0.5">
-            <input
-              ref={inputRef}
-              value={addTitle}
-              onChange={(e) => setAddTitle(e.target.value)}
-              placeholder="Taak..."
-              className="w-full text-xs px-2 py-1.5 rounded border border-[#58B09C]/50 bg-card focus:outline-none focus:border-[#58B09C] text-foreground placeholder:text-muted-foreground/40"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && addTitle.trim()) {
-                  onQuickAdd(addTitle.trim())
-                  setAddTitle('')
-                }
-                if (e.key === 'Escape') { setIsAdding(false); setAddTitle('') }
-              }}
-              onBlur={() => { if (!addTitle.trim()) { setIsAdding(false); setAddTitle('') } }}
-            />
-          </div>
-        ) : (
-          <button
-            onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-            className="mx-0.5 flex items-center gap-1 px-1.5 py-1 rounded text-[11px] text-muted-foreground/30 hover:text-[#58B09C] hover:bg-[#58B09C]/5 transition-colors"
-          >
-            <Plus className="w-3 h-3" />
-          </button>
-        )}
+        <div className="pointer-events-auto">
+          {isAdding ? (
+            <div className="mx-0.5">
+              <input
+                ref={inputRef}
+                value={addTitle}
+                onChange={(e) => setAddTitle(e.target.value)}
+                placeholder="Taak..."
+                className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#58B09C]/40 bg-card focus:outline-none focus:border-[#58B09C] focus:ring-2 focus:ring-[#58B09C]/20 text-foreground placeholder:text-muted-foreground/40 transition-all"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && addTitle.trim()) {
+                    onQuickAdd(addTitle.trim())
+                    setAddTitle('')
+                  }
+                  if (e.key === 'Escape') { setIsAdding(false); setAddTitle('') }
+                }}
+                onBlur={() => { if (!addTitle.trim()) { setIsAdding(false); setAddTitle('') } }}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
+              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] text-muted-foreground/30 hover:text-[#58B09C] hover:bg-[#58B09C]/5 transition-all duration-200"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -684,83 +841,131 @@ function DayColumn({
 // === TASK CARD ===
 
 function TaskCard({
-  taak, projectNaam, isPast, onToggle, onEdit, onDelete,
+  taak, projectNaam, isPast, scheduled, onDragStart, onDragEnd, onToggle, onEdit, onDelete,
 }: {
   taak: Taak
   projectNaam?: string
   isPast: boolean
+  scheduled?: boolean
+  onDragStart: () => void
+  onDragEnd: () => void
   onToggle: () => void
   onEdit: () => void
   onDelete: () => void
 }) {
   const isDone = taak.status === 'klaar'
+  const [justCompleted, setJustCompleted] = useState(false)
+  const colors = PRIORITEIT_COLORS[taak.prioriteit]
+  const hour = getHourFromDeadline(taak.deadline)
+
+  function handleToggle(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!isDone) {
+      setJustCompleted(true)
+      setTimeout(() => setJustCompleted(false), 600)
+    }
+    onToggle()
+  }
+
+  function handleDeleteClick(e: React.MouseEvent) {
+    e.stopPropagation()
+    onDelete()
+  }
+
+  function handleDragStart(e: React.DragEvent) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', taak.id)
+    onDragStart()
+  }
 
   return (
     <div
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={onDragEnd}
       className={cn(
-        'group relative rounded-md border-l-[3px] px-2 py-1.5 mx-0.5 cursor-pointer transition-all',
-        'hover:shadow-md hover:z-10',
-        isDone ? 'opacity-40 border-l-slate-300 bg-slate-50 dark:bg-slate-800/20' : PRIORITEIT_COLORS[taak.prioriteit],
-        isPast && !isDone && 'opacity-70'
+        'group relative rounded-lg border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200',
+        'hover:shadow-lg hover:shadow-black/5 hover:z-10 hover:-translate-y-[1px]',
+        isDone
+          ? 'opacity-40 border-l-slate-300 bg-slate-50 dark:bg-slate-800/20 hover:opacity-60'
+          : `${colors.border} ${colors.bg}`,
+        isPast && !isDone && 'opacity-60',
+        justCompleted && 'scale-95 opacity-50',
+        scheduled && 'shadow-sm'
       )}
       onClick={onEdit}
     >
-      <div className="flex items-start gap-1.5">
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <p className={cn(
-            'text-[12px] font-medium leading-tight text-foreground',
-            isDone && 'line-through text-muted-foreground'
-          )}>
-            {taak.titel}
-          </p>
-          {projectNaam && (
-            <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5 mt-0.5">
-              <Hash className="w-2 h-2" />{projectNaam}
-            </span>
-          )}
+      <div className="flex items-start gap-2">
+        {/* Drag handle */}
+        <div className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab">
+          <GripVertical className="w-3 h-3" />
         </div>
 
-        {/* Checkbox */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onToggle() }}
-          className="flex-shrink-0 mt-0.5"
-        >
-          {isDone ? (
-            <CheckCircle2 className="w-4 h-4 text-[#58B09C]" />
-          ) : (
-            <Circle className={cn(
-              'w-4 h-4 transition-colors hover:text-[#58B09C]',
-              taak.prioriteit === 'kritiek' ? 'text-red-400' :
-              taak.prioriteit === 'hoog' ? 'text-orange-400' :
-              'text-muted-foreground/25'
-            )} />
-          )}
-        </button>
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-1">
+            <p className={cn(
+              'text-[12px] font-medium leading-tight text-foreground flex-1',
+              isDone && 'line-through text-muted-foreground'
+            )}>
+              {taak.titel}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            {projectNaam && (
+              <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5">
+                <Hash className="w-2 h-2" />{projectNaam}
+              </span>
+            )}
+            {scheduled && hour !== null && (
+              <span className="text-[10px] text-muted-foreground/40 flex items-center gap-0.5">
+                <Clock className="w-2 h-2" />{String(hour).padStart(2, '0')}:00
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          {/* Delete button - visible on hover */}
+          <button
+            onClick={handleDeleteClick}
+            className="flex-shrink-0 p-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/30"
+            title="Verwijderen"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-red-500 transition-colors" />
+          </button>
+
+          {/* Checkbox */}
+          <button
+            onClick={handleToggle}
+            className={cn(
+              'flex-shrink-0 p-0.5 rounded-md transition-all duration-200',
+              !isDone && 'hover:bg-[#58B09C]/10'
+            )}
+            title={isDone ? 'Markeer als ongedaan' : 'Markeer als klaar'}
+          >
+            {isDone ? (
+              <div className="w-5 h-5 rounded-full bg-[#58B09C] flex items-center justify-center shadow-sm shadow-[#58B09C]/20">
+                <Check className="w-3 h-3 text-white" strokeWidth={3} />
+              </div>
+            ) : (
+              <div className={cn(
+                'w-5 h-5 rounded-full border-2 transition-all duration-200',
+                PRIORITEIT_RING_COLORS[taak.prioriteit],
+                'hover:border-[#58B09C] hover:bg-[#58B09C]/10'
+              )} />
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Hover actions */}
-      <div className="absolute top-0.5 right-5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              onClick={(e) => e.stopPropagation()}
-              className="p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10"
-            >
-              <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit() }}>
-              <Pencil className="w-3.5 h-3.5 mr-2" />Bewerken
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600 dark:text-red-400" onClick={(e) => { e.stopPropagation(); onDelete() }}>
-              <Trash2 className="w-3.5 h-3.5 mr-2" />Verwijderen
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {/* Completion animation overlay */}
+      {justCompleted && (
+        <div className="absolute inset-0 rounded-lg bg-[#58B09C]/20 flex items-center justify-center pointer-events-none animate-in fade-in duration-200">
+          <CheckCircle2 className="w-6 h-6 text-[#58B09C] animate-in zoom-in duration-300" />
+        </div>
+      )}
     </div>
   )
 }
@@ -830,7 +1035,7 @@ function EditTaskDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Annuleren</Button>
-          <Button onClick={onSave} disabled={isSaving}>
+          <Button onClick={onSave} disabled={isSaving} className="bg-[#58B09C] hover:bg-[#4a9a88]">
             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Opslaan
           </Button>
         </DialogFooter>
