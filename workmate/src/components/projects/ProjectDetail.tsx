@@ -34,6 +34,11 @@ import {
   CheckCheck,
   Sparkles,
   Loader2,
+  FileEdit,
+  CreditCard,
+  Save,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -59,16 +64,20 @@ import {
 } from '@/lib/utils'
 import {
   getProject,
+  updateProject,
   getTakenByProject,
   getDocumenten,
   createTaak,
   getOffertesByProject,
+  getOfferteItems,
   updateOfferte,
   createDocument,
   deleteDocument,
   createTekeningGoedkeuring,
   getTekeningGoedkeuringen,
   getKlant,
+  createFactuur,
+  createFactuurItem,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -77,7 +86,7 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant } from '@/types'
+import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur } from '@/types'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -188,12 +197,99 @@ export function ProjectDetail() {
   const [verstuurBericht, setVerstuurBericht] = useState('')
   const [isVersturen, setIsVersturen] = useState(false)
 
+  // Briefing state
+  const [briefingOpen, setBriefingOpen] = useState(false)
+  const [briefingText, setBriefingText] = useState('')
+  const [briefingSaving, setBriefingSaving] = useState(false)
+
+  // Invoice from offerte state
+  const [creatingFactuurForOfferte, setCreatingFactuurForOfferte] = useState<string | null>(null)
+
   // Email offerte state (simple offerte mail)
   const [emailOfferteOpen, setEmailOfferteOpen] = useState(false)
   const [emailOnderwerp, setEmailOnderwerp] = useState('')
   const [emailBericht, setEmailBericht] = useState('')
   const [emailOfferteId, setEmailOfferteId] = useState<string | null>(null)
   const [isEmailVerzenden, setIsEmailVerzenden] = useState(false)
+
+  // Initialize briefing text when project loads
+  useEffect(() => {
+    if (project?.beschrijving) {
+      setBriefingText(project.beschrijving)
+    }
+  }, [project?.beschrijving])
+
+  const handleSaveBriefing = async () => {
+    if (!project || !id) return
+    setBriefingSaving(true)
+    try {
+      const updated = await updateProject(id, { beschrijving: briefingText })
+      setProject(updated)
+      toast.success('Briefing opgeslagen')
+      setBriefingOpen(false)
+    } catch (err) {
+      console.error('Fout bij opslaan briefing:', err)
+      toast.error('Kon briefing niet opslaan')
+    } finally {
+      setBriefingSaving(false)
+    }
+  }
+
+  const handleCreateFactuurFromOfferte = async (offerte: Offerte) => {
+    if (!project || !user) return
+    setCreatingFactuurForOfferte(offerte.id)
+    try {
+      // Get offerte items
+      const offerteItems = await getOfferteItems(offerte.id)
+
+      // Create factuur
+      const factuurNummer = `FAC-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100)}`
+      const vervaldatum = new Date()
+      vervaldatum.setDate(vervaldatum.getDate() + 30)
+
+      const newFactuur = await createFactuur({
+        user_id: user.id || 'demo',
+        klant_id: offerte.klant_id,
+        offerte_id: offerte.id,
+        project_id: id,
+        nummer: factuurNummer,
+        titel: offerte.titel,
+        status: 'concept',
+        subtotaal: offerte.subtotaal,
+        btw_bedrag: offerte.btw_bedrag,
+        totaal: offerte.totaal,
+        betaald_bedrag: 0,
+        factuurdatum: new Date().toISOString().split('T')[0],
+        vervaldatum: vervaldatum.toISOString().split('T')[0],
+        notities: `Factuur aangemaakt vanuit offerte ${offerte.nummer}`,
+        voorwaarden: '',
+      })
+
+      // Create factuur items from offerte items
+      await Promise.all(
+        offerteItems.map((item: OfferteItem, index: number) =>
+          createFactuurItem({
+            factuur_id: newFactuur.id,
+            beschrijving: item.beschrijving,
+            aantal: item.aantal,
+            eenheidsprijs: item.eenheidsprijs,
+            btw_percentage: item.btw_percentage,
+            korting_percentage: item.korting_percentage,
+            totaal: item.totaal,
+            volgorde: index + 1,
+          })
+        )
+      )
+
+      toast.success(`Factuur ${factuurNummer} aangemaakt vanuit offerte ${offerte.nummer}`)
+      navigate(`/facturen`)
+    } catch (err) {
+      console.error('Fout bij aanmaken factuur:', err)
+      toast.error('Kon factuur niet aanmaken')
+    } finally {
+      setCreatingFactuurForOfferte(null)
+    }
+  }
 
   const fetchTaken = useCallback(async () => {
     if (!id) return
@@ -445,8 +541,10 @@ export function ProjectDetail() {
     )
   }
 
-  const isOverdue = new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
-  const daysLeft = Math.ceil((new Date(project.eind_datum).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+  const eindDatum = project.eind_datum ? new Date(project.eind_datum) : null
+  const isValidDate = eindDatum && !isNaN(eindDatum.getTime())
+  const isOverdue = isValidDate && eindDatum < new Date() && project.status !== 'afgerond'
+  const daysLeft = isValidDate ? Math.ceil((eindDatum.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0
   const takenKlaar = projectTaken.filter(t => t.status === 'klaar').length
   const takenTotaal = projectTaken.length
 
@@ -586,10 +684,10 @@ export function ProjectDetail() {
                   <span className="text-[10px] text-wm-pale/80 uppercase tracking-wider font-medium">Deadline</span>
                 </div>
                 <p className={`text-xl font-bold ${isOverdue ? 'text-amber-400' : ''}`}>
-                  {isOverdue ? `${Math.abs(daysLeft)}d` : project.status === 'afgerond' ? 'Klaar' : `${daysLeft}d`}
+                  {!isValidDate ? '-' : isOverdue ? `${Math.abs(daysLeft)}d` : project.status === 'afgerond' ? 'Klaar' : `${daysLeft}d`}
                 </p>
                 <p className={`text-[10px] mt-0.5 ${isOverdue ? 'text-amber-300/80' : 'text-wm-pale/60'}`}>
-                  {isOverdue ? 'verlopen' : project.status === 'afgerond' ? 'afgerond' : 'resterend'}
+                  {!isValidDate ? 'geen deadline' : isOverdue ? 'verlopen' : project.status === 'afgerond' ? 'afgerond' : 'resterend'}
                 </p>
               </div>
 
@@ -605,6 +703,75 @@ export function ProjectDetail() {
           </div>
         </div>
       </div>
+
+      {/* ── Briefing Sectie ── */}
+      <Card className="border-gray-200/80 dark:border-gray-700/80">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <FileEdit className="h-3.5 w-3.5 text-white" />
+              </div>
+              Briefing
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {briefingOpen && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-3 text-xs"
+                  disabled={briefingSaving}
+                  onClick={handleSaveBriefing}
+                >
+                  {briefingSaving ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <Save className="h-3 w-3 mr-1" />
+                  )}
+                  Opslaan
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={() => setBriefingOpen(!briefingOpen)}
+              >
+                {briefingOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        {briefingOpen ? (
+          <CardContent className="pt-2">
+            <Textarea
+              value={briefingText}
+              onChange={(e) => setBriefingText(e.target.value)}
+              placeholder="Voeg hier de projectbriefing toe... Beschrijf het project, de wensen van de klant, bijzonderheden, etc."
+              rows={6}
+              className="resize-y"
+            />
+          </CardContent>
+        ) : (
+          <CardContent className="pt-0 pb-3">
+            {briefingText ? (
+              <p
+                className="text-sm text-muted-foreground line-clamp-2 cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => setBriefingOpen(true)}
+              >
+                {briefingText}
+              </p>
+            ) : (
+              <p
+                className="text-sm text-muted-foreground/60 italic cursor-pointer hover:text-muted-foreground transition-colors"
+                onClick={() => setBriefingOpen(true)}
+              >
+                Klik om een briefing toe te voegen...
+              </p>
+            )}
+          </CardContent>
+        )}
+      </Card>
 
       {/* ── Main Layout: Taken + Sidebar ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -995,6 +1162,22 @@ export function ProjectDetail() {
                           <Mail className="h-3 w-3 mr-1" />
                           Mail
                         </Button>
+                        {offerte.status === 'goedgekeurd' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
+                            disabled={creatingFactuurForOfferte === offerte.id}
+                            onClick={() => handleCreateFactuurFromOfferte(offerte)}
+                          >
+                            {creatingFactuurForOfferte === offerte.id ? (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <CreditCard className="h-3 w-3 mr-1" />
+                            )}
+                            Factuur
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}

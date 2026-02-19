@@ -21,7 +21,14 @@ import {
   FileText,
   ArrowUp,
   ArrowDown,
+  ChevronDown,
 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,9 +42,10 @@ import {
   getPriorityColor,
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
-import { getProjecten, getKlanten } from '@/services/supabaseService'
+import { getProjecten, getKlanten, updateProject } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant } from '@/types'
+import { toast } from 'sonner'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle statussen' },
@@ -179,6 +187,17 @@ export function ProjectsList() {
     } else {
       setSortField(field)
       setSortDir('asc')
+    }
+  }
+
+  async function handleStatusChange(projectId: string, newStatus: Project['status']) {
+    try {
+      const updated = await updateProject(projectId, { status: newStatus })
+      setProjecten((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      toast.success(`Status gewijzigd naar ${statusLabels[newStatus]}`)
+    } catch (error) {
+      console.error('Fout bij statuswijziging:', error)
+      toast.error('Kon status niet wijzigen')
     }
   }
 
@@ -524,19 +543,6 @@ export function ProjectsList() {
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">PM</span>
                   </th>
                   <th className="text-left py-3 px-4">
-                    <button
-                      onClick={() => handleSort('eind_datum')}
-                      className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-                    >
-                      Deadline
-                      {sortField === 'eind_datum' ? (
-                        sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 opacity-40" />
-                      )}
-                    </button>
-                  </th>
-                  <th className="text-left py-3 px-4 hidden lg:table-cell">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
                   </th>
                   <th className="text-right py-3 px-4">
@@ -622,36 +628,43 @@ export function ProjectsList() {
                         </div>
                       </td>
 
-                      {/* Deadline */}
+                      {/* Status met dropdown */}
                       <td className="py-3 px-4">
-                        <div>
-                          <span className={cn(
-                            'text-sm font-medium',
-                            isOverdue ? 'text-red-600 dark:text-red-400' : 'text-foreground'
-                          )}>
-                            {formatDate(project.eind_datum)}
-                          </span>
-                          <p className={cn(
-                            'text-[10px] mt-0.5',
-                            isOverdue ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-500' : 'text-muted-foreground'
-                          )}>
-                            {isOverdue
-                              ? `${Math.abs(daysLeft)}d verlopen`
-                              : project.status === 'afgerond'
-                              ? 'Afgerond'
-                              : `${daysLeft}d resterend`}
-                          </p>
-                        </div>
-                      </td>
-
-                      {/* Status badge */}
-                      <td className="py-3 px-4 hidden lg:table-cell">
-                        <div className="flex items-center gap-2">
-                          <span className={cn('w-2.5 h-2.5 rounded-full flex-shrink-0', getStatusDotColor(project.status))} />
-                          <Badge className={cn('text-xs', getStatusColor(project.status))}>
-                            {statusLabels[project.status] || project.status}
-                          </Badge>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1.5 group/status"
+                            >
+                              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', getStatusDotColor(project.status))} />
+                              <Badge className={cn('text-xs cursor-pointer', getStatusColor(project.status))}>
+                                {statusLabels[project.status] || project.status}
+                              </Badge>
+                              <ChevronDown className="w-3 h-3 text-muted-foreground/40 group-hover/status:text-muted-foreground transition-colors" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-40">
+                            {statusOpties.filter(s => s.value !== 'alle').map((s) => (
+                              <DropdownMenuItem
+                                key={s.value}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (s.value !== project.status) {
+                                    handleStatusChange(project.id, s.value as Project['status'])
+                                  }
+                                }}
+                                className={cn(
+                                  'flex items-center gap-2 text-sm',
+                                  s.value === project.status && 'font-semibold'
+                                )}
+                              >
+                                <span className={cn('w-2 h-2 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
+                                {s.label}
+                                {s.value === project.status && <CheckCircle2 className="w-3 h-3 ml-auto text-primary" />}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
 
                       {/* Waarde / Budget */}
@@ -767,10 +780,39 @@ export function ProjectsList() {
 
                     {/* Status + Prioriteit badges */}
                     <div className="flex items-center gap-2 mb-4">
-                      <Badge className={`${getStatusColor(project.status)} text-xs flex items-center gap-1`}>
-                        {statusIcons[project.status]}
-                        {statusLabels[project.status] || project.status}
-                      </Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button onClick={(e) => e.preventDefault()} className="flex items-center gap-1 group/sbadge">
+                            <Badge className={`${getStatusColor(project.status)} text-xs flex items-center gap-1 cursor-pointer`}>
+                              {statusIcons[project.status]}
+                              {statusLabels[project.status] || project.status}
+                              <ChevronDown className="w-2.5 h-2.5 opacity-50 group-hover/sbadge:opacity-100 transition-opacity" />
+                            </Badge>
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-40">
+                          {statusOpties.filter(s => s.value !== 'alle').map((s) => (
+                            <DropdownMenuItem
+                              key={s.value}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                if (s.value !== project.status) {
+                                  handleStatusChange(project.id, s.value as Project['status'])
+                                }
+                              }}
+                              className={cn(
+                                'flex items-center gap-2 text-sm',
+                                s.value === project.status && 'font-semibold'
+                              )}
+                            >
+                              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
+                              {s.label}
+                              {s.value === project.status && <CheckCircle2 className="w-3 h-3 ml-auto text-primary" />}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Badge className={`${getPriorityColor(project.prioriteit)} text-xs`}>
                         {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
                       </Badge>
