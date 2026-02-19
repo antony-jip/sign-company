@@ -1,11 +1,12 @@
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || ''
-const OPENAI_BASE_URL = 'https://api.openai.com/v1'
+import supabase, { isSupabaseConfigured } from './supabaseClient'
+
 const DEFAULT_MODEL = 'gpt-4o-mini'
 
 // ============ CONFIGURATION CHECK ============
 
 export function isAIConfigured(): boolean {
-  return !!(OPENAI_API_KEY && OPENAI_API_KEY !== 'your-openai-api-key-here')
+  // AI is now server-side only. We just need Supabase auth to work.
+  return isSupabaseConfigured()
 }
 
 // ============ TYPES ============
@@ -15,35 +16,42 @@ interface ChatMessage {
   content: string
 }
 
-// ============ CORE API FUNCTIONS ============
+// ============ AUTH HELPER ============
 
-async function callOpenAI(
+async function getAuthToken(): Promise<string> {
+  if (!supabase) throw new Error('Supabase niet geconfigureerd')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) {
+    throw new Error('Niet ingelogd. Log opnieuw in om AI te gebruiken.')
+  }
+  return session.access_token
+}
+
+// ============ CORE API FUNCTION (via server-side proxy) ============
+
+async function callAI(
   messages: ChatMessage[],
   model: string = DEFAULT_MODEL,
-  temperature: number = 0.7,
   maxTokens: number = 2048
 ): Promise<string> {
-  const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+  const token = await getAuthToken()
+
+  const response = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-    }),
+    body: JSON.stringify({ messages, model, max_tokens: maxTokens }),
   })
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
-    throw new Error(error.error?.message || `OpenAI API fout: ${response.status}`)
+    throw new Error((error as any)?.error || `AI API fout: ${response.status}`)
   }
 
   const data = await response.json()
-  return data.choices[0]?.message?.content || ''
+  return data.choices?.[0]?.message?.content || ''
 }
 
 // ============ CHAT COMPLETION ============
@@ -53,7 +61,7 @@ export async function chatCompletion(
   systemPrompt?: string
 ): Promise<string> {
   if (!isAIConfigured()) {
-    return 'AI is momenteel niet geconfigureerd. Voeg je OpenAI API-sleutel toe in de instellingen om AI-functionaliteit te gebruiken. Je kunt de VITE_OPENAI_API_KEY instellen in je .env bestand.'
+    return 'AI is momenteel niet beschikbaar. Zorg dat je bent ingelogd en dat de OpenAI API key is geconfigureerd op de server.'
   }
 
   const allMessages: ChatMessage[] = []
@@ -69,7 +77,7 @@ export async function chatCompletion(
 
   allMessages.push(...messages)
 
-  return callOpenAI(allMessages)
+  return callAI(allMessages)
 }
 
 // ============ STREAMING CHAT COMPLETION ============
@@ -80,11 +88,14 @@ export async function streamChatCompletion(
   onChunk?: (chunk: string) => void
 ): Promise<string> {
   if (!isAIConfigured()) {
-    const fallback = 'AI is momenteel niet geconfigureerd. Voeg je OpenAI API-sleutel toe in de instellingen om AI-functionaliteit te gebruiken.'
+    const fallback = 'AI is momenteel niet beschikbaar. Zorg dat je bent ingelogd.'
     if (onChunk) onChunk(fallback)
     return fallback
   }
 
+  // For now, streaming goes through the same non-streaming endpoint
+  // and delivers the full response at once via onChunk.
+  // True SSE streaming can be added to /api/ai later.
   const allMessages: ChatMessage[] = []
 
   if (systemPrompt) {
@@ -98,57 +109,9 @@ export async function streamChatCompletion(
 
   allMessages.push(...messages)
 
-  const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: DEFAULT_MODEL,
-      messages: allMessages,
-      temperature: 0.7,
-      max_tokens: 2048,
-      stream: true,
-    }),
-  })
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.error?.message || `OpenAI API fout: ${response.status}`)
-  }
-
-  const reader = response.body?.getReader()
-  const decoder = new TextDecoder()
-  let fullContent = ''
-
-  if (!reader) throw new Error('Kan de stream niet lezen')
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-
-    const chunk = decoder.decode(value, { stream: true })
-    const lines = chunk.split('\n').filter((line) => line.startsWith('data: '))
-
-    for (const line of lines) {
-      const data = line.slice(6).trim()
-      if (data === '[DONE]') break
-
-      try {
-        const parsed = JSON.parse(data)
-        const content = parsed.choices[0]?.delta?.content || ''
-        if (content) {
-          fullContent += content
-          if (onChunk) onChunk(content)
-        }
-      } catch {
-        // Skip malformed JSON chunks
-      }
-    }
-  }
-
-  return fullContent
+  const result = await callAI(allMessages)
+  if (onChunk) onChunk(result)
+  return result
 }
 
 // ============ TEXT GENERATION ============
@@ -164,7 +127,7 @@ export async function generateText(
       offerte: 'Geachte [naam],\n\nHierbij ontvangt u onze offerte voor [project]. Wij bieden u het volgende aan:\n\n- [Item 1]: [prijs]\n- [Item 2]: [prijs]\n\nDeze offerte is geldig tot [datum].\n\nMet vriendelijke groet,\n[Uw naam]',
       rapport: '# Rapport: [Titel]\n\n## Samenvatting\n[Korte samenvatting van het rapport]\n\n## Bevindingen\n[Gedetailleerde bevindingen]\n\n## Conclusie\n[Conclusie en aanbevelingen]',
       notitie: '## Notitie\n\n**Datum:** [datum]\n**Betreft:** [onderwerp]\n\n[Inhoud van de notitie]',
-      algemeen: '[AI is niet geconfigureerd. Voeg je OpenAI API-sleutel toe om teksten te genereren.]',
+      algemeen: '[AI is niet beschikbaar. Log in en zorg dat de server correct is geconfigureerd.]',
     }
     return placeholders[type || 'algemeen'] || placeholders.algemeen
   }
@@ -180,7 +143,7 @@ ${type === 'notitie' ? 'Je schrijft beknopte en duidelijke notities.' : ''}`
     ? `Context: ${context}\n\nOpdracht: ${prompt}`
     : prompt
 
-  return callOpenAI([
+  return callAI([
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userMessage },
   ])
@@ -206,7 +169,7 @@ export async function analyzeProject(projectData: {
 
 ---
 
-*AI-analyse is niet beschikbaar. Configureer je OpenAI API-sleutel in de instellingen voor gedetailleerde projectanalyses, risicobeoordelingen en aanbevelingen.*
+*AI-analyse is niet beschikbaar. Log in om gedetailleerde projectanalyses te ontvangen.*
 
 ### Handmatige checklist:
 - [ ] Budget bewaking controleren
@@ -232,13 +195,13 @@ Geef een analyse met:
 4. Concrete aanbevelingen
 5. Prioriteiten voor de komende periode`
 
-  return callOpenAI([
+  return callAI([
     {
       role: 'system',
       content: 'Je bent een ervaren projectmanager die gedetailleerde projectanalyses maakt in het Nederlands. Je bent analytisch, praktisch en geeft concrete aanbevelingen.',
     },
     { role: 'user', content: prompt },
-  ], DEFAULT_MODEL, 0.5, 3000)
+  ], DEFAULT_MODEL, 3000)
 }
 
 // ============ EMAIL DRAFT GENERATION ============
@@ -283,13 +246,13 @@ Toon: ${toneDescriptions[tone]}
 
 Schrijf alleen de email tekst, geen onderwerpregel.`
 
-  return callOpenAI([
+  return callAI([
     {
       role: 'system',
       content: 'Je schrijft professionele zakelijke emails in het Nederlands. Je bent beknopt maar volledig.',
     },
     { role: 'user', content: prompt },
-  ], DEFAULT_MODEL, 0.7, 1500)
+  ], DEFAULT_MODEL, 1500)
 }
 
 // ============ QUOTE TEXT SUGGESTIONS ============
@@ -329,11 +292,11 @@ Schrijf een overtuigende maar professionele begeleidingstekst voor deze offerte.
 - Uitnodiging tot contact
 - Afsluiting`
 
-  return callOpenAI([
+  return callAI([
     {
       role: 'system',
       content: 'Je bent een ervaren offertespecialist die overtuigende en professionele offerteteksten schrijft in het Nederlands.',
     },
     { role: 'user', content: prompt },
-  ], DEFAULT_MODEL, 0.6, 1500)
+  ], DEFAULT_MODEL, 1500)
 }

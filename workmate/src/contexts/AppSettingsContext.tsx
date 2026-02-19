@@ -100,10 +100,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     if (data) setProfile(data)
   }, [user?.id])
 
-  // Read OpenAI key from localStorage (can't store in env at runtime)
-  const openaiApiKey = typeof window !== 'undefined'
-    ? localStorage.getItem('workmate_openai_key') || import.meta.env.VITE_OPENAI_API_KEY || ''
-    : ''
+  // OpenAI key is now server-side only (OPENAI_API_KEY in env, not exposed to frontend)
+  const openaiApiKey = ''
 
   const value: AppSettingsContextType = {
     settings,

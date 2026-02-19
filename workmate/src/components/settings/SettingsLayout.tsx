@@ -2232,34 +2232,10 @@ function MeldingenTab() {
 // ============ INTEGRATIES TAB ============
 
 function IntegratiesTab() {
-  const [openaiKey, setOpenaiKey] = useState(() => {
-    return localStorage.getItem('workmate_openai_key') || ''
-  })
-  const [showKey, setShowKey] = useState(false)
-  const [isSavingKey, setIsSavingKey] = useState(false)
-
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
   const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
-  const openaiFromEnv = import.meta.env.VITE_OPENAI_API_KEY && import.meta.env.VITE_OPENAI_API_KEY !== 'your-openai-api-key-here'
-  const openaiFromStorage = !!localStorage.getItem('workmate_openai_key')
-  const openaiConfigured = !!openaiFromEnv || openaiFromStorage
-
-  const handleSaveOpenAIKey = () => {
-    setIsSavingKey(true)
-    try {
-      if (openaiKey.trim()) {
-        localStorage.setItem('workmate_openai_key', openaiKey.trim())
-        toast.success('OpenAI API key opgeslagen. De AI-functionaliteit is nu beschikbaar.')
-      } else {
-        localStorage.removeItem('workmate_openai_key')
-        toast.success('OpenAI API key verwijderd.')
-      }
-    } catch (err) {
-      toast.error('Kon API key niet opslaan')
-    } finally {
-      setIsSavingKey(false)
-    }
-  }
+  // OpenAI key is now server-side only (configured via OPENAI_API_KEY env var on Vercel)
+  const openaiConfigured = supabaseConnected
 
   const integrations = [
     {
@@ -2295,7 +2271,6 @@ function IntegratiesTab() {
           <span className="text-purple-700 dark:text-purple-400 font-bold text-sm">AI</span>
         </div>
       ),
-      hasApiKeyInput: true,
     },
   ]
 
@@ -2340,47 +2315,18 @@ function IntegratiesTab() {
                   </p>
                 )}
 
-                {/* OpenAI API Key Input */}
-                {integration.hasApiKeyInput && (
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="relative flex-1 max-w-md">
-                      <Input
-                        type={showKey ? 'text' : 'password'}
-                        value={openaiKey}
-                        onChange={(e) => setOpenaiKey(e.target.value)}
-                        placeholder="sk-..."
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowKey(!showKey)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSaveOpenAIKey}
-                      disabled={isSavingKey}
-                    >
-                      {isSavingKey ? 'Opslaan...' : 'Opslaan'}
-                    </Button>
-                  </div>
+                {/* OpenAI - server-side configured */}
+                {integration.id === 'openai' && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                    De OpenAI API key wordt veilig op de server geconfigureerd (OPENAI_API_KEY environment variable).
+                  </p>
                 )}
 
-                {/* Gmail Connect Button */}
-                {integration.id === 'gmail' && !integration.connected && (
-                  <div className="mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toast.info('Gmail integratie vereist een Google Cloud project met OAuth2 credentials. Zie het PVA voor instructies.')}
-                    >
-                      Verbind Gmail
-                    </Button>
-                  </div>
+                {/* Gmail/Email setup info */}
+                {integration.id === 'gmail' && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                    Email werkt via SMTP. Configureer je Gmail-adres en App Wachtwoord in de email instellingen.
+                  </p>
                 )}
               </div>
             </div>
