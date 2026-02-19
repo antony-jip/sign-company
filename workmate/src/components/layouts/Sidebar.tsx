@@ -45,8 +45,7 @@ const navSections: NavSection[] = [
   {
     section: 'Planning',
     items: [
-      { label: 'Kalender', icon: Calendar, path: '/kalender' },
-      { label: 'Montage', icon: Wrench, path: '/montage' },
+      { label: 'Planning', icon: Calendar, path: '/kalender' },
       { label: 'Tijdregistratie', icon: Clock, path: '/tijdregistratie' },
     ],
   },

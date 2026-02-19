@@ -1,27 +1,26 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   format,
-  addMonths,
-  subMonths,
   addWeeks,
   subWeeks,
-  addDays,
-  subDays,
-  startOfMonth,
-  endOfMonth,
   startOfWeek,
   endOfWeek,
   eachDayOfInterval,
-  isSameMonth,
   isSameDay,
   isToday,
-  parseISO,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval as eachDay,
+  isSameMonth,
+  addMonths,
+  subMonths,
 } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   ChevronLeft,
   ChevronRight,
@@ -29,9 +28,30 @@ import {
   Calendar as CalendarIcon,
   Clock,
   MapPin,
+  Users,
+  Wrench,
+  Truck,
+  PlayCircle,
+  CheckCircle2,
+  PauseCircle,
+  Pencil,
+  Trash2,
+  X,
+  Loader2,
+  Filter,
+  UserCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getEvents, createEvent, updateEvent, deleteEvent } from '@/services/supabaseService'
+import {
+  getMontageAfspraken,
+  createMontageAfspraak,
+  updateMontageAfspraak,
+  deleteMontageAfspraak,
+  getProjecten,
+  getMedewerkers,
+  getKlanten,
+  getTaken,
+} from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import {
@@ -40,7 +60,6 @@ import {
   DialogHeader,
   DialogFooter,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -52,402 +71,848 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { MonthView } from './MonthView'
-import { WeekView } from './WeekView'
-import { DayView } from './DayView'
-import type { CalendarEvent } from '@/types'
+import type { MontageAfspraak, Project, Medewerker, Klant, Taak } from '@/types'
 
-type ViewMode = 'maand' | 'week' | 'dag'
+// ============================================================
+// STATUS CONFIG
+// ============================================================
 
-function getEventTypeColor(type: CalendarEvent['type']): string {
-  switch (type) {
-    case 'meeting':
-      return 'bg-blue-500'
-    case 'deadline':
-      return 'bg-red-500'
-    case 'herinnering':
-      return 'bg-yellow-500'
-    case 'persoonlijk':
-      return 'bg-green-500'
-    default:
-      return 'bg-gray-500'
-  }
+const STATUS_CONFIG: Record<
+  MontageAfspraak['status'],
+  { label: string; color: string; bgColor: string; borderColor: string; darkBg: string }
+> = {
+  gepland: {
+    label: 'Gepland',
+    color: 'text-blue-700 dark:text-blue-300',
+    bgColor: 'bg-blue-50 dark:bg-blue-950/40',
+    borderColor: 'border-blue-200 dark:border-blue-800',
+    darkBg: 'bg-blue-500',
+  },
+  onderweg: {
+    label: 'Onderweg',
+    color: 'text-amber-700 dark:text-amber-300',
+    bgColor: 'bg-amber-50 dark:bg-amber-950/40',
+    borderColor: 'border-amber-200 dark:border-amber-800',
+    darkBg: 'bg-amber-500',
+  },
+  bezig: {
+    label: 'Bezig',
+    color: 'text-green-700 dark:text-green-300',
+    bgColor: 'bg-green-50 dark:bg-green-950/40',
+    borderColor: 'border-green-200 dark:border-green-800',
+    darkBg: 'bg-green-500',
+  },
+  afgerond: {
+    label: 'Afgerond',
+    color: 'text-emerald-700 dark:text-emerald-300',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-950/40',
+    borderColor: 'border-emerald-200 dark:border-emerald-800',
+    darkBg: 'bg-emerald-500',
+  },
+  uitgesteld: {
+    label: 'Uitgesteld',
+    color: 'text-red-700 dark:text-red-300',
+    bgColor: 'bg-red-50 dark:bg-red-950/40',
+    borderColor: 'border-red-200 dark:border-red-800',
+    darkBg: 'bg-red-500',
+  },
 }
 
-function getEventTypeBadge(type: CalendarEvent['type']): string {
-  switch (type) {
-    case 'meeting':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-    case 'deadline':
-      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-    case 'herinnering':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-    case 'persoonlijk':
-      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
+// ============================================================
+// HELPERS
+// ============================================================
+
+const AVATAR_COLORS = [
+  'bg-blue-500', 'bg-emerald-500', 'bg-purple-500',
+  'bg-amber-500', 'bg-rose-500', 'bg-cyan-500',
+  'bg-indigo-500', 'bg-teal-500',
+]
+
+function getInitials(naam: string): string {
+  return naam.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-function getEventTypeLabel(type: CalendarEvent['type']): string {
-  switch (type) {
-    case 'meeting':
-      return 'Vergadering'
-    case 'deadline':
-      return 'Deadline'
-    case 'herinnering':
-      return 'Herinnering'
-    case 'persoonlijk':
-      return 'Persoonlijk'
-    default:
-      return type
-  }
+function getAvatarColor(index: number): string {
+  return AVATAR_COLORS[index % AVATAR_COLORS.length]
 }
 
-const defaultFormState = {
+function formatDateYMD(d: Date): string {
+  return format(d, 'yyyy-MM-dd')
+}
+
+const HOURS = Array.from({ length: 14 }, (_, i) => i + 6) // 06:00 - 19:00
+
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + (m || 0)
+}
+
+function minutesToPx(minutes: number, hourHeight: number): number {
+  return (minutes / 60) * hourHeight
+}
+
+// ============================================================
+// DEFAULT FORM STATE
+// ============================================================
+
+const defaultForm = {
+  klant_id: '',
+  project_id: '',
   titel: '',
   beschrijving: '',
-  start_datum: '',
-  eind_datum: '',
-  type: 'meeting' as CalendarEvent['type'],
+  datum: formatDateYMD(new Date()),
+  start_tijd: '08:00',
+  eind_tijd: '17:00',
+  geplande_tijd: '',
   locatie: '',
-  kleur: '#3b82f6',
+  monteurs: [] as string[],
+  materialen: '',
+  status: 'gepland' as MontageAfspraak['status'],
 }
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 
 export function CalendarLayout() {
   const { user } = useAuth()
-  const [viewMode, setViewMode] = useState<ViewMode>('maand')
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
-  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [afspraken, setAfspraken] = useState<MontageAfspraak[]>([])
+  const [projecten, setProjecten] = useState<Project[]>([])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+  const [klanten, setKlanten] = useState<Klant[]>([])
+  const [projectTaken, setProjectTaken] = useState<Taak[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [newEventOpen, setNewEventOpen] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [formData, setFormData] = useState(defaultFormState)
 
-  const fetchEvents = useCallback(async () => {
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formData, setFormData] = useState(defaultForm)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Filter: which medewerkers to show
+  const [selectedMedewerkers, setSelectedMedewerkers] = useState<string[]>([]) // empty = show all
+
+  // ---- Data loading ----
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true)
-      const data = await getEvents()
-      setEvents(data)
-    } catch (error) {
-      console.error('Failed to fetch events:', error)
-      toast.error('Kon evenementen niet laden')
+      const [aData, pData, mData, kData, tData] = await Promise.all([
+        getMontageAfspraken(),
+        getProjecten(),
+        getMedewerkers(),
+        getKlanten(),
+        getTaken(),
+      ])
+      setAfspraken(aData)
+      setProjecten(pData)
+      setMedewerkers(mData.filter((m) => m.status === 'actief'))
+      setKlanten(kData)
+      // Only show project tasks that have a deadline and a project_id
+      setProjectTaken(tData.filter((t) => t.project_id && t.deadline && t.status !== 'done'))
+    } catch (err) {
+      console.error('Fout bij laden data:', err)
+      toast.error('Kon planningsdata niet laden')
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchEvents()
-  }, [fetchEvents])
+    loadData()
+  }, [loadData])
 
-  const handleOpenNewEvent = () => {
-    // Pre-fill start/end with selected date or today
-    const base = selectedDate || new Date()
-    const startDate = new Date(base)
-    startDate.setHours(9, 0, 0, 0)
-    const endDate = new Date(base)
-    endDate.setHours(10, 0, 0, 0)
+  // ---- Week dates ----
+  const weekDates = useMemo(() => {
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
+    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
+    return eachDayOfInterval({ start: weekStart, end: weekEnd })
+  }, [currentDate])
 
+  const weekLabel = useMemo(() => {
+    const start = weekDates[0]
+    const end = weekDates[6]
+    return `${format(start, 'd MMM', { locale: nl })} - ${format(end, 'd MMM yyyy', { locale: nl })}`
+  }, [weekDates])
+
+  // ---- Filter afspraken by selected medewerkers ----
+  const filteredAfspraken = useMemo(() => {
+    if (selectedMedewerkers.length === 0) return afspraken
+    return afspraken.filter((a) =>
+      a.monteurs.some((m) => selectedMedewerkers.includes(m))
+    )
+  }, [afspraken, selectedMedewerkers])
+
+  // ---- Get afspraken for a specific day ----
+  const getAfsprakenForDay = useCallback(
+    (date: Date) => {
+      const dateStr = formatDateYMD(date)
+      return filteredAfspraken
+        .filter((a) => a.datum === dateStr)
+        .sort((a, b) => timeToMinutes(a.start_tijd) - timeToMinutes(b.start_tijd))
+    },
+    [filteredAfspraken]
+  )
+
+  // ---- Get project tasks for a specific day (by deadline) ----
+  const getTasksForDay = useCallback(
+    (date: Date) => {
+      const dateStr = formatDateYMD(date)
+      return projectTaken.filter((t) => t.deadline === dateStr)
+    },
+    [projectTaken]
+  )
+
+  // Plan a project task into the montage planning
+  const handlePlanTask = async (taak: Taak) => {
+    const project = projecten.find((p) => p.id === taak.project_id)
+    setEditingId(null)
     setFormData({
-      ...defaultFormState,
-      start_datum: format(startDate, "yyyy-MM-dd'T'HH:mm"),
-      eind_datum: format(endDate, "yyyy-MM-dd'T'HH:mm"),
+      ...defaultForm,
+      klant_id: project?.klant_id || '',
+      project_id: taak.project_id || '',
+      titel: taak.titel,
+      beschrijving: taak.beschrijving || '',
+      datum: taak.deadline || formatDateYMD(new Date()),
+      start_tijd: '08:00',
+      eind_tijd: '17:00',
     })
-    setNewEventOpen(true)
+    setDialogOpen(true)
   }
 
-  const handleSaveEvent = async () => {
-    if (!formData.titel.trim()) {
-      toast.error('Vul een titel in')
-      return
-    }
-    if (!formData.start_datum || !formData.eind_datum) {
-      toast.error('Vul start- en einddatum in')
+  // ---- Mini calendar data ----
+  const miniCalMonth = currentDate
+  const miniCalDays = useMemo(() => {
+    const monthStart = startOfMonth(miniCalMonth)
+    const monthEnd = endOfMonth(miniCalMonth)
+    const calStart = startOfWeek(monthStart, { weekStartsOn: 1 })
+    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
+    return eachDayOfInterval({ start: calStart, end: calEnd })
+  }, [miniCalMonth])
+
+  const dayHasAfspraak = useCallback(
+    (day: Date) => {
+      const dateStr = formatDateYMD(day)
+      return filteredAfspraken.some((a) => a.datum === dateStr)
+    },
+    [filteredAfspraken]
+  )
+
+  // ---- Dialog handlers ----
+  const openNewDialog = (date?: Date) => {
+    const d = date || new Date()
+    setEditingId(null)
+    setFormData({
+      ...defaultForm,
+      datum: formatDateYMD(d),
+    })
+    setDialogOpen(true)
+  }
+
+  const openEditDialog = (afspraak: MontageAfspraak) => {
+    setEditingId(afspraak.id)
+    setFormData({
+      klant_id: afspraak.klant_id,
+      project_id: afspraak.project_id,
+      titel: afspraak.titel,
+      beschrijving: afspraak.beschrijving,
+      datum: afspraak.datum,
+      start_tijd: afspraak.start_tijd,
+      eind_tijd: afspraak.eind_tijd,
+      geplande_tijd: '',
+      locatie: afspraak.locatie,
+      monteurs: [...afspraak.monteurs],
+      materialen: afspraak.materialen.join(', '),
+      status: afspraak.status,
+    })
+    setDialogOpen(true)
+  }
+
+  const handleSave = async () => {
+    if (!formData.titel.trim() && !formData.project_id) {
+      toast.error('Vul een taakomschrijving in of selecteer een project')
       return
     }
 
+    setIsSaving(true)
     try {
-      setIsSaving(true)
-      await createEvent({
+      // Get project/klant names for denormalized fields
+      const project = projecten.find((p) => p.id === formData.project_id)
+      const klant = klanten.find((k) => k.id === formData.klant_id)
+
+      const payload = {
         user_id: user?.id || 'demo',
-        project_id: null,
-        titel: formData.titel.trim(),
+        project_id: formData.project_id || '',
+        project_naam: project?.naam || '',
+        klant_id: formData.klant_id || project?.klant_id || '',
+        klant_naam: klant?.bedrijfsnaam || project?.klant_naam || '',
+        titel: formData.titel.trim() || project?.naam || '',
         beschrijving: formData.beschrijving.trim(),
-        start_datum: new Date(formData.start_datum).toISOString(),
-        eind_datum: new Date(formData.eind_datum).toISOString(),
-        type: formData.type,
+        datum: formData.datum,
+        start_tijd: formData.start_tijd,
+        eind_tijd: formData.eind_tijd,
         locatie: formData.locatie.trim(),
-        deelnemers: [],
-        kleur: formData.kleur,
-        herhaling: '',
-      })
-      toast.success('Evenement aangemaakt')
-      setNewEventOpen(false)
-      await fetchEvents()
-    } catch (error) {
-      console.error('Failed to create event:', error)
-      toast.error('Kon evenement niet aanmaken')
+        monteurs: formData.monteurs,
+        status: formData.status,
+        materialen: formData.materialen
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        notities: '',
+      }
+
+      if (editingId) {
+        await updateMontageAfspraak(editingId, payload)
+        toast.success('Planning bijgewerkt')
+      } else {
+        await createMontageAfspraak(payload)
+        toast.success('Taak ingepland')
+      }
+
+      setDialogOpen(false)
+      await loadData()
+    } catch (err) {
+      console.error('Fout bij opslaan:', err)
+      toast.error('Kon taak niet opslaan')
     } finally {
       setIsSaving(false)
     }
   }
 
-  // Navigation handlers
-  const handlePrev = () => {
-    switch (viewMode) {
-      case 'maand':
-        setCurrentDate((d) => subMonths(d, 1))
-        break
-      case 'week':
-        setCurrentDate((d) => subWeeks(d, 1))
-        break
-      case 'dag':
-        setCurrentDate((d) => subDays(d, 1))
-        break
+  const handleDelete = async () => {
+    if (!editingId) return
+    try {
+      await deleteMontageAfspraak(editingId)
+      toast.success('Taak verwijderd')
+      setDialogOpen(false)
+      await loadData()
+    } catch (err) {
+      console.error('Fout bij verwijderen:', err)
+      toast.error('Kon taak niet verwijderen')
     }
   }
 
-  const handleNext = () => {
-    switch (viewMode) {
-      case 'maand':
-        setCurrentDate((d) => addMonths(d, 1))
-        break
-      case 'week':
-        setCurrentDate((d) => addWeeks(d, 1))
-        break
-      case 'dag':
-        setCurrentDate((d) => addDays(d, 1))
-        break
-    }
-  }
-
-  const handleToday = () => {
-    const today = new Date()
-    setCurrentDate(today)
-    setSelectedDate(today)
-  }
-
-  const handleSelectDate = (date: Date) => {
-    setSelectedDate(date)
-    if (viewMode === 'maand') {
-      setCurrentDate(date)
-    }
-  }
-
-  // Format the title based on view mode
-  const headerTitle = useMemo(() => {
-    switch (viewMode) {
-      case 'maand':
-        return format(currentDate, 'MMMM yyyy', { locale: nl })
-      case 'week': {
-        const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
-        const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
-        const startStr = format(weekStart, 'd MMM', { locale: nl })
-        const endStr = format(weekEnd, 'd MMM yyyy', { locale: nl })
-        return `${startStr} - ${endStr}`
-      }
-      case 'dag':
-        return format(currentDate, 'EEEE d MMMM yyyy', { locale: nl })
-      default:
-        return ''
-    }
-  }, [viewMode, currentDate])
-
-  // Upcoming events for sidebar
-  const upcomingEvents = useMemo(() => {
-    const now = new Date()
-    return [...events]
-      .filter((e) => parseISO(e.start_datum) >= now)
-      .sort(
-        (a, b) =>
-          parseISO(a.start_datum).getTime() - parseISO(b.start_datum).getTime()
+  const handleStatusUpdate = async (id: string, newStatus: MontageAfspraak['status']) => {
+    try {
+      await updateMontageAfspraak(id, { status: newStatus })
+      setAfspraken((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
       )
-      .slice(0, 5)
-  }, [events])
-
-  // Mini calendar data for sidebar
-  const miniCalendarDays = useMemo(() => {
-    const monthStart = startOfMonth(currentDate)
-    const monthEnd = endOfMonth(currentDate)
-    const calStart = startOfWeek(monthStart, { weekStartsOn: 1 })
-    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
-    return eachDayOfInterval({ start: calStart, end: calEnd })
-  }, [currentDate])
-
-  const miniCalendarHasEvent = (day: Date) => {
-    return events.some((event) => isSameDay(parseISO(event.start_datum), day))
+      toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`)
+    } catch (err) {
+      console.error('Fout bij status update:', err)
+      toast.error('Kon status niet bijwerken')
+    }
   }
+
+  // When project changes in form, auto-fill klant
+  const handleProjectChange = (projectId: string) => {
+    setFormData((prev) => {
+      const project = projecten.find((p) => p.id === projectId)
+      return {
+        ...prev,
+        project_id: projectId,
+        klant_id: project?.klant_id || prev.klant_id,
+        titel: prev.titel || project?.naam || '',
+      }
+    })
+  }
+
+  // Toggle medewerker in form monteurs
+  const toggleFormMonteur = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      monteurs: prev.monteurs.includes(id)
+        ? prev.monteurs.filter((m) => m !== id)
+        : [...prev.monteurs, id],
+    }))
+  }
+
+  // Toggle medewerker filter
+  const toggleMedewerkerFilter = (id: string) => {
+    setSelectedMedewerkers((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+    )
+  }
+
+  // ---- Stats ----
+  const todayAfspraken = useMemo(
+    () => filteredAfspraken.filter((a) => a.datum === formatDateYMD(new Date())),
+    [filteredAfspraken]
+  )
+
+  const weekAfspraken = useMemo(() => {
+    const weekStart = formatDateYMD(weekDates[0])
+    const weekEnd = formatDateYMD(weekDates[6])
+    return filteredAfspraken.filter((a) => a.datum >= weekStart && a.datum <= weekEnd)
+  }, [filteredAfspraken, weekDates])
+
+  // ---- Render helpers ----
+  const renderMonteurAvatars = (monteurIds: string[], size: 'sm' | 'md' = 'sm') => {
+    const dims = size === 'sm' ? 'w-5 h-5 text-[9px]' : 'w-7 h-7 text-xs'
+    return (
+      <div className="flex -space-x-1">
+        {monteurIds.slice(0, 3).map((mId) => {
+          const mw = medewerkers.find((m) => m.id === mId)
+          const idx = medewerkers.findIndex((m) => m.id === mId)
+          return (
+            <div
+              key={mId}
+              className={cn(
+                dims,
+                'rounded-full flex items-center justify-center text-white font-bold ring-2 ring-white dark:ring-gray-900',
+                getAvatarColor(idx >= 0 ? idx : 0)
+              )}
+              title={mw?.naam || mId}
+            >
+              {mw ? getInitials(mw.naam) : '?'}
+            </div>
+          )
+        })}
+        {monteurIds.length > 3 && (
+          <div
+            className={cn(
+              dims,
+              'rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 font-bold ring-2 ring-white dark:ring-gray-900'
+            )}
+          >
+            +{monteurIds.length - 3}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const HOUR_HEIGHT = 56
+
+  // ---- Render: Afspraak card in the week grid ----
+  const renderAfspraakCard = (afspraak: MontageAfspraak, isOverlay = false) => {
+    const cfg = STATUS_CONFIG[afspraak.status]
+    const startMin = timeToMinutes(afspraak.start_tijd)
+    const endMin = timeToMinutes(afspraak.eind_tijd)
+    const duration = endMin - startMin
+    const topOffset = minutesToPx(startMin - HOURS[0] * 60, HOUR_HEIGHT)
+    const height = Math.max(minutesToPx(duration, HOUR_HEIGHT), 28)
+
+    if (isOverlay) {
+      return (
+        <div
+          key={afspraak.id}
+          className={cn(
+            'absolute left-0 right-1 rounded-md border px-2 py-1 cursor-pointer transition-all hover:shadow-md hover:z-20 overflow-hidden',
+            cfg.bgColor,
+            cfg.borderColor
+          )}
+          style={{ top: `${topOffset}px`, height: `${height}px` }}
+          onClick={() => openEditDialog(afspraak)}
+        >
+          <div className="flex items-start gap-1 min-h-0">
+            <div className={cn('w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0', cfg.darkBg)} />
+            <div className="flex-1 min-w-0">
+              <p className={cn('text-[11px] font-semibold truncate leading-tight', cfg.color)}>
+                {afspraak.titel}
+              </p>
+              {height > 36 && (
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {afspraak.start_tijd} - {afspraak.eind_tijd}
+                </p>
+              )}
+              {height > 52 && afspraak.locatie && (
+                <p className="text-[10px] text-muted-foreground truncate flex items-center gap-0.5">
+                  <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+                  {afspraak.locatie}
+                </p>
+              )}
+              {height > 68 && afspraak.monteurs.length > 0 && (
+                <div className="mt-0.5">
+                  {renderMonteurAvatars(afspraak.monteurs)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Flat card for the sidebar/list view
+    return (
+      <div
+        key={afspraak.id}
+        className={cn(
+          'rounded-lg border p-3 cursor-pointer transition-all hover:shadow-md',
+          cfg.bgColor,
+          cfg.borderColor
+        )}
+        onClick={() => openEditDialog(afspraak)}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className={cn('text-sm font-semibold truncate', cfg.color)}>
+              {afspraak.titel}
+            </p>
+            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+              <Clock className="w-3 h-3" />
+              <span>{afspraak.start_tijd} - {afspraak.eind_tijd}</span>
+            </div>
+            {afspraak.locatie && (
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                <MapPin className="w-3 h-3" />
+                <span className="truncate">{afspraak.locatie}</span>
+              </div>
+            )}
+            {afspraak.klant_naam && (
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                {afspraak.klant_naam}
+              </p>
+            )}
+          </div>
+          {afspraak.monteurs.length > 0 && (
+            <div className="flex-shrink-0">
+              {renderMonteurAvatars(afspraak.monteurs, 'md')}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER
+  // ============================================================
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4">
+      {/* ── Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
-            Agenda
+          <h1 className="text-2xl font-bold text-foreground font-display">
+            Planning
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Plan en beheer uw afspraken en deadlines
+          <p className="text-sm text-muted-foreground">
+            Plan en beheer montage, installatie en uitvoering
           </p>
         </div>
-        <Button className="gap-2 bg-blue-600 hover:bg-blue-700" onClick={handleOpenNewEvent}>
+        <Button
+          onClick={() => openNewDialog()}
+          className="gap-2 bg-gradient-to-r from-accent to-primary border-0"
+        >
           <Plus className="w-4 h-4" />
-          Nieuw Event
+          Taak inplannen
         </Button>
       </div>
 
-      <div className="flex gap-6">
-        {/* Main calendar area */}
+      {/* ── Stats Cards ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-900 border-blue-200/50 dark:border-blue-800/50">
+          <CardContent className="p-3">
+            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Vandaag</p>
+            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{todayAfspraken.length}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {todayAfspraken.filter((a) => a.status === 'afgerond').length} afgerond
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-primary/5 to-white dark:from-primary/10 dark:to-gray-900 border-primary/20">
+          <CardContent className="p-3">
+            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Deze week</p>
+            <p className="text-2xl font-bold text-accent dark:text-primary">{weekAfspraken.length}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {weekAfspraken.filter((a) => a.status === 'gepland').length} gepland
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Monteurs</p>
+            <p className="text-2xl font-bold text-foreground">{medewerkers.length}</p>
+            <p className="text-[11px] text-muted-foreground">beschikbaar</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Openstaand</p>
+            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+              {afspraken.filter((a) => a.status !== 'afgerond').length}
+            </p>
+            <p className="text-[11px] text-muted-foreground">nog uit te voeren</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Main Layout: Calendar + Sidebar ── */}
+      <div className="flex gap-4">
+        {/* ──── Week Grid (Main Area) ──── */}
         <div className="flex-1 min-w-0">
           {/* Navigation bar */}
-          <Card className="mb-4">
+          <Card className="mb-3">
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
-                {/* Left: navigation */}
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleToday}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
                     Vandaag
                   </Button>
-                  <div className="flex items-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={handlePrev}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={handleNext}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentDate((d) => subWeeks(d, 1))}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentDate((d) => addWeeks(d, 1))}>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
                   <h2 className="text-lg font-semibold text-foreground capitalize">
-                    {headerTitle}
+                    {weekLabel}
                   </h2>
                 </div>
-
-                {/* Right: view switcher */}
-                <div className="flex items-center border rounded-lg overflow-hidden">
-                  {(['maand', 'week', 'dag'] as ViewMode[]).map((mode) => (
-                    <Button
-                      key={mode}
-                      variant={viewMode === mode ? 'default' : 'ghost'}
-                      size="sm"
-                      className={cn(
-                        'rounded-none px-4 h-8 text-sm font-medium',
-                        viewMode !== mode && 'hover:bg-muted'
-                      )}
-                      onClick={() => setViewMode(mode)}
-                    >
-                      {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                    </Button>
-                  ))}
-                </div>
+                {/* Medewerker filter chips */}
+                {medewerkers.length > 0 && (
+                  <div className="hidden md:flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-muted-foreground mr-1" />
+                    {selectedMedewerkers.length > 0 && (
+                      <button
+                        onClick={() => setSelectedMedewerkers([])}
+                        className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded border border-dashed border-gray-300 dark:border-gray-600"
+                      >
+                        Alles
+                      </button>
+                    )}
+                    {medewerkers.slice(0, 6).map((mw, idx) => {
+                      const isActive = selectedMedewerkers.includes(mw.id)
+                      return (
+                        <button
+                          key={mw.id}
+                          onClick={() => toggleMedewerkerFilter(mw.id)}
+                          className={cn(
+                            'flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium transition-all border',
+                            isActive
+                              ? 'bg-primary/10 text-accent dark:text-primary border-primary/30'
+                              : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              'w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white font-bold',
+                              getAvatarColor(idx)
+                            )}
+                          >
+                            {getInitials(mw.naam)}
+                          </div>
+                          <span className="hidden lg:inline">{mw.naam.split(' ')[0]}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Calendar view */}
+          {/* Week grid */}
           <Card className="overflow-hidden">
-            <div className="h-[calc(100vh-340px)] min-h-[480px]">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-sm text-muted-foreground">Agenda laden...</p>
-                  </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-96">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Planning laden...</p>
                 </div>
-              ) : (
-                <>
-                  {viewMode === 'maand' && (
-                    <MonthView
-                      currentDate={currentDate}
-                      selectedDate={selectedDate}
-                      events={events}
-                      onSelectDate={handleSelectDate}
-                    />
-                  )}
-                  {viewMode === 'week' && (
-                    <WeekView
-                      currentDate={currentDate}
-                      selectedDate={selectedDate}
-                      events={events}
-                      onSelectDate={handleSelectDate}
-                    />
-                  )}
-                  {viewMode === 'dag' && (
-                    <DayView currentDate={currentDate} events={events} />
-                  )}
-                </>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 420px)', minHeight: '400px' }}>
+                <div className="grid grid-cols-[50px_repeat(7,1fr)] min-w-[700px]">
+                  {/* Header row: day labels */}
+                  <div className="sticky top-0 z-10 bg-card border-b border-gray-200 dark:border-gray-700" />
+                  {weekDates.map((date) => {
+                    const today = isToday(date)
+                    const dayAfspraken = getAfsprakenForDay(date)
+                    return (
+                      <div
+                        key={date.toISOString()}
+                        className={cn(
+                          'sticky top-0 z-10 bg-card border-b border-l border-gray-200 dark:border-gray-700 px-2 py-2 text-center',
+                          today && 'bg-primary/5 dark:bg-primary/10'
+                        )}
+                      >
+                        <p className="text-[10px] uppercase font-medium text-muted-foreground">
+                          {format(date, 'EEE', { locale: nl })}
+                        </p>
+                        <p
+                          className={cn(
+                            'text-lg font-bold leading-tight',
+                            today ? 'text-primary' : 'text-foreground'
+                          )}
+                        >
+                          {format(date, 'd')}
+                        </p>
+                        {(dayAfspraken.length > 0 || getTasksForDay(date).length > 0) && (
+                          <div className="flex items-center gap-0.5 justify-center mt-0.5">
+                            {dayAfspraken.length > 0 && (
+                              <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                                {dayAfspraken.length}
+                              </Badge>
+                            )}
+                            {getTasksForDay(date).length > 0 && (
+                              <Badge className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 border-0">
+                                {getTasksForDay(date).length}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                  {/* Hour rows */}
+                  {HOURS.map((hour) => (
+                    <React.Fragment key={hour}>
+                      {/* Time label */}
+                      <div
+                        className="border-b border-gray-100 dark:border-gray-800 text-[10px] text-muted-foreground text-right pr-2 pt-1"
+                        style={{ height: `${HOUR_HEIGHT}px` }}
+                      >
+                        {`${String(hour).padStart(2, '0')}:00`}
+                      </div>
+
+                      {/* Day cells */}
+                      {weekDates.map((date) => {
+                        const today = isToday(date)
+                        return (
+                          <div
+                            key={`${hour}-${date.toISOString()}`}
+                            className={cn(
+                              'border-b border-l border-gray-100 dark:border-gray-800 relative group',
+                              today && 'bg-primary/[0.02] dark:bg-primary/[0.04]'
+                            )}
+                            style={{ height: `${HOUR_HEIGHT}px` }}
+                            onClick={() => {
+                              const d = new Date(date)
+                              setFormData({
+                                ...defaultForm,
+                                datum: formatDateYMD(d),
+                                start_tijd: `${String(hour).padStart(2, '0')}:00`,
+                                eind_tijd: `${String(Math.min(hour + 2, 19)).padStart(2, '0')}:00`,
+                              })
+                              setEditingId(null)
+                              setDialogOpen(true)
+                            }}
+                          >
+                            {/* Plus button on hover */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                              <Plus className="w-4 h-4 text-muted-foreground/30" />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
+
+                {/* Overlay: positioned afspraak cards */}
+                <div
+                  className="grid grid-cols-[50px_repeat(7,1fr)] min-w-[700px] pointer-events-none"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    paddingTop: '58px', // header height
+                  }}
+                >
+                  <div /> {/* time label spacer */}
+                  {weekDates.map((date) => {
+                    const dayAfspraken = getAfsprakenForDay(date)
+                    return (
+                      <div key={date.toISOString()} className="relative border-l border-transparent" style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}>
+                        {dayAfspraken.map((afspraak) => (
+                          <div key={afspraak.id} className="pointer-events-auto px-0.5">
+                            {renderAfspraakCard(afspraak, true)}
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Now indicator */}
+                {weekDates.some((d) => isToday(d)) && (() => {
+                  const now = new Date()
+                  const nowMin = now.getHours() * 60 + now.getMinutes()
+                  const startMin = HOURS[0] * 60
+                  const endMin = (HOURS[HOURS.length - 1] + 1) * 60
+                  if (nowMin < startMin || nowMin > endMin) return null
+                  const topPx = minutesToPx(nowMin - startMin, HOUR_HEIGHT)
+                  const todayIdx = weekDates.findIndex((d) => isToday(d))
+                  if (todayIdx === -1) return null
+
+                  return (
+                    <div
+                      className="absolute pointer-events-none"
+                      style={{
+                        top: `${topPx + 58}px`,
+                        left: `${50 + (todayIdx * ((100 - 50 / 7) / 7))}%`,
+                        right: 0,
+                        zIndex: 15,
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
+                        <div className="flex-1 h-[2px] bg-red-500" />
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
           </Card>
         </div>
 
-        {/* Sidebar */}
-        <div className="w-72 flex-shrink-0 hidden lg:block space-y-4">
+        {/* ──── Sidebar ──── */}
+        <div className="w-72 flex-shrink-0 hidden lg:block space-y-3">
           {/* Mini calendar */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-                {format(currentDate, 'MMMM yyyy', { locale: nl })}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                  {format(miniCalMonth, 'MMMM yyyy', { locale: nl })}
+                </CardTitle>
+                <div className="flex items-center gap-0.5">
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentDate((d) => subMonths(d, 1))}>
+                    <ChevronLeft className="w-3 h-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentDate((d) => addMonths(d, 1))}>
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="pb-4">
-              {/* Day labels */}
+            <CardContent className="pb-3">
               <div className="grid grid-cols-7 mb-1">
                 {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((d) => (
-                  <div
-                    key={d}
-                    className="text-center text-[10px] font-semibold text-muted-foreground uppercase py-1"
-                  >
+                  <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground uppercase py-0.5">
                     {d}
                   </div>
                 ))}
               </div>
-
-              {/* Day grid */}
               <div className="grid grid-cols-7">
-                {miniCalendarDays.map((day, i) => {
-                  const isCurrentMonth = isSameMonth(day, currentDate)
+                {miniCalDays.map((day, i) => {
+                  const isCurrentMonth = isSameMonth(day, miniCalMonth)
                   const isTodayDate = isToday(day)
-                  const isSelected = selectedDate
-                    ? isSameDay(day, selectedDate)
-                    : false
-                  const hasEvent = miniCalendarHasEvent(day)
+                  const isInWeek = weekDates.some((wd) => isSameDay(wd, day))
+                  const hasEvent = dayHasAfspraak(day)
 
                   return (
                     <button
                       key={i}
-                      onClick={() => handleSelectDate(day)}
+                      onClick={() => setCurrentDate(day)}
                       className={cn(
-                        'relative w-full aspect-square flex flex-col items-center justify-center text-xs rounded-md transition-colors',
+                        'relative w-full aspect-square flex flex-col items-center justify-center text-[11px] rounded-md transition-colors',
                         !isCurrentMonth && 'text-muted-foreground/40',
                         isCurrentMonth && 'text-foreground',
-                        isTodayDate && 'bg-blue-600 text-white font-bold',
-                        isSelected &&
-                          !isTodayDate &&
-                          'bg-blue-100 dark:bg-blue-900/30 font-semibold',
-                        !isTodayDate &&
-                          !isSelected &&
-                          'hover:bg-muted/50'
+                        isTodayDate && 'bg-primary text-white font-bold',
+                        isInWeek && !isTodayDate && 'bg-primary/10 font-semibold',
+                        !isTodayDate && !isInWeek && 'hover:bg-muted/50'
                       )}
                     >
                       {format(day, 'd')}
                       {hasEvent && !isTodayDate && (
-                        <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-blue-500" />
+                        <div className="absolute bottom-0 w-1 h-1 rounded-full bg-primary" />
                       )}
                     </button>
                   )
@@ -456,78 +921,131 @@ export function CalendarLayout() {
             </CardContent>
           </Card>
 
-          {/* Upcoming events */}
+          {/* Medewerkers sidebar */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">
-                Komende evenementen
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                Team
               </CardTitle>
             </CardHeader>
-            <CardContent className="pb-4">
-              {upcomingEvents.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Geen komende evenementen
+            <CardContent className="pb-3">
+              {medewerkers.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-3">
+                  Geen medewerkers gevonden. Voeg medewerkers toe bij Team.
                 </p>
               ) : (
-                <ScrollArea className="max-h-[340px]">
-                  <div className="space-y-3">
-                    {upcomingEvents.map((event) => {
-                      const start = parseISO(event.start_datum)
-                      const end = parseISO(event.eind_datum)
-                      const isTodayEvent = isToday(start)
+                <div className="space-y-1">
+                  {medewerkers.map((mw, idx) => {
+                    const isActive = selectedMedewerkers.length === 0 || selectedMedewerkers.includes(mw.id)
+                    const todayCount = afspraken.filter(
+                      (a) => a.datum === formatDateYMD(new Date()) && a.monteurs.includes(mw.id)
+                    ).length
+                    const weekCount = afspraken.filter((a) => {
+                      const wStart = formatDateYMD(weekDates[0])
+                      const wEnd = formatDateYMD(weekDates[6])
+                      return a.datum >= wStart && a.datum <= wEnd && a.monteurs.includes(mw.id)
+                    }).length
 
+                    return (
+                      <button
+                        key={mw.id}
+                        onClick={() => toggleMedewerkerFilter(mw.id)}
+                        className={cn(
+                          'w-full flex items-center gap-2.5 p-2 rounded-lg transition-all text-left',
+                          isActive
+                            ? 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'
+                            : 'opacity-40 hover:opacity-70'
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'w-7 h-7 rounded-full flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0',
+                            getAvatarColor(idx)
+                          )}
+                        >
+                          {getInitials(mw.naam)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">
+                            {mw.naam}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {mw.functie || mw.rol}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          {todayCount > 0 ? (
+                            <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                              {todayCount} vandaag
+                            </Badge>
+                          ) : weekCount > 0 ? (
+                            <span className="text-[10px] text-muted-foreground">{weekCount}/wk</span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground/50">vrij</span>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Today's tasks sidebar */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-muted-foreground" />
+                Vandaag
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-3">
+              {todayAfspraken.length === 0 && getTasksForDay(new Date()).length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-3">
+                  Geen taken voor vandaag
+                </p>
+              ) : (
+                <ScrollArea className="max-h-[280px]">
+                  <div className="space-y-2">
+                    {todayAfspraken.map((a) => renderAfspraakCard(a))}
+                    {/* Project tasks due today */}
+                    {getTasksForDay(new Date()).map((taak) => {
+                      const project = projecten.find((p) => p.id === taak.project_id)
                       return (
                         <div
-                          key={event.id}
-                          className="flex gap-3 group cursor-pointer"
+                          key={`task-${taak.id}`}
+                          className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 p-3 cursor-pointer transition-all hover:shadow-md"
+                          onClick={() => handlePlanTask(taak)}
                         >
-                          {/* Color indicator */}
-                          <div className="flex flex-col items-center flex-shrink-0 pt-1">
-                            <div
-                              className={cn(
-                                'w-2.5 h-2.5 rounded-full',
-                                getEventTypeColor(event.type)
-                              )}
-                            />
-                            <div className="w-px flex-1 bg-gray-200 dark:bg-gray-700 mt-1" />
-                          </div>
-
-                          {/* Content */}
-                          <div className="flex-1 min-w-0 pb-3">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <p className="text-xs font-medium text-muted-foreground">
-                                {isTodayEvent
-                                  ? 'Vandaag'
-                                  : format(start, 'EEE d MMM', { locale: nl })}
-                              </p>
-                              <Badge
-                                className={cn(
-                                  'text-[9px] px-1.5 py-0',
-                                  getEventTypeBadge(event.type)
-                                )}
-                              >
-                                {getEventTypeLabel(event.type)}
-                              </Badge>
-                            </div>
-                            <p className="text-sm font-semibold text-foreground truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                              {event.titel}
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <Clock className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
-                                {format(start, 'HH:mm')}
-                                {' - '}
-                                {format(end, 'HH:mm')}
-                              </span>
-                            </div>
-                            {event.locatie && (
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <MapPin className="w-3 h-3 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground truncate">
-                                  {event.locatie}
-                                </span>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <Badge className="text-[8px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 border-0">
+                                  Projecttaak
+                                </Badge>
                               </div>
-                            )}
+                              <p className="text-sm font-semibold text-purple-700 dark:text-purple-300 truncate">
+                                {taak.titel}
+                              </p>
+                              {project && (
+                                <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                  {project.naam}
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handlePlanTask(taak)
+                              }}
+                            >
+                              Inplannen
+                            </Button>
                           </div>
                         </div>
                       )
@@ -540,150 +1058,261 @@ export function CalendarLayout() {
         </div>
       </div>
 
-      {/* New Event Dialog */}
-      <Dialog open={newEventOpen} onOpenChange={setNewEventOpen}>
-        <DialogContent className="sm:max-w-2xl">
+      {/* ══════════════════════════════════════════════════════════
+          TAAK TOEVOEGEN / BEWERKEN DIALOG
+         ══════════════════════════════════════════════════════════ */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nieuw Evenement</DialogTitle>
-            <DialogDescription>
-              Vul de gegevens in om een nieuw evenement aan te maken.
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                <Wrench className="h-3.5 w-3.5 text-white" />
+              </div>
+              {editingId ? 'Taak bewerken' : 'Taak toevoegen'}
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            {/* Titel */}
-            <div className="grid gap-2">
-              <Label htmlFor="event-titel">Titel *</Label>
+          <div className="grid gap-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
+            {/* Klant selectie */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Selecteer een relatie</Label>
+              <Select
+                value={formData.klant_id || '_none'}
+                onValueChange={(v) => setFormData((p) => ({ ...p, klant_id: v === '_none' ? '' : v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecteer een klant..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">
+                    <span className="text-muted-foreground">Geen klant</span>
+                  </SelectItem>
+                  {klanten.map((k) => (
+                    <SelectItem key={k.id} value={k.id}>
+                      {k.bedrijfsnaam}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Project selectie */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Selecteer een project</Label>
+              <Select
+                value={formData.project_id || '_none'}
+                onValueChange={(v) => handleProjectChange(v === '_none' ? '' : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecteer een project..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">
+                    <span className="text-muted-foreground">Geen project</span>
+                  </SelectItem>
+                  {projecten
+                    .filter((p) => !formData.klant_id || p.klant_id === formData.klant_id)
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{p.naam}</span>
+                          {p.klant_naam && (
+                            <span className="text-xs text-muted-foreground">({p.klant_naam})</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Datum */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Datum</Label>
               <Input
-                id="event-titel"
-                placeholder="Naam van het evenement"
-                value={formData.titel}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, titel: e.target.value }))
-                }
+                type="date"
+                value={formData.datum}
+                onChange={(e) => setFormData((p) => ({ ...p, datum: e.target.value }))}
               />
             </div>
 
-            {/* Beschrijving */}
-            <div className="grid gap-2">
-              <Label htmlFor="event-beschrijving">Beschrijving</Label>
+            {/* Start en Eindtijd */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Starttijd</Label>
+                <Input
+                  type="time"
+                  value={formData.start_tijd}
+                  onChange={(e) => setFormData((p) => ({ ...p, start_tijd: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Eindtijd</Label>
+                <Input
+                  type="time"
+                  value={formData.eind_tijd}
+                  onChange={(e) => setFormData((p) => ({ ...p, eind_tijd: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Geplande tijd */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Geplande tijd</Label>
+              <Input
+                value={formData.geplande_tijd}
+                onChange={(e) => setFormData((p) => ({ ...p, geplande_tijd: e.target.value }))}
+                placeholder="bijv. 4 uur, hele dag..."
+              />
+            </div>
+
+            {/* Medewerker selectie */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Medewerker</Label>
+              {medewerkers.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Geen medewerkers beschikbaar. Voeg ze toe bij Team.
+                </p>
+              ) : (
+                <div className="border rounded-lg p-2 space-y-1 max-h-40 overflow-y-auto">
+                  {medewerkers.map((mw, idx) => {
+                    const isChecked = formData.monteurs.includes(mw.id)
+                    return (
+                      <label
+                        key={mw.id}
+                        className={cn(
+                          'flex items-center gap-2.5 p-1.5 rounded-md cursor-pointer transition-colors',
+                          isChecked
+                            ? 'bg-primary/10'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                        )}
+                      >
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={() => toggleFormMonteur(mw.id)}
+                        />
+                        <div
+                          className={cn(
+                            'w-6 h-6 rounded-full flex items-center justify-center text-[9px] text-white font-bold',
+                            getAvatarColor(idx)
+                          )}
+                        >
+                          {getInitials(mw.naam)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{mw.naam}</p>
+                          <p className="text-[10px] text-muted-foreground">{mw.functie || mw.rol}</p>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+              {formData.monteurs.length > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  {formData.monteurs.length} medewerker{formData.monteurs.length !== 1 ? 's' : ''} geselecteerd
+                </p>
+              )}
+            </div>
+
+            {/* Taakomschrijving */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Taakomschrijving</Label>
               <Textarea
-                id="event-beschrijving"
-                placeholder="Optionele beschrijving"
                 value={formData.beschrijving}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    beschrijving: e.target.value,
-                  }))
-                }
+                onChange={(e) => setFormData((p) => ({ ...p, beschrijving: e.target.value }))}
+                placeholder="Beschrijf de werkzaamheden..."
                 rows={3}
               />
             </div>
 
-            {/* Start en Eind datum */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="event-start">Startdatum *</Label>
-                <Input
-                  id="event-start"
-                  type="datetime-local"
-                  value={formData.start_datum}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      start_datum: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="event-eind">Einddatum *</Label>
-                <Input
-                  id="event-eind"
-                  type="datetime-local"
-                  value={formData.eind_datum}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      eind_datum: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+            {/* Titel (auto-vullen vanuit project, maar aanpasbaar) */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Titel</Label>
+              <Input
+                value={formData.titel}
+                onChange={(e) => setFormData((p) => ({ ...p, titel: e.target.value }))}
+                placeholder="Korte titel voor in de planning..."
+              />
             </div>
 
-            {/* Type en Locatie */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>Type</Label>
+            {/* Locatie */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Locatie</Label>
+              <Input
+                value={formData.locatie}
+                onChange={(e) => setFormData((p) => ({ ...p, locatie: e.target.value }))}
+                placeholder="Adres of locatie..."
+              />
+            </div>
+
+            {/* Materialen */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Materialen (komma-gescheiden)</Label>
+              <Input
+                value={formData.materialen}
+                onChange={(e) => setFormData((p) => ({ ...p, materialen: e.target.value }))}
+                placeholder="bijv. Ladder, Boor, Schroeven..."
+              />
+            </div>
+
+            {/* Status (alleen bij bewerken) */}
+            {editingId && (
+              <div className="grid gap-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Status</Label>
                 <Select
-                  value={formData.type}
-                  onValueChange={(value: CalendarEvent['type']) =>
-                    setFormData((prev) => ({ ...prev, type: value }))
+                  value={formData.status}
+                  onValueChange={(v: MontageAfspraak['status']) =>
+                    setFormData((p) => ({ ...p, status: v }))
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecteer type" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="meeting">Vergadering</SelectItem>
-                    <SelectItem value="deadline">Deadline</SelectItem>
-                    <SelectItem value="herinnering">Herinnering</SelectItem>
-                    <SelectItem value="persoonlijk">Persoonlijk</SelectItem>
+                    {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2">
+                          <div className={cn('w-2 h-2 rounded-full', cfg.darkBg)} />
+                          {cfg.label}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="event-locatie">Locatie</Label>
-                <Input
-                  id="event-locatie"
-                  placeholder="Bijv. Kantoor, Online"
-                  value={formData.locatie}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      locatie: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Kleur */}
-            <div className="grid gap-2">
-              <Label htmlFor="event-kleur">Kleur</Label>
-              <div className="flex items-center gap-3">
-                <Input
-                  id="event-kleur"
-                  type="color"
-                  className="w-12 h-10 p-1 cursor-pointer"
-                  value={formData.kleur}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, kleur: e.target.value }))
-                  }
-                />
-                <span className="text-sm text-muted-foreground">
-                  {formData.kleur}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setNewEventOpen(false)}
-              disabled={isSaving}
-            >
+          <DialogFooter className="gap-2 sm:gap-0">
+            {editingId && (
+              <Button
+                variant="ghost"
+                className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 mr-auto"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Verwijderen
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isSaving}>
               Annuleren
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={handleSaveEvent}
+              onClick={handleSave}
               disabled={isSaving}
+              className="bg-gradient-to-r from-accent to-primary border-0"
             >
-              {isSaving ? 'Opslaan...' : 'Opslaan'}
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  Opslaan...
+                </>
+              ) : editingId ? (
+                'Opslaan'
+              ) : (
+                'Toevoegen'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
