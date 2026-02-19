@@ -235,7 +235,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             {fetchedOfferte.project_id && (
               <button
                 onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
-                className="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                className="inline-flex items-center gap-1 text-xs text-[#386150] dark:text-[#58B09C] hover:underline"
               >
                 Bekijk project
                 <ExternalLink className="h-3 w-3" />

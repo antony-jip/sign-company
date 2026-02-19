@@ -108,7 +108,7 @@ function getFileIcon(type: string, size: string = 'h-8 w-8') {
   if (type.includes('zip') || type.includes('archive'))
     return <FileArchive className={`${size} text-yellow-600`} />
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
-    return <FileImage className={`${size} text-purple-500`} />
+    return <FileImage className={`${size} text-[#58B09C]`} />
   if (type.includes('illustrator') || type.includes('acad'))
     return <File className={`${size} text-orange-500`} />
   return <File className={`${size} text-gray-400`} />
@@ -125,7 +125,7 @@ function getGoedkeuringStatusIcon(status: string) {
   switch (status) {
     case 'goedgekeurd': return <CheckCircle2 className="h-4 w-4 text-green-600" />
     case 'revisie': return <RotateCcw className="h-4 w-4 text-amber-600" />
-    case 'bekeken': return <Eye className="h-4 w-4 text-purple-600" />
+    case 'bekeken': return <Eye className="h-4 w-4 text-[#386150]" />
     default: return <Clock className="h-4 w-4 text-blue-600" />
   }
 }
@@ -134,7 +134,7 @@ function getGoedkeuringStatusColor(status: string) {
   switch (status) {
     case 'goedgekeurd': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
     case 'revisie': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300'
-    case 'bekeken': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+    case 'bekeken': return 'bg-[#CAF7E2]/30 text-[#3D3522] dark:bg-[#386150]/30 dark:text-[#CAF7E2]'
     default: return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
   }
 }
@@ -488,21 +488,21 @@ export function ProjectDetail() {
         </div>
 
         {/* Project Hero Banner */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 text-white">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#3D3522] via-[#386150] to-[#3D3522] p-6 text-white">
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-400 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-400 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#58B09C] rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#CAF7E2] rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
           </div>
 
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center flex-shrink-0">
-                  <Briefcase className="h-6 w-6 text-indigo-300" />
+                  <Briefcase className="h-6 w-6 text-[#CAF7E2]" />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-white">{project.naam}</h1>
-                  <p className="text-sm text-indigo-200/70 mt-0.5 flex items-center gap-1.5">
+                  <p className="text-sm text-[#CAF7E2]/70 mt-0.5 flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5" />
                     {project.klant_naam || 'Onbekende klant'}
                   </p>
@@ -520,7 +520,7 @@ export function ProjectDetail() {
                   size="sm"
                   onClick={handleAiAnalysis}
                   disabled={aiAnalysisLoading}
-                  className="h-8 px-3 text-indigo-200 hover:text-white hover:bg-white/10 border border-white/10"
+                  className="h-8 px-3 text-[#CAF7E2] hover:text-white hover:bg-white/10 border border-white/10"
                 >
                   {aiAnalysisLoading
                     ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
@@ -544,13 +544,13 @@ export function ProjectDetail() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Target className="h-3.5 w-3.5 text-indigo-300" />
-                  <span className="text-[10px] text-indigo-200/80 uppercase tracking-wider font-medium">Voortgang</span>
+                  <Target className="h-3.5 w-3.5 text-[#CAF7E2]" />
+                  <span className="text-[10px] text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Voortgang</span>
                 </div>
                 <p className="text-xl font-bold">{project.voortgang}%</p>
                 <div className="mt-1 h-1 bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full"
+                    className="h-full bg-gradient-to-r from-[#58B09C] to-[#CAF7E2] rounded-full"
                     style={{ width: `${project.voortgang}%` }}
                   />
                 </div>
@@ -558,15 +558,15 @@ export function ProjectDetail() {
 
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-blue-300" />
-                  <span className="text-[10px] text-indigo-200/80 uppercase tracking-wider font-medium">Goedkeuring</span>
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#7dd3b8]" />
+                  <span className="text-[10px] text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Goedkeuring</span>
                 </div>
                 {goedkeuringen.length > 0 ? (
                   <>
                     <p className="text-xl font-bold">
                       {goedkeuringen.filter(g => g.status === 'goedgekeurd').length}/{goedkeuringen.length}
                     </p>
-                    <p className="text-[10px] mt-0.5 text-indigo-200/60">
+                    <p className="text-[10px] mt-0.5 text-[#CAF7E2]/60">
                       {goedkeuringen.some(g => g.status === 'revisie')
                         ? `${goedkeuringen.filter(g => g.status === 'revisie').length} revisie(s)`
                         : 'goedgekeurd'}
@@ -575,20 +575,20 @@ export function ProjectDetail() {
                 ) : (
                   <>
                     <p className="text-xl font-bold">-</p>
-                    <p className="text-[10px] mt-0.5 text-indigo-200/60">nog niet verstuurd</p>
+                    <p className="text-[10px] mt-0.5 text-[#CAF7E2]/60">nog niet verstuurd</p>
                   </>
                 )}
               </div>
 
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <CalendarDays className="h-3.5 w-3.5 text-purple-300" />
-                  <span className="text-[10px] text-indigo-200/80 uppercase tracking-wider font-medium">Deadline</span>
+                  <CalendarDays className="h-3.5 w-3.5 text-[#CAF7E2]" />
+                  <span className="text-[10px] text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Deadline</span>
                 </div>
                 <p className={`text-xl font-bold ${isOverdue ? 'text-amber-400' : ''}`}>
                   {isOverdue ? `${Math.abs(daysLeft)}d` : project.status === 'afgerond' ? 'Klaar' : `${daysLeft}d`}
                 </p>
-                <p className={`text-[10px] mt-0.5 ${isOverdue ? 'text-amber-300/80' : 'text-indigo-200/60'}`}>
+                <p className={`text-[10px] mt-0.5 ${isOverdue ? 'text-amber-300/80' : 'text-[#CAF7E2]/60'}`}>
                   {isOverdue ? 'verlopen' : project.status === 'afgerond' ? 'afgerond' : 'resterend'}
                 </p>
               </div>
@@ -596,10 +596,10 @@ export function ProjectDetail() {
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
                 <div className="flex items-center gap-1.5 mb-1">
                   <TrendingUp className="h-3.5 w-3.5 text-green-300" />
-                  <span className="text-[10px] text-indigo-200/80 uppercase tracking-wider font-medium">Taken</span>
+                  <span className="text-[10px] text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Taken</span>
                 </div>
                 <p className="text-xl font-bold">{takenKlaar}/{takenTotaal}</p>
-                <p className="text-[10px] mt-0.5 text-indigo-200/60">afgerond</p>
+                <p className="text-[10px] mt-0.5 text-[#CAF7E2]/60">afgerond</p>
               </div>
             </div>
           </div>
@@ -616,7 +616,7 @@ export function ProjectDetail() {
                 variant={takenWeergave === 'board' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setTakenWeergave('board')}
-                className={takenWeergave === 'board' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 border-0' : ''}
+                className={takenWeergave === 'board' ? 'bg-gradient-to-r from-[#386150] to-[#58B09C] border-0' : ''}
               >
                 <LayoutGrid className="mr-1.5 h-4 w-4" />
                 Board
@@ -625,7 +625,7 @@ export function ProjectDetail() {
                 variant={takenWeergave === 'tabel' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setTakenWeergave('tabel')}
-                className={takenWeergave === 'tabel' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 border-0' : ''}
+                className={takenWeergave === 'tabel' ? 'bg-gradient-to-r from-[#386150] to-[#58B09C] border-0' : ''}
               >
                 <List className="mr-1.5 h-4 w-4" />
                 Tabel
@@ -641,7 +641,7 @@ export function ProjectDetail() {
               }
             }}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0">
+                <Button size="sm" className="bg-gradient-to-r from-[#386150] to-[#58B09C] border-0">
                   <Plus className="mr-1.5 h-4 w-4" />
                   Nieuwe Taak
                 </Button>
@@ -699,7 +699,7 @@ export function ProjectDetail() {
                   </Button>
                   <Button
                     disabled={!nieuweTaakTitel.trim()}
-                    className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
+                    className="bg-gradient-to-r from-[#386150] to-[#58B09C] border-0"
                     onClick={async () => {
                       try {
                         await createTaak({
@@ -897,7 +897,7 @@ export function ProjectDetail() {
                       key={lid}
                       className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2"
                     >
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[#58B09C] to-[#CAF7E2] flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
                         {getInitials(lid)}
                       </div>
                       <span className="text-sm font-medium text-foreground truncate">{lid}</span>
@@ -937,7 +937,7 @@ export function ProjectDetail() {
                   <Button
                     variant="link"
                     size="sm"
-                    className="text-indigo-600 dark:text-indigo-400 mt-1 h-auto p-0"
+                    className="text-[#386150] dark:text-[#58B09C] mt-1 h-auto p-0"
                     onClick={openNieuweOfferte}
                   >
                     Eerste offerte aanmaken
@@ -1025,7 +1025,7 @@ export function ProjectDetail() {
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-indigo-600" />
+                  <Mail className="h-5 w-5 text-[#386150]" />
                   Offerte versturen via e-mail
                 </DialogTitle>
                 <DialogDescription>
@@ -1066,7 +1066,7 @@ export function ProjectDetail() {
                 </Button>
                 <Button
                   disabled={isEmailVerzenden || !emailOnderwerp.trim()}
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
+                  className="bg-gradient-to-r from-[#386150] to-[#58B09C] border-0"
                   onClick={async () => {
                     setIsEmailVerzenden(true)
                     try {
@@ -1099,7 +1099,7 @@ export function ProjectDetail() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#386150] to-[#58B09C] flex items-center justify-center">
                     <FileText className="h-3.5 w-3.5 text-white" />
                   </div>
                   Bestanden
@@ -1135,8 +1135,8 @@ export function ProjectDetail() {
               <div
                 className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 cursor-pointer ${
                   isDragging
-                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30'
-                    : 'border-gray-300 dark:border-gray-700 hover:border-indigo-400'
+                    ? 'border-[#58B09C] bg-[#58B09C]/10 dark:bg-[#58B09C]/20'
+                    : 'border-gray-300 dark:border-gray-700 hover:border-[#58B09C]'
                 }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => {
@@ -1156,10 +1156,10 @@ export function ProjectDetail() {
                 <div className="flex flex-col items-center gap-2">
                   <Upload className={`h-5 w-5 transition-colors ${
                     isDragging
-                      ? 'text-indigo-600 dark:text-indigo-400'
+                      ? 'text-[#386150] dark:text-[#58B09C]'
                       : 'text-muted-foreground opacity-60'
                   }`} />
-                  <p className={`text-xs font-medium ${isDragging ? 'text-indigo-600 dark:text-indigo-400' : 'text-muted-foreground'}`}>
+                  <p className={`text-xs font-medium ${isDragging ? 'text-[#386150] dark:text-[#58B09C]' : 'text-muted-foreground'}`}>
                     {isDragging ? 'Laat los om te uploaden' : 'Sleep bestanden of klik om te uploaden'}
                   </p>
                 </div>
@@ -1177,7 +1177,7 @@ export function ProjectDetail() {
                         {getFileIcon(doc.type)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        <p className="text-sm font-medium text-foreground truncate group-hover:text-[#386150] dark:group-hover:text-[#58B09C] transition-colors">
                           {doc.naam}
                         </p>
                         <div className="flex items-center gap-2">
@@ -1220,7 +1220,7 @@ export function ProjectDetail() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-600" />
+              <Sparkles className="h-5 w-5 text-[#386150]" />
               AI Projectanalyse
             </DialogTitle>
             <DialogDescription>
@@ -1230,7 +1230,7 @@ export function ProjectDetail() {
           <div className="py-4">
             {aiAnalysisLoading ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-[#386150]" />
                 <p className="text-sm text-muted-foreground">Analyse wordt uitgevoerd...</p>
               </div>
             ) : aiAnalysisResult ? (
@@ -1246,7 +1246,7 @@ export function ProjectDetail() {
             <Button
               onClick={handleAiAnalysis}
               disabled={aiAnalysisLoading}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
+              className="bg-gradient-to-r from-[#386150] to-[#58B09C] border-0"
             >
               {aiAnalysisLoading
                 ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
@@ -1269,7 +1269,7 @@ export function ProjectDetail() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-indigo-600" />
+              <Send className="h-5 w-5 text-[#386150]" />
               Verstuur naar klant ter goedkeuring
             </DialogTitle>
             <DialogDescription>
@@ -1315,7 +1315,7 @@ export function ProjectDetail() {
                       key={doc.id}
                       className={`flex items-center gap-2.5 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                         selectedDocIds.includes(doc.id)
-                          ? 'bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800'
+                          ? 'bg-[#58B09C]/10 dark:bg-[#58B09C]/20 border border-[#58B09C]/30 dark:border-[#58B09C]/30'
                           : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent'
                       }`}
                     >
@@ -1323,7 +1323,7 @@ export function ProjectDetail() {
                         type="checkbox"
                         checked={selectedDocIds.includes(doc.id)}
                         onChange={() => toggleDocSelection(doc.id)}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        className="rounded border-gray-300 text-[#386150] focus:ring-[#58B09C]"
                       />
                       <div className="flex-shrink-0">
                         {getFileIcon(doc.type, 'h-5 w-5')}
@@ -1337,7 +1337,7 @@ export function ProjectDetail() {
                 )}
               </div>
               {selectedDocIds.length > 0 && (
-                <p className="text-xs text-indigo-600">{selectedDocIds.length} bestand(en) geselecteerd</p>
+                <p className="text-xs text-[#386150]">{selectedDocIds.length} bestand(en) geselecteerd</p>
               )}
             </div>
 
@@ -1397,7 +1397,7 @@ export function ProjectDetail() {
             </Button>
             <Button
               disabled={isVersturen || selectedDocIds.length === 0 || !verstuurOnderwerp.trim()}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
+              className="bg-gradient-to-r from-[#386150] to-[#58B09C] border-0"
               onClick={handleVerstuurNaarKlant}
             >
               <Send className="mr-1.5 h-4 w-4" />
@@ -1439,7 +1439,7 @@ function TaakCard({ taak }: { key?: React.Key; taak: Taak }) {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#58B09C] to-[#CAF7E2] flex items-center justify-center flex-shrink-0">
               <span className="text-white text-[9px] font-semibold">
                 {getInitials(taak.toegewezen_aan)}
               </span>

@@ -932,7 +932,7 @@ export function TijdregistratieLayout() {
             </p>
             <div className="mt-2 h-2 w-full rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-indigo-500 transition-all"
+                className="h-full rounded-full bg-[#58B09C] transition-all"
                 style={{ width: `${Math.min((urenDezeMaand / 160) * 100, 100)}%` }}
               />
             </div>

@@ -373,7 +373,7 @@ export function AITextGenerator() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-500" />
+            <Sparkles className="w-5 h-5 text-[#58B09C]" />
             Tekst Configuratie
           </CardTitle>
         </CardHeader>

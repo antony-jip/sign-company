@@ -39,7 +39,7 @@ type PriorityFilter = 'alle' | 'laag' | 'medium' | 'hoog' | 'urgent'
 const DEFAULT_STATUS_COLUMNS = [
   { key: 'concept', label: 'Concept', color: 'from-slate-500/10 to-slate-500/5', accent: 'bg-slate-400 dark:bg-slate-500', headerBg: 'bg-slate-50/80 dark:bg-slate-800/50' },
   { key: 'verzonden', label: 'Verzonden', color: 'from-blue-500/10 to-blue-500/5', accent: 'bg-blue-400 dark:bg-blue-500', headerBg: 'bg-blue-50/80 dark:bg-blue-900/30' },
-  { key: 'bekeken', label: 'Bekeken', color: 'from-violet-500/10 to-violet-500/5', accent: 'bg-violet-400 dark:bg-violet-500', headerBg: 'bg-violet-50/80 dark:bg-violet-900/30' },
+  { key: 'bekeken', label: 'Bekeken', color: 'from-[#58B09C]/10 to-[#58B09C]/5', accent: 'bg-[#58B09C] dark:bg-[#58B09C]', headerBg: 'bg-[#CAF7E2]/30 dark:bg-[#386150]/20' },
   { key: 'goedgekeurd', label: 'Goedgekeurd', color: 'from-emerald-500/10 to-emerald-500/5', accent: 'bg-emerald-400 dark:bg-emerald-500', headerBg: 'bg-emerald-50/80 dark:bg-emerald-900/30' },
   { key: 'afgewezen', label: 'Afgewezen', color: 'from-red-500/10 to-red-500/5', accent: 'bg-red-400 dark:bg-red-500', headerBg: 'bg-red-50/80 dark:bg-red-900/30' },
 ]
@@ -47,7 +47,7 @@ const DEFAULT_STATUS_COLUMNS = [
 const KLEUR_TO_STYLE: Record<string, { color: string; accent: string; headerBg: string }> = {
   gray: { color: 'from-slate-500/10 to-slate-500/5', accent: 'bg-slate-400 dark:bg-slate-500', headerBg: 'bg-slate-50/80 dark:bg-slate-800/50' },
   blue: { color: 'from-blue-500/10 to-blue-500/5', accent: 'bg-blue-400 dark:bg-blue-500', headerBg: 'bg-blue-50/80 dark:bg-blue-900/30' },
-  purple: { color: 'from-violet-500/10 to-violet-500/5', accent: 'bg-violet-400 dark:bg-violet-500', headerBg: 'bg-violet-50/80 dark:bg-violet-900/30' },
+  purple: { color: 'from-[#58B09C]/10 to-[#58B09C]/5', accent: 'bg-[#58B09C] dark:bg-[#58B09C]', headerBg: 'bg-[#CAF7E2]/30 dark:bg-[#386150]/20' },
   green: { color: 'from-emerald-500/10 to-emerald-500/5', accent: 'bg-emerald-400 dark:bg-emerald-500', headerBg: 'bg-emerald-50/80 dark:bg-emerald-900/30' },
   red: { color: 'from-red-500/10 to-red-500/5', accent: 'bg-red-400 dark:bg-red-500', headerBg: 'bg-red-50/80 dark:bg-red-900/30' },
   orange: { color: 'from-orange-500/10 to-orange-500/5', accent: 'bg-orange-400 dark:bg-orange-500', headerBg: 'bg-orange-50/80 dark:bg-orange-900/30' },
@@ -525,12 +525,12 @@ export function QuotesPipeline() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">van verzonden</p>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-violet-200/50 dark:border-violet-800/40 bg-gradient-to-br from-violet-50/80 to-white/80 dark:from-violet-950/40 dark:to-gray-900/80 backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
+        <div className="relative overflow-hidden rounded-2xl border border-[#58B09C]/30 dark:border-[#58B09C]/20 bg-gradient-to-br from-[#CAF7E2]/30 to-white/80 dark:from-[#386150]/30 dark:to-gray-900/80 backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/50">
-              <DollarSign className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+            <div className="p-1.5 rounded-lg bg-[#CAF7E2]/30 dark:bg-[#386150]/30">
+              <DollarSign className="h-4 w-4 text-[#386150] dark:text-[#58B09C]" />
             </div>
-            <span className="text-xs font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wide">Gem. waarde</span>
+            <span className="text-xs font-medium text-[#386150] dark:text-[#58B09C] uppercase tracking-wide">Gem. waarde</span>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(kpis.avgValue)}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">per offerte</p>
@@ -824,7 +824,7 @@ export function QuotesPipeline() {
                   const statusBadgeColors: Record<string, string> = {
                     concept: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
                     verzonden: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-                    bekeken: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+                    bekeken: 'bg-[#CAF7E2]/30 text-[#386150] dark:bg-[#386150]/30 dark:text-[#7dd3b8]',
                     goedgekeurd: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
                     afgewezen: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
                   }

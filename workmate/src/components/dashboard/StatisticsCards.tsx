@@ -121,32 +121,32 @@ export function StatisticsCards() {
       subtitle: `${projecten.length} totaal`,
       change: projecten.length > 0 ? `${Math.round((actieveProjecten / projecten.length) * 100)}%` : undefined,
       icon: FolderKanban,
-      gradient: 'from-blue-500 to-cyan-400',
-      shadowColor: 'shadow-blue-500/20',
+      gradient: 'from-[#58B09C] to-[#7dd3b8]',
+      shadowColor: 'shadow-[#58B09C]/20',
     },
     {
       title: 'Totaal Klanten',
       value: animKlanten.toString(),
       subtitle: `${klanten.filter((k) => k.status === 'actief').length} actief`,
       icon: Users,
-      gradient: 'from-emerald-500 to-teal-400',
-      shadowColor: 'shadow-emerald-500/20',
+      gradient: 'from-[#386150] to-[#58B09C]',
+      shadowColor: 'shadow-[#386150]/20',
     },
     {
       title: 'Open Offertes',
       value: formatCurrency(openstaandeOffertes),
       subtitle: `${offertes.filter((o) => ['verzonden', 'bekeken', 'concept'].includes(o.status)).length} offertes`,
       icon: FileText,
-      gradient: 'from-violet-500 to-purple-400',
-      shadowColor: 'shadow-violet-500/20',
+      gradient: 'from-[#4A442D] to-[#6b6549]',
+      shadowColor: 'shadow-[#4A442D]/20',
     },
     {
       title: 'Goedgekeurd',
       value: formatCurrency(goedgekeurdeOffertes),
       subtitle: `${offertes.filter((o) => o.status === 'goedgekeurd').length} goedgekeurd`,
       icon: PiggyBank,
-      gradient: 'from-amber-500 to-orange-400',
-      shadowColor: 'shadow-amber-500/20',
+      gradient: 'from-[#8b7355] to-[#b09670]',
+      shadowColor: 'shadow-[#8b7355]/20',
     },
   ]
 
@@ -175,7 +175,7 @@ export function StatisticsCards() {
 
               <div className="mt-3 flex items-center gap-2">
                 {stat.change && (
-                  <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                  <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-[#386150] dark:text-[#58B09C] bg-[#CAF7E2]/40 dark:bg-[#58B09C]/10 px-1.5 py-0.5 rounded-md">
                     <ArrowUpRight className="w-3 h-3" />
                     {stat.change}
                   </span>

@@ -90,7 +90,7 @@ export function Header() {
       <div className="flex items-center gap-4 min-w-0">
         <div className="w-10 md:hidden" />
         <div>
-          <h1 className="text-lg font-semibold text-foreground truncate">
+          <h1 className="text-lg font-semibold text-foreground truncate font-display">
             {pageTitle}
           </h1>
         </div>

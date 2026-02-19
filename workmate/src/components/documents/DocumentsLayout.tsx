@@ -36,7 +36,7 @@ function getFileIconColor(type: string): string {
   const lower = type.toLowerCase()
   if (lower.includes('pdf')) return 'text-red-500'
   if (lower.includes('spreadsheet') || lower.includes('xlsx') || lower.includes('xls')) return 'text-green-500'
-  if (lower.includes('image') || lower.includes('png') || lower.includes('jpg') || lower.includes('jpeg')) return 'text-purple-500'
+  if (lower.includes('image') || lower.includes('png') || lower.includes('jpg') || lower.includes('jpeg')) return 'text-[#58B09C]'
   if (lower.includes('word') || lower.includes('docx') || lower.includes('doc')) return 'text-blue-500'
   return 'text-gray-500'
 }
@@ -238,7 +238,7 @@ export function DocumentsLayout() {
                 pdf: 'bg-red-500',
                 docx: 'bg-blue-500',
                 xlsx: 'bg-green-500',
-                afbeelding: 'bg-purple-500',
+                afbeelding: 'bg-[#58B09C]',
               }
               return (
                 <button

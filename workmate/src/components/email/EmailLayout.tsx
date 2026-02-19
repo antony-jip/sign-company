@@ -49,7 +49,7 @@ const folderTabs: FolderTab[] = [
 const labelColors: Record<string, string> = {
   offerte: 'bg-blue-400',
   klant: 'bg-emerald-400',
-  project: 'bg-violet-400',
+  project: 'bg-[#58B09C]',
   leverancier: 'bg-amber-400',
 }
 
@@ -67,8 +67,8 @@ function extractSenderEmail(from: string): string {
 
 function getAvatarColor(name: string): string {
   const colors = [
-    'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500',
-    'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-pink-500',
+    'bg-blue-500', 'bg-emerald-500', 'bg-[#58B09C]', 'bg-amber-500',
+    'bg-rose-500', 'bg-cyan-500', 'bg-[#58B09C]', 'bg-pink-500',
     'bg-teal-500', 'bg-orange-500',
   ]
   const index = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length
@@ -527,7 +527,7 @@ export function EmailLayout() {
                             </span>
                             <span className="text-[11px] text-muted-foreground flex-shrink-0 flex items-center gap-1">
                               {email.scheduled_at && email.map === 'gepland' && (
-                                <Clock className="w-3 h-3 text-purple-500" />
+                                <Clock className="w-3 h-3 text-[#58B09C]" />
                               )}
                               {formatShortDate(email.scheduled_at || email.datum)}
                             </span>

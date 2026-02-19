@@ -75,7 +75,7 @@ const statusIcons: Record<string, React.ReactNode> = {
 function getStatusBorderColor(status: string): string {
   switch (status) {
     case 'actief': return 'border-l-green-500'
-    case 'gepland': return 'border-l-indigo-500'
+    case 'gepland': return 'border-l-[#58B09C]'
     case 'in-review': return 'border-l-amber-500'
     case 'afgerond': return 'border-l-emerald-500'
     case 'on-hold': return 'border-l-red-500'
@@ -86,7 +86,7 @@ function getStatusBorderColor(status: string): string {
 function getStatusDotColor(status: string): string {
   switch (status) {
     case 'actief': return 'bg-green-500'
-    case 'gepland': return 'bg-indigo-500'
+    case 'gepland': return 'bg-[#58B09C]'
     case 'in-review': return 'bg-amber-500'
     case 'afgerond': return 'bg-emerald-500'
     case 'on-hold': return 'bg-red-500'
@@ -211,7 +211,7 @@ export function ProjectsList() {
       {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#386150] to-[#58B09C] flex items-center justify-center shadow-lg shadow-[#58B09C]/20">
             <FolderKanban className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -221,7 +221,7 @@ export function ProjectsList() {
             </p>
           </div>
         </div>
-        <Button asChild className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 border-0">
+        <Button asChild className="bg-gradient-to-r from-[#386150] to-[#58B09C] hover:from-[#2d4f40] hover:to-[#4a9a88] shadow-lg shadow-[#58B09C]/25 border-0">
           <Link to="/projecten/nieuw">
             <Plus className="mr-2 h-4 w-4" />
             Nieuw Project
@@ -230,18 +230,18 @@ export function ProjectsList() {
       </div>
 
       {/* ── Project Briefing ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 text-white">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#3D3522] via-[#386150] to-[#3D3522] p-6 text-white">
         {/* Background decoration */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-400 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-400 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#58B09C] rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#CAF7E2] rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
         </div>
 
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-4">
-            <Briefcase className="h-5 w-5 text-indigo-300" />
+            <Briefcase className="h-5 w-5 text-[#CAF7E2]" />
             <h2 className="text-lg font-semibold text-white">Project Briefing</h2>
-            <span className="text-xs text-indigo-300/70 ml-auto">
+            <span className="text-xs text-[#CAF7E2]/70 ml-auto">
               {new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </span>
           </div>
@@ -250,53 +250,53 @@ export function ProjectsList() {
             {/* Totaal */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
-                <FolderKanban className="h-4 w-4 text-indigo-300" />
-                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Totaal</span>
+                <FolderKanban className="h-4 w-4 text-[#CAF7E2]" />
+                <span className="text-xs text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Totaal</span>
               </div>
               <p className="text-2xl font-bold">{projecten.length}</p>
-              <p className="text-xs text-indigo-200/60 mt-0.5">projecten</p>
+              <p className="text-xs text-[#CAF7E2]/60 mt-0.5">projecten</p>
             </div>
 
             {/* Actief */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="h-4 w-4 text-green-400" />
-                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Actief</span>
+                <span className="text-xs text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Actief</span>
               </div>
               <p className="text-2xl font-bold text-green-400">{briefing.actief}</p>
-              <p className="text-xs text-indigo-200/60 mt-0.5">lopend</p>
+              <p className="text-xs text-[#CAF7E2]/60 mt-0.5">lopend</p>
             </div>
 
             {/* Afgerond */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Klaar</span>
+                <span className="text-xs text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Klaar</span>
               </div>
               <p className="text-2xl font-bold text-emerald-400">{briefing.afgerond}</p>
-              <p className="text-xs text-indigo-200/60 mt-0.5">afgerond</p>
+              <p className="text-xs text-[#CAF7E2]/60 mt-0.5">afgerond</p>
             </div>
 
             {/* Verlopen */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle className="h-4 w-4 text-amber-400" />
-                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Verlopen</span>
+                <span className="text-xs text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Verlopen</span>
               </div>
               <p className={`text-2xl font-bold ${briefing.overdue > 0 ? 'text-amber-400' : 'text-white'}`}>
                 {briefing.overdue}
               </p>
-              <p className="text-xs text-indigo-200/60 mt-0.5">over deadline</p>
+              <p className="text-xs text-[#CAF7E2]/60 mt-0.5">over deadline</p>
             </div>
 
             {/* Budget */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
-                <DollarSign className="h-4 w-4 text-blue-300" />
-                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Budget</span>
+                <DollarSign className="h-4 w-4 text-[#7dd3b8]" />
+                <span className="text-xs text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Budget</span>
               </div>
               <p className="text-xl font-bold">{formatCurrency(briefing.totaalBudget)}</p>
-              <p className="text-xs text-indigo-200/60 mt-0.5">
+              <p className="text-xs text-[#CAF7E2]/60 mt-0.5">
                 {formatCurrency(briefing.totaalBesteed)} besteed
               </p>
             </div>
@@ -304,13 +304,13 @@ export function ProjectsList() {
             {/* Voortgang */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
-                <BarChart3 className="h-4 w-4 text-violet-300" />
-                <span className="text-xs text-indigo-200/80 uppercase tracking-wider font-medium">Voortgang</span>
+                <BarChart3 className="h-4 w-4 text-[#CAF7E2]" />
+                <span className="text-xs text-[#CAF7E2]/80 uppercase tracking-wider font-medium">Voortgang</span>
               </div>
               <p className="text-2xl font-bold">{briefing.gemiddeldeVoortgang}%</p>
               <div className="mt-1.5 h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full transition-all duration-700"
+                  className="h-full bg-gradient-to-r from-[#58B09C] to-[#CAF7E2] rounded-full transition-all duration-700"
                   style={{ width: `${briefing.gemiddeldeVoortgang}%` }}
                 />
               </div>
@@ -441,7 +441,7 @@ export function ProjectsList() {
               className={cn(
                 'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
                 prioriteitFilter === optie.value
-                  ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300'
+                  ? 'bg-[#58B09C]/10 text-[#386150] dark:bg-[#58B09C]/20 dark:text-[#7dd3b8]'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               )}
             >
@@ -590,7 +590,7 @@ export function ProjectsList() {
                         <div>
                           <Link
                             to={`/projecten/${project.id}`}
-                            className="text-sm font-semibold text-foreground hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                            className="text-sm font-semibold text-foreground hover:text-[#386150] dark:hover:text-[#58B09C] transition-colors"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {project.naam}
@@ -607,8 +607,8 @@ export function ProjectsList() {
                         <div className="flex items-center gap-2">
                           {project.team_leden.length > 0 ? (
                             <>
-                              <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
-                                <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                              <div className="w-7 h-7 rounded-full bg-[#58B09C]/10 dark:bg-[#58B09C]/20 flex items-center justify-center flex-shrink-0">
+                                <span className="text-[10px] font-semibold text-[#386150] dark:text-[#58B09C]">
                                   {project.team_leden[0].charAt(0).toUpperCase()}
                                 </span>
                               </div>
@@ -672,7 +672,7 @@ export function ProjectsList() {
                               className={cn(
                                 'h-full rounded-full transition-all',
                                 project.voortgang >= 100 ? 'bg-emerald-500' :
-                                project.voortgang >= 60 ? 'bg-indigo-500' :
+                                project.voortgang >= 60 ? 'bg-[#58B09C]' :
                                 project.voortgang >= 30 ? 'bg-blue-500' : 'bg-gray-400'
                               )}
                               style={{ width: `${Math.min(project.voortgang, 100)}%` }}
@@ -740,21 +740,21 @@ export function ProjectsList() {
                 className="group block"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <Card className="h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-0.5 border-gray-200/80 dark:border-gray-700/80 relative">
+                <Card className="h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-[#58B09C]/5 hover:-translate-y-0.5 border-gray-200/80 dark:border-gray-700/80 relative">
                   {/* Top accent line */}
                   <div className={`absolute top-0 left-0 right-0 h-0.5 ${
                     project.status === 'actief' ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
                     project.status === 'afgerond' ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
                     project.status === 'in-review' ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
                     project.status === 'on-hold' ? 'bg-gradient-to-r from-orange-400 to-red-500' :
-                    'bg-gradient-to-r from-indigo-400 to-purple-500'
+                    'bg-gradient-to-r from-[#58B09C] to-[#CAF7E2]'
                   }`} />
 
                   <CardContent className="p-5">
                     {/* Header: naam + badges */}
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                        <h3 className="font-semibold text-foreground group-hover:text-[#386150] dark:group-hover:text-[#58B09C] transition-colors truncate">
                           {project.naam}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
@@ -793,9 +793,9 @@ export function ProjectsList() {
                             project.voortgang >= 100
                               ? 'bg-gradient-to-r from-emerald-400 to-green-500'
                               : project.voortgang >= 60
-                              ? 'bg-gradient-to-r from-indigo-400 to-purple-500'
+                              ? 'bg-gradient-to-r from-[#386150] to-[#58B09C]'
                               : project.voortgang >= 30
-                              ? 'bg-gradient-to-r from-blue-400 to-indigo-500'
+                              ? 'bg-gradient-to-r from-[#58B09C] to-[#7dd3b8]'
                               : 'bg-gradient-to-r from-gray-300 to-gray-400'
                           }`}
                           style={{ width: `${project.voortgang}%` }}

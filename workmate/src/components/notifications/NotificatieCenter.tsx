@@ -62,8 +62,8 @@ const typeConfig: Record<
   },
   montage_gepland: {
     icon: Truck,
-    colorClass: "text-violet-600",
-    bgClass: "bg-violet-100",
+    colorClass: "text-[#386150]",
+    bgClass: "bg-[#CAF7E2]/30",
   },
   betaling_ontvangen: {
     icon: Banknote,

@@ -2202,10 +2202,10 @@ function MeldingenTab() {
           </div>
 
           {/* Status wijzigingen */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-[#CAF7E2]/20 dark:bg-[#386150]/20 border border-[#58B09C]/30 dark:border-[#58B09C]/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <Settings className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <div className="w-10 h-10 rounded-lg bg-[#CAF7E2]/30 dark:bg-[#386150]/30 flex items-center justify-center">
+                <Settings className="w-5 h-5 text-[#386150] dark:text-[#7dd3b8]" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -2269,8 +2269,8 @@ function IntegratiesTab() {
       description: 'AI-functionaliteit voor tekst generatie en analyse',
       connected: openaiConfigured,
       icon: (
-        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-          <span className="text-purple-700 dark:text-purple-400 font-bold text-sm">AI</span>
+        <div className="w-10 h-10 bg-[#CAF7E2]/30 dark:bg-[#386150]/30 rounded-lg flex items-center justify-center">
+          <span className="text-[#386150] dark:text-[#7dd3b8] font-bold text-sm">AI</span>
         </div>
       ),
     },

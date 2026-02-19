@@ -1447,7 +1447,7 @@ export async function updateTekeningGoedkeuringByToken(
 const DEFAULT_PIPELINE_STAPPEN = [
   { key: 'concept', label: 'Concept', kleur: 'gray', volgorde: 0, actief: true },
   { key: 'verzonden', label: 'Verzonden', kleur: 'blue', volgorde: 1, actief: true },
-  { key: 'bekeken', label: 'Bekeken', kleur: 'purple', volgorde: 2, actief: true },
+  { key: 'bekeken', label: 'Bekeken', kleur: 'teal', volgorde: 2, actief: true },
   { key: 'goedgekeurd', label: 'Goedgekeurd', kleur: 'green', volgorde: 3, actief: true },
   { key: 'afgewezen', label: 'Afgewezen', kleur: 'red', volgorde: 4, actief: true },
 ]

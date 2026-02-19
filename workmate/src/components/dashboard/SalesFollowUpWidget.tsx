@@ -440,7 +440,7 @@ export function SalesFollowUpWidget() {
                     className={cn(
                       'text-xs rounded-lg data-[state=active]:shadow-sm transition-all',
                       upcomingItems.length > 0
-                        ? 'data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/40 dark:data-[state=active]:text-blue-300'
+                        ? 'data-[state=active]:bg-[#58B09C]/10 data-[state=active]:text-[#386150] dark:data-[state=active]:bg-[#58B09C]/20 dark:data-[state=active]:text-[#7dd3b8]'
                         : 'data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700'
                     )}
                   >
@@ -538,7 +538,7 @@ export function SalesFollowUpWidget() {
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
             <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-gray-50/80 dark:bg-gray-800/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
-                <TrendingUp className="h-3 w-3 text-blue-500" />
+                <TrendingUp className="h-3 w-3 text-[#58B09C]" />
                 <span className="text-[11px] text-gray-500 dark:text-gray-400">Open</span>
               </div>
               <span className="text-sm font-bold text-gray-900 dark:text-white">
@@ -564,7 +564,7 @@ export function SalesFollowUpWidget() {
 
             <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-gray-50/80 dark:bg-gray-800/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
-                <Timer className="h-3 w-3 text-purple-500" />
+                <Timer className="h-3 w-3 text-[#4A442D]" />
                 <span className="text-[11px] text-gray-500 dark:text-gray-400">Gem. reactie</span>
               </div>
               <span className="text-sm font-bold text-gray-900 dark:text-white">

@@ -41,34 +41,34 @@ export function truncate(str: string, length: number): string {
 
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {
-    actief: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    inactief: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-    prospect: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-    gepland: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-    'in-review': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-    afgerond: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    'on-hold': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-    concept: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-    verzonden: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-    bekeken: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-    goedgekeurd: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    afgewezen: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-    todo: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-    bezig: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-    review: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-    klaar: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    definitief: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    gearchiveerd: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+    actief: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    inactief: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400',
+    prospect: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
+    gepland: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+    'in-review': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+    afgerond: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    'on-hold': 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+    concept: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400',
+    verzonden: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
+    bekeken: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+    goedgekeurd: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    afgewezen: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+    todo: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400',
+    bezig: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
+    review: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+    klaar: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    definitief: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    gearchiveerd: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400',
   }
-  return colors[status] || 'bg-gray-100 text-gray-800'
+  return colors[status] || 'bg-stone-100 text-stone-700'
 }
 
 export function getPriorityColor(priority: string): string {
   const colors: Record<string, string> = {
-    laag: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-    hoog: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-    kritiek: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    laag: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+    hoog: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+    kritiek: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
   }
-  return colors[priority] || 'bg-gray-100 text-gray-800'
+  return colors[priority] || 'bg-stone-100 text-stone-700'
 }

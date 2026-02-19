@@ -121,8 +121,8 @@ export function FinancialLayout() {
       label: 'Openstaande Offertes',
       value: String(openstaandeOffertes.length),
       icon: Receipt,
-      color: 'text-purple-600 dark:text-purple-400',
-      bg: 'bg-purple-50 dark:bg-purple-900/30',
+      color: 'text-[#386150] dark:text-[#7dd3b8]',
+      bg: 'bg-[#CAF7E2]/20 dark:bg-[#386150]/30',
     },
   ]
 

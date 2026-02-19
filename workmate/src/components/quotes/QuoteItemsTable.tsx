@@ -229,7 +229,7 @@ export function QuoteItemsTable({
                       size="icon"
                       onClick={() => handleAiSuggest(item.id)}
                       disabled={aiLoadingItemId === item.id}
-                      className="h-7 w-7 text-purple-400 hover:text-purple-600 flex-shrink-0"
+                      className="h-7 w-7 text-[#7dd3b8] hover:text-[#386150] flex-shrink-0"
                     >
                       {aiLoadingItemId === item.id
                         ? <Loader2 className="h-3.5 w-3.5 animate-spin" />

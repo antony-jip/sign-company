@@ -204,7 +204,7 @@ function processQuery(q: string, data: BusinessData): { text: string; data?: Res
         type: 'metrics',
         metrics: [
           { label: 'Actief', value: actief.length, icon: <FolderKanban className="w-4 h-4" />, color: 'blue' },
-          { label: 'Gepland', value: gepland.length, icon: <Calendar className="w-4 h-4" />, color: 'violet' },
+          { label: 'Gepland', value: gepland.length, icon: <Calendar className="w-4 h-4" />, color: 'teal' },
           { label: 'Budget', value: eur(totaalBudget), sub: `${eur(totaalBesteed)} besteed`, icon: <Euro className="w-4 h-4" />, color: 'emerald' },
           { label: 'Afgerond', value: afgerond.length, icon: <CheckSquare className="w-4 h-4" />, color: 'gray' },
         ]
@@ -283,7 +283,7 @@ function processQuery(q: string, data: BusinessData): { text: string; data?: Res
           { label: 'Actief', value: actief.length, icon: <Users className="w-4 h-4" />, color: 'emerald' },
           { label: 'Prospects', value: prospect.length, icon: <Users className="w-4 h-4" />, color: 'blue' },
           { label: 'Inactief', value: inactief.length, icon: <Users className="w-4 h-4" />, color: 'gray' },
-          { label: 'Totaal', value: all.length, icon: <Users className="w-4 h-4" />, color: 'violet' },
+          { label: 'Totaal', value: all.length, icon: <Users className="w-4 h-4" />, color: 'teal' },
         ]
       }
     }
@@ -305,7 +305,7 @@ function processQuery(q: string, data: BusinessData): { text: string; data?: Res
         metrics: [
           { label: 'Omzet', value: eur(omzet), icon: <Euro className="w-4 h-4" />, color: 'emerald', trend: 'up' },
           { label: 'Goedgekeurd', value: eur(goedgekeurdeOffertes.reduce((s, o) => s + o.totaal, 0)), icon: <TrendingUp className="w-4 h-4" />, color: 'blue' },
-          { label: 'Pipeline', value: eur(pipeline), icon: <BarChart3 className="w-4 h-4" />, color: 'violet' },
+          { label: 'Pipeline', value: eur(pipeline), icon: <BarChart3 className="w-4 h-4" />, color: 'teal' },
         ]
       }
     }
@@ -353,7 +353,7 @@ function processQuery(q: string, data: BusinessData): { text: string; data?: Res
         type: 'metrics',
         metrics: [
           { label: 'Open Offertes', value: openOffertes.length, sub: eur(pipeline), icon: <FileText className="w-4 h-4" />, color: 'blue' },
-          { label: 'Actieve Projecten', value: actieveProjecten.length, icon: <FolderKanban className="w-4 h-4" />, color: 'violet' },
+          { label: 'Actieve Projecten', value: actieveProjecten.length, icon: <FolderKanban className="w-4 h-4" />, color: 'teal' },
           { label: 'Open Taken', value: openTaken.length, icon: <CheckSquare className="w-4 h-4" />, color: 'amber' },
           { label: 'Klanten', value: data.klanten.filter(k => k.status === 'actief').length, icon: <Users className="w-4 h-4" />, color: 'emerald' },
         ],
@@ -406,9 +406,9 @@ function formatDate(d?: string): string {
 
 function getMetricColors(color: string) {
   const map: Record<string, { bg: string; text: string; icon: string }> = {
-    blue: { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', icon: 'text-blue-500' },
+    blue: { bg: 'bg-[#58B09C]/10 dark:bg-[#58B09C]/20', text: 'text-[#386150] dark:text-[#7dd3b8]', icon: 'text-[#58B09C]' },
     emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300', icon: 'text-emerald-500' },
-    violet: { bg: 'bg-violet-50 dark:bg-violet-950/40', text: 'text-violet-700 dark:text-violet-300', icon: 'text-violet-500' },
+    violet: { bg: 'bg-[#4A442D]/10 dark:bg-[#4A442D]/30', text: 'text-[#4A442D] dark:text-[#CAF7E2]', icon: 'text-[#58B09C]' },
     amber: { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300', icon: 'text-amber-500' },
     red: { bg: 'bg-red-50 dark:bg-red-950/40', text: 'text-red-700 dark:text-red-300', icon: 'text-red-500' },
     gray: { bg: 'bg-gray-50 dark:bg-gray-800/40', text: 'text-gray-700 dark:text-gray-300', icon: 'text-gray-500' },
@@ -561,7 +561,7 @@ export function WorkmateAIChat() {
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="flex-shrink-0 px-6 pt-5 pb-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-purple-200 dark:shadow-purple-900/30">
+          <div className="p-2.5 bg-gradient-to-br from-[#386150] to-[#58B09C] rounded-xl shadow-lg shadow-[#58B09C]/30 dark:shadow-[#386150]/30">
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -606,8 +606,8 @@ export function WorkmateAIChat() {
         {messages.length === 0 ? (
           /* Empty state with suggestions */
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 flex items-center justify-center mb-4">
-              <Sparkles className="w-7 h-7 text-violet-500" />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#CAF7E2]/30 to-[#58B09C]/10 dark:from-[#4A442D]/40 dark:to-[#386150]/40 flex items-center justify-center mb-4">
+              <Sparkles className="w-7 h-7 text-[#58B09C]" />
             </div>
             <p className="text-sm font-medium text-foreground mb-1">Stel een vraag</p>
             <p className="text-xs text-muted-foreground mb-6 text-center max-w-xs">
@@ -640,7 +640,7 @@ export function WorkmateAIChat() {
                 ) : (
                   <div className="space-y-3">
                     <div className="flex items-start gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#386150] to-[#58B09C] flex items-center justify-center flex-shrink-0 mt-0.5">
                         <Bot className="w-3.5 h-3.5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">

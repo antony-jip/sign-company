@@ -67,7 +67,7 @@ type SortField = 'titel' | 'status' | 'prioriteit' | 'toegewezen_aan' | 'deadlin
 const STATUS_COLUMNS: { key: TaakStatus; label: string; color: string }[] = [
   { key: 'todo', label: 'Todo', color: 'bg-gray-500' },
   { key: 'bezig', label: 'Bezig', color: 'bg-blue-500' },
-  { key: 'review', label: 'Review', color: 'bg-purple-500' },
+  { key: 'review', label: 'Review', color: 'bg-[#58B09C]' },
   { key: 'klaar', label: 'Klaar', color: 'bg-green-500' },
 ]
 
@@ -518,7 +518,7 @@ export function TasksLayout() {
               alle: '',
               todo: 'bg-gray-500',
               bezig: 'bg-blue-500',
-              review: 'bg-purple-500',
+              review: 'bg-[#58B09C]',
               klaar: 'bg-green-500',
             }
             const count = f === 'alle' ? taken.length : taken.filter((t) => t.status === f).length
@@ -567,7 +567,7 @@ export function TasksLayout() {
                 className={cn(
                   'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
                   prioriteitFilter === f
-                    ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300'
+                    ? 'bg-[#CAF7E2]/30 text-[#386150] dark:bg-[#386150]/30 dark:text-[#7dd3b8]'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >

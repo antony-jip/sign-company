@@ -34,7 +34,7 @@ import type { TekeningGoedkeuring, Document, Offerte, OfferteItem, Klant, Projec
 function getFileIcon(type: string) {
   if (type.includes('pdf')) return <FileText className="h-10 w-10 text-red-500" />
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
-    return <FileImage className="h-10 w-10 text-purple-500" />
+    return <FileImage className="h-10 w-10 text-[#58B09C]" />
   return <File className="h-10 w-10 text-gray-400" />
 }
 
@@ -242,7 +242,7 @@ export function ClientApprovalPage() {
   const offerteTotaal = offerteSubtotaal + totaalBtw
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-[#CAF7E2]/20 to-[#58B09C]/5">
       <Toaster position="top-center" richColors />
 
       {/* Success Animation Overlay */}
@@ -277,7 +277,7 @@ export function ClientApprovalPage() {
               {isImageType(previewDoc.type) ? (
                 <div className="bg-gray-50 p-4 flex items-center justify-center min-h-[300px]">
                   <div className="text-center">
-                    <FileImage className="h-20 w-20 text-purple-300 mx-auto mb-3" />
+                    <FileImage className="h-20 w-20 text-[#58B09C]/50 mx-auto mb-3" />
                     <p className="text-sm text-gray-500">Afbeelding preview</p>
                     <p className="text-xs text-gray-400 mt-1">{previewDoc.naam} ({formatFileSize(previewDoc.grootte)})</p>
                   </div>
@@ -301,7 +301,7 @@ export function ClientApprovalPage() {
         <div className="max-w-4xl mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center flex-shrink-0">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#386150] to-[#3D3522] flex items-center justify-center flex-shrink-0">
                 <Building2 className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -327,7 +327,7 @@ export function ClientApprovalPage() {
             {/* Connection line */}
             <div className="absolute top-5 left-[10%] right-[10%] h-0.5 bg-gray-200" />
             <div
-              className="absolute top-5 left-[10%] h-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-700"
+              className="absolute top-5 left-[10%] h-0.5 bg-gradient-to-r from-[#58B09C] to-[#386150] transition-all duration-700"
               style={{ width: `${currentStap >= 2 ? 80 : currentStap * 40}%` }}
             />
 
@@ -487,7 +487,7 @@ export function ClientApprovalPage() {
                           <span className="text-xs text-gray-500">{formatFileSize(doc.grootte)}</span>
                           <span className="text-xs text-gray-400">{formatDate(doc.created_at)}</span>
                           {isImageType(doc.type) && (
-                            <span className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                            <span className="inline-flex items-center gap-1 text-xs text-[#386150] bg-[#CAF7E2]/40 px-1.5 py-0.5 rounded">
                               <ZoomIn className="h-3 w-3" />
                               Preview
                             </span>

@@ -125,7 +125,7 @@ export function CalendarMiniWidget() {
                 className={cn(
                   'relative flex flex-col items-center justify-center h-8 rounded-md text-sm transition-colors',
                   isTodayDate
-                    ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold shadow-sm'
+                    ? 'bg-gradient-to-br from-[#386150] to-[#58B09C] text-white font-bold shadow-sm'
                     : 'text-foreground/80 hover:bg-muted/60'
                 )}
               >
@@ -136,7 +136,7 @@ export function CalendarMiniWidget() {
                       'absolute bottom-0.5 h-1 w-1 rounded-full',
                       isTodayDate
                         ? 'bg-white'
-                        : 'bg-blue-500 dark:bg-blue-400'
+                        : 'bg-[#58B09C] dark:bg-[#58B09C]'
                     )}
                   />
                 )}

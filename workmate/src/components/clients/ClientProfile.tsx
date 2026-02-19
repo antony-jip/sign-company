@@ -75,7 +75,7 @@ import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoo
 function getStatusBarColor(status: string): string {
   switch (status) {
     case 'actief': return 'bg-green-500'
-    case 'gepland': return 'bg-indigo-500'
+    case 'gepland': return 'bg-[#58B09C]'
     case 'in-review': return 'bg-amber-500'
     case 'afgerond': return 'bg-emerald-500'
     case 'on-hold': return 'bg-red-500'
@@ -86,7 +86,7 @@ function getStatusBarColor(status: string): string {
 function getStatusBorderColor(status: string): string {
   switch (status) {
     case 'actief': return 'border-l-green-500'
-    case 'gepland': return 'border-l-indigo-500'
+    case 'gepland': return 'border-l-[#58B09C]'
     case 'in-review': return 'border-l-amber-500'
     case 'afgerond': return 'border-l-emerald-500'
     case 'on-hold': return 'border-l-red-500'
@@ -305,7 +305,7 @@ export function ClientProfile() {
           {/* Toevoegen dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25 border-0">
+              <Button className="bg-gradient-to-r from-[#386150] to-[#58B09C] hover:from-[#2d4f40] hover:to-[#4a9a88] shadow-lg shadow-[#58B09C]/25 border-0">
                 Toevoegen
                 <ChevronDown className="w-4 h-4 ml-1" />
               </Button>
@@ -315,7 +315,7 @@ export function ClientProfile() {
                 className="gap-2 cursor-pointer"
                 onClick={() => navigate(`/projecten/nieuw?klant=${id}`)}
               >
-                <FolderKanban className="w-4 h-4 text-indigo-500" />
+                <FolderKanban className="w-4 h-4 text-[#58B09C]" />
                 Project
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -455,7 +455,7 @@ export function ClientProfile() {
         <Card className="border-gray-200 dark:border-gray-800">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-purple-500" />
+              <CreditCard className="w-4 h-4 text-[#58B09C]" />
               Financieel
             </CardTitle>
           </CardHeader>
@@ -521,7 +521,7 @@ export function ClientProfile() {
                   className={cn(
                     'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                     activeTab === tab.key
-                      ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
+                      ? 'bg-[#58B09C] text-white shadow-md shadow-[#58B09C]/25'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   )}
                 >
@@ -602,8 +602,8 @@ export function ClientProfile() {
                               <td className="py-3 px-4 hidden md:table-cell">
                                 {project.team_leden.length > 0 ? (
                                   <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
-                                      <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                                    <div className="w-6 h-6 rounded-full bg-[#CAF7E2]/30 dark:bg-[#386150]/30 flex items-center justify-center flex-shrink-0">
+                                      <span className="text-[10px] font-semibold text-[#386150] dark:text-[#58B09C]">
                                         {project.team_leden[0].charAt(0).toUpperCase()}
                                       </span>
                                     </div>
