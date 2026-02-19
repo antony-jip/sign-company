@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -30,60 +27,29 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  Search,
   Plus,
-  Columns3,
-  List,
   MoreHorizontal,
   Pencil,
   Trash2,
-  Clock,
   CalendarDays,
-  User,
-  FolderOpen,
-  AlertCircle,
   Loader2,
   CheckCircle2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  GripVertical,
+  Circle,
+  ChevronDown,
+  ChevronRight,
+  Flag,
+  Hash,
+  Inbox,
+  Search,
 } from 'lucide-react'
-import { cn, formatDate, getStatusColor, getPriorityColor } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten } from '@/services/supabaseService'
-import type { Taak, Project, SortDirection } from '@/types'
-
-// ============ CONSTANTS ============
-
-type ViewMode = 'kanban' | 'table'
-type StatusFilter = 'alle' | 'todo' | 'bezig' | 'review' | 'klaar'
-type PrioriteitFilter = 'alle' | 'laag' | 'medium' | 'hoog' | 'kritiek'
+import type { Taak, Project } from '@/types'
 
 type TaakStatus = Taak['status']
 type TaakPrioriteit = Taak['prioriteit']
-type SortField = 'titel' | 'status' | 'prioriteit' | 'toegewezen_aan' | 'deadline' | 'project_id' | 'bestede_tijd'
-
-const STATUS_COLUMNS: { key: TaakStatus; label: string; color: string }[] = [
-  { key: 'todo', label: 'Todo', color: 'bg-gray-500' },
-  { key: 'bezig', label: 'Bezig', color: 'bg-blue-500' },
-  { key: 'review', label: 'Review', color: 'bg-[#58B09C]' },
-  { key: 'klaar', label: 'Klaar', color: 'bg-green-500' },
-]
-
-const STATUS_LABELS: Record<TaakStatus, string> = {
-  todo: 'Todo',
-  bezig: 'Bezig',
-  review: 'Review',
-  klaar: 'Klaar',
-}
-
-const PRIORITEIT_LABELS: Record<TaakPrioriteit, string> = {
-  laag: 'Laag',
-  medium: 'Medium',
-  hoog: 'Hoog',
-  kritiek: 'Kritiek',
-}
+type ViewSection = 'inbox' | 'vandaag' | 'binnenkort' | 'project'
 
 const PRIORITEIT_ORDER: Record<string, number> = {
   kritiek: 4,
@@ -92,11 +58,11 @@ const PRIORITEIT_ORDER: Record<string, number> = {
   laag: 1,
 }
 
-const STATUS_ORDER: Record<string, number> = {
-  todo: 1,
-  bezig: 2,
-  review: 3,
-  klaar: 4,
+const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
+  kritiek: 'text-red-500',
+  hoog: 'text-orange-500',
+  medium: 'text-yellow-500',
+  laag: 'text-muted-foreground/30',
 }
 
 interface TaakFormData {
@@ -123,55 +89,51 @@ const EMPTY_FORM: TaakFormData = {
   project_id: '',
 }
 
-// ============ MAIN COMPONENT ============
-
 export function TasksLayout() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  // Data state
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // View & filter state
-  const [viewMode, setViewMode] = useState<ViewMode>('kanban')
+  // View state
+  const [activeView, setActiveView] = useState<ViewSection>('inbox')
+  const [activeProjectId, setActiveProjectId] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
-  const [prioriteitFilter, setPrioriteitFilter] = useState<PrioriteitFilter>('alle')
-  const [persoonFilter, setPersoonFilter] = useState<string>('alle')
+  const [showCompleted, setShowCompleted] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
 
-  // Table sort state
-  const [sortField, setSortField] = useState<SortField>('deadline')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  // Inline add state
+  const [isAdding, setIsAdding] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newPriority, setNewPriority] = useState<TaakPrioriteit>('medium')
+  const [newDeadline, setNewDeadline] = useState('')
+  const [newProjectId, setNewProjectId] = useState('')
+  const addInputRef = useRef<HTMLInputElement>(null)
 
-  // Dialog state
-  const [dialogOpen, setDialogOpen] = useState(false)
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingTaak, setEditingTaak] = useState<Taak | null>(null)
   const [formData, setFormData] = useState<TaakFormData>(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Delete confirmation state
+  // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingTaak, setDeletingTaak] = useState<Taak | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Kanban drag state
-  const [draggedTaak, setDraggedTaak] = useState<Taak | null>(null)
-
-  // ============ DATA FETCHING ============
+  // Projects sidebar collapsed
+  const [projectsExpanded, setProjectsExpanded] = useState(true)
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const [takenData, projectenData] = await Promise.all([
-        getTaken(),
-        getProjecten(),
-      ])
+      const [takenData, projectenData] = await Promise.all([getTaken(), getProjecten()])
       setTaken(takenData)
       setProjecten(projectenData)
     } catch (error) {
-      console.error('Fout bij laden van data:', error)
+      console.error('Fout bij laden:', error)
       toast.error('Kon taken niet laden')
     } finally {
       setIsLoading(false)
@@ -182,112 +144,171 @@ export function TasksLayout() {
     loadData()
   }, [loadData])
 
-  // ============ DERIVED DATA ============
-
   const projectMap = useMemo(() => {
     const map: Record<string, string> = {}
-    projecten.forEach((p) => {
-      map[p.id] = p.naam
-    })
+    projecten.forEach((p) => { map[p.id] = p.naam })
     return map
   }, [projecten])
 
-  const uniquePersonen = useMemo(() => {
-    const set = new Set<string>()
-    taken.forEach((t) => {
-      if (t.toegewezen_aan?.trim()) {
-        set.add(t.toegewezen_aan.trim())
-      }
-    })
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'nl'))
-  }, [taken])
-
+  // Filtered tasks per view
   const filteredTaken = useMemo(() => {
     let result = [...taken]
 
-    if (statusFilter !== 'alle') {
-      result = result.filter((t) => t.status === statusFilter)
-    }
-
-    if (prioriteitFilter !== 'alle') {
-      result = result.filter((t) => t.prioriteit === prioriteitFilter)
-    }
-
-    if (persoonFilter !== 'alle') {
-      result = result.filter((t) => t.toegewezen_aan === persoonFilter)
-    }
-
+    // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()
       result = result.filter(
         (t) =>
           t.titel.toLowerCase().includes(q) ||
           t.beschrijving.toLowerCase().includes(q) ||
-          t.toegewezen_aan.toLowerCase().includes(q) ||
           (projectMap[t.project_id] || '').toLowerCase().includes(q)
       )
+      // When searching, show all tasks regardless of view
+      if (!showCompleted) {
+        result = result.filter((t) => t.status !== 'klaar')
+      }
+      result.sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
+      return result
     }
+
+    // View-specific filters
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const nextWeek = new Date(today)
+    nextWeek.setDate(nextWeek.getDate() + 7)
+
+    switch (activeView) {
+      case 'inbox':
+        // All tasks (no project filter)
+        break
+      case 'vandaag': {
+        result = result.filter((t) => {
+          if (!t.deadline) return false
+          const d = new Date(t.deadline)
+          d.setHours(0, 0, 0, 0)
+          return d <= today
+        })
+        break
+      }
+      case 'binnenkort': {
+        result = result.filter((t) => {
+          if (!t.deadline) return false
+          const d = new Date(t.deadline)
+          d.setHours(0, 0, 0, 0)
+          return d <= nextWeek
+        })
+        break
+      }
+      case 'project':
+        result = result.filter((t) => t.project_id === activeProjectId)
+        break
+    }
+
+    if (!showCompleted) {
+      result = result.filter((t) => t.status !== 'klaar')
+    }
+
+    // Sort: overdue first, then by priority, then by deadline
+    result.sort((a, b) => {
+      const aOverdue = a.deadline && new Date(a.deadline) < today && a.status !== 'klaar' ? 1 : 0
+      const bOverdue = b.deadline && new Date(b.deadline) < today && b.status !== 'klaar' ? 1 : 0
+      if (aOverdue !== bOverdue) return bOverdue - aOverdue
+      const prioDiff = (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0)
+      if (prioDiff !== 0) return prioDiff
+      if (a.deadline && b.deadline) return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+      if (a.deadline) return -1
+      if (b.deadline) return 1
+      return 0
+    })
 
     return result
-  }, [taken, statusFilter, prioriteitFilter, persoonFilter, searchQuery, projectMap])
+  }, [taken, activeView, activeProjectId, showCompleted, searchQuery, projectMap])
 
-  const sortedTaken = useMemo(() => {
-    return [...filteredTaken].sort((a, b) => {
-      let comparison = 0
+  const completedCount = useMemo(
+    () => taken.filter((t) => t.status === 'klaar').length,
+    [taken]
+  )
 
-      switch (sortField) {
-        case 'titel':
-          comparison = a.titel.localeCompare(b.titel, 'nl')
-          break
-        case 'status':
-          comparison = (STATUS_ORDER[a.status] || 0) - (STATUS_ORDER[b.status] || 0)
-          break
-        case 'prioriteit':
-          comparison = (PRIORITEIT_ORDER[a.prioriteit] || 0) - (PRIORITEIT_ORDER[b.prioriteit] || 0)
-          break
-        case 'toegewezen_aan':
-          comparison = a.toegewezen_aan.localeCompare(b.toegewezen_aan, 'nl')
-          break
-        case 'deadline':
-          comparison = new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
-          break
-        case 'project_id':
-          comparison = (projectMap[a.project_id] || '').localeCompare(projectMap[b.project_id] || '', 'nl')
-          break
-        case 'bestede_tijd':
-          comparison = a.bestede_tijd - b.bestede_tijd
-          break
+  const todayCount = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return taken.filter((t) => {
+      if (t.status === 'klaar' || !t.deadline) return false
+      const d = new Date(t.deadline)
+      d.setHours(0, 0, 0, 0)
+      return d <= today
+    }).length
+  }, [taken])
+
+  const binnenkortCount = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const nextWeek = new Date(today)
+    nextWeek.setDate(nextWeek.getDate() + 7)
+    return taken.filter((t) => {
+      if (t.status === 'klaar' || !t.deadline) return false
+      const d = new Date(t.deadline)
+      d.setHours(0, 0, 0, 0)
+      return d <= nextWeek
+    }).length
+  }, [taken])
+
+  // Task counts per project
+  const projectTaskCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    taken.forEach((t) => {
+      if (t.status !== 'klaar' && t.project_id) {
+        counts[t.project_id] = (counts[t.project_id] || 0) + 1
       }
-
-      return sortDirection === 'asc' ? comparison : -comparison
     })
-  }, [filteredTaken, sortField, sortDirection, projectMap])
+    return counts
+  }, [taken])
 
-  const takenByStatus = useMemo(() => {
-    const map: Record<TaakStatus, Taak[]> = {
-      todo: [],
-      bezig: [],
-      review: [],
-      klaar: [],
+  // === HANDLERS ===
+
+  async function handleQuickAdd() {
+    if (!newTitle.trim()) return
+
+    try {
+      const projectId = activeView === 'project' ? activeProjectId : newProjectId
+      const newTaak = await createTaak({
+        user_id: user?.id || '',
+        titel: newTitle.trim(),
+        beschrijving: '',
+        status: 'todo',
+        prioriteit: newPriority,
+        toegewezen_aan: '',
+        deadline: newDeadline || '',
+        geschatte_tijd: 0,
+        bestede_tijd: 0,
+        project_id: projectId || '',
+      })
+      setTaken((prev) => [newTaak, ...prev])
+      setNewTitle('')
+      setNewPriority('medium')
+      setNewDeadline('')
+      setNewProjectId('')
+      toast.success('Taak aangemaakt')
+      // Keep input focused for rapid entry
+      addInputRef.current?.focus()
+    } catch (error) {
+      console.error('Fout bij aanmaken:', error)
+      toast.error('Kon taak niet aanmaken')
     }
-    filteredTaken.forEach((t) => {
-      map[t.status]?.push(t)
-    })
-    // Sort each column by priority (highest first)
-    Object.keys(map).forEach((key) => {
-      map[key as TaakStatus].sort(
-        (a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0)
-      )
-    })
-    return map
-  }, [filteredTaken])
+  }
 
-  // ============ HANDLERS ============
-
-  function openNewDialog() {
-    setEditingTaak(null)
-    setFormData(EMPTY_FORM)
-    setDialogOpen(true)
+  async function handleToggleComplete(taak: Taak) {
+    const newStatus: TaakStatus = taak.status === 'klaar' ? 'todo' : 'klaar'
+    try {
+      const updated = await updateTaak(taak.id, { status: newStatus })
+      setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      if (newStatus === 'klaar') {
+        toast.success('Taak afgerond!')
+      }
+    } catch (error) {
+      console.error('Fout bij statuswijziging:', error)
+      toast.error('Kon taak niet bijwerken')
+    }
   }
 
   function openEditDialog(taak: Taak) {
@@ -303,12 +324,7 @@ export function TasksLayout() {
       bestede_tijd: taak.bestede_tijd,
       project_id: taak.project_id,
     })
-    setDialogOpen(true)
-  }
-
-  function openDeleteDialog(taak: Taak) {
-    setDeletingTaak(taak)
-    setDeleteDialogOpen(true)
+    setEditDialogOpen(true)
   }
 
   async function handleSave() {
@@ -316,45 +332,22 @@ export function TasksLayout() {
       toast.error('Titel is verplicht')
       return
     }
-
-    if (!formData.project_id) {
-      toast.error('Project is verplicht')
-      return
-    }
-
     setIsSaving(true)
     try {
-      if (editingTaak) {
-        const updated = await updateTaak(editingTaak.id, {
-          titel: formData.titel.trim(),
-          beschrijving: formData.beschrijving.trim(),
-          status: formData.status,
-          prioriteit: formData.prioriteit,
-          toegewezen_aan: formData.toegewezen_aan.trim(),
-          deadline: formData.deadline || new Date().toISOString().split('T')[0],
-          geschatte_tijd: formData.geschatte_tijd,
-          bestede_tijd: formData.bestede_tijd,
-          project_id: formData.project_id,
-        })
-        setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-        toast.success(`Taak "${updated.titel}" bijgewerkt`)
-      } else {
-        const newTaak = await createTaak({
-          user_id: user?.id || '',
-          titel: formData.titel.trim(),
-          beschrijving: formData.beschrijving.trim(),
-          status: formData.status,
-          prioriteit: formData.prioriteit,
-          toegewezen_aan: formData.toegewezen_aan.trim(),
-          deadline: formData.deadline || new Date().toISOString().split('T')[0],
-          geschatte_tijd: formData.geschatte_tijd,
-          bestede_tijd: formData.bestede_tijd,
-          project_id: formData.project_id,
-        })
-        setTaken((prev) => [newTaak, ...prev])
-        toast.success(`Taak "${newTaak.titel}" aangemaakt`)
-      }
-      setDialogOpen(false)
+      const updated = await updateTaak(editingTaak!.id, {
+        titel: formData.titel.trim(),
+        beschrijving: formData.beschrijving.trim(),
+        status: formData.status,
+        prioriteit: formData.prioriteit,
+        toegewezen_aan: formData.toegewezen_aan.trim(),
+        deadline: formData.deadline || '',
+        geschatte_tijd: formData.geschatte_tijd,
+        bestede_tijd: formData.bestede_tijd,
+        project_id: formData.project_id,
+      })
+      setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      toast.success('Taak bijgewerkt')
+      setEditDialogOpen(false)
     } catch (error) {
       console.error('Fout bij opslaan:', error)
       toast.error('Kon taak niet opslaan')
@@ -363,14 +356,18 @@ export function TasksLayout() {
     }
   }
 
+  function openDeleteDialog(taak: Taak) {
+    setDeletingTaak(taak)
+    setDeleteDialogOpen(true)
+  }
+
   async function handleDelete() {
     if (!deletingTaak) return
-
     setIsDeleting(true)
     try {
       await deleteTaak(deletingTaak.id)
       setTaken((prev) => prev.filter((t) => t.id !== deletingTaak.id))
-      toast.success(`Taak "${deletingTaak.titel}" verwijderd`)
+      toast.success('Taak verwijderd')
       setDeleteDialogOpen(false)
       setDeletingTaak(null)
     } catch (error) {
@@ -381,66 +378,17 @@ export function TasksLayout() {
     }
   }
 
-  async function handleStatusChange(taak: Taak, newStatus: TaakStatus) {
-    try {
-      const updated = await updateTaak(taak.id, { status: newStatus })
-      setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-      toast.success(`Status gewijzigd naar "${STATUS_LABELS[newStatus]}"`)
-    } catch (error) {
-      console.error('Fout bij statuswijziging:', error)
-      toast.error('Kon status niet wijzigen')
+  function getViewTitle() {
+    if (searchQuery.trim()) return `Zoekresultaten`
+    switch (activeView) {
+      case 'inbox': return 'Inbox'
+      case 'vandaag': return 'Vandaag'
+      case 'binnenkort': return 'Binnenkort'
+      case 'project': return projectMap[activeProjectId] || 'Project'
     }
   }
 
-  function handleSort(field: SortField) {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDirection('asc')
-    }
-  }
-
-  // Kanban drag handlers
-  function handleDragStart(e: React.DragEvent, taak: Taak) {
-    setDraggedTaak(taak)
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', taak.id)
-  }
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-  }
-
-  async function handleDrop(e: React.DragEvent, targetStatus: TaakStatus) {
-    e.preventDefault()
-    if (!draggedTaak || draggedTaak.status === targetStatus) {
-      setDraggedTaak(null)
-      return
-    }
-    await handleStatusChange(draggedTaak, targetStatus)
-    setDraggedTaak(null)
-  }
-
-  function handleDragEnd() {
-    setDraggedTaak(null)
-  }
-
-  function clearFilters() {
-    setSearchQuery('')
-    setStatusFilter('alle')
-    setPrioriteitFilter('alle')
-    setPersoonFilter('alle')
-  }
-
-  const hasActiveFilters =
-    searchQuery.trim() !== '' ||
-    statusFilter !== 'alle' ||
-    prioriteitFilter !== 'alle' ||
-    persoonFilter !== 'alle'
-
-  // ============ RENDER ============
+  // === RENDER ===
 
   if (isLoading) {
     return (
@@ -452,227 +400,290 @@ export function TasksLayout() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
-            Taken
-          </h1>
-          <Badge variant="secondary" className="text-sm font-medium">
-            {filteredTaken.length}
-          </Badge>
-        </div>
-        <Button onClick={openNewDialog}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nieuwe Taak
-        </Button>
-      </div>
-
-      {/* Search + View toggle */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="Zoek op titel, beschrijving, persoon..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+    <div className="flex gap-6 min-h-[calc(100vh-120px)]">
+      {/* Sidebar navigation */}
+      <aside className="hidden md:flex flex-col w-56 flex-shrink-0">
+        <nav className="space-y-1">
+          <SidebarItem
+            icon={<Inbox className="w-4 h-4" />}
+            label="Inbox"
+            count={taken.filter((t) => t.status !== 'klaar').length}
+            active={activeView === 'inbox' && !searchQuery}
+            onClick={() => { setActiveView('inbox'); setSearchQuery(''); setShowSearch(false) }}
           />
-        </div>
-        <div className="flex items-center border rounded-md bg-background">
-          <Button
-            variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-            size="icon"
-            className="rounded-r-none"
-            onClick={() => setViewMode('kanban')}
-            title="Kanban weergave"
+          <SidebarItem
+            icon={<CalendarDays className="w-4 h-4" />}
+            label="Vandaag"
+            count={todayCount}
+            active={activeView === 'vandaag' && !searchQuery}
+            onClick={() => { setActiveView('vandaag'); setSearchQuery(''); setShowSearch(false) }}
+            countColor={todayCount > 0 ? 'text-red-600 dark:text-red-400' : undefined}
+          />
+          <SidebarItem
+            icon={<CalendarDays className="w-4 h-4" />}
+            label="Binnenkort"
+            count={binnenkortCount}
+            active={activeView === 'binnenkort' && !searchQuery}
+            onClick={() => { setActiveView('binnenkort'); setSearchQuery(''); setShowSearch(false) }}
+          />
+        </nav>
+
+        {/* Projects section */}
+        <div className="mt-6">
+          <button
+            onClick={() => setProjectsExpanded(!projectsExpanded)}
+            className="flex items-center gap-1.5 w-full px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
           >
-            <Columns3 className="w-4 h-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'table' ? 'default' : 'ghost'}
-            size="icon"
-            className="rounded-l-none"
-            onClick={() => setViewMode('table')}
-            title="Tabel weergave"
-          >
-            <List className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Filter pills */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        {/* Status pills */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {(['alle', 'todo', 'bezig', 'review', 'klaar'] as StatusFilter[]).map((f) => {
-            const labels: Record<StatusFilter, string> = {
-              alle: 'Alle',
-              todo: 'Todo',
-              bezig: 'Bezig',
-              review: 'Review',
-              klaar: 'Klaar',
-            }
-            const dotColors: Record<StatusFilter, string> = {
-              alle: '',
-              todo: 'bg-gray-500',
-              bezig: 'bg-blue-500',
-              review: 'bg-[#58B09C]',
-              klaar: 'bg-green-500',
-            }
-            const count = f === 'alle' ? taken.length : taken.filter((t) => t.status === f).length
-            return (
-              <button
-                key={f}
-                onClick={() => setStatusFilter(f)}
-                className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
-                  statusFilter === f
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                )}
-              >
-                {dotColors[f] && <span className={cn('w-2 h-2 rounded-full', dotColors[f])} />}
-                {labels[f]}
-                {count > 0 && <span className="text-[10px] opacity-70">{count}</span>}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="h-4 w-px bg-border hidden sm:block" />
-
-        {/* Priority pills */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {(['alle', 'kritiek', 'hoog', 'medium', 'laag'] as PrioriteitFilter[]).map((f) => {
-            const labels: Record<PrioriteitFilter, string> = {
-              alle: 'Alle',
-              kritiek: 'Kritiek',
-              hoog: 'Hoog',
-              medium: 'Medium',
-              laag: 'Laag',
-            }
-            const dotColors: Record<PrioriteitFilter, string> = {
-              alle: '',
-              kritiek: 'bg-red-500',
-              hoog: 'bg-orange-500',
-              medium: 'bg-yellow-500',
-              laag: 'bg-green-500',
-            }
-            return (
-              <button
-                key={f}
-                onClick={() => setPrioriteitFilter(f)}
-                className={cn(
-                  'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
-                  prioriteitFilter === f
-                    ? 'bg-[#CAF7E2]/30 text-[#386150] dark:bg-[#386150]/30 dark:text-[#7dd3b8]'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                )}
-              >
-                {dotColors[f] && <span className={cn('w-2 h-2 rounded-full', dotColors[f])} />}
-                {labels[f]}
-              </button>
-            )
-          })}
-        </div>
-
-        {uniquePersonen.length > 0 && (
-          <>
-            <div className="h-4 w-px bg-border hidden sm:block" />
-            {/* Person filter pills */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <button
-                onClick={() => setPersoonFilter('alle')}
-                className={cn(
-                  'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
-                  persoonFilter === 'alle'
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                )}
-              >
-                Iedereen
-              </button>
-              {uniquePersonen.slice(0, 5).map((persoon) => (
-                <button
-                  key={persoon}
-                  onClick={() => setPersoonFilter(persoon)}
-                  className={cn(
-                    'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
-                    persoonFilter === persoon
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  )}
-                >
-                  {persoon}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Content */}
-      {filteredTaken.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <CheckCircle2 className="w-12 h-12 mb-4 text-muted-foreground opacity-50" />
-            <p className="text-gray-500 dark:text-gray-400 text-center text-lg font-medium">
-              {hasActiveFilters
-                ? 'Geen taken gevonden met de huidige filters.'
-                : 'Nog geen taken aangemaakt.'}
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {hasActiveFilters
-                ? 'Pas de filters aan om meer resultaten te zien.'
-                : 'Maak een nieuwe taak aan om te beginnen.'}
-            </p>
-            {hasActiveFilters ? (
-              <Button variant="link" className="mt-2" onClick={clearFilters}>
-                Filters wissen
-              </Button>
+            {projectsExpanded ? (
+              <ChevronDown className="w-3 h-3" />
             ) : (
-              <Button className="mt-4" onClick={openNewDialog}>
-                <Plus className="w-4 h-4 mr-2" />
-                Eerste taak aanmaken
-              </Button>
+              <ChevronRight className="w-3 h-3" />
             )}
-          </CardContent>
-        </Card>
-      ) : viewMode === 'kanban' ? (
-        <KanbanView
-          takenByStatus={takenByStatus}
-          projectMap={projectMap}
-          onEdit={openEditDialog}
-          onDelete={openDeleteDialog}
-          onStatusChange={handleStatusChange}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onDragEnd={handleDragEnd}
-          draggedTaak={draggedTaak}
-          navigate={navigate}
-        />
-      ) : (
-        <TableView
-          taken={sortedTaken}
-          projectMap={projectMap}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          onSort={handleSort}
-          onEdit={openEditDialog}
-          onDelete={openDeleteDialog}
-          onStatusChange={handleStatusChange}
-          navigate={navigate}
-        />
-      )}
+            Projecten
+          </button>
+          {projectsExpanded && (
+            <nav className="mt-1 space-y-0.5">
+              {projecten
+                .filter((p) => p.status === 'actief' || p.status === 'gepland')
+                .map((project) => (
+                  <SidebarItem
+                    key={project.id}
+                    icon={<Hash className="w-3.5 h-3.5" />}
+                    label={project.naam}
+                    count={projectTaskCounts[project.id] || 0}
+                    active={activeView === 'project' && activeProjectId === project.id && !searchQuery}
+                    onClick={() => {
+                      setActiveView('project')
+                      setActiveProjectId(project.id)
+                      setSearchQuery('')
+                      setShowSearch(false)
+                    }}
+                    compact
+                  />
+                ))}
+            </nav>
+          )}
+        </div>
+      </aside>
 
-      {/* Add/Edit Task Dialog */}
-      <TaskDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        editingTaak={editingTaak}
+      {/* Main content */}
+      <main className="flex-1 max-w-3xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-foreground font-display">
+              {getViewTitle()}
+            </h1>
+            <span className="text-sm text-muted-foreground">
+              {filteredTaken.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Search toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => {
+                setShowSearch(!showSearch)
+                if (showSearch) setSearchQuery('')
+              }}
+            >
+              <Search className="w-4 h-4" />
+            </Button>
+            {/* Mobile view selector */}
+            <div className="md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    {getViewTitle()}
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => { setActiveView('inbox'); setSearchQuery('') }}>
+                    <Inbox className="w-4 h-4 mr-2" /> Inbox
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setActiveView('vandaag'); setSearchQuery('') }}>
+                    <CalendarDays className="w-4 h-4 mr-2" /> Vandaag
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setActiveView('binnenkort'); setSearchQuery('') }}>
+                    <CalendarDays className="w-4 h-4 mr-2" /> Binnenkort
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {projecten
+                    .filter((p) => p.status === 'actief' || p.status === 'gepland')
+                    .map((p) => (
+                      <DropdownMenuItem
+                        key={p.id}
+                        onClick={() => {
+                          setActiveView('project')
+                          setActiveProjectId(p.id)
+                          setSearchQuery('')
+                        }}
+                      >
+                        <Hash className="w-4 h-4 mr-2" /> {p.naam}
+                      </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+
+        {/* Search bar */}
+        {showSearch && (
+          <div className="mb-4">
+            <Input
+              autoFocus
+              placeholder="Zoek taken..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
+        )}
+
+        {/* Inline quick-add */}
+        {!isAdding ? (
+          <button
+            onClick={() => {
+              setIsAdding(true)
+              setTimeout(() => addInputRef.current?.focus(), 50)
+            }}
+            className="flex items-center gap-2 w-full px-3 py-2.5 mb-4 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors group border border-transparent hover:border-border/50"
+          >
+            <Plus className="w-4 h-4 text-[#58B09C] group-hover:text-[#386150]" />
+            <span>Taak toevoegen</span>
+          </button>
+        ) : (
+          <div className="mb-4 rounded-lg border border-border bg-card p-3 space-y-3">
+            <Input
+              ref={addInputRef}
+              placeholder="Wat moet je doen?"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newTitle.trim()) handleQuickAdd()
+                if (e.key === 'Escape') {
+                  setIsAdding(false)
+                  setNewTitle('')
+                  setNewDeadline('')
+                  setNewPriority('medium')
+                  setNewProjectId('')
+                }
+              }}
+              className="border-0 shadow-none px-0 text-base focus-visible:ring-0 placeholder:text-muted-foreground/50"
+            />
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Deadline picker */}
+              <Input
+                type="date"
+                value={newDeadline}
+                onChange={(e) => setNewDeadline(e.target.value)}
+                className="w-auto h-7 text-xs"
+              />
+              {/* Priority picker */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                    <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[newPriority]}`} />
+                    {newPriority === 'medium' ? 'Prioriteit' : newPriority.charAt(0).toUpperCase() + newPriority.slice(1)}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {(['kritiek', 'hoog', 'medium', 'laag'] as TaakPrioriteit[]).map((p) => (
+                    <DropdownMenuItem key={p} onClick={() => setNewPriority(p)}>
+                      <Flag className={`w-3.5 h-3.5 mr-2 ${PRIORITEIT_FLAG_COLORS[p]}`} />
+                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {/* Project picker (only if not already in project view) */}
+              {activeView !== 'project' && (
+                <Select value={newProjectId} onValueChange={setNewProjectId}>
+                  <SelectTrigger className="w-auto h-7 text-xs min-w-0">
+                    <SelectValue placeholder="Project (optioneel)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geen">Geen project</SelectItem>
+                    {projecten.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <div className="flex-1" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setIsAdding(false)
+                  setNewTitle('')
+                  setNewDeadline('')
+                  setNewPriority('medium')
+                  setNewProjectId('')
+                }}
+              >
+                Annuleren
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-xs bg-[#58B09C] hover:bg-[#386150]"
+                disabled={!newTitle.trim()}
+                onClick={handleQuickAdd}
+              >
+                Toevoegen
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Task list */}
+        <div className="space-y-px">
+          {filteredTaken.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <CheckCircle2 className="w-10 h-10 mb-3 opacity-20" />
+              <p className="text-sm font-medium">
+                {searchQuery ? 'Geen taken gevonden' : 'Alles afgevinkt!'}
+              </p>
+              <p className="text-xs mt-1 text-muted-foreground/60">
+                {searchQuery ? 'Probeer een andere zoekopdracht' : 'Voeg een nieuwe taak toe om te beginnen'}
+              </p>
+            </div>
+          ) : (
+            filteredTaken.map((taak) => (
+              <TaskRow
+                key={taak.id}
+                taak={taak}
+                projectNaam={projectMap[taak.project_id]}
+                showProject={activeView !== 'project'}
+                onToggle={() => handleToggleComplete(taak)}
+                onEdit={() => openEditDialog(taak)}
+                onDelete={() => openDeleteDialog(taak)}
+              />
+            ))
+          )}
+        </div>
+
+        {/* Show completed toggle */}
+        {completedCount > 0 && (
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className="flex items-center gap-2 mt-4 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showCompleted ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            {completedCount} afgeronde {completedCount === 1 ? 'taak' : 'taken'}
+          </button>
+        )}
+      </main>
+
+      {/* Edit dialog */}
+      <EditTaskDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
         formData={formData}
         setFormData={setFormData}
         onSave={handleSave}
@@ -680,29 +691,20 @@ export function TasksLayout() {
         projecten={projecten}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Taak verwijderen</DialogTitle>
             <DialogDescription>
-              Weet je zeker dat je de taak "{deletingTaak?.titel}" wilt verwijderen?
-              Deze actie kan niet ongedaan worden gemaakt.
+              Weet je zeker dat je "{deletingTaak?.titel}" wilt verwijderen?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-              disabled={isDeleting}
-            >
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
               Annuleren
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Verwijderen
             </Button>
@@ -713,156 +715,147 @@ export function TasksLayout() {
   )
 }
 
-// ============ KANBAN VIEW ============
+// === SIDEBAR ITEM ===
 
-interface KanbanViewProps {
-  takenByStatus: Record<TaakStatus, Taak[]>
-  projectMap: Record<string, string>
-  onEdit: (taak: Taak) => void
-  onDelete: (taak: Taak) => void
-  onStatusChange: (taak: Taak, status: TaakStatus) => void
-  onDragStart: (e: React.DragEvent, taak: Taak) => void
-  onDragOver: (e: React.DragEvent) => void
-  onDrop: (e: React.DragEvent, status: TaakStatus) => void
-  onDragEnd: () => void
-  draggedTaak: Taak | null
-  navigate: ReturnType<typeof useNavigate>
-}
-
-function KanbanView({
-  takenByStatus,
-  projectMap,
-  onEdit,
-  onDelete,
-  onStatusChange,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd,
-  draggedTaak,
-  navigate,
-}: KanbanViewProps) {
+function SidebarItem({
+  icon,
+  label,
+  count,
+  active,
+  onClick,
+  compact = false,
+  countColor,
+}: {
+  icon: React.ReactNode
+  label: string
+  count?: number
+  active: boolean
+  onClick: () => void
+  compact?: boolean
+  countColor?: string
+}) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-      {STATUS_COLUMNS.map((column) => {
-        const columnTaken = takenByStatus[column.key]
-        const isDragTarget = draggedTaak && draggedTaak.status !== column.key
-
-        return (
-          <div
-            key={column.key}
-            className={cn(
-              'flex flex-col rounded-lg border bg-muted/30 transition-colors min-h-[200px]',
-              isDragTarget && 'border-primary/50 bg-primary/5'
-            )}
-            onDragOver={onDragOver}
-            onDrop={(e) => onDrop(e, column.key)}
-          >
-            {/* Column header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <div className="flex items-center gap-2">
-                <div className={cn('w-3 h-3 rounded-full', column.color)} />
-                <span className="font-semibold text-sm">{column.label}</span>
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                {columnTaken.length}
-              </Badge>
-            </div>
-
-            {/* Column content */}
-            <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-[calc(100vh-340px)]">
-              {columnTaken.length === 0 ? (
-                <div className="flex items-center justify-center h-24 text-xs text-muted-foreground">
-                  Geen taken
-                </div>
-              ) : (
-                columnTaken.map((taak) => (
-                  <KanbanCard
-                    key={taak.id}
-                    taak={taak}
-                    projectNaam={projectMap[taak.project_id] || ''}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onStatusChange={onStatusChange}
-                    onDragStart={onDragStart}
-                    onDragEnd={onDragEnd}
-                    isDragging={draggedTaak?.id === taak.id}
-                    navigate={navigate}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        )
-      })}
-    </div>
+    <button
+      onClick={onClick}
+      className={cn(
+        'flex items-center gap-2.5 w-full rounded-lg transition-colors text-left',
+        compact ? 'px-3 py-1.5 text-sm' : 'px-3 py-2 text-sm',
+        active
+          ? 'bg-[#58B09C]/10 text-[#386150] dark:text-[#7dd3b8] font-medium'
+          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+      )}
+    >
+      <span className={cn(active ? 'text-[#58B09C]' : 'text-muted-foreground/60')}>
+        {icon}
+      </span>
+      <span className="flex-1 truncate">{label}</span>
+      {count !== undefined && count > 0 && (
+        <span className={cn('text-xs tabular-nums', countColor || 'text-muted-foreground/50')}>
+          {count}
+        </span>
+      )}
+    </button>
   )
 }
 
-// ============ KANBAN CARD ============
+// === TASK ROW ===
 
-interface KanbanCardProps {
-  key?: React.Key
-  taak: Taak
-  projectNaam: string
-  onEdit: (taak: Taak) => void
-  onDelete: (taak: Taak) => void
-  onStatusChange: (taak: Taak, status: TaakStatus) => void
-  onDragStart: (e: React.DragEvent, taak: Taak) => void
-  onDragEnd: () => void
-  isDragging: boolean
-  navigate: ReturnType<typeof useNavigate>
-}
-
-function KanbanCard({
+function TaskRow({
   taak,
   projectNaam,
+  showProject,
+  onToggle,
   onEdit,
   onDelete,
-  onStatusChange,
-  onDragStart,
-  onDragEnd,
-  isDragging,
-  navigate,
-}: KanbanCardProps) {
-  const isOverdue = new Date(taak.deadline) < new Date() && taak.status !== 'klaar'
+}: {
+  taak: Taak
+  projectNaam?: string
+  showProject: boolean
+  onToggle: () => void
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const isDone = taak.status === 'klaar'
+  const isOverdue = !isDone && taak.deadline && new Date(taak.deadline) < new Date()
 
   return (
-    <Card
-      draggable
-      onDragStart={(e) => onDragStart(e, taak)}
-      onDragEnd={onDragEnd}
-      className={cn(
-        'p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-all',
-        isDragging && 'opacity-50 rotate-2 shadow-lg'
+    <div className={cn(
+      'group flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-muted/40',
+      isDone && 'opacity-50'
+    )}>
+      {/* Checkbox */}
+      <button
+        onClick={onToggle}
+        className="mt-0.5 flex-shrink-0 transition-colors"
+      >
+        {isDone ? (
+          <CheckCircle2 className="w-5 h-5 text-[#58B09C]" />
+        ) : (
+          <Circle className={cn(
+            'w-5 h-5 hover:text-[#58B09C] transition-colors',
+            taak.prioriteit === 'kritiek' ? 'text-red-400' :
+            taak.prioriteit === 'hoog' ? 'text-orange-400' :
+            'text-muted-foreground/30'
+          )} />
+        )}
+      </button>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          'text-sm text-foreground',
+          isDone && 'line-through text-muted-foreground'
+        )}>
+          {taak.titel}
+        </p>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {taak.beschrijving && (
+            <span className="text-xs text-muted-foreground/60 truncate max-w-[200px]">
+              {taak.beschrijving}
+            </span>
+          )}
+          {showProject && projectNaam && (
+            <span className="text-xs text-muted-foreground/60 flex items-center gap-0.5">
+              <Hash className="w-2.5 h-2.5" />
+              {projectNaam}
+            </span>
+          )}
+          {taak.deadline && (
+            <span className={cn(
+              'text-xs flex items-center gap-0.5',
+              isOverdue
+                ? 'text-red-600 dark:text-red-400 font-medium'
+                : 'text-muted-foreground/60'
+            )}>
+              <CalendarDays className="w-2.5 h-2.5" />
+              {formatDate(taak.deadline)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Priority flag */}
+      {!isDone && taak.prioriteit !== 'laag' && taak.prioriteit !== 'medium' && (
+        <Flag className={cn('w-3.5 h-3.5 flex-shrink-0 mt-0.5', PRIORITEIT_FLAG_COLORS[taak.prioriteit])} />
       )}
-    >
-      {/* Header: priority badge + actions */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <Badge className={cn('text-[10px] px-1.5 py-0', getPriorityColor(taak.prioriteit))}>
-          {PRIORITEIT_LABELS[taak.prioriteit]}
-        </Badge>
+
+      {/* Actions */}
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 -mt-1">
-              <MoreHorizontal className="w-3.5 h-3.5" />
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => onEdit(taak)}>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={onEdit}>
               <Pencil className="w-4 h-4 mr-2" />
               Bewerken
             </DropdownMenuItem>
-            {STATUS_COLUMNS.filter((s) => s.key !== taak.status).map((s) => (
-              <DropdownMenuItem key={s.key} onClick={() => onStatusChange(taak, s.key)}>
-                <div className={cn('w-3 h-3 rounded-full mr-2', s.color)} />
-                Verplaats naar {s.label}
-              </DropdownMenuItem>
-            ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-              onClick={() => onDelete(taak)}
+              className="text-red-600 dark:text-red-400"
+              onClick={onDelete}
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Verwijderen
@@ -870,369 +863,77 @@ function KanbanCard({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      {/* Title */}
-      <p className="text-sm font-medium text-foreground line-clamp-2 mb-1">
-        {taak.titel}
-      </p>
-
-      {/* Description preview */}
-      {taak.beschrijving && (
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-          {taak.beschrijving}
-        </p>
-      )}
-
-      {/* Project name */}
-      {projectNaam && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            navigate(`/projecten/${taak.project_id}`)
-          }}
-          className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline mb-2"
-        >
-          <FolderOpen className="w-3 h-3" />
-          {projectNaam}
-        </button>
-      )}
-
-      {/* Footer: assignee, deadline, time */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-auto pt-2 border-t border-gray-100 dark:border-gray-800">
-        {taak.toegewezen_aan && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <User className="w-3 h-3" />
-            <span className="truncate max-w-[80px]">{taak.toegewezen_aan}</span>
-          </div>
-        )}
-        {taak.deadline && (
-          <div
-            className={cn(
-              'flex items-center gap-1 text-xs',
-              isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-muted-foreground'
-            )}
-          >
-            <CalendarDays className="w-3 h-3" />
-            <span>{formatDate(taak.deadline)}</span>
-          </div>
-        )}
-        {(taak.bestede_tijd > 0 || taak.geschatte_tijd > 0) && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="w-3 h-3" />
-            <span>{taak.bestede_tijd}u / {taak.geschatte_tijd}u</span>
-          </div>
-        )}
-      </div>
-    </Card>
+    </div>
   )
 }
 
-// ============ TABLE VIEW ============
+// === EDIT TASK DIALOG ===
 
-interface TableViewProps {
-  taken: Taak[]
-  projectMap: Record<string, string>
-  sortField: SortField
-  sortDirection: SortDirection
-  onSort: (field: SortField) => void
-  onEdit: (taak: Taak) => void
-  onDelete: (taak: Taak) => void
-  onStatusChange: (taak: Taak, status: TaakStatus) => void
-  navigate: ReturnType<typeof useNavigate>
-}
-
-function TableView({
-  taken,
-  projectMap,
-  sortField,
-  sortDirection,
-  onSort,
-  onEdit,
-  onDelete,
-  onStatusChange,
-  navigate,
-}: TableViewProps) {
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="ml-1 h-3 w-3 opacity-40" />
-    }
-    return sortDirection === 'asc' ? (
-      <ArrowUp className="ml-1 h-3 w-3" />
-    ) : (
-      <ArrowDown className="ml-1 h-3 w-3" />
-    )
-  }
-
-  const columns: { field: SortField; label: string; hiddenOn?: string }[] = [
-    { field: 'titel', label: 'Titel' },
-    { field: 'project_id', label: 'Project', hiddenOn: 'hidden lg:table-cell' },
-    { field: 'status', label: 'Status' },
-    { field: 'prioriteit', label: 'Prioriteit' },
-    { field: 'toegewezen_aan', label: 'Toegewezen', hiddenOn: 'hidden md:table-cell' },
-    { field: 'deadline', label: 'Deadline' },
-    { field: 'bestede_tijd', label: 'Tijd', hiddenOn: 'hidden xl:table-cell' },
-  ]
-
-  return (
-    <Card>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              {columns.map(({ field, label, hiddenOn }) => (
-                <th key={field} className={cn('text-left py-3 px-4', hiddenOn)}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto p-0 font-semibold text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                    onClick={() => onSort(field)}
-                  >
-                    {label}
-                    <SortIcon field={field} />
-                  </Button>
-                </th>
-              ))}
-              <th className="w-10 py-3 px-4" />
-            </tr>
-          </thead>
-          <tbody>
-            {taken.map((taak) => {
-              const isOverdue = new Date(taak.deadline) < new Date() && taak.status !== 'klaar'
-
-              return (
-                <tr
-                  key={taak.id}
-                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150"
-                >
-                  {/* Titel */}
-                  <td className="py-3 px-4">
-                    <div>
-                      <p className="font-medium text-sm text-foreground">{taak.titel}</p>
-                      {taak.beschrijving && (
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                          {taak.beschrijving}
-                        </p>
-                      )}
-                    </div>
-                  </td>
-
-                  {/* Project */}
-                  <td className="py-3 px-4 hidden lg:table-cell">
-                    {projectMap[taak.project_id] ? (
-                      <button
-                        onClick={() => navigate(`/projecten/${taak.project_id}`)}
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        {projectMap[taak.project_id]}
-                      </button>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">-</span>
-                    )}
-                  </td>
-
-                  {/* Status */}
-                  <td className="py-3 px-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="cursor-pointer">
-                          <Badge className={cn('text-xs', getStatusColor(taak.status))}>
-                            {STATUS_LABELS[taak.status]}
-                          </Badge>
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        {STATUS_COLUMNS.map((s) => (
-                          <DropdownMenuItem
-                            key={s.key}
-                            onClick={() => {
-                              if (s.key !== taak.status) {
-                                onStatusChange(taak, s.key)
-                              }
-                            }}
-                            className={cn(s.key === taak.status && 'font-semibold')}
-                          >
-                            <div className={cn('w-3 h-3 rounded-full mr-2', s.color)} />
-                            {s.label}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-
-                  {/* Prioriteit */}
-                  <td className="py-3 px-4">
-                    <Badge className={cn('text-xs', getPriorityColor(taak.prioriteit))}>
-                      {PRIORITEIT_LABELS[taak.prioriteit]}
-                    </Badge>
-                  </td>
-
-                  {/* Toegewezen aan */}
-                  <td className="py-3 px-4 hidden md:table-cell">
-                    <span className="text-sm text-foreground">
-                      {taak.toegewezen_aan || '-'}
-                    </span>
-                  </td>
-
-                  {/* Deadline */}
-                  <td className="py-3 px-4">
-                    <span
-                      className={cn(
-                        'text-sm',
-                        isOverdue
-                          ? 'text-red-600 dark:text-red-400 font-medium'
-                          : 'text-foreground'
-                      )}
-                    >
-                      {formatDate(taak.deadline)}
-                      {isOverdue && (
-                        <span className="ml-1 text-xs text-red-500">(verlopen)</span>
-                      )}
-                    </span>
-                  </td>
-
-                  {/* Tijd */}
-                  <td className="py-3 px-4 hidden xl:table-cell">
-                    <span className="text-sm text-muted-foreground">
-                      {taak.bestede_tijd}u / {taak.geschatte_tijd}u
-                    </span>
-                  </td>
-
-                  {/* Actions */}
-                  <td className="py-3 px-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => onEdit(taak)}>
-                          <Pencil className="w-4 h-4 mr-2" />
-                          Bewerken
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-                          onClick={() => onDelete(taak)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Verwijderen
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  )
-}
-
-// ============ TASK DIALOG ============
-
-interface TaskDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  editingTaak: Taak | null
-  formData: TaakFormData
-  setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
-  onSave: () => void
-  isSaving: boolean
-  projecten: Project[]
-}
-
-function TaskDialog({
+function EditTaskDialog({
   open,
   onOpenChange,
-  editingTaak,
   formData,
   setFormData,
   onSave,
   isSaving,
   projecten,
-}: TaskDialogProps) {
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  formData: TaakFormData
+  setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
+  onSave: () => void
+  isSaving: boolean
+  projecten: Project[]
+}) {
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {editingTaak ? 'Taak bewerken' : 'Nieuwe taak'}
-          </DialogTitle>
-          <DialogDescription>
-            {editingTaak
-              ? 'Pas de gegevens van de taak aan.'
-              : 'Vul de gegevens in om een nieuwe taak aan te maken.'}
-          </DialogDescription>
+          <DialogTitle>Taak bewerken</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          {/* Titel */}
+        <div className="grid gap-4 py-2">
           <div className="grid gap-2">
-            <Label htmlFor="titel">Titel *</Label>
+            <Label htmlFor="edit-titel">Titel</Label>
             <Input
-              id="titel"
-              placeholder="Bijv. Logo ontwerp goedkeuren"
+              id="edit-titel"
               value={formData.titel}
               onChange={(e) => updateField('titel', e.target.value)}
             />
           </div>
 
-          {/* Beschrijving */}
           <div className="grid gap-2">
-            <Label htmlFor="beschrijving">Beschrijving</Label>
+            <Label htmlFor="edit-beschrijving">Beschrijving</Label>
             <Textarea
-              id="beschrijving"
-              placeholder="Beschrijf de taak in meer detail..."
+              id="edit-beschrijving"
               value={formData.beschrijving}
               onChange={(e) => updateField('beschrijving', e.target.value)}
               rows={3}
+              placeholder="Optioneel..."
             />
           </div>
 
-          {/* Project */}
-          <div className="grid gap-2">
-            <Label>Project *</Label>
-            <Select
-              value={formData.project_id}
-              onValueChange={(value) => updateField('project_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecteer een project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projecten.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.naam}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Status & Prioriteit */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
-              <Label>Status</Label>
+              <Label>Prioriteit</Label>
               <Select
-                value={formData.status}
-                onValueChange={(value) => updateField('status', value as TaakStatus)}
+                value={formData.prioriteit}
+                onValueChange={(v) => updateField('prioriteit', v as TaakPrioriteit)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_COLUMNS.map((s) => (
-                    <SelectItem key={s.key} value={s.key}>
+                  {(['kritiek', 'hoog', 'medium', 'laag'] as TaakPrioriteit[]).map((p) => (
+                    <SelectItem key={p} value={p}>
                       <div className="flex items-center gap-2">
-                        <div className={cn('w-2.5 h-2.5 rounded-full', s.color)} />
-                        {s.label}
+                        <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[p]}`} />
+                        {p.charAt(0).toUpperCase() + p.slice(1)}
                       </div>
                     </SelectItem>
                   ))}
@@ -1241,60 +942,9 @@ function TaskDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label>Prioriteit</Label>
-              <Select
-                value={formData.prioriteit}
-                onValueChange={(value) => updateField('prioriteit', value as TaakPrioriteit)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="kritiek">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                      Kritiek
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="hoog">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                      Hoog
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="medium">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                      Medium
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="laag">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                      Laag
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Toegewezen aan & Deadline */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="toegewezen_aan">Toegewezen aan</Label>
+              <Label htmlFor="edit-deadline">Deadline</Label>
               <Input
-                id="toegewezen_aan"
-                placeholder="Naam van de persoon"
-                value={formData.toegewezen_aan}
-                onChange={(e) => updateField('toegewezen_aan', e.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="deadline">Deadline</Label>
-              <Input
-                id="deadline"
+                id="edit-deadline"
                 type="date"
                 value={formData.deadline}
                 onChange={(e) => updateField('deadline', e.target.value)}
@@ -1302,45 +952,42 @@ function TaskDialog({
             </div>
           </div>
 
-          {/* Geschatte tijd & Bestede tijd */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="geschatte_tijd">Geschatte tijd (uren)</Label>
-              <Input
-                id="geschatte_tijd"
-                type="number"
-                min="0"
-                step="0.5"
-                value={formData.geschatte_tijd}
-                onChange={(e) => updateField('geschatte_tijd', parseFloat(e.target.value) || 0)}
-              />
-            </div>
+          <div className="grid gap-2">
+            <Label>Project (optioneel)</Label>
+            <Select
+              value={formData.project_id || 'geen'}
+              onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Geen project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="geen">Geen project</SelectItem>
+                {projecten.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="bestede_tijd">Bestede tijd (uren)</Label>
-              <Input
-                id="bestede_tijd"
-                type="number"
-                min="0"
-                step="0.5"
-                value={formData.bestede_tijd}
-                onChange={(e) => updateField('bestede_tijd', parseFloat(e.target.value) || 0)}
-              />
-            </div>
+          <div className="grid gap-2">
+            <Label htmlFor="edit-toegewezen">Toegewezen aan</Label>
+            <Input
+              id="edit-toegewezen"
+              value={formData.toegewezen_aan}
+              onChange={(e) => updateField('toegewezen_aan', e.target.value)}
+              placeholder="Optioneel..."
+            />
           </div>
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSaving}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Annuleren
           </Button>
           <Button onClick={onSave} disabled={isSaving}>
             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {editingTaak ? 'Opslaan' : 'Aanmaken'}
+            Opslaan
           </Button>
         </DialogFooter>
       </DialogContent>
