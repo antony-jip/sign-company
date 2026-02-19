@@ -73,6 +73,8 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { analyzeProject } from '@/services/aiService'
+import { sendEmail } from '@/services/gmailService'
+import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant } from '@/types'
@@ -141,7 +143,7 @@ export function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { offertePrefix, offerteGeldigheidDagen, standaardBtw } = useAppSettings()
+  const { offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [takenWeergave, setTakenWeergave] = useState<'board' | 'tabel'>('board')
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
@@ -357,12 +359,30 @@ export function ProjectDetail() {
         revisie_nummer: 1,
       })
 
+      // Actually send the email with the approval link
+      try {
+        const goedkeurUrl = `${window.location.origin}/goedkeuring/${gk.token}`
+        const { subject, html } = tekeningGoedkeuringTemplate({
+          klantNaam: klant.contactpersoon || klant.bedrijfsnaam,
+          projectNaam: project.naam,
+          beschrijving: verstuurBericht,
+          goedkeurUrl,
+          bedrijfsnaam: bedrijfsnaam || undefined,
+          primaireKleur: primaireKleur || undefined,
+          handtekening: emailHandtekening || undefined,
+        })
+        await sendEmail(klant.email, subject, '', { html })
+      } catch (emailErr) {
+        console.error('Goedkeuring email mislukt:', emailErr)
+        toast.error('Goedkeuring aangemaakt, maar email niet verzonden')
+      }
+
       // Update offerte status if attached
       if (selectedOfferteId) {
         await updateOfferte(selectedOfferteId, { status: 'verzonden' })
       }
 
-      toast.success('Tekeningen verstuurd naar klant! Goedkeuringslink aangemaakt.')
+      toast.success('Tekeningen verstuurd naar klant!')
       setVerstuurOpen(false)
       await Promise.all([fetchGoedkeuringen(), fetchOffertes()])
     } catch (err) {
