@@ -441,7 +441,7 @@ export function TasksLayout() {
               <Button
                 variant={isCurrentWeek ? 'default' : 'ghost'}
                 size="sm"
-                className={cn('h-7 text-xs px-3 rounded-md', isCurrentWeek && 'bg-[#58B09C] hover:bg-[#4a9a88] shadow-sm')}
+                className={cn('h-7 text-xs px-3 rounded-md', isCurrentWeek && 'bg-primary hover:bg-wm-hover shadow-sm')}
                 onClick={() => setWeekOffset(0)}
               >
                 Vandaag
@@ -457,7 +457,7 @@ export function TasksLayout() {
               className={cn(
                 'text-xs px-3 py-1.5 rounded-lg border transition-all duration-200',
                 showCompleted
-                  ? 'bg-[#58B09C]/10 border-[#58B09C]/30 text-[#386150] dark:text-[#7dd3b8] shadow-sm'
+                  ? 'bg-primary/10 border-primary/30 text-accent dark:text-wm-light shadow-sm'
                   : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
               )}
             >
@@ -480,12 +480,12 @@ export function TasksLayout() {
                 key={i}
                 className={cn(
                   'flex-1 min-w-0 text-center py-2.5 border-l border-border/40 transition-colors',
-                  isToday && 'bg-[#58B09C]/5'
+                  isToday && 'bg-primary/5'
                 )}
               >
                 <div className={cn(
                   'text-[11px] uppercase tracking-wider font-semibold',
-                  isToday ? 'text-[#58B09C]' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
+                  isToday ? 'text-primary' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
                 )}>
                   {DAY_LABELS[i]}
                 </div>
@@ -493,7 +493,7 @@ export function TasksLayout() {
                   <span className={cn(
                     'inline-flex items-center justify-center text-sm font-bold transition-all',
                     isToday
-                      ? 'w-8 h-8 rounded-full bg-[#58B09C] text-white shadow-sm shadow-[#58B09C]/30'
+                      ? 'w-8 h-8 rounded-full bg-primary text-white shadow-sm shadow-primary/30'
                       : isPast ? 'text-muted-foreground/30' : 'text-foreground'
                   )}>
                     {day.getDate()}
@@ -502,7 +502,7 @@ export function TasksLayout() {
                     <span className={cn(
                       'text-[10px] font-medium tabular-nums px-1.5 py-0.5 rounded-full',
                       isToday
-                        ? 'bg-[#58B09C]/15 text-[#58B09C]'
+                        ? 'bg-primary/15 text-primary'
                         : 'bg-muted/60 text-muted-foreground/50'
                     )}>
                       {dayTasks.length}
@@ -619,7 +619,7 @@ export function TasksLayout() {
               </Select>
             </div>
             <Button
-              className="w-full h-9 text-sm bg-[#58B09C] hover:bg-[#4a9a88] rounded-lg shadow-sm"
+              className="w-full h-9 text-sm bg-primary hover:bg-wm-hover rounded-lg shadow-sm"
               disabled={!fabTitle.trim()}
               onClick={handleFabAdd}
             >
@@ -631,9 +631,9 @@ export function TasksLayout() {
         <button
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
-            'flex items-center justify-center w-14 h-14 rounded-full shadow-lg shadow-[#58B09C]/20 transition-all duration-200',
-            'bg-[#58B09C] hover:bg-[#4a9a88] text-white hover:shadow-xl hover:shadow-[#58B09C]/30 hover:scale-105',
-            fabOpen && 'rotate-45 bg-[#386150]'
+            'flex items-center justify-center w-14 h-14 rounded-full shadow-lg shadow-primary/20 transition-all duration-200',
+            'bg-primary hover:bg-wm-hover text-white hover:shadow-xl hover:shadow-primary/30 hover:scale-105',
+            fabOpen && 'rotate-45 bg-accent'
           )}
         >
           <Plus className="w-6 h-6" />
@@ -729,7 +729,7 @@ function DayColumn({
   return (
     <div className={cn(
       'flex-1 min-w-0 border-l border-border/40 relative',
-      isToday && 'bg-[#58B09C]/[0.02]'
+      isToday && 'bg-primary/[0.02]'
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
@@ -741,7 +741,7 @@ function DayColumn({
             style={{ height: HOUR_HEIGHT }}
             className={cn(
               'group/hour border-b border-border/30 transition-colors duration-150 relative',
-              isDropHere && 'bg-[#58B09C]/10'
+              isDropHere && 'bg-primary/10'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
             onDrop={(e) => handleDrop(e, hour)}
@@ -750,9 +750,9 @@ function DayColumn({
             {/* Drop indicator */}
             {isDropHere && (
               <div className="h-full flex items-start pt-1 px-1 pointer-events-none">
-                <div className="w-full rounded-md border-2 border-dashed border-[#58B09C]/40 h-10 flex items-center justify-center">
-                  <Clock className="w-3 h-3 text-[#58B09C]/60 mr-1" />
-                  <span className="text-[10px] text-[#58B09C]/60 font-medium">{String(hour).padStart(2, '0')}:00</span>
+                <div className="w-full rounded-md border-2 border-dashed border-primary/40 h-10 flex items-center justify-center">
+                  <Clock className="w-3 h-3 text-primary/60 mr-1" />
+                  <span className="text-[10px] text-primary/60 font-medium">{String(hour).padStart(2, '0')}:00</span>
                 </div>
               </div>
             )}
@@ -765,7 +765,7 @@ function DayColumn({
                   value={hourAddTitle}
                   onChange={(e) => setHourAddTitle(e.target.value)}
                   placeholder={`Taak om ${String(hour).padStart(2, '0')}:00...`}
-                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#58B09C]/50 bg-card shadow-lg focus:outline-none focus:border-[#58B09C] focus:ring-2 focus:ring-[#58B09C]/20 text-foreground placeholder:text-muted-foreground/40 transition-all"
+                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-primary/50 bg-card shadow-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/40 transition-all"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && hourAddTitle.trim()) {
                       onQuickAddAtTime(hour, hourAddTitle.trim())
@@ -783,7 +783,7 @@ function DayColumn({
             {!isDropHere && !isAddingHere && (
               <button
                 onClick={() => { setAddingAtHour(hour); setHourAddTitle(''); setTimeout(() => hourInputRef.current?.focus(), 50) }}
-                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-md text-muted-foreground/25 hover:text-[#58B09C] hover:bg-[#58B09C]/10 transition-all duration-200"
+                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-md text-muted-foreground/25 hover:text-primary hover:bg-primary/10 transition-all duration-200"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -856,7 +856,7 @@ function DayColumn({
                 value={addTitle}
                 onChange={(e) => setAddTitle(e.target.value)}
                 placeholder="Taak..."
-                className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#58B09C]/40 bg-card focus:outline-none focus:border-[#58B09C] focus:ring-2 focus:ring-[#58B09C]/20 text-foreground placeholder:text-muted-foreground/40 transition-all"
+                className="w-full text-xs px-2.5 py-2 rounded-lg border border-primary/40 bg-card focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/40 transition-all"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && addTitle.trim()) {
                     onQuickAdd(addTitle.trim())
@@ -870,7 +870,7 @@ function DayColumn({
           ) : (
             <button
               onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] text-muted-foreground/30 hover:text-[#58B09C] hover:bg-[#58B09C]/5 transition-all duration-200"
+              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] text-muted-foreground/30 hover:text-primary hover:bg-primary/5 transition-all duration-200"
             >
               <Plus className="w-3 h-3" />
             </button>
@@ -984,19 +984,19 @@ function TaskCard({
             onClick={handleToggle}
             className={cn(
               'flex-shrink-0 p-0.5 rounded-md transition-all duration-200',
-              !isDone && 'hover:bg-[#58B09C]/10'
+              !isDone && 'hover:bg-primary/10'
             )}
             title={isDone ? 'Markeer als ongedaan' : 'Markeer als klaar'}
           >
             {isDone ? (
-              <div className="w-5 h-5 rounded-full bg-[#58B09C] flex items-center justify-center shadow-sm shadow-[#58B09C]/20">
+              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm shadow-primary/20">
                 <Check className="w-3 h-3 text-white" strokeWidth={3} />
               </div>
             ) : (
               <div className={cn(
                 'w-5 h-5 rounded-full border-2 transition-all duration-200',
                 PRIORITEIT_RING_COLORS[taak.prioriteit],
-                'hover:border-[#58B09C] hover:bg-[#58B09C]/10'
+                'hover:border-primary hover:bg-primary/10'
               )} />
             )}
           </button>
@@ -1005,8 +1005,8 @@ function TaskCard({
 
       {/* Completion animation overlay */}
       {justCompleted && (
-        <div className="absolute inset-0 rounded-lg bg-[#58B09C]/20 flex items-center justify-center pointer-events-none animate-in fade-in duration-200">
-          <CheckCircle2 className="w-6 h-6 text-[#58B09C] animate-in zoom-in duration-300" />
+        <div className="absolute inset-0 rounded-lg bg-primary/20 flex items-center justify-center pointer-events-none animate-in fade-in duration-200">
+          <CheckCircle2 className="w-6 h-6 text-primary animate-in zoom-in duration-300" />
         </div>
       )}
     </div>
@@ -1078,7 +1078,7 @@ function EditTaskDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Annuleren</Button>
-          <Button onClick={onSave} disabled={isSaving} className="bg-[#58B09C] hover:bg-[#4a9a88]">
+          <Button onClick={onSave} disabled={isSaving} className="bg-primary hover:bg-wm-hover">
             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Opslaan
           </Button>
         </DialogFooter>

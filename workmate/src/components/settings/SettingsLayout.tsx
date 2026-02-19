@@ -46,6 +46,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { usePalette, PALETTES } from '@/contexts/PaletteContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
@@ -2202,10 +2203,10 @@ function MeldingenTab() {
           </div>
 
           {/* Status wijzigingen */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-[#CAF7E2]/20 dark:bg-[#386150]/20 border border-[#58B09C]/30 dark:border-[#58B09C]/20">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-wm-pale/20 dark:bg-accent/20 border border-primary/30 dark:border-primary/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#CAF7E2]/30 dark:bg-[#386150]/30 flex items-center justify-center">
-                <Settings className="w-5 h-5 text-[#386150] dark:text-[#7dd3b8]" />
+              <div className="w-10 h-10 rounded-lg bg-wm-pale/30 dark:bg-accent/30 flex items-center justify-center">
+                <Settings className="w-5 h-5 text-accent dark:text-wm-light" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -2269,8 +2270,8 @@ function IntegratiesTab() {
       description: 'AI-functionaliteit voor tekst generatie en analyse',
       connected: openaiConfigured,
       icon: (
-        <div className="w-10 h-10 bg-[#CAF7E2]/30 dark:bg-[#386150]/30 rounded-lg flex items-center justify-center">
-          <span className="text-[#386150] dark:text-[#7dd3b8] font-bold text-sm">AI</span>
+        <div className="w-10 h-10 bg-wm-pale/30 dark:bg-accent/30 rounded-lg flex items-center justify-center">
+          <span className="text-accent dark:text-wm-light font-bold text-sm">AI</span>
         </div>
       ),
     },
@@ -2591,6 +2592,7 @@ function WeergaveTab() {
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage } = useLanguage()
   const { settings, updateSettings } = useAppSettings()
+  const { paletteId, setPaletteId } = usePalette()
   const [sidebarItems, setSidebarItems] = useState<string[]>(
     settings.sidebar_items || ALL_SIDEBAR_ITEMS.map((i) => i.label)
   )
@@ -2670,6 +2672,68 @@ function WeergaveTab() {
               checked={theme === 'dark'}
               onCheckedChange={toggleTheme}
             />
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Color Palette Picker */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <Palette className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                Kleurenpalet
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Kies je favoriete accentkleur voor de hele app
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {PALETTES.map((p) => {
+              const isActive = paletteId === p.id
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setPaletteId(p.id)
+                    toast.success(`Palet "${p.naam}" geactiveerd`)
+                  }}
+                  className={`relative group rounded-xl border-2 p-3 transition-all duration-200 text-left ${
+                    isActive
+                      ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20'
+                      : 'border-border hover:border-primary/40 hover:shadow-sm'
+                  }`}
+                >
+                  {/* Color swatch */}
+                  <div className="flex gap-1 mb-2.5">
+                    {p.preview.map((color, i) => (
+                      <div
+                        key={i}
+                        className={`h-6 flex-1 transition-transform duration-200 ${
+                          i === 0 ? 'rounded-l-md' : i === 2 ? 'rounded-r-md' : ''
+                        } ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  {/* Label */}
+                  <p className={`text-sm font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                    {p.naam}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                    {p.beschrijving}
+                  </p>
+                  {/* Active indicator */}
+                  {isActive && (
+                    <div className="absolute top-2 right-2">
+                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    </div>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 

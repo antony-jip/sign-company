@@ -96,8 +96,8 @@ export function AIInsightWidget() {
         id: 'deadline-projects',
         message: `${nearDeadlineProjects.length} project${nearDeadlineProjects.length > 1 ? 'en naderen hun' : ' nadert zijn'} deadline`,
         icon: FolderKanban,
-        iconColor: 'text-[#58B09C]',
-        iconBg: 'bg-[#58B09C]/10',
+        iconColor: 'text-primary',
+        iconBg: 'bg-primary/10',
         actionLabel: 'Bekijk projecten',
         href: '/projecten',
       })
@@ -135,8 +135,8 @@ export function AIInsightWidget() {
         id: 'pending-quotes',
         message: `${pendingOffertes.length} offerte${pendingOffertes.length > 1 ? 's' : ''} wacht${pendingOffertes.length > 1 ? 'en' : ''} op reactie`,
         icon: FileText,
-        iconColor: 'text-[#58B09C]',
-        iconBg: 'bg-[#58B09C]/10',
+        iconColor: 'text-primary',
+        iconBg: 'bg-primary/10',
         actionLabel: 'Bekijk offertes',
         href: '/offertes',
       })
@@ -148,8 +148,8 @@ export function AIInsightWidget() {
           id: 'no-clients',
           message: 'Begin met het toevoegen van uw eerste klant',
           icon: Users,
-          iconColor: 'text-[#58B09C]',
-          iconBg: 'bg-[#58B09C]/10',
+          iconColor: 'text-primary',
+          iconBg: 'bg-primary/10',
           actionLabel: 'Klanten beheren',
           href: '/klanten',
         })
@@ -170,8 +170,8 @@ export function AIInsightWidget() {
           id: 'no-quotes',
           message: 'Stel uw eerste offerte op voor een klant',
           icon: FileText,
-          iconColor: 'text-[#58B09C]',
-          iconBg: 'bg-[#58B09C]/10',
+          iconColor: 'text-primary',
+          iconBg: 'bg-primary/10',
           actionLabel: 'Nieuwe offerte',
           href: '/offertes/nieuw',
         })
@@ -185,7 +185,7 @@ export function AIInsightWidget() {
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#4A442D] to-[#386150] shadow-md">
+          <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#4A442D] to-accent shadow-md">
             <Sparkles className="h-4 w-4 text-white" />
           </div>
           <span>AI Inzichten</span>

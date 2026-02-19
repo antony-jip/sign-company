@@ -121,16 +121,16 @@ export function StatisticsCards() {
       subtitle: `${projecten.length} totaal`,
       change: projecten.length > 0 ? `${Math.round((actieveProjecten / projecten.length) * 100)}%` : undefined,
       icon: FolderKanban,
-      gradient: 'from-[#58B09C] to-[#7dd3b8]',
-      shadowColor: 'shadow-[#58B09C]/20',
+      gradient: 'from-primary to-wm-light',
+      shadowColor: 'shadow-primary/20',
     },
     {
       title: 'Totaal Klanten',
       value: animKlanten.toString(),
       subtitle: `${klanten.filter((k) => k.status === 'actief').length} actief`,
       icon: Users,
-      gradient: 'from-[#386150] to-[#58B09C]',
-      shadowColor: 'shadow-[#386150]/20',
+      gradient: 'from-accent to-primary',
+      shadowColor: 'shadow-accent/20',
     },
     {
       title: 'Open Offertes',
@@ -175,7 +175,7 @@ export function StatisticsCards() {
 
               <div className="mt-3 flex items-center gap-2">
                 {stat.change && (
-                  <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-[#386150] dark:text-[#58B09C] bg-[#CAF7E2]/40 dark:bg-[#58B09C]/10 px-1.5 py-0.5 rounded-md">
+                  <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-accent dark:text-primary bg-wm-pale/40 dark:bg-primary/10 px-1.5 py-0.5 rounded-md">
                     <ArrowUpRight className="w-3 h-3" />
                     {stat.change}
                   </span>

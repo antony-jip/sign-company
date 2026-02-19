@@ -406,9 +406,9 @@ function formatDate(d?: string): string {
 
 function getMetricColors(color: string) {
   const map: Record<string, { bg: string; text: string; icon: string }> = {
-    blue: { bg: 'bg-[#58B09C]/10 dark:bg-[#58B09C]/20', text: 'text-[#386150] dark:text-[#7dd3b8]', icon: 'text-[#58B09C]' },
+    blue: { bg: 'bg-primary/10 dark:bg-primary/20', text: 'text-accent dark:text-wm-light', icon: 'text-primary' },
     emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300', icon: 'text-emerald-500' },
-    violet: { bg: 'bg-[#4A442D]/10 dark:bg-[#4A442D]/30', text: 'text-[#4A442D] dark:text-[#CAF7E2]', icon: 'text-[#58B09C]' },
+    violet: { bg: 'bg-[#4A442D]/10 dark:bg-[#4A442D]/30', text: 'text-[#4A442D] dark:text-wm-pale', icon: 'text-primary' },
     amber: { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300', icon: 'text-amber-500' },
     red: { bg: 'bg-red-50 dark:bg-red-950/40', text: 'text-red-700 dark:text-red-300', icon: 'text-red-500' },
     gray: { bg: 'bg-gray-50 dark:bg-gray-800/40', text: 'text-gray-700 dark:text-gray-300', icon: 'text-gray-500' },
@@ -561,7 +561,7 @@ export function WorkmateAIChat() {
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="flex-shrink-0 px-6 pt-5 pb-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 bg-gradient-to-br from-[#386150] to-[#58B09C] rounded-xl shadow-lg shadow-[#58B09C]/30 dark:shadow-[#386150]/30">
+          <div className="p-2.5 bg-gradient-to-br from-accent to-primary rounded-xl shadow-lg shadow-primary/30 dark:shadow-accent/30">
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -606,8 +606,8 @@ export function WorkmateAIChat() {
         {messages.length === 0 ? (
           /* Empty state with suggestions */
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#CAF7E2]/30 to-[#58B09C]/10 dark:from-[#4A442D]/40 dark:to-[#386150]/40 flex items-center justify-center mb-4">
-              <Sparkles className="w-7 h-7 text-[#58B09C]" />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-wm-pale/30 to-primary/10 dark:from-[#4A442D]/40 dark:to-accent/40 flex items-center justify-center mb-4">
+              <Sparkles className="w-7 h-7 text-primary" />
             </div>
             <p className="text-sm font-medium text-foreground mb-1">Stel een vraag</p>
             <p className="text-xs text-muted-foreground mb-6 text-center max-w-xs">
@@ -633,14 +633,14 @@ export function WorkmateAIChat() {
               <div key={msg.id}>
                 {msg.rol === 'user' ? (
                   <div className="flex justify-end">
-                    <div className="max-w-[80%] bg-[#386150] text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm">
+                    <div className="max-w-[80%] bg-accent text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm">
                       {msg.bericht}
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="flex items-start gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#386150] to-[#58B09C] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0 mt-0.5">
                         <Bot className="w-3.5 h-3.5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">

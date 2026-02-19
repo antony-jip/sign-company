@@ -96,7 +96,7 @@ export function RegisterPage() {
           <CardHeader className="text-center pb-2">
             {/* Workmate Logo */}
             <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#386150] via-[#58B09C] to-[#CAF7E2] flex items-center justify-center shadow-lg shadow-[#58B09C]/25">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center shadow-lg shadow-primary/25">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold text-foreground">Workmate</span>
@@ -266,7 +266,7 @@ export function RegisterPage() {
               {/* Register Button */}
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-[#386150] to-[#58B09C] hover:from-[#2d5243] hover:to-[#4a9d8a] text-white shadow-lg shadow-[#58B09C]/25 transition-all duration-200"
+                className="w-full h-11 bg-gradient-to-r from-accent to-primary hover:from-[#2d5243] hover:to-[#4a9d8a] text-white shadow-lg shadow-primary/25 transition-all duration-200"
                 disabled={isLoading || !agreeTerms}
               >
                 {isLoading ? (

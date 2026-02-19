@@ -157,7 +157,7 @@ export function WorkflowWidget() {
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-[#58B09C] animate-pulse" />
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             Actie vereist
           </h3>
           <span className="text-xs text-muted-foreground">
@@ -175,7 +175,7 @@ export function WorkflowWidget() {
                 {iconMap[item.type]}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate group-hover:text-[#386150] dark:group-hover:text-[#58B09C] transition-colors">
+                <p className="text-sm font-medium text-foreground truncate group-hover:text-accent dark:group-hover:text-primary transition-colors">
                   {item.title}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">

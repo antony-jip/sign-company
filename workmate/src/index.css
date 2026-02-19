@@ -43,6 +43,9 @@
     --wm-sidebar-bg: 42 28% 17%;
     --wm-sidebar-hover: 48 24% 22%;
     --wm-sidebar-active: 163 36% 52%;
+    --wm-hover: 163 33% 45%;
+    --wm-light: 163 46% 66%;
+    --wm-pale: 146 76% 88%;
     --wm-glass: rgba(255, 255, 255, 0.72);
     --wm-glass-border: rgba(255, 255, 255, 0.20);
     --wm-shadow-color: 155 20% 40%;
@@ -73,6 +76,9 @@
 
     --wm-sidebar-bg: 42 30% 8%;
     --wm-sidebar-hover: 48 24% 13%;
+    --wm-hover: 163 36% 50%;
+    --wm-light: 163 46% 70%;
+    --wm-pale: 146 76% 88%;
     --wm-glass: rgba(20, 18, 12, 0.85);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
     --wm-glow: 0 0 40px rgba(88, 176, 156, 0.08);
@@ -388,8 +394,8 @@
 /* Login page animated gradient — earthy botanical */
 .wm-login-bg {
   background: linear-gradient(-45deg,
-    #2a2316, #3D3522, #4A442D, #386150,
-    #58B09C, #386150, #4A442D, #3D3522
+    #2a2316, #3D3522, #4A442D, var(--wm-gradient-start),
+    var(--wm-gradient-mid), var(--wm-gradient-start), #4A442D, #3D3522
   );
   background-size: 400% 400%;
   animation: loginGradient 20s ease infinite;

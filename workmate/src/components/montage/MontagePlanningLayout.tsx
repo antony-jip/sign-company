@@ -159,8 +159,8 @@ function getInitials(naam: string): string {
 }
 
 const AVATAR_COLORS = [
-  "bg-[#58B09C]",
-  "bg-[#386150]",
+  "bg-primary",
+  "bg-accent",
   "bg-teal-500",
   "bg-orange-500",
   "bg-pink-500",

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { PaletteProvider } from '@/contexts/PaletteContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import { AppSettingsProvider } from '@/contexts/AppSettingsContext'
@@ -99,18 +100,20 @@ function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <AppSettingsProvider>
-              <SidebarProvider>
-                <ErrorBoundary>
-                  <Toaster position="top-right" richColors />
-                  <AppContent />
-                </ErrorBoundary>
-              </SidebarProvider>
-            </AppSettingsProvider>
-          </AuthProvider>
-        </LanguageProvider>
+        <PaletteProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <AppSettingsProvider>
+                <SidebarProvider>
+                  <ErrorBoundary>
+                    <Toaster position="top-right" richColors />
+                    <AppContent />
+                  </ErrorBoundary>
+                </SidebarProvider>
+              </AppSettingsProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </PaletteProvider>
       </ThemeProvider>
     </BrowserRouter>
   )

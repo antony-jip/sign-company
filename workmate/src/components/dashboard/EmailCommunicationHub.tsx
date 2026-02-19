@@ -29,7 +29,7 @@ function extractName(from: string): string {
 }
 
 const avatarColors = [
-  'bg-[#58B09C]',
+  'bg-primary',
   'bg-green-500',
   'bg-[#4A442D]',
   'bg-orange-500',
@@ -64,13 +64,13 @@ export function EmailCommunicationHub() {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#386150] to-[#58B09C] shadow-md">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-accent to-primary shadow-md">
               <Mail className="h-4 w-4 text-white" />
             </div>
             <span>Recente Berichten</span>
           </CardTitle>
           {recentUnread.length > 0 && (
-            <span className="flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-[#386150] text-white text-[11px] font-bold">
+            <span className="flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-accent text-white text-[11px] font-bold">
               {recentUnread.length}
             </span>
           )}
@@ -122,7 +122,7 @@ export function EmailCommunicationHub() {
                         {timeAgo(email.datum)}
                       </span>
                       {/* Unread indicator */}
-                      <span className="h-2 w-2 rounded-full bg-[#58B09C] flex-shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-0.5">

@@ -55,7 +55,7 @@ export function LoginPage() {
         <div className="max-w-md space-y-6">
           <h2 className="text-4xl font-bold text-white leading-tight">
             Jouw bedrijf,<br />
-            <span className="text-[#CAF7E2]">slimmer beheerd.</span>
+            <span className="text-wm-pale">slimmer beheerd.</span>
           </h2>
           <p className="text-white/60 text-lg leading-relaxed">
             Alles wat je nodig hebt voor klantenbeheer, offertes, projecten en meer — in één platform.
@@ -64,15 +64,15 @@ export function LoginPage() {
           {/* Feature pills */}
           <div className="flex flex-wrap gap-3 pt-2">
             <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 border border-white/10 rounded-full px-4 py-2 backdrop-blur-sm">
-              <Zap className="w-3.5 h-3.5 text-[#CAF7E2]" />
+              <Zap className="w-3.5 h-3.5 text-wm-pale" />
               AI-Assistent
             </div>
             <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 border border-white/10 rounded-full px-4 py-2 backdrop-blur-sm">
-              <BarChart3 className="w-3.5 h-3.5 text-[#58B09C]" />
+              <BarChart3 className="w-3.5 h-3.5 text-primary" />
               Live Analytics
             </div>
             <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 border border-white/10 rounded-full px-4 py-2 backdrop-blur-sm">
-              <Shield className="w-3.5 h-3.5 text-[#7dd3b8]" />
+              <Shield className="w-3.5 h-3.5 text-wm-light" />
               Veilig & Privé
             </div>
           </div>
@@ -97,7 +97,7 @@ export function LoginPage() {
             <CardHeader className="text-center pb-2 pt-8">
               {/* Mobile-only logo */}
               <div className="flex items-center justify-center gap-3 mb-6 lg:hidden">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#386150] via-[#58B09C] to-[#CAF7E2] flex items-center justify-center shadow-lg shadow-[#58B09C]/25">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center shadow-lg shadow-primary/25">
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-2xl font-bold text-foreground">Workmate</span>
@@ -173,7 +173,7 @@ export function LoginPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-gradient-to-r from-[#386150] to-[#58B09C] hover:from-[#2d5243] hover:to-[#4a9d8a] text-white shadow-lg shadow-[#58B09C]/20 transition-all duration-200 rounded-xl group"
+                  className="w-full h-11 bg-gradient-to-r from-accent to-primary hover:from-[#2d5243] hover:to-[#4a9d8a] text-white shadow-lg shadow-primary/20 transition-all duration-200 rounded-xl group"
                   disabled={isLoading}
                 >
                   {isLoading ? (

@@ -173,7 +173,7 @@ const ROL_OPTIES: { value: Medewerker['rol']; label: string }[] = [
 ];
 
 const ROL_KLEUREN: Record<Medewerker['rol'], string> = {
-  admin: 'bg-[#CAF7E2]/30 text-[#3D3522] border-[#58B09C]/30',
+  admin: 'bg-wm-pale/30 text-[#3D3522] border-primary/30',
   medewerker: 'bg-blue-100 text-blue-800 border-blue-200',
   monteur: 'bg-green-100 text-green-800 border-green-200',
   verkoop: 'bg-amber-100 text-amber-800 border-amber-200',
@@ -203,8 +203,8 @@ function avatarColor(naam: string): string {
     'bg-emerald-500',
     'bg-teal-500',
     'bg-cyan-500',
-    'bg-[#58B09C]',
-    'bg-[#386150]',
+    'bg-primary',
+    'bg-accent',
     'bg-[#4A442D]',
     'bg-fuchsia-500',
   ];

@@ -53,7 +53,7 @@ export function PriorityTasks() {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#58B09C] to-[#7dd3b8] shadow-md">
+          <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-wm-light shadow-md">
             <ListTodo className="h-4 w-4 text-white" />
           </div>
           <span>Prioritaire Taken</span>

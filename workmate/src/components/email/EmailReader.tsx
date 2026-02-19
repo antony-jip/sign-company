@@ -66,8 +66,8 @@ function extractSenderEmail(from: string): string {
 
 function getAvatarColor(name: string): string {
   const colors = [
-    'bg-[#58B09C]', 'bg-emerald-500', 'bg-[#4A442D]', 'bg-amber-500',
-    'bg-rose-500', 'bg-cyan-500', 'bg-[#58B09C]', 'bg-pink-500',
+    'bg-primary', 'bg-emerald-500', 'bg-[#4A442D]', 'bg-amber-500',
+    'bg-rose-500', 'bg-cyan-500', 'bg-primary', 'bg-pink-500',
     'bg-teal-500', 'bg-orange-500',
   ]
   const index = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length
@@ -78,7 +78,7 @@ function getLabelColor(label: string): string {
   switch (label) {
     case 'offerte': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
     case 'klant': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
-    case 'project': return 'bg-[#CAF7E2]/30 text-[#386150] dark:bg-[#386150]/30 dark:text-[#7dd3b8]'
+    case 'project': return 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-light'
     case 'leverancier': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
     default: return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
   }
@@ -96,7 +96,7 @@ function getFileTypeColor(name: string): string {
     case 'pdf': return 'bg-red-500'
     case 'doc': case 'docx': return 'bg-blue-600'
     case 'xls': case 'xlsx': return 'bg-green-600'
-    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-[#58B09C]'
+    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-primary'
     case 'zip': case 'rar': return 'bg-yellow-600'
     default: return 'bg-gray-500'
   }
@@ -493,9 +493,9 @@ export function EmailReader({
           </button>
         </div>
         {email.scheduled_at && email.map === 'gepland' && (
-          <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-[#CAF7E2]/20 dark:bg-[#386150]/20 border border-[#58B09C]/30 dark:border-[#386150] rounded-lg">
-            <Clock className="w-4 h-4 text-[#386150] dark:text-[#7dd3b8]" />
-            <span className="text-sm text-[#386150] dark:text-[#CAF7E2]">
+          <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-wm-pale/20 dark:bg-accent/20 border border-primary/30 dark:border-accent rounded-lg">
+            <Clock className="w-4 h-4 text-accent dark:text-wm-light" />
+            <span className="text-sm text-accent dark:text-wm-pale">
               Ingepland voor verzending op <strong>{formatDateTime(email.scheduled_at)}</strong>
             </span>
           </div>
@@ -984,14 +984,14 @@ export function EmailReader({
 
             {/* Scheduled indicator */}
             {scheduledAt && (
-              <div className="px-3 py-2 bg-[#CAF7E2]/20 dark:bg-[#386150]/20 border-t flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-[#386150] dark:text-[#CAF7E2]">
+              <div className="px-3 py-2 bg-wm-pale/20 dark:bg-accent/20 border-t flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-accent dark:text-wm-pale">
                   <Clock className="w-3.5 h-3.5" />
                   Ingepland: <strong>{formatDateTime(scheduledAt)}</strong>
                 </div>
                 <button
                   onClick={() => { setScheduledAt(''); setScheduleOption('now') }}
-                  className="text-xs text-[#386150] hover:text-[#3D3522] dark:hover:text-[#CAF7E2] font-medium"
+                  className="text-xs text-accent hover:text-[#3D3522] dark:hover:text-wm-pale font-medium"
                 >
                   Annuleren
                 </button>

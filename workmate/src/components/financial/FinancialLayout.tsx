@@ -114,15 +114,15 @@ export function FinancialLayout() {
       label: 'Winst',
       value: formatCurrency(winst),
       icon: Euro,
-      color: winst >= 0 ? 'text-[#386150] dark:text-[#58B09C]' : 'text-red-600 dark:text-red-400',
-      bg: winst >= 0 ? 'bg-[#58B09C]/10 dark:bg-[#58B09C]/20' : 'bg-red-50 dark:bg-red-900/30',
+      color: winst >= 0 ? 'text-accent dark:text-primary' : 'text-red-600 dark:text-red-400',
+      bg: winst >= 0 ? 'bg-primary/10 dark:bg-primary/20' : 'bg-red-50 dark:bg-red-900/30',
     },
     {
       label: 'Openstaande Offertes',
       value: String(openstaandeOffertes.length),
       icon: Receipt,
-      color: 'text-[#386150] dark:text-[#7dd3b8]',
-      bg: 'bg-[#CAF7E2]/20 dark:bg-[#386150]/30',
+      color: 'text-accent dark:text-wm-light',
+      bg: 'bg-wm-pale/20 dark:bg-accent/30',
     },
   ]
 
@@ -130,8 +130,8 @@ export function FinancialLayout() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-[#58B09C]/10 dark:bg-[#58B09C]/20 rounded-lg">
-          <PiggyBank className="w-6 h-6 text-[#386150] dark:text-[#58B09C]" />
+        <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg">
+          <PiggyBank className="w-6 h-6 text-accent dark:text-primary" />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">

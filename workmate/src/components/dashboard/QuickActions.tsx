@@ -18,14 +18,14 @@ const actions: QuickAction[] = [
     description: 'Start een project',
     icon: FolderPlus,
     href: '/projecten/nieuw',
-    gradient: 'from-[#58B09C] to-[#7dd3b8]',
+    gradient: 'from-primary to-wm-light',
   },
   {
     label: 'Nieuwe Offerte',
     description: 'Maak een offerte',
     icon: FilePlus,
     href: '/offertes/nieuw',
-    gradient: 'from-[#386150] to-[#58B09C]',
+    gradient: 'from-accent to-primary',
   },
   {
     label: 'Nieuwe Klant',
@@ -46,14 +46,14 @@ const actions: QuickAction[] = [
     description: 'Bekijk kalender',
     icon: Calendar,
     href: '/kalender',
-    gradient: 'from-[#386150] to-[#58B09C]',
+    gradient: 'from-accent to-primary',
   },
   {
     label: 'Email',
     description: 'Stuur een email',
     icon: Mail,
     href: '/email',
-    gradient: 'from-[#386150] to-[#58B09C]',
+    gradient: 'from-accent to-primary',
   },
 ]
 

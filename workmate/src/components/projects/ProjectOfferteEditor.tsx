@@ -234,7 +234,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Pencil className="h-5 w-5 text-[#386150] dark:text-[#58B09C]" />
+            <Pencil className="h-5 w-5 text-accent dark:text-primary" />
             Offerte Bewerken
           </DialogTitle>
           <DialogDescription>
@@ -244,7 +244,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#58B09C] border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : (
           <div className="space-y-6 py-4">
@@ -283,7 +283,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-[#386150] dark:text-[#58B09C]" />
+                    <FileText className="h-4 w-4 text-accent dark:text-primary" />
                     Offerte Regels
                   </CardTitle>
                   <Button size="sm" variant="outline" onClick={handleAddItem}>
@@ -364,7 +364,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-[#386150] dark:text-[#58B09C]"
+                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-accent dark:text-primary"
                                   onClick={() => handleDuplicateItem(index)}
                                   title="Dupliceer regel"
                                 >
@@ -400,7 +400,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                   </div>
                   <div className="flex justify-between text-base font-bold border-t pt-2">
                     <span>Totaal</span>
-                    <span className="text-[#386150] dark:text-[#58B09C]">{formatCurrency(totaal)}</span>
+                    <span className="text-accent dark:text-primary">{formatCurrency(totaal)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -438,7 +438,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
           <Button
             onClick={handleSave}
             disabled={isSaving || isLoading}
-            className="bg-gradient-to-r from-[#386150] to-[#58B09C] border-0"
+            className="bg-gradient-to-r from-accent to-primary border-0"
           >
             <Save className="h-4 w-4 mr-1" />
             {isSaving ? 'Opslaan...' : 'Opslaan'}

@@ -128,9 +128,9 @@ const STATUS_CONFIG: Record<FactuurStatus, { label: string; color: string; borde
   },
   gecrediteerd: {
     label: 'Gecrediteerd',
-    color: 'bg-[#CAF7E2]/30 text-[#386150] dark:bg-[#386150]/30 dark:text-[#CAF7E2]',
-    border: 'border-l-[#58B09C]',
-    dot: 'bg-[#58B09C]',
+    color: 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-pale',
+    border: 'border-l-primary',
+    dot: 'bg-primary',
   },
 }
 
@@ -1479,7 +1479,7 @@ export function FacturenLayout() {
                   {viewingFactuur.project_id && (
                     <a
                       href={`/projecten/${viewingFactuur.project_id}`}
-                      className="inline-flex items-center gap-1 text-[#386150] dark:text-[#58B09C] hover:underline"
+                      className="inline-flex items-center gap-1 text-accent dark:text-primary hover:underline"
                     >
                       <FileText className="h-3 w-3" />
                       Bekijk project

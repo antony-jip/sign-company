@@ -136,7 +136,7 @@ export function Sidebar() {
       >
         <Icon className={cn(
           'w-[17px] h-[17px] flex-shrink-0 transition-colors duration-200',
-          isActive ? 'text-[#58B09C]' : 'text-gray-500 group-hover:text-gray-400'
+          isActive ? 'text-primary' : 'text-gray-500 group-hover:text-gray-400'
         )} />
         {!isCollapsed && <span className="truncate">{item.label}</span>}
       </NavLink>
@@ -166,7 +166,7 @@ export function Sidebar() {
           isCollapsed ? 'justify-center' : 'gap-3'
         )}
       >
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#386150] via-[#58B09C] to-[#CAF7E2] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#58B09C]/25">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/25">
           <Sparkles className="w-5 h-5 text-white" />
         </div>
         {!isCollapsed && (
@@ -174,7 +174,7 @@ export function Sidebar() {
             <span className="text-[15px] font-bold text-white tracking-tight font-display">
               Workmate
             </span>
-            <span className="text-[10px] text-[#58B09C]/60 font-medium ml-1.5">
+            <span className="text-[10px] text-primary/60 font-medium ml-1.5">
               CRM
             </span>
           </div>
@@ -208,7 +208,7 @@ export function Sidebar() {
       <div className="border-t border-white/[0.05] p-3 space-y-2 flex-shrink-0">
         {!isCollapsed && user && (
           <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#386150] to-[#58B09C] flex items-center justify-center flex-shrink-0 ring-2 ring-white/[0.08]">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0 ring-2 ring-white/[0.08]">
               <span className="text-white text-xs font-semibold">
                 {(user.user_metadata?.voornaam?.[0] || user.email?.[0] || 'U').toUpperCase()}
               </span>
@@ -235,7 +235,7 @@ export function Sidebar() {
 
         {isCollapsed && user && (
           <div className="relative group flex justify-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#386150] to-[#58B09C] flex items-center justify-center cursor-pointer ring-2 ring-white/[0.08]">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center cursor-pointer ring-2 ring-white/[0.08]">
               <span className="text-white text-xs font-semibold">
                 {(user.user_metadata?.voornaam?.[0] || user.email?.[0] || 'U').toUpperCase()}
               </span>

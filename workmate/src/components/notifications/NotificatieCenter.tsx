@@ -62,8 +62,8 @@ const typeConfig: Record<
   },
   montage_gepland: {
     icon: Truck,
-    colorClass: "text-[#386150]",
-    bgClass: "bg-[#CAF7E2]/30",
+    colorClass: "text-accent",
+    bgClass: "bg-wm-pale/30",
   },
   betaling_ontvangen: {
     icon: Banknote,
@@ -351,7 +351,7 @@ export function NotificatieCenter() {
                               {formatTijdGeleden(notificatie.created_at)}
                             </span>
                             {!notificatie.gelezen && (
-                              <span className="h-2 w-2 shrink-0 rounded-full bg-[#58B09C]" />
+                              <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
                             )}
                           </div>
                         </div>

@@ -68,7 +68,7 @@ export function TodayPlanningWidget() {
           subtitle: event.locatie || event.beschrijving || '',
           time: format(eventDate, 'HH:mm'),
           link: '/kalender',
-          color: event.kleur || '#58B09C',
+          color: event.kleur || 'hsl(var(--primary))',
         })
       } else if (isTomorrow(eventDate)) {
         tomorrow.push({
@@ -78,7 +78,7 @@ export function TodayPlanningWidget() {
           subtitle: event.locatie || event.beschrijving || '',
           time: format(eventDate, 'HH:mm'),
           link: '/kalender',
-          color: event.kleur || '#58B09C',
+          color: event.kleur || 'hsl(var(--primary))',
         })
       }
     })
@@ -140,7 +140,7 @@ export function TodayPlanningWidget() {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#58B09C] to-[#7dd3b8] shadow-md">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-wm-light shadow-md">
               <Calendar className="h-4 w-4 text-white" />
             </div>
             Vandaag
@@ -246,7 +246,7 @@ function TimelineRow({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className={`font-medium text-foreground truncate group-hover:text-[#386150] dark:group-hover:text-[#58B09C] transition-colors ${
+        <p className={`font-medium text-foreground truncate group-hover:text-accent dark:group-hover:text-primary transition-colors ${
           compact ? 'text-xs' : 'text-sm'
         }`}>
           {item.title}

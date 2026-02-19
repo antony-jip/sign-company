@@ -85,7 +85,7 @@ export function SalesPulseWidget() {
       detail: `${openOffertes.length} open offerte${openOffertes.length !== 1 ? 's' : ''}`,
       icon: <TrendingUp className="h-4 w-4" />,
       href: '/offertes',
-      accent: 'text-[#58B09C] bg-[#58B09C]/10',
+      accent: 'text-primary bg-primary/10',
     },
     {
       label: 'Te factureren',
@@ -111,7 +111,7 @@ export function SalesPulseWidget() {
       detail: `${betaaldDezeMaand.length} betaald`,
       icon: <CircleDollarSign className="h-4 w-4" />,
       href: '/financieel',
-      accent: 'text-[#386150] dark:text-[#7dd3b8] bg-[#386150]/10',
+      accent: 'text-accent dark:text-wm-light bg-accent/10',
     },
   ]
 

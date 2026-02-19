@@ -52,6 +52,9 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        "wm-hover": "hsl(var(--wm-hover))",
+        "wm-light": "hsl(var(--wm-light))",
+        "wm-pale": "hsl(var(--wm-pale))",
       },
       borderRadius: {
         lg: "var(--radius)",

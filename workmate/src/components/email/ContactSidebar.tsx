@@ -40,8 +40,8 @@ interface ContactSidebarProps {
 
 function getAvatarColor(name: string): string {
   const colors = [
-    'bg-[#58B09C]', 'bg-emerald-500', 'bg-[#4A442D]', 'bg-amber-500',
-    'bg-rose-500', 'bg-cyan-500', 'bg-[#386150]', 'bg-pink-500',
+    'bg-primary', 'bg-emerald-500', 'bg-[#4A442D]', 'bg-amber-500',
+    'bg-rose-500', 'bg-cyan-500', 'bg-accent', 'bg-pink-500',
   ]
   const index = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length
   return colors[index]
@@ -52,7 +52,7 @@ function getTagColor(tag: string): string {
     klant: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
     prospect: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
     leverancier: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
-    partner: 'bg-[#CAF7E2]/30 text-[#386150] dark:bg-[#386150]/30 dark:text-[#7dd3b8]',
+    partner: 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-light',
     klacht: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
     overheid: 'bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300',
     particulier: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
@@ -93,7 +93,7 @@ function getActivityColor(type: string): string {
   switch (type) {
     case 'email': return 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400'
     case 'call': return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400'
-    case 'meeting': return 'bg-[#CAF7E2]/30 text-[#386150] dark:bg-[#386150]/30 dark:text-[#58B09C]'
+    case 'meeting': return 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-primary'
     default: return 'bg-gray-100 text-gray-600'
   }
 }

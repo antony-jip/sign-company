@@ -155,7 +155,7 @@ function getFileTypeColor(name: string): string {
     case 'pdf': return 'bg-red-500'
     case 'doc': case 'docx': return 'bg-blue-600'
     case 'xls': case 'xlsx': return 'bg-green-600'
-    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-[#58B09C]'
+    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-primary'
     case 'zip': case 'rar': return 'bg-yellow-600'
     default: return 'bg-gray-500'
   }
@@ -460,7 +460,7 @@ export function EmailCompose({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 gap-1.5 text-xs text-[#386150] hover:text-[#386150] hover:bg-[#CAF7E2]/20 dark:hover:bg-[#58B09C]/20"
+                className="h-7 gap-1.5 text-xs text-accent hover:text-accent hover:bg-wm-pale/20 dark:hover:bg-primary/20"
                 onClick={handleAiGenerate}
               >
                 <Sparkles className="w-3.5 h-3.5" />

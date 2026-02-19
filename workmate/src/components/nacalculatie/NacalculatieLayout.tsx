@@ -489,8 +489,8 @@ export function NacalculatieLayout() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#58B09C]/10 dark:bg-[#58B09C]/20 rounded-lg">
-            <Calculator className="w-6 h-6 text-[#386150] dark:text-[#58B09C]" />
+          <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg">
+            <Calculator className="w-6 h-6 text-accent dark:text-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
@@ -531,8 +531,8 @@ export function NacalculatieLayout() {
       {/* ==================== HEADER ==================== */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#58B09C]/10 dark:bg-[#58B09C]/20 rounded-lg">
-            <Calculator className="w-6 h-6 text-[#386150] dark:text-[#58B09C]" />
+          <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg">
+            <Calculator className="w-6 h-6 text-accent dark:text-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
@@ -1093,7 +1093,7 @@ export function NacalculatieLayout() {
                   </div>
                   <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex">
                     <div
-                      className="bg-[#58B09C] h-full transition-all duration-300"
+                      className="bg-primary h-full transition-all duration-300"
                       style={{
                         width: detailData.werkelijkeKosten > 0
                           ? `${(detailData.tijdKosten / detailData.werkelijkeKosten) * 100}%`
@@ -1111,7 +1111,7 @@ export function NacalculatieLayout() {
                   </div>
                   <div className="flex items-center gap-4 mt-2 text-xs">
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 bg-[#58B09C] rounded-full inline-block" />
+                      <span className="w-2.5 h-2.5 bg-primary rounded-full inline-block" />
                       <span className="text-gray-500 dark:text-gray-400">
                         Arbeid ({formatCurrency(detailData.tijdKosten)})
                       </span>
