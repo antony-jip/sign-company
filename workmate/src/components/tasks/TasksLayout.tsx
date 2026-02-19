@@ -37,10 +37,13 @@ import {
   Circle,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Flag,
   Hash,
   Inbox,
   Search,
+  X,
+  Calendar,
 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -49,21 +52,18 @@ import type { Taak, Project } from '@/types'
 
 type TaakStatus = Taak['status']
 type TaakPrioriteit = Taak['prioriteit']
-type ViewSection = 'inbox' | 'vandaag' | 'binnenkort' | 'project'
+type ViewSection = 'week' | 'inbox' | 'project'
 
 const PRIORITEIT_ORDER: Record<string, number> = {
-  kritiek: 4,
-  hoog: 3,
-  medium: 2,
-  laag: 1,
+  kritiek: 4, hoog: 3, medium: 2, laag: 1,
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'text-red-500',
-  hoog: 'text-orange-500',
-  medium: 'text-yellow-500',
-  laag: 'text-muted-foreground/30',
+  kritiek: 'text-red-500', hoog: 'text-orange-500', medium: 'text-yellow-500', laag: 'text-muted-foreground/30',
 }
+
+const DAY_NAMES = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag']
+const DAY_NAMES_SHORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
 
 interface TaakFormData {
   titel: string
@@ -78,15 +78,33 @@ interface TaakFormData {
 }
 
 const EMPTY_FORM: TaakFormData = {
-  titel: '',
-  beschrijving: '',
-  status: 'todo',
-  prioriteit: 'medium',
-  toegewezen_aan: '',
-  deadline: '',
-  geschatte_tijd: 0,
-  bestede_tijd: 0,
-  project_id: '',
+  titel: '', beschrijving: '', status: 'todo', prioriteit: 'medium',
+  toegewezen_aan: '', deadline: '', geschatte_tijd: 0, bestede_tijd: 0, project_id: '',
+}
+
+function getMonday(d: Date): Date {
+  const date = new Date(d)
+  const day = date.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  date.setDate(date.getDate() + diff)
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}
+
+function formatDayHeader(date: Date, today: Date): string {
+  if (isSameDay(date, today)) return 'Vandaag'
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  if (isSameDay(date, tomorrow)) return 'Morgen'
+  return `${DAY_NAMES[date.getDay()]} ${date.getDate()}`
+}
+
+function formatShortDate(date: Date): string {
+  return `${date.getDate()} ${['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][date.getMonth()]}`
 }
 
 export function TasksLayout() {
@@ -97,19 +115,20 @@ export function TasksLayout() {
   const [isLoading, setIsLoading] = useState(true)
 
   // View state
-  const [activeView, setActiveView] = useState<ViewSection>('inbox')
+  const [activeView, setActiveView] = useState<ViewSection>('week')
   const [activeProjectId, setActiveProjectId] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
   const [showCompleted, setShowCompleted] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const [weekOffset, setWeekOffset] = useState(0) // 0 = this week, 1 = next week, etc.
 
-  // Inline add state
-  const [isAdding, setIsAdding] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [newPriority, setNewPriority] = useState<TaakPrioriteit>('medium')
-  const [newDeadline, setNewDeadline] = useState('')
-  const [newProjectId, setNewProjectId] = useState('')
-  const addInputRef = useRef<HTMLInputElement>(null)
+  // FAB quick-add state
+  const [fabOpen, setFabOpen] = useState(false)
+  const [fabTitle, setFabTitle] = useState('')
+  const [fabPriority, setFabPriority] = useState<TaakPrioriteit>('medium')
+  const [fabDeadline, setFabDeadline] = useState('')
+  const [fabProjectId, setFabProjectId] = useState('')
+  const fabInputRef = useRef<HTMLInputElement>(null)
 
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -122,7 +141,7 @@ export function TasksLayout() {
   const [deletingTaak, setDeletingTaak] = useState<Taak | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Projects sidebar collapsed
+  // Projects sidebar
   const [projectsExpanded, setProjectsExpanded] = useState(true)
 
   const loadData = useCallback(async () => {
@@ -139,9 +158,14 @@ export function TasksLayout() {
     }
   }, [])
 
+  useEffect(() => { loadData() }, [loadData])
+
+  // Focus FAB input when opened
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    if (fabOpen) {
+      setTimeout(() => fabInputRef.current?.focus(), 100)
+    }
+  }, [fabOpen])
 
   const projectMap = useMemo(() => {
     const map: Record<string, string> = {}
@@ -149,11 +173,72 @@ export function TasksLayout() {
     return map
   }, [projecten])
 
-  // Filtered tasks per view
+  // Week days
+  const today = useMemo(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
+  }, [])
+
+  const weekDays = useMemo(() => {
+    const monday = getMonday(today)
+    monday.setDate(monday.getDate() + weekOffset * 7)
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday)
+      d.setDate(d.getDate() + i)
+      return d
+    })
+  }, [today, weekOffset])
+
+  // Tasks grouped by day for week view
+  const tasksByDay = useMemo(() => {
+    const map = new Map<string, Taak[]>()
+    weekDays.forEach((d) => { map.set(d.toDateString(), []) })
+
+    const activeTaken = taken.filter((t) => t.status !== 'klaar' || showCompleted)
+
+    activeTaken.forEach((t) => {
+      if (!t.deadline) return
+      const deadline = new Date(t.deadline)
+      deadline.setHours(0, 0, 0, 0)
+      const key = deadline.toDateString()
+      if (map.has(key)) {
+        map.get(key)!.push(t)
+      }
+    })
+
+    // Sort each day by priority
+    map.forEach((tasks) => {
+      tasks.sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
+    })
+
+    return map
+  }, [taken, weekDays, showCompleted])
+
+  // Overdue tasks (before this week)
+  const overdueTasks = useMemo(() => {
+    const firstDay = weekDays[0]
+    return taken
+      .filter((t) => {
+        if (t.status === 'klaar' || !t.deadline) return false
+        const d = new Date(t.deadline)
+        d.setHours(0, 0, 0, 0)
+        return d < firstDay
+      })
+      .sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
+  }, [taken, weekDays])
+
+  // Tasks without deadline
+  const noDateTasks = useMemo(() => {
+    return taken
+      .filter((t) => !t.deadline && (t.status !== 'klaar' || showCompleted))
+      .sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
+  }, [taken, showCompleted])
+
+  // Inbox / project filtered tasks
   const filteredTaken = useMemo(() => {
     let result = [...taken]
 
-    // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()
       result = result.filter(
@@ -162,52 +247,16 @@ export function TasksLayout() {
           t.beschrijving.toLowerCase().includes(q) ||
           (projectMap[t.project_id] || '').toLowerCase().includes(q)
       )
-      // When searching, show all tasks regardless of view
-      if (!showCompleted) {
-        result = result.filter((t) => t.status !== 'klaar')
-      }
-      result.sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
-      return result
     }
 
-    // View-specific filters
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const nextWeek = new Date(today)
-    nextWeek.setDate(nextWeek.getDate() + 7)
-
-    switch (activeView) {
-      case 'inbox':
-        // All tasks (no project filter)
-        break
-      case 'vandaag': {
-        result = result.filter((t) => {
-          if (!t.deadline) return false
-          const d = new Date(t.deadline)
-          d.setHours(0, 0, 0, 0)
-          return d <= today
-        })
-        break
-      }
-      case 'binnenkort': {
-        result = result.filter((t) => {
-          if (!t.deadline) return false
-          const d = new Date(t.deadline)
-          d.setHours(0, 0, 0, 0)
-          return d <= nextWeek
-        })
-        break
-      }
-      case 'project':
-        result = result.filter((t) => t.project_id === activeProjectId)
-        break
+    if (activeView === 'project') {
+      result = result.filter((t) => t.project_id === activeProjectId)
     }
 
     if (!showCompleted) {
       result = result.filter((t) => t.status !== 'klaar')
     }
 
-    // Sort: overdue first, then by priority, then by deadline
     result.sort((a, b) => {
       const aOverdue = a.deadline && new Date(a.deadline) < today && a.status !== 'klaar' ? 1 : 0
       const bOverdue = b.deadline && new Date(b.deadline) < today && b.status !== 'klaar' ? 1 : 0
@@ -221,38 +270,10 @@ export function TasksLayout() {
     })
 
     return result
-  }, [taken, activeView, activeProjectId, showCompleted, searchQuery, projectMap])
+  }, [taken, activeView, activeProjectId, showCompleted, searchQuery, projectMap, today])
 
-  const completedCount = useMemo(
-    () => taken.filter((t) => t.status === 'klaar').length,
-    [taken]
-  )
+  const completedCount = useMemo(() => taken.filter((t) => t.status === 'klaar').length, [taken])
 
-  const todayCount = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return taken.filter((t) => {
-      if (t.status === 'klaar' || !t.deadline) return false
-      const d = new Date(t.deadline)
-      d.setHours(0, 0, 0, 0)
-      return d <= today
-    }).length
-  }, [taken])
-
-  const binnenkortCount = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const nextWeek = new Date(today)
-    nextWeek.setDate(nextWeek.getDate() + 7)
-    return taken.filter((t) => {
-      if (t.status === 'klaar' || !t.deadline) return false
-      const d = new Date(t.deadline)
-      d.setHours(0, 0, 0, 0)
-      return d <= nextWeek
-    }).length
-  }, [taken])
-
-  // Task counts per project
   const projectTaskCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     taken.forEach((t) => {
@@ -265,34 +286,39 @@ export function TasksLayout() {
 
   // === HANDLERS ===
 
-  async function handleQuickAdd() {
-    if (!newTitle.trim()) return
-
+  async function handleQuickAdd(title: string, priority: TaakPrioriteit, deadline: string, projectId: string) {
+    if (!title.trim()) return
     try {
-      const projectId = activeView === 'project' ? activeProjectId : newProjectId
       const newTaak = await createTaak({
         user_id: user?.id || '',
-        titel: newTitle.trim(),
+        titel: title.trim(),
         beschrijving: '',
         status: 'todo',
-        prioriteit: newPriority,
+        prioriteit: priority,
         toegewezen_aan: '',
-        deadline: newDeadline || '',
+        deadline: deadline || '',
         geschatte_tijd: 0,
         bestede_tijd: 0,
         project_id: projectId || '',
       })
       setTaken((prev) => [newTaak, ...prev])
-      setNewTitle('')
-      setNewPriority('medium')
-      setNewDeadline('')
-      setNewProjectId('')
       toast.success('Taak aangemaakt')
-      // Keep input focused for rapid entry
-      addInputRef.current?.focus()
+      return true
     } catch (error) {
       console.error('Fout bij aanmaken:', error)
       toast.error('Kon taak niet aanmaken')
+      return false
+    }
+  }
+
+  async function handleFabAdd() {
+    const ok = await handleQuickAdd(fabTitle, fabPriority, fabDeadline, fabProjectId)
+    if (ok) {
+      setFabTitle('')
+      setFabPriority('medium')
+      setFabDeadline('')
+      setFabProjectId('')
+      fabInputRef.current?.focus()
     }
   }
 
@@ -301,9 +327,7 @@ export function TasksLayout() {
     try {
       const updated = await updateTaak(taak.id, { status: newStatus })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-      if (newStatus === 'klaar') {
-        toast.success('Taak afgerond!')
-      }
+      if (newStatus === 'klaar') toast.success('Taak afgerond!')
     } catch (error) {
       console.error('Fout bij statuswijziging:', error)
       toast.error('Kon taak niet bijwerken')
@@ -313,35 +337,23 @@ export function TasksLayout() {
   function openEditDialog(taak: Taak) {
     setEditingTaak(taak)
     setFormData({
-      titel: taak.titel,
-      beschrijving: taak.beschrijving,
-      status: taak.status,
-      prioriteit: taak.prioriteit,
-      toegewezen_aan: taak.toegewezen_aan,
+      titel: taak.titel, beschrijving: taak.beschrijving, status: taak.status,
+      prioriteit: taak.prioriteit, toegewezen_aan: taak.toegewezen_aan,
       deadline: taak.deadline ? taak.deadline.split('T')[0] : '',
-      geschatte_tijd: taak.geschatte_tijd,
-      bestede_tijd: taak.bestede_tijd,
-      project_id: taak.project_id,
+      geschatte_tijd: taak.geschatte_tijd, bestede_tijd: taak.bestede_tijd, project_id: taak.project_id,
     })
     setEditDialogOpen(true)
   }
 
   async function handleSave() {
-    if (!formData.titel.trim()) {
-      toast.error('Titel is verplicht')
-      return
-    }
+    if (!formData.titel.trim()) { toast.error('Titel is verplicht'); return }
     setIsSaving(true)
     try {
       const updated = await updateTaak(editingTaak!.id, {
-        titel: formData.titel.trim(),
-        beschrijving: formData.beschrijving.trim(),
-        status: formData.status,
-        prioriteit: formData.prioriteit,
-        toegewezen_aan: formData.toegewezen_aan.trim(),
-        deadline: formData.deadline || '',
-        geschatte_tijd: formData.geschatte_tijd,
-        bestede_tijd: formData.bestede_tijd,
+        titel: formData.titel.trim(), beschrijving: formData.beschrijving.trim(),
+        status: formData.status, prioriteit: formData.prioriteit,
+        toegewezen_aan: formData.toegewezen_aan.trim(), deadline: formData.deadline || '',
+        geschatte_tijd: formData.geschatte_tijd, bestede_tijd: formData.bestede_tijd,
         project_id: formData.project_id,
       })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
@@ -350,14 +362,7 @@ export function TasksLayout() {
     } catch (error) {
       console.error('Fout bij opslaan:', error)
       toast.error('Kon taak niet opslaan')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  function openDeleteDialog(taak: Taak) {
-    setDeletingTaak(taak)
-    setDeleteDialogOpen(true)
+    } finally { setIsSaving(false) }
   }
 
   async function handleDelete() {
@@ -372,19 +377,7 @@ export function TasksLayout() {
     } catch (error) {
       console.error('Fout bij verwijderen:', error)
       toast.error('Kon taak niet verwijderen')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
-  function getViewTitle() {
-    if (searchQuery.trim()) return `Zoekresultaten`
-    switch (activeView) {
-      case 'inbox': return 'Inbox'
-      case 'vandaag': return 'Vandaag'
-      case 'binnenkort': return 'Binnenkort'
-      case 'project': return projectMap[activeProjectId] || 'Project'
-    }
+    } finally { setIsDeleting(false) }
   }
 
   // === RENDER ===
@@ -398,296 +391,304 @@ export function TasksLayout() {
     )
   }
 
+  const weekLabel = weekOffset === 0
+    ? 'Deze week'
+    : weekOffset === 1
+    ? 'Volgende week'
+    : `${formatShortDate(weekDays[0])} - ${formatShortDate(weekDays[6])}`
+
   return (
-    <div className="flex gap-6 min-h-[calc(100vh-120px)]">
-      {/* Sidebar navigation */}
-      <aside className="hidden md:flex flex-col w-56 flex-shrink-0">
-        <nav className="space-y-1">
-          <SidebarItem
-            icon={<Inbox className="w-4 h-4" />}
-            label="Inbox"
-            count={taken.filter((t) => t.status !== 'klaar').length}
-            active={activeView === 'inbox' && !searchQuery}
-            onClick={() => { setActiveView('inbox'); setSearchQuery(''); setShowSearch(false) }}
-          />
-          <SidebarItem
-            icon={<CalendarDays className="w-4 h-4" />}
-            label="Vandaag"
-            count={todayCount}
-            active={activeView === 'vandaag' && !searchQuery}
-            onClick={() => { setActiveView('vandaag'); setSearchQuery(''); setShowSearch(false) }}
-            countColor={todayCount > 0 ? 'text-red-600 dark:text-red-400' : undefined}
-          />
-          <SidebarItem
-            icon={<CalendarDays className="w-4 h-4" />}
-            label="Binnenkort"
-            count={binnenkortCount}
-            active={activeView === 'binnenkort' && !searchQuery}
-            onClick={() => { setActiveView('binnenkort'); setSearchQuery(''); setShowSearch(false) }}
-          />
-        </nav>
+    <>
+      <div className="flex gap-6 min-h-[calc(100vh-120px)]">
+        {/* Sidebar */}
+        <aside className="hidden md:flex flex-col w-52 flex-shrink-0">
+          <nav className="space-y-1">
+            <SidebarItem
+              icon={<Calendar className="w-4 h-4" />}
+              label="Week"
+              active={activeView === 'week' && !searchQuery}
+              onClick={() => { setActiveView('week'); setSearchQuery(''); setShowSearch(false); setWeekOffset(0) }}
+            />
+            <SidebarItem
+              icon={<Inbox className="w-4 h-4" />}
+              label="Alle taken"
+              count={taken.filter((t) => t.status !== 'klaar').length}
+              active={activeView === 'inbox' && !searchQuery}
+              onClick={() => { setActiveView('inbox'); setSearchQuery(''); setShowSearch(false) }}
+            />
+          </nav>
 
-        {/* Projects section */}
-        <div className="mt-6">
-          <button
-            onClick={() => setProjectsExpanded(!projectsExpanded)}
-            className="flex items-center gap-1.5 w-full px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-          >
-            {projectsExpanded ? (
-              <ChevronDown className="w-3 h-3" />
-            ) : (
-              <ChevronRight className="w-3 h-3" />
-            )}
-            Projecten
-          </button>
-          {projectsExpanded && (
-            <nav className="mt-1 space-y-0.5">
-              {projecten
-                .filter((p) => p.status === 'actief' || p.status === 'gepland')
-                .map((project) => (
-                  <SidebarItem
-                    key={project.id}
-                    icon={<Hash className="w-3.5 h-3.5" />}
-                    label={project.naam}
-                    count={projectTaskCounts[project.id] || 0}
-                    active={activeView === 'project' && activeProjectId === project.id && !searchQuery}
-                    onClick={() => {
-                      setActiveView('project')
-                      setActiveProjectId(project.id)
-                      setSearchQuery('')
-                      setShowSearch(false)
-                    }}
-                    compact
-                  />
-                ))}
-            </nav>
-          )}
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <main className="flex-1 max-w-3xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-foreground font-display">
-              {getViewTitle()}
-            </h1>
-            <span className="text-sm text-muted-foreground">
-              {filteredTaken.length}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Search toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => {
-                setShowSearch(!showSearch)
-                if (showSearch) setSearchQuery('')
-              }}
+          <div className="mt-6">
+            <button
+              onClick={() => setProjectsExpanded(!projectsExpanded)}
+              className="flex items-center gap-1.5 w-full px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
             >
-              <Search className="w-4 h-4" />
-            </Button>
-            {/* Mobile view selector */}
-            <div className="md:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    {getViewTitle()}
-                    <ChevronDown className="w-3 h-3 ml-1" />
+              {projectsExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              Projecten
+            </button>
+            {projectsExpanded && (
+              <nav className="mt-1 space-y-0.5">
+                {projecten
+                  .filter((p) => p.status === 'actief' || p.status === 'gepland')
+                  .map((project) => (
+                    <SidebarItem
+                      key={project.id}
+                      icon={<Hash className="w-3.5 h-3.5" />}
+                      label={project.naam}
+                      count={projectTaskCounts[project.id] || 0}
+                      active={activeView === 'project' && activeProjectId === project.id && !searchQuery}
+                      onClick={() => { setActiveView('project'); setActiveProjectId(project.id); setSearchQuery(''); setShowSearch(false) }}
+                      compact
+                    />
+                  ))}
+              </nav>
+            )}
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-foreground font-display">
+                {searchQuery ? 'Zoekresultaten' : activeView === 'week' ? weekLabel : activeView === 'inbox' ? 'Alle taken' : projectMap[activeProjectId] || 'Project'}
+              </h1>
+              {/* Week navigation */}
+              {activeView === 'week' && !searchQuery && (
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset((w) => w - 1)}>
+                    <ChevronLeft className="w-4 h-4" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => { setActiveView('inbox'); setSearchQuery('') }}>
-                    <Inbox className="w-4 h-4 mr-2" /> Inbox
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setActiveView('vandaag'); setSearchQuery('') }}>
-                    <CalendarDays className="w-4 h-4 mr-2" /> Vandaag
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setActiveView('binnenkort'); setSearchQuery('') }}>
-                    <CalendarDays className="w-4 h-4 mr-2" /> Binnenkort
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {projecten
-                    .filter((p) => p.status === 'actief' || p.status === 'gepland')
-                    .map((p) => (
-                      <DropdownMenuItem
-                        key={p.id}
-                        onClick={() => {
-                          setActiveView('project')
-                          setActiveProjectId(p.id)
-                          setSearchQuery('')
-                        }}
-                      >
+                  {weekOffset !== 0 && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setWeekOffset(0)}>
+                      Vandaag
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset((w) => w + 1)}>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost" size="icon" className="h-8 w-8"
+                onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchQuery('') }}
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+              {/* Mobile view selector */}
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {activeView === 'week' ? 'Week' : activeView === 'inbox' ? 'Alle' : projectMap[activeProjectId]}
+                      <ChevronDown className="w-3 h-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => { setActiveView('week'); setSearchQuery('') }}>
+                      <Calendar className="w-4 h-4 mr-2" /> Week
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setActiveView('inbox'); setSearchQuery('') }}>
+                      <Inbox className="w-4 h-4 mr-2" /> Alle taken
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {projecten.filter((p) => p.status === 'actief' || p.status === 'gepland').map((p) => (
+                      <DropdownMenuItem key={p.id} onClick={() => { setActiveView('project'); setActiveProjectId(p.id); setSearchQuery('') }}>
                         <Hash className="w-4 h-4 mr-2" /> {p.naam}
                       </DropdownMenuItem>
                     ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Search bar */}
-        {showSearch && (
-          <div className="mb-4">
-            <Input
-              autoFocus
-              placeholder="Zoek taken..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-md"
-            />
-          </div>
-        )}
+          {/* Search */}
+          {showSearch && (
+            <div className="mb-4">
+              <Input autoFocus placeholder="Zoek taken..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="max-w-md" />
+            </div>
+          )}
 
-        {/* Inline quick-add */}
-        {!isAdding ? (
-          <button
-            onClick={() => {
-              setIsAdding(true)
-              setTimeout(() => addInputRef.current?.focus(), 50)
-            }}
-            className="flex items-center gap-2 w-full px-3 py-2.5 mb-4 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors group border border-transparent hover:border-border/50"
-          >
-            <Plus className="w-4 h-4 text-[#58B09C] group-hover:text-[#386150]" />
-            <span>Taak toevoegen</span>
-          </button>
-        ) : (
-          <div className="mb-4 rounded-lg border border-border bg-card p-3 space-y-3">
+          {/* Week view */}
+          {activeView === 'week' && !searchQuery ? (
+            <div className="space-y-1">
+              {/* Overdue */}
+              {overdueTasks.length > 0 && weekOffset <= 0 && (
+                <DaySection
+                  label="Achterstallig"
+                  isOverdue
+                  tasks={overdueTasks}
+                  projectMap={projectMap}
+                  showProject
+                  onToggle={handleToggleComplete}
+                  onEdit={openEditDialog}
+                  onDelete={(t) => { setDeletingTaak(t); setDeleteDialogOpen(true) }}
+                />
+              )}
+
+              {/* Day columns */}
+              {weekDays.map((day) => {
+                const dayTasks = tasksByDay.get(day.toDateString()) || []
+                const isToday = isSameDay(day, today)
+                return (
+                  <DaySection
+                    key={day.toDateString()}
+                    label={formatDayHeader(day, today)}
+                    sublabel={`${DAY_NAMES_SHORT[day.getDay()]} ${day.getDate()}`}
+                    isToday={isToday}
+                    tasks={dayTasks}
+                    projectMap={projectMap}
+                    showProject
+                    onToggle={handleToggleComplete}
+                    onEdit={openEditDialog}
+                    onDelete={(t) => { setDeletingTaak(t); setDeleteDialogOpen(true) }}
+                    onQuickAdd={async (title) => {
+                      const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+                      await handleQuickAdd(title, 'medium', dateStr, '')
+                    }}
+                  />
+                )
+              })}
+
+              {/* No date tasks */}
+              {noDateTasks.length > 0 && (
+                <DaySection
+                  label="Geen datum"
+                  tasks={noDateTasks}
+                  projectMap={projectMap}
+                  showProject
+                  onToggle={handleToggleComplete}
+                  onEdit={openEditDialog}
+                  onDelete={(t) => { setDeletingTaak(t); setDeleteDialogOpen(true) }}
+                />
+              )}
+            </div>
+          ) : (
+            /* Inbox / project / search list view */
+            <div className="space-y-px">
+              {filteredTaken.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <CheckCircle2 className="w-10 h-10 mb-3 opacity-20" />
+                  <p className="text-sm font-medium">{searchQuery ? 'Geen taken gevonden' : 'Alles afgevinkt!'}</p>
+                </div>
+              ) : (
+                filteredTaken.map((taak) => (
+                  <TaskRow
+                    key={taak.id}
+                    taak={taak}
+                    projectNaam={projectMap[taak.project_id]}
+                    showProject={activeView !== 'project'}
+                    onToggle={() => handleToggleComplete(taak)}
+                    onEdit={() => openEditDialog(taak)}
+                    onDelete={() => { setDeletingTaak(taak); setDeleteDialogOpen(true) }}
+                  />
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Completed toggle */}
+          {completedCount > 0 && (
+            <button
+              onClick={() => setShowCompleted(!showCompleted)}
+              className="flex items-center gap-2 mt-4 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showCompleted ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {completedCount} afgeronde {completedCount === 1 ? 'taak' : 'taken'}
+            </button>
+          )}
+        </main>
+      </div>
+
+      {/* === FLOATING ACTION BUTTON === */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        {/* Quick-add popup */}
+        {fabOpen && (
+          <div className="w-80 rounded-xl border border-border bg-card shadow-2xl p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-foreground">Snel toevoegen</span>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFabOpen(false)}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </div>
             <Input
-              ref={addInputRef}
+              ref={fabInputRef}
               placeholder="Wat moet je doen?"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
+              value={fabTitle}
+              onChange={(e) => setFabTitle(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && newTitle.trim()) handleQuickAdd()
-                if (e.key === 'Escape') {
-                  setIsAdding(false)
-                  setNewTitle('')
-                  setNewDeadline('')
-                  setNewPriority('medium')
-                  setNewProjectId('')
-                }
+                if (e.key === 'Enter' && fabTitle.trim()) handleFabAdd()
+                if (e.key === 'Escape') setFabOpen(false)
               }}
-              className="border-0 shadow-none px-0 text-base focus-visible:ring-0 placeholder:text-muted-foreground/50"
+              className="text-sm"
             />
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Deadline picker */}
               <Input
                 type="date"
-                value={newDeadline}
-                onChange={(e) => setNewDeadline(e.target.value)}
+                value={fabDeadline}
+                onChange={(e) => setFabDeadline(e.target.value)}
                 className="w-auto h-7 text-xs"
               />
-              {/* Priority picker */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                    <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[newPriority]}`} />
-                    {newPriority === 'medium' ? 'Prioriteit' : newPriority.charAt(0).toUpperCase() + newPriority.slice(1)}
+                    <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[fabPriority]}`} />
+                    {fabPriority === 'medium' ? 'Prio' : fabPriority.charAt(0).toUpperCase() + fabPriority.slice(1)}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
+                <DropdownMenuContent align="end">
                   {(['kritiek', 'hoog', 'medium', 'laag'] as TaakPrioriteit[]).map((p) => (
-                    <DropdownMenuItem key={p} onClick={() => setNewPriority(p)}>
+                    <DropdownMenuItem key={p} onClick={() => setFabPriority(p)}>
                       <Flag className={`w-3.5 h-3.5 mr-2 ${PRIORITEIT_FLAG_COLORS[p]}`} />
                       {p.charAt(0).toUpperCase() + p.slice(1)}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              {/* Project picker (only if not already in project view) */}
-              {activeView !== 'project' && (
-                <Select value={newProjectId} onValueChange={setNewProjectId}>
-                  <SelectTrigger className="w-auto h-7 text-xs min-w-0">
-                    <SelectValue placeholder="Project (optioneel)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="geen">Geen project</SelectItem>
-                    {projecten.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <div className="flex-1" />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => {
-                  setIsAdding(false)
-                  setNewTitle('')
-                  setNewDeadline('')
-                  setNewPriority('medium')
-                  setNewProjectId('')
-                }}
-              >
-                Annuleren
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 text-xs bg-[#58B09C] hover:bg-[#386150]"
-                disabled={!newTitle.trim()}
-                onClick={handleQuickAdd}
-              >
-                Toevoegen
-              </Button>
+              <Select value={fabProjectId || 'geen'} onValueChange={(v) => setFabProjectId(v === 'geen' ? '' : v)}>
+                <SelectTrigger className="w-auto h-7 text-xs min-w-0 max-w-[120px]">
+                  <SelectValue placeholder="Project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="geen">Geen project</SelectItem>
+                  {projecten.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            <Button
+              className="w-full h-8 text-sm bg-[#58B09C] hover:bg-[#386150]"
+              disabled={!fabTitle.trim()}
+              onClick={handleFabAdd}
+            >
+              Toevoegen
+            </Button>
           </div>
         )}
 
-        {/* Task list */}
-        <div className="space-y-px">
-          {filteredTaken.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <CheckCircle2 className="w-10 h-10 mb-3 opacity-20" />
-              <p className="text-sm font-medium">
-                {searchQuery ? 'Geen taken gevonden' : 'Alles afgevinkt!'}
-              </p>
-              <p className="text-xs mt-1 text-muted-foreground/60">
-                {searchQuery ? 'Probeer een andere zoekopdracht' : 'Voeg een nieuwe taak toe om te beginnen'}
-              </p>
-            </div>
-          ) : (
-            filteredTaken.map((taak) => (
-              <TaskRow
-                key={taak.id}
-                taak={taak}
-                projectNaam={projectMap[taak.project_id]}
-                showProject={activeView !== 'project'}
-                onToggle={() => handleToggleComplete(taak)}
-                onEdit={() => openEditDialog(taak)}
-                onDelete={() => openDeleteDialog(taak)}
-              />
-            ))
+        {/* FAB button */}
+        <button
+          onClick={() => setFabOpen(!fabOpen)}
+          className={cn(
+            'flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-200',
+            'bg-[#58B09C] hover:bg-[#386150] text-white hover:shadow-xl hover:scale-105',
+            fabOpen && 'rotate-45 bg-[#386150]'
           )}
-        </div>
-
-        {/* Show completed toggle */}
-        {completedCount > 0 && (
-          <button
-            onClick={() => setShowCompleted(!showCompleted)}
-            className="flex items-center gap-2 mt-4 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {showCompleted ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            {completedCount} afgeronde {completedCount === 1 ? 'taak' : 'taken'}
-          </button>
-        )}
-      </main>
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      </div>
 
       {/* Edit dialog */}
       <EditTaskDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSave}
-        isSaving={isSaving}
-        projecten={projecten}
+        open={editDialogOpen} onOpenChange={setEditDialogOpen}
+        formData={formData} setFormData={setFormData}
+        onSave={handleSave} isSaving={isSaving} projecten={projecten}
       />
 
       {/* Delete dialog */}
@@ -695,14 +696,10 @@ export function TasksLayout() {
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Taak verwijderen</DialogTitle>
-            <DialogDescription>
-              Weet je zeker dat je "{deletingTaak?.titel}" wilt verwijderen?
-            </DialogDescription>
+            <DialogDescription>Weet je zeker dat je "{deletingTaak?.titel}" wilt verwijderen?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
-              Annuleren
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>Annuleren</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Verwijderen
@@ -710,6 +707,130 @@ export function TasksLayout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  )
+}
+
+// === DAY SECTION (Week view) ===
+
+function DaySection({
+  label, sublabel, isToday, isOverdue, tasks, projectMap, showProject,
+  onToggle, onEdit, onDelete, onQuickAdd,
+}: {
+  label: string
+  sublabel?: string
+  isToday?: boolean
+  isOverdue?: boolean
+  tasks: Taak[]
+  projectMap: Record<string, string>
+  showProject: boolean
+  onToggle: (taak: Taak) => void
+  onEdit: (taak: Taak) => void
+  onDelete: (taak: Taak) => void
+  onQuickAdd?: (title: string) => void
+}) {
+  const [addingTitle, setAddingTitle] = useState('')
+  const [isAdding, setIsAdding] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  return (
+    <div className={cn(
+      'rounded-lg mb-2',
+      isToday && 'bg-[#58B09C]/5 border border-[#58B09C]/15',
+      isOverdue && 'bg-red-50/50 dark:bg-red-900/5 border border-red-200/30 dark:border-red-800/20',
+      !isToday && !isOverdue && 'border border-transparent'
+    )}>
+      {/* Day header */}
+      <div className="flex items-center justify-between px-3 py-2">
+        <div className="flex items-center gap-2">
+          <span className={cn(
+            'text-sm font-semibold',
+            isToday && 'text-[#386150] dark:text-[#58B09C]',
+            isOverdue && 'text-red-600 dark:text-red-400',
+            !isToday && !isOverdue && 'text-foreground'
+          )}>
+            {label}
+          </span>
+          {sublabel && !isToday && !isOverdue && (
+            <span className="text-xs text-muted-foreground/50">{sublabel}</span>
+          )}
+          {tasks.length > 0 && (
+            <span className="text-[11px] text-muted-foreground/40">{tasks.length}</span>
+          )}
+        </div>
+        {onQuickAdd && (
+          <button
+            onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
+            className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 rounded text-muted-foreground/40 hover:text-[#58B09C] transition-all"
+            title="Taak toevoegen"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      {/* Tasks */}
+      <div className="px-1">
+        {tasks.map((taak) => (
+          <TaskRow
+            key={taak.id}
+            taak={taak}
+            projectNaam={projectMap[taak.project_id]}
+            showProject={showProject}
+            hideDeadline={!isOverdue}
+            onToggle={() => onToggle(taak)}
+            onEdit={() => onEdit(taak)}
+            onDelete={() => onDelete(taak)}
+          />
+        ))}
+      </div>
+
+      {/* Inline quick add per day */}
+      {isAdding && onQuickAdd && (
+        <div className="px-3 pb-2">
+          <Input
+            ref={inputRef}
+            placeholder="Taak toevoegen..."
+            value={addingTitle}
+            onChange={(e) => setAddingTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && addingTitle.trim()) {
+                onQuickAdd(addingTitle.trim())
+                setAddingTitle('')
+                // Keep open for more
+              }
+              if (e.key === 'Escape') {
+                setIsAdding(false)
+                setAddingTitle('')
+              }
+            }}
+            onBlur={() => {
+              if (!addingTitle.trim()) {
+                setIsAdding(false)
+                setAddingTitle('')
+              }
+            }}
+            className="h-8 text-sm"
+          />
+        </div>
+      )}
+
+      {/* Empty state for today */}
+      {tasks.length === 0 && !isOverdue && !isAdding && (
+        <div className="px-3 pb-2">
+          {onQuickAdd ? (
+            <button
+              onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground/40 hover:text-muted-foreground transition-colors py-1"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Taak toevoegen</span>
+            </button>
+          ) : (
+            <p className="text-xs text-muted-foreground/30 py-1">Geen taken</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -717,21 +838,10 @@ export function TasksLayout() {
 // === SIDEBAR ITEM ===
 
 function SidebarItem({
-  icon,
-  label,
-  count,
-  active,
-  onClick,
-  compact = false,
-  countColor,
+  icon, label, count, active, onClick, compact = false, countColor,
 }: {
-  icon: React.ReactNode
-  label: string
-  count?: number
-  active: boolean
-  onClick: () => void
-  compact?: boolean
-  countColor?: string
+  icon: React.ReactNode; label: string; count?: number; active: boolean
+  onClick: () => void; compact?: boolean; countColor?: string
 }) {
   return (
     <button
@@ -744,14 +854,10 @@ function SidebarItem({
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
       )}
     >
-      <span className={cn(active ? 'text-[#58B09C]' : 'text-muted-foreground/60')}>
-        {icon}
-      </span>
+      <span className={cn(active ? 'text-[#58B09C]' : 'text-muted-foreground/60')}>{icon}</span>
       <span className="flex-1 truncate">{label}</span>
       {count !== undefined && count > 0 && (
-        <span className={cn('text-xs tabular-nums', countColor || 'text-muted-foreground/50')}>
-          {count}
-        </span>
+        <span className={cn('text-xs tabular-nums', countColor || 'text-muted-foreground/50')}>{count}</span>
       )}
     </button>
   )
@@ -760,33 +866,20 @@ function SidebarItem({
 // === TASK ROW ===
 
 function TaskRow({
-  taak,
-  projectNaam,
-  showProject,
-  onToggle,
-  onEdit,
-  onDelete,
+  taak, projectNaam, showProject, hideDeadline, onToggle, onEdit, onDelete,
 }: {
-  taak: Taak
-  projectNaam?: string
-  showProject: boolean
-  onToggle: () => void
-  onEdit: () => void
-  onDelete: () => void
+  taak: Taak; projectNaam?: string; showProject: boolean; hideDeadline?: boolean
+  onToggle: () => void; onEdit: () => void; onDelete: () => void
 }) {
   const isDone = taak.status === 'klaar'
   const isOverdue = !isDone && taak.deadline && new Date(taak.deadline) < new Date()
 
   return (
     <div className={cn(
-      'group flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-muted/40',
+      'group flex items-start gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-muted/40',
       isDone && 'opacity-50'
     )}>
-      {/* Checkbox */}
-      <button
-        onClick={onToggle}
-        className="mt-0.5 flex-shrink-0 transition-colors"
-      >
+      <button onClick={onToggle} className="mt-0.5 flex-shrink-0 transition-colors">
         {isDone ? (
           <CheckCircle2 className="w-5 h-5 text-[#58B09C]" />
         ) : (
@@ -799,46 +892,31 @@ function TaskRow({
         )}
       </button>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className={cn(
-          'text-sm text-foreground',
-          isDone && 'line-through text-muted-foreground'
-        )}>
+        <p className={cn('text-sm text-foreground', isDone && 'line-through text-muted-foreground')}>
           {taak.titel}
         </p>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          {taak.beschrijving && (
-            <span className="text-xs text-muted-foreground/60 truncate max-w-[200px]">
-              {taak.beschrijving}
-            </span>
-          )}
           {showProject && projectNaam && (
             <span className="text-xs text-muted-foreground/60 flex items-center gap-0.5">
-              <Hash className="w-2.5 h-2.5" />
-              {projectNaam}
+              <Hash className="w-2.5 h-2.5" />{projectNaam}
             </span>
           )}
-          {taak.deadline && (
+          {!hideDeadline && taak.deadline && (
             <span className={cn(
               'text-xs flex items-center gap-0.5',
-              isOverdue
-                ? 'text-red-600 dark:text-red-400 font-medium'
-                : 'text-muted-foreground/60'
+              isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-muted-foreground/60'
             )}>
-              <CalendarDays className="w-2.5 h-2.5" />
-              {formatDate(taak.deadline)}
+              <CalendarDays className="w-2.5 h-2.5" />{formatDate(taak.deadline)}
             </span>
           )}
         </div>
       </div>
 
-      {/* Priority flag */}
       {!isDone && taak.prioriteit !== 'laag' && taak.prioriteit !== 'medium' && (
         <Flag className={cn('w-3.5 h-3.5 flex-shrink-0 mt-0.5', PRIORITEIT_FLAG_COLORS[taak.prioriteit])} />
       )}
 
-      {/* Actions */}
       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -848,16 +926,11 @@ function TaskRow({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem onClick={onEdit}>
-              <Pencil className="w-4 h-4 mr-2" />
-              Bewerken
+              <Pencil className="w-4 h-4 mr-2" />Bewerken
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-red-600 dark:text-red-400"
-              onClick={onDelete}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Verwijderen
+            <DropdownMenuItem className="text-red-600 dark:text-red-400" onClick={onDelete}>
+              <Trash2 className="w-4 h-4 mr-2" />Verwijderen
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -866,24 +939,14 @@ function TaskRow({
   )
 }
 
-// === EDIT TASK DIALOG ===
+// === EDIT DIALOG ===
 
 function EditTaskDialog({
-  open,
-  onOpenChange,
-  formData,
-  setFormData,
-  onSave,
-  isSaving,
-  projecten,
+  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  formData: TaakFormData
-  setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
-  onSave: () => void
-  isSaving: boolean
-  projecten: Project[]
+  open: boolean; onOpenChange: (open: boolean) => void
+  formData: TaakFormData; setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
+  onSave: () => void; isSaving: boolean; projecten: Project[]
 }) {
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -892,41 +955,21 @@ function EditTaskDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Taak bewerken</DialogTitle>
-        </DialogHeader>
-
+        <DialogHeader><DialogTitle>Taak bewerken</DialogTitle></DialogHeader>
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
             <Label htmlFor="edit-titel">Titel</Label>
-            <Input
-              id="edit-titel"
-              value={formData.titel}
-              onChange={(e) => updateField('titel', e.target.value)}
-            />
+            <Input id="edit-titel" value={formData.titel} onChange={(e) => updateField('titel', e.target.value)} />
           </div>
-
           <div className="grid gap-2">
             <Label htmlFor="edit-beschrijving">Beschrijving</Label>
-            <Textarea
-              id="edit-beschrijving"
-              value={formData.beschrijving}
-              onChange={(e) => updateField('beschrijving', e.target.value)}
-              rows={3}
-              placeholder="Optioneel..."
-            />
+            <Textarea id="edit-beschrijving" value={formData.beschrijving} onChange={(e) => updateField('beschrijving', e.target.value)} rows={3} placeholder="Optioneel..." />
           </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label>Prioriteit</Label>
-              <Select
-                value={formData.prioriteit}
-                onValueChange={(v) => updateField('prioriteit', v as TaakPrioriteit)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={formData.prioriteit} onValueChange={(v) => updateField('prioriteit', v as TaakPrioriteit)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(['kritiek', 'hoog', 'medium', 'laag'] as TaakPrioriteit[]).map((p) => (
                     <SelectItem key={p} value={p}>
@@ -939,54 +982,30 @@ function EditTaskDialog({
                 </SelectContent>
               </Select>
             </div>
-
             <div className="grid gap-2">
               <Label htmlFor="edit-deadline">Deadline</Label>
-              <Input
-                id="edit-deadline"
-                type="date"
-                value={formData.deadline}
-                onChange={(e) => updateField('deadline', e.target.value)}
-              />
+              <Input id="edit-deadline" type="date" value={formData.deadline} onChange={(e) => updateField('deadline', e.target.value)} />
             </div>
           </div>
-
           <div className="grid gap-2">
             <Label>Project (optioneel)</Label>
-            <Select
-              value={formData.project_id || 'geen'}
-              onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Geen project" />
-              </SelectTrigger>
+            <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
+              <SelectTrigger><SelectValue placeholder="Geen project" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="geen">Geen project</SelectItem>
-                {projecten.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>
-                ))}
+                {projecten.map((p) => (<SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>))}
               </SelectContent>
             </Select>
           </div>
-
           <div className="grid gap-2">
             <Label htmlFor="edit-toegewezen">Toegewezen aan</Label>
-            <Input
-              id="edit-toegewezen"
-              value={formData.toegewezen_aan}
-              onChange={(e) => updateField('toegewezen_aan', e.target.value)}
-              placeholder="Optioneel..."
-            />
+            <Input id="edit-toegewezen" value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
           </div>
         </div>
-
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
-            Annuleren
-          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Annuleren</Button>
           <Button onClick={onSave} disabled={isSaving}>
-            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Opslaan
+            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Opslaan
           </Button>
         </DialogFooter>
       </DialogContent>
