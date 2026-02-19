@@ -1384,6 +1384,7 @@ function BedrijfTab() {
         setBedrijfsnaam(profile.bedrijfsnaam || '')
         setKvkNummer(profile.kvk_nummer || '')
         setBtwNummer(profile.btw_nummer || '')
+        if (profile.logo_url) setLogoPreview(profile.logo_url)
         // Parse bedrijfs_adres back into components if stored as combined string
         if (profile.bedrijfs_adres) {
           const adresParts = profile.bedrijfs_adres.split(', ')
@@ -1437,6 +1438,7 @@ function BedrijfTab() {
         bedrijfs_adres: bedrijfsAdres,
         kvk_nummer: kvkNummer,
         btw_nummer: btwNummer,
+        ...(logoPreview ? { logo_url: logoPreview } : {}),
       })
       await refreshProfile()
       toast.success('Bedrijfsgegevens succesvol opgeslagen')

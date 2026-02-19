@@ -32,6 +32,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, OfferteTemplate } from '@/types'
 import { generateOffertePDF } from '@/services/pdfService'
+import { sendEmail } from '@/services/gmailService'
+import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { formatCurrency } from '@/lib/utils'
 import { QuoteItemsTable, type QuoteLineItem } from './QuoteItemsTable'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
@@ -253,6 +255,24 @@ export function QuoteCreation() {
           })
         )
       )
+
+      // Send email to klant when status is 'verzonden'
+      if (status === 'verzonden' && selectedKlant?.email) {
+        try {
+          const { subject, html } = offerteVerzendTemplate({
+            klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
+            offerteNummer: offerteNummer,
+            offerteTitel: offerteTitel,
+            totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(subtotaal + btwBedrag),
+            geldigTot: geldigTot,
+          })
+          await sendEmail(selectedKlant.email, subject, '', { html })
+        } catch (emailErr) {
+          console.error('Email verzenden mislukt:', emailErr)
+          // Don't block the flow - offerte is saved, email just failed
+          toast.error('Offerte opgeslagen maar email niet verzonden')
+        }
+      }
 
       toast.success(
         status === 'concept'

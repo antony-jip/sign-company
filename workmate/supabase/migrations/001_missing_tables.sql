@@ -390,3 +390,9 @@ CREATE INDEX IF NOT EXISTS idx_notificaties_gelezen ON notificaties(gelezen);
 CREATE INDEX IF NOT EXISTS idx_calculatie_producten_user_id ON calculatie_producten(user_id);
 CREATE INDEX IF NOT EXISTS idx_tekening_goedkeuringen_token ON tekening_goedkeuringen(token);
 CREATE INDEX IF NOT EXISTS idx_emails_scheduled_at ON emails(scheduled_at);
+
+-- ============================================================
+-- PROFILE AANPASSINGEN
+-- ============================================================
+-- Logo URL toevoegen aan profiles (voor briefpapier/PDF/email)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS logo_url TEXT;

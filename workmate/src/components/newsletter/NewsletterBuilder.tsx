@@ -39,6 +39,8 @@ import {
   X,
   Edit3,
   Globe,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 import {
   getNieuwsbrieven,
@@ -47,6 +49,7 @@ import {
   deleteNieuwsbrief,
   getKlanten,
 } from '@/services/supabaseService'
+import { sendEmail } from '@/services/gmailService'
 import type { Nieuwsbrief, Klant } from '@/types'
 import { cn, formatDate, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -444,6 +447,18 @@ export function NewsletterBuilder() {
   const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop')
   const [newEmail, setNewEmail] = useState('')
 
+  // Send progress state
+  const [sendProgress, setSendProgress] = useState<{
+    sending: boolean
+    current: number
+    total: number
+    failed: string[]
+  } | null>(null)
+
+  // Collapsible contacts state
+  const [contactsExpanded, setContactsExpanded] = useState(false)
+  const [expandedKlantIds, setExpandedKlantIds] = useState<Set<string>>(new Set())
+
   // Dialog state
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [previewSendDialogOpen, setPreviewSendDialogOpen] = useState(false)
@@ -551,6 +566,34 @@ export function NewsletterBuilder() {
 
   const clearAllEmails = useCallback(() => {
     setEditor((prev) => ({ ...prev, ontvangers: [] }))
+  }, [])
+
+  const addAllContactEmails = useCallback(() => {
+    const emails: string[] = []
+    klanten
+      .filter((k) => k.status === 'actief' && k.contactpersonen?.length > 0)
+      .forEach((k) => {
+        k.contactpersonen.forEach((cp) => {
+          if (cp.email) emails.push(cp.email)
+        })
+      })
+    setEditor((prev) => {
+      const combined = Array.from(new Set([...prev.ontvangers, ...emails]))
+      return { ...prev, ontvangers: combined }
+    })
+    toast.success(`${emails.length} e-mailadressen van contactpersonen toegevoegd`)
+  }, [klanten])
+
+  const toggleKlantExpanded = useCallback((klantId: string) => {
+    setExpandedKlantIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(klantId)) {
+        next.delete(klantId)
+      } else {
+        next.add(klantId)
+      }
+      return next
+    })
   }, [])
 
   // ============ HTML SNIPPET INSERTION ============
@@ -661,6 +704,7 @@ export function NewsletterBuilder() {
       setIsSaving(true)
       const now = new Date().toISOString()
 
+      // Save to DB first
       if (editingId) {
         const updated = await updateNieuwsbrief(editingId, {
           naam: editor.naam,
@@ -686,12 +730,39 @@ export function NewsletterBuilder() {
         setNieuwsbrieven((prev) => [created, ...prev])
       }
 
-      toast.success(`Nieuwsbrief verzonden naar ${editor.ontvangers.length} ontvanger(s)`)
+      // Actually send emails to all recipients
+      const recipients = editor.ontvangers
+      const failed: string[] = []
+      setSendProgress({ sending: true, current: 0, total: recipients.length, failed: [] })
+
+      for (let i = 0; i < recipients.length; i++) {
+        setSendProgress({ sending: true, current: i + 1, total: recipients.length, failed: [...failed] })
+        try {
+          await sendEmail(recipients[i], editor.onderwerp, '', { html: editor.html_inhoud })
+        } catch (err) {
+          console.error(`Fout bij verzenden naar ${recipients[i]}:`, err)
+          failed.push(recipients[i])
+        }
+      }
+
+      setSendProgress(null)
+
+      if (failed.length === 0) {
+        toast.success(`Nieuwsbrief verzonden naar ${recipients.length} ontvanger(s)`)
+      } else if (failed.length === recipients.length) {
+        toast.error('Alle e-mails zijn mislukt. Controleer uw verbinding en probeer het opnieuw.')
+      } else {
+        toast.warning(
+          `Verzonden naar ${recipients.length - failed.length} van ${recipients.length} ontvangers. Mislukt: ${failed.join(', ')}`
+        )
+      }
+
       setSendDialogOpen(false)
       closeEditor()
     } catch (err) {
       console.error('Fout bij verzenden:', err)
       toast.error('Kon de nieuwsbrief niet verzenden')
+      setSendProgress(null)
     } finally {
       setIsSaving(false)
     }
@@ -706,11 +777,19 @@ export function NewsletterBuilder() {
       return
     }
 
-    // In production this would actually send the email via an API
-    toast.success(`Voorbeeld verzonden naar ${email}`)
-    setPreviewSendDialogOpen(false)
-    setPreviewEmail('')
-  }, [previewEmail])
+    try {
+      setIsSaving(true)
+      await sendEmail(email, 'Preview: ' + editor.onderwerp, '', { html: editor.html_inhoud })
+      toast.success(`Voorbeeld verzonden naar ${email}`)
+      setPreviewSendDialogOpen(false)
+      setPreviewEmail('')
+    } catch (err) {
+      console.error('Fout bij verzenden preview:', err)
+      toast.error('Kon het voorbeeld niet verzenden. Probeer het opnieuw.')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [previewEmail, editor.onderwerp, editor.html_inhoud])
 
   const handleDelete = useCallback(async () => {
     if (!deleteTargetId) return
@@ -910,6 +989,109 @@ export function NewsletterBuilder() {
                   <Users className="h-4 w-4 mr-2" />
                   Alle actieve klanten toevoegen ({klanten.filter((k) => k.status === 'actief' && k.email).length})
                 </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={addAllContactEmails}
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Alle contactpersonen toevoegen ({klanten.filter((k) => k.status === 'actief' && k.contactpersonen?.length > 0).reduce((sum, k) => sum + k.contactpersonen.filter((cp) => cp.email).length, 0)})
+                </Button>
+
+                {/* Collapsible section: klanten with their contact persons */}
+                <div className="border rounded-md">
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-accent/50 transition-colors"
+                    onClick={() => setContactsExpanded(!contactsExpanded)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Users className="h-3.5 w-3.5" />
+                      Klanten &amp; contactpersonen
+                    </span>
+                    {contactsExpanded ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                  {contactsExpanded && (
+                    <div className="border-t max-h-60 overflow-y-auto">
+                      {klanten
+                        .filter((k) => k.status === 'actief' && k.contactpersonen?.length > 0)
+                        .map((klant) => (
+                          <div key={klant.id} className="border-b last:border-b-0">
+                            <button
+                              type="button"
+                              className="w-full flex items-center justify-between px-3 py-1.5 text-xs hover:bg-accent/30 transition-colors"
+                              onClick={() => toggleKlantExpanded(klant.id)}
+                            >
+                              <span className="font-medium truncate">{klant.bedrijfsnaam}</span>
+                              <span className="flex items-center gap-1 text-muted-foreground flex-shrink-0">
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                                  {klant.contactpersonen.filter((cp) => cp.email).length}
+                                </Badge>
+                                {expandedKlantIds.has(klant.id) ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </span>
+                            </button>
+                            {expandedKlantIds.has(klant.id) && (
+                              <div className="bg-muted/30 px-3 py-1">
+                                {klant.contactpersonen
+                                  .filter((cp) => cp.email)
+                                  .map((cp) => (
+                                    <div
+                                      key={cp.id}
+                                      className="flex items-center justify-between py-1 text-xs"
+                                    >
+                                      <div className="truncate mr-2">
+                                        <span className="font-medium">{cp.naam}</span>
+                                        {cp.functie && (
+                                          <span className="text-muted-foreground ml-1">({cp.functie})</span>
+                                        )}
+                                        <span className="text-muted-foreground block">{cp.email}</span>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 text-[10px] px-2 flex-shrink-0"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setEditor((prev) => {
+                                            if (prev.ontvangers.includes(cp.email)) {
+                                              toast.warning('Dit e-mailadres is al toegevoegd')
+                                              return prev
+                                            }
+                                            return { ...prev, ontvangers: [...prev.ontvangers, cp.email] }
+                                          })
+                                        }}
+                                        disabled={editor.ontvangers.includes(cp.email)}
+                                      >
+                                        {editor.ontvangers.includes(cp.email) ? (
+                                          <CheckCircle2 className="h-3 w-3" />
+                                        ) : (
+                                          <Plus className="h-3 w-3" />
+                                        )}
+                                      </Button>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      {klanten.filter((k) => k.status === 'actief' && k.contactpersonen?.length > 0).length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-3">
+                          Geen actieve klanten met contactpersonen
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex gap-2">
                   <Input
@@ -1182,8 +1364,27 @@ export function NewsletterBuilder() {
                 <p>Na verzenden wordt de status gewijzigd naar &apos;Verzonden&apos; en kan de nieuwsbrief niet meer bewerkt worden.</p>
               </div>
             </div>
+            {sendProgress && sendProgress.sending && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Verzenden: {sendProgress.current} van {sendProgress.total}...</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(sendProgress.current / sendProgress.total) * 100}%` }}
+                  />
+                </div>
+                {sendProgress.failed.length > 0 && (
+                  <p className="text-xs text-destructive">
+                    {sendProgress.failed.length} mislukt: {sendProgress.failed.join(', ')}
+                  </p>
+                )}
+              </div>
+            )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setSendDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setSendDialogOpen(false)} disabled={sendProgress?.sending}>
                 Annuleren
               </Button>
               <Button onClick={handleSend} disabled={isSaving}>
@@ -1235,8 +1436,12 @@ export function NewsletterBuilder() {
               >
                 Annuleren
               </Button>
-              <Button onClick={handleSendPreview} disabled={!previewEmail.trim()}>
-                <Send className="h-4 w-4 mr-1" />
+              <Button onClick={handleSendPreview} disabled={!previewEmail.trim() || isSaving}>
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 mr-1" />
+                )}
                 Voorbeeld versturen
               </Button>
             </DialogFooter>

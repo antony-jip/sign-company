@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT,
   telefoon TEXT,
   avatar_url TEXT,
+  logo_url TEXT,
   bedrijfsnaam TEXT,
   bedrijfs_adres TEXT,
   kvk_nummer TEXT,

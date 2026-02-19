@@ -31,6 +31,7 @@ interface AppSettingsContextType {
   bedrijfsAdres: string
   kvkNummer: string
   btwNummer: string
+  logoUrl: string
   openaiApiKey: string
 }
 
@@ -130,6 +131,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     bedrijfsAdres: profile?.bedrijfs_adres || '',
     kvkNummer: profile?.kvk_nummer || '',
     btwNummer: profile?.btw_nummer || '',
+    logoUrl: profile?.logo_url || '',
     openaiApiKey,
   }
 

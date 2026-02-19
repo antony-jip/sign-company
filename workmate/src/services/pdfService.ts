@@ -48,11 +48,20 @@ function addHeader(
   const pageWidth = doc.internal.pageSize.getWidth()
   const brand = getBrandColor(bedrijfsProfiel)
 
-  // Company name / logo area
+  // Company logo + name area
+  let nameX = 20
+  if (bedrijfsProfiel.logo_url) {
+    try {
+      doc.addImage(bedrijfsProfiel.logo_url, 'PNG', 20, 15, 25, 20)
+      nameX = 50 // shift name to the right of logo
+    } catch {
+      // Logo loading failed, just show text
+    }
+  }
   doc.setFontSize(22)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...brand)
-  doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', 20, 30)
+  doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', nameX, 30)
 
   // Company details (right side)
   doc.setFontSize(9)

@@ -5,6 +5,7 @@ export interface Profile {
   email: string;
   telefoon: string;
   avatar_url: string;
+  logo_url: string;
   bedrijfsnaam: string;
   bedrijfs_adres: string;
   kvk_nummer: string;

@@ -63,6 +63,8 @@ import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem } from '@/types'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { exportCSV, exportExcel } from '@/lib/export'
+import { sendEmail } from '@/services/gmailService'
+import { factuurHerinneringTemplate } from '@/services/emailTemplateService'
 
 // ============ TYPES ============
 
@@ -689,6 +691,13 @@ export function FacturenLayout() {
 
   const handleSendReminder = useCallback(
     async (factuur: Factuur) => {
+      // Find the klant to get their email address
+      const klant = klanten.find((k) => k.id === factuur.klant_id)
+      if (!klant?.email) {
+        toast.error('Geen emailadres gevonden voor deze klant')
+        return
+      }
+
       const updates: Partial<Factuur> = {
         betalingsherinnering_verzonden: true,
       }
@@ -702,6 +711,33 @@ export function FacturenLayout() {
         }
       }
 
+      // Send the actual reminder email
+      try {
+        const vervalDate = new Date(factuur.vervaldatum)
+        const dagenVervallen = Math.max(0, Math.floor((Date.now() - vervalDate.getTime()) / (1000 * 60 * 60 * 24)))
+        const { subject, html } = factuurHerinneringTemplate({
+          klantNaam: klant.contactpersoon || klant.bedrijfsnaam,
+          factuurNummer: factuur.nummer,
+          factuurTitel: factuur.titel,
+          totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(factuur.totaal),
+          vervaldatum: formatDate(factuur.vervaldatum),
+          dagenVervallen,
+        })
+        await sendEmail(klant.email, subject, '', { html })
+      } catch (emailErr) {
+        console.error('Herinnering email verzenden mislukt:', emailErr)
+        // Still update the flag since the intent was to send - but warn the user
+        setFacturen((prev) =>
+          prev.map((f) =>
+            f.id === factuur.id
+              ? { ...f, ...updates, updated_at: new Date().toISOString() }
+              : f
+          )
+        )
+        toast.error('Herinnering gemarkeerd maar email niet verzonden')
+        return
+      }
+
       setFacturen((prev) =>
         prev.map((f) =>
           f.id === factuur.id
@@ -711,7 +747,7 @@ export function FacturenLayout() {
       )
       toast.success(`Herinnering verzonden voor ${factuur.nummer}`)
     },
-    []
+    [klanten]
   )
 
   const handleDeleteFactuur = useCallback(
