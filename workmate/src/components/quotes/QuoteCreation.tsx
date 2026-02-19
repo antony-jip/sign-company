@@ -42,7 +42,7 @@ import { generateOffertePDF } from '@/services/pdfService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
-import { QuoteItemsTable, type QuoteLineItem } from './QuoteItemsTable'
+import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import type { CalculatieRegel } from '@/types'
 
@@ -77,7 +77,7 @@ export function QuoteCreation() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
-  const { offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
+  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
   const [currentStep, setCurrentStep] = useState(0)
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -199,18 +199,32 @@ export function QuoteCreation() {
     }
   }, [selectedKlantId])
 
-  // ── Helper: maak een leeg calculatie-item ──
-  const createEmptyItem = (label?: string): QuoteLineItem => ({
-    id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    soort: 'prijs',
-    beschrijving: label || '',
-    extra_velden: {},
-    aantal: 1,
-    eenheidsprijs: 0,
-    btw_percentage: standaardBtw,
-    korting_percentage: 0,
-    totaal: 0,
-  })
+  // ── Helper: maak een leeg calculatie-item met default beschrijving-regels ──
+  const createEmptyItem = (label?: string): QuoteLineItem => {
+    // Gebruik offerte_regel_velden uit settings, of de defaults
+    const labels = (settings.offerte_regel_velden && settings.offerte_regel_velden.length > 0)
+      ? settings.offerte_regel_velden
+      : DEFAULT_DETAIL_LABELS
+
+    const detail_regels: DetailRegel[] = labels.map((l, i) => ({
+      id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+      label: l,
+      waarde: '',
+    }))
+
+    return {
+      id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      soort: 'prijs',
+      beschrijving: label || '',
+      extra_velden: {},
+      detail_regels,
+      aantal: 1,
+      eenheidsprijs: 0,
+      btw_percentage: standaardBtw,
+      korting_percentage: 0,
+      totaal: 0,
+    }
+  }
 
   // ── Item handlers ──
   const handleAddItem = () => {

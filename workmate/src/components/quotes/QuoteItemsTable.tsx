@@ -8,15 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
-import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { CalculatieModal } from './CalculatieModal'
 import type { CalculatieRegel } from '@/types'
 
@@ -24,18 +17,37 @@ import type { CalculatieRegel } from '@/types'
 // OFFERTE ITEMS
 //
 // Elk item is 1 complete "calculatie":
-//   1. Omschrijving (titel van het item)
-//   2. Detail-velden (Aantal, Afmeting, Materiaal, Lay-out, Montage, Opmerking)
-//   3. Prijsberekening (Aantal × Prijs, BTW, Korting, Totaal)
+//   1. Item naam (titel bovenaan)
+//   2. Beschrijving-regels — dynamisch: toevoegen, verwijderen, aanpassen
+//      Default: Omschrijving, Aantal, Afmeting, Materiaal, Lay-out, Montage, Opmerking
+//   3. Prijsberekening — Aantal × Prijs [Calculator] | BTW | Korting | = Totaal
 //
-// Alles in 1 blok — simpel en overzichtelijk.
+// De Calculator (CalculatieModal) zit achter de prijs voor
+// gedetailleerde inkoop/verkoop/marge berekening.
 // ============================================================
+
+export interface DetailRegel {
+  id: string
+  label: string
+  waarde: string
+}
+
+export const DEFAULT_DETAIL_LABELS = [
+  'Omschrijving',
+  'Aantal',
+  'Afmeting',
+  'Materiaal',
+  'Lay-out',
+  'Montage',
+  'Opmerking',
+]
 
 export interface QuoteLineItem {
   id: string
   soort: 'prijs' | 'tekst'
   beschrijving: string
   extra_velden: Record<string, string>
+  detail_regels?: DetailRegel[]
   aantal: number
   eenheidsprijs: number
   btw_percentage: number
@@ -47,7 +59,7 @@ export interface QuoteLineItem {
 
 interface QuoteItemsTableProps {
   items: QuoteLineItem[]
-  onAddItem: (soort?: 'prijs' | 'tekst') => void
+  onAddItem: () => void
   onUpdateItem: (id: string, field: keyof QuoteLineItem, value: any) => void
   onRemoveItem: (id: string) => void
   onUpdateItemWithCalculatie?: (
@@ -65,6 +77,10 @@ function calculateLineTotaal(item: QuoteLineItem): number {
   return bruto - bruto * (item.korting_percentage / 100)
 }
 
+function genId(): string {
+  return `dr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+}
+
 export function QuoteItemsTable({
   items,
   onAddItem,
@@ -72,9 +88,6 @@ export function QuoteItemsTable({
   onRemoveItem,
   onUpdateItemWithCalculatie,
 }: QuoteItemsTableProps) {
-  const { settings } = useAppSettings()
-  const regelVelden = settings.offerte_regel_velden || []
-
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
@@ -118,11 +131,54 @@ export function QuoteItemsTable({
     })
   }
 
-  const updateExtraVeld = (itemId: string, label: string, value: string) => {
+  // ── Detail regels handlers ──
+  const getDetailRegels = (item: QuoteLineItem): DetailRegel[] => {
+    return item.detail_regels || []
+  }
+
+  const updateDetailRegels = (itemId: string, regels: DetailRegel[]) => {
+    onUpdateItem(itemId, 'detail_regels', regels)
+  }
+
+  const addDetailRegel = (itemId: string) => {
     const item = items.find((i) => i.id === itemId)
     if (!item) return
-    const updated = { ...item.extra_velden, [label]: value }
-    onUpdateItem(itemId, 'extra_velden', updated)
+    const regels = getDetailRegels(item)
+    updateDetailRegels(itemId, [...regels, { id: genId(), label: '', waarde: '' }])
+  }
+
+  const removeDetailRegel = (itemId: string, regelId: string) => {
+    const item = items.find((i) => i.id === itemId)
+    if (!item) return
+    const regels = getDetailRegels(item).filter((r) => r.id !== regelId)
+    updateDetailRegels(itemId, regels)
+  }
+
+  const duplicateDetailRegel = (itemId: string, regelId: string) => {
+    const item = items.find((i) => i.id === itemId)
+    if (!item) return
+    const regels = getDetailRegels(item)
+    const idx = regels.findIndex((r) => r.id === regelId)
+    if (idx === -1) return
+    const original = regels[idx]
+    const copy = { ...original, id: genId(), waarde: '' }
+    const updated = [...regels]
+    updated.splice(idx + 1, 0, copy)
+    updateDetailRegels(itemId, updated)
+  }
+
+  const updateDetailRegelField = (
+    itemId: string,
+    regelId: string,
+    field: 'label' | 'waarde',
+    value: string
+  ) => {
+    const item = items.find((i) => i.id === itemId)
+    if (!item) return
+    const regels = getDetailRegels(item).map((r) =>
+      r.id === regelId ? { ...r, [field]: value } : r
+    )
+    updateDetailRegels(itemId, regels)
   }
 
   return (
@@ -131,13 +187,14 @@ export function QuoteItemsTable({
       {items.map((item, index) => {
         const isCollapsed = collapsedItems.has(item.id)
         const lineTotaal = calculateLineTotaal(item)
+        const detailRegels = getDetailRegels(item)
 
         return (
           <div
             key={item.id}
             className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm"
           >
-            {/* ──── HEADER: nummer + omschrijving + acties ──── */}
+            {/* ──── HEADER: nummer + item naam + totaal + acties ──── */}
             <div className="flex items-center gap-3 px-4 py-3 bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <div className="h-7 w-7 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
                 <span className="text-xs font-bold text-white">{index + 1}</span>
@@ -146,7 +203,7 @@ export function QuoteItemsTable({
               <Input
                 value={item.beschrijving}
                 onChange={(e) => onUpdateItem(item.id, 'beschrijving', e.target.value)}
-                placeholder="Omschrijving van dit item..."
+                placeholder="Item naam..."
                 className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 text-sm font-semibold flex-1 placeholder:font-normal"
               />
 
@@ -169,31 +226,62 @@ export function QuoteItemsTable({
               </button>
             </div>
 
-            {/* ──── BODY: detail-velden + prijsberekening ──── */}
+            {/* ──── BODY: beschrijving-regels + prijsberekening ──── */}
             {!isCollapsed && (
               <>
-                {/* Detail-velden */}
-                {regelVelden.length > 0 && (
-                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                      {regelVelden.map((label) => (
-                        <div key={label} className="flex items-center gap-2">
-                          <label className="text-xs font-medium text-muted-foreground w-20 flex-shrink-0 text-right">
-                            {label}
-                          </label>
-                          <Input
-                            value={item.extra_velden?.[label] || ''}
-                            onChange={(e) => updateExtraVeld(item.id, label, e.target.value)}
-                            placeholder={`${label}...`}
-                            className="h-8 text-sm flex-1"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* Beschrijving-regels (dynamisch) */}
+                <div className="px-4 py-3 space-y-1.5 border-b border-gray-100 dark:border-gray-800">
+                  {detailRegels.map((regel) => (
+                    <div key={regel.id} className="flex items-center gap-1.5 group">
+                      {/* Verwijder knop */}
+                      <button
+                        onClick={() => removeDetailRegel(item.id, regel.id)}
+                        className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                        title="Verwijder rij"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
 
-                {/* Prijsberekening */}
+                      {/* Dupliceer knop */}
+                      <button
+                        onClick={() => duplicateDetailRegel(item.id, regel.id)}
+                        className="text-gray-300 hover:text-blue-500 dark:text-gray-600 dark:hover:text-blue-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                        title="Dupliceer rij"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </button>
+
+                      {/* Label */}
+                      <Input
+                        value={regel.label}
+                        onChange={(e) => updateDetailRegelField(item.id, regel.id, 'label', e.target.value)}
+                        placeholder="Label..."
+                        className="w-28 flex-shrink-0 h-8 text-xs font-medium border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 focus-visible:border-gray-300 shadow-none text-muted-foreground"
+                      />
+
+                      <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">:</span>
+
+                      {/* Waarde */}
+                      <Input
+                        value={regel.waarde}
+                        onChange={(e) => updateDetailRegelField(item.id, regel.id, 'waarde', e.target.value)}
+                        placeholder="Vul in..."
+                        className="flex-1 h-8 text-sm"
+                      />
+                    </div>
+                  ))}
+
+                  {/* Rij toevoegen */}
+                  <button
+                    onClick={() => addDetailRegel(item.id)}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors pt-1"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Beschrijving toevoegen
+                  </button>
+                </div>
+
+                {/* ──── PRIJSBEREKENING ──── */}
                 <div className="px-4 py-3 bg-gray-50/50 dark:bg-gray-800/30">
                   <div className="flex items-end gap-3 flex-wrap">
                     {/* Aantal */}
@@ -212,31 +300,8 @@ export function QuoteItemsTable({
                     <span className="text-muted-foreground pb-2 text-sm">×</span>
 
                     {/* Prijs per stuk */}
-                    <div className="space-y-1 flex-1 min-w-[120px] max-w-[180px]">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-medium text-muted-foreground">Prijs per stuk</label>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                onClick={() => openCalculatie(item.id)}
-                                className={cn(
-                                  'text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-md transition-colors',
-                                  item.heeft_calculatie
-                                    ? 'text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400'
-                                    : 'text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30'
-                                )}
-                              >
-                                <Calculator className="h-3 w-3" />
-                                {item.heeft_calculatie ? 'Bewerk' : 'Calculatie'}
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Detailcalculatie voor nauwkeurige prijsberekening</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
+                    <div className="space-y-1 flex-1 min-w-[140px] max-w-[200px]">
+                      <label className="text-[11px] font-medium text-muted-foreground">Prijs per stuk</label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
                         <Input
@@ -245,8 +310,21 @@ export function QuoteItemsTable({
                           onChange={(e) => onUpdateItem(item.id, 'eenheidsprijs', Math.max(0, parseFloat(e.target.value) || 0))}
                           min={0}
                           step={0.01}
-                          className="h-9 text-sm pl-7"
+                          className="h-9 text-sm pl-7 pr-10"
                         />
+                        {/* Calculator knop — prominent, altijd zichtbaar */}
+                        <button
+                          onClick={() => openCalculatie(item.id)}
+                          className={cn(
+                            'absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center transition-colors',
+                            item.heeft_calculatie
+                              ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
+                              : 'bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-blue-900/40 dark:hover:text-blue-400'
+                          )}
+                          title={item.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie openen'}
+                        >
+                          <Calculator className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
 
@@ -295,6 +373,21 @@ export function QuoteItemsTable({
                       </div>
                     </div>
                   </div>
+
+                  {/* Calculatie indicator */}
+                  {item.heeft_calculatie && item.calculatie_regels && item.calculatie_regels.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        onClick={() => openCalculatie(item.id)}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                      >
+                        <Calculator className="h-3 w-3" />
+                        Calculatie: {item.calculatie_regels.length} regels —
+                        Inkoop {formatCurrency(item.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0))} |
+                        Verkoop {formatCurrency(item.calculatie_regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0))}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -312,7 +405,7 @@ export function QuoteItemsTable({
           </p>
           <Button
             variant="outline"
-            onClick={() => onAddItem('prijs')}
+            onClick={() => onAddItem()}
             className="mt-4 gap-2"
           >
             <Plus className="h-4 w-4" />
@@ -324,7 +417,7 @@ export function QuoteItemsTable({
       {/* ========= TOEVOEGEN KNOP ========= */}
       {items.length > 0 && (
         <button
-          onClick={() => onAddItem('prijs')}
+          onClick={() => onAddItem()}
           className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm font-medium text-muted-foreground hover:text-accent hover:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
         >
           <Plus className="h-4 w-4" />
