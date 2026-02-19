@@ -32,6 +32,8 @@ import {
   Trash2,
   RefreshCw,
   CheckCheck,
+  Sparkles,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -70,6 +72,7 @@ import {
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { analyzeProject } from '@/services/aiService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant } from '@/types'
@@ -156,6 +159,11 @@ export function ProjectDetail() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
 
+  // AI analysis state
+  const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false)
+  const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false)
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<string | null>(null)
+
   // Offerte editor state
   const [editOfferteId, setEditOfferteId] = useState<string | null>(null)
 
@@ -224,6 +232,33 @@ export function ProjectDetail() {
       console.error('Fout bij ophalen goedkeuringen:', err)
     }
   }, [id])
+
+  const handleAiAnalysis = async () => {
+    if (!project) return
+    setAiAnalysisLoading(true)
+    setAiAnalysisOpen(true)
+    setAiAnalysisResult(null)
+    try {
+      const result = await analyzeProject({
+        naam: project.naam,
+        beschrijving: project.beschrijving || '',
+        status: project.status,
+        budget: project.budget,
+        besteed: project.besteed,
+        voortgang: project.voortgang,
+        taken: projectTaken.map((t) => ({
+          titel: t.titel,
+          status: t.status,
+          prioriteit: t.prioriteit,
+        })),
+      })
+      setAiAnalysisResult(result)
+    } catch {
+      setAiAnalysisResult('Kon de analyse niet uitvoeren. Probeer het later opnieuw.')
+    } finally {
+      setAiAnalysisLoading(false)
+    }
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -448,6 +483,19 @@ export function ProjectDetail() {
                 <Badge className={`${getPriorityColor(project.prioriteit)} text-sm px-3 py-1`}>
                   {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
                 </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAiAnalysis}
+                  disabled={aiAnalysisLoading}
+                  className="h-8 px-3 text-indigo-200 hover:text-white hover:bg-white/10 border border-white/10"
+                >
+                  {aiAnalysisLoading
+                    ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                    : <Sparkles className="h-4 w-4 mr-1.5" />
+                  }
+                  AI Analyse
+                </Button>
               </div>
             </div>
 
@@ -1125,6 +1173,49 @@ export function ProjectDetail() {
           </Card>
         </div>
       </div>
+
+      {/* ── AI Analyse dialog ── */}
+      <Dialog open={aiAnalysisOpen} onOpenChange={setAiAnalysisOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              AI Projectanalyse
+            </DialogTitle>
+            <DialogDescription>
+              AI-gegenereerde analyse van {project.naam}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {aiAnalysisLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                <p className="text-sm text-muted-foreground">Analyse wordt uitgevoerd...</p>
+              </div>
+            ) : aiAnalysisResult ? (
+              <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-sm text-foreground leading-relaxed">
+                {aiAnalysisResult}
+              </div>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiAnalysisOpen(false)}>
+              Sluiten
+            </Button>
+            <Button
+              onClick={handleAiAnalysis}
+              disabled={aiAnalysisLoading}
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0"
+            >
+              {aiAnalysisLoading
+                ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                : <Sparkles className="h-4 w-4 mr-1.5" />
+              }
+              Opnieuw analyseren
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Verstuur naar klant dialog ── */}
       <Dialog open={verstuurOpen} onOpenChange={(open) => {

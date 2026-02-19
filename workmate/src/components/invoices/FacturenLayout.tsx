@@ -48,6 +48,8 @@ import {
   Download,
   ArrowUp,
   ArrowDown,
+  FileDown,
+  Send,
 } from 'lucide-react'
 import {
   getFacturen,
@@ -64,7 +66,9 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { sendEmail } from '@/services/gmailService'
-import { factuurHerinneringTemplate } from '@/services/emailTemplateService'
+import { factuurHerinneringTemplate, factuurVerzendTemplate } from '@/services/emailTemplateService'
+import { generateFactuurPDF } from '@/services/pdfService'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 // ============ TYPES ============
 
@@ -354,6 +358,9 @@ function isThisMonth(dateStr: string): boolean {
 // ============ COMPONENT ============
 
 export function FacturenLayout() {
+  // App settings (bedrijfsprofiel for PDF generation)
+  const { profile, primaireKleur, emailHandtekening, bedrijfsnaam } = useAppSettings()
+
   // Data state
   const [facturen, setFacturen] = useState<Factuur[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -869,6 +876,112 @@ export function FacturenLayout() {
     toast.success('Excel gedownload')
   }, [filteredFacturen])
 
+  const handleDownloadPdf = useCallback(
+    (factuur: Factuur) => {
+      const klant = klanten.find((k) => k.id === factuur.klant_id) || {}
+
+      const bedrijfsProfiel = {
+        ...profile,
+        primaireKleur,
+      }
+
+      const factuurData = {
+        nummer: factuur.nummer,
+        titel: factuur.titel,
+        datum: factuur.factuurdatum,
+        vervaldatum: factuur.vervaldatum,
+        subtotaal: factuur.subtotaal,
+        btw_bedrag: factuur.btw_bedrag,
+        totaal: factuur.totaal,
+        notities: factuur.notities || undefined,
+        betaalvoorwaarden: factuur.voorwaarden || undefined,
+      }
+
+      // Build items from factuur data (single line item based on totals)
+      const items: OfferteItem[] = [
+        {
+          id: '',
+          offerte_id: '',
+          beschrijving: factuur.titel,
+          aantal: 1,
+          eenheidsprijs: factuur.subtotaal,
+          btw_percentage: factuur.subtotaal > 0 ? Math.round((factuur.btw_bedrag / factuur.subtotaal) * 100) : 21,
+          korting_percentage: 0,
+          totaal: factuur.subtotaal,
+          volgorde: 1,
+        },
+      ]
+
+      try {
+        const doc = generateFactuurPDF(factuurData, items, klant, bedrijfsProfiel)
+        doc.save(`factuur-${factuur.nummer}.pdf`)
+        toast.success(`PDF gedownload voor ${factuur.nummer}`)
+      } catch (err) {
+        console.error('Fout bij genereren PDF:', err)
+        toast.error('Kon PDF niet genereren')
+      }
+    },
+    [klanten, profile, primaireKleur]
+  )
+
+  const handleSendFactuur = useCallback(
+    async (factuur: Factuur) => {
+      const klant = klanten.find((k) => k.id === factuur.klant_id)
+      if (!klant?.email) {
+        toast.error('Geen emailadres gevonden voor deze klant')
+        return
+      }
+
+      try {
+        const { subject, html } = factuurVerzendTemplate({
+          klantNaam: klant.contactpersoon || klant.bedrijfsnaam,
+          factuurNummer: factuur.nummer,
+          factuurTitel: factuur.titel,
+          totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(factuur.totaal),
+          vervaldatum: formatDate(factuur.vervaldatum),
+          bedrijfsnaam,
+          primaireKleur,
+          handtekening: emailHandtekening || undefined,
+        })
+
+        await sendEmail(klant.email, subject, '', { html })
+
+        // Update status to 'verzonden'
+        const updates: Partial<Factuur> = { status: 'verzonden' }
+
+        if (!factuur.id.startsWith('demo-')) {
+          try {
+            const updated = await updateFactuur(factuur.id, updates)
+            setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
+          } catch {
+            // Still update locally even if DB update fails
+            setFacturen((prev) =>
+              prev.map((f) =>
+                f.id === factuur.id
+                  ? { ...f, ...updates, updated_at: new Date().toISOString() }
+                  : f
+              )
+            )
+          }
+        } else {
+          setFacturen((prev) =>
+            prev.map((f) =>
+              f.id === factuur.id
+                ? { ...f, ...updates, updated_at: new Date().toISOString() }
+                : f
+            )
+          )
+        }
+
+        toast.success(`Factuur ${factuur.nummer} verzonden naar ${klant.email}`)
+      } catch (err) {
+        console.error('Fout bij verzenden factuur:', err)
+        toast.error('Kon factuur niet verzenden')
+      }
+    },
+    [klanten, bedrijfsnaam, primaireKleur, emailHandtekening]
+  )
+
   // ============ RENDER ============
 
   if (isLoading) {
@@ -1218,6 +1331,16 @@ export function FacturenLayout() {
                             <Pencil className="h-4 w-4 mr-2" />
                             Bewerken
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadPdf(factuur)}>
+                            <FileDown className="h-4 w-4 mr-2" />
+                            Download PDF
+                          </DropdownMenuItem>
+                          {factuur.status === 'concept' && (
+                            <DropdownMenuItem onClick={() => handleSendFactuur(factuur)}>
+                              <Send className="h-4 w-4 mr-2" />
+                              Verstuur factuur
+                            </DropdownMenuItem>
+                          )}
                           {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
                             <DropdownMenuItem onClick={() => handleMarkAsBetaald(factuur)}>
                               <CreditCard className="h-4 w-4 mr-2" />

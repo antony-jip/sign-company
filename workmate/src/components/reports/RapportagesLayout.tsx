@@ -49,6 +49,8 @@ import type {
 import { cn, formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportCSV, exportExcel } from '@/lib/export';
+import { generateRapportPDF } from '@/services/pdfService';
+import { useAppSettings } from '@/contexts/AppSettingsContext';
 
 // ---------------------------------------------------------------------------
 // Demo data generators
@@ -266,6 +268,7 @@ const MAAND_NAMEN = [
 // ---------------------------------------------------------------------------
 
 export function RapportagesLayout() {
+  const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings();
   const [periode, setPeriode] = useState<Periode>('dit_jaar');
   const [facturen, setFacturen] = useState<Factuur[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
@@ -525,6 +528,148 @@ export function RapportagesLayout() {
   }
 
   // ---------------------------------------------------------------------------
+  // PDF download handlers
+  // ---------------------------------------------------------------------------
+
+  const bedrijfsProfiel = {
+    bedrijfsnaam: bedrijfsnaam || 'Uw Bedrijf',
+    bedrijfs_adres: bedrijfsAdres || '',
+    kvk_nummer: kvkNummer || '',
+    btw_nummer: btwNummer || '',
+    primaireKleur: primaireKleur || '#2563eb',
+  };
+
+  function handleDownloadOmzetPDF() {
+    try {
+      const doc = generateRapportPDF(
+        {
+          titel: `Omzet per maand - ${new Date().getFullYear()}`,
+          datum: new Date().toISOString(),
+          samenvatting: `Totale omzet: ${formatCurrency(totaleOmzet)} | Totale winst: ${formatCurrency(totaleWinst)} | Conversieratio: ${conversieRatio}%`,
+          secties: [
+            {
+              kop: 'Maandelijks overzicht',
+              inhoud: 'Onderstaande tabel toont de gefactureerde omzet per maand.',
+              tabel: {
+                headers: ['Maand', 'Omzet'],
+                rijen: maandelijksOmzet.map((m) => [m.maand, formatCurrency(m.waarde)]),
+              },
+            },
+          ],
+        },
+        'financieel',
+        bedrijfsProfiel,
+      );
+      doc.save(`omzet-rapport-${new Date().getFullYear()}.pdf`);
+      toast.success('PDF gedownload');
+    } catch {
+      toast.error('Kon PDF niet genereren');
+    }
+  }
+
+  function handleDownloadKlantenPDF() {
+    try {
+      const doc = generateRapportPDF(
+        {
+          titel: `Top klanten - ${getPeriodeLabel(periode)}`,
+          datum: new Date().toISOString(),
+          secties: [
+            {
+              kop: 'Top 5 klanten op basis van omzet',
+              inhoud: 'Onderstaande tabel toont de top klanten op basis van gefactureerde omzet.',
+              tabel: {
+                headers: ['Klant', 'Projecten', 'Gefactureerd', 'Openstaand', 'Laatste factuur'],
+                rijen: topKlanten.map((k) => [
+                  k.naam,
+                  String(k.aantalProjecten),
+                  formatCurrency(k.totaalGefactureerd),
+                  formatCurrency(k.openstaand),
+                  formatDatum(k.laatsteFactuur),
+                ]),
+              },
+            },
+          ],
+        },
+        'klant',
+        bedrijfsProfiel,
+      );
+      doc.save(`top-klanten-rapport.pdf`);
+      toast.success('PDF gedownload');
+    } catch {
+      toast.error('Kon PDF niet genereren');
+    }
+  }
+
+  function handleDownloadProjectenPDF() {
+    try {
+      const doc = generateRapportPDF(
+        {
+          titel: 'Project winstgevendheid',
+          datum: new Date().toISOString(),
+          secties: [
+            {
+              kop: 'Budget versus bestede kosten',
+              inhoud: 'Onderstaande tabel toont het budget, de bestede kosten en de marge per project.',
+              tabel: {
+                headers: ['Project', 'Klant', 'Budget', 'Besteed', 'Marge %', 'Status'],
+                rijen: projectWinstgevendheid.map((p) => [
+                  p.naam,
+                  p.klant_naam || p.klant_id,
+                  formatCurrency(p.budget),
+                  formatCurrency(p.besteed),
+                  `${p.marge}%`,
+                  statusNaarNederlands(p.status),
+                ]),
+              },
+            },
+          ],
+        },
+        'project',
+        bedrijfsProfiel,
+      );
+      doc.save(`project-winstgevendheid-rapport.pdf`);
+      toast.success('PDF gedownload');
+    } catch {
+      toast.error('Kon PDF niet genereren');
+    }
+  }
+
+  function handleDownloadOffertesPDF() {
+    try {
+      const doc = generateRapportPDF(
+        {
+          titel: `Offerte conversie - ${getPeriodeLabel(periode)}`,
+          datum: new Date().toISOString(),
+          samenvatting: `Totaal: ${offerteStats.totaal} offertes | Goedgekeurd: ${offerteStats.goedgekeurd} | Afgewezen: ${offerteStats.afgewezen} | In behandeling: ${offerteStats.inBehandeling} | Conversieratio: ${offerteStats.ratio}%`,
+          secties: [
+            {
+              kop: 'Offertes overzicht',
+              inhoud: 'Onderstaande tabel toont alle offertes voor de geselecteerde periode.',
+              tabel: {
+                headers: ['Nummer', 'Titel', 'Klant', 'Status', 'Totaal', 'Datum'],
+                rijen: gefilterdeOffertes.map((o) => [
+                  o.nummer,
+                  o.titel,
+                  o.klant_naam || o.klant_id,
+                  o.status,
+                  formatCurrency(o.totaal),
+                  o.created_at.split('T')[0],
+                ]),
+              },
+            },
+          ],
+        },
+        'algemeen',
+        bedrijfsProfiel,
+      );
+      doc.save(`offerte-conversie-rapport.pdf`);
+      toast.success('PDF gedownload');
+    } catch {
+      toast.error('Kon PDF niet genereren');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
 
@@ -699,6 +844,14 @@ export function RapportagesLayout() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={handleDownloadOmzetPDF}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => handleExportOmzet('csv')}
               >
                 <Download className="mr-1 h-3 w-3" />
@@ -767,6 +920,14 @@ export function RapportagesLayout() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadKlantenPDF}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                PDF
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -866,6 +1027,14 @@ export function RapportagesLayout() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadProjectenPDF}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                PDF
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -979,6 +1148,14 @@ export function RapportagesLayout() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadOffertesPDF}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                PDF
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

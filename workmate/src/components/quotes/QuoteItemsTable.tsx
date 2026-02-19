@@ -16,10 +16,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Trash2, Plus, Calculator, GripVertical, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trash2, Plus, Calculator, GripVertical, ChevronDown, ChevronUp, Sparkles, Loader2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { CalculatieModal } from './CalculatieModal'
+import { suggestQuoteText } from '@/services/aiService'
 import type { CalculatieRegel } from '@/types'
 
 // ============================================================
@@ -87,6 +88,8 @@ export function QuoteItemsTable({
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
   // Track welke item-blokken zijn ingeklapt
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set())
+  // AI suggest loading state per item
+  const [aiLoadingItemId, setAiLoadingItemId] = useState<string | null>(null)
 
   const activeItem = items.find((i) => i.id === activeItemId)
 
@@ -111,6 +114,27 @@ export function QuoteItemsTable({
   const openCalculatie = (itemId: string) => {
     setActiveItemId(itemId)
     setCalculatieOpen(true)
+  }
+
+  const handleAiSuggest = async (itemId: string) => {
+    setAiLoadingItemId(itemId)
+    try {
+      const item = items.find((i) => i.id === itemId)
+      const result = await suggestQuoteText({
+        items: items
+          .filter((i) => i.soort === 'prijs')
+          .map((i) => ({ beschrijving: i.beschrijving, totaal: i.totaal })),
+        totaal: subtotaal,
+      })
+      // Use the result as the item description
+      if (result && item) {
+        onUpdateItem(itemId, 'beschrijving', result.split('\n')[0].replace(/^(Geachte.*|Beste.*|Hierbij.*)/, '').trim() || result.slice(0, 200))
+      }
+    } catch {
+      // Silently fail - the AI service already handles fallbacks
+    } finally {
+      setAiLoadingItemId(null)
+    }
   }
 
   const handleCalculatieConfirm = (data: {
@@ -196,6 +220,28 @@ export function QuoteItemsTable({
                 placeholder="Omschrijving..."
                 className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 text-sm font-medium flex-1"
               />
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleAiSuggest(item.id)}
+                      disabled={aiLoadingItemId === item.id}
+                      className="h-7 w-7 text-purple-400 hover:text-purple-600 flex-shrink-0"
+                    >
+                      {aiLoadingItemId === item.id
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        : <Sparkles className="h-3.5 w-3.5" />
+                      }
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>AI omschrijving genereren</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
               {isPrijs && item.heeft_calculatie && (
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-blue-600 border-blue-200 dark:border-blue-800 flex-shrink-0">
