@@ -522,6 +522,32 @@ export function EmailLayout() {
     toast.success('Snooze verwijderd')
   }, [])
 
+  // ── Reply / Forward / Compose ──
+  const handleReply = useCallback((email: Email) => {
+    const senderEmail = email.van.match(/<([^>]+)>/)?.[1] || email.van
+    setComposeDefaults({
+      to: senderEmail,
+      subject: `Re: ${email.onderwerp}`,
+      body: `\n\n---\nOp ${formatDateTime(email.datum)} schreef ${extractSenderName(email.van)}:\n\n${email.inhoud}`,
+    })
+    setViewMode('composing')
+  }, [])
+
+  const handleForward = useCallback((email: Email) => {
+    setComposeDefaults({
+      to: '',
+      subject: `Fwd: ${email.onderwerp}`,
+      body: `\n\n---\nDoorgestuurd bericht\nVan: ${email.van}\nDatum: ${formatDateTime(email.datum)}\nOnderwerp: ${email.onderwerp}\n\n${email.inhoud}`,
+    })
+    setViewMode('composing')
+  }, [])
+
+  const handleCompose = useCallback(() => {
+    setComposeDefaults({})
+    setViewMode('composing')
+    setSelectedEmail(null)
+  }, [])
+
   // ── Quick reply (uses sendEmailRef to avoid dep ordering) ──
   const sendEmailRef = React.useRef<(data: { to: string; subject: string; body: string }) => void>()
   const handleQuickReply = useCallback((email: Email) => {
@@ -622,32 +648,7 @@ export function EmailLayout() {
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [viewMode, focusedIndex, filteredEmails, handleSelectEmail, handleToggleStar, handleTogglePin, handleArchive, handleDelete, handleCompose])
-
-  const handleReply = useCallback((email: Email) => {
-    const senderEmail = email.van.match(/<([^>]+)>/)?.[1] || email.van
-    setComposeDefaults({
-      to: senderEmail,
-      subject: `Re: ${email.onderwerp}`,
-      body: `\n\n---\nOp ${formatDateTime(email.datum)} schreef ${extractSenderName(email.van)}:\n\n${email.inhoud}`,
-    })
-    setViewMode('composing')
-  }, [])
-
-  const handleForward = useCallback((email: Email) => {
-    setComposeDefaults({
-      to: '',
-      subject: `Fwd: ${email.onderwerp}`,
-      body: `\n\n---\nDoorgestuurd bericht\nVan: ${email.van}\nDatum: ${formatDateTime(email.datum)}\nOnderwerp: ${email.onderwerp}\n\n${email.inhoud}`,
-    })
-    setViewMode('composing')
-  }, [])
-
-  const handleCompose = useCallback(() => {
-    setComposeDefaults({})
-    setViewMode('composing')
-    setSelectedEmail(null)
-  }, [])
+  }, [viewMode, focusedIndex, filteredEmails, handleSelectEmail, handleToggleStar, handleTogglePin, handleArchive, handleDelete, handleCompose, handleReply, handleForward])
 
   const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; scheduledAt?: string }) => {
     const isScheduled = !!data.scheduledAt
