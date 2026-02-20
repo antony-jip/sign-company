@@ -1196,10 +1196,18 @@ export function EmailLayout() {
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setQuickReplyId(quickReplyId === email.id ? null : email.id); setQuickReplyText('') }}
-                            className="p-1 rounded hover:bg-muted"
-                            title="Snel beantwoorden"
+                            className={cn(
+                              'p-1 rounded hover:bg-muted transition-all',
+                              quickReplyId === email.id && 'bg-orange-100 dark:bg-orange-950/40 ring-2 ring-orange-500'
+                            )}
+                            title={quickReplyId === email.id ? 'Preview sluiten' : 'Snel beantwoorden'}
                           >
-                            <Reply className="w-3.5 h-3.5 text-muted-foreground" />
+                            <Reply className={cn(
+                              'transition-all',
+                              quickReplyId === email.id
+                                ? 'w-4.5 h-4.5 text-orange-600 dark:text-orange-400 stroke-[2.5]'
+                                : 'w-3.5 h-3.5 text-muted-foreground'
+                            )} />
                           </button>
                         </div>
 
