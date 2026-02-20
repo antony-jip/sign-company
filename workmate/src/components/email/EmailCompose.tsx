@@ -43,7 +43,6 @@ import {
   Plus,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { useAuth } from '@/contexts/AuthContext'
 import { generateEmailDraft } from '@/services/aiService'
 import { getKlanten } from '@/services/supabaseService'
 import { toast } from 'sonner'
@@ -227,7 +226,6 @@ export function EmailCompose({
   onSend,
 }: EmailComposeProps) {
   const { emailHandtekening, bedrijfsnaam } = useAppSettings()
-  const { user } = useAuth()
 
   const [to, setTo] = useState(defaultTo)
   const [cc, setCc] = useState('')

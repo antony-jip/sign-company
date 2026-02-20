@@ -37,6 +37,7 @@ import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKla
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
 import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
+import { useAuth } from '@/contexts/AuthContext'
 import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
 import { ContactSidebar } from './ContactSidebar'
@@ -155,6 +156,8 @@ function formatShortDate(dateStr: string): string {
 type ViewMode = 'idle' | 'reading' | 'composing'
 
 export function EmailLayout() {
+  const { user } = useAuth()
+
   // ── State ──
   const [viewMode, setViewMode] = useState<ViewMode>('idle')
   const [selectedFolder, setSelectedFolder] = useState<EmailFolder>('inbox')
@@ -659,9 +662,9 @@ export function EmailLayout() {
       })
 
       const newEmail: Omit<Email, 'id' | 'created_at'> = {
-        user_id: '',
+        user_id: user?.id || '',
         gmail_id: '',
-        van: 'ik@signcompany.nl',
+        van: user?.email || '',
         aan: data.to,
         onderwerp: data.subject,
         inhoud: data.body,
@@ -706,7 +709,7 @@ export function EmailLayout() {
   const handleAddCustomer = useCallback(async (email: string, data?: AddCustomerData) => {
     try {
       const newKlant = await createKlant({
-        user_id: '',
+        user_id: user?.id || '',
         bedrijfsnaam: data?.bedrijfsnaam || '',
         contactpersoon: data?.contactpersoon || extractSenderName(email),
         email: data?.email || email,
@@ -746,7 +749,7 @@ export function EmailLayout() {
   const handleCreateTaskFromEmail = useCallback(async (email: Email, description: string) => {
     try {
       await createTaak({
-        user_id: '',
+        user_id: user?.id || '',
         project_id: '',
         titel: description,
         beschrijving: `Aangemaakt vanuit email: "${email.onderwerp}"\nVan: ${email.van}\nDatum: ${email.datum}`,
