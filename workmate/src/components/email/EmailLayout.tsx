@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Search,
@@ -15,6 +16,13 @@ import {
   Loader2,
   Clock,
   SlidersHorizontal,
+  Archive,
+  Mail,
+  MailOpen,
+  CheckCheck,
+  X,
+  Minus,
+  Type,
 } from 'lucide-react'
 import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKlant } from '@/services/supabaseService'
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
@@ -33,6 +41,7 @@ import { logger } from '../../utils/logger'
 
 type EmailFolder = 'inbox' | 'verzonden' | 'concepten' | 'gepland' | 'prullenbak'
 type FilterType = 'alle' | 'ongelezen' | 'met-ster' | 'bijlagen'
+type FontSize = 'small' | 'medium' | 'large'
 
 interface FolderTab {
   id: EmailFolder
@@ -53,6 +62,12 @@ const labelColors: Record<string, string> = {
   klant: 'bg-emerald-400',
   project: 'bg-primary',
   leverancier: 'bg-amber-400',
+}
+
+const fontSizeClasses: Record<FontSize, { name: string; subject: string; preview: string; date: string }> = {
+  small: { name: 'text-xs', subject: 'text-xs', preview: 'text-[11px]', date: 'text-[10px]' },
+  medium: { name: 'text-sm', subject: 'text-[13px]', preview: 'text-xs', date: 'text-[11px]' },
+  large: { name: 'text-base', subject: 'text-sm', preview: 'text-[13px]', date: 'text-xs' },
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -113,6 +128,12 @@ export function EmailLayout() {
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // Multi-select
+  const [checkedEmails, setCheckedEmails] = useState<Set<string>>(new Set())
+
+  // Font size
+  const [fontSize, setFontSize] = useState<FontSize>('medium')
+
   // Compose defaults (for reply/forward)
   const [composeDefaults, setComposeDefaults] = useState<{
     to?: string; subject?: string; body?: string
@@ -135,6 +156,11 @@ export function EmailLayout() {
     return () => { cancelled = true }
   }, [])
 
+  // Clear checked when changing folder/filter
+  useEffect(() => {
+    setCheckedEmails(new Set())
+  }, [selectedFolder, filter])
+
   // ── Folder counts ──
   const folderCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -151,6 +177,17 @@ export function EmailLayout() {
     })
     return counts
   }, [emails])
+
+  // ── Filter counts (for badge) ──
+  const filterCounts = useMemo(() => {
+    const folderEmails = emails.filter((e) => e.map === selectedFolder)
+    return {
+      alle: folderEmails.length,
+      ongelezen: folderEmails.filter((e) => !e.gelezen).length,
+      'met-ster': folderEmails.filter((e) => e.starred).length,
+      bijlagen: folderEmails.filter((e) => e.bijlagen > 0).length,
+    }
+  }, [emails, selectedFolder])
 
   // ── Filtered + sorted emails ──
   const filteredEmails = useMemo(() => {
@@ -178,12 +215,37 @@ export function EmailLayout() {
     )
   }, [emails, selectedFolder, searchQuery, filter])
 
+  // ── Multi-select helpers ──
+  const hasChecked = checkedEmails.size > 0
+  const allChecked = filteredEmails.length > 0 && checkedEmails.size === filteredEmails.length
+  const someChecked = hasChecked && !allChecked
+
+  const toggleCheckEmail = useCallback((id: string) => {
+    setCheckedEmails((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleCheckAll = useCallback(() => {
+    if (allChecked) {
+      setCheckedEmails(new Set())
+    } else {
+      setCheckedEmails(new Set(filteredEmails.map((e) => e.id)))
+    }
+  }, [allChecked, filteredEmails])
+
+  const clearChecked = useCallback(() => {
+    setCheckedEmails(new Set())
+  }, [])
+
   // ── Current contact (for CRM sidebar) ──
   const findContactByEmail = useCallback((emailAddr: string): EmailContact | null => {
     const clean = extractEmailAddress(emailAddr).toLowerCase()
     if (!clean) return null
 
-    // Match on klant email or contactpersonen email
     const klant = klanten.find((k) => {
       if (k.email?.toLowerCase() === clean) return true
       if (k.contactpersonen?.some((cp) => cp.email?.toLowerCase() === clean)) return true
@@ -191,7 +253,6 @@ export function EmailLayout() {
     })
     if (!klant) return null
 
-    // Find the matching contactpersoon name
     const matchedCP = klant.contactpersonen?.find((cp) => cp.email?.toLowerCase() === clean)
 
     return {
@@ -232,6 +293,7 @@ export function EmailLayout() {
   const handleSelectEmail = useCallback((email: Email) => {
     setSelectedEmail(email)
     setViewMode('reading')
+    setCheckedEmails(new Set())
     if (!email.gelezen) {
       setEmails((prev) =>
         prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
@@ -286,6 +348,46 @@ export function EmailLayout() {
     toast.success('Email verwijderd')
   }, [])
 
+  // ── Bulk actions ──
+  const handleBulkDelete = useCallback(() => {
+    const ids = Array.from(checkedEmails)
+    setEmails((prev) =>
+      prev.map((e) =>
+        ids.includes(e.id) ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e
+      )
+    )
+    ids.forEach((id) => updateEmail(id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {}))
+    setCheckedEmails(new Set())
+    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} verwijderd`)
+  }, [checkedEmails])
+
+  const handleBulkArchive = useCallback(() => {
+    const ids = Array.from(checkedEmails)
+    setEmails((prev) => prev.filter((e) => !ids.includes(e.id)))
+    setCheckedEmails(new Set())
+    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} gearchiveerd`)
+  }, [checkedEmails])
+
+  const handleBulkMarkRead = useCallback(() => {
+    const ids = Array.from(checkedEmails)
+    setEmails((prev) =>
+      prev.map((e) => ids.includes(e.id) ? { ...e, gelezen: true } : e)
+    )
+    ids.forEach((id) => updateEmail(id, { gelezen: true }).catch(() => {}))
+    setCheckedEmails(new Set())
+    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} als gelezen gemarkeerd`)
+  }, [checkedEmails])
+
+  const handleBulkMarkUnread = useCallback(() => {
+    const ids = Array.from(checkedEmails)
+    setEmails((prev) =>
+      prev.map((e) => ids.includes(e.id) ? { ...e, gelezen: false } : e)
+    )
+    ids.forEach((id) => updateEmail(id, { gelezen: false }).catch(() => {}))
+    setCheckedEmails(new Set())
+    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} als ongelezen gemarkeerd`)
+  }, [checkedEmails])
+
   const handleReply = useCallback((email: Email) => {
     const senderEmail = email.van.match(/<([^>]+)>/)?.[1] || email.van
     setComposeDefaults({
@@ -315,12 +417,10 @@ export function EmailLayout() {
     const isScheduled = !!data.scheduledAt
 
     try {
-      // Actually send via /api/send-email (SMTP)
       await sendEmailViaApi(data.to, data.subject, data.body, {
         scheduledAt: data.scheduledAt,
       })
 
-      // Also save locally so it appears in the sent folder
       const newEmail: Omit<Email, 'id' | 'created_at'> = {
         user_id: '',
         gmail_id: '',
@@ -340,7 +440,6 @@ export function EmailLayout() {
       setEmails((prev) => [saved, ...prev])
       toast.success(isScheduled ? 'Email ingepland' : 'Email verzonden')
     } catch (err: any) {
-      // If API send fails (e.g. no email settings), still save as draft
       logger.error('Email verzenden mislukt:', err)
       toast.error(err.message || 'Email kon niet worden verzonden')
     }
@@ -391,7 +490,6 @@ export function EmailLayout() {
           is_primair: true,
         }],
       })
-      // Update local state so sidebar immediately reflects the new customer
       setKlanten((prev) => [...prev, newKlant])
       toast.success(`${data?.contactpersoon || email} toegevoegd aan klanten`)
     } catch (err: any) {
@@ -406,6 +504,8 @@ export function EmailLayout() {
 
   // ── Show CRM sidebar? ──
   const showSidebar = viewMode === 'reading' || viewMode === 'composing'
+
+  const fs = fontSizeClasses[fontSize]
 
   // ═════════════════════════════════════════════════════════════════
   // ─── Render ────────────────────────────────────────────────────
@@ -455,7 +555,7 @@ export function EmailLayout() {
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
                       isActive
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     )}
                   >
@@ -465,7 +565,7 @@ export function EmailLayout() {
                       <span className={cn(
                         'text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center',
                         isActive
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-primary text-white'
                           : 'bg-muted-foreground/20 text-muted-foreground'
                       )}>
                         {count}
@@ -476,49 +576,184 @@ export function EmailLayout() {
               })}
             </div>
 
-            {/* Filter chips */}
-            <div className="px-3 pb-2 flex items-center gap-1 border-b">
-              {(['alle', 'ongelezen', 'met-ster', 'bijlagen'] as FilterType[]).map((f) => {
-                const labels: Record<FilterType, string> = {
-                  alle: 'Alle',
-                  ongelezen: 'Ongelezen',
-                  'met-ster': 'Met ster',
-                  bijlagen: 'Bijlagen',
-                }
-                return (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={cn(
-                      'px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors',
-                      filter === f
-                        ? 'bg-foreground text-background'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    )}
-                  >
-                    {labels[f]}
-                  </button>
-                )
-              })}
+            {/* Filter chips + Font size */}
+            <div className="px-3 pb-2 flex items-center justify-between border-b">
+              <div className="flex items-center gap-1">
+                {(['alle', 'ongelezen', 'met-ster', 'bijlagen'] as FilterType[]).map((f) => {
+                  const labels: Record<FilterType, string> = {
+                    alle: 'Alle',
+                    ongelezen: 'Ongelezen',
+                    'met-ster': 'Met ster',
+                    bijlagen: 'Bijlagen',
+                  }
+                  const count = filterCounts[f]
+                  const isActive = filter === f
+                  return (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={cn(
+                        'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors',
+                        isActive
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      )}
+                    >
+                      {labels[f]}
+                      {f !== 'alle' && count > 0 && (
+                        <span className={cn(
+                          'text-[9px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center',
+                          isActive
+                            ? 'bg-background/20 text-background'
+                            : 'bg-muted-foreground/15 text-muted-foreground'
+                        )}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {/* Font size control */}
+              <div className="flex items-center gap-0.5 ml-2">
+                <button
+                  onClick={() => setFontSize('small')}
+                  className={cn(
+                    'w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-colors',
+                    fontSize === 'small'
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-muted'
+                  )}
+                  title="Klein"
+                >
+                  A
+                </button>
+                <button
+                  onClick={() => setFontSize('medium')}
+                  className={cn(
+                    'w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors',
+                    fontSize === 'medium'
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-muted'
+                  )}
+                  title="Normaal"
+                >
+                  A
+                </button>
+                <button
+                  onClick={() => setFontSize('large')}
+                  className={cn(
+                    'w-6 h-6 rounded flex items-center justify-center text-sm font-bold transition-colors',
+                    fontSize === 'large'
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-muted'
+                  )}
+                  title="Groot"
+                >
+                  A
+                </button>
+              </div>
             </div>
 
-            {/* Email list */}
+            {/* ── Bulk action toolbar ── */}
+            {hasChecked ? (
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={allChecked ? true : someChecked ? 'indeterminate' : false}
+                    onCheckedChange={toggleCheckAll}
+                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <span className="text-xs font-medium text-foreground">
+                    {checkedEmails.size} geselecteerd
+                  </span>
+                </div>
+                <div className="h-4 w-px bg-border mx-1" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={handleBulkMarkRead}
+                >
+                  <MailOpen className="w-3.5 h-3.5" />
+                  Gelezen
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={handleBulkMarkUnread}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Ongelezen
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={handleBulkArchive}
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                  Archiveren
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Verwijderen
+                </Button>
+                <div className="flex-1" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-muted-foreground"
+                  onClick={clearChecked}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ) : (
+              /* Select all bar (subtle) */
+              <div className="flex items-center gap-2 px-4 py-1.5 border-b bg-muted/10">
+                <Checkbox
+                  checked={false}
+                  onCheckedChange={toggleCheckAll}
+                  className="opacity-40 hover:opacity-100 transition-opacity"
+                />
+                <span className="text-[11px] text-muted-foreground">
+                  {filteredEmails.length} email{filteredEmails.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
+
+            {/* ── Email list ── */}
             <ScrollArea className="flex-1">
               {filteredEmails.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                   {selectedFolder === 'gepland' ? (
                     <>
-                      <Clock className="w-10 h-10 mb-3 opacity-20" />
+                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                        <Clock className="w-7 h-7 text-primary/40" />
+                      </div>
                       <p className="text-sm font-medium">Geen ingeplande emails</p>
+                      <p className="text-xs mt-1">Plan een email in bij het verzenden</p>
                     </>
                   ) : filter !== 'alle' ? (
                     <>
-                      <SlidersHorizontal className="w-10 h-10 mb-3 opacity-20" />
-                      <p className="text-sm font-medium">Geen resultaten</p>
+                      <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
+                        <CheckCheck className="w-7 h-7 text-emerald-500/40" />
+                      </div>
+                      <p className="text-sm font-medium">Alles bijgewerkt</p>
+                      <p className="text-xs mt-1">Geen {filter === 'ongelezen' ? 'ongelezen' : filter === 'met-ster' ? 'emails met ster' : 'emails met bijlagen'}</p>
                     </>
                   ) : (
                     <>
-                      <Inbox className="w-10 h-10 mb-3 opacity-20" />
+                      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
+                        <Inbox className="w-7 h-7 opacity-30" />
+                      </div>
                       <p className="text-sm font-medium">Geen emails</p>
                     </>
                   )}
@@ -526,7 +761,8 @@ export function EmailLayout() {
               ) : (
                 <div>
                   {filteredEmails.map((email) => {
-                    const isSelected = selectedEmail?.id === email.id && viewMode === 'reading'
+                    const isActive = selectedEmail?.id === email.id && viewMode === 'reading'
+                    const isChecked = checkedEmails.has(email.id)
                     const isUnread = !email.gelezen
                     const displayName = email.map === 'verzonden' || email.map === 'concepten'
                       ? extractSenderName(email.aan)
@@ -540,33 +776,56 @@ export function EmailLayout() {
                     return (
                       <div
                         key={email.id}
-                        onClick={() => handleSelectEmail(email)}
                         className={cn(
-                          'relative flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors group border-b border-border/50',
-                          isSelected
-                            ? 'bg-blue-50/80 dark:bg-blue-900/20'
-                            : 'hover:bg-muted/40',
-                          isUnread && 'border-l-[3px] border-l-blue-500'
+                          'relative flex items-start gap-3 px-4 py-3 cursor-pointer transition-all group border-b border-border/40',
+                          isActive && 'bg-primary/5 dark:bg-primary/10',
+                          isChecked && 'bg-primary/5 dark:bg-primary/10',
+                          !isActive && !isChecked && 'hover:bg-muted/40',
+                          isUnread && !isChecked && !isActive && 'bg-background'
                         )}
                       >
-                        {/* Avatar */}
-                        <div className={cn(
-                          'w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 mt-0.5',
-                          avatarColor
-                        )}>
-                          {initials}
+                        {/* Unread indicator bar */}
+                        {isUnread && (
+                          <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-primary" />
+                        )}
+
+                        {/* Checkbox / Avatar */}
+                        <div className="relative flex-shrink-0 mt-0.5">
+                          {/* Avatar always visible, checkbox overlays on hover/check */}
+                          <div className={cn(
+                            'w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold transition-opacity',
+                            avatarColor,
+                            (hasChecked || isChecked) && 'opacity-0'
+                          )}>
+                            {initials}
+                          </div>
+                          <div className={cn(
+                            'absolute inset-0 w-9 h-9 rounded-full flex items-center justify-center transition-opacity',
+                            (hasChecked || isChecked) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          )}>
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={() => toggleCheckEmail(email.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                          </div>
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0" onClick={() => handleSelectEmail(email)}>
                           <div className="flex items-center justify-between gap-2">
                             <span className={cn(
-                              'text-sm truncate',
+                              'truncate',
+                              fs.name,
                               isUnread ? 'font-bold text-foreground' : 'font-medium text-foreground/80'
                             )}>
                               {displayName}
                             </span>
-                            <span className="text-[11px] text-muted-foreground flex-shrink-0 flex items-center gap-1">
+                            <span className={cn(
+                              'text-muted-foreground flex-shrink-0 flex items-center gap-1',
+                              fs.date
+                            )}>
                               {email.scheduled_at && email.map === 'gepland' && (
                                 <Clock className="w-3 h-3 text-primary" />
                               )}
@@ -574,12 +833,16 @@ export function EmailLayout() {
                             </span>
                           </div>
                           <p className={cn(
-                            'text-[13px] truncate mt-0.5',
+                            'truncate mt-0.5',
+                            fs.subject,
                             isUnread ? 'font-semibold text-foreground' : 'text-foreground/70'
                           )}>
                             {email.onderwerp}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          <p className={cn(
+                            'text-muted-foreground truncate mt-0.5',
+                            fs.preview
+                          )}>
                             {truncate(email.inhoud.replace(/\n/g, ' '), 80)}
                           </p>
                           {visibleLabels.length > 0 && (
@@ -588,11 +851,16 @@ export function EmailLayout() {
                                 <span
                                   key={label}
                                   className={cn(
-                                    'w-2 h-2 rounded-full flex-shrink-0',
-                                    labelColors[label] || 'bg-gray-400'
+                                    'px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider',
+                                    label === 'offerte' && 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
+                                    label === 'klant' && 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300',
+                                    label === 'project' && 'bg-primary/10 text-primary',
+                                    label === 'leverancier' && 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300',
+                                    !['offerte', 'klant', 'project', 'leverancier'].includes(label) && 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
                                   )}
-                                  title={label}
-                                />
+                                >
+                                  {label}
+                                </span>
                               ))}
                             </div>
                           )}
