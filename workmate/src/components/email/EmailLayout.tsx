@@ -33,7 +33,7 @@ import {
   Zap,
   BarChart3,
 } from 'lucide-react'
-import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKlant } from '@/services/supabaseService'
+import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKlant, createTaak } from '@/services/supabaseService'
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
 import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -742,6 +742,27 @@ export function EmailLayout() {
     toast.success('Geabonneerd op nieuwsbrief')
   }, [])
 
+  // ── Create task from email ──
+  const handleCreateTaskFromEmail = useCallback(async (email: Email, description: string) => {
+    try {
+      await createTaak({
+        user_id: '',
+        project_id: '',
+        titel: description,
+        beschrijving: `Aangemaakt vanuit email: "${email.onderwerp}"\nVan: ${email.van}\nDatum: ${email.datum}`,
+        status: 'todo',
+        prioriteit: 'medium',
+        toegewezen_aan: '',
+        deadline: '',
+        geschatte_tijd: 0,
+        bestede_tijd: 0,
+      })
+    } catch (err: any) {
+      logger.error('Taak aanmaken mislukt:', err)
+      toast.error('Kon taak niet aanmaken')
+    }
+  }, [])
+
   // ── Show CRM sidebar? ──
   const showSidebar = viewMode === 'reading' || viewMode === 'composing'
 
@@ -1285,6 +1306,7 @@ export function EmailLayout() {
                 onForward={handleForward}
                 onArchive={handleArchive}
                 onBack={handleBack}
+                onCreateTask={handleCreateTaskFromEmail}
               />
             ) : null}
           </div>
