@@ -9,6 +9,13 @@ import { Badge } from '@/components/ui/badge'
 // Tabs removed - using custom left sidebar navigation
 import { Textarea } from '@/components/ui/textarea'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -41,6 +48,11 @@ import {
   HelpCircle,
   Edit2,
   Copy,
+  Mail,
+  Lock,
+  Server,
+  Info,
+  ExternalLink,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -2698,11 +2710,364 @@ function MeldingenTab() {
 
 // ============ INTEGRATIES TAB ============
 
+// Local storage key for email settings in demo mode
+const EMAIL_SETTINGS_KEY = 'workmate_email_settings'
+
+interface EmailSettings {
+  smtp_host: string
+  smtp_port: number
+  smtp_encryption: 'TLS' | 'SSL' | 'Geen'
+  gmail_address: string
+  app_password: string
+  accept_self_signed: boolean
+}
+
+const DEFAULT_EMAIL_SETTINGS: EmailSettings = {
+  smtp_host: 'smtp.gmail.com',
+  smtp_port: 587,
+  smtp_encryption: 'TLS',
+  gmail_address: '',
+  app_password: '',
+  accept_self_signed: false,
+}
+
+function getLocalEmailSettings(): EmailSettings | null {
+  try {
+    const stored = localStorage.getItem(EMAIL_SETTINGS_KEY)
+    if (stored) return JSON.parse(stored)
+  } catch { /* ignore */ }
+  return null
+}
+
+function saveLocalEmailSettings(settings: EmailSettings): void {
+  localStorage.setItem(EMAIL_SETTINGS_KEY, JSON.stringify(settings))
+}
+
+function removeLocalEmailSettings(): void {
+  localStorage.removeItem(EMAIL_SETTINGS_KEY)
+}
+
+function EmailSettingsDialog({
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSaved: () => void
+}) {
+  const [settings, setSettings] = useState<EmailSettings>(DEFAULT_EMAIL_SETTINGS)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  // Load existing settings on open
+  useEffect(() => {
+    if (open) {
+      const existing = getLocalEmailSettings()
+      if (existing) {
+        setSettings(existing)
+      } else {
+        setSettings(DEFAULT_EMAIL_SETTINGS)
+      }
+      setError('')
+      setSuccess('')
+    }
+  }, [open])
+
+  const handleSave = async () => {
+    setError('')
+    setSuccess('')
+
+    if (!settings.gmail_address) {
+      setError('Vul een e-mailadres in')
+      return
+    }
+    if (!settings.app_password) {
+      setError('Vul een app-wachtwoord in')
+      return
+    }
+    if (!settings.smtp_host) {
+      setError('Vul een SMTP server in')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      // Save locally (works in demo mode and as cache)
+      saveLocalEmailSettings(settings)
+
+      // Also try to save to Supabase if configured
+      if (isSupabaseConfigured()) {
+        const { saveEmailSettings } = await import('@/services/gmailService')
+        await saveEmailSettings({
+          gmail_address: settings.gmail_address,
+          app_password: settings.app_password,
+          smtp_host: settings.smtp_host,
+          smtp_port: settings.smtp_port,
+        })
+      }
+
+      setSuccess('E-mailinstellingen opgeslagen!')
+      onSaved()
+      setTimeout(() => onOpenChange(false), 800)
+    } catch (err: any) {
+      // If Supabase save fails, local save already succeeded
+      if (isSupabaseConfigured()) {
+        setError(`Server fout: ${err.message}. Instellingen zijn lokaal opgeslagen.`)
+      } else {
+        setSuccess('E-mailinstellingen lokaal opgeslagen (demo modus)')
+        onSaved()
+        setTimeout(() => onOpenChange(false), 800)
+      }
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleTest = async () => {
+    setIsTesting(true)
+    setError('')
+    setSuccess('')
+    // In demo mode, just simulate a test
+    setTimeout(() => {
+      if (settings.gmail_address && settings.app_password && settings.smtp_host) {
+        setSuccess('Verbinding succesvol! (demo modus - echte test vereist Supabase)')
+      } else {
+        setError('Vul eerst alle verplichte velden in')
+      }
+      setIsTesting(false)
+    }, 1500)
+  }
+
+  const handleDisconnect = () => {
+    removeLocalEmailSettings()
+    setSettings(DEFAULT_EMAIL_SETTINGS)
+    setSuccess('')
+    setError('')
+    onSaved()
+  }
+
+  const isConnected = !!getLocalEmailSettings()
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+              <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
+            </div>
+            E-mail SMTP Instellingen
+          </DialogTitle>
+          <DialogDescription>
+            Configureer je SMTP server om e-mails te verzenden vanuit Workmate.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-2">
+          {/* SMTP Server */}
+          <div className="space-y-2">
+            <Label htmlFor="smtp_host" className="flex items-center gap-2 text-sm font-medium">
+              <Server className="w-3.5 h-3.5 text-muted-foreground" />
+              SMTP Serveradres
+            </Label>
+            <Input
+              id="smtp_host"
+              placeholder="smtp.gmail.com"
+              value={settings.smtp_host}
+              onChange={(e) => setSettings({ ...settings, smtp_host: e.target.value })}
+            />
+          </div>
+
+          {/* Port + Encryption row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="smtp_port" className="text-sm font-medium">
+                Poort
+              </Label>
+              <Input
+                id="smtp_port"
+                type="number"
+                placeholder="587"
+                value={settings.smtp_port}
+                onChange={(e) => setSettings({ ...settings, smtp_port: parseInt(e.target.value) || 587 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="smtp_encryption" className="text-sm font-medium">
+                Mail encryptie
+              </Label>
+              <Select
+                value={settings.smtp_encryption}
+                onValueChange={(val) => setSettings({ ...settings, smtp_encryption: val as EmailSettings['smtp_encryption'] })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="TLS" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TLS">TLS</SelectItem>
+                  <SelectItem value="SSL">SSL</SelectItem>
+                  <SelectItem value="Geen">Geen</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Username (email) */}
+          <div className="space-y-2">
+            <Label htmlFor="gmail_address" className="flex items-center gap-2 text-sm font-medium">
+              <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+              Gebruikersnaam (e-mailadres)
+            </Label>
+            <Input
+              id="gmail_address"
+              type="email"
+              placeholder="studio@signcompany.nl"
+              value={settings.gmail_address}
+              onChange={(e) => setSettings({ ...settings, gmail_address: e.target.value })}
+            />
+          </div>
+
+          {/* Password */}
+          <div className="space-y-2">
+            <Label htmlFor="app_password" className="flex items-center gap-2 text-sm font-medium">
+              <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+              Wachtwoord / App Wachtwoord
+            </Label>
+            <div className="relative">
+              <Input
+                id="app_password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••••••••••"
+                value={settings.app_password}
+                onChange={(e) => setSettings({ ...settings, app_password: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Self-signed certs */}
+          <div className="flex items-center justify-between">
+            <Label htmlFor="self_signed" className="text-sm text-muted-foreground">
+              Zelf-ondertekende certificaten accepteren
+            </Label>
+            <Switch
+              id="self_signed"
+              checked={settings.accept_self_signed}
+              onCheckedChange={(checked) => setSettings({ ...settings, accept_self_signed: checked })}
+            />
+          </div>
+
+          {/* Gmail App Password info */}
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3">
+            <div className="flex gap-2">
+              <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                <p className="font-medium">Gmail gebruikers</p>
+                <p>
+                  Gebruik een <strong>App Wachtwoord</strong> in plaats van je gewone wachtwoord.
+                  Ga naar{' '}
+                  <a
+                    href="https://myaccount.google.com/apppasswords"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline inline-flex items-center gap-0.5"
+                  >
+                    Google App Wachtwoorden
+                    <ExternalLink className="w-3 h-3" />
+                  </a>{' '}
+                  om er een aan te maken. 2FA moet ingeschakeld zijn.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* SPF Record info */}
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3">
+            <div className="flex gap-2">
+              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                <p className="font-medium">SPF Record</p>
+                <p>
+                  Zorg dat je domein een geldig SPF record heeft om te voorkomen dat e-mails
+                  als spam worden gemarkeerd. Voeg <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">include:_spf.google.com</code> toe
+                  aan je DNS SPF record.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Error/Success messages */}
+          {error && (
+            <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-3">
+              <p className="text-xs text-red-700 dark:text-red-300">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3">
+              <p className="text-xs text-green-700 dark:text-green-300">{success}</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 pt-2">
+            <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+              <Save className="w-4 h-4" />
+              {isSaving ? 'Opslaan...' : 'Opslaan'}
+            </Button>
+            <Button variant="outline" onClick={handleTest} disabled={isTesting} className="gap-2">
+              <Mail className="w-4 h-4" />
+              {isTesting ? 'Testen...' : 'Test verbinding'}
+            </Button>
+            {isConnected && (
+              <Button variant="ghost" onClick={handleDisconnect} className="gap-2 text-red-600 hover:text-red-700 ml-auto">
+                <Trash2 className="w-4 h-4" />
+                Verwijderen
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function IntegratiesTab() {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
   const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
   // OpenAI key is now server-side only (configured via OPENAI_API_KEY env var on Vercel)
   const openaiConfigured = supabaseConnected
+
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+  const [emailConnected, setEmailConnected] = useState(false)
+  const [emailAddress, setEmailAddress] = useState<string | null>(null)
+
+  // Check email connection status on mount and after save
+  const checkEmailStatus = useCallback(() => {
+    const localSettings = getLocalEmailSettings()
+    if (localSettings && localSettings.gmail_address && localSettings.app_password) {
+      setEmailConnected(true)
+      setEmailAddress(localSettings.gmail_address)
+    } else {
+      setEmailConnected(false)
+      setEmailAddress(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    checkEmailStatus()
+  }, [checkEmailStatus])
 
   const integrations = [
     {
@@ -2719,14 +3084,15 @@ function IntegratiesTab() {
     },
     {
       id: 'gmail',
-      name: 'Gmail',
-      description: 'E-mail integratie voor inbox synchronisatie',
-      connected: false,
+      name: 'Gmail / SMTP',
+      description: 'E-mail verzenden via SMTP',
+      connected: emailConnected,
       icon: (
         <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
           <span className="text-red-700 dark:text-red-400 font-bold text-sm">GM</span>
         </div>
       ),
+      details: emailConnected && emailAddress ? `Account: ${emailAddress}` : undefined,
     },
     {
       id: 'openai',
@@ -2744,7 +3110,11 @@ function IntegratiesTab() {
   return (
     <div className="space-y-4">
       {integrations.map((integration) => (
-        <Card key={integration.id}>
+        <Card
+          key={integration.id}
+          className={integration.id === 'gmail' ? 'cursor-pointer hover:border-red-300 dark:hover:border-red-700 transition-colors' : ''}
+          onClick={integration.id === 'gmail' ? () => setEmailDialogOpen(true) : undefined}
+        >
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               {integration.icon}
@@ -2791,15 +3161,24 @@ function IntegratiesTab() {
 
                 {/* Gmail/Email setup info */}
                 {integration.id === 'gmail' && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                    Email werkt via SMTP. Configureer je Gmail-adres en App Wachtwoord in de email instellingen.
-                  </p>
+                  <div className="mt-2">
+                    <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={(e) => { e.stopPropagation(); setEmailDialogOpen(true) }}>
+                      <Settings className="w-3 h-3" />
+                      {emailConnected ? 'Instellingen wijzigen' : 'SMTP Configureren'}
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
       ))}
+
+      <EmailSettingsDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        onSaved={checkEmailStatus}
+      />
     </div>
   )
 }
