@@ -263,32 +263,6 @@ export function EmailCompose({
     return [...custom, ...savedSignatures, ...DEFAULT_SIGNATURES]
   }, [emailHandtekening, savedSignatures])
 
-  const handleSaveSignature = useCallback(() => {
-    if (!editSigNaam.trim() || !editSigInhoud.trim()) return
-    const isNew = !editingSignature || editingSignature.id.startsWith('new-')
-    const sig: Signature = {
-      id: isNew ? `custom-${Date.now()}` : editingSignature!.id,
-      naam: editSigNaam.trim(),
-      inhoud: editSigInhoud.trim(),
-    }
-    const updated = isNew
-      ? [...savedSignatures, sig]
-      : savedSignatures.map((s) => (s.id === sig.id ? sig : s))
-    setSavedSignatures(updated)
-    saveSignatures(updated)
-    setEditingSignature(null)
-    setSelectedSignature(sig.id)
-    toast.success('Handtekening opgeslagen')
-  }, [editSigNaam, editSigInhoud, editingSignature, savedSignatures])
-
-  const handleDeleteSignature = useCallback((id: string) => {
-    const updated = savedSignatures.filter((s) => s.id !== id)
-    setSavedSignatures(updated)
-    saveSignatures(updated)
-    if (selectedSignature === id) setSelectedSignature('zakelijk')
-    toast.success('Handtekening verwijderd')
-  }, [savedSignatures, selectedSignature])
-
   // Undo send
   const [undoTimer, setUndoTimer] = useState<number | null>(null)
   const [undoCountdown, setUndoCountdown] = useState(0)
