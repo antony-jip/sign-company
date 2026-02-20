@@ -83,15 +83,17 @@ function createEmptyRegel(defaults?: { marge: number; btw: number }): Calculatie
   }
 }
 
+const round2 = (n: number) => Math.round(n * 100) / 100
+
 /** Bereken verkoopprijs op basis van inkoop + marge */
 function berekenVerkoopVanInkoop(inkoop: number, margePerc: number): number {
-  return inkoop * (1 + margePerc / 100)
+  return round2(inkoop * (1 + margePerc / 100))
 }
 
 /** Bereken marge% op basis van inkoop en verkoop */
 function berekenMarge(inkoop: number, verkoop: number): number {
   if (inkoop === 0) return 0
-  return ((verkoop - inkoop) / inkoop) * 100
+  return Math.round(((verkoop - inkoop) / inkoop) * 1000) / 10
 }
 
 export function CalculatieModal({
@@ -209,16 +211,20 @@ export function CalculatieModal({
     let totaalKorting = 0
 
     regels.forEach((r) => {
-      const regelInkoop = r.aantal * r.inkoop_prijs
-      const regelVerkoop = r.aantal * r.verkoop_prijs
-      const kortingBedrag = regelVerkoop * (r.korting_percentage / 100)
+      const regelInkoop = round2(r.aantal * r.inkoop_prijs)
+      const regelVerkoop = round2(r.aantal * r.verkoop_prijs)
+      const kortingBedrag = round2(regelVerkoop * (r.korting_percentage / 100))
       totaalInkoop += regelInkoop
       totaalVerkoop += regelVerkoop - kortingBedrag
       totaalKorting += kortingBedrag
     })
 
-    const margeBedrag = totaalVerkoop - totaalInkoop
-    const margePercentage = totaalInkoop > 0 ? (margeBedrag / totaalInkoop) * 100 : 0
+    totaalInkoop = round2(totaalInkoop)
+    totaalVerkoop = round2(totaalVerkoop)
+    totaalKorting = round2(totaalKorting)
+
+    const margeBedrag = round2(totaalVerkoop - totaalInkoop)
+    const margePercentage = totaalInkoop > 0 ? Math.round((margeBedrag / totaalInkoop) * 1000) / 10 : 0
 
     return {
       totaalInkoop,

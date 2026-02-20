@@ -131,29 +131,31 @@ export function QuoteCreation() {
   // ── Calculations for sticky bar ──
   const prijsItems = items.filter((i) => i.soort === 'prijs')
 
-  const subtotaal = prijsItems.reduce((sum, item) => {
-    const bruto = item.aantal * item.eenheidsprijs
-    return sum + (bruto - bruto * (item.korting_percentage / 100))
-  }, 0)
+  const round2 = (n: number) => Math.round(n * 100) / 100
 
-  const btwBedrag = prijsItems.reduce((sum, item) => {
+  const subtotaal = round2(prijsItems.reduce((sum, item) => {
     const bruto = item.aantal * item.eenheidsprijs
-    const netto = bruto - bruto * (item.korting_percentage / 100)
-    return sum + netto * (item.btw_percentage / 100)
-  }, 0)
+    return sum + round2(bruto - bruto * (item.korting_percentage / 100))
+  }, 0))
+
+  const btwBedrag = round2(prijsItems.reduce((sum, item) => {
+    const bruto = item.aantal * item.eenheidsprijs
+    const netto = round2(bruto - bruto * (item.korting_percentage / 100))
+    return sum + round2(netto * (item.btw_percentage / 100))
+  }, 0))
 
   // Inkoop = sum of all calculatie_regels inkoop_prijs * aantal
   const totaalInkoop = useMemo(() => {
-    return prijsItems.reduce((sum, item) => {
+    return round2(prijsItems.reduce((sum, item) => {
       if (item.calculatie_regels && item.calculatie_regels.length > 0) {
-        return sum + item.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0)
+        return sum + item.calculatie_regels.reduce((s, r) => s + round2(r.inkoop_prijs * r.aantal), 0)
       }
       return sum
-    }, 0)
+    }, 0))
   }, [prijsItems])
 
-  const winstExBtw = subtotaal - totaalInkoop
-  const margePercentage = subtotaal > 0 ? ((winstExBtw / subtotaal) * 100) : 0
+  const winstExBtw = round2(subtotaal - totaalInkoop)
+  const margePercentage = subtotaal > 0 ? Math.round(((winstExBtw / subtotaal) * 100) * 10) / 10 : 0
 
   // ── Data fetching ──
   useEffect(() => {

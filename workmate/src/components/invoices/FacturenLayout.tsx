@@ -164,21 +164,23 @@ function createEmptyLineItem(): LineItem {
   }
 }
 
+const round2 = (n: number) => Math.round(n * 100) / 100
+
 function calcLineTotal(item: LineItem): number {
   const subtotaal = item.aantal * item.eenheidsprijs
   const korting = subtotaal * (item.korting_percentage / 100)
-  return subtotaal - korting
+  return round2(subtotaal - korting)
 }
 
 function calcSubtotaal(items: LineItem[]): number {
-  return items.reduce((sum, item) => sum + calcLineTotal(item), 0)
+  return round2(items.reduce((sum, item) => sum + calcLineTotal(item), 0))
 }
 
 function calcBtwBedrag(items: LineItem[]): number {
-  return items.reduce((sum, item) => {
+  return round2(items.reduce((sum, item) => {
     const lineTotal = calcLineTotal(item)
-    return sum + lineTotal * (item.btw_percentage / 100)
-  }, 0)
+    return sum + round2(lineTotal * (item.btw_percentage / 100))
+  }, 0))
 }
 
 function getDefaultVervaldatum(factuurdatum: string): string {
