@@ -16,13 +16,14 @@ import {
   Clock,
   SlidersHorizontal,
 } from 'lucide-react'
-import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail } from '@/services/supabaseService'
+import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKlant } from '@/services/supabaseService'
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
 import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
 import { ContactSidebar } from './ContactSidebar'
+import type { AddCustomerData } from './ContactSidebar'
 import { extractEmailAddress } from '@/utils/emailUtils'
 import type { EmailContact } from '@/utils/emailUtils'
 import type { Email, Klant } from '@/types'
@@ -180,13 +181,24 @@ export function EmailLayout() {
   // ── Current contact (for CRM sidebar) ──
   const findContactByEmail = useCallback((emailAddr: string): EmailContact | null => {
     const clean = extractEmailAddress(emailAddr).toLowerCase()
-    const klant = klanten.find((k) => k.email?.toLowerCase() === clean)
+    if (!clean) return null
+
+    // Match on klant email or contactpersonen email
+    const klant = klanten.find((k) => {
+      if (k.email?.toLowerCase() === clean) return true
+      if (k.contactpersonen?.some((cp) => cp.email?.toLowerCase() === clean)) return true
+      return false
+    })
     if (!klant) return null
+
+    // Find the matching contactpersoon name
+    const matchedCP = klant.contactpersonen?.find((cp) => cp.email?.toLowerCase() === clean)
+
     return {
-      name: klant.bedrijfsnaam || `${klant.contactpersonen?.[0]?.naam || ''}`.trim() || clean,
+      name: matchedCP?.naam || klant.contactpersoon || klant.bedrijfsnaam || clean,
       email: clean,
       company: klant.bedrijfsnaam,
-      phone: klant.telefoon,
+      phone: matchedCP?.telefoon || klant.telefoon,
       isCustomer: true,
       subscribedNewsletter: false,
       tags: klant.tags || [],
@@ -352,8 +364,40 @@ export function EmailLayout() {
     setViewMode('idle')
   }, [])
 
-  const handleAddCustomer = useCallback((_email: string) => {
-    toast.success('Toegevoegd aan klanten')
+  const handleAddCustomer = useCallback(async (email: string, data?: AddCustomerData) => {
+    try {
+      const newKlant = await createKlant({
+        user_id: '',
+        bedrijfsnaam: data?.bedrijfsnaam || '',
+        contactpersoon: data?.contactpersoon || extractSenderName(email),
+        email: data?.email || email,
+        telefoon: data?.telefoon || '',
+        adres: data?.adres || '',
+        postcode: data?.postcode || '',
+        stad: data?.stad || '',
+        land: data?.land || 'Nederland',
+        website: data?.website || '',
+        kvk_nummer: data?.kvk_nummer || '',
+        btw_nummer: data?.btw_nummer || '',
+        status: data?.status || 'prospect',
+        tags: data?.tags || [],
+        notities: data?.notities || '',
+        contactpersonen: [{
+          id: '',
+          naam: data?.contactpersoon || extractSenderName(email),
+          functie: '',
+          email: data?.email || email,
+          telefoon: data?.telefoon || '',
+          is_primair: true,
+        }],
+      })
+      // Update local state so sidebar immediately reflects the new customer
+      setKlanten((prev) => [...prev, newKlant])
+      toast.success(`${data?.contactpersoon || email} toegevoegd aan klanten`)
+    } catch (err: any) {
+      logger.error('Klant aanmaken mislukt:', err)
+      toast.error('Kon contact niet opslaan')
+    }
   }, [])
 
   const handleSubscribeNewsletter = useCallback((_email: string) => {
@@ -361,7 +405,7 @@ export function EmailLayout() {
   }, [])
 
   // ── Show CRM sidebar? ──
-  const showSidebar = viewMode === 'reading' || (viewMode === 'composing' && !!composeDefaults.to)
+  const showSidebar = viewMode === 'reading' || viewMode === 'composing'
 
   // ═════════════════════════════════════════════════════════════════
   // ─── Render ────────────────────────────────────────────────────
