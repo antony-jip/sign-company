@@ -39,9 +39,19 @@ import {
   FileText,
   CalendarClock,
   Quote,
+  StickyNote,
+  Bell,
+  CheckSquare,
+  Eye,
+  Download,
+  Image,
+  File,
+  AlertCircle,
 } from 'lucide-react'
 import { formatDateTime, getInitials, cn } from '@/lib/utils'
 import type { Email } from '@/types'
+import { updateEmail } from '@/services/supabaseService'
+import { toast } from 'sonner'
 
 interface EmailReaderProps {
   email: Email | null
@@ -52,6 +62,8 @@ interface EmailReaderProps {
   onForward?: (email: Email) => void
   onArchive?: (email: Email) => void
   onBack?: () => void
+  onCreateTask?: (email: Email, description: string) => void
+  onUpdateEmail?: (email: Email, updates: Partial<Email>) => void
 }
 
 function extractSenderName(from: string): string {
@@ -153,6 +165,8 @@ export function EmailReader({
   onForward,
   onArchive,
   onBack,
+  onCreateTask,
+  onUpdateEmail,
 }: EmailReaderProps) {
   const [replyOpen, setReplyOpen] = useState(false)
   const [replyMode, setReplyMode] = useState<'reply' | 'reply-all' | 'forward'>('reply')
@@ -171,6 +185,22 @@ export function EmailReader({
   const [scheduledAt, setScheduledAt] = useState('')
   const [customDate, setCustomDate] = useState('')
   const [customTime, setCustomTime] = useState('09:00')
+
+  // Internal notes
+  const [showNotes, setShowNotes] = useState(false)
+  const [noteText, setNoteText] = useState('')
+
+  // Follow-up reminder
+  const [showFollowUp, setShowFollowUp] = useState(false)
+  const [followUpDate, setFollowUpDate] = useState('')
+  const [followUpTime, setFollowUpTime] = useState('09:00')
+
+  // Email-to-task
+  const [showCreateTask, setShowCreateTask] = useState(false)
+  const [taskDescription, setTaskDescription] = useState('')
+
+  // Attachment preview
+  const [previewAttachment, setPreviewAttachment] = useState<number | null>(null)
 
   // Dropdowns
   const [showTemplates, setShowTemplates] = useState(false)
@@ -191,6 +221,15 @@ export function EmailReader({
   const templateRef = useRef<HTMLDivElement>(null)
   const mergeFieldRef = useRef<HTMLDivElement>(null)
   const replyModeRef = useRef<HTMLDivElement>(null)
+
+  // Sync internal notes and follow-up from email
+  useEffect(() => {
+    if (email) {
+      setNoteText(email.internal_notes || '')
+      setFollowUpDate(email.follow_up_at ? email.follow_up_at.split('T')[0] : '')
+      setFollowUpTime(email.follow_up_at ? email.follow_up_at.split('T')[1]?.substring(0, 5) || '09:00' : '09:00')
+    }
+  }, [email?.id])
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -388,6 +427,43 @@ export function EmailReader({
     closeReply()
   }, [email, replyMode, attachments, onReply, onForward, closeReply])
 
+  // ── Save internal notes ──
+  const handleSaveNotes = useCallback(() => {
+    if (!email) return
+    updateEmail(email.id, { internal_notes: noteText } as Partial<Email>).catch(() => {})
+    onUpdateEmail?.(email, { internal_notes: noteText })
+    toast.success('Notitie opgeslagen')
+    setShowNotes(false)
+  }, [email, noteText, onUpdateEmail])
+
+  // ── Set follow-up reminder ──
+  const handleSetFollowUp = useCallback(() => {
+    if (!email || !followUpDate) return
+    const followUpAt = `${followUpDate}T${followUpTime}`
+    updateEmail(email.id, { follow_up_at: followUpAt } as Partial<Email>).catch(() => {})
+    onUpdateEmail?.(email, { follow_up_at: followUpAt })
+    toast.success(`Follow-up ingesteld op ${formatDateTime(followUpAt)}`)
+    setShowFollowUp(false)
+  }, [email, followUpDate, followUpTime, onUpdateEmail])
+
+  const handleClearFollowUp = useCallback(() => {
+    if (!email) return
+    updateEmail(email.id, { follow_up_at: null } as any).catch(() => {})
+    onUpdateEmail?.(email, { follow_up_at: undefined })
+    setFollowUpDate('')
+    toast.success('Follow-up verwijderd')
+  }, [email, onUpdateEmail])
+
+  // ── Create task from email ──
+  const handleCreateTask = useCallback(() => {
+    if (!email) return
+    const desc = taskDescription.trim() || `Opvolgen: ${email.onderwerp}`
+    onCreateTask?.(email, desc)
+    toast.success('Taak aangemaakt')
+    setShowCreateTask(false)
+    setTaskDescription('')
+  }, [email, taskDescription, onCreateTask])
+
   if (!email) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
@@ -456,8 +532,127 @@ export function EmailReader({
               <><Mail className="w-3.5 h-3.5" /> Markeer als gelezen</>
             )}
           </Button>
+          <div className="h-4 w-px bg-border mx-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn('gap-1.5 h-8 text-xs', showNotes && 'bg-accent')}
+            onClick={() => { setShowNotes(!showNotes); setShowFollowUp(false); setShowCreateTask(false) }}
+          >
+            <StickyNote className="w-3.5 h-3.5" />
+            Notities
+            {email.internal_notes && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn('gap-1.5 h-8 text-xs', showFollowUp && 'bg-accent')}
+            onClick={() => { setShowFollowUp(!showFollowUp); setShowNotes(false); setShowCreateTask(false) }}
+          >
+            <Bell className="w-3.5 h-3.5" />
+            Follow-up
+            {email.follow_up_at && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn('gap-1.5 h-8 text-xs', showCreateTask && 'bg-accent')}
+            onClick={() => { setShowCreateTask(!showCreateTask); setShowNotes(false); setShowFollowUp(false) }}
+          >
+            <CheckSquare className="w-3.5 h-3.5" />
+            Taak
+          </Button>
         </div>
       </div>
+
+      {/* ── Internal Notes Panel ── */}
+      {showNotes && (
+        <div className="px-6 py-3 border-b bg-amber-50/50 dark:bg-amber-900/10 flex-shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <StickyNote className="w-4 h-4 text-amber-600" />
+            <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Interne notities</span>
+          </div>
+          <textarea
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            placeholder="Voeg een interne notitie toe (niet zichtbaar voor de afzender)..."
+            className="w-full min-h-[60px] px-3 py-2 text-sm border rounded-md bg-background resize-none focus:outline-none focus:ring-1 focus:ring-amber-400"
+            rows={2}
+          />
+          <div className="flex items-center justify-end gap-2 mt-2">
+            <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowNotes(false)}>
+              Annuleren
+            </Button>
+            <Button size="sm" className="text-xs gap-1.5" onClick={handleSaveNotes}>
+              <StickyNote className="w-3.5 h-3.5" />
+              Opslaan
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Follow-up Reminder Panel ── */}
+      {showFollowUp && (
+        <div className="px-6 py-3 border-b bg-blue-50/50 dark:bg-blue-900/10 flex-shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <Bell className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Follow-up herinnering</span>
+          </div>
+          {email.follow_up_at && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300">
+              <Bell className="w-3.5 h-3.5" />
+              Herinnering op {formatDateTime(email.follow_up_at)}
+              <button onClick={handleClearFollowUp} className="ml-auto text-blue-500 hover:text-blue-700 underline text-xs">
+                Verwijderen
+              </button>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={followUpDate}
+              onChange={(e) => setFollowUpDate(e.target.value)}
+              className="h-8 text-sm w-40"
+            />
+            <Input
+              type="time"
+              value={followUpTime}
+              onChange={(e) => setFollowUpTime(e.target.value)}
+              className="h-8 text-sm w-28"
+            />
+            <Button size="sm" className="text-xs gap-1.5" onClick={handleSetFollowUp} disabled={!followUpDate}>
+              <Bell className="w-3.5 h-3.5" />
+              Instellen
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Email to Task Panel ── */}
+      {showCreateTask && (
+        <div className="px-6 py-3 border-b bg-emerald-50/50 dark:bg-emerald-900/10 flex-shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckSquare className="w-4 h-4 text-emerald-600" />
+            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Taak aanmaken uit email</span>
+          </div>
+          <Input
+            value={taskDescription}
+            onChange={(e) => setTaskDescription(e.target.value)}
+            placeholder={`Opvolgen: ${email.onderwerp}`}
+            className="h-8 text-sm mb-2"
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateTask() }}
+          />
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowCreateTask(false)}>
+              Annuleren
+            </Button>
+            <Button size="sm" className="text-xs gap-1.5" onClick={handleCreateTask}>
+              <CheckSquare className="w-3.5 h-3.5" />
+              Taak aanmaken
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ── Subject Header ── */}
       <div className="px-6 pt-5 pb-4 border-b flex-shrink-0">
@@ -553,15 +748,64 @@ export function EmailReader({
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {Array.from({ length: msg.bijlagen }).map((_, i) => (
-                            <div key={i} className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors">
-                              <div className="w-8 h-8 rounded bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">PDF</div>
-                              <div>
-                                <span className="text-xs font-medium">Bijlage {i + 1}</span>
-                                <p className="text-[10px] text-muted-foreground">PDF document</p>
+                          {Array.from({ length: msg.bijlagen }).map((_, i) => {
+                            const isPreview = previewAttachment === i
+                            return (
+                              <div key={i} className="flex flex-col">
+                                <div
+                                  className={cn(
+                                    'flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors',
+                                    isPreview ? 'bg-primary/10 ring-1 ring-primary' : 'bg-muted hover:bg-muted/80'
+                                  )}
+                                  onClick={() => setPreviewAttachment(isPreview ? null : i)}
+                                >
+                                  <div className="w-8 h-8 rounded bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">PDF</div>
+                                  <div>
+                                    <span className="text-xs font-medium">Bijlage {i + 1}</span>
+                                    <p className="text-[10px] text-muted-foreground">PDF document</p>
+                                  </div>
+                                  <div className="flex items-center gap-1 ml-2">
+                                    <button
+                                      className="p-1 rounded hover:bg-accent/50"
+                                      title="Bekijken"
+                                      onClick={(ev) => { ev.stopPropagation(); setPreviewAttachment(isPreview ? null : i) }}
+                                    >
+                                      <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                                    </button>
+                                    <button
+                                      className="p-1 rounded hover:bg-accent/50"
+                                      title="Downloaden"
+                                      onClick={(ev) => { ev.stopPropagation(); toast.info('Download gestart...') }}
+                                    >
+                                      <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                                    </button>
+                                  </div>
+                                </div>
+                                {/* Inline attachment preview */}
+                                {isPreview && (
+                                  <div className="mt-2 p-4 rounded-lg border bg-muted/30 max-w-md">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <File className="w-4 h-4 text-red-500" />
+                                      <span className="text-sm font-medium">Bijlage {i + 1} - Voorbeeld</span>
+                                      <button
+                                        className="ml-auto p-1 rounded hover:bg-muted"
+                                        onClick={() => setPreviewAttachment(null)}
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center justify-center h-32 bg-white dark:bg-gray-900 rounded border">
+                                      <div className="text-center text-muted-foreground">
+                                        <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        <p className="text-xs">PDF voorbeeld</p>
+                                        <p className="text-[10px] mt-1">Klik op downloaden om het volledige bestand te openen</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       </div>
                     )}

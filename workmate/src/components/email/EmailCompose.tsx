@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,13 +35,21 @@ import {
   X,
   Type,
   ArrowLeft,
+  FileSignature,
+  Undo,
+  Users,
+  Pencil,
+  Trash2,
+  Plus,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { generateEmailDraft } from '@/services/aiService'
+import { getKlanten } from '@/services/supabaseService'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
 import { logger } from '../../utils/logger'
+import type { Klant } from '@/types'
 
 interface EmailComposeProps {
   open: boolean
@@ -137,6 +145,57 @@ const mergeFields = [
   { id: 'telefoon', label: 'Telefoonnummer', value: '[telefoon]' },
 ]
 
+interface Signature {
+  id: string
+  naam: string
+  inhoud: string
+}
+
+const DEFAULT_SIGNATURES: Signature[] = [
+  {
+    id: 'zakelijk',
+    naam: 'Zakelijk',
+    inhoud: `Met vriendelijke groet,
+
+[mijn_naam]
+[bedrijf]
+[telefoon]`,
+  },
+  {
+    id: 'informeel',
+    naam: 'Informeel',
+    inhoud: `Groeten,
+
+[mijn_naam]`,
+  },
+  {
+    id: 'offerte',
+    naam: 'Offerte',
+    inhoud: `Met vriendelijke groet,
+
+[mijn_naam]
+[bedrijf]
+[telefoon]
+
+P.S. Heeft u vragen over deze offerte? Bel ons gerust!`,
+  },
+]
+
+const SIGNATURES_STORAGE_KEY = 'workmate_email_signatures'
+
+function loadSavedSignatures(): Signature[] {
+  try {
+    const saved = localStorage.getItem(SIGNATURES_STORAGE_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch { return [] }
+}
+
+function saveSignatures(sigs: Signature[]) {
+  localStorage.setItem(SIGNATURES_STORAGE_KEY, JSON.stringify(sigs))
+}
+
+const UNDO_SEND_SECONDS = 5
+
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
@@ -182,6 +241,59 @@ export function EmailCompose({
   const [customDate, setCustomDate] = useState('')
   const [customTime, setCustomTime] = useState('09:00')
 
+  // Contact autocomplete
+  const [contacts, setContacts] = useState<Klant[]>([])
+  const [contactSuggestions, setContactSuggestions] = useState<Klant[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
+  const toInputRef = useRef<HTMLInputElement>(null)
+
+  // Signatures
+  const [selectedSignature, setSelectedSignature] = useState<string>('zakelijk')
+  const [showSignatureDropdown, setShowSignatureDropdown] = useState(false)
+  const [savedSignatures, setSavedSignatures] = useState<Signature[]>(() => loadSavedSignatures())
+  const [editingSignature, setEditingSignature] = useState<Signature | null>(null)
+  const [editSigNaam, setEditSigNaam] = useState('')
+  const [editSigInhoud, setEditSigInhoud] = useState('')
+  const signatureRef = useRef<HTMLDivElement>(null)
+  const allSignatures = useMemo(() => {
+    const custom: Signature[] = emailHandtekening
+      ? [{ id: 'custom', naam: 'Mijn handtekening', inhoud: emailHandtekening }]
+      : []
+    return [...custom, ...savedSignatures, ...DEFAULT_SIGNATURES]
+  }, [emailHandtekening, savedSignatures])
+
+  const handleSaveSignature = useCallback(() => {
+    if (!editSigNaam.trim() || !editSigInhoud.trim()) return
+    const isNew = !editingSignature || editingSignature.id.startsWith('new-')
+    const sig: Signature = {
+      id: isNew ? `custom-${Date.now()}` : editingSignature!.id,
+      naam: editSigNaam.trim(),
+      inhoud: editSigInhoud.trim(),
+    }
+    const updated = isNew
+      ? [...savedSignatures, sig]
+      : savedSignatures.map((s) => (s.id === sig.id ? sig : s))
+    setSavedSignatures(updated)
+    saveSignatures(updated)
+    setEditingSignature(null)
+    setSelectedSignature(sig.id)
+    toast.success('Handtekening opgeslagen')
+  }, [editSigNaam, editSigInhoud, editingSignature, savedSignatures])
+
+  const handleDeleteSignature = useCallback((id: string) => {
+    const updated = savedSignatures.filter((s) => s.id !== id)
+    setSavedSignatures(updated)
+    saveSignatures(updated)
+    if (selectedSignature === id) setSelectedSignature('zakelijk')
+    toast.success('Handtekening verwijderd')
+  }, [savedSignatures, selectedSignature])
+
+  // Undo send
+  const [undoTimer, setUndoTimer] = useState<number | null>(null)
+  const [undoCountdown, setUndoCountdown] = useState(0)
+  const undoCallbackRef = useRef<(() => void) | null>(null)
+
   // File upload
   const [attachments, setAttachments] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -206,14 +318,20 @@ export function EmailCompose({
         if (!editorRef.current) return
         if (defaultBody) {
           editorRef.current.innerHTML = defaultBody.replace(/\n/g, '<br>')
-        } else if (emailHandtekening) {
-          editorRef.current.innerHTML = `<br><br>--<br>${emailHandtekening.replace(/\n/g, '<br>')}`
+        } else {
+          // Use selected signature
+          const sig = allSignatures.find(s => s.id === selectedSignature)
+          if (sig) {
+            editorRef.current.innerHTML = `<br><br>--<br>${sig.inhoud.replace(/\n/g, '<br>')}`
+          } else if (emailHandtekening) {
+            editorRef.current.innerHTML = `<br><br>--<br>${emailHandtekening.replace(/\n/g, '<br>')}`
+          }
         }
         setEditorEmpty(!editorRef.current.innerText?.trim())
       }, 50)
       return () => clearTimeout(timer)
     }
-  }, [open, defaultBody, emailHandtekening])
+  }, [open, defaultBody, emailHandtekening, selectedSignature, allSignatures])
 
   // Sync state when defaults change (reply/forward)
   useEffect(() => {
@@ -221,9 +339,39 @@ export function EmailCompose({
     setSubject(defaultSubject)
   }, [defaultTo, defaultSubject])
 
+  // Load contacts for autocomplete
+  useEffect(() => {
+    let cancelled = false
+    getKlanten().then((data) => {
+      if (!cancelled) setContacts(data || [])
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  // Filter contact suggestions based on "to" input
+  useEffect(() => {
+    if (!to.trim() || to.includes('@') && to.endsWith('.')) {
+      setContactSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+    const q = to.toLowerCase()
+    const matches = contacts.filter((k) => {
+      const contactEmails = k.contactpersonen?.map(c => c.email).filter(Boolean) || []
+      const contactNames = k.contactpersonen?.map(c => c.naam).filter(Boolean) || []
+      return (
+        k.bedrijfsnaam.toLowerCase().includes(q) ||
+        contactNames.some(n => n.toLowerCase().includes(q)) ||
+        contactEmails.some(e => e.toLowerCase().includes(q))
+      )
+    }).slice(0, 5)
+    setContactSuggestions(matches)
+    setShowSuggestions(matches.length > 0)
+  }, [to, contacts])
+
   // Close dropdowns on outside click
   useEffect(() => {
-    if (!showScheduleDropdown && !showMergeFields) return
+    if (!showScheduleDropdown && !showMergeFields && !showSuggestions && !showSignatureDropdown) return
     function handleClickOutside(e: MouseEvent) {
       if (showScheduleDropdown && scheduleDropdownRef.current && !scheduleDropdownRef.current.contains(e.target as Node)) {
         setShowScheduleDropdown(false)
@@ -231,10 +379,95 @@ export function EmailCompose({
       if (showMergeFields && mergeFieldRef.current && !mergeFieldRef.current.contains(e.target as Node)) {
         setShowMergeFields(false)
       }
+      if (showSuggestions && suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+      if (showSignatureDropdown && signatureRef.current && !signatureRef.current.contains(e.target as Node)) {
+        setShowSignatureDropdown(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showScheduleDropdown, showMergeFields])
+  }, [showScheduleDropdown, showMergeFields, showSuggestions, showSignatureDropdown])
+
+  // Undo send countdown
+  useEffect(() => {
+    if (undoCountdown <= 0) return
+    const interval = setInterval(() => {
+      setUndoCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          // Timer expired, actually send
+          undoCallbackRef.current?.()
+          undoCallbackRef.current = null
+          setUndoTimer(null)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [undoCountdown > 0 ? 1 : 0]) // only re-run when starting/stopping
+
+  const handleSelectContact = useCallback((klant: Klant) => {
+    const email = klant.contactpersonen?.[0]?.email || ''
+    if (email) {
+      setTo(email)
+    }
+    setShowSuggestions(false)
+  }, [])
+
+  const handleSignatureChange = useCallback((sigId: string) => {
+    setSelectedSignature(sigId)
+    const sig = allSignatures.find(s => s.id === sigId)
+    if (sig && editorRef.current) {
+      // Remove old signature (everything after --\n) and add new one
+      const currentHtml = editorRef.current.innerHTML
+      const sigSeparator = currentHtml.indexOf('--<br>')
+      const bodyPart = sigSeparator >= 0 ? currentHtml.substring(0, sigSeparator) : currentHtml
+      const newSigHtml = `--<br>${sig.inhoud.replace(/\n/g, '<br>')}`
+      editorRef.current.innerHTML = `${bodyPart}${newSigHtml}`
+      setEditorEmpty(!editorRef.current.innerText?.trim())
+    }
+    setShowSignatureDropdown(false)
+  }, [allSignatures])
+
+  const handleSaveSignature = useCallback(() => {
+    if (!editSigNaam.trim() || !editSigInhoud.trim()) return
+    const isNew = !editingSignature || !savedSignatures.find(s => s.id === editingSignature.id)
+    const sig: Signature = {
+      id: isNew ? `sig-${Date.now()}` : editingSignature!.id,
+      naam: editSigNaam.trim(),
+      inhoud: editSigInhoud.trim(),
+    }
+    const updated = isNew
+      ? [...savedSignatures, sig]
+      : savedSignatures.map(s => s.id === sig.id ? sig : s)
+    setSavedSignatures(updated)
+    saveSignatures(updated)
+    setEditingSignature(null)
+    setEditSigNaam('')
+    setEditSigInhoud('')
+    toast.success(isNew ? 'Handtekening opgeslagen' : 'Handtekening bijgewerkt')
+  }, [editingSignature, editSigNaam, editSigInhoud, savedSignatures])
+
+  const handleDeleteSignature = useCallback((id: string) => {
+    const updated = savedSignatures.filter(s => s.id !== id)
+    setSavedSignatures(updated)
+    saveSignatures(updated)
+    if (selectedSignature === id) setSelectedSignature('zakelijk')
+    toast.success('Handtekening verwijderd')
+  }, [savedSignatures, selectedSignature])
+
+  const handleUndoSend = useCallback(() => {
+    if (undoTimer) {
+      clearTimeout(undoTimer)
+      setUndoTimer(null)
+    }
+    setUndoCountdown(0)
+    undoCallbackRef.current = null
+    toast.success('Verzending geannuleerd')
+  }, [undoTimer])
 
   // Format commands
   const updateFormatState = useCallback(() => {
@@ -357,17 +590,41 @@ export function EmailCompose({
 
   const handleSend = async () => {
     if (!to.trim() || !subject.trim()) return
-    setIsSending(true)
 
-    try {
-      const body = editorRef.current?.innerText || ''
-      onSend?.({ to: to.trim(), subject: subject.trim(), body, scheduledAt: scheduledAt || undefined })
-      resetAndClose()
-    } catch (error) {
-      logger.error('Verzenden mislukt:', error)
-    } finally {
-      setIsSending(false)
+    const body = editorRef.current?.innerText || ''
+    const sendData = { to: to.trim(), subject: subject.trim(), body, scheduledAt: scheduledAt || undefined }
+
+    // If scheduled, send immediately (no undo)
+    if (scheduledAt) {
+      setIsSending(true)
+      try {
+        onSend?.(sendData)
+        resetAndClose()
+      } catch (error) {
+        logger.error('Verzenden mislukt:', error)
+      } finally {
+        setIsSending(false)
+      }
+      return
     }
+
+    // Undo send: start countdown
+    setUndoCountdown(UNDO_SEND_SECONDS)
+    undoCallbackRef.current = () => {
+      try {
+        onSend?.(sendData)
+        resetAndClose()
+      } catch (error) {
+        logger.error('Verzenden mislukt:', error)
+      }
+    }
+    const timer = window.setTimeout(() => {
+      undoCallbackRef.current?.()
+      undoCallbackRef.current = null
+      setUndoTimer(null)
+      setUndoCountdown(0)
+    }, UNDO_SEND_SECONDS * 1000)
+    setUndoTimer(timer)
   }
 
   const resetAndClose = () => {
@@ -433,7 +690,7 @@ export function EmailCompose({
             </Select>
           </div>
 
-          {/* To field */}
+          {/* To field with autocomplete */}
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-between w-20 flex-shrink-0">
               <Label className="text-sm font-medium">Aan</Label>
@@ -446,7 +703,43 @@ export function EmailCompose({
                 CC {showCc ? <ChevronUp className="w-2.5 h-2.5 ml-0.5" /> : <ChevronDown className="w-2.5 h-2.5 ml-0.5" />}
               </Button>
             </div>
-            <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="h-9" />
+            <div className="relative flex-1" ref={suggestionsRef}>
+              <Input
+                ref={toInputRef}
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                onFocus={() => { if (contactSuggestions.length > 0) setShowSuggestions(true) }}
+                placeholder="email@voorbeeld.nl of zoek contacten..."
+                type="text"
+                className="h-9"
+              />
+              {showSuggestions && contactSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 rounded-md border bg-popover shadow-lg z-50 max-h-48 overflow-y-auto">
+                  {contactSuggestions.map((klant) => {
+                    const contact = klant.contactpersonen?.[0]
+                    const email = contact?.email || ''
+                    const naam = contact?.naam || klant.bedrijfsnaam
+                    return (
+                      <button
+                        key={klant.id}
+                        onClick={() => handleSelectContact(klant)}
+                        className="w-full text-left px-3 py-2 hover:bg-accent transition-colors flex items-center gap-3"
+                      >
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary flex-shrink-0">
+                          {getInitials(naam)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{naam}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {klant.bedrijfsnaam}{email ? ` — ${email}` : ''}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* CC field */}
@@ -610,6 +903,25 @@ export function EmailCompose({
         </div>
       </ScrollArea>
 
+      {/* ── Undo send bar ── */}
+      {undoCountdown > 0 && (
+        <div className="flex items-center justify-between px-4 py-2.5 border-t bg-amber-50 dark:bg-amber-900/20">
+          <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
+            <Send className="w-4 h-4" />
+            Email wordt verzonden in {undoCountdown}s...
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300"
+            onClick={handleUndoSend}
+          >
+            <Undo className="w-3.5 h-3.5" />
+            Ongedaan maken
+          </Button>
+        </div>
+      )}
+
       {/* ── Footer / Actions ── */}
       <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/10">
         <div className="flex items-center gap-2">
@@ -635,6 +947,105 @@ export function EmailCompose({
               {attachments.length} bestand{attachments.length > 1 ? 'en' : ''}
             </span>
           )}
+          <Separator orientation="vertical" className="h-5 mx-1" />
+          {/* Signature selector */}
+          <div className="relative" ref={signatureRef}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground"
+              onClick={() => setShowSignatureDropdown(!showSignatureDropdown)}
+            >
+              <FileSignature className="w-4 h-4" />
+              Handtekening
+              <ChevronDown className="w-3 h-3" />
+            </Button>
+            {showSignatureDropdown && !editingSignature && (
+              <div className="absolute left-0 bottom-full mb-2 w-64 rounded-md border bg-popover p-1 shadow-lg z-50">
+                <button
+                  onClick={() => { setSelectedSignature('none'); setShowSignatureDropdown(false) }}
+                  className={cn('w-full text-left px-3 py-2 text-sm rounded hover:bg-accent', selectedSignature === 'none' && 'bg-accent font-medium')}
+                >
+                  Geen handtekening
+                </button>
+                {allSignatures.map((sig) => {
+                  const isSaved = savedSignatures.some(s => s.id === sig.id)
+                  return (
+                    <div key={sig.id} className={cn('flex items-center rounded hover:bg-accent group', selectedSignature === sig.id && 'bg-accent font-medium')}>
+                      <button
+                        onClick={() => handleSignatureChange(sig.id)}
+                        className="flex-1 text-left px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileSignature className="w-3.5 h-3.5 text-muted-foreground" />
+                          {sig.naam}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate mt-0.5 ml-5.5">{sig.inhoud.split('\n')[0]}</p>
+                      </button>
+                      {isSaved && (
+                        <div className="flex items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingSignature(sig); setEditSigNaam(sig.naam); setEditSigInhoud(sig.inhoud) }}
+                            className="p-1 rounded hover:bg-muted" title="Bewerken"
+                          >
+                            <Pencil className="w-3 h-3 text-muted-foreground" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteSignature(sig.id) }}
+                            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-950" title="Verwijderen"
+                          >
+                            <Trash2 className="w-3 h-3 text-red-500" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+                <div className="border-t mt-1 pt-1">
+                  <button
+                    onClick={() => { setEditingSignature({ id: '', naam: '', inhoud: '' }); setEditSigNaam(''); setEditSigInhoud('') }}
+                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent text-primary font-medium flex items-center gap-2"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Nieuwe handtekening
+                  </button>
+                </div>
+              </div>
+            )}
+            {editingSignature && (
+              <div className="absolute left-0 bottom-full mb-2 w-72 rounded-md border bg-popover p-3 shadow-lg z-50">
+                <h4 className="text-sm font-semibold mb-2">{editingSignature.id ? 'Handtekening bewerken' : 'Nieuwe handtekening'}</h4>
+                <input
+                  value={editSigNaam}
+                  onChange={(e) => setEditSigNaam(e.target.value)}
+                  placeholder="Naam (bijv. Zakelijk)"
+                  className="w-full text-sm border rounded px-2 py-1.5 mb-2 bg-background"
+                />
+                <textarea
+                  value={editSigInhoud}
+                  onChange={(e) => setEditSigInhoud(e.target.value)}
+                  placeholder="Handtekening tekst..."
+                  rows={4}
+                  className="w-full text-sm border rounded px-2 py-1.5 mb-2 bg-background resize-none"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => { setEditingSignature(null); setEditSigNaam(''); setEditSigInhoud('') }}
+                    className="text-xs text-muted-foreground hover:text-foreground px-2 py-1"
+                  >
+                    Annuleren
+                  </button>
+                  <button
+                    onClick={handleSaveSignature}
+                    disabled={!editSigNaam.trim() || !editSigInhoud.trim()}
+                    className="text-xs bg-primary text-primary-foreground rounded px-3 py-1 font-medium disabled:opacity-50"
+                  >
+                    Opslaan
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={resetAndClose}>

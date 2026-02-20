@@ -148,11 +148,47 @@ export interface Email {
   datum: string;
   gelezen: boolean;
   starred: boolean;
+  pinned?: boolean;
+  snoozed_until?: string;
   labels: string[];
   bijlagen: number;
   map: string;
   scheduled_at?: string;
+  thread_id?: string;
+  internal_notes?: string;
+  follow_up_at?: string;
+  tracking?: EmailTracking;
   created_at: string;
+}
+
+export interface EmailTracking {
+  opens: number;
+  last_opened?: string;
+  clicks: number;
+  last_clicked?: string;
+  pixel_id?: string;
+}
+
+export interface EmailSequence {
+  id: string;
+  user_id: string;
+  naam: string;
+  beschrijving: string;
+  status: 'actief' | 'gepauzeerd' | 'concept';
+  stappen: EmailSequenceStap[];
+  ontvangers: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailSequenceStap {
+  id: string;
+  volgorde: number;
+  onderwerp: string;
+  inhoud: string;
+  wacht_dagen: number;
+  verzonden: number;
+  geopend: number;
 }
 
 export interface CalendarEvent {

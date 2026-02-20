@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,12 @@ import {
   Pencil,
   Trash2,
   X,
+  BarChart3,
+  Calendar,
+  Award,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   getMedewerkers,
@@ -43,6 +50,8 @@ import {
 import type { Medewerker } from '@/types';
 import { cn, getInitials } from '@/lib/utils';
 import { toast } from 'sonner';
+
+type TeamTab = 'overzicht' | 'beschikbaarheid' | 'vaardigheden' | 'prestaties';
 
 
 // ---------------------------------------------------------------------------
@@ -120,6 +129,7 @@ function blankMedewerker(): Omit<Medewerker, 'id' | 'user_id' | 'created_at' | '
 // ---------------------------------------------------------------------------
 export function TeamLayout() {
   // ---- state ---------------------------------------------------------------
+  const [activeTab, setActiveTab] = useState<TeamTab>('overzicht');
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
   const [loading, setLoading] = useState(true);
   const [zoekterm, setZoekterm] = useState('');
@@ -293,6 +303,30 @@ export function TeamLayout() {
     }));
   }
 
+  // ---- availability data (mock per weekday) --------------------------------
+  const beschikbaarheid = useMemo(() => {
+    const dagen = ['Ma', 'Di', 'Wo', 'Do', 'Vr'];
+    return medewerkers.filter(m => m.status === 'actief').map((m) => ({
+      id: m.id,
+      naam: m.naam,
+      rol: m.rol,
+      dagen: dagen.map((dag) => {
+        // Simple demo logic based on name hash
+        const hash = m.naam.charCodeAt(0) + dag.charCodeAt(0);
+        if (hash % 7 === 0) return 'vrij' as const;
+        if (hash % 5 === 0) return 'halve-dag' as const;
+        return 'beschikbaar' as const;
+      }),
+    }));
+  }, [medewerkers]);
+
+  // ---- skills matrix -------------------------------------------------------
+  const alleVaardigheden = useMemo(() => {
+    const set = new Set<string>();
+    medewerkers.forEach((m) => m.vaardigheden.forEach((v) => set.add(v)));
+    return Array.from(set).sort();
+  }, [medewerkers]);
+
   // ---- render --------------------------------------------------------------
   return (
     <div className="space-y-6">
@@ -306,6 +340,33 @@ export function TeamLayout() {
           <Plus className="mr-2 h-4 w-4" />
           Nieuwe medewerker
         </Button>
+      </div>
+
+      {/* ---- Tab bar ---- */}
+      <div className="flex items-center gap-1">
+        {([
+          { id: 'overzicht' as TeamTab, label: 'Overzicht', icon: Users },
+          { id: 'beschikbaarheid' as TeamTab, label: 'Beschikbaarheid', icon: Calendar },
+          { id: 'vaardigheden' as TeamTab, label: 'Vaardigheden', icon: Award },
+          { id: 'prestaties' as TeamTab, label: 'Prestaties', icon: BarChart3 },
+        ]).map((tab) => {
+          const TabIcon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                activeTab === tab.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+            >
+              <TabIcon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* ---- Summary cards ---- */}
@@ -350,7 +411,221 @@ export function TeamLayout() {
         </Card>
       </div>
 
-      {/* ---- Search + Filters ---- */}
+      {/* ──── Beschikbaarheid tab ──── */}
+      {activeTab === 'beschikbaarheid' && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Weekplanning beschikbaarheid
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {beschikbaarheid.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Geen actieve medewerkers</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 pr-4 font-medium text-muted-foreground w-48">Medewerker</th>
+                      {['Ma', 'Di', 'Wo', 'Do', 'Vr'].map((dag) => (
+                        <th key={dag} className="text-center py-2 px-2 font-medium text-muted-foreground w-24">{dag}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {beschikbaarheid.map((m) => (
+                      <tr key={m.id} className="border-b last:border-0">
+                        <td className="py-2 pr-4">
+                          <div className="flex items-center gap-2">
+                            <div className={cn('w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold', avatarColor(m.naam))}>
+                              {getInitials(m.naam)}
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{m.naam}</p>
+                              <p className="text-[10px] text-muted-foreground capitalize">{m.rol}</p>
+                            </div>
+                          </div>
+                        </td>
+                        {m.dagen.map((status, i) => (
+                          <td key={i} className="text-center py-2 px-2">
+                            <div className={cn(
+                              'inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-medium',
+                              status === 'beschikbaar' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+                              status === 'halve-dag' && 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+                              status === 'vrij' && 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500',
+                            )}>
+                              {status === 'beschikbaar' ? <CheckCircle className="w-4 h-4" /> : status === 'halve-dag' ? <Clock className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="flex items-center gap-4 mt-4 pt-3 border-t">
+              <div className="flex items-center gap-1.5 text-xs">
+                <div className="w-3 h-3 rounded bg-emerald-100 dark:bg-emerald-900/30" />
+                <span className="text-muted-foreground">Beschikbaar</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                <div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/30" />
+                <span className="text-muted-foreground">Halve dag</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                <div className="w-3 h-3 rounded bg-gray-100 dark:bg-gray-800" />
+                <span className="text-muted-foreground">Vrij</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ──── Vaardigheden tab ──── */}
+      {activeTab === 'vaardigheden' && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Award className="w-4 h-4" />
+              Vaardigheden matrix
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {alleVaardigheden.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Geen vaardigheden geregistreerd</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 pr-4 font-medium text-muted-foreground w-48">Medewerker</th>
+                      {alleVaardigheden.map((v) => (
+                        <th key={v} className="text-center py-2 px-1 font-medium text-muted-foreground">
+                          <span className="text-[10px] writing-mode-vertical rotate-[-45deg] inline-block w-16 text-left truncate" title={v}>
+                            {v}
+                          </span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {medewerkers.filter(m => m.status === 'actief').map((m) => (
+                      <tr key={m.id} className="border-b last:border-0">
+                        <td className="py-2 pr-4">
+                          <div className="flex items-center gap-2">
+                            <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold', avatarColor(m.naam))}>
+                              {getInitials(m.naam)}
+                            </div>
+                            <span className="font-medium text-sm truncate">{m.naam}</span>
+                          </div>
+                        </td>
+                        {alleVaardigheden.map((v) => (
+                          <td key={v} className="text-center py-2 px-1">
+                            {m.vaardigheden.includes(v) ? (
+                              <div className="w-5 h-5 mx-auto rounded bg-primary/20 flex items-center justify-center">
+                                <CheckCircle className="w-3.5 h-3.5 text-primary" />
+                              </div>
+                            ) : (
+                              <div className="w-5 h-5 mx-auto" />
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="mt-4 pt-3 border-t">
+              <h4 className="text-xs font-semibold text-muted-foreground mb-2">Vaardigheden dekking</h4>
+              <div className="flex flex-wrap gap-2">
+                {alleVaardigheden.map((v) => {
+                  const count = medewerkers.filter(m => m.status === 'actief' && m.vaardigheden.includes(v)).length;
+                  return (
+                    <Badge key={v} variant="secondary" className={cn('text-xs', count <= 1 && 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300')}>
+                      {v}: {count}
+                      {count <= 1 && <AlertTriangle className="w-3 h-3 ml-1" />}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ──── Prestaties tab ──── */}
+      {activeTab === 'prestaties' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {medewerkers.filter(m => m.status === 'actief').map((m) => {
+              // Generate demo performance data based on name hash
+              const hash = m.naam.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+              const projecten = (hash % 8) + 1;
+              const uren = ((hash % 30) + 10) * 4;
+              const urenTarget = 160;
+              const urenPerc = Math.min((uren / urenTarget) * 100, 100);
+
+              return (
+                <Card key={m.id}>
+                  <CardContent className="pt-4 pb-3 px-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className={cn('w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold', avatarColor(m.naam))}>
+                        {getInitials(m.naam)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{m.naam}</p>
+                        <p className="text-xs text-muted-foreground">{m.functie} — {m.afdeling}</p>
+                      </div>
+                      <Badge variant="outline" className={cn('text-[10px]', ROL_KLEUREN[m.rol])}>
+                        {ROL_LABELS[m.rol]}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div>
+                        <p className="text-lg font-bold">{projecten}</p>
+                        <p className="text-[10px] text-muted-foreground">Projecten</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold">{uren}u</p>
+                        <p className="text-[10px] text-muted-foreground">Uren (maand)</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold">&euro;{(uren * m.uurtarief).toFixed(0)}</p>
+                        <p className="text-[10px] text-muted-foreground">Omzet</p>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                        <span>Uren target</span>
+                        <span>{uren}/{urenTarget}u ({urenPerc.toFixed(0)}%)</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            'h-full rounded-full transition-all',
+                            urenPerc >= 90 ? 'bg-emerald-500' : urenPerc >= 70 ? 'bg-amber-500' : 'bg-red-500'
+                          )}
+                          style={{ width: `${urenPerc}%` }}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ---- Search + Filters (only in overzicht tab) ---- */}
+      {activeTab === 'overzicht' && (<>
       <div className="space-y-4">
         {/* Search bar */}
         <div className="relative max-w-sm">
@@ -503,6 +778,7 @@ export function TeamLayout() {
           ))}
         </div>
       )}
+      </>)}
 
       {/* ---- Add / Edit Dialog ---- */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
