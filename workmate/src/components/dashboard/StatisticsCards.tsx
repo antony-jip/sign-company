@@ -11,6 +11,7 @@ import {
 import { getProjecten, getKlanten, getOffertes } from '@/services/supabaseService'
 import type { Project, Klant, Offerte } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { logger } from '../../utils/logger'
 
 interface StatCard {
   title: string
@@ -78,7 +79,7 @@ export function StatisticsCards() {
         setKlanten(k)
         setOffertes(o)
       })
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setLoading(false))
   }, [])
 

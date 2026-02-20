@@ -55,6 +55,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Nieuwsbrief, Klant } from '@/types'
 import { cn, formatDate, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 
 // ============ HTML TEMPLATES ============
 
@@ -485,7 +486,7 @@ export function NewsletterBuilder() {
       setNieuwsbrieven(nieuwsbrievenData)
       setKlanten(klantenData)
     } catch (err) {
-      console.error('Fout bij ophalen gegevens:', err)
+      logger.error('Fout bij ophalen gegevens:', err)
       toast.error('Kon gegevens niet laden. Probeer het opnieuw.')
     } finally {
       setIsLoading(false)
@@ -686,7 +687,7 @@ export function NewsletterBuilder() {
         toast.success('Nieuwsbrief aangemaakt als concept')
       }
     } catch (err) {
-      console.error('Fout bij opslaan:', err)
+      logger.error('Fout bij opslaan:', err)
       toast.error('Kon de nieuwsbrief niet opslaan')
     } finally {
       setIsSaving(false)
@@ -750,7 +751,7 @@ export function NewsletterBuilder() {
           })
           await sendEmail(recipients[i], editor.onderwerp, '', { html: wrappedHtml })
         } catch (err) {
-          console.error(`Fout bij verzenden naar ${recipients[i]}:`, err)
+          logger.error(`Fout bij verzenden naar ${recipients[i]}:`, err)
           failed.push(recipients[i])
         }
       }
@@ -770,7 +771,7 @@ export function NewsletterBuilder() {
       setSendDialogOpen(false)
       closeEditor()
     } catch (err) {
-      console.error('Fout bij verzenden:', err)
+      logger.error('Fout bij verzenden:', err)
       toast.error('Kon de nieuwsbrief niet verzenden')
       setSendProgress(null)
     } finally {
@@ -801,7 +802,7 @@ export function NewsletterBuilder() {
       setPreviewSendDialogOpen(false)
       setPreviewEmail('')
     } catch (err) {
-      console.error('Fout bij verzenden preview:', err)
+      logger.error('Fout bij verzenden preview:', err)
       toast.error('Kon het voorbeeld niet verzenden. Probeer het opnieuw.')
     } finally {
       setIsSaving(false)
@@ -820,7 +821,7 @@ export function NewsletterBuilder() {
         closeEditor()
       }
     } catch (err) {
-      console.error('Fout bij verwijderen:', err)
+      logger.error('Fout bij verwijderen:', err)
       toast.error('Kon de nieuwsbrief niet verwijderen')
     } finally {
       setDeleteDialogOpen(false)

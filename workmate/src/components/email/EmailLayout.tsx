@@ -26,6 +26,7 @@ import { ContactSidebar } from './ContactSidebar'
 import { getContactByEmail, extractEmailAddress } from '@/data/email-demo-data'
 import type { EmailContact } from '@/data/email-demo-data'
 import type { Email, Klant } from '@/types'
+import { logger } from '../../utils/logger'
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -318,7 +319,7 @@ export function EmailLayout() {
       toast.success(isScheduled ? 'Email ingepland' : 'Email verzonden')
     } catch (err: any) {
       // If API send fails (e.g. no email settings), still save as draft
-      console.error('Email verzenden mislukt:', err)
+      logger.error('Email verzenden mislukt:', err)
       toast.error(err.message || 'Email kon niet worden verzonden')
     }
 

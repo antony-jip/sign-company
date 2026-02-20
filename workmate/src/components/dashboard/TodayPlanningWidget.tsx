@@ -18,6 +18,7 @@ import type { Taak, Project, CalendarEvent } from '@/types'
 import { getPriorityColor } from '@/lib/utils'
 import { format, isToday, isTomorrow, parseISO, isAfter, isBefore, addDays } from 'date-fns'
 import { nl } from 'date-fns/locale'
+import { logger } from '../../utils/logger'
 
 interface TimelineItem {
   id: string
@@ -46,7 +47,7 @@ export function TodayPlanningWidget() {
         setProjecten(p)
         setEvents(e)
       })
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setLoading(false))
   }, [])
 

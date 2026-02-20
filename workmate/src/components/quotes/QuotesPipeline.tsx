@@ -31,6 +31,7 @@ import { getOffertes, updateOfferte } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Offerte } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { logger } from '../../utils/logger'
 
 type ViewMode = 'pipeline' | 'lijst'
 type SortOption = 'newest' | 'oldest' | 'highest' | 'expiring'
@@ -144,7 +145,7 @@ export function QuotesPipeline() {
       const data = await getOffertes()
       setOffertes(data)
     } catch (err) {
-      console.error('Fout bij ophalen offertes:', err)
+      logger.error('Fout bij ophalen offertes:', err)
       setError('Kan offertes niet laden. Probeer opnieuw.')
     } finally {
       setIsLoading(false)
@@ -264,7 +265,7 @@ export function QuotesPipeline() {
         setFollowUpDate('')
         setFollowUpNote('')
       } catch (err) {
-        console.error('Fout bij opslaan follow-up:', err)
+        logger.error('Fout bij opslaan follow-up:', err)
         toast.error('Kon follow-up niet opslaan')
       } finally {
         setSavingFollowUp(false)
@@ -284,7 +285,7 @@ export function QuotesPipeline() {
       setOffertes((prev) => prev.map((o) => (o.id === offerte.id ? { ...o, ...updated } : o)))
       toast.success(`Contactpoging ${(offerte.contact_pogingen || 0) + 1} geregistreerd`)
     } catch (err) {
-      console.error('Fout bij registreren contactpoging:', err)
+      logger.error('Fout bij registreren contactpoging:', err)
       toast.error('Kon contactpoging niet registreren')
     } finally {
       setCallingClient(null)

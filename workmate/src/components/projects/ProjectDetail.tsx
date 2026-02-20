@@ -87,6 +87,7 @@ import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
 import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur } from '@/types'
+import { logger } from '../../utils/logger'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -228,7 +229,7 @@ export function ProjectDetail() {
       toast.success('Briefing opgeslagen')
       setBriefingOpen(false)
     } catch (err) {
-      console.error('Fout bij opslaan briefing:', err)
+      logger.error('Fout bij opslaan briefing:', err)
       toast.error('Kon briefing niet opslaan')
     } finally {
       setBriefingSaving(false)
@@ -284,7 +285,7 @@ export function ProjectDetail() {
       toast.success(`Factuur ${factuurNummer} aangemaakt vanuit offerte ${offerte.nummer}`)
       navigate(`/facturen`)
     } catch (err) {
-      console.error('Fout bij aanmaken factuur:', err)
+      logger.error('Fout bij aanmaken factuur:', err)
       toast.error('Kon factuur niet aanmaken')
     } finally {
       setCreatingFactuurForOfferte(null)
@@ -297,7 +298,7 @@ export function ProjectDetail() {
       const taken = await getTakenByProject(id)
       setProjectTaken(taken)
     } catch (err) {
-      console.error('Fout bij ophalen taken:', err)
+      logger.error('Fout bij ophalen taken:', err)
     }
   }, [id])
 
@@ -307,7 +308,7 @@ export function ProjectDetail() {
       const offertes = await getOffertesByProject(id)
       setProjectOffertes(offertes)
     } catch (err) {
-      console.error('Fout bij ophalen offertes:', err)
+      logger.error('Fout bij ophalen offertes:', err)
     }
   }, [id])
 
@@ -317,7 +318,7 @@ export function ProjectDetail() {
       const allDocs = await getDocumenten()
       setProjectDocumenten(allDocs.filter((d) => d.project_id === id))
     } catch (err) {
-      console.error('Fout bij ophalen documenten:', err)
+      logger.error('Fout bij ophalen documenten:', err)
     }
   }, [id])
 
@@ -327,7 +328,7 @@ export function ProjectDetail() {
       const gk = await getTekeningGoedkeuringen(id)
       setGoedkeuringen(gk)
     } catch (err) {
-      console.error('Fout bij ophalen goedkeuringen:', err)
+      logger.error('Fout bij ophalen goedkeuringen:', err)
     }
   }, [id])
 
@@ -382,7 +383,7 @@ export function ProjectDetail() {
           setKlant(klantData)
         }
       } catch (err) {
-        console.error('Fout bij ophalen projectgegevens:', err)
+        logger.error('Fout bij ophalen projectgegevens:', err)
         toast.error('Kon projectgegevens niet laden')
       } finally {
         setIsLoading(false)
@@ -412,7 +413,7 @@ export function ProjectDetail() {
           gedeeld_met: [],
         })
       } catch (err) {
-        console.error(`Fout bij uploaden ${file.name}:`, err)
+        logger.error(`Fout bij uploaden ${file.name}:`, err)
         toast.error(`Kon "${file.name}" niet uploaden`)
       }
     }
@@ -469,7 +470,7 @@ export function ProjectDetail() {
         })
         await sendEmail(klant.email, subject, '', { html })
       } catch (emailErr) {
-        console.error('Goedkeuring email mislukt:', emailErr)
+        logger.error('Goedkeuring email mislukt:', emailErr)
         toast.error('Goedkeuring aangemaakt, maar email niet verzonden')
       }
 
@@ -482,7 +483,7 @@ export function ProjectDetail() {
       setVerstuurOpen(false)
       await Promise.all([fetchGoedkeuringen(), fetchOffertes()])
     } catch (err) {
-      console.error('Fout bij versturen:', err)
+      logger.error('Fout bij versturen:', err)
       toast.error('Kon niet versturen naar klant')
     } finally {
       setIsVersturen(false)
@@ -889,7 +890,7 @@ export function ProjectDetail() {
                         setNieuweTaakDeadline('')
                         await fetchTaken()
                       } catch (err) {
-                        console.error('Fout bij aanmaken taak:', err)
+                        logger.error('Fout bij aanmaken taak:', err)
                         toast.error('Kon taak niet aanmaken')
                       }
                     }}
@@ -1263,7 +1264,7 @@ export function ProjectDetail() {
                       setEmailOfferteId(null)
                       await fetchOffertes()
                     } catch (err) {
-                      console.error('Fout bij verzenden offerte:', err)
+                      logger.error('Fout bij verzenden offerte:', err)
                       toast.error('Kon offerte niet verzenden')
                     } finally {
                       setIsEmailVerzenden(false)
@@ -1381,7 +1382,7 @@ export function ProjectDetail() {
                             toast.success(`"${doc.naam}" verwijderd`)
                             await fetchDocumenten()
                           } catch (err) {
-                            console.error('Fout bij verwijderen:', err)
+                            logger.error('Fout bij verwijderen:', err)
                             toast.error('Kon bestand niet verwijderen')
                           }
                         }}

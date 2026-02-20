@@ -46,6 +46,7 @@ import { getProjecten, getKlanten, updateProject } from '@/services/supabaseServ
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant } from '@/types'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle statussen' },
@@ -125,7 +126,7 @@ export function ProjectsList() {
         setProjecten(projectenData)
         setKlanten(klantenData)
       } catch (error) {
-        console.error('Fout bij ophalen data:', error)
+        logger.error('Fout bij ophalen data:', error)
       } finally {
         setIsLoading(false)
       }
@@ -196,7 +197,7 @@ export function ProjectsList() {
       setProjecten((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
       toast.success(`Status gewijzigd naar ${statusLabels[newStatus]}`)
     } catch (error) {
-      console.error('Fout bij statuswijziging:', error)
+      logger.error('Fout bij statuswijziging:', error)
       toast.error('Kon status niet wijzigen')
     }
   }

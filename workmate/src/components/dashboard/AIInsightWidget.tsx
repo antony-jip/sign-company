@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { getProjecten, getOffertes, getKlanten, getTaken } from '@/services/supabaseService'
 import type { Project, Offerte, Klant, Taak } from '@/types'
+import { logger } from '../../utils/logger'
 
 interface AIInsight {
   id: string
@@ -44,7 +45,7 @@ export function AIInsightWidget() {
         setKlanten(k)
         setTaken(t)
       })
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setLoading(false))
   }, [])
 

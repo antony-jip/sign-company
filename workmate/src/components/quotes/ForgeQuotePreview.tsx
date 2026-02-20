@@ -8,6 +8,7 @@ import { generateOffertePDF } from '@/services/pdfService'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import { Receipt, ArrowLeft, ExternalLink } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
+import { logger } from '../../utils/logger'
 
 interface ForgeQuotePreviewProps {
   offerte?: {
@@ -80,7 +81,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         setFetchedKlant(klant)
         setFetchedItems(items)
       } catch (err) {
-        console.error('Failed to load offerte data:', err)
+        logger.error('Failed to load offerte data:', err)
         toast.error('Kon offerte niet laden')
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -143,7 +144,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         }
       }
     } catch (err) {
-      console.error('Failed to update offerte status:', err)
+      logger.error('Failed to update offerte status:', err)
       toast.error('Kon status niet bijwerken')
     }
   }
@@ -167,7 +168,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       doc.save(`${fetchedOfferte.nummer}.pdf`)
       toast.success('PDF gedownload')
     } catch (err) {
-      console.error('Failed to generate PDF:', err)
+      logger.error('Failed to generate PDF:', err)
       toast.error('Kon PDF niet genereren')
     }
   }

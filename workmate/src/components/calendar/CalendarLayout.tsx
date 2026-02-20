@@ -72,6 +72,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { MontageAfspraak, Project, Medewerker, Klant, Taak } from '@/types'
+import { logger } from '../../utils/logger'
 
 // ============================================================
 // STATUS CONFIG
@@ -275,7 +276,7 @@ export function CalendarLayout() {
       setKlanten(kData)
       setProjectTaken(tData.filter((t) => t.project_id && t.deadline && t.status !== 'done'))
     } catch (err) {
-      console.error('Fout bij laden data:', err)
+      logger.error('Fout bij laden data:', err)
       toast.error('Kon planningsdata niet laden')
     } finally {
       setIsLoading(false)
@@ -436,7 +437,7 @@ export function CalendarLayout() {
       setDialogOpen(false)
       await loadData()
     } catch (err) {
-      console.error('Fout bij opslaan:', err)
+      logger.error('Fout bij opslaan:', err)
       toast.error('Kon taak niet opslaan')
     } finally {
       setIsSaving(false)
@@ -451,7 +452,7 @@ export function CalendarLayout() {
       setDialogOpen(false)
       await loadData()
     } catch (err) {
-      console.error('Fout bij verwijderen:', err)
+      logger.error('Fout bij verwijderen:', err)
       toast.error('Kon taak niet verwijderen')
     }
   }
@@ -464,7 +465,7 @@ export function CalendarLayout() {
       )
       toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`)
     } catch (err) {
-      console.error('Fout bij status update:', err)
+      logger.error('Fout bij status update:', err)
       toast.error('Kon status niet bijwerken')
     }
   }

@@ -70,6 +70,7 @@ import { factuurHerinneringTemplate, factuurVerzendTemplate } from '@/services/e
 import { generateFactuurPDF } from '@/services/pdfService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSearchParams } from 'react-router-dom'
+import { logger } from '../../utils/logger'
 
 // ============ TYPES ============
 
@@ -498,7 +499,7 @@ export function FacturenLayout() {
       setCreateDialogOpen(false)
       resetForm()
     } catch (err) {
-      console.error('Fout bij opslaan factuur:', err)
+      logger.error('Fout bij opslaan factuur:', err)
       toast.error('Kon factuur niet opslaan')
     } finally {
       setIsSaving(false)
@@ -559,7 +560,7 @@ export function FacturenLayout() {
         })
         await sendEmail(klant.email, subject, '', { html })
       } catch (emailErr) {
-        console.error('Herinnering email verzenden mislukt:', emailErr)
+        logger.error('Herinnering email verzenden mislukt:', emailErr)
         // Still update the flag since the intent was to send - but warn the user
         setFacturen((prev) =>
           prev.map((f) =>
@@ -769,7 +770,7 @@ export function FacturenLayout() {
         doc.save(`factuur-${factuur.nummer}.pdf`)
         toast.success(`PDF gedownload voor ${factuur.nummer}`)
       } catch (err) {
-        console.error('Fout bij genereren PDF:', err)
+        logger.error('Fout bij genereren PDF:', err)
         toast.error('Kon PDF niet genereren')
       }
     },
@@ -817,7 +818,7 @@ export function FacturenLayout() {
 
         toast.success(`Factuur ${factuur.nummer} verzonden naar ${klant.email}`)
       } catch (err) {
-        console.error('Fout bij verzenden factuur:', err)
+        logger.error('Fout bij verzenden factuur:', err)
         toast.error('Kon factuur niet verzenden')
       }
     },

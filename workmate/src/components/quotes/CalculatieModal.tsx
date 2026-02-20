@@ -40,6 +40,7 @@ import { formatCurrency } from '@/lib/utils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getCalculatieProducten, getCalculatieTemplates } from '@/services/supabaseService'
 import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate } from '@/types'
+import { logger } from '../../utils/logger'
 
 // ============================================================
 // CALCULATIE MODAL
@@ -124,8 +125,8 @@ export function CalculatieModal({
       }
       setBeschrijving(itemBeschrijving || '')
       // Laad catalogus producten en templates
-      getCalculatieProducten().then(setProducten).catch(console.error)
-      getCalculatieTemplates().then(setTemplates).catch(console.error)
+      getCalculatieProducten().then(setProducten).catch(logger.error)
+      getCalculatieTemplates().then(setTemplates).catch(logger.error)
     }
   }, [open, initialRegels, itemBeschrijving, standaardMarge, standaardBtw])
 

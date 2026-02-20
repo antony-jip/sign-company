@@ -20,6 +20,7 @@ import {
 import { getOffertes } from '@/services/supabaseService'
 import type { Offerte } from '@/types'
 import { formatCurrency, formatDate, cn } from '@/lib/utils'
+import { logger } from '../../utils/logger'
 
 interface FollowUpItem {
   offerte: Offerte
@@ -221,7 +222,7 @@ export function SalesFollowUpWidget() {
       const data = await getOffertes()
       setOffertes(data)
     } catch (error) {
-      console.error('Error loading offertes for follow-up widget:', error)
+      logger.error('Error loading offertes for follow-up widget:', error)
     } finally {
       setLoading(false)
     }

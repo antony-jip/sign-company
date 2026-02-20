@@ -35,6 +35,7 @@ import {
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { formatCurrency } from '@/lib/utils'
 import type { Offerte, OfferteItem } from '@/types'
+import { logger } from '../../utils/logger'
 
 interface ProjectOfferteEditorProps {
   offerteId: string
@@ -79,7 +80,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
       }
       setItems(itemsData.map(i => ({ ...i })))
     } catch (err) {
-      console.error('Fout bij laden offerte:', err)
+      logger.error('Fout bij laden offerte:', err)
       toast.error('Kon offerte niet laden')
     } finally {
       setIsLoading(false)
@@ -219,7 +220,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
       onSaved()
       onClose()
     } catch (err) {
-      console.error('Fout bij opslaan offerte:', err)
+      logger.error('Fout bij opslaan offerte:', err)
       toast.error('Kon offerte niet opslaan')
     } finally {
       setIsSaving(false)

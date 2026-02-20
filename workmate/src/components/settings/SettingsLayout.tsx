@@ -67,6 +67,7 @@ import {
 } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
+import { logger } from '../../utils/logger'
 
 const settingsTabs = [
   { id: 'profiel', label: 'Profiel', icon: User, description: 'Uw persoonlijke gegevens' },
@@ -206,7 +207,7 @@ function CalculatieTab() {
         setProducten(prods)
         setTemplates(tmps)
       })
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setIsLoading(false))
   }, [])
 
@@ -231,7 +232,7 @@ function CalculatieTab() {
       })
       toast.success('Calculatie-instellingen opgeslagen')
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast.error('Kon instellingen niet opslaan')
     } finally {
       setIsSaving(false)
@@ -303,7 +304,7 @@ function CalculatieTab() {
       }
       resetProductForm()
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast.error('Kon product niet opslaan')
     } finally {
       setIsSaving(false)
@@ -318,7 +319,7 @@ function CalculatieTab() {
       setProducten((prev) => prev.filter((p) => p.id !== id))
       toast.success('Product verwijderd')
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast.error('Kon product niet verwijderen')
     }
   }
@@ -328,7 +329,7 @@ function CalculatieTab() {
       const updated = await updateCalculatieProduct(p.id, { actief: !p.actief })
       setProducten((prev) => prev.map((pr) => (pr.id === p.id ? updated : pr)))
     } catch (err) {
-      console.error(err)
+      logger.error(err)
     }
   }
 
@@ -863,7 +864,7 @@ function CalculatieTemplatesSection({
   useEffect(() => {
     getCalculatieTemplates()
       .then(setTemplates)
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setIsLoading(false))
   }, [])
 
@@ -970,7 +971,7 @@ function CalculatieTemplatesSection({
       }
       resetForm()
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast.error('Kon template niet opslaan')
     } finally {
       setIsSaving(false)
@@ -992,7 +993,7 @@ function CalculatieTemplatesSection({
       const updated = await updateCalculatieTemplate(t.id, { actief: !t.actief })
       setTemplates((prev) => prev.map((tp) => (tp.id === t.id ? updated : tp)))
     } catch (err) {
-      console.error(err)
+      logger.error(err)
     }
   }
 
@@ -1309,7 +1310,7 @@ function OfferteTemplatesSection() {
   useEffect(() => {
     getOfferteTemplates()
       .then(setOfferteTemplates)
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setIsLoading(false))
   }, [])
 
@@ -1382,7 +1383,7 @@ function OfferteTemplatesSection() {
       }
       resetForm()
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast.error('Kon template niet opslaan')
     } finally {
       setIsSaving(false)
@@ -1404,7 +1405,7 @@ function OfferteTemplatesSection() {
       const updated = await updateOfferteTemplate(t.id, { actief: !t.actief })
       setOfferteTemplates((prev) => prev.map((tp) => (tp.id === t.id ? updated : tp)))
     } catch (err) {
-      console.error(err)
+      logger.error(err)
     }
   }
 
@@ -1685,7 +1686,7 @@ function ProfielTab() {
         setAchternaam(user.user_metadata?.achternaam || '')
       }
     } catch (err) {
-      console.error('Fout bij laden profiel:', err)
+      logger.error('Fout bij laden profiel:', err)
       toast.error('Kon profiel niet laden')
     } finally {
       setIsLoading(false)
@@ -1726,7 +1727,7 @@ function ProfielTab() {
       await refreshProfile()
       toast.success('Profiel succesvol opgeslagen')
     } catch (err) {
-      console.error('Fout bij opslaan profiel:', err)
+      logger.error('Fout bij opslaan profiel:', err)
       toast.error('Kon profiel niet opslaan')
     } finally {
       setIsSaving(false)
@@ -1862,7 +1863,7 @@ function BedrijfTab() {
         }
       }
     } catch (err) {
-      console.error('Fout bij laden bedrijfsgegevens:', err)
+      logger.error('Fout bij laden bedrijfsgegevens:', err)
       toast.error('Kon bedrijfsgegevens niet laden')
     } finally {
       setIsLoading(false)
@@ -1907,7 +1908,7 @@ function BedrijfTab() {
       await refreshProfile()
       toast.success('Bedrijfsgegevens succesvol opgeslagen')
     } catch (err) {
-      console.error('Fout bij opslaan bedrijfsgegevens:', err)
+      logger.error('Fout bij opslaan bedrijfsgegevens:', err)
       toast.error('Kon bedrijfsgegevens niet opslaan')
     } finally {
       setIsSaving(false)
@@ -2088,7 +2089,7 @@ function AanpassingenTab() {
       setToonDagenOpen(data.toon_dagen_open)
       setToonFollowUpIndicatoren(data.toon_follow_up_indicatoren)
     } catch (err) {
-      console.error('Fout bij laden instellingen:', err)
+      logger.error('Fout bij laden instellingen:', err)
       toast.error('Kon instellingen niet laden')
     } finally {
       setIsLoading(false)
@@ -2158,7 +2159,7 @@ function AanpassingenTab() {
       await refreshSettings()
       toast.success('Aanpassingen opgeslagen')
     } catch (err) {
-      console.error('Fout bij opslaan aanpassingen:', err)
+      logger.error('Fout bij opslaan aanpassingen:', err)
       toast.error('Kon aanpassingen niet opslaan')
     } finally {
       setIsSaving(false)
@@ -2558,7 +2559,7 @@ function MeldingenTab() {
       setMeldingNieuweOfferte(data.melding_nieuwe_offerte)
       setMeldingStatusWijziging(data.melding_status_wijziging)
     } catch (err) {
-      console.error('Fout bij laden meldingen:', err)
+      logger.error('Fout bij laden meldingen:', err)
     } finally {
       setIsLoading(false)
     }
@@ -2581,7 +2582,7 @@ function MeldingenTab() {
       await refreshSettings()
       toast.success('Meldingsinstellingen opgeslagen')
     } catch (err) {
-      console.error('Fout bij opslaan meldingen:', err)
+      logger.error('Fout bij opslaan meldingen:', err)
       toast.error('Kon meldingsinstellingen niet opslaan')
     } finally {
       setIsSaving(false)
@@ -2883,7 +2884,7 @@ function BeveiligingTab() {
       setNewPassword('')
       setConfirmPassword('')
     } catch (err) {
-      console.error('Error changing password:', err)
+      logger.error('Error changing password:', err)
       toast.error('Er is een fout opgetreden bij het wijzigen van het wachtwoord')
     } finally {
       setIsChanging(false)
@@ -3078,7 +3079,7 @@ function WeergaveTab() {
       await updateSettings({ sidebar_items: sidebarItems })
       toast.success('Navigatie-instellingen opgeslagen')
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast.error('Kon navigatie niet opslaan')
     } finally {
       setIsSavingSidebar(false)

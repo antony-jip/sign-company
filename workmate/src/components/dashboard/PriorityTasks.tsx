@@ -6,6 +6,7 @@ import { ListTodo, CheckCircle2, Loader2 } from 'lucide-react'
 import { getTaken, getProjecten } from '@/services/supabaseService'
 import type { Taak, Project } from '@/types'
 import { formatDate, getPriorityColor, getStatusColor } from '@/lib/utils'
+import { logger } from '../../utils/logger'
 
 const priorityOrder: Record<string, number> = {
   kritiek: 0,
@@ -26,7 +27,7 @@ export function PriorityTasks() {
         setTaken(t)
         setProjecten(p)
       })
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setLoading(false))
   }, [])
 

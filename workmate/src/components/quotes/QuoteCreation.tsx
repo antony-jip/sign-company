@@ -45,6 +45,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import type { CalculatieRegel } from '@/types'
+import { logger } from '../../utils/logger'
 
 const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
 2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
@@ -162,7 +163,7 @@ export function QuoteCreation() {
         setProjecten(projectenData)
       })
       .catch((err) => {
-        console.error('Failed to fetch data:', err)
+        logger.error('Failed to fetch data:', err)
         toast.error('Kon data niet laden')
       })
       .finally(() => setIsLoading(false))
@@ -339,7 +340,7 @@ export function QuoteCreation() {
           })
           await sendEmail(selectedKlant.email, subject, '', { html })
         } catch (emailErr) {
-          console.error('Email verzenden mislukt:', emailErr)
+          logger.error('Email verzenden mislukt:', emailErr)
           toast.error('Offerte opgeslagen maar email niet verzonden')
         }
       }
@@ -351,7 +352,7 @@ export function QuoteCreation() {
       )
       navigate('/offertes')
     } catch (err) {
-      console.error('Failed to save offerte:', err)
+      logger.error('Failed to save offerte:', err)
       toast.error('Kon offerte niet opslaan')
     } finally {
       setIsSaving(false)
@@ -403,7 +404,7 @@ export function QuoteCreation() {
       doc.save(`${offerteNummer}.pdf`)
       toast.success('PDF gedownload')
     } catch (err) {
-      console.error('Failed to generate PDF:', err)
+      logger.error('Failed to generate PDF:', err)
       toast.error('Kon PDF niet genereren')
     }
   }

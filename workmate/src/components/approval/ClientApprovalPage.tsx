@@ -30,6 +30,7 @@ import {
   getProject,
 } from '@/services/supabaseService'
 import type { TekeningGoedkeuring, Document, Offerte, OfferteItem, Klant, Project } from '@/types'
+import { logger } from '../../utils/logger'
 
 function getFileIcon(type: string) {
   if (type.includes('pdf')) return <FileText className="h-10 w-10 text-red-500" />
@@ -135,7 +136,7 @@ export function ClientApprovalPage() {
           setOfferteItems(itemsData)
         }
       } catch (err) {
-        console.error('Fout bij laden:', err)
+        logger.error('Fout bij laden:', err)
       } finally {
         setIsLoading(false)
       }
@@ -165,7 +166,7 @@ export function ClientApprovalPage() {
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 4000)
     } catch (err) {
-      console.error('Fout bij goedkeuren:', err)
+      logger.error('Fout bij goedkeuren:', err)
       toast.error('Er ging iets mis. Probeer het opnieuw.')
     } finally {
       setIsSubmitting(false)
@@ -190,7 +191,7 @@ export function ClientApprovalPage() {
       } : null)
       toast.success('Revisie aangevraagd. We gaan ermee aan de slag!')
     } catch (err) {
-      console.error('Fout bij revisie:', err)
+      logger.error('Fout bij revisie:', err)
       toast.error('Er ging iets mis. Probeer het opnieuw.')
     } finally {
       setIsSubmitting(false)

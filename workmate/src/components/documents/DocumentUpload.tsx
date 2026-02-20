@@ -24,6 +24,7 @@ import { createDocument } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 
 interface DocumentUploadProps {
   open: boolean
@@ -136,7 +137,7 @@ export function DocumentUpload({ open, onOpenChange }: DocumentUploadProps) {
       setTagInput('')
       onOpenChange(false)
     } catch (error) {
-      console.error('Upload fout:', error)
+      logger.error('Upload fout:', error)
       toast.error('Uploaden mislukt. Probeer het opnieuw.')
     } finally {
       setIsUploading(false)

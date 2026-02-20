@@ -12,6 +12,7 @@ import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseServic
 import type { Klant, Project } from '@/types'
 import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
+import { logger } from '../../utils/logger'
 
 type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
@@ -37,7 +38,7 @@ export function ClientsLayout() {
         setKlanten(k)
         setProjecten(p)
       })
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setLoading(false))
   }, [])
 
@@ -126,7 +127,7 @@ export function ClientsLayout() {
       toast.success('Klant verwijderd')
       fetchData()
     } catch (error) {
-      console.error(error)
+      logger.error(error)
       toast.error('Fout bij verwijderen van klant')
     }
   }

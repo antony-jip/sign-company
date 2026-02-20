@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { logger } from '../../utils/logger'
 
 export function ProjectCreate() {
   const navigate = useNavigate()
@@ -41,7 +42,7 @@ export function ProjectCreate() {
         const data = await getKlanten();
         setKlanten(data);
       } catch (error) {
-        console.error('Fout bij ophalen klanten:', error);
+        logger.error('Fout bij ophalen klanten:', error);
       }
     };
     fetchKlanten();
@@ -96,7 +97,7 @@ export function ProjectCreate() {
       toast.success('Project succesvol aangemaakt');
       navigate('/projecten');
     } catch (error) {
-      console.error('Fout bij aanmaken project:', error);
+      logger.error('Fout bij aanmaken project:', error);
       toast.error('Er is iets misgegaan bij het aanmaken van het project');
     } finally {
       setLoading(false);

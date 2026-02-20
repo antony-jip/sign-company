@@ -47,6 +47,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten } from '@/services/supabaseService'
 import type { Taak, Project } from '@/types'
+import { logger } from '../../utils/logger'
 
 type TaakStatus = Taak['status']
 type TaakPrioriteit = Taak['prioriteit']
@@ -175,7 +176,7 @@ export function TasksLayout() {
       setTaken(takenData)
       setProjecten(projectenData)
     } catch (error) {
-      console.error('Fout bij laden:', error)
+      logger.error('Fout bij laden:', error)
       toast.error('Kon taken niet laden')
     } finally {
       setIsLoading(false)
@@ -306,7 +307,7 @@ export function TasksLayout() {
       toast.success('Taak aangemaakt')
       return true
     } catch (error) {
-      console.error('Fout bij aanmaken:', error)
+      logger.error('Fout bij aanmaken:', error)
       toast.error('Kon taak niet aanmaken')
       return false
     }
@@ -330,7 +331,7 @@ export function TasksLayout() {
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
       if (newStatus === 'klaar') toast.success('Taak afgerond!')
     } catch (error) {
-      console.error('Fout bij statuswijziging:', error)
+      logger.error('Fout bij statuswijziging:', error)
       toast.error('Kon taak niet bijwerken')
     }
   }
@@ -341,7 +342,7 @@ export function TasksLayout() {
       setTaken((prev) => prev.filter((t) => t.id !== taak.id))
       toast.success('Taak verwijderd')
     } catch (error) {
-      console.error('Fout bij verwijderen:', error)
+      logger.error('Fout bij verwijderen:', error)
       toast.error('Kon taak niet verwijderen')
     }
   }
@@ -372,7 +373,7 @@ export function TasksLayout() {
       toast.success('Taak bijgewerkt')
       setEditDialogOpen(false)
     } catch (error) {
-      console.error('Fout bij opslaan:', error)
+      logger.error('Fout bij opslaan:', error)
       toast.error('Kon taak niet opslaan')
     } finally { setIsSaving(false) }
   }
@@ -387,7 +388,7 @@ export function TasksLayout() {
       setDeleteDialogOpen(false)
       setDeletingTaak(null)
     } catch (error) {
-      console.error('Fout bij verwijderen:', error)
+      logger.error('Fout bij verwijderen:', error)
       toast.error('Kon taak niet verwijderen')
     } finally { setIsDeleting(false) }
   }
@@ -401,7 +402,7 @@ export function TasksLayout() {
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
       toast.success(`Verplaatst naar ${DAY_LABELS[dayIndex]} ${String(hour).padStart(2, '0')}:00`)
     } catch (error) {
-      console.error('Fout bij verplaatsen:', error)
+      logger.error('Fout bij verplaatsen:', error)
       toast.error('Kon taak niet verplaatsen')
     }
   }

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { getOffertes, getKlanten, getProjecten } from '@/services/supabaseService'
 import type { Offerte, Klant, Project } from '@/types'
+import { logger } from '../../utils/logger'
 
 interface CommandItem {
   id: string
@@ -114,7 +115,7 @@ export function CommandPalette() {
           setProjectItems(mapProjectenToItems(projecten))
         }
       } catch (error) {
-        console.error('CommandPalette: failed to load data', error)
+        logger.error('CommandPalette: failed to load data', error)
       } finally {
         if (!cancelled) {
           setIsLoading(false)

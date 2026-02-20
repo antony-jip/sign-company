@@ -5,6 +5,7 @@ import { Mail, ArrowRight, Loader2 } from 'lucide-react'
 import { getEmails } from '@/services/supabaseService'
 import type { Email } from '@/types'
 import { getInitials, cn } from '@/lib/utils'
+import { logger } from '../../utils/logger'
 
 function timeAgo(dateStr: string): string {
   const now = new Date()
@@ -45,7 +46,7 @@ export function EmailCommunicationHub() {
   useEffect(() => {
     getEmails()
       .then(setEmails)
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setLoading(false))
   }, [])
 

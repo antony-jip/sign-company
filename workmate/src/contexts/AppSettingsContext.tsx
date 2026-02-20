@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getAppSettings, updateAppSettings, getProfile, updateProfile } from '@/services/supabaseService'
 import type { AppSettings, Profile, PipelineStap } from '@/types'
 import { getDefaultAppSettings } from '@/services/supabaseService'
+import { logger } from '../utils/logger'
 
 interface AppSettingsContextType {
   settings: AppSettings
@@ -57,7 +58,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       setSettings(settingsData)
       if (profileData) setProfile(profileData)
     } catch (err) {
-      console.error('Error loading app settings:', err)
+      logger.error('Error loading app settings:', err)
     } finally {
       setIsLoading(false)
     }
@@ -73,7 +74,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       const updated = await updateAppSettings(user.id, updates)
       setSettings(updated)
     } catch (err) {
-      console.error('Error updating settings:', err)
+      logger.error('Error updating settings:', err)
       throw err
     }
   }, [user?.id])
@@ -84,7 +85,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       const updated = await updateProfile(user.id, updates)
       setProfile(updated)
     } catch (err) {
-      console.error('Error updating profile:', err)
+      logger.error('Error updating profile:', err)
       throw err
     }
   }, [user?.id])

@@ -48,6 +48,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { generateEmailDraft } from '@/services/aiService'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { logger } from '../../utils/logger'
 
 interface EmailComposeProps {
   open: boolean
@@ -373,7 +374,7 @@ export function EmailCompose({
       onSend?.({ to: to.trim(), subject: subject.trim(), body, scheduledAt: scheduledAt || undefined })
       resetAndClose()
     } catch (error) {
-      console.error('Verzenden mislukt:', error)
+      logger.error('Verzenden mislukt:', error)
     } finally {
       setIsSending(false)
     }

@@ -15,6 +15,7 @@ import { nl } from 'date-fns/locale'
 import { getEvents } from '@/services/supabaseService'
 import type { CalendarEvent } from '@/types'
 import { cn } from '@/lib/utils'
+import { logger } from '../../utils/logger'
 
 const WEEKDAY_LABELS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo']
 
@@ -26,7 +27,7 @@ export function CalendarMiniWidget() {
   useEffect(() => {
     getEvents()
       .then(setEvents)
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setLoading(false))
   }, [])
 

@@ -11,6 +11,7 @@ import {
 import { getOffertes, getFacturen } from '@/services/supabaseService'
 import { formatCurrency } from '@/lib/utils'
 import type { Offerte, Factuur } from '@/types'
+import { logger } from '../../utils/logger'
 
 interface PulseMetric {
   label: string
@@ -32,7 +33,7 @@ export function SalesPulseWidget() {
         setOffertes(o)
         setFacturen(f)
       })
-      .catch(console.error)
+      .catch(logger.error)
       .finally(() => setLoading(false))
   }, [])
 

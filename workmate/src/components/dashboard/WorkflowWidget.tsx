@@ -13,6 +13,7 @@ import {
 import { getOffertes, getFacturen, getProjecten } from '@/services/supabaseService'
 import { formatCurrency } from '@/lib/utils'
 import type { Offerte, Factuur, Project } from '@/types'
+import { logger } from '../../utils/logger'
 
 interface WorkflowItem {
   type: 'factureer' | 'vervallen' | 'geen_offerte'
@@ -100,7 +101,7 @@ export function WorkflowWidget() {
 
         setItems(workflowItems)
       } catch (err) {
-        console.error('WorkflowWidget load error:', err)
+        logger.error('WorkflowWidget load error:', err)
       } finally {
         setLoading(false)
       }
