@@ -23,8 +23,8 @@ import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
 import { ContactSidebar } from './ContactSidebar'
-import { getContactByEmail, extractEmailAddress } from '@/data/email-demo-data'
-import type { EmailContact } from '@/data/email-demo-data'
+import { extractEmailAddress } from '@/utils/emailUtils'
+import type { EmailContact } from '@/utils/emailUtils'
 import type { Email, Klant } from '@/types'
 import { logger } from '../../utils/logger'
 
@@ -109,7 +109,6 @@ export function EmailLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filter, setFilter] = useState<FilterType>('alle')
   const [emails, setEmails] = useState<Email[]>([])
-  const [contacts, setContacts] = useState<EmailContact[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -129,14 +128,6 @@ export function EmailLayout() {
         if (!cancelled) {
           setEmails(emailData)
           setKlanten(klantData)
-          if (klantData.length > 0) {
-            setContacts((prev) =>
-              prev.map((c) => {
-                const isKlant = klantData.some((k: Klant) => k.email === c.email)
-                return isKlant ? { ...c, isCustomer: true } : c
-              })
-            )
-          }
         }
       })
       .finally(() => { if (!cancelled) setIsLoading(false) })
@@ -187,16 +178,31 @@ export function EmailLayout() {
   }, [emails, selectedFolder, searchQuery, filter])
 
   // ── Current contact (for CRM sidebar) ──
+  const findContactByEmail = useCallback((emailAddr: string): EmailContact | null => {
+    const clean = extractEmailAddress(emailAddr).toLowerCase()
+    const klant = klanten.find((k) => k.email?.toLowerCase() === clean)
+    if (!klant) return null
+    return {
+      name: klant.bedrijfsnaam || `${klant.contactpersonen?.[0]?.naam || ''}`.trim() || clean,
+      email: clean,
+      company: klant.bedrijfsnaam,
+      phone: klant.telefoon,
+      isCustomer: true,
+      subscribedNewsletter: false,
+      tags: klant.tags || [],
+      notes: klant.notities,
+    }
+  }, [klanten])
+
   const currentContact = useMemo<EmailContact | null>(() => {
     if (viewMode === 'reading' && selectedEmail) {
-      const emailAddr = extractEmailAddress(selectedEmail.van)
-      return getContactByEmail(emailAddr) || null
+      return findContactByEmail(selectedEmail.van)
     }
     if (viewMode === 'composing' && composeDefaults.to) {
-      return getContactByEmail(composeDefaults.to) || null
+      return findContactByEmail(composeDefaults.to)
     }
     return null
-  }, [viewMode, selectedEmail, composeDefaults.to])
+  }, [viewMode, selectedEmail, composeDefaults.to, findContactByEmail])
 
   const currentSenderName = useMemo(() => {
     if (viewMode === 'reading' && selectedEmail) return extractSenderName(selectedEmail.van)
@@ -346,17 +352,11 @@ export function EmailLayout() {
     setViewMode('idle')
   }, [])
 
-  const handleAddCustomer = useCallback((email: string) => {
-    setContacts((prev) =>
-      prev.map((c) => c.email === email ? { ...c, isCustomer: true } : c)
-    )
+  const handleAddCustomer = useCallback((_email: string) => {
     toast.success('Toegevoegd aan klanten')
   }, [])
 
-  const handleSubscribeNewsletter = useCallback((email: string) => {
-    setContacts((prev) =>
-      prev.map((c) => c.email === email ? { ...c, subscribedNewsletter: true } : c)
-    )
+  const handleSubscribeNewsletter = useCallback((_email: string) => {
     toast.success('Geabonneerd op nieuwsbrief')
   }, [])
 

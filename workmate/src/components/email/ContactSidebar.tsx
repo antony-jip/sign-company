@@ -19,7 +19,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
-import type { EmailContact } from '@/data/email-demo-data'
+import type { EmailContact } from '@/utils/emailUtils'
 
 export interface ConversationParticipant {
   name: string
