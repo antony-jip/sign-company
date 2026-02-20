@@ -1245,9 +1245,15 @@ export function EmailLayout() {
                         </div>
                       )}
 
-                      {/* Quick reply inline */}
+                      {/* Quick reply inline with email preview */}
                       {quickReplyId === email.id && (
-                        <div className="flex items-center gap-2 px-8 py-1.5 bg-muted/20 border-b border-border/30" onClick={(e) => e.stopPropagation()}>
+                        <div className="px-8 py-2 bg-muted/20 border-b border-border/30 space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                          {/* Email preview */}
+                          <div className="text-[11px] text-muted-foreground bg-background/60 rounded p-2 max-h-24 overflow-y-auto border border-border/20">
+                            <p className="font-medium text-foreground/70 mb-0.5">{email.onderwerp}</p>
+                            <p className="whitespace-pre-line">{truncate(email.inhoud, 300)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
                           <Input
                             value={quickReplyText}
                             onChange={(e) => setQuickReplyText(e.target.value)}
@@ -1273,6 +1279,7 @@ export function EmailLayout() {
                           >
                             <Send className="w-3 h-3" />
                           </Button>
+                          </div>
                         </div>
                       )}
                       </div>

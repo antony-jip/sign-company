@@ -38,6 +38,9 @@ import {
   FileSignature,
   Undo,
   Users,
+  Pencil,
+  Trash2,
+  Plus,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -178,6 +181,19 @@ P.S. Heeft u vragen over deze offerte? Bel ons gerust!`,
   },
 ]
 
+const SIGNATURES_STORAGE_KEY = 'workmate_email_signatures'
+
+function loadSavedSignatures(): Signature[] {
+  try {
+    const saved = localStorage.getItem(SIGNATURES_STORAGE_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch { return [] }
+}
+
+function saveSignatures(sigs: Signature[]) {
+  localStorage.setItem(SIGNATURES_STORAGE_KEY, JSON.stringify(sigs))
+}
+
 const UNDO_SEND_SECONDS = 5
 
 function formatFileSize(bytes: number): string {
@@ -235,13 +251,43 @@ export function EmailCompose({
   // Signatures
   const [selectedSignature, setSelectedSignature] = useState<string>('zakelijk')
   const [showSignatureDropdown, setShowSignatureDropdown] = useState(false)
+  const [savedSignatures, setSavedSignatures] = useState<Signature[]>(() => loadSavedSignatures())
+  const [editingSignature, setEditingSignature] = useState<Signature | null>(null)
+  const [editSigNaam, setEditSigNaam] = useState('')
+  const [editSigInhoud, setEditSigInhoud] = useState('')
   const signatureRef = useRef<HTMLDivElement>(null)
-  const customSignatures = useMemo(() => {
+  const allSignatures = useMemo(() => {
     const custom: Signature[] = emailHandtekening
       ? [{ id: 'custom', naam: 'Mijn handtekening', inhoud: emailHandtekening }]
       : []
-    return [...custom, ...DEFAULT_SIGNATURES]
-  }, [emailHandtekening])
+    return [...custom, ...savedSignatures, ...DEFAULT_SIGNATURES]
+  }, [emailHandtekening, savedSignatures])
+
+  const handleSaveSignature = useCallback(() => {
+    if (!editSigNaam.trim() || !editSigInhoud.trim()) return
+    const isNew = !editingSignature || editingSignature.id.startsWith('new-')
+    const sig: Signature = {
+      id: isNew ? `custom-${Date.now()}` : editingSignature!.id,
+      naam: editSigNaam.trim(),
+      inhoud: editSigInhoud.trim(),
+    }
+    const updated = isNew
+      ? [...savedSignatures, sig]
+      : savedSignatures.map((s) => (s.id === sig.id ? sig : s))
+    setSavedSignatures(updated)
+    saveSignatures(updated)
+    setEditingSignature(null)
+    setSelectedSignature(sig.id)
+    toast.success('Handtekening opgeslagen')
+  }, [editSigNaam, editSigInhoud, editingSignature, savedSignatures])
+
+  const handleDeleteSignature = useCallback((id: string) => {
+    const updated = savedSignatures.filter((s) => s.id !== id)
+    setSavedSignatures(updated)
+    saveSignatures(updated)
+    if (selectedSignature === id) setSelectedSignature('zakelijk')
+    toast.success('Handtekening verwijderd')
+  }, [savedSignatures, selectedSignature])
 
   // Undo send
   const [undoTimer, setUndoTimer] = useState<number | null>(null)
@@ -274,7 +320,7 @@ export function EmailCompose({
           editorRef.current.innerHTML = defaultBody.replace(/\n/g, '<br>')
         } else {
           // Use selected signature
-          const sig = customSignatures.find(s => s.id === selectedSignature)
+          const sig = allSignatures.find(s => s.id === selectedSignature)
           if (sig) {
             editorRef.current.innerHTML = `<br><br>--<br>${sig.inhoud.replace(/\n/g, '<br>')}`
           } else if (emailHandtekening) {
@@ -285,7 +331,7 @@ export function EmailCompose({
       }, 50)
       return () => clearTimeout(timer)
     }
-  }, [open, defaultBody, emailHandtekening, selectedSignature, customSignatures])
+  }, [open, defaultBody, emailHandtekening, selectedSignature, allSignatures])
 
   // Sync state when defaults change (reply/forward)
   useEffect(() => {
@@ -373,7 +419,7 @@ export function EmailCompose({
 
   const handleSignatureChange = useCallback((sigId: string) => {
     setSelectedSignature(sigId)
-    const sig = customSignatures.find(s => s.id === sigId)
+    const sig = allSignatures.find(s => s.id === sigId)
     if (sig && editorRef.current) {
       // Remove old signature (everything after --\n) and add new one
       const currentHtml = editorRef.current.innerHTML
@@ -384,7 +430,34 @@ export function EmailCompose({
       setEditorEmpty(!editorRef.current.innerText?.trim())
     }
     setShowSignatureDropdown(false)
-  }, [customSignatures])
+  }, [allSignatures])
+
+  const handleSaveSignature = useCallback(() => {
+    if (!editSigNaam.trim() || !editSigInhoud.trim()) return
+    const isNew = !editingSignature || !savedSignatures.find(s => s.id === editingSignature.id)
+    const sig: Signature = {
+      id: isNew ? `sig-${Date.now()}` : editingSignature!.id,
+      naam: editSigNaam.trim(),
+      inhoud: editSigInhoud.trim(),
+    }
+    const updated = isNew
+      ? [...savedSignatures, sig]
+      : savedSignatures.map(s => s.id === sig.id ? sig : s)
+    setSavedSignatures(updated)
+    saveSignatures(updated)
+    setEditingSignature(null)
+    setEditSigNaam('')
+    setEditSigInhoud('')
+    toast.success(isNew ? 'Handtekening opgeslagen' : 'Handtekening bijgewerkt')
+  }, [editingSignature, editSigNaam, editSigInhoud, savedSignatures])
+
+  const handleDeleteSignature = useCallback((id: string) => {
+    const updated = savedSignatures.filter(s => s.id !== id)
+    setSavedSignatures(updated)
+    saveSignatures(updated)
+    if (selectedSignature === id) setSelectedSignature('zakelijk')
+    toast.success('Handtekening verwijderd')
+  }, [savedSignatures, selectedSignature])
 
   const handleUndoSend = useCallback(() => {
     if (undoTimer) {
@@ -887,26 +960,89 @@ export function EmailCompose({
               Handtekening
               <ChevronDown className="w-3 h-3" />
             </Button>
-            {showSignatureDropdown && (
-              <div className="absolute left-0 bottom-full mb-2 w-56 rounded-md border bg-popover p-1 shadow-lg z-50">
+            {showSignatureDropdown && !editingSignature && (
+              <div className="absolute left-0 bottom-full mb-2 w-64 rounded-md border bg-popover p-1 shadow-lg z-50">
                 <button
                   onClick={() => { setSelectedSignature('none'); setShowSignatureDropdown(false) }}
                   className={cn('w-full text-left px-3 py-2 text-sm rounded hover:bg-accent', selectedSignature === 'none' && 'bg-accent font-medium')}
                 >
                   Geen handtekening
                 </button>
-                {customSignatures.map((sig) => (
-                  <button
-                    key={sig.id}
-                    onClick={() => handleSignatureChange(sig.id)}
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded hover:bg-accent', selectedSignature === sig.id && 'bg-accent font-medium')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileSignature className="w-3.5 h-3.5 text-muted-foreground" />
-                      {sig.naam}
+                {allSignatures.map((sig) => {
+                  const isSaved = savedSignatures.some(s => s.id === sig.id)
+                  return (
+                    <div key={sig.id} className={cn('flex items-center rounded hover:bg-accent group', selectedSignature === sig.id && 'bg-accent font-medium')}>
+                      <button
+                        onClick={() => handleSignatureChange(sig.id)}
+                        className="flex-1 text-left px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileSignature className="w-3.5 h-3.5 text-muted-foreground" />
+                          {sig.naam}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate mt-0.5 ml-5.5">{sig.inhoud.split('\n')[0]}</p>
+                      </button>
+                      {isSaved && (
+                        <div className="flex items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingSignature(sig); setEditSigNaam(sig.naam); setEditSigInhoud(sig.inhoud) }}
+                            className="p-1 rounded hover:bg-muted" title="Bewerken"
+                          >
+                            <Pencil className="w-3 h-3 text-muted-foreground" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteSignature(sig.id) }}
+                            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-950" title="Verwijderen"
+                          >
+                            <Trash2 className="w-3 h-3 text-red-500" />
+                          </button>
+                        </div>
+                      )}
                     </div>
+                  )
+                })}
+                <div className="border-t mt-1 pt-1">
+                  <button
+                    onClick={() => { setEditingSignature({ id: '', naam: '', inhoud: '' }); setEditSigNaam(''); setEditSigInhoud('') }}
+                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent text-primary font-medium flex items-center gap-2"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Nieuwe handtekening
                   </button>
-                ))}
+                </div>
+              </div>
+            )}
+            {editingSignature && (
+              <div className="absolute left-0 bottom-full mb-2 w-72 rounded-md border bg-popover p-3 shadow-lg z-50">
+                <h4 className="text-sm font-semibold mb-2">{editingSignature.id ? 'Handtekening bewerken' : 'Nieuwe handtekening'}</h4>
+                <input
+                  value={editSigNaam}
+                  onChange={(e) => setEditSigNaam(e.target.value)}
+                  placeholder="Naam (bijv. Zakelijk)"
+                  className="w-full text-sm border rounded px-2 py-1.5 mb-2 bg-background"
+                />
+                <textarea
+                  value={editSigInhoud}
+                  onChange={(e) => setEditSigInhoud(e.target.value)}
+                  placeholder="Handtekening tekst..."
+                  rows={4}
+                  className="w-full text-sm border rounded px-2 py-1.5 mb-2 bg-background resize-none"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => { setEditingSignature(null); setEditSigNaam(''); setEditSigInhoud('') }}
+                    className="text-xs text-muted-foreground hover:text-foreground px-2 py-1"
+                  >
+                    Annuleren
+                  </button>
+                  <button
+                    onClick={handleSaveSignature}
+                    disabled={!editSigNaam.trim() || !editSigInhoud.trim()}
+                    className="text-xs bg-primary text-primary-foreground rounded px-3 py-1 font-medium disabled:opacity-50"
+                  >
+                    Opslaan
+                  </button>
+                </div>
               </div>
             )}
           </div>
