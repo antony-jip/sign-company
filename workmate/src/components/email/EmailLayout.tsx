@@ -1042,171 +1042,160 @@ export function EmailLayout() {
                 </div>
               ) : (
                 <div>
-                  {filteredEmails.map((email) => {
+                  {filteredEmails.map((email, idx) => {
                     const isActive = selectedEmail?.id === email.id && viewMode === 'reading'
                     const isChecked = checkedEmails.has(email.id)
                     const isUnread = !email.gelezen
                     const displayName = email.map === 'verzonden' || email.map === 'concepten'
                       ? extractSenderName(email.aan)
                       : extractSenderName(email.van)
-                    const initials = getInitials(displayName)
-                    const avatarColor = getAvatarColor(displayName)
                     const visibleLabels = email.labels.filter(
                       (l) => l !== 'verzonden' && l !== 'prullenbak' && l !== 'gepland'
                     )
-
-                    const isFocused = focusedIndex === filteredEmails.indexOf(email)
+                    const isFocused = focusedIndex === idx
 
                     return (
+                      <div key={email.id} className="flex flex-col">
+                      {/* ── Compact email row ── */}
                       <div
-                        key={email.id}
                         className={cn(
-                          'relative flex flex-col border-b border-border/40',
+                          'relative flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-colors group border-b border-border/30',
                           isActive && 'bg-primary/5 dark:bg-primary/10',
                           isChecked && 'bg-primary/5 dark:bg-primary/10',
                           isFocused && !isActive && !isChecked && 'ring-1 ring-inset ring-primary/30 bg-primary/[0.02]',
                           !isActive && !isChecked && !isFocused && 'hover:bg-muted/40',
                           isUnread && !isChecked && !isActive && 'bg-background'
                         )}
+                        onClick={() => handleSelectEmail(email)}
                       >
-                      <div className={cn('relative flex items-start gap-3 px-4 py-3 cursor-pointer transition-all group')}>
-
-                        {/* Unread indicator bar */}
-                        {isUnread && (
-                          <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-primary" />
-                        )}
-
-                        {/* Checkbox / Avatar */}
-                        <div className="relative flex-shrink-0 mt-0.5">
-                          {/* Avatar always visible, checkbox overlays on hover/check */}
-                          <div className={cn(
-                            'w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold transition-opacity',
-                            avatarColor,
-                            (hasChecked || isChecked) && 'opacity-0'
-                          )}>
-                            {initials}
-                          </div>
-                          <div className={cn(
-                            'absolute inset-0 w-9 h-9 rounded-full flex items-center justify-center transition-opacity',
-                            (hasChecked || isChecked) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                          )}>
-                            <Checkbox
-                              checked={isChecked}
-                              onCheckedChange={() => toggleCheckEmail(email.id)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                            />
-                          </div>
+                        {/* Unread dot */}
+                        <div className="w-2 flex-shrink-0 flex justify-center">
+                          {isUnread && <div className="w-2 h-2 rounded-full bg-primary" />}
                         </div>
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0" onClick={() => handleSelectEmail(email)}>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className={cn(
-                              'truncate',
-                              fs.name,
-                              isUnread ? 'font-bold text-foreground' : 'font-medium text-foreground/80'
-                            )}>
-                              {displayName}
-                            </span>
-                            <span className={cn(
-                              'text-muted-foreground flex-shrink-0 flex items-center gap-1',
-                              fs.date
-                            )}>
-                              {email.scheduled_at && email.map === 'gepland' && (
-                                <Clock className="w-3 h-3 text-primary" />
-                              )}
-                              {formatShortDate(email.scheduled_at || email.datum)}
-                            </span>
-                          </div>
-                          <p className={cn(
-                            'truncate mt-0.5',
+                        {/* Checkbox (visible on hover or when any checked) */}
+                        <div className={cn(
+                          'flex-shrink-0 transition-opacity',
+                          hasChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        )}>
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={() => toggleCheckEmail(email.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary w-4 h-4"
+                          />
+                        </div>
+
+                        {/* Star */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleToggleStar(email) }}
+                          className="flex-shrink-0 p-0.5"
+                        >
+                          {email.starred ? (
+                            <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                          ) : (
+                            <Star className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-60 transition-opacity dark:text-gray-600" />
+                          )}
+                        </button>
+
+                        {/* Pin indicator */}
+                        {email.pinned && (
+                          <Pin className="w-3 h-3 text-primary fill-primary flex-shrink-0" />
+                        )}
+
+                        {/* Sender name */}
+                        <span className={cn(
+                          'w-36 truncate flex-shrink-0',
+                          fs.name,
+                          isUnread ? 'font-bold text-foreground' : 'font-medium text-foreground/70'
+                        )}>
+                          {displayName}
+                        </span>
+
+                        {/* Subject + preview on one line */}
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          <span className={cn(
+                            'truncate flex-shrink-0 max-w-[50%]',
                             fs.subject,
                             isUnread ? 'font-semibold text-foreground' : 'text-foreground/70'
                           )}>
                             {email.onderwerp}
-                          </p>
-                          <p className={cn(
-                            'text-muted-foreground truncate mt-0.5',
-                            fs.preview
-                          )}>
-                            {truncate(email.inhoud.replace(/\n/g, ' '), 80)}
-                          </p>
-                          {visibleLabels.length > 0 && (
-                            <div className="flex items-center gap-1.5 mt-1.5">
-                              {visibleLabels.slice(0, 3).map((label) => (
-                                <span
-                                  key={label}
-                                  className={cn(
-                                    'px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider',
-                                    label === 'offerte' && 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
-                                    label === 'klant' && 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300',
-                                    label === 'project' && 'bg-primary/10 text-primary',
-                                    label === 'leverancier' && 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300',
-                                    !['offerte', 'klant', 'project', 'leverancier'].includes(label) && 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
-                                  )}
-                                >
-                                  {label}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                          </span>
+                          <span className={cn('text-muted-foreground truncate', fs.preview)}>
+                            — {truncate(email.inhoud.replace(/\n/g, ' '), 60)}
+                          </span>
                         </div>
 
-                        {/* Actions: star, pin, snooze, quick reply */}
-                        <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
-                          <div className="flex items-center gap-0.5">
-                            {email.pinned && (
-                              <Pin className="w-3.5 h-3.5 text-primary fill-primary" />
+                        {/* Labels (compact) */}
+                        {visibleLabels.length > 0 && (
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {visibleLabels.slice(0, 2).map((label) => (
+                              <span
+                                key={label}
+                                className={cn(
+                                  'px-1.5 py-0 rounded text-[9px] font-semibold uppercase tracking-wider',
+                                  label === 'offerte' && 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
+                                  label === 'klant' && 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300',
+                                  label === 'project' && 'bg-primary/10 text-primary',
+                                  label === 'leverancier' && 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300',
+                                  !['offerte', 'klant', 'project', 'leverancier'].includes(label) && 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                                )}
+                              >
+                                {label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Attachment icon */}
+                        {email.bijlagen > 0 && (
+                          <Paperclip className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+                        )}
+
+                        {/* Hover actions */}
+                        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleTogglePin(email) }}
+                            className="p-1 rounded hover:bg-muted"
+                            title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
+                          >
+                            {email.pinned ? (
+                              <PinOff className="w-3.5 h-3.5 text-muted-foreground" />
+                            ) : (
+                              <Pin className="w-3.5 h-3.5 text-muted-foreground" />
                             )}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleToggleStar(email) }}
-                              className="p-0.5"
-                            >
-                              {email.starred ? (
-                                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                              ) : (
-                                <Star className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity dark:text-gray-600" />
-                              )}
-                            </button>
-                          </div>
-                          {/* Hover actions */}
-                          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleTogglePin(email) }}
-                              className="p-0.5 rounded hover:bg-muted"
-                              title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
-                            >
-                              {email.pinned ? (
-                                <PinOff className="w-3.5 h-3.5 text-muted-foreground" />
-                              ) : (
-                                <Pin className="w-3.5 h-3.5 text-muted-foreground" />
-                              )}
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setShowSnoozeMenu(showSnoozeMenu === email.id ? null : email.id) }}
-                              className="p-0.5 rounded hover:bg-muted"
-                              title="Snooze"
-                            >
-                              <AlarmClock className="w-3.5 h-3.5 text-muted-foreground" />
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setQuickReplyId(quickReplyId === email.id ? null : email.id); setQuickReplyText('') }}
-                              className="p-0.5 rounded hover:bg-muted"
-                              title="Snel beantwoorden"
-                            >
-                              <Reply className="w-3.5 h-3.5 text-muted-foreground" />
-                            </button>
-                          </div>
-                          {email.bijlagen > 0 && (
-                            <Paperclip className="w-3.5 h-3.5 text-muted-foreground/60" />
-                          )}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setShowSnoozeMenu(showSnoozeMenu === email.id ? null : email.id) }}
+                            className="p-1 rounded hover:bg-muted"
+                            title="Snooze"
+                          >
+                            <AlarmClock className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setQuickReplyId(quickReplyId === email.id ? null : email.id); setQuickReplyText('') }}
+                            className="p-1 rounded hover:bg-muted"
+                            title="Snel beantwoorden"
+                          >
+                            <Reply className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
                         </div>
+
+                        {/* Date */}
+                        <span className={cn(
+                          'text-muted-foreground flex-shrink-0 flex items-center gap-1 w-16 justify-end',
+                          fs.date
+                        )}>
+                          {email.scheduled_at && email.map === 'gepland' && (
+                            <Clock className="w-3 h-3 text-primary" />
+                          )}
+                          {formatShortDate(email.scheduled_at || email.datum)}
+                        </span>
                       </div>
 
-                      {/* Snooze indicator */}
+                      {/* Snooze indicator (only when snoozed) */}
                       {email.snoozed_until && (
-                        <div className="flex items-center gap-1.5 px-4 pb-1.5 text-[10px] text-amber-600 dark:text-amber-400">
+                        <div className="flex items-center gap-1.5 px-8 py-1 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/10 border-b border-border/30">
                           <AlarmClock className="w-3 h-3" />
                           Gesnoozed tot {formatDateTime(email.snoozed_until)}
                           <button
@@ -1218,9 +1207,9 @@ export function EmailLayout() {
                         </div>
                       )}
 
-                      {/* Snooze dropdown menu */}
+                      {/* Snooze dropdown */}
                       {showSnoozeMenu === email.id && (
-                        <div className="mx-4 mb-2 rounded-md border bg-popover p-1 shadow-lg">
+                        <div className="mx-8 my-1 rounded-md border bg-popover p-1 shadow-lg">
                           {SNOOZE_OPTIONS.map((opt) => (
                             <button
                               key={opt.label}
@@ -1236,12 +1225,12 @@ export function EmailLayout() {
 
                       {/* Quick reply inline */}
                       {quickReplyId === email.id && (
-                        <div className="flex items-center gap-2 px-4 pb-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-2 px-8 py-1.5 bg-muted/20 border-b border-border/30" onClick={(e) => e.stopPropagation()}>
                           <Input
                             value={quickReplyText}
                             onChange={(e) => setQuickReplyText(e.target.value)}
                             placeholder="Typ een snel antwoord..."
-                            className="h-8 text-sm flex-1"
+                            className="h-7 text-xs flex-1"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
@@ -1256,11 +1245,11 @@ export function EmailLayout() {
                           />
                           <Button
                             size="sm"
-                            className="h-8 gap-1.5"
+                            className="h-7 gap-1 text-xs"
                             disabled={!quickReplyText.trim()}
                             onClick={() => handleQuickReply(email)}
                           >
-                            <Send className="w-3.5 h-3.5" />
+                            <Send className="w-3 h-3" />
                           </Button>
                         </div>
                       )}
