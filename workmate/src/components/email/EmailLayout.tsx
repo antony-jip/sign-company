@@ -1174,6 +1174,17 @@ export function EmailLayout() {
                           <Paperclip className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
                         )}
 
+                        {/* Quick reply close button - always visible when open */}
+                        {quickReplyId === email.id && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setQuickReplyId(null); setQuickReplyText('') }}
+                            className="p-1 rounded bg-orange-500 hover:bg-orange-600 transition-colors flex-shrink-0"
+                            title="Preview sluiten"
+                          >
+                            <Reply className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                          </button>
+                        )}
+
                         {/* Hover actions */}
                         <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
@@ -1196,18 +1207,10 @@ export function EmailLayout() {
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setQuickReplyId(quickReplyId === email.id ? null : email.id); setQuickReplyText('') }}
-                            className={cn(
-                              'p-1 rounded hover:bg-muted transition-all',
-                              quickReplyId === email.id && 'bg-orange-100 dark:bg-orange-950/40 ring-2 ring-orange-500'
-                            )}
-                            title={quickReplyId === email.id ? 'Preview sluiten' : 'Snel beantwoorden'}
+                            className="p-1 rounded hover:bg-muted"
+                            title="Snel beantwoorden"
                           >
-                            <Reply className={cn(
-                              'transition-all',
-                              quickReplyId === email.id
-                                ? 'w-4.5 h-4.5 text-orange-600 dark:text-orange-400 stroke-[2.5]'
-                                : 'w-3.5 h-3.5 text-muted-foreground'
-                            )} />
+                            <Reply className="w-3.5 h-3.5 text-muted-foreground" />
                           </button>
                         </div>
 
