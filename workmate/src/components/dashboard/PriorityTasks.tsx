@@ -22,13 +22,17 @@ export function PriorityTasks() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     Promise.all([getTaken(), getProjecten()])
       .then(([t, p]) => {
-        setTaken(t)
-        setProjecten(p)
+        if (!cancelled) {
+          setTaken(t)
+          setProjecten(p)
+        }
       })
       .catch(logger.error)
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   const topTasks = useMemo(() => {

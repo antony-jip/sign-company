@@ -157,16 +157,20 @@ export function QuoteCreation() {
 
   // ── Data fetching ──
   useEffect(() => {
+    let cancelled = false
     Promise.all([getKlanten(), getProjecten()])
       .then(([klantenData, projectenData]) => {
-        setKlanten(klantenData)
-        setProjecten(projectenData)
+        if (!cancelled) {
+          setKlanten(klantenData)
+          setProjecten(projectenData)
+        }
       })
       .catch((err) => {
         logger.error('Failed to fetch data:', err)
-        toast.error('Kon data niet laden')
+        if (!cancelled) toast.error('Kon data niet laden')
       })
-      .finally(() => setIsLoading(false))
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   // Auto-fill from project params

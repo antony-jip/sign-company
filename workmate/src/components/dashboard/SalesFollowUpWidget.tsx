@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -216,21 +216,22 @@ export function SalesFollowUpWidget() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('achterstallig')
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const data = await getOffertes()
-      setOffertes(data)
-    } catch (error) {
-      logger.error('Error loading offertes for follow-up widget:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
+    let cancelled = false
+    async function loadData() {
+      try {
+        setLoading(true)
+        const data = await getOffertes()
+        if (!cancelled) setOffertes(data)
+      } catch (error) {
+        logger.error('Error loading offertes for follow-up widget:', error)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
     loadData()
-  }, [loadData])
+    return () => { cancelled = true }
+  }, [])
 
   const {
     overdueItems,

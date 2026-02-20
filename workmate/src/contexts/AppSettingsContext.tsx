@@ -44,29 +44,32 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const loadSettings = useCallback(async () => {
-    if (!user?.id) {
-      setIsLoading(false)
-      return
-    }
-    try {
-      setIsLoading(true)
-      const [settingsData, profileData] = await Promise.all([
-        getAppSettings(user.id),
-        getProfile(user.id),
-      ])
-      setSettings(settingsData)
-      if (profileData) setProfile(profileData)
-    } catch (err) {
-      logger.error('Error loading app settings:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [user?.id])
-
   useEffect(() => {
-    loadSettings()
-  }, [loadSettings])
+    let cancelled = false
+    async function load() {
+      if (!user?.id) {
+        if (!cancelled) setIsLoading(false)
+        return
+      }
+      try {
+        if (!cancelled) setIsLoading(true)
+        const [settingsData, profileData] = await Promise.all([
+          getAppSettings(user.id),
+          getProfile(user.id),
+        ])
+        if (!cancelled) {
+          setSettings(settingsData)
+          if (profileData) setProfile(profileData)
+        }
+      } catch (err) {
+        logger.error('Error loading app settings:', err)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [user?.id])
 
   const handleUpdateSettings = useCallback(async (updates: Partial<AppSettings>) => {
     if (!user?.id) return

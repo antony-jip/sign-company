@@ -28,6 +28,7 @@ export function WorkflowWidget() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     async function loadData() {
       try {
         const [offertes, facturen, projecten] = await Promise.all([
@@ -35,6 +36,8 @@ export function WorkflowWidget() {
           getFacturen().catch(() => []),
           getProjecten().catch(() => []),
         ])
+
+        if (cancelled) return
 
         const workflowItems: WorkflowItem[] = []
 
@@ -99,14 +102,15 @@ export function WorkflowWidget() {
           })
         }
 
-        setItems(workflowItems)
+        if (!cancelled) setItems(workflowItems)
       } catch (err) {
         logger.error('WorkflowWidget load error:', err)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     loadData()
+    return () => { cancelled = true }
   }, [])
 
   if (loading) {

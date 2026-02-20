@@ -120,23 +120,27 @@ export function EmailLayout() {
 
   // ── Load data ──
   useEffect(() => {
+    let cancelled = false
     Promise.all([
       getEmails().catch(() => []),
       getKlanten().catch(() => []),
     ])
       .then(([emailData, klantData]) => {
-        setEmails(emailData)
-        setKlanten(klantData)
-        if (klantData.length > 0) {
-          setContacts((prev) =>
-            prev.map((c) => {
-              const isKlant = klantData.some((k: Klant) => k.email === c.email)
-              return isKlant ? { ...c, isCustomer: true } : c
-            })
-          )
+        if (!cancelled) {
+          setEmails(emailData)
+          setKlanten(klantData)
+          if (klantData.length > 0) {
+            setContacts((prev) =>
+              prev.map((c) => {
+                const isKlant = klantData.some((k: Klant) => k.email === c.email)
+                return isKlant ? { ...c, isCustomer: true } : c
+              })
+            )
+          }
         }
       })
-      .finally(() => setIsLoading(false))
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   // ── Folder counts ──

@@ -44,10 +44,12 @@ export function EmailCommunicationHub() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     getEmails()
-      .then(setEmails)
+      .then((data) => { if (!cancelled) setEmails(data) })
       .catch(logger.error)
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   const recentUnread = useMemo(() => {

@@ -73,14 +73,18 @@ export function StatisticsCards() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     Promise.all([getProjecten(), getKlanten(), getOffertes()])
       .then(([p, k, o]) => {
-        setProjecten(p)
-        setKlanten(k)
-        setOffertes(o)
+        if (!cancelled) {
+          setProjecten(p)
+          setKlanten(k)
+          setOffertes(o)
+        }
       })
       .catch(logger.error)
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   const actieveProjecten = projecten.filter(

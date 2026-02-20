@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -169,21 +169,26 @@ export function TasksLayout() {
 
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const [takenData, projectenData] = await Promise.all([getTaken(), getProjecten()])
-      setTaken(takenData)
-      setProjecten(projectenData)
-    } catch (error) {
-      logger.error('Fout bij laden:', error)
-      toast.error('Kon taken niet laden')
-    } finally {
-      setIsLoading(false)
+  useEffect(() => {
+    let cancelled = false
+    async function loadData() {
+      setIsLoading(true)
+      try {
+        const [takenData, projectenData] = await Promise.all([getTaken(), getProjecten()])
+        if (!cancelled) {
+          setTaken(takenData)
+          setProjecten(projectenData)
+        }
+      } catch (error) {
+        logger.error('Fout bij laden:', error)
+        if (!cancelled) toast.error('Kon taken niet laden')
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
     }
+    loadData()
+    return () => { cancelled = true }
   }, [])
-
-  useEffect(() => { loadData() }, [loadData])
 
   // Update now-line every minute
   useEffect(() => {

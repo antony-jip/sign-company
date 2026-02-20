@@ -360,6 +360,7 @@ export function ProjectDetail() {
   }
 
   useEffect(() => {
+    let cancelled = false
     async function fetchData() {
       if (!id) return
       setIsLoading(true)
@@ -371,25 +372,30 @@ export function ProjectDetail() {
           getOffertesByProject(id),
           getTekeningGoedkeuringen(id),
         ])
-        setProject(projectData)
-        setProjectTaken(takenData)
-        setProjectDocumenten(allDocumenten.filter((d) => d.project_id === id))
-        setProjectOffertes(offertesData)
-        setGoedkeuringen(goedkeuringenData)
+        if (!cancelled) {
+          setProject(projectData)
+          setProjectTaken(takenData)
+          setProjectDocumenten(allDocumenten.filter((d) => d.project_id === id))
+          setProjectOffertes(offertesData)
+          setGoedkeuringen(goedkeuringenData)
+        }
 
         // Fetch klant data
         if (projectData?.klant_id) {
           const klantData = await getKlant(projectData.klant_id)
-          setKlant(klantData)
+          if (!cancelled) {
+            setKlant(klantData)
+          }
         }
       } catch (err) {
         logger.error('Fout bij ophalen projectgegevens:', err)
-        toast.error('Kon projectgegevens niet laden')
+        if (!cancelled) toast.error('Kon projectgegevens niet laden')
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
     fetchData()
+    return () => { cancelled = true }
   }, [id])
 
   // ── File upload handler ──

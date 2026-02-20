@@ -138,23 +138,24 @@ export function QuotesPipeline() {
   const priorityRef = useRef<HTMLDivElement>(null)
   const sortRef = useRef<HTMLDivElement>(null)
 
-  const loadOffertes = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      const data = await getOffertes()
-      setOffertes(data)
-    } catch (err) {
-      logger.error('Fout bij ophalen offertes:', err)
-      setError('Kan offertes niet laden. Probeer opnieuw.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
+    let cancelled = false
+    async function loadOffertes() {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const data = await getOffertes()
+        if (!cancelled) setOffertes(data)
+      } catch (err) {
+        logger.error('Fout bij ophalen offertes:', err)
+        if (!cancelled) setError('Kan offertes niet laden. Probeer opnieuw.')
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
     loadOffertes()
-  }, [loadOffertes])
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

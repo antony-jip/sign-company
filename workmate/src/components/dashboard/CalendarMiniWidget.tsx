@@ -25,10 +25,12 @@ export function CalendarMiniWidget() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     getEvents()
-      .then(setEvents)
+      .then((data) => { if (!cancelled) setEvents(data) })
       .catch(logger.error)
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   const { daysInMonth, startOffset, eventDates, upcomingEvents } =

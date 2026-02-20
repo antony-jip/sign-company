@@ -41,14 +41,18 @@ export function TodayPlanningWidget() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     Promise.all([getTaken(), getProjecten(), getEvents()])
       .then(([t, p, e]) => {
-        setTaken(t)
-        setProjecten(p)
-        setEvents(e)
+        if (!cancelled) {
+          setTaken(t)
+          setProjecten(p)
+          setEvents(e)
+        }
       })
       .catch(logger.error)
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   const { todayItems, tomorrowItems, overdueTasks } = useMemo(() => {

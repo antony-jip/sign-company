@@ -86,6 +86,7 @@ export function WeatherWidget() {
   const [error, setError] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
     async function fetchWeather(lat: number, lon: number) {
       try {
         const res = await fetch(
@@ -94,27 +95,29 @@ export function WeatherWidget() {
         if (!res.ok) throw new Error('Weather fetch failed')
         const data = await res.json()
 
-        setCurrent({
-          temperature: Math.round(data.current.temperature_2m),
-          apparentTemperature: Math.round(data.current.apparent_temperature),
-          weatherCode: data.current.weather_code,
-          windSpeed: Math.round(data.current.wind_speed_10m),
-          humidity: data.current.relative_humidity_2m,
-          isDay: data.current.is_day === 1,
-        })
+        if (!cancelled) {
+          setCurrent({
+            temperature: Math.round(data.current.temperature_2m),
+            apparentTemperature: Math.round(data.current.apparent_temperature),
+            weatherCode: data.current.weather_code,
+            windSpeed: Math.round(data.current.wind_speed_10m),
+            humidity: data.current.relative_humidity_2m,
+            isDay: data.current.is_day === 1,
+          })
 
-        const days: DailyForecast[] = data.daily.time.slice(1).map((t: string, i: number) => ({
-          date: new Date(t),
-          maxTemp: Math.round(data.daily.temperature_2m_max[i + 1]),
-          minTemp: Math.round(data.daily.temperature_2m_min[i + 1]),
-          weatherCode: data.daily.weather_code[i + 1],
-          precipitationProbability: data.daily.precipitation_probability_max[i + 1],
-        }))
-        setForecast(days)
+          const days: DailyForecast[] = data.daily.time.slice(1).map((t: string, i: number) => ({
+            date: new Date(t),
+            maxTemp: Math.round(data.daily.temperature_2m_max[i + 1]),
+            minTemp: Math.round(data.daily.temperature_2m_min[i + 1]),
+            weatherCode: data.daily.weather_code[i + 1],
+            precipitationProbability: data.daily.precipitation_probability_max[i + 1],
+          }))
+          setForecast(days)
+        }
       } catch {
-        setError(true)
+        if (!cancelled) setError(true)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
@@ -122,12 +125,16 @@ export function WeatherWidget() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          fetchWeather(pos.coords.latitude, pos.coords.longitude)
-          setLocation('Huidige locatie')
+          if (!cancelled) {
+            fetchWeather(pos.coords.latitude, pos.coords.longitude)
+            setLocation('Huidige locatie')
+          }
         },
         () => {
-          fetchWeather(52.37, 4.89)
-          setLocation('Amsterdam')
+          if (!cancelled) {
+            fetchWeather(52.37, 4.89)
+            setLocation('Amsterdam')
+          }
         },
         { timeout: 3000 }
       )
@@ -135,6 +142,7 @@ export function WeatherWidget() {
       fetchWeather(52.37, 4.89)
       setLocation('Amsterdam')
     }
+    return () => { cancelled = true }
   }, [])
 
   if (loading) {

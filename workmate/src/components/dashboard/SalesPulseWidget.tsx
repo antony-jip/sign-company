@@ -28,13 +28,17 @@ export function SalesPulseWidget() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     Promise.all([getOffertes(), getFacturen()])
       .then(([o, f]) => {
-        setOffertes(o)
-        setFacturen(f)
+        if (!cancelled) {
+          setOffertes(o)
+          setFacturen(f)
+        }
       })
       .catch(logger.error)
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   if (loading) {

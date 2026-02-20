@@ -38,15 +38,19 @@ export function AIInsightWidget() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     Promise.all([getProjecten(), getOffertes(), getKlanten(), getTaken()])
       .then(([p, o, k, t]) => {
-        setProjecten(p)
-        setOffertes(o)
-        setKlanten(k)
-        setTaken(t)
+        if (!cancelled) {
+          setProjecten(p)
+          setOffertes(o)
+          setKlanten(k)
+          setTaken(t)
+        }
       })
       .catch(logger.error)
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   const insights = useMemo(() => {

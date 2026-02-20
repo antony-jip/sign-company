@@ -251,6 +251,7 @@ export function FacturenLayout() {
   // ============ DATA LOADING ============
 
   useEffect(() => {
+    let cancelled = false
     async function loadData() {
       try {
         setIsLoading(true)
@@ -260,15 +261,17 @@ export function FacturenLayout() {
           getOffertes().catch(() => []),
         ])
 
-        setFacturen(facturenData)
-        setKlanten(klantenData)
-
-        setOffertes(offertesData)
+        if (!cancelled) {
+          setFacturen(facturenData)
+          setKlanten(klantenData)
+          setOffertes(offertesData)
+        }
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
     loadData()
+    return () => { cancelled = true }
   }, [])
 
   // ============ COMPUTED VALUES ============

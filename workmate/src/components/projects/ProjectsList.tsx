@@ -116,6 +116,7 @@ export function ProjectsList() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
+    let cancelled = false
     async function fetchData() {
       try {
         setIsLoading(true)
@@ -123,15 +124,18 @@ export function ProjectsList() {
           getProjecten(),
           getKlanten(),
         ])
-        setProjecten(projectenData)
-        setKlanten(klantenData)
+        if (!cancelled) {
+          setProjecten(projectenData)
+          setKlanten(klantenData)
+        }
       } catch (error) {
         logger.error('Fout bij ophalen data:', error)
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
     fetchData()
+    return () => { cancelled = true }
   }, [])
 
   function getKlantNaam(klantId: string): string {
