@@ -29,6 +29,12 @@ import type {
 
 // ============ HELPERS ============
 
+function assertId(id: unknown, label = 'id'): asserts id is string {
+  if (!id || typeof id !== 'string') {
+    throw new Error(`Ongeldig ${label}: waarde is vereist`)
+  }
+}
+
 function getLocalData<T>(key: string): T[] {
   const data = localStorage.getItem(`workmate_${key}`)
   return data ? JSON.parse(data) : []
@@ -65,6 +71,7 @@ export async function getKlanten(): Promise<Klant[]> {
 }
 
 export async function getKlant(id: string): Promise<Klant | null> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('klanten')
@@ -102,6 +109,7 @@ export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'upda
 }
 
 export async function updateKlant(id: string, updates: Partial<Klant>): Promise<Klant> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('klanten')
@@ -121,6 +129,7 @@ export async function updateKlant(id: string, updates: Partial<Klant>): Promise<
 }
 
 export async function deleteKlant(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('klanten').delete().eq('id', id)
     if (error) throw error
@@ -153,6 +162,7 @@ export async function getProjecten(): Promise<Project[]> {
 }
 
 export async function getProject(id: string): Promise<Project | null> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('projecten')
@@ -170,6 +180,7 @@ export async function getProject(id: string): Promise<Project | null> {
 }
 
 export async function getProjectenByKlant(klantId: string): Promise<Project[]> {
+  assertId(klantId, 'klant_id')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('projecten')
@@ -206,6 +217,7 @@ export async function createProject(project: Omit<Project, 'id' | 'created_at' |
 }
 
 export async function updateProject(id: string, updates: Partial<Project>): Promise<Project> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('projecten')
@@ -225,6 +237,7 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
 }
 
 export async function deleteProject(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('projecten').delete().eq('id', id)
     if (error) throw error
@@ -249,6 +262,7 @@ export async function getTaken(): Promise<Taak[]> {
 }
 
 export async function getTaak(id: string): Promise<Taak | null> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('taken')
@@ -263,6 +277,7 @@ export async function getTaak(id: string): Promise<Taak | null> {
 }
 
 export async function getTakenByProject(projectId: string): Promise<Taak[]> {
+  assertId(projectId, 'project_id')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('taken')
@@ -299,6 +314,7 @@ export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated
 }
 
 export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Taak> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('taken')
@@ -318,6 +334,7 @@ export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Ta
 }
 
 export async function deleteTaak(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('taken').delete().eq('id', id)
     if (error) throw error
@@ -350,6 +367,7 @@ export async function getOffertes(): Promise<Offerte[]> {
 }
 
 export async function getOfferte(id: string): Promise<Offerte | null> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offertes')
@@ -367,6 +385,7 @@ export async function getOfferte(id: string): Promise<Offerte | null> {
 }
 
 export async function getOffertesByProject(projectId: string): Promise<Offerte[]> {
+  assertId(projectId, 'project_id')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offertes')
@@ -412,6 +431,7 @@ export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' |
 }
 
 export async function updateOfferte(id: string, updates: Partial<Offerte>): Promise<Offerte> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offertes')
@@ -431,6 +451,7 @@ export async function updateOfferte(id: string, updates: Partial<Offerte>): Prom
 }
 
 export async function deleteOfferte(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('offertes').delete().eq('id', id)
     if (error) throw error
@@ -443,6 +464,7 @@ export async function deleteOfferte(id: string): Promise<void> {
 // ============ OFFERTE ITEMS ============
 
 export async function getOfferteItems(offerteId: string): Promise<OfferteItem[]> {
+  assertId(offerteId, 'offerte_id')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offerte_items')
@@ -480,6 +502,7 @@ export async function createOfferteItem(item: Omit<OfferteItem, 'id' | 'created_
 }
 
 export async function updateOfferteItem(id: string, updates: Partial<OfferteItem>): Promise<OfferteItem> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offerte_items')
@@ -499,6 +522,7 @@ export async function updateOfferteItem(id: string, updates: Partial<OfferteItem
 }
 
 export async function deleteOfferteItem(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('offerte_items').delete().eq('id', id)
     if (error) throw error
@@ -523,6 +547,7 @@ export async function getDocumenten(): Promise<Document[]> {
 }
 
 export async function getDocument(id: string): Promise<Document | null> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('documenten')
@@ -559,6 +584,7 @@ export async function createDocument(document: Omit<Document, 'id' | 'created_at
 }
 
 export async function updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('documenten')
@@ -578,6 +604,7 @@ export async function updateDocument(id: string, updates: Partial<Document>): Pr
 }
 
 export async function deleteDocument(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('documenten').delete().eq('id', id)
     if (error) throw error
@@ -602,6 +629,7 @@ export async function getEmails(): Promise<Email[]> {
 }
 
 export async function getEmail(id: string): Promise<Email | null> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('emails')
@@ -637,6 +665,7 @@ export async function createEmail(email: Omit<Email, 'id' | 'created_at'>): Prom
 }
 
 export async function updateEmail(id: string, updates: Partial<Email>): Promise<Email> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('emails')
@@ -656,6 +685,7 @@ export async function updateEmail(id: string, updates: Partial<Email>): Promise<
 }
 
 export async function deleteEmail(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('emails').delete().eq('id', id)
     if (error) throw error
@@ -680,6 +710,7 @@ export async function getEvents(): Promise<CalendarEvent[]> {
 }
 
 export async function getEvent(id: string): Promise<CalendarEvent | null> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('events')
@@ -716,6 +747,7 @@ export async function createEvent(event: Omit<CalendarEvent, 'id' | 'created_at'
 }
 
 export async function updateEvent(id: string, updates: Partial<CalendarEvent>): Promise<CalendarEvent> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('events')
@@ -735,6 +767,7 @@ export async function updateEvent(id: string, updates: Partial<CalendarEvent>): 
 }
 
 export async function deleteEvent(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('events').delete().eq('id', id)
     if (error) throw error
@@ -780,6 +813,7 @@ export async function createGrootboekRekening(rekening: Omit<Grootboek, 'id' | '
 }
 
 export async function updateGrootboekRekening(id: string, updates: Partial<Grootboek>): Promise<Grootboek> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('grootboek')
@@ -799,6 +833,7 @@ export async function updateGrootboekRekening(id: string, updates: Partial<Groot
 }
 
 export async function deleteGrootboekRekening(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('grootboek').delete().eq('id', id)
     if (error) throw error
@@ -844,6 +879,7 @@ export async function createBtwCode(btwCode: Omit<BtwCode, 'id' | 'created_at'>)
 }
 
 export async function updateBtwCode(id: string, updates: Partial<BtwCode>): Promise<BtwCode> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('btw_codes')
@@ -863,6 +899,7 @@ export async function updateBtwCode(id: string, updates: Partial<BtwCode>): Prom
 }
 
 export async function deleteBtwCode(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('btw_codes').delete().eq('id', id)
     if (error) throw error
@@ -908,6 +945,7 @@ export async function createKorting(korting: Omit<Korting, 'id' | 'created_at'>)
 }
 
 export async function updateKorting(id: string, updates: Partial<Korting>): Promise<Korting> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('kortingen')
@@ -927,6 +965,7 @@ export async function updateKorting(id: string, updates: Partial<Korting>): Prom
 }
 
 export async function deleteKorting(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('kortingen').delete().eq('id', id)
     if (error) throw error
@@ -983,6 +1022,7 @@ export async function deleteAIChats(): Promise<void> {
 // ============ PROFILES ============
 
 export async function getProfile(userId: string): Promise<Profile | null> {
+  assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('profiles')
@@ -1014,6 +1054,7 @@ export async function getNieuwsbrieven(): Promise<Nieuwsbrief[]> {
 }
 
 export async function getNieuwsbrief(id: string): Promise<Nieuwsbrief | null> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('nieuwsbrieven')
@@ -1050,6 +1091,7 @@ export async function createNieuwsbrief(nieuwsbrief: Omit<Nieuwsbrief, 'id' | 'c
 }
 
 export async function updateNieuwsbrief(id: string, updates: Partial<Nieuwsbrief>): Promise<Nieuwsbrief> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('nieuwsbrieven')
@@ -1069,6 +1111,7 @@ export async function updateNieuwsbrief(id: string, updates: Partial<Nieuwsbrief
 }
 
 export async function deleteNieuwsbrief(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('nieuwsbrieven').delete().eq('id', id)
     if (error) throw error
@@ -1115,6 +1158,7 @@ export async function createCalculatieProduct(product: Omit<CalculatieProduct, '
 }
 
 export async function updateCalculatieProduct(id: string, updates: Partial<CalculatieProduct>): Promise<CalculatieProduct> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('calculatie_producten')
@@ -1134,6 +1178,7 @@ export async function updateCalculatieProduct(id: string, updates: Partial<Calcu
 }
 
 export async function deleteCalculatieProduct(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('calculatie_producten').delete().eq('id', id)
     if (error) throw error
@@ -1180,6 +1225,7 @@ export async function createCalculatieTemplate(template: Omit<CalculatieTemplate
 }
 
 export async function updateCalculatieTemplate(id: string, updates: Partial<CalculatieTemplate>): Promise<CalculatieTemplate> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('calculatie_templates')
@@ -1199,6 +1245,7 @@ export async function updateCalculatieTemplate(id: string, updates: Partial<Calc
 }
 
 export async function deleteCalculatieTemplate(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('calculatie_templates').delete().eq('id', id)
     if (error) throw error
@@ -1308,6 +1355,7 @@ export async function createOfferteTemplate(template: Omit<OfferteTemplate, 'id'
 }
 
 export async function updateOfferteTemplate(id: string, updates: Partial<OfferteTemplate>): Promise<OfferteTemplate> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offerte_templates')
@@ -1327,6 +1375,7 @@ export async function updateOfferteTemplate(id: string, updates: Partial<Offerte
 }
 
 export async function deleteOfferteTemplate(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('offerte_templates').delete().eq('id', id)
     if (error) throw error
@@ -1345,6 +1394,7 @@ function generateToken(): string {
 }
 
 export async function getTekeningGoedkeuringen(projectId: string): Promise<TekeningGoedkeuring[]> {
+  assertId(projectId, 'project_id')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('tekening_goedkeuringen')
@@ -1359,6 +1409,7 @@ export async function getTekeningGoedkeuringen(projectId: string): Promise<Teken
 }
 
 export async function getTekeningGoedkeuringByToken(token: string): Promise<TekeningGoedkeuring | null> {
+  assertId(token, 'token')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('tekening_goedkeuringen')
@@ -1402,6 +1453,7 @@ export async function updateTekeningGoedkeuring(
   id: string,
   updates: Partial<TekeningGoedkeuring>
 ): Promise<TekeningGoedkeuring> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('tekening_goedkeuringen')
@@ -1424,6 +1476,7 @@ export async function updateTekeningGoedkeuringByToken(
   token: string,
   updates: Partial<TekeningGoedkeuring>
 ): Promise<TekeningGoedkeuring> {
+  assertId(token, 'token')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('tekening_goedkeuringen')
@@ -1493,6 +1546,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
 }
 
 export async function getAppSettings(userId: string): Promise<AppSettings> {
+  assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('app_settings')
@@ -1511,6 +1565,7 @@ export async function getAppSettings(userId: string): Promise<AppSettings> {
 }
 
 export async function updateAppSettings(userId: string, updates: Partial<AppSettings>): Promise<AppSettings> {
+  assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
     const { data: existing } = await supabase
       .from('app_settings')
@@ -1554,6 +1609,7 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
 }
 
 export async function updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile> {
+  assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('profiles')
@@ -1606,6 +1662,7 @@ export async function getFacturen(): Promise<Factuur[]> {
 }
 
 export async function getFactuur(id: string): Promise<Factuur> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('facturen').select('*').eq('id', id).single()
     if (error) throw error
@@ -1631,6 +1688,7 @@ export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' |
 }
 
 export async function updateFactuur(id: string, updates: Partial<Factuur>): Promise<Factuur> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('facturen').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
@@ -1645,6 +1703,7 @@ export async function updateFactuur(id: string, updates: Partial<Factuur>): Prom
 }
 
 export async function deleteFactuur(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('facturen').delete().eq('id', id)
     if (error) throw error
@@ -1655,6 +1714,7 @@ export async function deleteFactuur(id: string): Promise<void> {
 }
 
 export async function getFactuurItems(factuurId: string): Promise<FactuurItem[]> {
+  assertId(factuurId, 'factuur_id')
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('factuur_items').select('*').eq('factuur_id', factuurId).order('volgorde')
     if (error) throw error
@@ -1701,6 +1761,7 @@ export async function createTijdregistratie(entry: Omit<Tijdregistratie, 'id' | 
 }
 
 export async function updateTijdregistratie(id: string, updates: Partial<Tijdregistratie>): Promise<Tijdregistratie> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('tijdregistraties').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
@@ -1715,6 +1776,7 @@ export async function updateTijdregistratie(id: string, updates: Partial<Tijdreg
 }
 
 export async function deleteTijdregistratie(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('tijdregistraties').delete().eq('id', id)
     if (error) throw error
@@ -1749,6 +1811,7 @@ export async function createMedewerker(mw: Omit<Medewerker, 'id' | 'created_at' 
 }
 
 export async function updateMedewerker(id: string, updates: Partial<Medewerker>): Promise<Medewerker> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('medewerkers').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
@@ -1763,6 +1826,7 @@ export async function updateMedewerker(id: string, updates: Partial<Medewerker>)
 }
 
 export async function deleteMedewerker(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('medewerkers').delete().eq('id', id)
     if (error) throw error
@@ -1797,6 +1861,7 @@ export async function createNotificatie(notif: Omit<Notificatie, 'id' | 'created
 }
 
 export async function markNotificatieGelezen(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     await supabase.from('notificaties').update({ gelezen: true }).eq('id', id)
     return
@@ -1844,6 +1909,7 @@ export async function createMontageAfspraak(afspraak: Omit<MontageAfspraak, 'id'
 }
 
 export async function updateMontageAfspraak(id: string, updates: Partial<MontageAfspraak>): Promise<MontageAfspraak> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('montage_afspraken').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
@@ -1858,6 +1924,7 @@ export async function updateMontageAfspraak(id: string, updates: Partial<Montage
 }
 
 export async function deleteMontageAfspraak(id: string): Promise<void> {
+  assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase.from('montage_afspraken').delete().eq('id', id)
     if (error) throw error
