@@ -1,16 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
   SelectContent,
@@ -41,7 +34,7 @@ import {
   Quote,
   X,
   Type,
-  FileText,
+  ArrowLeft,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -206,7 +199,7 @@ export function EmailCompose({
 
   const scheduleDropdownRef = useRef<HTMLDivElement>(null)
 
-  // Set initial editor content when dialog opens
+  // Set initial editor content when panel opens
   useEffect(() => {
     if (open && editorRef.current) {
       const timer = setTimeout(() => {
@@ -368,9 +361,6 @@ export function EmailCompose({
 
     try {
       const body = editorRef.current?.innerText || ''
-
-      // Delegate actual sending + saving to parent via onSend callback
-      // Parent (EmailLayout) handles /api/send-email + createEmail
       onSend?.({ to: to.trim(), subject: subject.trim(), body, scheduledAt: scheduledAt || undefined })
       resetAndClose()
     } catch (error) {
@@ -398,20 +388,39 @@ export function EmailCompose({
     onOpenChange(false)
   }
 
-  return (
-    <Dialog open={open} onOpenChange={resetAndClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Nieuwe email</DialogTitle>
-          <DialogDescription>Stel een nieuw bericht op en verstuur het.</DialogDescription>
-        </DialogHeader>
+  if (!open) return null
 
-        <div className="flex-1 space-y-4 overflow-y-auto">
+  return (
+    <div className="flex flex-col h-full">
+      {/* ── Header ── */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/20">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={resetAndClose}>
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <h2 className="text-base font-semibold">
+          {defaultTo ? (defaultSubject?.startsWith('Re:') ? 'Beantwoorden' : defaultSubject?.startsWith('Fwd:') ? 'Doorsturen' : 'Nieuwe email') : 'Nieuwe email'}
+        </h2>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs text-accent hover:text-accent hover:bg-wm-pale/20 dark:hover:bg-primary/20"
+            onClick={handleAiGenerate}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            AI Genereren
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Form ── */}
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-3">
           {/* Template selector */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Template</Label>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm font-medium w-20 flex-shrink-0">Template</Label>
             <Select value={template} onValueChange={handleTemplateChange}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Selecteer template" />
               </SelectTrigger>
               <SelectContent>
@@ -425,321 +434,309 @@ export function EmailCompose({
           </div>
 
           {/* To field */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between w-20 flex-shrink-0">
               <Label className="text-sm font-medium">Aan</Label>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 text-xs text-muted-foreground"
+                className="h-5 px-1 text-[10px] text-muted-foreground"
                 onClick={() => setShowCc(!showCc)}
               >
-                CC {showCc ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                CC {showCc ? <ChevronUp className="w-2.5 h-2.5 ml-0.5" /> : <ChevronDown className="w-2.5 h-2.5 ml-0.5" />}
               </Button>
             </div>
-            <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" />
+            <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="h-9" />
           </div>
 
           {/* CC field */}
           {showCc && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">CC</Label>
-              <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@voorbeeld.nl" type="email" />
+            <div className="flex items-center gap-3">
+              <Label className="text-sm font-medium w-20 flex-shrink-0">CC</Label>
+              <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@voorbeeld.nl" type="email" className="h-9" />
             </div>
           )}
 
           {/* Subject */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Onderwerp</Label>
-            <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Onderwerp van de email..." />
+          <div className="flex items-center gap-3">
+            <Label className="text-sm font-medium w-20 flex-shrink-0">Onderwerp</Label>
+            <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Onderwerp van de email..." className="h-9" />
           </div>
 
+          <Separator />
+
           {/* Body - Rich Editor */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Bericht</Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1.5 text-xs text-accent hover:text-accent hover:bg-wm-pale/20 dark:hover:bg-primary/20"
-                onClick={handleAiGenerate}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                AI Genereren
-              </Button>
+          <div className="border rounded-lg overflow-hidden">
+            {/* Merge fields toolbar */}
+            <div className="flex items-center gap-0.5 px-2 py-1.5 border-b bg-muted/20">
+              <div className="relative" ref={mergeFieldRef}>
+                <button
+                  onClick={() => setShowMergeFields(!showMergeFields)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded hover:bg-accent transition-colors',
+                    showMergeFields && 'bg-accent'
+                  )}
+                >
+                  <Type className="w-3.5 h-3.5" />
+                  Veld invoegen
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                {showMergeFields && (
+                  <div className="absolute left-0 top-full mt-1 w-52 rounded-md border bg-popover p-1 shadow-lg z-50">
+                    {mergeFields.map(f => (
+                      <button
+                        key={f.id}
+                        onClick={() => insertMergeField(f.value)}
+                        className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors flex items-center justify-between"
+                      >
+                        <span>{f.label}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">{f.value}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Editor card - one cohesive unit */}
-            <div className="border rounded-lg overflow-hidden">
-              {/* Merge fields toolbar */}
-              <div className="flex items-center gap-0.5 px-2 py-1.5 border-b bg-muted/20">
-                <div className="relative" ref={mergeFieldRef}>
+            {/* ContentEditable - full width */}
+            <div className="relative">
+              {editorEmpty && (
+                <div className="absolute top-3 left-4 text-sm text-muted-foreground pointer-events-none select-none">
+                  Schrijf uw bericht hier...
+                </div>
+              )}
+              <div
+                ref={editorRef}
+                contentEditable
+                onInput={handleEditorInput}
+                onMouseUp={updateFormatState}
+                onKeyUp={updateFormatState}
+                className="min-h-[240px] max-h-[500px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none"
+                suppressContentEditableWarning
+              />
+            </div>
+
+            {/* Attachments */}
+            {attachments.length > 0 && (
+              <div className="px-3 py-2 border-t bg-muted/10">
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((file, i) => (
+                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-muted rounded-md text-xs">
+                      <div className={`w-6 h-6 rounded flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0 ${getFileTypeColor(file.name)}`}>
+                        {getFileExt(file.name)}
+                      </div>
+                      <span className="font-medium max-w-[120px] truncate">{file.name}</span>
+                      <span className="text-muted-foreground">({formatFileSize(file.size)})</span>
+                      <button onClick={() => removeAttachment(i)} className="text-muted-foreground hover:text-red-500 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Formatting toolbar */}
+            <div className="flex items-center gap-0.5 px-2 py-1 border-t bg-muted/30 flex-wrap">
+              <button onClick={() => execFormat('undo')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Ongedaan maken">
+                <Undo2 className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+              <button onClick={() => execFormat('redo')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Opnieuw">
+                <Redo2 className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+
+              <Separator orientation="vertical" className="h-4 mx-1" />
+
+              <button
+                onClick={() => execFormat('bold')}
+                className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.bold && 'bg-accent text-foreground')}
+                title="Vet (Ctrl+B)"
+              >
+                <Bold className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => execFormat('italic')}
+                className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.italic && 'bg-accent text-foreground')}
+                title="Cursief (Ctrl+I)"
+              >
+                <Italic className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => execFormat('underline')}
+                className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.underline && 'bg-accent text-foreground')}
+                title="Onderstrepen (Ctrl+U)"
+              >
+                <Underline className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => execFormat('strikeThrough')}
+                className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.strikethrough && 'bg-accent text-foreground')}
+                title="Doorhalen"
+              >
+                <Strikethrough className="w-3.5 h-3.5" />
+              </button>
+
+              <Separator orientation="vertical" className="h-4 mx-1" />
+
+              <button onClick={() => execFormat('insertUnorderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Opsommingslijst">
+                <List className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+              <button onClick={() => execFormat('insertOrderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Genummerde lijst">
+                <ListOrdered className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+
+              <Separator orientation="vertical" className="h-4 mx-1" />
+
+              <button onClick={() => execFormat('justifyLeft')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Links uitlijnen">
+                <AlignLeft className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+              <button onClick={() => execFormat('justifyCenter')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Centreren">
+                <AlignCenter className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+              <button onClick={() => execFormat('justifyRight')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Rechts uitlijnen">
+                <AlignRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+
+              <Separator orientation="vertical" className="h-4 mx-1" />
+
+              <button onClick={() => execFormat('formatBlock', 'blockquote')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Citaat">
+                <Quote className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+              <button onClick={insertLink} className="p-1.5 rounded hover:bg-accent transition-colors" title="Link invoegen">
+                <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </ScrollArea>
+
+      {/* ── Footer / Actions ── */}
+      <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/10">
+        <div className="flex items-center gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.svg,.zip,.rar,.txt,.csv"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-muted-foreground"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip className="w-4 h-4" />
+            Bijlage
+          </Button>
+          {attachments.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {attachments.length} bestand{attachments.length > 1 ? 'en' : ''}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={resetAndClose}>
+            Annuleren
+          </Button>
+          <div className="relative" ref={scheduleDropdownRef}>
+            <div className="flex">
+              <Button
+                onClick={handleSend}
+                disabled={!to.trim() || !subject.trim() || isSending}
+                size="sm"
+                className="gap-2 rounded-r-none"
+              >
+                {scheduledAt ? (
+                  <><Clock className="w-4 h-4" />{isSending ? 'Inplannen...' : 'Inplannen'}</>
+                ) : (
+                  <><Send className="w-4 h-4" />{isSending ? 'Verzenden...' : 'Verzenden'}</>
+                )}
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="rounded-l-none border-l border-l-primary-foreground/20 px-2"
+                onClick={() => setShowScheduleDropdown(!showScheduleDropdown)}
+                type="button"
+              >
+                <CalendarClock className="w-4 h-4" />
+              </Button>
+            </div>
+            {showScheduleDropdown && (
+              <div className="absolute right-0 bottom-full mb-2 w-72 rounded-md border bg-popover p-2 shadow-md z-50">
+                <div className="space-y-1">
                   <button
-                    onClick={() => setShowMergeFields(!showMergeFields)}
-                    className={cn(
-                      'flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded hover:bg-accent transition-colors',
-                      showMergeFields && 'bg-accent'
-                    )}
+                    type="button"
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'now' && 'bg-accent font-medium')}
+                    onClick={() => handleScheduleSelect('now')}
                   >
-                    <Type className="w-3.5 h-3.5" />
-                    Veld invoegen
-                    <ChevronDown className="w-3 h-3" />
+                    <div className="flex items-center gap-2"><Send className="w-4 h-4" /> Nu verzenden</div>
                   </button>
-                  {showMergeFields && (
-                    <div className="absolute left-0 top-full mt-1 w-52 rounded-md border bg-popover p-1 shadow-lg z-50">
-                      {mergeFields.map(f => (
-                        <button
-                          key={f.id}
-                          onClick={() => insertMergeField(f.value)}
-                          className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors flex items-center justify-between"
-                        >
-                          <span>{f.label}</span>
-                          <span className="text-[10px] text-muted-foreground font-mono">{f.value}</span>
-                        </button>
-                      ))}
+                  <button
+                    type="button"
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'tomorrow-9' && 'bg-accent font-medium')}
+                    onClick={() => handleScheduleSelect('tomorrow-9')}
+                  >
+                    <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 09:00</div>
+                  </button>
+                  <button
+                    type="button"
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'tomorrow-14' && 'bg-accent font-medium')}
+                    onClick={() => handleScheduleSelect('tomorrow-14')}
+                  >
+                    <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 14:00</div>
+                  </button>
+                  <button
+                    type="button"
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'next-monday' && 'bg-accent font-medium')}
+                    onClick={() => handleScheduleSelect('next-monday')}
+                  >
+                    <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Volgende week maandag 09:00</div>
+                  </button>
+                  <div className="border-t my-1" />
+                  <button
+                    type="button"
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'custom' && 'bg-accent font-medium')}
+                    onClick={() => handleScheduleSelect('custom')}
+                  >
+                    <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Aangepaste datum/tijd</div>
+                  </button>
+                  {scheduleOption === 'custom' && (
+                    <div className="px-3 py-2 space-y-2">
+                      <div>
+                        <Label className="text-xs">Datum</Label>
+                        <Input
+                          type="date"
+                          value={customDate}
+                          onChange={(e) => {
+                            setCustomDate(e.target.value)
+                            if (e.target.value && customTime) setScheduledAt(`${e.target.value}T${customTime}`)
+                          }}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Tijd</Label>
+                        <Input
+                          type="time"
+                          value={customTime}
+                          onChange={(e) => {
+                            setCustomTime(e.target.value)
+                            if (customDate && e.target.value) setScheduledAt(`${customDate}T${e.target.value}`)
+                          }}
+                          className="h-8 text-sm"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
-
-              {/* ContentEditable - full width, no side gaps */}
-              <div className="relative">
-                {editorEmpty && (
-                  <div className="absolute top-3 left-4 text-sm text-muted-foreground pointer-events-none select-none">
-                    Schrijf uw bericht hier...
-                  </div>
-                )}
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  onInput={handleEditorInput}
-                  onMouseUp={updateFormatState}
-                  onKeyUp={updateFormatState}
-                  className="min-h-[280px] max-h-[500px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none"
-                  suppressContentEditableWarning
-                />
-              </div>
-
-              {/* Attachments */}
-              {attachments.length > 0 && (
-                <div className="px-3 py-2 border-t bg-muted/10">
-                  <div className="flex flex-wrap gap-2">
-                    {attachments.map((file, i) => (
-                      <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-muted rounded-md text-xs">
-                        <div className={`w-6 h-6 rounded flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0 ${getFileTypeColor(file.name)}`}>
-                          {getFileExt(file.name)}
-                        </div>
-                        <span className="font-medium max-w-[120px] truncate">{file.name}</span>
-                        <span className="text-muted-foreground">({formatFileSize(file.size)})</span>
-                        <button onClick={() => removeAttachment(i)} className="text-muted-foreground hover:text-red-500 transition-colors">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Formatting toolbar */}
-              <div className="flex items-center gap-0.5 px-2 py-1 border-t bg-muted/30 flex-wrap">
-                <button onClick={() => execFormat('undo')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Ongedaan maken">
-                  <Undo2 className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-                <button onClick={() => execFormat('redo')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Opnieuw">
-                  <Redo2 className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-
-                <Separator orientation="vertical" className="h-4 mx-1" />
-
-                <button
-                  onClick={() => execFormat('bold')}
-                  className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.bold && 'bg-accent text-foreground')}
-                  title="Vet (Ctrl+B)"
-                >
-                  <Bold className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => execFormat('italic')}
-                  className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.italic && 'bg-accent text-foreground')}
-                  title="Cursief (Ctrl+I)"
-                >
-                  <Italic className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => execFormat('underline')}
-                  className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.underline && 'bg-accent text-foreground')}
-                  title="Onderstrepen (Ctrl+U)"
-                >
-                  <Underline className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => execFormat('strikeThrough')}
-                  className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.strikethrough && 'bg-accent text-foreground')}
-                  title="Doorhalen"
-                >
-                  <Strikethrough className="w-3.5 h-3.5" />
-                </button>
-
-                <Separator orientation="vertical" className="h-4 mx-1" />
-
-                <button onClick={() => execFormat('insertUnorderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Opsommingslijst">
-                  <List className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-                <button onClick={() => execFormat('insertOrderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Genummerde lijst">
-                  <ListOrdered className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-
-                <Separator orientation="vertical" className="h-4 mx-1" />
-
-                <button onClick={() => execFormat('justifyLeft')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Links uitlijnen">
-                  <AlignLeft className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-                <button onClick={() => execFormat('justifyCenter')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Centreren">
-                  <AlignCenter className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-                <button onClick={() => execFormat('justifyRight')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Rechts uitlijnen">
-                  <AlignRight className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-
-                <Separator orientation="vertical" className="h-4 mx-1" />
-
-                <button onClick={() => execFormat('formatBlock', 'blockquote')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Citaat">
-                  <Quote className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-                <button onClick={insertLink} className="p-1.5 rounded hover:bg-accent transition-colors" title="Link invoegen">
-                  <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter className="flex-shrink-0 flex items-center justify-between sm:justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.svg,.zip,.rar,.txt,.csv"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-muted-foreground"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Paperclip className="w-4 h-4" />
-              Bijlage toevoegen
-            </Button>
-            {attachments.length > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {attachments.length} bestand{attachments.length > 1 ? 'en' : ''}
-              </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={resetAndClose}>
-              Annuleren
-            </Button>
-            <div className="relative" ref={scheduleDropdownRef}>
-              <div className="flex">
-                <Button
-                  onClick={handleSend}
-                  disabled={!to.trim() || !subject.trim() || isSending}
-                  className="gap-2 rounded-r-none"
-                >
-                  {scheduledAt ? (
-                    <><Clock className="w-4 h-4" />{isSending ? 'Inplannen...' : 'Inplannen'}</>
-                  ) : (
-                    <><Send className="w-4 h-4" />{isSending ? 'Verzenden...' : 'Verzenden'}</>
-                  )}
-                </Button>
-                <Button
-                  variant="default"
-                  size="icon"
-                  className="rounded-l-none border-l border-l-primary-foreground/20 px-2"
-                  onClick={() => setShowScheduleDropdown(!showScheduleDropdown)}
-                  type="button"
-                >
-                  <CalendarClock className="w-4 h-4" />
-                </Button>
-              </div>
-              {showScheduleDropdown && (
-                <div className="absolute right-0 bottom-full mb-2 w-72 rounded-md border bg-popover p-2 shadow-md z-50">
-                  <div className="space-y-1">
-                    <button
-                      type="button"
-                      className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'now' && 'bg-accent font-medium')}
-                      onClick={() => handleScheduleSelect('now')}
-                    >
-                      <div className="flex items-center gap-2"><Send className="w-4 h-4" /> Nu verzenden</div>
-                    </button>
-                    <button
-                      type="button"
-                      className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'tomorrow-9' && 'bg-accent font-medium')}
-                      onClick={() => handleScheduleSelect('tomorrow-9')}
-                    >
-                      <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 09:00</div>
-                    </button>
-                    <button
-                      type="button"
-                      className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'tomorrow-14' && 'bg-accent font-medium')}
-                      onClick={() => handleScheduleSelect('tomorrow-14')}
-                    >
-                      <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 14:00</div>
-                    </button>
-                    <button
-                      type="button"
-                      className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'next-monday' && 'bg-accent font-medium')}
-                      onClick={() => handleScheduleSelect('next-monday')}
-                    >
-                      <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Volgende week maandag 09:00</div>
-                    </button>
-                    <div className="border-t my-1" />
-                    <button
-                      type="button"
-                      className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'custom' && 'bg-accent font-medium')}
-                      onClick={() => handleScheduleSelect('custom')}
-                    >
-                      <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Aangepaste datum/tijd</div>
-                    </button>
-                    {scheduleOption === 'custom' && (
-                      <div className="px-3 py-2 space-y-2">
-                        <div>
-                          <Label className="text-xs">Datum</Label>
-                          <Input
-                            type="date"
-                            value={customDate}
-                            onChange={(e) => {
-                              setCustomDate(e.target.value)
-                              if (e.target.value && customTime) setScheduledAt(`${e.target.value}T${customTime}`)
-                            }}
-                            className="h-8 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Tijd</Label>
-                          <Input
-                            type="time"
-                            value={customTime}
-                            onChange={(e) => {
-                              setCustomTime(e.target.value)
-                              if (customDate && e.target.value) setScheduledAt(`${customDate}T${e.target.value}`)
-                            }}
-                            className="h-8 text-sm"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   )
 }
