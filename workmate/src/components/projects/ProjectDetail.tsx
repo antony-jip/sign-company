@@ -264,6 +264,9 @@ export function ProjectDetail() {
         vervaldatum: vervaldatum.toISOString().split('T')[0],
         notities: `Factuur aangemaakt vanuit offerte ${offerte.nummer}`,
         voorwaarden: '',
+        bron_type: 'offerte',
+        bron_offerte_id: offerte.id,
+        bron_project_id: id,
       })
 
       // Create factuur items from offerte items
@@ -281,6 +284,11 @@ export function ProjectDetail() {
           })
         )
       )
+
+      // Update offerte met factuur link (bidirectioneel)
+      await updateOfferte(offerte.id, {
+        geconverteerd_naar_factuur_id: newFactuur.id,
+      })
 
       toast.success(`Factuur ${factuurNummer} aangemaakt vanuit offerte ${offerte.nummer}`)
       navigate(`/facturen`)

@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
-import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject } from '@/services/supabaseService'
+import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject, createProject } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
-import { Receipt, ArrowLeft, ExternalLink } from 'lucide-react'
+import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import { logger } from '../../utils/logger'
 
@@ -149,6 +149,40 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     }
   }
 
+  // Maak project van goedgekeurde offerte
+  async function handleMaakProject() {
+    if (!fetchedOfferte) return
+    try {
+      const project = await createProject({
+        user_id: fetchedOfferte.user_id,
+        klant_id: fetchedOfferte.klant_id,
+        naam: fetchedOfferte.titel,
+        beschrijving: `Aangemaakt vanuit offerte ${fetchedOfferte.nummer}`,
+        status: 'actief',
+        prioriteit: 'medium',
+        start_datum: new Date().toISOString().split('T')[0],
+        eind_datum: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+        budget: fetchedOfferte.totaal || 0,
+        besteed: 0,
+        voortgang: 0,
+        team_leden: [],
+        bron_offerte_id: fetchedOfferte.id,
+      })
+
+      // Update offerte met project link
+      const updatedOfferte = await updateOfferte(fetchedOfferte.id, {
+        project_id: project.id,
+        geconverteerd_naar_project_id: project.id,
+      })
+      setFetchedOfferte(updatedOfferte)
+      toast.success(`Project "${project.naam}" aangemaakt`)
+      navigate(`/projecten/${project.id}`)
+    } catch (err) {
+      logger.error('Failed to create project from offerte:', err)
+      toast.error('Kon project niet aanmaken')
+    }
+  }
+
   // Handle PDF download
   function handleDownloadPDF() {
     if (!fetchedOfferte || !fetchedItems.length) return
@@ -269,6 +303,48 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Conversieketen indicator */}
+            {(fetchedOfferte.project_id || fetchedOfferte.geconverteerd_naar_factuur_id) && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mr-2">
+                <Badge className={getStatusColor(fetchedOfferte.status) + ' text-[10px]'}>
+                  {fetchedOfferte.nummer}
+                </Badge>
+                {fetchedOfferte.project_id && (
+                  <>
+                    <ArrowRight className="h-3 w-3" />
+                    <button
+                      onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
+                      className="text-accent dark:text-primary hover:underline font-medium"
+                    >
+                      Project
+                    </button>
+                  </>
+                )}
+                {fetchedOfferte.geconverteerd_naar_factuur_id && (
+                  <>
+                    <ArrowRight className="h-3 w-3" />
+                    <button
+                      onClick={() => navigate('/facturen')}
+                      className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                    >
+                      Factuur
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Maak Project button - voor goedgekeurde offertes zonder project */}
+            {fetchedOfferte.status === 'goedgekeurd' && !fetchedOfferte.project_id && (
+              <button
+                onClick={handleMaakProject}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent/90 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+              >
+                <FolderPlus className="h-4 w-4" />
+                Maak Project
+              </button>
+            )}
+
             {/* Factureer button - only for goedgekeurde offertes */}
             {fetchedOfferte.status === 'goedgekeurd' && (
               <button
