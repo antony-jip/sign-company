@@ -66,6 +66,7 @@ import {
 import {
   getProject,
   updateProject,
+  createProject,
   getTakenByProject,
   getDocumenten,
   createTaak,
@@ -77,6 +78,7 @@ import {
   createTekeningGoedkeuring,
   getTekeningGoedkeuringen,
   getKlant,
+  getKlanten,
   createFactuur,
   createFactuurItem,
   getTijdregistratiesByProject,
@@ -212,6 +214,14 @@ export function ProjectDetail() {
   // Budget tracking state
   const [projectTijdregistraties, setProjectTijdregistraties] = useState<Tijdregistratie[]>([])
 
+  // Project kopiëren state
+  const [kopieDialogOpen, setKopieDialogOpen] = useState(false)
+  const [kopieNaam, setKopieNaam] = useState('')
+  const [kopieKlantId, setKopieKlantId] = useState('')
+  const [kopieStartDatum, setKopieStartDatum] = useState(new Date().toISOString().split('T')[0])
+  const [alleKlanten, setAlleKlanten] = useState<Klant[]>([])
+  const [kopieBezig, setKopieBezig] = useState(false)
+
   // Email offerte state (simple offerte mail)
   const [emailOfferteOpen, setEmailOfferteOpen] = useState(false)
   const [emailOnderwerp, setEmailOnderwerp] = useState('')
@@ -303,6 +313,72 @@ export function ProjectDetail() {
       toast.error('Kon factuur niet aanmaken')
     } finally {
       setCreatingFactuurForOfferte(null)
+    }
+  }
+
+  const openKopieDialog = async () => {
+    if (!project) return
+    setKopieNaam(`${project.naam} (kopie)`)
+    setKopieKlantId(project.klant_id || '')
+    setKopieStartDatum(new Date().toISOString().split('T')[0])
+    try {
+      const klanten = await getKlanten()
+      setAlleKlanten(klanten)
+    } catch {
+      setAlleKlanten([])
+    }
+    setKopieDialogOpen(true)
+  }
+
+  const handleKopieerProject = async () => {
+    if (!project || !user || !kopieNaam.trim()) return
+    setKopieBezig(true)
+    try {
+      const gekozenKlant = alleKlanten.find(k => k.id === kopieKlantId)
+      const newProject = await createProject({
+        user_id: user.id,
+        naam: kopieNaam.trim(),
+        klant_id: kopieKlantId || project.klant_id,
+        klant_naam: gekozenKlant?.bedrijfsnaam || project.klant_naam,
+        beschrijving: project.beschrijving,
+        status: 'gepland',
+        prioriteit: project.prioriteit,
+        start_datum: kopieStartDatum,
+        eind_datum: '',
+        budget: project.budget,
+        besteed: 0,
+        voortgang: 0,
+        team_leden: [...project.team_leden],
+        tags: [...project.tags],
+        categorie: project.categorie,
+        budget_waarschuwing_pct: project.budget_waarschuwing_pct,
+        bron_project_id: project.id,
+      })
+
+      // Kopieer taken (zonder datums / bestede tijd)
+      for (const taak of projectTaken) {
+        await createTaak({
+          user_id: user.id,
+          project_id: newProject.id,
+          titel: taak.titel,
+          beschrijving: taak.beschrijving,
+          status: 'todo',
+          prioriteit: taak.prioriteit,
+          toegewezen_aan: taak.toegewezen_aan,
+          deadline: '',
+          geschatte_tijd: taak.geschatte_tijd,
+          bestede_tijd: 0,
+        })
+      }
+
+      toast.success(`Project "${kopieNaam}" aangemaakt met ${projectTaken.length} taken`)
+      setKopieDialogOpen(false)
+      navigate(`/projecten/${newProject.id}`)
+    } catch (err) {
+      logger.error('Fout bij kopiëren project:', err)
+      toast.error('Kon project niet kopiëren')
+    } finally {
+      setKopieBezig(false)
     }
   }
 
@@ -657,6 +733,15 @@ export function ProjectDetail() {
                 >
                   <Receipt className="h-4 w-4 mr-1.5" />
                   Factuur
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={openKopieDialog}
+                  className="h-8 px-3 text-wm-pale hover:text-white hover:bg-white/10 border border-white/10"
+                >
+                  <Copy className="h-4 w-4 mr-1.5" />
+                  Kopiëren
                 </Button>
               </div>
             </div>
@@ -1645,6 +1730,74 @@ export function ProjectDetail() {
             >
               <Send className="mr-1.5 h-4 w-4" />
               {isVersturen ? 'Versturen...' : `Verstuur (${selectedDocIds.length} bestanden)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Kopieer project dialog ── */}
+      <Dialog open={kopieDialogOpen} onOpenChange={(open) => {
+        setKopieDialogOpen(open)
+        if (!open) { setKopieNaam(''); setKopieKlantId(''); }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5 text-accent" />
+              Project kopiëren
+            </DialogTitle>
+            <DialogDescription>
+              Taken en teamleden worden gekopieerd. Tijdregistraties, facturen en documenten niet.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Projectnaam</Label>
+              <Input
+                value={kopieNaam}
+                onChange={(e) => setKopieNaam(e.target.value)}
+                placeholder="Naam van het nieuwe project"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Klant</Label>
+              <select
+                value={kopieKlantId}
+                onChange={(e) => setKopieKlantId(e.target.value)}
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">Zelfde klant behouden</option>
+                {alleKlanten.map((k) => (
+                  <option key={k.id} value={k.id}>{k.bedrijfsnaam}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Startdatum</Label>
+              <Input
+                type="date"
+                value={kopieStartDatum}
+                onChange={(e) => setKopieStartDatum(e.target.value)}
+              />
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
+              <p>Wordt gekopieerd:</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                <li>{projectTaken.length} taken (status wordt reset naar 'todo')</li>
+                <li>{project.team_leden.length} teamleden</li>
+                <li>Budget: {formatCurrency(project.budget)}</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setKopieDialogOpen(false)}>Annuleren</Button>
+            <Button
+              disabled={kopieBezig || !kopieNaam.trim()}
+              className="bg-gradient-to-r from-accent to-primary border-0"
+              onClick={handleKopieerProject}
+            >
+              {kopieBezig ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Copy className="h-4 w-4 mr-1.5" />}
+              {kopieBezig ? 'Kopiëren...' : 'Project kopiëren'}
             </Button>
           </DialogFooter>
         </DialogContent>
