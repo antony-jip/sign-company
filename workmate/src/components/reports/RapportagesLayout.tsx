@@ -38,6 +38,8 @@ import {
   getOffertes,
   getFacturen,
   getTijdregistraties,
+  getMedewerkers,
+  getVoorraadArtikelen,
 } from '@/services/supabaseService';
 import type {
   Klant,
@@ -45,6 +47,8 @@ import type {
   Offerte,
   Factuur,
   Tijdregistratie,
+  Medewerker,
+  VoorraadArtikel,
 } from '@/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -113,6 +117,8 @@ export function RapportagesLayout() {
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [offertes, setOffertes] = useState<Offerte[]>([]);
   const [tijdregistraties, setTijdregistraties] = useState<Tijdregistratie[]>([]);
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
+  const [voorraadArtikelen, setVoorraadArtikelen] = useState<VoorraadArtikel[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch data on mount
@@ -120,17 +126,21 @@ export function RapportagesLayout() {
     async function fetchData() {
       setLoading(true);
       try {
-        const [facturenData, projectenData, offertesData, tijdData] = await Promise.all([
+        const [facturenData, projectenData, offertesData, tijdData, mwData, vaData] = await Promise.all([
           getFacturen(),
           getProjecten(),
           getOffertes(),
           getTijdregistraties(),
+          getMedewerkers().catch(() => []),
+          getVoorraadArtikelen().catch(() => []),
         ]);
 
         setFacturen(facturenData);
         setProjecten(projectenData);
         setOffertes(offertesData);
         setTijdregistraties(tijdData);
+        setMedewerkers(mwData);
+        setVoorraadArtikelen(vaData);
       } catch {
         toast.error('Fout bij het laden van rapportagegegevens');
       } finally {
@@ -292,6 +302,57 @@ export function RapportagesLayout() {
   }, [gefilterdeOffertes]);
 
   // ---------------------------------------------------------------------------
+  // Medewerker productiviteit
+  // ---------------------------------------------------------------------------
+
+  const medewerkerProductiviteit = useMemo(() => {
+    return medewerkers
+      .filter((m) => m.status === 'actief')
+      .map((m) => {
+        const uren = tijdregistraties
+          .filter((t) => t.medewerker_id === m.id)
+          .reduce((s, t) => s + (t.duur || 0), 0);
+        const projectIds = new Set(
+          tijdregistraties.filter((t) => t.medewerker_id === m.id).map((t) => t.project_id)
+        );
+        return {
+          id: m.id,
+          naam: m.naam,
+          functie: m.functie,
+          uren: Math.round(uren * 10) / 10,
+          projecten: projectIds.size,
+          uurtarief: m.uurtarief,
+          omzet: Math.round(uren * m.uurtarief * 100) / 100,
+        };
+      })
+      .sort((a, b) => b.uren - a.uren);
+  }, [medewerkers, tijdregistraties]);
+
+  // ---------------------------------------------------------------------------
+  // Voorraad rapportage
+  // ---------------------------------------------------------------------------
+
+  const voorraadStats = useMemo(() => {
+    const totaalArtikelen = voorraadArtikelen.length;
+    const onderMinimum = voorraadArtikelen.filter(
+      (a) => a.huidige_voorraad <= (a.minimum_voorraad || 0)
+    ).length;
+    const totaleVoorraadWaarde = voorraadArtikelen.reduce(
+      (s, a) => s + (a.huidige_voorraad * (a.inkoopprijs || 0)),
+      0
+    );
+    return {
+      totaalArtikelen,
+      onderMinimum,
+      totaleVoorraadWaarde: Math.round(totaleVoorraadWaarde * 100) / 100,
+      artikelen: [...voorraadArtikelen].sort((a, b) =>
+        (a.huidige_voorraad <= (a.minimum_voorraad || 0) ? 0 : 1) -
+        (b.huidige_voorraad <= (b.minimum_voorraad || 0) ? 0 : 1)
+      ).slice(0, 15),
+    };
+  }, [voorraadArtikelen]);
+
+  // ---------------------------------------------------------------------------
   // Export handlers
   // ---------------------------------------------------------------------------
 
@@ -360,6 +421,42 @@ export function RapportagesLayout() {
       exportExcel('maandelijkse-omzet', headers, data);
     }
     toast.success(`Omzetgegevens geexporteerd als ${type.toUpperCase()}`);
+  }
+
+  function handleExportMedewerkers(type: 'csv' | 'excel') {
+    const headers = ['Medewerker', 'Functie', 'Uren', 'Projecten', 'Uurtarief', 'Omzet'];
+    const data = medewerkerProductiviteit.map((m) => ({
+      Medewerker: m.naam,
+      Functie: m.functie,
+      Uren: m.uren,
+      Projecten: m.projecten,
+      Uurtarief: m.uurtarief,
+      Omzet: m.omzet,
+    }));
+    if (type === 'csv') {
+      exportCSV('medewerker-productiviteit', headers, data);
+    } else {
+      exportExcel('medewerker-productiviteit', headers, data);
+    }
+    toast.success(`Medewerker rapport geexporteerd als ${type.toUpperCase()}`);
+  }
+
+  function handleExportVoorraad(type: 'csv' | 'excel') {
+    const headers = ['Artikel', 'Categorie', 'Huidig', 'Minimum', 'Inkoopprijs', 'Waarde'];
+    const data = voorraadArtikelen.map((a) => ({
+      Artikel: a.naam,
+      Categorie: a.categorie || '-',
+      Huidig: a.huidige_voorraad,
+      Minimum: a.minimum_voorraad || 0,
+      Inkoopprijs: a.inkoopprijs || 0,
+      Waarde: Math.round(a.huidige_voorraad * (a.inkoopprijs || 0) * 100) / 100,
+    }));
+    if (type === 'csv') {
+      exportCSV('voorraad-rapport', headers, data);
+    } else {
+      exportExcel('voorraad-rapport', headers, data);
+    }
+    toast.success(`Voorraad rapport geexporteerd als ${type.toUpperCase()}`);
   }
 
   // ---------------------------------------------------------------------------
@@ -1118,6 +1215,138 @@ export function RapportagesLayout() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Medewerker Productiviteit */}
+      {/* ------------------------------------------------------------------ */}
+      {medewerkerProductiviteit.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Medewerker productiviteit
+                </CardTitle>
+                <CardDescription>
+                  Uren, projecten en omzet per medewerker
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleExportMedewerkers('csv')}>
+                  <Download className="mr-1 h-3 w-3" /> CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleExportMedewerkers('excel')}>
+                  <FileSpreadsheet className="mr-1 h-3 w-3" /> Excel
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="pb-3 font-medium text-muted-foreground">Medewerker</th>
+                    <th className="pb-3 font-medium text-muted-foreground">Functie</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Uren</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Projecten</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Uurtarief</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Omzet</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {medewerkerProductiviteit.map((m) => (
+                    <tr key={m.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                      <td className="py-3 font-medium">{m.naam}</td>
+                      <td className="py-3 text-muted-foreground">{m.functie || '-'}</td>
+                      <td className="py-3 text-right">{m.uren}u</td>
+                      <td className="py-3 text-right">{m.projecten}</td>
+                      <td className="py-3 text-right">{formatCurrency(m.uurtarief)}/u</td>
+                      <td className="py-3 text-right font-medium">{formatCurrency(m.omzet)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Voorraad Rapportage */}
+      {/* ------------------------------------------------------------------ */}
+      {voorraadArtikelen.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Voorraad rapport
+                </CardTitle>
+                <CardDescription>
+                  {voorraadStats.totaalArtikelen} artikelen | Waarde: {formatCurrency(voorraadStats.totaleVoorraadWaarde)}
+                  {voorraadStats.onderMinimum > 0 && (
+                    <Badge variant="destructive" className="ml-2 text-[10px]">
+                      {voorraadStats.onderMinimum} onder minimum
+                    </Badge>
+                  )}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleExportVoorraad('csv')}>
+                  <Download className="mr-1 h-3 w-3" /> CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleExportVoorraad('excel')}>
+                  <FileSpreadsheet className="mr-1 h-3 w-3" /> Excel
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="pb-3 font-medium text-muted-foreground">Artikel</th>
+                    <th className="pb-3 font-medium text-muted-foreground">Categorie</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Huidig</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Minimum</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Inkoopprijs</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Waarde</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {voorraadStats.artikelen.map((a) => {
+                    const onderMin = a.huidige_voorraad <= (a.minimum_voorraad || 0);
+                    return (
+                      <tr key={a.id} className={cn(
+                        'border-b last:border-0 hover:bg-muted/50 transition-colors',
+                        onderMin && 'bg-red-50 dark:bg-red-900/10'
+                      )}>
+                        <td className="py-3 font-medium">
+                          {a.naam}
+                          {onderMin && <Badge variant="destructive" className="ml-2 text-[10px]">Laag</Badge>}
+                        </td>
+                        <td className="py-3 text-muted-foreground">{a.categorie || '-'}</td>
+                        <td className={cn('py-3 text-right', onderMin && 'text-red-600 font-bold')}>
+                          {a.huidige_voorraad} {a.eenheid || ''}
+                        </td>
+                        <td className="py-3 text-right text-muted-foreground">{a.minimum_voorraad || '-'}</td>
+                        <td className="py-3 text-right">{formatCurrency(a.inkoopprijs || 0)}</td>
+                        <td className="py-3 text-right font-medium">
+                          {formatCurrency(a.huidige_voorraad * (a.inkoopprijs || 0))}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
