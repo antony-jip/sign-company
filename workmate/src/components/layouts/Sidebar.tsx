@@ -63,6 +63,8 @@ const navSections: NavSection[] = [
     section: 'Beheer',
     items: [
       { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
+      { label: 'Uitgaven', icon: CreditCard, path: '/uitgaven' },
+      { label: 'Leveranciers', icon: Truck, path: '/leveranciers' },
       { label: 'Rapportages', icon: BarChart3, path: '/rapportages' },
       { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
       { label: 'Team', icon: UsersRound, path: '/team' },

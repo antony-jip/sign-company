@@ -90,6 +90,8 @@ import {
   createProjectToewijzing,
   deleteProjectToewijzing,
   getWerkbonnenByProject,
+  getUitgavenByProject,
+  round2,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -98,7 +100,7 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
-import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon } from '@/types'
+import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Uitgave } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
@@ -226,6 +228,7 @@ export function ProjectDetail() {
   const [alleMedewerkers, setAlleMedewerkers] = useState<Medewerker[]>([])
   const [projectToewijzingen, setProjectToewijzingen] = useState<ProjectToewijzing[]>([])
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
+  const [projectUitgaven, setProjectUitgaven] = useState<Uitgave[]>([])
   const [toewijzingMedewerkerId, setToewijzingMedewerkerId] = useState('')
   const [toewijzingRol, setToewijzingRol] = useState<ProjectToewijzing['rol']>('medewerker')
 
@@ -470,7 +473,7 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, uitgavenData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
@@ -480,6 +483,7 @@ export function ProjectDetail() {
           getMedewerkers(),
           getProjectToewijzingen(id),
           getWerkbonnenByProject(id),
+          getUitgavenByProject(id),
         ])
         if (!cancelled) {
           setProject(projectData)
@@ -491,6 +495,7 @@ export function ProjectDetail() {
           setAlleMedewerkers(medewerkersData || [])
           setProjectToewijzingen(toewijzingenData || [])
           setProjectWerkbonnen(werkbonnenData || [])
+          setProjectUitgaven(uitgavenData || [])
         }
 
         // Fetch klant data
@@ -1380,6 +1385,55 @@ export function ProjectDetail() {
                     </div>
                   ))}
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Uitgaven ── */}
+          <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="p-1 rounded-md bg-red-500/10">
+                    <CreditCard className="h-3.5 w-3.5 text-red-600" />
+                  </div>
+                  Uitgaven
+                  <span className="text-xs text-muted-foreground font-normal">{projectUitgaven.length}</span>
+                </CardTitle>
+                <Button
+                  variant="ghost" size="icon" className="h-7 w-7"
+                  onClick={() => navigate('/uitgaven')}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {projectUitgaven.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">Geen uitgaven</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    {projectUitgaven.slice(0, 5).map((uit) => (
+                      <div
+                        key={uit.id}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{uit.omschrijving}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(uit.datum).toLocaleDateString('nl-NL')}</p>
+                        </div>
+                        <span className="text-sm font-medium">{formatCurrency(uit.bedrag_incl_btw)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 pt-3 border-t flex justify-between text-sm">
+                    <span className="text-muted-foreground">Totaal</span>
+                    <span className="font-semibold">{formatCurrency(round2(projectUitgaven.reduce((s, u) => s + u.bedrag_incl_btw, 0)))}</span>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
