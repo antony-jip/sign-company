@@ -60,8 +60,9 @@ import {
   getOffertes,
   getOfferteItems,
   createFactuurItem,
+  getHerinneringTemplates,
 } from '@/services/supabaseService'
-import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem } from '@/types'
+import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate } from '@/types'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { exportCSV, exportExcel } from '@/lib/export'
@@ -75,7 +76,7 @@ import { logger } from '../../utils/logger'
 // ============ TYPES ============
 
 type FactuurStatus = Factuur['status']
-type FilterStatus = 'alle' | FactuurStatus
+type FilterStatus = 'alle' | FactuurStatus | 'verlopen'
 type SortField = 'datum' | 'bedrag' | 'klantnaam'
 type SortDir = 'asc' | 'desc'
 
@@ -141,6 +142,7 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'verzonden', label: 'Verzonden' },
   { value: 'betaald', label: 'Betaald' },
   { value: 'vervallen', label: 'Vervallen' },
+  { value: 'verlopen', label: 'Verlopen' },
   { value: 'gecrediteerd', label: 'Gecrediteerd' },
 ]
 
@@ -247,6 +249,13 @@ export function FacturenLayout() {
     items: [createEmptyLineItem()],
   })
 
+  // Herinnering state
+  const [herinneringTemplates, setHerinneringTemplates] = useState<HerinneringTemplate[]>([])
+  const [herinneringDialogOpen, setHerinneringDialogOpen] = useState(false)
+  const [herinneringFactuur, setHerinneringFactuur] = useState<Factuur | null>(null)
+  const [herinneringType, setHerinneringType] = useState<HerinneringTemplate['type']>('herinnering_1')
+  const [herinneringPreview, setHerinneringPreview] = useState('')
+
   // URL params for workflow integration
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -257,16 +266,18 @@ export function FacturenLayout() {
     async function loadData() {
       try {
         setIsLoading(true)
-        const [facturenData, klantenData, offertesData] = await Promise.all([
+        const [facturenData, klantenData, offertesData, herinneringData] = await Promise.all([
           getFacturen().catch(() => []),
           getKlanten().catch(() => []),
           getOffertes().catch(() => []),
+          getHerinneringTemplates().catch(() => []),
         ])
 
         if (!cancelled) {
           setFacturen(facturenData)
           setKlanten(klantenData)
           setOffertes(offertesData)
+          setHerinneringTemplates(herinneringData)
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -316,7 +327,10 @@ export function FacturenLayout() {
       )
     }
 
-    if (filterStatus !== 'alle') {
+    if (filterStatus === 'verlopen') {
+      const vandaag = getTodayString()
+      result = result.filter((f) => f.vervaldatum < vandaag && f.status !== 'betaald' && f.status !== 'gecrediteerd')
+    } else if (filterStatus !== 'alle') {
       result = result.filter((f) => f.status === filterStatus)
     }
 
@@ -830,6 +844,100 @@ export function FacturenLayout() {
     [klanten, bedrijfsnaam, primaireKleur, emailHandtekening]
   )
 
+  // ============ HERINNERING LOGIC ============
+
+  const getDagenVerlopen = useCallback((factuur: Factuur): number => {
+    const vervaldatum = new Date(factuur.vervaldatum)
+    const vandaag = new Date()
+    return Math.max(0, Math.floor((vandaag.getTime() - vervaldatum.getTime()) / (1000 * 60 * 60 * 24)))
+  }, [])
+
+  const getVolgendeHerinnering = useCallback((factuur: Factuur): HerinneringTemplate['type'] | null => {
+    const dagen = getDagenVerlopen(factuur)
+    if (dagen <= 0) return null
+    if (!factuur.herinnering_1_verstuurd && dagen >= 7) return 'herinnering_1'
+    if (!factuur.herinnering_2_verstuurd && dagen >= 14) return 'herinnering_2'
+    if (!factuur.herinnering_3_verstuurd && dagen >= 21) return 'herinnering_3'
+    if (!factuur.aanmaning_verstuurd && dagen >= 30) return 'aanmaning'
+    return null
+  }, [getDagenVerlopen])
+
+  const openHerinneringDialog = useCallback((factuur: Factuur) => {
+    const type = getVolgendeHerinnering(factuur) || 'herinnering_1'
+    const template = herinneringTemplates.find((t) => t.type === type)
+    const klant = klanten.find((k) => k.id === factuur.klant_id)
+    if (template && klant) {
+      const preview = template.inhoud
+        .replace(/{klant_naam}/g, klant.contactpersoon || klant.bedrijfsnaam)
+        .replace(/{factuur_nummer}/g, factuur.nummer)
+        .replace(/{factuur_bedrag}/g, formatCurrency(factuur.totaal))
+        .replace(/{vervaldatum}/g, formatDate(factuur.vervaldatum))
+        .replace(/{dagen_verlopen}/g, String(getDagenVerlopen(factuur)))
+        .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
+      setHerinneringPreview(preview)
+    }
+    setHerinneringFactuur(factuur)
+    setHerinneringType(type)
+    setHerinneringDialogOpen(true)
+  }, [getVolgendeHerinnering, herinneringTemplates, klanten, getDagenVerlopen, bedrijfsnaam])
+
+  const handleVerstuurHerinnering = useCallback(async () => {
+    if (!herinneringFactuur) return
+    const klant = klanten.find((k) => k.id === herinneringFactuur.klant_id)
+    if (!klant?.email) {
+      toast.error('Geen emailadres gevonden voor deze klant')
+      return
+    }
+
+    const template = herinneringTemplates.find((t) => t.type === herinneringType)
+    if (!template) {
+      toast.error('Geen herinnering template gevonden')
+      return
+    }
+
+    try {
+      const onderwerp = template.onderwerp
+        .replace(/{factuur_nummer}/g, herinneringFactuur.nummer)
+
+      // Try to send email (may fail if SMTP not configured)
+      try {
+        await sendEmail(klant.email, onderwerp, herinneringPreview, {})
+      } catch {
+        toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Herinnering is wel gemarkeerd.')
+      }
+
+      // Mark herinnering as sent
+      const fieldMap: Record<string, string> = {
+        herinnering_1: 'herinnering_1_verstuurd',
+        herinnering_2: 'herinnering_2_verstuurd',
+        herinnering_3: 'herinnering_3_verstuurd',
+        aanmaning: 'aanmaning_verstuurd',
+      }
+      const updateField = fieldMap[herinneringType]
+      const updates: Partial<Factuur> = { [updateField]: new Date().toISOString() }
+
+      await updateFactuur(herinneringFactuur.id, updates)
+      setFacturen((prev) => prev.map((f) => f.id === herinneringFactuur.id ? { ...f, ...updates } : f))
+
+      toast.success(`${template.type === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} gemarkeerd voor ${herinneringFactuur.nummer}`)
+      setHerinneringDialogOpen(false)
+    } catch (err) {
+      toast.error('Fout bij versturen herinnering')
+    }
+  }, [herinneringFactuur, klanten, herinneringTemplates, herinneringType, herinneringPreview])
+
+  const verlopenCount = useMemo(() => {
+    const vandaag = getTodayString()
+    return facturen.filter((f) => f.vervaldatum < vandaag && f.status !== 'betaald' && f.status !== 'gecrediteerd').length
+  }, [facturen])
+
+  const verlopenTotaal = useMemo(() => {
+    const vandaag = getTodayString()
+    return round2(facturen
+      .filter((f) => f.vervaldatum < vandaag && f.status !== 'betaald' && f.status !== 'gecrediteerd')
+      .reduce((sum, f) => sum + f.totaal, 0))
+  }, [facturen])
+
   // ============ RENDER ============
 
   if (isLoading) {
@@ -941,11 +1049,19 @@ export function FacturenLayout() {
             </span>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {statistics.vervallenCount}
+            {verlopenCount}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            actie vereist
+            {verlopenTotaal > 0 ? formatCurrency(verlopenTotaal) : 'actie vereist'}
           </p>
+          {verlopenCount > 0 && (
+            <button
+              className="text-xs text-red-600 hover:underline mt-1"
+              onClick={() => setFilterStatus('verlopen')}
+            >
+              Toon verlopen →
+            </button>
+          )}
         </div>
 
         <div className="relative overflow-hidden rounded-2xl border border-amber-200/50 dark:border-amber-800/40 bg-gradient-to-br from-amber-50/80 to-white/80 dark:from-amber-950/40 dark:to-gray-900/80 backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
@@ -1061,6 +1177,7 @@ export function FacturenLayout() {
                   { key: 'vervaldatum', label: 'Vervaldatum' },
                   { key: 'bedrag', label: 'Bedrag' },
                   { key: 'status', label: 'Status' },
+                  { key: 'verlopen', label: 'Verlopen' },
                   { key: 'acties', label: '' },
                 ].map((col) => (
                   <th
@@ -1075,7 +1192,7 @@ export function FacturenLayout() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
               {filteredFacturen.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-16 text-center">
+                  <td colSpan={10} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-3 text-muted-foreground">
                       <FileText className="h-10 w-10 opacity-30" />
                       <p className="text-sm font-medium">Geen facturen gevonden</p>
@@ -1164,6 +1281,19 @@ export function FacturenLayout() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
+                      {isOverdue && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-medium text-red-600">{getDagenVerlopen(factuur)}d</span>
+                          <div className="flex gap-0.5">
+                            {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-orange-400" title="Herinnering 1" />}
+                            {factuur.herinnering_2_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-orange-500" title="Herinnering 2" />}
+                            {factuur.herinnering_3_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-red-400" title="Herinnering 3" />}
+                            {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-red-600" title="Aanmaning" />}
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -1199,10 +1329,10 @@ export function FacturenLayout() {
                               Markeer als betaald
                             </DropdownMenuItem>
                           )}
-                          {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
-                            <DropdownMenuItem onClick={() => handleSendReminder(factuur)}>
+                          {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && getVolgendeHerinnering(factuur) && (
+                            <DropdownMenuItem onClick={() => openHerinneringDialog(factuur)}>
                               <Bell className="h-4 w-4 mr-2" />
-                              Verstuur herinnering
+                              Verstuur {getVolgendeHerinnering(factuur) === 'aanmaning' ? 'aanmaning' : 'herinnering'}
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
@@ -1697,6 +1827,65 @@ export function FacturenLayout() {
               </div>
             )}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Herinnering Dialog ── */}
+      <Dialog open={herinneringDialogOpen} onOpenChange={setHerinneringDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-orange-500" />
+              {herinneringType === 'aanmaning' ? 'Aanmaning versturen' : 'Herinnering versturen'}
+            </DialogTitle>
+            <DialogDescription>
+              Factuur {herinneringFactuur?.nummer} — {getDagenVerlopen(herinneringFactuur || {} as Factuur)} dagen verlopen
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Type</Label>
+              <div className="flex gap-2 mt-1">
+                {(['herinnering_1', 'herinnering_2', 'herinnering_3', 'aanmaning'] as const).map((type) => (
+                  <Button
+                    key={type}
+                    variant={herinneringType === type ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      setHerinneringType(type)
+                      const template = herinneringTemplates.find((t) => t.type === type)
+                      const klant = klanten.find((k) => k.id === herinneringFactuur?.klant_id)
+                      if (template && klant && herinneringFactuur) {
+                        setHerinneringPreview(
+                          template.inhoud
+                            .replace(/{klant_naam}/g, klant.contactpersoon || klant.bedrijfsnaam)
+                            .replace(/{factuur_nummer}/g, herinneringFactuur.nummer)
+                            .replace(/{factuur_bedrag}/g, formatCurrency(herinneringFactuur.totaal))
+                            .replace(/{vervaldatum}/g, formatDate(herinneringFactuur.vervaldatum))
+                            .replace(/{dagen_verlopen}/g, String(getDagenVerlopen(herinneringFactuur)))
+                            .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
+                        )
+                      }
+                    }}
+                  >
+                    {type === 'herinnering_1' ? 'H1' : type === 'herinnering_2' ? 'H2' : type === 'herinnering_3' ? 'H3' : 'Aanm.'}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Preview</Label>
+              <div className="mt-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm whitespace-pre-wrap max-h-60 overflow-y-auto">
+                {herinneringPreview || 'Geen template beschikbaar'}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHerinneringDialogOpen(false)}>Annuleren</Button>
+            <Button onClick={handleVerstuurHerinnering} className="bg-orange-500 hover:bg-orange-600">
+              <Bell className="h-4 w-4 mr-1" /> Verstuur
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
