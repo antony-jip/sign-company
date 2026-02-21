@@ -11,7 +11,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Legend, Area, AreaChart,
 } from 'recharts'
-import { cn, formatCurrency, round2 } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
+import { round2 } from '@/utils/budgetUtils'
 import { getFacturen, getDeals } from '@/services/supabaseService'
 import type { Factuur, Deal } from '@/types'
 

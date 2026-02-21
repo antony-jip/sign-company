@@ -22,7 +22,6 @@ import {
   getGedeeldeEmails, getMedewerkers, updateEmailToewijzing,
   updateEmailTicketStatus, addInterneNotitie,
 } from '@/services/supabaseService'
-import { generateId, now } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 
 // ─── Configs ────────────────────────────────────────────────────────
@@ -162,13 +161,13 @@ export function GedeeldeInboxLayout() {
     setIsSavingNote(true)
     try {
       const notitie: InternEmailNotitie = {
-        id: generateId(),
+        id: crypto.randomUUID(),
         medewerker_id: user.id,
         medewerker_naam: user.user_metadata?.voornaam
           ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim()
           : user.email?.split('@')[0] || 'Gebruiker',
         tekst: notitieText.trim(),
-        datum: now(),
+        datum: new Date().toISOString(),
       }
       const updated = await addInterneNotitie(selectedEmail.id, notitie)
       setEmails((prev) => prev.map((e) => e.id === updated.id ? updated : e))

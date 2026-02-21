@@ -338,7 +338,7 @@ export function RapportagesLayout() {
       (a) => a.huidige_voorraad <= (a.minimum_voorraad || 0)
     ).length;
     const totaleVoorraadWaarde = voorraadArtikelen.reduce(
-      (s, a) => s + (a.huidige_voorraad * (a.inkoopprijs || 0)),
+      (s, a) => s + (a.huidige_voorraad * (a.inkoop_prijs || 0)),
       0
     );
     return {
@@ -448,8 +448,8 @@ export function RapportagesLayout() {
       Categorie: a.categorie || '-',
       Huidig: a.huidige_voorraad,
       Minimum: a.minimum_voorraad || 0,
-      Inkoopprijs: a.inkoopprijs || 0,
-      Waarde: Math.round(a.huidige_voorraad * (a.inkoopprijs || 0) * 100) / 100,
+      Inkoopprijs: a.inkoop_prijs || 0,
+      Waarde: Math.round(a.huidige_voorraad * (a.inkoop_prijs || 0) * 100) / 100,
     }));
     if (type === 'csv') {
       exportCSV('voorraad-rapport', headers, data);
@@ -1334,9 +1334,9 @@ export function RapportagesLayout() {
                           {a.huidige_voorraad} {a.eenheid || ''}
                         </td>
                         <td className="py-3 text-right text-muted-foreground">{a.minimum_voorraad || '-'}</td>
-                        <td className="py-3 text-right">{formatCurrency(a.inkoopprijs || 0)}</td>
+                        <td className="py-3 text-right">{formatCurrency(a.inkoop_prijs || 0)}</td>
                         <td className="py-3 text-right font-medium">
-                          {formatCurrency(a.huidige_voorraad * (a.inkoopprijs || 0))}
+                          {formatCurrency(a.huidige_voorraad * (a.inkoop_prijs || 0))}
                         </td>
                       </tr>
                     );

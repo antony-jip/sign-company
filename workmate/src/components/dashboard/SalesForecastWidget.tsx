@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { formatCurrency, round2 } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
+import { round2 } from '@/utils/budgetUtils'
 import { getDeals } from '@/services/supabaseService'
 import type { Deal } from '@/types'
 
