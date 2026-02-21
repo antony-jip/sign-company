@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import {
   Loader2, Users, UserPlus, MessageSquare, Send, AlertCircle,
-  CheckCircle2, Clock, Filter, ChevronDown,
+  CheckCircle2, Clock, Filter,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +15,6 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn, formatDateTime, getInitials } from '@/lib/utils'
 import type { Email, Medewerker, InternEmailNotitie } from '@/types'
 import {

@@ -67,10 +67,12 @@ import {
   getEmails,
   getDocumenten,
   getOffertes,
+  getFacturen,
+  getDealsByKlant,
   updateKlant,
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
-import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon } from '@/types'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal } from '@/types'
 
 function getStatusBarColor(status: string): string {
   switch (status) {
@@ -111,6 +113,8 @@ export function ClientProfile() {
   const [clientProjecten, setClientProjecten] = useState<Project[]>([])
   const [clientEmails, setClientEmails] = useState<Email[]>([])
   const [clientDocumenten, setClientDocumenten] = useState<DocType[]>([])
+  const [clientFacturen, setClientFacturen] = useState<Factuur[]>([])
+  const [clientDeals, setClientDeals] = useState<Deal[]>([])
   const [clientOffertes, setClientOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('projecten')
@@ -129,7 +133,9 @@ export function ClientProfile() {
       getEmails(),
       getDocumenten(),
       getOffertes(),
-    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes]) => {
+      getFacturen().catch(() => []),
+      getDealsByKlant(id).catch(() => []),
+    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals]) => {
       setKlant(klantData)
       setClientProjecten(projecten)
       setNotitie(klantData?.notities || '')
@@ -147,6 +153,8 @@ export function ClientProfile() {
         )
       }
       setClientDocumenten(allDocs.filter((d) => d.klant_id === id))
+      setClientFacturen(allFacturen.filter((f) => f.klant_id === id))
+      setClientDeals(deals)
       setIsLoading(false)
     })
   }, [id])
@@ -264,7 +272,9 @@ export function ClientProfile() {
   const contactpersonen = klant.contactpersonen || []
   const tabs = [
     { key: 'projecten', label: 'Projecten', count: clientProjecten.length, icon: FolderKanban },
+    { key: 'deals', label: 'Deals', count: clientDeals.length, icon: CreditCard },
     { key: 'offertes', label: 'Offertes', count: clientOffertes.length, icon: FileText },
+    { key: 'facturen', label: 'Facturen', count: clientFacturen.length, icon: Receipt },
     { key: 'communicatie', label: 'Communicatie', count: clientEmails.length, icon: Mail },
     { key: 'documenten', label: 'Documenten', count: clientDocumenten.length, icon: FileIcon },
   ]
@@ -725,6 +735,104 @@ export function ClientProfile() {
                               {formatDate(offerte.geldig_tot)}
                             </span>
                           </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ════════ DEALS TAB ════════ */}
+          {activeTab === 'deals' && (
+            <Card>
+              {clientDeals.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Geen deals voor deze klant</p>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fase</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waarde</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Kans</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {clientDeals.map((deal) => (
+                        <tr
+                          key={deal.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                          onClick={() => navigate(`/deals/${deal.id}`)}
+                        >
+                          <td className="py-3 px-4 text-sm font-medium">{deal.titel}</td>
+                          <td className="py-3 px-4 text-sm capitalize text-muted-foreground">{deal.fase}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={cn('text-xs capitalize',
+                              deal.status === 'gewonnen' ? 'bg-emerald-100 text-emerald-700' :
+                              deal.status === 'verloren' ? 'bg-red-100 text-red-700' :
+                              deal.status === 'on-hold' ? 'bg-amber-100 text-amber-700' :
+                              'bg-blue-100 text-blue-700'
+                            )}>
+                              {deal.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(deal.verwachte_waarde)}</td>
+                          <td className="py-3 px-4 text-right text-sm text-muted-foreground hidden md:table-cell">{deal.kans_percentage || 50}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ════════ FACTUREN TAB ════════ */}
+          {activeTab === 'facturen' && (
+            <Card>
+              {clientFacturen.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <Receipt className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Geen facturen voor deze klant</p>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Totaal</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Datum</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {clientFacturen.map((factuur) => (
+                        <tr key={factuur.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
+                          </td>
+                          <td className="py-3 px-4 text-sm">{factuur.titel}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={cn('text-xs capitalize',
+                              factuur.status === 'betaald' ? 'bg-emerald-100 text-emerald-700' :
+                              factuur.status === 'vervallen' ? 'bg-red-100 text-red-700' :
+                              factuur.status === 'verzonden' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-700'
+                            )}>
+                              {factuur.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(factuur.totaal)}</td>
+                          <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground">{formatDate(factuur.factuurdatum)}</td>
                         </tr>
                       ))}
                     </tbody>

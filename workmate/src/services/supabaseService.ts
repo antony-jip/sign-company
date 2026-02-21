@@ -3452,29 +3452,4 @@ export async function addInterneNotitie(emailId: string, notitie: InternEmailNot
   return updateEmail(emailId, { interne_notities: [...huidigeNotities, notitie] })
 }
 
-// Helper: getEmail (needed for addInterneNotitie)
-async function getEmail(id: string): Promise<Email | null> {
-  assertId(id)
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('emails').select('*').eq('id', id).single()
-    if (error) return null
-    return data
-  }
-  return getLocalData<Email>('emails').find((e) => e.id === id) || null
-}
-
-// Helper: updateEmail
-async function updateEmail(id: string, updates: Partial<Email>): Promise<Email> {
-  assertId(id)
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('emails').update(updates).eq('id', id).select().single()
-    if (error) throw error
-    return data
-  }
-  const items = getLocalData<Email>('emails')
-  const index = items.findIndex((e) => e.id === id)
-  if (index === -1) throw new Error('Email niet gevonden')
-  items[index] = { ...items[index], ...updates }
-  setLocalData('emails', items)
-  return items[index]
-}
+// getEmail and updateEmail are exported above (lines 653, 689) — used by shared inbox functions

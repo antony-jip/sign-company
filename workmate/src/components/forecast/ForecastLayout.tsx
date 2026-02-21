@@ -1,17 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
-  TrendingUp, Loader2, DollarSign, Target, BarChart3, ArrowUp, ArrowDown,
+  TrendingUp, Loader2, DollarSign, Target, BarChart3,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, Legend, Area, AreaChart,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
-import { cn, formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { getFacturen, getDeals } from '@/services/supabaseService'
 import type { Factuur, Deal } from '@/types'
