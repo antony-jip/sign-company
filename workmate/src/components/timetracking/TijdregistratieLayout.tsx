@@ -50,13 +50,17 @@ import {
   updateTijdregistratie,
   deleteTijdregistratie,
   getProjecten,
+  getKlanten,
+  createFactuur,
+  createFactuurItem,
 } from "@/services/supabaseService";
-import type { Tijdregistratie, Project } from "@/types";
+import type { Tijdregistratie, Project, Klant } from "@/types";
+import { round2 } from "@/utils/budgetUtils";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportCSV, exportExcel } from "@/lib/export";
 
-type FilterType = "alle" | "deze_week" | "deze_maand" | "facturabel" | "niet_facturabel";
+type FilterType = "alle" | "deze_week" | "deze_maand" | "facturabel" | "niet_facturabel" | "gefactureerd" | "niet_gefactureerd";
 
 type TimerStatus = "stopped" | "running" | "paused";
 
@@ -170,8 +174,10 @@ const EMPTY_FORM: FormData = {
 export function TijdregistratieLayout() {
   const [registraties, setRegistraties] = useState<Tijdregistratie[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
+  const [klanten, setKlanten] = useState<Klant[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterType>("deze_week");
+  const [factureerBezig, setFactureerBezig] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -194,13 +200,15 @@ export function TijdregistratieLayout() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [regData, projData] = await Promise.all([
+      const [regData, projData, klantData] = await Promise.all([
         getTijdregistraties(),
         getProjecten(),
+        getKlanten(),
       ]);
 
       setRegistraties(regData || []);
       setProjecten(projData || []);
+      setKlanten(klantData || []);
     } catch {
       toast.error('Kon tijdregistraties niet laden');
     } finally {
@@ -337,6 +345,10 @@ export function TijdregistratieLayout() {
         return r.facturabel;
       case "niet_facturabel":
         return !r.facturabel;
+      case "gefactureerd":
+        return r.gefactureerd;
+      case "niet_gefactureerd":
+        return r.facturabel && !r.gefactureerd;
       case "alle":
       default:
         return true;
@@ -488,6 +500,92 @@ export function TijdregistratieLayout() {
     setDeleteConfirmId(null);
   }
 
+  async function handleFactureerUren() {
+    const teFactureren = sortedRegistraties.filter((r) => r.facturabel && !r.gefactureerd);
+    if (teFactureren.length === 0) {
+      toast.error("Geen ongefactureerde uren gevonden");
+      return;
+    }
+
+    // Groepeer per project
+    const perProject = new Map<string, Tijdregistratie[]>();
+    for (const reg of teFactureren) {
+      const key = reg.project_id;
+      if (!perProject.has(key)) perProject.set(key, []);
+      perProject.get(key)!.push(reg);
+    }
+
+    setFactureerBezig(true);
+    try {
+      for (const [projectId, regs] of perProject) {
+        const project = projecten.find((p) => p.id === projectId);
+        const klant = project ? klanten.find((k) => k.id === project.klant_id) : null;
+
+        // Bereken factuuritems per uurregistratie
+        const items = regs.map((r, i) => {
+          const uren = round2(r.duur_minuten / 60);
+          const totaal = round2(uren * r.uurtarief);
+          return {
+            beschrijving: `${r.datum} - ${r.omschrijving} (${uren}u)`,
+            aantal: uren,
+            eenheidsprijs: r.uurtarief,
+            btw_percentage: 21,
+            korting_percentage: 0,
+            totaal,
+            volgorde: i,
+          };
+        });
+
+        const subtotaal = round2(items.reduce((sum, item) => sum + item.totaal, 0));
+        const btwBedrag = round2(subtotaal * 0.21);
+        const totaal = round2(subtotaal + btwBedrag);
+
+        const factuur = await createFactuur({
+          user_id: regs[0].user_id,
+          klant_id: klant?.id || "",
+          klant_naam: klant?.bedrijfsnaam || project?.klant_naam || "",
+          project_id: projectId,
+          nummer: `FAC-${Date.now().toString(36).toUpperCase()}`,
+          titel: `Uren ${project?.naam || "project"} - ${new Date().toLocaleDateString("nl-NL")}`,
+          status: "concept",
+          subtotaal,
+          btw_bedrag: btwBedrag,
+          totaal,
+          betaald_bedrag: 0,
+          factuurdatum: new Date().toISOString().split("T")[0],
+          vervaldatum: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+          notities: "",
+          voorwaarden: "",
+          bron_type: "project",
+          bron_project_id: projectId,
+        });
+
+        // Factuuritems aanmaken
+        for (const item of items) {
+          await createFactuurItem({
+            factuur_id: factuur.id,
+            ...item,
+          });
+        }
+
+        // Markeer alle tijdregistraties als gefactureerd
+        for (const reg of regs) {
+          await updateTijdregistratie(reg.id, {
+            gefactureerd: true,
+            factuur_id: factuur.id,
+          });
+        }
+      }
+
+      toast.success(`${teFactureren.length} uren gefactureerd over ${perProject.size} project(en)`);
+      loadData();
+    } catch {
+      toast.error("Kon niet alle uren factureren");
+    } finally {
+      setFactureerBezig(false);
+    }
+  }
+
   function handleExportCSV() {
     const headers = ["Datum", "Project", "Omschrijving", "Start", "Eind", "Duur (uur)", "Uurtarief", "Totaal", "Facturabel"];
     const exportData = sortedRegistraties.map((r) => ({
@@ -555,6 +653,15 @@ export function TijdregistratieLayout() {
           <Button variant="outline" size="sm" onClick={handleExportExcel}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Excel
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleFactureerUren}
+            disabled={factureerBezig || registraties.filter((r) => r.facturabel && !r.gefactureerd).length === 0}
+          >
+            <Euro className="mr-2 h-4 w-4" />
+            {factureerBezig ? "Bezig..." : `Factureer uren (${registraties.filter((r) => r.facturabel && !r.gefactureerd).length})`}
           </Button>
           <Button onClick={openNewDialog}>
             <Plus className="mr-2 h-4 w-4" />
@@ -868,29 +975,35 @@ export function TijdregistratieLayout() {
             { key: "deze_maand", label: "Deze maand" },
             { key: "facturabel", label: "Facturabel" },
             { key: "niet_facturabel", label: "Niet-facturabel" },
+            { key: "niet_gefactureerd", label: "Te factureren" },
+            { key: "gefactureerd", label: "Gefactureerd" },
           ] as { key: FilterType; label: string }[]
-        ).map((filter) => (
-          <Button
-            key={filter.key}
-            variant={activeFilter === filter.key ? "default" : "outline"}
-            size="sm"
-            className="rounded-full"
-            onClick={() => setActiveFilter(filter.key)}
-          >
-            {filter.label}
-            {filter.key !== "alle" && (
-              <Badge variant="secondary" className="ml-1.5 px-1.5 py-0 text-[10px]">
-                {filter.key === "deze_week"
-                  ? registraties.filter((r) => isCurrentWeek(r.datum)).length
-                  : filter.key === "deze_maand"
-                    ? registraties.filter((r) => isCurrentMonth(r.datum)).length
-                    : filter.key === "facturabel"
-                      ? registraties.filter((r) => r.facturabel).length
-                      : registraties.filter((r) => !r.facturabel).length}
-              </Badge>
-            )}
-          </Button>
-        ))}
+        ).map((filter) => {
+          const filterCounts: Record<string, number> = {
+            deze_week: registraties.filter((r) => isCurrentWeek(r.datum)).length,
+            deze_maand: registraties.filter((r) => isCurrentMonth(r.datum)).length,
+            facturabel: registraties.filter((r) => r.facturabel).length,
+            niet_facturabel: registraties.filter((r) => !r.facturabel).length,
+            niet_gefactureerd: registraties.filter((r) => r.facturabel && !r.gefactureerd).length,
+            gefactureerd: registraties.filter((r) => r.gefactureerd).length,
+          };
+          return (
+            <Button
+              key={filter.key}
+              variant={activeFilter === filter.key ? "default" : "outline"}
+              size="sm"
+              className="rounded-full"
+              onClick={() => setActiveFilter(filter.key)}
+            >
+              {filter.label}
+              {filter.key !== "alle" && (
+                <Badge variant="secondary" className="ml-1.5 px-1.5 py-0 text-[10px]">
+                  {filterCounts[filter.key] ?? 0}
+                </Badge>
+              )}
+            </Button>
+          );
+        })}
       </div>
 
       {/* Timesheet Table */}
@@ -970,7 +1083,11 @@ export function TijdregistratieLayout() {
                           {totaal > 0 ? formatCurrency(totaal) : "-"}
                         </td>
                         <td className="py-3 pr-4 text-center">
-                          {reg.facturabel ? (
+                          {reg.gefactureerd ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-[10px]">
+                              Gefact.
+                            </Badge>
+                          ) : reg.facturabel ? (
                             <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
                           ) : (
                             <XCircle className="h-5 w-5 text-muted-foreground mx-auto" />
