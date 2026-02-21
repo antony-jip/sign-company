@@ -5,6 +5,7 @@ import {
   Mail, Calendar, CalendarCheck, PiggyBank, Bot, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload,
   Sparkles, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
+  ClipboardCheck, Truck, CreditCard,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -39,6 +40,7 @@ const navSections: NavSection[] = [
       { label: 'Klanten', icon: Users, path: '/klanten' },
       { label: 'Offertes', icon: FileText, path: '/offertes' },
       { label: 'Facturen', icon: Receipt, path: '/facturen' },
+      { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
       { label: 'Documenten', icon: Files, path: '/documenten' },
     ],
   },

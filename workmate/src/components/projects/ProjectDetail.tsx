@@ -42,6 +42,7 @@ import {
   AlertTriangle,
   Shield,
   UserPlus,
+  ClipboardCheck,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -88,6 +89,7 @@ import {
   getProjectToewijzingen,
   createProjectToewijzing,
   deleteProjectToewijzing,
+  getWerkbonnenByProject,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -96,7 +98,7 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
-import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie, Medewerker, ProjectToewijzing } from '@/types'
+import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
@@ -223,6 +225,7 @@ export function ProjectDetail() {
   // Project rechten state
   const [alleMedewerkers, setAlleMedewerkers] = useState<Medewerker[]>([])
   const [projectToewijzingen, setProjectToewijzingen] = useState<ProjectToewijzing[]>([])
+  const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
   const [toewijzingMedewerkerId, setToewijzingMedewerkerId] = useState('')
   const [toewijzingRol, setToewijzingRol] = useState<ProjectToewijzing['rol']>('medewerker')
 
@@ -467,7 +470,7 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
@@ -476,6 +479,7 @@ export function ProjectDetail() {
           getTijdregistratiesByProject(id),
           getMedewerkers(),
           getProjectToewijzingen(id),
+          getWerkbonnenByProject(id),
         ])
         if (!cancelled) {
           setProject(projectData)
@@ -486,6 +490,7 @@ export function ProjectDetail() {
           setProjectTijdregistraties(tijdData)
           setAlleMedewerkers(medewerkersData || [])
           setProjectToewijzingen(toewijzingenData || [])
+          setProjectWerkbonnen(werkbonnenData || [])
         }
 
         // Fetch klant data
@@ -1325,6 +1330,57 @@ export function ProjectDetail() {
                   <UserPlus className="h-4 w-4" />
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Werkbonnen ── */}
+          <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="p-1 rounded-md bg-amber-500/10">
+                    <ClipboardCheck className="h-3.5 w-3.5 text-amber-600" />
+                  </div>
+                  Werkbonnen
+                  <span className="text-xs text-muted-foreground font-normal">{projectWerkbonnen.length}</span>
+                </CardTitle>
+                <Button
+                  variant="ghost" size="icon" className="h-7 w-7"
+                  onClick={() => navigate(`/werkbonnen/nieuw`)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {projectWerkbonnen.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">Geen werkbonnen</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {projectWerkbonnen.map((wb) => (
+                    <div
+                      key={wb.id}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/werkbonnen/${wb.id}`)}
+                    >
+                      <div>
+                        <p className="text-sm font-medium font-mono">{wb.werkbon_nummer}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        wb.status === 'concept' ? 'bg-gray-100 text-gray-700' :
+                        wb.status === 'ingediend' ? 'bg-blue-100 text-blue-700' :
+                        wb.status === 'goedgekeurd' ? 'bg-green-100 text-green-700' :
+                        'bg-purple-100 text-purple-700'
+                      }`}>
+                        {wb.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

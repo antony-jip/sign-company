@@ -41,6 +41,8 @@ import { CommandPalette } from '@/components/shared/CommandPalette'
 import { ClientApprovalPage } from '@/components/approval/ClientApprovalPage'
 import { BookingBeheer } from '@/components/booking/BookingBeheer'
 import { PublicBookingPage } from '@/components/booking/PublicBookingPage'
+import { WerkbonnenLayout } from '@/components/werkbonnen/WerkbonnenLayout'
+import { WerkbonDetail } from '@/components/werkbonnen/WerkbonDetail'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -92,6 +94,8 @@ function AppContent() {
         <Route path="nieuwsbrieven" element={<NewsletterBuilder />} />
         <Route path="importeren" element={<DataImportLayout />} />
         <Route path="ai" element={<WorkmateAIChat />} />
+        <Route path="werkbonnen" element={<WerkbonnenLayout />} />
+        <Route path="werkbonnen/:id" element={<WerkbonDetail />} />
         <Route path="booking" element={<BookingBeheer />} />
         <Route path="instellingen" element={<SettingsLayout />} />
       </Route>
