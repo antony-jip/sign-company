@@ -52,6 +52,8 @@ import { BestelbonDetail } from '@/components/bestelbonnen/BestelbonDetail'
 import { LeveringsbonnenLayout } from '@/components/leveringsbonnen/LeveringsbonnenLayout'
 import { LeveringsbonDetail } from '@/components/leveringsbonnen/LeveringsbonDetail'
 import { VoorraadLayout } from '@/components/voorraad/VoorraadLayout'
+import { DealsLayout } from '@/components/deals/DealsLayout'
+import { DealDetail } from '@/components/deals/DealDetail'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -90,6 +92,8 @@ function AppContent() {
         <Route path="projecten/:id" element={<ProjectDetail />} />
         <Route path="klanten" element={<ClientsLayout />} />
         <Route path="klanten/:id" element={<ClientProfile />} />
+        <Route path="deals" element={<DealsLayout />} />
+        <Route path="deals/:id" element={<DealDetail />} />
         <Route path="offertes" element={<QuotesPipeline />} />
         <Route path="offertes/nieuw" element={<QuoteCreation />} />
         <Route path="offertes/:id" element={<ForgeQuotePreview />} />

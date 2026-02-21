@@ -6,6 +6,7 @@ import {
   ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload,
   Sparkles, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
   ClipboardCheck, Truck, CreditCard, ShoppingCart, PackageCheck, Warehouse,
+  Handshake, UserPlus,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -38,6 +39,7 @@ const navSections: NavSection[] = [
       { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
       { label: 'Taken', icon: CheckSquare, path: '/taken' },
       { label: 'Klanten', icon: Users, path: '/klanten' },
+      { label: 'Deals', icon: Handshake, path: '/deals' },
       { label: 'Offertes', icon: FileText, path: '/offertes' },
       { label: 'Facturen', icon: Receipt, path: '/facturen' },
       { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
@@ -58,6 +60,7 @@ const navSections: NavSection[] = [
     section: 'Communicatie',
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
+      { label: 'Lead Capture', icon: UserPlus, path: '/leads' },
       { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
     ],
   },
