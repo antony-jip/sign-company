@@ -23,8 +23,8 @@ import {
   getVoorraadArtikelen, createVoorraadArtikel, updateVoorraadArtikel, deleteVoorraadArtikel,
   getVoorraadMutaties, createVoorraadMutatie,
   getLeveranciers, getProjecten,
-  round2,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 
 // ============ TYPES ============
 

@@ -20,8 +20,9 @@ import type { Leverancier, Uitgave, KvkResultaat } from '@/types'
 import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
 import {
   getLeveranciers, createLeverancier, updateLeverancier, deleteLeverancier,
-  getUitgavenByLeverancier, round2,
+  getUitgavenByLeverancier,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 
 interface FormData {
   bedrijfsnaam: string

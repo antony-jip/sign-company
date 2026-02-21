@@ -91,8 +91,8 @@ import {
   deleteProjectToewijzing,
   getWerkbonnenByProject,
   getUitgavenByProject,
-  round2,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { analyzeProject } from '@/services/aiService'

@@ -40,8 +40,8 @@ import {
   getTijdregistraties,
   getFacturen,
   getUitgaven,
-  round2,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 import type { Project, Offerte, OfferteItem, Tijdregistratie, Factuur, Uitgave } from '@/types'
 import { cn, formatCurrency } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'

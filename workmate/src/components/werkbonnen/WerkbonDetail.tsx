@@ -26,8 +26,9 @@ import {
   getWerkbonRegels, createWerkbonRegel, updateWerkbonRegel, deleteWerkbonRegel,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
   getKlanten, getProjecten, getProjectenByKlant, getMedewerkers,
-  createFactuur, createFactuurItem, round2,
+  createFactuur, createFactuurItem,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   concept: { label: 'Concept', color: 'text-gray-700', bg: 'bg-gray-100' },

@@ -24,8 +24,8 @@ import {
   getDeal, updateDeal,
   getDealActiviteiten, createDealActiviteit,
   getKlanten, getMedewerkers,
-  round2,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 // ============ CONSTANTS ============

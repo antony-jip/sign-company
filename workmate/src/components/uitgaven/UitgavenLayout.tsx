@@ -23,8 +23,9 @@ import type { Uitgave, Leverancier, Project } from '@/types'
 import {
   getUitgaven, createUitgave, updateUitgave, deleteUitgave,
   getLeveranciers, createLeverancier,
-  getProjecten, round2,
+  getProjecten,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 
 type FilterStatus = 'alle' | 'open' | 'betaald' | 'verlopen'
 type FilterCategorie = 'alle' | Uitgave['categorie']

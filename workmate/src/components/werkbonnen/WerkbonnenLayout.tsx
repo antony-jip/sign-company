@@ -17,8 +17,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import type { Werkbon, Klant, Project } from '@/types'
 import {
   getWerkbonnen, deleteWerkbon, getKlanten, getProjecten, getWerkbonRegels,
-  round2,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 
 type FilterStatus = 'alle' | 'concept' | 'ingediend' | 'goedgekeurd' | 'gefactureerd'
 

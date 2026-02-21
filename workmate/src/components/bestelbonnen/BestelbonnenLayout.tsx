@@ -16,8 +16,9 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import type { Bestelbon, Leverancier, Project } from '@/types'
 import {
   getBestelbonnen, deleteBestelbon, getLeveranciers, getProjecten,
-  getBestelbonRegels, round2,
+  getBestelbonRegels,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 
 // ============ TYPES ============
 

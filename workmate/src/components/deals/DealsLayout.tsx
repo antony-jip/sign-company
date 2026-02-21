@@ -20,8 +20,9 @@ import { cn, formatCurrency, formatDate, getInitials } from '@/lib/utils'
 import type { Deal, Klant, Medewerker } from '@/types'
 import {
   getDeals, createDeal, updateDeal, deleteDeal,
-  getKlanten, getMedewerkers, round2,
+  getKlanten, getMedewerkers,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 // ============ CONSTANTS ============

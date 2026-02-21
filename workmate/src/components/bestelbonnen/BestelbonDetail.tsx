@@ -19,8 +19,8 @@ import {
   getBestelbon, createBestelbon, updateBestelbon,
   getBestelbonRegels, createBestelbonRegel, updateBestelbonRegel, deleteBestelbonRegel,
   getLeveranciers, getProjecten, generateBestelbonNummer,
-  round2,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 import { generateBestelbonPDF } from '@/services/pdfService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
