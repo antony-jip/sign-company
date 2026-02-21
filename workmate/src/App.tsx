@@ -54,6 +54,10 @@ import { LeveringsbonDetail } from '@/components/leveringsbonnen/LeveringsbonDet
 import { VoorraadLayout } from '@/components/voorraad/VoorraadLayout'
 import { DealsLayout } from '@/components/deals/DealsLayout'
 import { DealDetail } from '@/components/deals/DealDetail'
+import { LeadCaptureLayout } from '@/components/leads/LeadCaptureLayout'
+import { LeadFormulierEditor } from '@/components/leads/LeadFormulierEditor'
+import { LeadFormulierPubliek } from '@/components/leads/LeadFormulierPubliek'
+import { LeadInzendingenLayout } from '@/components/leads/LeadInzendingenLayout'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -81,6 +85,8 @@ function AppContent() {
       <Route path="/betalen/:token" element={<BetaalPagina />} />
       {/* Publieke route - offerte bekijken door klant (geen login vereist) */}
       <Route path="/offerte-bekijken/:token" element={<OffertePubliekPagina />} />
+      {/* Publieke route - lead formulier invullen (geen login vereist) */}
+      <Route path="/formulier/:token" element={<LeadFormulierPubliek />} />
       <Route path="/" element={
         <ProtectedRoute>
           <AppLayout />
@@ -120,6 +126,10 @@ function AppContent() {
         <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />
         <Route path="leveringsbonnen/:id" element={<LeveringsbonDetail />} />
         <Route path="voorraad" element={<VoorraadLayout />} />
+        <Route path="leads" element={<LeadCaptureLayout />} />
+        <Route path="leads/formulieren/nieuw" element={<LeadFormulierEditor />} />
+        <Route path="leads/formulieren/:id" element={<LeadFormulierEditor />} />
+        <Route path="leads/inzendingen" element={<LeadInzendingenLayout />} />
         <Route path="booking" element={<BookingBeheer />} />
         <Route path="instellingen" element={<SettingsLayout />} />
       </Route>
