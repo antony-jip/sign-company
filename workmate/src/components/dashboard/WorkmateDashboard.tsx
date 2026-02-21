@@ -10,6 +10,7 @@ import { PriorityTasks } from './PriorityTasks'
 import { CalendarMiniWidget } from './CalendarMiniWidget'
 import { SalesFollowUpWidget } from './SalesFollowUpWidget'
 import { WorkflowWidget } from './WorkflowWidget'
+import { SalesForecastWidget } from './SalesForecastWidget'
 import { Zap } from 'lucide-react'
 
 export function WorkmateDashboard() {
@@ -78,6 +79,7 @@ export function WorkmateDashboard() {
         <div className="space-y-5">
           <WorkflowWidget />
           {toonFollowUpIndicatoren && <SalesFollowUpWidget />}
+          <SalesForecastWidget />
           <AIInsightWidget />
           <CalendarMiniWidget />
         </div>

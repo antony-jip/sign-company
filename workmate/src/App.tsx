@@ -58,6 +58,7 @@ import { LeadCaptureLayout } from '@/components/leads/LeadCaptureLayout'
 import { LeadFormulierEditor } from '@/components/leads/LeadFormulierEditor'
 import { LeadFormulierPubliek } from '@/components/leads/LeadFormulierPubliek'
 import { LeadInzendingenLayout } from '@/components/leads/LeadInzendingenLayout'
+import { ForecastLayout } from '@/components/forecast/ForecastLayout'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -130,6 +131,7 @@ function AppContent() {
         <Route path="leads/formulieren/nieuw" element={<LeadFormulierEditor />} />
         <Route path="leads/formulieren/:id" element={<LeadFormulierEditor />} />
         <Route path="leads/inzendingen" element={<LeadInzendingenLayout />} />
+        <Route path="forecast" element={<ForecastLayout />} />
         <Route path="booking" element={<BookingBeheer />} />
         <Route path="instellingen" element={<SettingsLayout />} />
       </Route>

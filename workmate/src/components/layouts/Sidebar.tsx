@@ -6,7 +6,7 @@ import {
   ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload,
   Sparkles, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
   ClipboardCheck, Truck, CreditCard, ShoppingCart, PackageCheck, Warehouse,
-  Handshake, UserPlus,
+  Handshake, UserPlus, TrendingUp,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -71,6 +71,7 @@ const navSections: NavSection[] = [
       { label: 'Uitgaven', icon: CreditCard, path: '/uitgaven' },
       { label: 'Leveranciers', icon: Truck, path: '/leveranciers' },
       { label: 'Voorraad', icon: Warehouse, path: '/voorraad' },
+      { label: 'Forecast', icon: TrendingUp, path: '/forecast' },
       { label: 'Rapportages', icon: BarChart3, path: '/rapportages' },
       { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
       { label: 'Team', icon: UsersRound, path: '/team' },
