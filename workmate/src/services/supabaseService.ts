@@ -30,6 +30,12 @@ import type {
   ProjectToewijzing,
   BookingSlot,
   BookingAfspraak,
+  Werkbon,
+  WerkbonRegel,
+  WerkbonFoto,
+  HerinneringTemplate,
+  Leverancier,
+  Uitgave,
 } from '@/types'
 
 // ============ HELPERS ============
@@ -2189,4 +2195,437 @@ export async function updateBookingAfspraak(id: string, updates: Partial<Booking
   items[index] = { ...items[index], ...updates }
   setLocalData('booking_afspraken', items)
   return items[index]
+}
+
+// ============ HELPERS: round2 ============
+
+export function round2(val: number): number {
+  return Math.round((val + Number.EPSILON) * 100) / 100
+}
+
+// ============ WERKBONNEN (Tier 1 Feature 1) ============
+
+async function generateWerkbonNummer(): Promise<string> {
+  const jaar = new Date().getFullYear()
+  const werkbonnen = await getWerkbonnen()
+  const ditJaar = werkbonnen.filter((w) => w.werkbon_nummer.startsWith(`WB-${jaar}-`))
+  const maxNr = ditJaar.reduce((max, w) => {
+    const nr = parseInt(w.werkbon_nummer.split('-')[2], 10)
+    return nr > max ? nr : max
+  }, 0)
+  return `WB-${jaar}-${String(maxNr + 1).padStart(3, '0')}`
+}
+
+export async function getWerkbonnen(): Promise<Werkbon[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbonnen').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Werkbon>('werkbonnen')
+}
+
+export async function getWerkbon(id: string): Promise<Werkbon | null> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbonnen').select('*').eq('id', id).single()
+    if (error) return null
+    return data
+  }
+  return getLocalData<Werkbon>('werkbonnen').find((w) => w.id === id) || null
+}
+
+export async function getWerkbonnenByProject(projectId: string): Promise<Werkbon[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbonnen').select('*').eq('project_id', projectId).order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Werkbon>('werkbonnen').filter((w) => w.project_id === projectId)
+}
+
+export async function getWerkbonnenByKlant(klantId: string): Promise<Werkbon[]> {
+  assertId(klantId, 'klant_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbonnen').select('*').eq('klant_id', klantId).order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Werkbon>('werkbonnen').filter((w) => w.klant_id === klantId)
+}
+
+export async function createWerkbon(werkbon: Omit<Werkbon, 'id' | 'werkbon_nummer' | 'created_at' | 'updated_at'>): Promise<Werkbon> {
+  const werkbon_nummer = await generateWerkbonNummer()
+  const newWerkbon: Werkbon = { ...werkbon, id: generateId(), werkbon_nummer, created_at: now(), updated_at: now() } as Werkbon
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbonnen').insert(newWerkbon).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Werkbon>('werkbonnen')
+  items.push(newWerkbon)
+  setLocalData('werkbonnen', items)
+  return newWerkbon
+}
+
+export async function updateWerkbon(id: string, updates: Partial<Werkbon>): Promise<Werkbon> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbonnen').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Werkbon>('werkbonnen')
+  const index = items.findIndex((w) => w.id === id)
+  if (index === -1) throw new Error('Werkbon niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('werkbonnen', items)
+  return items[index]
+}
+
+export async function deleteWerkbon(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('werkbonnen').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Werkbon>('werkbonnen')
+  setLocalData('werkbonnen', items.filter((w) => w.id !== id))
+}
+
+// ============ WERKBON REGELS ============
+
+export async function getWerkbonRegels(werkbonId: string): Promise<WerkbonRegel[]> {
+  assertId(werkbonId, 'werkbon_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbon_regels').select('*').eq('werkbon_id', werkbonId).order('created_at')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<WerkbonRegel>('werkbon_regels').filter((r) => r.werkbon_id === werkbonId)
+}
+
+export async function createWerkbonRegel(regel: Omit<WerkbonRegel, 'id' | 'created_at'>): Promise<WerkbonRegel> {
+  const newRegel: WerkbonRegel = { ...regel, id: generateId(), created_at: now() } as WerkbonRegel
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbon_regels').insert(newRegel).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<WerkbonRegel>('werkbon_regels')
+  items.push(newRegel)
+  setLocalData('werkbon_regels', items)
+  return newRegel
+}
+
+export async function updateWerkbonRegel(id: string, updates: Partial<WerkbonRegel>): Promise<WerkbonRegel> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbon_regels').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<WerkbonRegel>('werkbon_regels')
+  const index = items.findIndex((r) => r.id === id)
+  if (index === -1) throw new Error('Werkbon regel niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('werkbon_regels', items)
+  return items[index]
+}
+
+export async function deleteWerkbonRegel(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('werkbon_regels').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<WerkbonRegel>('werkbon_regels')
+  setLocalData('werkbon_regels', items.filter((r) => r.id !== id))
+}
+
+// ============ WERKBON FOTO'S ============
+
+export async function getWerkbonFotos(werkbonId: string): Promise<WerkbonFoto[]> {
+  assertId(werkbonId, 'werkbon_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbon_fotos').select('*').eq('werkbon_id', werkbonId).order('created_at')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<WerkbonFoto>('werkbon_fotos').filter((f) => f.werkbon_id === werkbonId)
+}
+
+export async function createWerkbonFoto(foto: Omit<WerkbonFoto, 'id' | 'created_at'>): Promise<WerkbonFoto> {
+  const newFoto: WerkbonFoto = { ...foto, id: generateId(), created_at: now() } as WerkbonFoto
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('werkbon_fotos').insert(newFoto).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<WerkbonFoto>('werkbon_fotos')
+  items.push(newFoto)
+  setLocalData('werkbon_fotos', items)
+  return newFoto
+}
+
+export async function deleteWerkbonFoto(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('werkbon_fotos').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<WerkbonFoto>('werkbon_fotos')
+  setLocalData('werkbon_fotos', items.filter((f) => f.id !== id))
+}
+
+// ============ BETALINGSHERINNERINGEN (Tier 1 Feature 2) ============
+
+export async function getHerinneringTemplates(): Promise<HerinneringTemplate[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('herinnering_templates').select('*').order('dagen_na_vervaldatum')
+    if (error) throw error
+    return data || []
+  }
+  const items = getLocalData<HerinneringTemplate>('herinnering_templates')
+  if (items.length === 0) {
+    const defaults = getDefaultHerinneringTemplates('')
+    setLocalData('herinnering_templates', defaults)
+    return defaults
+  }
+  return items
+}
+
+export function getDefaultHerinneringTemplates(userId: string): HerinneringTemplate[] {
+  return [
+    {
+      id: generateId(), user_id: userId,
+      type: 'herinnering_1', onderwerp: 'Herinnering: factuur {factuur_nummer} is verlopen',
+      inhoud: 'Beste {klant_naam},\n\nGraag herinneren wij u aan factuur {factuur_nummer} ter waarde van {factuur_bedrag}, die op {vervaldatum} betaald had moeten worden. De factuur staat nu {dagen_verlopen} dagen open.\n\nWij verzoeken u vriendelijk het openstaande bedrag zo spoedig mogelijk te voldoen.\n\nMet vriendelijke groet,\n{bedrijfsnaam}',
+      dagen_na_vervaldatum: 7, actief: true, created_at: now(),
+    },
+    {
+      id: generateId(), user_id: userId,
+      type: 'herinnering_2', onderwerp: 'Tweede herinnering: factuur {factuur_nummer}',
+      inhoud: 'Beste {klant_naam},\n\nOndanks onze eerdere herinnering hebben wij nog geen betaling ontvangen voor factuur {factuur_nummer} ter waarde van {factuur_bedrag}. De vervaldatum was {vervaldatum}, inmiddels {dagen_verlopen} dagen geleden.\n\nWij verzoeken u dringend het bedrag binnen 7 dagen te voldoen.\n\nMet vriendelijke groet,\n{bedrijfsnaam}',
+      dagen_na_vervaldatum: 14, actief: true, created_at: now(),
+    },
+    {
+      id: generateId(), user_id: userId,
+      type: 'herinnering_3', onderwerp: 'Laatste herinnering: factuur {factuur_nummer}',
+      inhoud: 'Beste {klant_naam},\n\nDit is onze laatste herinnering voor factuur {factuur_nummer} ter waarde van {factuur_bedrag}. De factuur is inmiddels {dagen_verlopen} dagen verlopen.\n\nIndien wij binnen 7 dagen geen betaling ontvangen, zijn wij genoodzaakt verdere stappen te ondernemen.\n\nMet vriendelijke groet,\n{bedrijfsnaam}',
+      dagen_na_vervaldatum: 21, actief: true, created_at: now(),
+    },
+    {
+      id: generateId(), user_id: userId,
+      type: 'aanmaning', onderwerp: 'Aanmaning: factuur {factuur_nummer}',
+      inhoud: 'Beste {klant_naam},\n\nOndanks herhaalde herinneringen hebben wij nog geen betaling ontvangen voor factuur {factuur_nummer} ter waarde van {factuur_bedrag}. De factuur is {dagen_verlopen} dagen verlopen.\n\nDit is een formele aanmaning. Wij verzoeken u het openstaande bedrag per omgaande te voldoen. Bij uitblijven van betaling behouden wij ons het recht voor om wettelijke rente en incassokosten in rekening te brengen.\n\nMet vriendelijke groet,\n{bedrijfsnaam}',
+      dagen_na_vervaldatum: 30, actief: true, created_at: now(),
+    },
+  ]
+}
+
+export async function createHerinneringTemplate(template: Omit<HerinneringTemplate, 'id' | 'created_at'>): Promise<HerinneringTemplate> {
+  const newTemplate: HerinneringTemplate = { ...template, id: generateId(), created_at: now() } as HerinneringTemplate
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('herinnering_templates').insert(newTemplate).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<HerinneringTemplate>('herinnering_templates')
+  items.push(newTemplate)
+  setLocalData('herinnering_templates', items)
+  return newTemplate
+}
+
+export async function updateHerinneringTemplate(id: string, updates: Partial<HerinneringTemplate>): Promise<HerinneringTemplate> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('herinnering_templates').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<HerinneringTemplate>('herinnering_templates')
+  const index = items.findIndex((t) => t.id === id)
+  if (index === -1) throw new Error('Herinnering template niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('herinnering_templates', items)
+  return items[index]
+}
+
+export async function deleteHerinneringTemplate(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('herinnering_templates').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<HerinneringTemplate>('herinnering_templates')
+  setLocalData('herinnering_templates', items.filter((t) => t.id !== id))
+}
+
+export async function getVerlopenFacturen(): Promise<Factuur[]> {
+  const facturen = await getFacturen()
+  const vandaag = new Date().toISOString().split('T')[0]
+  return facturen.filter((f) => f.vervaldatum < vandaag && f.status !== 'betaald' && f.status !== 'gecrediteerd' && (f.factuur_type || 'standaard') !== 'creditnota')
+}
+
+// ============ LEVERANCIERS (Tier 1 Feature 3) ============
+
+export async function getLeveranciers(): Promise<Leverancier[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('leveranciers').select('*').order('bedrijfsnaam')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Leverancier>('leveranciers')
+}
+
+export async function getLeverancier(id: string): Promise<Leverancier | null> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('leveranciers').select('*').eq('id', id).single()
+    if (error) return null
+    return data
+  }
+  return getLocalData<Leverancier>('leveranciers').find((l) => l.id === id) || null
+}
+
+export async function createLeverancier(lev: Omit<Leverancier, 'id' | 'created_at'>): Promise<Leverancier> {
+  const newLev: Leverancier = { ...lev, id: generateId(), created_at: now() } as Leverancier
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('leveranciers').insert(newLev).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Leverancier>('leveranciers')
+  items.push(newLev)
+  setLocalData('leveranciers', items)
+  return newLev
+}
+
+export async function updateLeverancier(id: string, updates: Partial<Leverancier>): Promise<Leverancier> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('leveranciers').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Leverancier>('leveranciers')
+  const index = items.findIndex((l) => l.id === id)
+  if (index === -1) throw new Error('Leverancier niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('leveranciers', items)
+  return items[index]
+}
+
+export async function deleteLeverancier(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('leveranciers').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Leverancier>('leveranciers')
+  setLocalData('leveranciers', items.filter((l) => l.id !== id))
+}
+
+// ============ UITGAVEN (Tier 1 Feature 3) ============
+
+async function generateUitgaveNummer(): Promise<string> {
+  const jaar = new Date().getFullYear()
+  const uitgaven = await getUitgaven()
+  const ditJaar = uitgaven.filter((u) => u.uitgave_nummer.startsWith(`UIT-${jaar}-`))
+  const maxNr = ditJaar.reduce((max, u) => {
+    const nr = parseInt(u.uitgave_nummer.split('-')[2], 10)
+    return nr > max ? nr : max
+  }, 0)
+  return `UIT-${jaar}-${String(maxNr + 1).padStart(3, '0')}`
+}
+
+export async function getUitgaven(): Promise<Uitgave[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('uitgaven').select('*').order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Uitgave>('uitgaven')
+}
+
+export async function getUitgave(id: string): Promise<Uitgave | null> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('uitgaven').select('*').eq('id', id).single()
+    if (error) return null
+    return data
+  }
+  return getLocalData<Uitgave>('uitgaven').find((u) => u.id === id) || null
+}
+
+export async function getUitgavenByProject(projectId: string): Promise<Uitgave[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('uitgaven').select('*').eq('project_id', projectId).order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Uitgave>('uitgaven').filter((u) => u.project_id === projectId)
+}
+
+export async function getUitgavenByLeverancier(leverancierId: string): Promise<Uitgave[]> {
+  assertId(leverancierId, 'leverancier_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('uitgaven').select('*').eq('leverancier_id', leverancierId).order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Uitgave>('uitgaven').filter((u) => u.leverancier_id === leverancierId)
+}
+
+export async function createUitgave(uitgave: Omit<Uitgave, 'id' | 'uitgave_nummer' | 'created_at' | 'updated_at'>): Promise<Uitgave> {
+  const uitgave_nummer = await generateUitgaveNummer()
+  const newUitgave: Uitgave = { ...uitgave, id: generateId(), uitgave_nummer, created_at: now(), updated_at: now() } as Uitgave
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('uitgaven').insert(newUitgave).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Uitgave>('uitgaven')
+  items.push(newUitgave)
+  setLocalData('uitgaven', items)
+  return newUitgave
+}
+
+export async function updateUitgave(id: string, updates: Partial<Uitgave>): Promise<Uitgave> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('uitgaven').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Uitgave>('uitgaven')
+  const index = items.findIndex((u) => u.id === id)
+  if (index === -1) throw new Error('Uitgave niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('uitgaven', items)
+  return items[index]
+}
+
+export async function deleteUitgave(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('uitgaven').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Uitgave>('uitgaven')
+  setLocalData('uitgaven', items.filter((u) => u.id !== id))
+}
+
+export async function getUitgavenTotaalByProject(projectId: string): Promise<number> {
+  const uitgaven = await getUitgavenByProject(projectId)
+  return round2(uitgaven.reduce((sum, u) => sum + u.bedrag_incl_btw, 0))
 }

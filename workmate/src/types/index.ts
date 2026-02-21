@@ -497,6 +497,21 @@ export interface Factuur {
   bron_type?: 'offerte' | 'project' | 'handmatig';
   bron_offerte_id?: string;
   bron_project_id?: string;
+  // Tier 1 Feature 2: Betalingsherinneringen
+  betaaltermijn_dagen?: number;
+  herinnering_1_verstuurd?: string;
+  herinnering_2_verstuurd?: string;
+  herinnering_3_verstuurd?: string;
+  aanmaning_verstuurd?: string;
+  // Tier 1 Feature 4: Creditnota's + Voorschotfacturen
+  factuur_type?: 'standaard' | 'voorschot' | 'creditnota' | 'eindafrekening';
+  gerelateerde_factuur_id?: string;
+  credit_reden?: string;
+  voorschot_percentage?: number;
+  is_voorschot_verrekend?: boolean;
+  verrekende_voorschot_ids?: string[];
+  // Tier 1 Feature 1: Werkbon koppeling
+  werkbon_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -657,4 +672,119 @@ export interface BookingAfspraak {
   status: 'gepland' | 'bevestigd' | 'geannuleerd';
   token: string;
   created_at: string;
+}
+
+// ============ WERKBONNEN (Tier 1 Feature 1) ============
+
+export interface Werkbon {
+  id: string;
+  user_id: string;
+  werkbon_nummer: string;
+  project_id: string;
+  klant_id: string;
+  montage_afspraak_id?: string;
+  locatie_adres: string;
+  locatie_stad?: string;
+  locatie_postcode?: string;
+  datum: string;
+  start_tijd?: string;
+  eind_tijd?: string;
+  pauze_minuten?: number;
+  status: 'concept' | 'ingediend' | 'goedgekeurd' | 'gefactureerd';
+  klant_handtekening?: string;
+  klant_naam_getekend?: string;
+  getekend_op?: string;
+  omschrijving?: string;
+  interne_notitie?: string;
+  factuur_id?: string;
+  kilometers?: number;
+  km_tarief?: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface WerkbonRegel {
+  id: string;
+  user_id: string;
+  werkbon_id: string;
+  type: 'arbeid' | 'materiaal' | 'overig';
+  medewerker_id?: string;
+  uren?: number;
+  uurtarief?: number;
+  omschrijving: string;
+  aantal?: number;
+  eenheid?: string;
+  prijs_per_eenheid?: number;
+  totaal: number;
+  factureerbaar: boolean;
+  created_at: string;
+}
+
+export interface WerkbonFoto {
+  id: string;
+  user_id: string;
+  werkbon_id: string;
+  type: 'voor' | 'na' | 'overig';
+  url: string;
+  omschrijving?: string;
+  created_at: string;
+}
+
+// ============ BETALINGSHERINNERINGEN (Tier 1 Feature 2) ============
+
+export interface HerinneringTemplate {
+  id: string;
+  user_id: string;
+  type: 'herinnering_1' | 'herinnering_2' | 'herinnering_3' | 'aanmaning';
+  onderwerp: string;
+  inhoud: string;
+  dagen_na_vervaldatum: number;
+  actief: boolean;
+  created_at: string;
+}
+
+// ============ UITGAVENBEHEER (Tier 1 Feature 3) ============
+
+export interface Leverancier {
+  id: string;
+  user_id: string;
+  bedrijfsnaam: string;
+  contactpersoon?: string;
+  email?: string;
+  telefoon?: string;
+  adres?: string;
+  postcode?: string;
+  stad?: string;
+  website?: string;
+  kvk_nummer?: string;
+  btw_nummer?: string;
+  iban?: string;
+  categorie?: string;
+  notitie?: string;
+  actief: boolean;
+  created_at: string;
+}
+
+export interface Uitgave {
+  id: string;
+  user_id: string;
+  uitgave_nummer: string;
+  leverancier_id?: string;
+  project_id?: string;
+  type: 'inkoopfactuur' | 'bon' | 'abonnement' | 'kilometervergoeding' | 'overig';
+  referentie_nummer?: string;
+  bedrag_excl_btw: number;
+  btw_bedrag: number;
+  btw_percentage: number;
+  bedrag_incl_btw: number;
+  datum: string;
+  vervaldatum?: string;
+  status: 'open' | 'betaald' | 'verlopen';
+  betaald_op?: string;
+  categorie: 'materiaal' | 'arbeid_extern' | 'transport' | 'gereedschap' | 'kantoor' | 'software' | 'verzekering' | 'overig';
+  grootboek_id?: string;
+  bijlage_url?: string;
+  omschrijving: string;
+  created_at: string;
+  updated_at?: string;
 }
