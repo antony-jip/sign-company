@@ -17,7 +17,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Uitgave, Leverancier, Project } from '@/types'
 import {
@@ -174,8 +174,6 @@ export function UitgavenLayout() {
       totaalJaar: round2(uitgaven.filter((u) => u.datum >= jaarStart).reduce((s, u) => s + u.bedrag_incl_btw, 0)),
     }
   }, [uitgaven])
-
-  const formatCurrency = (val: number) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(val)
 
   const openNieuw = useCallback(() => {
     setFormData({ ...EMPTY_FORM })

@@ -18,7 +18,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Werkbon, WerkbonRegel, WerkbonFoto, Klant, Project, Medewerker } from '@/types'
 import {
@@ -438,8 +438,6 @@ export function WerkbonDetail() {
       toast.error('Fout bij aanmaken factuur')
     }
   }, [regels, klantId, projectId, klanten, projecten, medewerkers, kilometers, kmTarief, userId, werkbonNummer, werkbonId, navigate])
-
-  const formatCurrency = (val: number) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(val)
 
   if (isLoading) {
     return (

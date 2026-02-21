@@ -14,7 +14,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Leverancier, Uitgave, KvkResultaat } from '@/types'
 import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
@@ -106,8 +106,6 @@ export function LeveranciersLayout() {
       (l.email || '').toLowerCase().includes(q)
     )
   }, [leveranciers, searchQuery])
-
-  const formatCurrency = (val: number) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(val)
 
   const openNieuw = useCallback(() => {
     setFormData({ ...EMPTY_FORM })

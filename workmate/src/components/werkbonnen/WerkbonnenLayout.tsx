@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Werkbon, Klant, Project } from '@/types'
 import {
@@ -141,8 +141,6 @@ export function WerkbonnenLayout() {
     URL.revokeObjectURL(url)
     toast.success('CSV geëxporteerd')
   }, [gefilterd, getKlantNaam, getProjectNaam, bedragen])
-
-  const formatCurrency = (val: number) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(val)
 
   if (isLoading) {
     return (
