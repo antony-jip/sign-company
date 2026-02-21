@@ -88,6 +88,7 @@ export function QuoteCreation() {
   // Query params van bijv. projecten-pagina
   const paramKlantId = searchParams.get('klant_id') || ''
   const paramProjectId = searchParams.get('project_id') || ''
+  const paramDealId = searchParams.get('deal_id') || ''
   const paramTitel = searchParams.get('titel') || ''
 
   // ── Step 0: Klant + Project + Details ──
@@ -309,12 +310,13 @@ export function QuoteCreation() {
         user_id: user.id,
         klant_id: selectedKlantId,
         ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+        ...(paramDealId ? { deal_id: paramDealId } : {}),
         nummer: offerteNummer,
         titel: offerteTitel,
         status,
         subtotaal,
         btw_bedrag: btwBedrag,
-        totaal: subtotaal + btwBedrag,
+        totaal: round2(subtotaal + btwBedrag),
         geldig_tot: geldigTot,
         notities,
         voorwaarden,
@@ -341,7 +343,7 @@ export function QuoteCreation() {
             klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
             offerteNummer,
             offerteTitel,
-            totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(subtotaal + btwBedrag),
+            totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(subtotaal + btwBedrag)),
             geldigTot,
           })
           await sendEmail(selectedKlant.email, subject, '', { html })
@@ -381,7 +383,7 @@ export function QuoteCreation() {
         status: 'concept' as const,
         subtotaal,
         btw_bedrag: btwBedrag,
-        totaal: subtotaal + btwBedrag,
+        totaal: round2(subtotaal + btwBedrag),
         geldig_tot: geldigTot,
         notities,
         voorwaarden,
@@ -943,7 +945,7 @@ export function QuoteCreation() {
                   <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
                   <div className="bg-gradient-to-r from-accent to-primary rounded-xl px-5 py-2">
                     <p className="text-[10px] uppercase tracking-wider text-white/70 font-medium">Totaal incl BTW</p>
-                    <p className="text-lg font-bold text-white">{formatCurrency(subtotaal + btwBedrag)}</p>
+                    <p className="text-lg font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
                   </div>
                 </div>
               </div>

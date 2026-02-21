@@ -111,6 +111,7 @@ export interface Offerte {
   follow_up_status?: 'geen' | 'gepland' | 'achterstallig' | 'afgerond';
   contact_pogingen?: number;
   prioriteit?: 'laag' | 'medium' | 'hoog' | 'urgent';
+  deal_id?: string;
   // Feature 2: Offerte → Project → Factuur keten
   geconverteerd_naar_project_id?: string;
   geconverteerd_naar_factuur_id?: string;
@@ -166,14 +167,14 @@ export interface Email {
   gelezen: boolean;
   starred: boolean;
   pinned?: boolean;
-  snoozed_until?: string;
+  snoozed_until?: string | null;
   labels: string[];
   bijlagen: number;
   map: string;
   scheduled_at?: string;
   thread_id?: string;
   internal_notes?: string;
-  follow_up_at?: string;
+  follow_up_at?: string | null;
   tracking?: EmailTracking;
   // Tier 3 Feature 3: Gedeelde Inbox
   inbox_type?: 'persoonlijk' | 'gedeeld';

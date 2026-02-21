@@ -34,6 +34,7 @@ import {
 } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { formatCurrency } from '@/lib/utils'
+import { round2 } from '@/utils/budgetUtils'
 import type { Offerte, OfferteItem } from '@/types'
 import { logger } from '../../utils/logger'
 
@@ -153,16 +154,16 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
 
   const calculateTotals = () => {
     const activeItems = items.filter(i => !i._deleted)
-    const subtotaal = activeItems.reduce((sum, item) => {
+    const subtotaal = round2(activeItems.reduce((sum, item) => {
       const bruto = item.aantal * item.eenheidsprijs
-      return sum + (bruto - bruto * (item.korting_percentage / 100))
-    }, 0)
-    const btwBedrag = activeItems.reduce((sum, item) => {
+      return sum + round2(bruto - bruto * (item.korting_percentage / 100))
+    }, 0))
+    const btwBedrag = round2(activeItems.reduce((sum, item) => {
       const bruto = item.aantal * item.eenheidsprijs
-      const netto = bruto - bruto * (item.korting_percentage / 100)
-      return sum + netto * (item.btw_percentage / 100)
-    }, 0)
-    return { subtotaal, btwBedrag, totaal: subtotaal + btwBedrag }
+      const netto = round2(bruto - bruto * (item.korting_percentage / 100))
+      return sum + round2(netto * (item.btw_percentage / 100))
+    }, 0))
+    return { subtotaal, btwBedrag, totaal: round2(subtotaal + btwBedrag) }
   }
 
   const handleSave = async () => {

@@ -524,7 +524,7 @@ export function EmailLayout() {
     setEmails((prev) =>
       prev.map((e) => (e.id === email.id ? { ...e, snoozed_until: undefined, map: 'inbox' } : e))
     )
-    updateEmail(email.id, { snoozed_until: null } as any).catch(() => {})
+    updateEmail(email.id, { snoozed_until: null }).catch(() => {})
     toast.success('Snooze verwijderd')
   }, [])
 

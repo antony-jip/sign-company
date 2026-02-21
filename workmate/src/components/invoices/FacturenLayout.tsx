@@ -474,7 +474,7 @@ export function FacturenLayout() {
     const validItems = formData.items.filter((i) => i.beschrijving.trim())
     const subtotaal = calcSubtotaal(validItems)
     const btwBedrag = calcBtwBedrag(validItems)
-    const totaal = subtotaal + btwBedrag
+    const totaal = round2(subtotaal + btwBedrag)
 
     const selectedKlant = klanten.find((k) => k.id === formData.klant_id)
 
@@ -2056,7 +2056,7 @@ export function FacturenLayout() {
                     <Separator />
                     <div className="flex justify-between text-sm font-bold">
                       <span>Totaal</span>
-                      <span>{formatCurrency(calcSubtotaal(formData.items) + calcBtwBedrag(formData.items))}</span>
+                      <span>{formatCurrency(round2(calcSubtotaal(formData.items) + calcBtwBedrag(formData.items)))}</span>
                     </div>
                   </div>
                 </div>

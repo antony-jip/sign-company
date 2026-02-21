@@ -465,7 +465,7 @@ export function DealDetail() {
                 </div>
               )}
               <Separator />
-              <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => navigate(`/offertes/nieuw?klant_id=${deal.klant_id}`)}>
+              <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => navigate(`/offertes/nieuw?klant_id=${deal.klant_id}&deal_id=${deal.id}`)}>
                 <FileText className="h-3.5 w-3.5" /> Maak offerte
               </Button>
             </CardContent>
