@@ -33,6 +33,7 @@ import {
   Eye,
   Zap,
   BarChart3,
+  Users,
 } from 'lucide-react'
 import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKlant, createTaak } from '@/services/supabaseService'
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
@@ -45,6 +46,7 @@ import { ContactSidebar } from './ContactSidebar'
 import { EmailTracking } from './EmailTracking'
 import { EmailSequences } from './EmailSequences'
 import { EmailAnalytics } from './EmailAnalytics'
+import { GedeeldeInboxLayout } from './GedeeldeInboxLayout'
 import type { AddCustomerData } from './ContactSidebar'
 import { extractEmailAddress } from '@/utils/emailUtils'
 import type { EmailContact } from '@/utils/emailUtils'
@@ -56,7 +58,7 @@ import { logger } from '../../utils/logger'
 type EmailFolder = 'inbox' | 'verzonden' | 'concepten' | 'gepland' | 'gesnoozed' | 'prullenbak'
 type FilterType = 'alle' | 'ongelezen' | 'met-ster' | 'vastgepind' | 'bijlagen'
 type FontSize = 'small' | 'medium' | 'large'
-type EmailTab = 'email' | 'tracking' | 'sequences' | 'analytics'
+type EmailTab = 'email' | 'gedeelde-inbox' | 'tracking' | 'sequences' | 'analytics'
 
 interface FolderTab {
   id: EmailFolder
@@ -782,6 +784,7 @@ export function EmailLayout() {
       <div className="flex items-center gap-1 mb-4">
         {([
           { id: 'email' as EmailTab, label: 'Email', icon: Mail },
+          { id: 'gedeelde-inbox' as EmailTab, label: 'Team Inbox', icon: Users },
           { id: 'tracking' as EmailTab, label: 'Tracking', icon: Eye },
           { id: 'sequences' as EmailTab, label: 'Sequences', icon: Zap },
           { id: 'analytics' as EmailTab, label: 'Analytics', icon: BarChart3 },
@@ -806,7 +809,9 @@ export function EmailLayout() {
       </div>
 
       {/* ── Tab Content ── */}
-      {activeTab === 'tracking' ? (
+      {activeTab === 'gedeelde-inbox' ? (
+        <GedeeldeInboxLayout />
+      ) : activeTab === 'tracking' ? (
         <EmailTracking emails={emails} />
       ) : activeTab === 'sequences' ? (
         <EmailSequences />
