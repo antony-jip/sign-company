@@ -2734,12 +2734,13 @@ export async function respondOpOfferte(token: string, reactie: { type: 'goedgeke
 
 // ============ BESTELBONNEN (Tier 2 Feature 3) ============
 
-async function generateBestelbonNummer(): Promise<string> {
+export async function generateBestelbonNummer(): Promise<string> {
   const jaar = new Date().getFullYear()
   const items = await getBestelbonnen()
   const prefix = `BST-${jaar}-`
   const maxNr = items.filter((b) => b.bestelbon_nummer.startsWith(prefix)).reduce((max, b) => {
-    const nr = parseInt(b.bestelbon_nummer.split('-')[2], 10)
+    const parts = b.bestelbon_nummer.split('-')
+    const nr = parseInt(parts[parts.length - 1], 10)
     return nr > max ? nr : max
   }, 0)
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`

@@ -5,7 +5,7 @@ import {
   Mail, Calendar, CalendarCheck, PiggyBank, Bot, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload,
   Sparkles, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
-  ClipboardCheck, Truck, CreditCard,
+  ClipboardCheck, Truck, CreditCard, ShoppingCart, PackageCheck, Warehouse,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -41,6 +41,8 @@ const navSections: NavSection[] = [
       { label: 'Offertes', icon: FileText, path: '/offertes' },
       { label: 'Facturen', icon: Receipt, path: '/facturen' },
       { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
+      { label: 'Bestelbonnen', icon: ShoppingCart, path: '/bestelbonnen' },
+      { label: 'Leveringsbonnen', icon: PackageCheck, path: '/leveringsbonnen' },
       { label: 'Documenten', icon: Files, path: '/documenten' },
     ],
   },
@@ -65,6 +67,7 @@ const navSections: NavSection[] = [
       { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
       { label: 'Uitgaven', icon: CreditCard, path: '/uitgaven' },
       { label: 'Leveranciers', icon: Truck, path: '/leveranciers' },
+      { label: 'Voorraad', icon: Warehouse, path: '/voorraad' },
       { label: 'Rapportages', icon: BarChart3, path: '/rapportages' },
       { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
       { label: 'Team', icon: UsersRound, path: '/team' },

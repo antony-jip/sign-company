@@ -650,3 +650,231 @@ export function generateRapportPDF(
 
   return doc
 }
+
+// ============ BESTELBON PDF ============
+
+export function generateBestelbonPDF(
+  bestelbonData: {
+    nummer: string
+    onderwerp: string
+    besteldatum: string
+    verwachte_leverdatum?: string
+    notities?: string
+    totaal_bedrag: number
+  },
+  regels: { beschrijving: string; aantal: number; eenheidsprijs: number; eenheid?: string }[],
+  leverancier: Partial<{ naam: string; adres?: string; postcode?: string; stad?: string }>,
+  bedrijfsProfiel: PdfBedrijfsProfiel
+): jsPDF {
+  const doc = new jsPDF()
+  const brand = getBrandColor(bedrijfsProfiel)
+
+  let y = addHeader(doc, bedrijfsProfiel, 'Bestelbon', bestelbonData.nummer)
+
+  // Leverancier info
+  if (leverancier.naam) {
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(60, 60, 60)
+    doc.text('Aan:', 20, y)
+    doc.setFont('helvetica', 'normal')
+    y += 6
+    doc.text(leverancier.naam, 20, y)
+    y += 5
+    if (leverancier.adres) { doc.text(leverancier.adres, 20, y); y += 5 }
+    if (leverancier.postcode || leverancier.stad) {
+      doc.text(`${leverancier.postcode || ''} ${leverancier.stad || ''}`.trim(), 20, y)
+      y += 5
+    }
+    y += 5
+  }
+
+  // Details
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(60, 60, 60)
+  if (bestelbonData.onderwerp) {
+    doc.setFont('helvetica', 'bold')
+    doc.text(`Betreft: ${bestelbonData.onderwerp}`, 20, y)
+    doc.setFont('helvetica', 'normal')
+    y += 6
+  }
+  doc.text(`Besteldatum: ${formatDate(bestelbonData.besteldatum)}`, 20, y)
+  y += 5
+  if (bestelbonData.verwachte_leverdatum) {
+    doc.text(`Verwachte levering: ${formatDate(bestelbonData.verwachte_leverdatum)}`, 20, y)
+    y += 5
+  }
+  y += 5
+
+  // Items table
+  const tableBody = regels.map((r, i) => [
+    (i + 1).toString(),
+    r.beschrijving,
+    r.aantal.toString(),
+    r.eenheid || 'stuk',
+    formatCurrency(r.eenheidsprijs),
+    formatCurrency(Math.round(r.aantal * r.eenheidsprijs * 100) / 100),
+  ])
+
+  autoTable(doc, {
+    startY: y,
+    head: [['#', 'Omschrijving', 'Aantal', 'Eenheid', 'Prijs', 'Totaal']],
+    body: tableBody,
+    theme: 'striped',
+    headStyles: { fillColor: brand, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+    columnStyles: {
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 'auto' },
+      2: { cellWidth: 20, halign: 'center' },
+      3: { cellWidth: 22, halign: 'center' },
+      4: { cellWidth: 28, halign: 'right' },
+      5: { cellWidth: 30, halign: 'right' },
+    },
+    margin: { left: 20, right: 20 },
+  })
+
+  // Total
+  const finalY = (doc as any).lastAutoTable?.finalY || y + 20
+  let totalsY = finalY + 10
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(12)
+  doc.setTextColor(...brand)
+  doc.text('Totaal:', pageWidth - 70, totalsY + 5)
+  doc.text(formatCurrency(bestelbonData.totaal_bedrag), pageWidth - 20, totalsY + 5, { align: 'right' })
+
+  // Notes
+  if (bestelbonData.notities) {
+    totalsY += 20
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...brand)
+    doc.text('Opmerkingen:', 20, totalsY)
+    totalsY += 6
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(80, 80, 80)
+    doc.setFontSize(9)
+    const splitNotes = doc.splitTextToSize(bestelbonData.notities, pageWidth - 40)
+    doc.text(splitNotes, 20, totalsY)
+  }
+
+  addFooter(doc, bedrijfsProfiel)
+  return doc
+}
+
+// ============ LEVERINGSBON PDF ============
+
+export function generateLeveringsbonPDF(
+  leveringsbonData: {
+    nummer: string
+    onderwerp: string
+    leverdatum: string
+    notities?: string
+    handtekening_data?: string
+  },
+  regels: { beschrijving: string; aantal: number; eenheid?: string }[],
+  klant: Partial<Klant>,
+  bedrijfsProfiel: PdfBedrijfsProfiel
+): jsPDF {
+  const doc = new jsPDF()
+  const brand = getBrandColor(bedrijfsProfiel)
+
+  let y = addHeader(doc, bedrijfsProfiel, 'Leveringsbon', leveringsbonData.nummer)
+
+  // Klant info
+  y = addClientInfo(doc, klant, y)
+
+  // Details
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(60, 60, 60)
+  if (leveringsbonData.onderwerp) {
+    doc.setFont('helvetica', 'bold')
+    doc.text(`Betreft: ${leveringsbonData.onderwerp}`, 20, y)
+    doc.setFont('helvetica', 'normal')
+    y += 6
+  }
+  doc.text(`Leverdatum: ${formatDate(leveringsbonData.leverdatum)}`, 20, y)
+  y += 8
+
+  // Items table — NO prices (pure delivery proof)
+  const tableBody = regels.map((r, i) => [
+    (i + 1).toString(),
+    r.beschrijving,
+    r.aantal.toString(),
+    r.eenheid || 'stuk',
+  ])
+
+  autoTable(doc, {
+    startY: y,
+    head: [['#', 'Omschrijving', 'Aantal', 'Eenheid']],
+    body: tableBody,
+    theme: 'striped',
+    headStyles: { fillColor: brand, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: [60, 60, 60] },
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+    columnStyles: {
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 'auto' },
+      2: { cellWidth: 25, halign: 'center' },
+      3: { cellWidth: 30, halign: 'center' },
+    },
+    margin: { left: 20, right: 20 },
+  })
+
+  let endY = (doc as any).lastAutoTable?.finalY || y + 20
+
+  // Notities
+  if (leveringsbonData.notities) {
+    endY += 10
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...brand)
+    doc.text('Opmerkingen:', 20, endY)
+    endY += 6
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(80, 80, 80)
+    doc.setFontSize(9)
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const splitNotes = doc.splitTextToSize(leveringsbonData.notities, pageWidth - 40)
+    doc.text(splitNotes, 20, endY)
+    endY += splitNotes.length * 5
+  }
+
+  // Handtekening
+  endY += 15
+  if (endY > doc.internal.pageSize.getHeight() - 60) {
+    doc.addPage()
+    endY = 20
+  }
+
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...brand)
+  doc.text('Handtekening voor ontvangst:', 20, endY)
+  endY += 8
+
+  if (leveringsbonData.handtekening_data) {
+    try {
+      doc.addImage(leveringsbonData.handtekening_data, 'PNG', 20, endY, 60, 30)
+    } catch {
+      doc.setDrawColor(200, 200, 200)
+      doc.rect(20, endY, 80, 30)
+    }
+  } else {
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.3)
+    doc.rect(20, endY, 80, 30)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(180, 180, 180)
+    doc.text('Handtekening', 60, endY + 18, { align: 'center' })
+  }
+
+  addFooter(doc, bedrijfsProfiel)
+  return doc
+}
