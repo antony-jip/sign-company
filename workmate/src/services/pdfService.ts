@@ -340,6 +340,7 @@ export function generateFactuurPDF(
     notities?: string
     betaalvoorwaarden?: string
     factuur_type?: string
+    betaal_link?: string
   },
   items: OfferteItem[],
   klant: Partial<Klant>,
@@ -479,6 +480,33 @@ export function generateFactuurPDF(
     doc.setFontSize(9)
     const splitNotes = doc.splitTextToSize(factuurData.notities, pageWidth - 40)
     doc.text(splitNotes, 20, totalsY)
+  }
+
+  // Online betaallink
+  if (factuurData.betaal_link) {
+    totalsY += 15
+    // Check if we need a new page
+    if (totalsY > doc.internal.pageSize.getHeight() - 40) {
+      doc.addPage()
+      totalsY = 20
+    }
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...brand)
+    doc.text('Online betalen:', 20, totalsY)
+    totalsY += 6
+
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(60, 60, 60)
+    doc.setFontSize(9)
+    doc.text('Betaal direct via de onderstaande link:', 20, totalsY)
+    totalsY += 5
+
+    doc.setTextColor(41, 98, 218)
+    doc.textWithLink(factuurData.betaal_link, 20, totalsY, {
+      url: factuurData.betaal_link,
+    })
   }
 
   // Footer

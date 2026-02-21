@@ -50,6 +50,9 @@ import {
   ArrowDown,
   FileDown,
   Send,
+  Link,
+  Globe,
+  Copy,
 } from 'lucide-react'
 import {
   getFacturen,
@@ -61,6 +64,7 @@ import {
   getOfferteItems,
   createFactuurItem,
   getHerinneringTemplates,
+  generateBetaalToken,
 } from '@/services/supabaseService'
 import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate } from '@/types'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
@@ -496,6 +500,8 @@ export function FacturenLayout() {
         toast.success('Factuur bijgewerkt')
       } else {
         const nummer = generateFactuurNummer(facturen)
+        const betaalToken = generateBetaalToken()
+        const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
         const newFactuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
           user_id: '',
           klant_id: formData.klant_id,
@@ -513,6 +519,8 @@ export function FacturenLayout() {
           vervaldatum: formData.vervaldatum,
           notities: formData.notities,
           voorwaarden: formData.voorwaarden,
+          betaal_token: betaalToken,
+          betaal_link: betaalLink,
         }
 
         try {
@@ -798,6 +806,7 @@ export function FacturenLayout() {
         notities: factuur.notities || undefined,
         betaalvoorwaarden: factuur.voorwaarden || undefined,
         factuur_type: factuur.factuur_type || 'standaard',
+        betaal_link: factuur.betaal_link || undefined,
       }
 
       // Build items from factuur data (single line item based on totals)
@@ -977,6 +986,7 @@ export function FacturenLayout() {
       const nummer = generateTypedNummer(facturen, 'CN')
       const selectedKlant = klanten.find((k) => k.id === creditnotaFactuur.klant_id)
 
+      const cnToken = generateBetaalToken()
       const creditnota: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
         user_id: '',
         klant_id: creditnotaFactuur.klant_id,
@@ -995,6 +1005,8 @@ export function FacturenLayout() {
         notities: `Creditnota: ${creditReden}`,
         voorwaarden: creditnotaFactuur.voorwaarden,
         factuur_type: 'creditnota',
+        betaal_token: cnToken,
+        betaal_link: `${window.location.origin}/betalen/${cnToken}`,
         gerelateerde_factuur_id: creditnotaFactuur.id,
         credit_reden: creditReden,
       }
@@ -1040,6 +1052,7 @@ export function FacturenLayout() {
       const btwBedrag = round2(voorschotOfferte.btw_bedrag * (voorschotPercentage / 100))
       const totaal = round2(subtotaal + btwBedrag)
 
+      const vsToken = generateBetaalToken()
       const voorschotFactuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
         user_id: '',
         klant_id: voorschotOfferte.klant_id,
@@ -1058,6 +1071,8 @@ export function FacturenLayout() {
         notities: `Voorschot ${voorschotPercentage}% van offerte ${voorschotOfferte.nummer}`,
         voorwaarden: 'Betaling binnen 14 dagen na factuurdatum.',
         factuur_type: 'voorschot',
+        betaal_token: vsToken,
+        betaal_link: `${window.location.origin}/betalen/${vsToken}`,
         gerelateerde_factuur_id: undefined,
         voorschot_percentage: voorschotPercentage,
       }
@@ -1103,6 +1118,7 @@ export function FacturenLayout() {
       const restSubtotaal = round2(eindafrekeningFactuur.subtotaal - betaaldeVoorschotten.reduce((s, f) => s + f.subtotaal, 0))
       const restBtw = round2(restBedrag - restSubtotaal)
 
+      const eaToken = generateBetaalToken()
       const eindafrekening: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
         user_id: '',
         klant_id: eindafrekeningFactuur.klant_id,
@@ -1121,6 +1137,8 @@ export function FacturenLayout() {
         notities: `Eindafrekening na ${betaaldeVoorschotten.length} voorschot(ten) (${formatCurrency(voorschotTotaal)} verrekend)`,
         voorwaarden: eindafrekeningFactuur.voorwaarden,
         factuur_type: 'eindafrekening',
+        betaal_token: eaToken,
+        betaal_link: `${window.location.origin}/betalen/${eaToken}`,
         gerelateerde_factuur_id: eindafrekeningFactuur.id,
         verrekende_voorschot_ids: betaaldeVoorschotten.map((f) => f.id),
       }
@@ -1399,6 +1417,7 @@ export function FacturenLayout() {
                   { key: 'bedrag', label: 'Bedrag' },
                   { key: 'status', label: 'Status' },
                   { key: 'verlopen', label: 'Verlopen' },
+                  { key: 'bekeken', label: 'Online' },
                   { key: 'acties', label: '' },
                 ].map((col) => (
                   <th
@@ -1413,7 +1432,7 @@ export function FacturenLayout() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
               {filteredFacturen.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-16 text-center">
+                  <td colSpan={11} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-3 text-muted-foreground">
                       <FileText className="h-10 w-10 opacity-30" />
                       <p className="text-sm font-medium">Geen facturen gevonden</p>
@@ -1522,6 +1541,16 @@ export function FacturenLayout() {
                       )}
                     </td>
                     <td className="px-4 py-3">
+                      {factuur.online_bekeken ? (
+                        <div className="flex items-center gap-1.5" title={factuur.online_bekeken_op ? `Bekeken op ${new Date(factuur.online_bekeken_op).toLocaleString('nl-NL')}` : 'Online bekeken'}>
+                          <Globe className="h-3.5 w-3.5 text-blue-500" />
+                          <span className="text-xs text-blue-600 font-medium">Bekeken</span>
+                        </div>
+                      ) : factuur.betaal_link ? (
+                        <span className="text-xs text-gray-400">—</span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -1545,6 +1574,18 @@ export function FacturenLayout() {
                             <FileDown className="h-4 w-4 mr-2" />
                             Download PDF
                           </DropdownMenuItem>
+                          {factuur.betaal_link && (
+                            <DropdownMenuItem onClick={() => {
+                              navigator.clipboard.writeText(factuur.betaal_link!).then(() => {
+                                toast.success('Betaallink gekopieerd naar klembord')
+                              }).catch(() => {
+                                toast.error('Kon link niet kopiëren')
+                              })
+                            }}>
+                              <Link className="h-4 w-4 mr-2" />
+                              Kopieer betaallink
+                            </DropdownMenuItem>
+                          )}
                           {factuur.status === 'concept' && (
                             <DropdownMenuItem onClick={() => handleSendFactuur(factuur)}>
                               <Send className="h-4 w-4 mr-2" />
@@ -1728,6 +1769,38 @@ export function FacturenLayout() {
                 <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
                   <Bell className="h-3.5 w-3.5" />
                   Betalingsherinnering is verzonden
+                </div>
+              )}
+
+              {/* Online betaling info */}
+              {viewingFactuur.betaal_link && (
+                <div className="space-y-2">
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Link className="h-3.5 w-3.5" />
+                      <span>Betaallink</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => {
+                        navigator.clipboard.writeText(viewingFactuur.betaal_link!).then(() => {
+                          toast.success('Betaallink gekopieerd')
+                        }).catch(() => {})
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                      Kopieer
+                    </Button>
+                  </div>
+                  {viewingFactuur.online_bekeken && (
+                    <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                      <Globe className="h-3.5 w-3.5" />
+                      Online bekeken{viewingFactuur.online_bekeken_op ? ` op ${new Date(viewingFactuur.online_bekeken_op).toLocaleString('nl-NL')}` : ''}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -10,6 +10,7 @@ export interface Profile {
   bedrijfs_adres: string;
   kvk_nummer: string;
   btw_nummer: string;
+  iban?: string;
   taal: 'nl' | 'en';
   theme: 'light' | 'dark';
   created_at: string;
