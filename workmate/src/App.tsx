@@ -49,6 +49,8 @@ import { BetaalPagina } from '@/components/betaling/BetaalPagina'
 import { OffertePubliekPagina } from '@/components/offerte/OffertePubliekPagina'
 import { BestelbonnenLayout } from '@/components/bestelbonnen/BestelbonnenLayout'
 import { BestelbonDetail } from '@/components/bestelbonnen/BestelbonDetail'
+import { LeveringsbonnenLayout } from '@/components/leveringsbonnen/LeveringsbonnenLayout'
+import { LeveringsbonDetail } from '@/components/leveringsbonnen/LeveringsbonDetail'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -110,6 +112,8 @@ function AppContent() {
         <Route path="leveranciers" element={<LeveranciersLayout />} />
         <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
         <Route path="bestelbonnen/:id" element={<BestelbonDetail />} />
+        <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />
+        <Route path="leveringsbonnen/:id" element={<LeveringsbonDetail />} />
         <Route path="booking" element={<BookingBeheer />} />
         <Route path="instellingen" element={<SettingsLayout />} />
       </Route>
