@@ -21,6 +21,7 @@ import {
   ArrowUp,
   ArrowDown,
   ChevronDown,
+  MoreHorizontal,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -89,6 +90,17 @@ function getStatusBorderColor(status: string): string {
   }
 }
 
+function getStatusCellBg(status: string): string {
+  switch (status) {
+    case 'actief': return 'bg-green-50 dark:bg-green-950/30'
+    case 'gepland': return 'bg-blue-50 dark:bg-blue-950/30'
+    case 'in-review': return 'bg-amber-50 dark:bg-amber-950/30'
+    case 'afgerond': return 'bg-emerald-50 dark:bg-emerald-950/30'
+    case 'on-hold': return 'bg-red-50 dark:bg-red-950/30'
+    default: return 'bg-gray-50 dark:bg-gray-800/30'
+  }
+}
+
 function getStatusDotColor(status: string): string {
   switch (status) {
     case 'actief': return 'bg-green-500'
@@ -139,6 +151,11 @@ export function ProjectsList() {
   function getKlantNaam(klantId: string): string {
     const klant = klanten.find((k) => k.id === klantId)
     return klant ? klant.bedrijfsnaam : 'Onbekend'
+  }
+
+  function getKlantContactpersoon(klantId: string): string {
+    const klant = klanten.find((k) => k.id === klantId)
+    return klant?.contactpersoon || ''
   }
 
   // Unieke klanten voor filter pills
@@ -557,12 +574,15 @@ export function ProjectsList() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <th className="text-left py-3 px-4 w-[120px]">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
+                  </th>
                   <th className="text-left py-3 px-4">
                     <button
                       onClick={() => handleSort('naam')}
                       className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
                     >
-                      Project
+                      Omschrijving
                       {sortField === 'naam' ? (
                         sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                       ) : (
@@ -570,16 +590,13 @@ export function ProjectsList() {
                       )}
                     </button>
                   </th>
+                  <th className="text-left py-3 px-4 hidden lg:table-cell">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Relatie</span>
+                  </th>
                   <th className="text-left py-3 px-4 hidden md:table-cell">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Team</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">PM</span>
                   </th>
-                  <th className="text-left py-3 px-4">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
-                  </th>
-                  <th className="text-left py-3 px-4">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Prioriteit</span>
-                  </th>
-                  <th className="text-right py-3 px-4">
+                  <th className="text-right py-3 px-4 hidden xl:table-cell">
                     <button
                       onClick={() => handleSort('voortgang')}
                       className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
@@ -597,7 +614,7 @@ export function ProjectsList() {
                       onClick={() => handleSort('eind_datum')}
                       className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
                     >
-                      Start
+                      Startdatum
                       {sortField === 'eind_datum' ? (
                         sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                       ) : (
@@ -605,80 +622,39 @@ export function ProjectsList() {
                       )}
                     </button>
                   </th>
+                  <th className="w-10 py-3 px-2" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {gefilterdeProjecten.map((project) => {
                   const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
+                  const contactpersoon = getKlantContactpersoon(project.klant_id)
 
                   return (
                     <tr
                       key={project.id}
-                      className={cn(
-                        'hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors border-l-4',
-                        getStatusBorderColor(project.status)
-                      )}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
                       onClick={() => window.location.href = `/projecten/${project.id}`}
                     >
-                      {/* Project naam + klant */}
-                      <td className="py-3 px-4">
-                        <div>
-                          <Link
-                            to={`/projecten/${project.id}`}
-                            className="text-sm font-semibold text-foreground hover:text-accent dark:hover:text-primary transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {project.naam}
-                          </Link>
-                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            {klantNaam}
-                          </p>
-                        </div>
-                      </td>
-
-                      {/* Team */}
-                      <td className="py-3 px-4 hidden md:table-cell">
-                        <div className="flex items-center">
-                          {project.team_leden.length > 0 ? (
-                            <div className="flex items-center -space-x-1.5">
-                              {project.team_leden.slice(0, 3).map((lid, i) => (
-                                <div
-                                  key={i}
-                                  className="w-7 h-7 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-background text-[10px] font-semibold text-accent dark:text-primary"
-                                  title={lid}
-                                >
-                                  {lid.charAt(0).toUpperCase()}
-                                </div>
-                              ))}
-                              {project.team_leden.length > 3 && (
-                                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center border-2 border-background text-[10px] font-medium text-muted-foreground">
-                                  +{project.team_leden.length - 3}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">-</span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Status met dropdown */}
-                      <td className="py-3 px-4">
+                      {/* Status - links met kleur-achtergrond */}
+                      <td className="py-0 px-0">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
                               onClick={(e) => e.stopPropagation()}
-                              className="flex items-center gap-1.5 group/status"
+                              className={cn(
+                                'w-full h-full py-3 px-4 flex items-center gap-2 group/status transition-colors border-l-4',
+                                getStatusBorderColor(project.status),
+                                getStatusCellBg(project.status)
+                              )}
                             >
-                              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', getStatusDotColor(project.status))} />
-                              <Badge className={cn('text-xs cursor-pointer', getStatusColor(project.status))}>
+                              <span className="text-sm font-medium text-foreground">
                                 {statusLabels[project.status] || project.status}
-                              </Badge>
-                              <ChevronDown className="w-3 h-3 text-muted-foreground/40 group-hover/status:text-muted-foreground transition-colors" />
+                              </span>
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 group-hover/status:text-muted-foreground transition-colors" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-40">
+                          <DropdownMenuContent align="start" className="w-44">
                             {statusOpties.filter(s => s.value !== 'alle').map((s) => (
                               <DropdownMenuItem
                                 key={s.value}
@@ -702,17 +678,54 @@ export function ProjectsList() {
                         </DropdownMenu>
                       </td>
 
-                      {/* Prioriteit */}
+                      {/* Omschrijving - naam + datum */}
                       <td className="py-3 px-4">
-                        <Badge className={`${getPriorityColor(project.prioriteit)} text-xs`}>
-                          {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
-                        </Badge>
+                        <div>
+                          <Link
+                            to={`/projecten/${project.id}`}
+                            className="text-sm font-semibold text-foreground hover:text-accent dark:hover:text-primary transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {project.naam}
+                          </Link>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {formatDate(project.start_datum)}
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* Relatie - bedrijfsnaam + contactpersoon */}
+                      <td className="py-3 px-4 hidden lg:table-cell">
+                        <div>
+                          <span className="text-sm font-medium text-foreground">{klantNaam}</span>
+                          {contactpersoon && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{contactpersoon}</p>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* PM - eerste teamlid */}
+                      <td className="py-3 px-4 hidden md:table-cell">
+                        {project.team_leden.length > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] font-semibold text-accent dark:text-primary">
+                                {project.team_leden[0].charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <span className="text-sm text-foreground truncate max-w-[120px]">
+                              {project.team_leden[0]}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
                       </td>
 
                       {/* Voortgang */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 hidden xl:table-cell">
                         <div className="flex items-center gap-2 justify-end">
-                          <div className="w-20 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                             <div
                               className={cn(
                                 'h-full rounded-full transition-all',
@@ -731,9 +744,55 @@ export function ProjectsList() {
 
                       {/* Startdatum */}
                       <td className="py-3 px-4 text-right hidden lg:table-cell">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-sm text-muted-foreground">
                           {formatDate(project.start_datum)}
                         </span>
+                      </td>
+
+                      {/* Acties menu */}
+                      <td className="py-3 px-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.location.href = `/projecten/${project.id}`
+                              }}
+                            >
+                              Bekijken
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const csv = [
+                                  'Project;' + project.naam,
+                                  'Klant;' + klantNaam,
+                                  'Status;' + (statusLabels[project.status] || project.status),
+                                  'Voortgang;' + project.voortgang + '%',
+                                  'Start;' + formatDate(project.start_datum),
+                                ].join('\n')
+                                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                                const url = URL.createObjectURL(blob)
+                                const a = document.createElement('a')
+                                a.href = url
+                                a.download = `${project.naam.replace(/\s+/g, '-').toLowerCase()}.csv`
+                                a.click()
+                                URL.revokeObjectURL(url)
+                              }}
+                            >
+                              <Download className="w-3.5 h-3.5 mr-2" />
+                              Download CSV
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   )
