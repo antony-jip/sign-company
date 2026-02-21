@@ -25,6 +25,11 @@ import type {
   Medewerker,
   Notificatie,
   MontageAfspraak,
+  Verlof,
+  Bedrijfssluitingsdag,
+  ProjectToewijzing,
+  BookingSlot,
+  BookingAfspraak,
 } from '@/types'
 
 // ============ HELPERS ============
@@ -1932,4 +1937,256 @@ export async function deleteMontageAfspraak(id: string): Promise<void> {
   }
   const items = getLocalData<MontageAfspraak>('montage_afspraken')
   setLocalData('montage_afspraken', items.filter((a) => a.id !== id))
+}
+
+// ============ TIJDREGISTRATIE HELPERS ============
+
+export async function getTijdregistratiesByProject(projectId: string): Promise<Tijdregistratie[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('tijdregistraties').select('*').eq('project_id', projectId).order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Tijdregistratie>('tijdregistraties').filter((t) => t.project_id === projectId)
+}
+
+// ============ VERLOF & BESCHIKBAARHEID (Feature 3) ============
+
+export async function getVerlof(): Promise<Verlof[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('verlof').select('*').order('start_datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Verlof>('verlof')
+}
+
+export async function getVerlofByMedewerker(medewerkerId: string): Promise<Verlof[]> {
+  assertId(medewerkerId, 'medewerker_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('verlof').select('*').eq('medewerker_id', medewerkerId).order('start_datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Verlof>('verlof').filter((v) => v.medewerker_id === medewerkerId)
+}
+
+export async function createVerlof(verlof: Omit<Verlof, 'id' | 'created_at'>): Promise<Verlof> {
+  const newVerlof: Verlof = { ...verlof, id: generateId(), created_at: now() } as Verlof
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('verlof').insert(newVerlof).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Verlof>('verlof')
+  items.push(newVerlof)
+  setLocalData('verlof', items)
+  return newVerlof
+}
+
+export async function updateVerlof(id: string, updates: Partial<Verlof>): Promise<Verlof> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('verlof').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Verlof>('verlof')
+  const index = items.findIndex((v) => v.id === id)
+  if (index === -1) throw new Error('Verlof niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('verlof', items)
+  return items[index]
+}
+
+export async function deleteVerlof(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('verlof').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Verlof>('verlof')
+  setLocalData('verlof', items.filter((v) => v.id !== id))
+}
+
+export async function getBedrijfssluitingsdagen(): Promise<Bedrijfssluitingsdag[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('bedrijfssluitingsdagen').select('*').order('datum')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Bedrijfssluitingsdag>('bedrijfssluitingsdagen')
+}
+
+export async function createBedrijfssluitingsdag(dag: Omit<Bedrijfssluitingsdag, 'id' | 'created_at'>): Promise<Bedrijfssluitingsdag> {
+  const newDag: Bedrijfssluitingsdag = { ...dag, id: generateId(), created_at: now() } as Bedrijfssluitingsdag
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('bedrijfssluitingsdagen').insert(newDag).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Bedrijfssluitingsdag>('bedrijfssluitingsdagen')
+  items.push(newDag)
+  setLocalData('bedrijfssluitingsdagen', items)
+  return newDag
+}
+
+export async function deleteBedrijfssluitingsdag(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('bedrijfssluitingsdagen').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Bedrijfssluitingsdag>('bedrijfssluitingsdagen')
+  setLocalData('bedrijfssluitingsdagen', items.filter((d) => d.id !== id))
+}
+
+// ============ PROJECT TOEWIJZINGEN (Feature 4) ============
+
+export async function getProjectToewijzingen(projectId: string): Promise<ProjectToewijzing[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('project_toewijzingen').select('*').eq('project_id', projectId)
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<ProjectToewijzing>('project_toewijzingen').filter((t) => t.project_id === projectId)
+}
+
+export async function getProjectToewijzingenVoorMedewerker(medewerkerId: string): Promise<ProjectToewijzing[]> {
+  assertId(medewerkerId, 'medewerker_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('project_toewijzingen').select('*').eq('medewerker_id', medewerkerId)
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<ProjectToewijzing>('project_toewijzingen').filter((t) => t.medewerker_id === medewerkerId)
+}
+
+export async function createProjectToewijzing(toewijzing: Omit<ProjectToewijzing, 'id' | 'created_at'>): Promise<ProjectToewijzing> {
+  const newToewijzing: ProjectToewijzing = { ...toewijzing, id: generateId(), created_at: now() } as ProjectToewijzing
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('project_toewijzingen').insert(newToewijzing).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<ProjectToewijzing>('project_toewijzingen')
+  items.push(newToewijzing)
+  setLocalData('project_toewijzingen', items)
+  return newToewijzing
+}
+
+export async function deleteProjectToewijzing(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('project_toewijzingen').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<ProjectToewijzing>('project_toewijzingen')
+  setLocalData('project_toewijzingen', items.filter((t) => t.id !== id))
+}
+
+// ============ BOOKING SYSTEEM (Feature 6) ============
+
+export async function getBookingSlots(): Promise<BookingSlot[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('booking_slots').select('*').order('dag_van_week')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<BookingSlot>('booking_slots')
+}
+
+export async function createBookingSlot(slot: Omit<BookingSlot, 'id' | 'created_at'>): Promise<BookingSlot> {
+  const newSlot: BookingSlot = { ...slot, id: generateId(), created_at: now() } as BookingSlot
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('booking_slots').insert(newSlot).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<BookingSlot>('booking_slots')
+  items.push(newSlot)
+  setLocalData('booking_slots', items)
+  return newSlot
+}
+
+export async function updateBookingSlot(id: string, updates: Partial<BookingSlot>): Promise<BookingSlot> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('booking_slots').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<BookingSlot>('booking_slots')
+  const index = items.findIndex((s) => s.id === id)
+  if (index === -1) throw new Error('Booking slot niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('booking_slots', items)
+  return items[index]
+}
+
+export async function deleteBookingSlot(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('booking_slots').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<BookingSlot>('booking_slots')
+  setLocalData('booking_slots', items.filter((s) => s.id !== id))
+}
+
+export async function getBookingAfspraken(): Promise<BookingAfspraak[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('booking_afspraken').select('*').order('datum', { ascending: true })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<BookingAfspraak>('booking_afspraken')
+}
+
+export async function getBookingAfspraakByToken(token: string): Promise<BookingAfspraak | null> {
+  assertId(token, 'token')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('booking_afspraken').select('*').eq('token', token).single()
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+    return data
+  }
+  const items = getLocalData<BookingAfspraak>('booking_afspraken')
+  return items.find((a) => a.token === token) || null
+}
+
+export async function createBookingAfspraak(afspraak: Omit<BookingAfspraak, 'id' | 'token' | 'created_at'>): Promise<BookingAfspraak> {
+  const newAfspraak: BookingAfspraak = { ...afspraak, id: generateId(), token: generateToken(), created_at: now() } as BookingAfspraak
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('booking_afspraken').insert(newAfspraak).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<BookingAfspraak>('booking_afspraken')
+  items.push(newAfspraak)
+  setLocalData('booking_afspraken', items)
+  return newAfspraak
+}
+
+export async function updateBookingAfspraak(id: string, updates: Partial<BookingAfspraak>): Promise<BookingAfspraak> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('booking_afspraken').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<BookingAfspraak>('booking_afspraken')
+  const index = items.findIndex((a) => a.id === id)
+  if (index === -1) throw new Error('Booking afspraak niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('booking_afspraken', items)
+  return items[index]
 }

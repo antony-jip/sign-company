@@ -62,6 +62,13 @@ export interface Project {
   besteed: number;
   voortgang: number;
   team_leden: string[];
+  // Feature 1: Budget meldingen
+  budget_waarschuwing_pct?: number;
+  // Feature 2: Offerte → Project keten
+  bron_offerte_id?: string;
+  // Feature 8: Project kopiëren / template
+  is_template?: boolean;
+  bron_project_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -103,6 +110,9 @@ export interface Offerte {
   follow_up_status?: 'geen' | 'gepland' | 'achterstallig' | 'afgerond';
   contact_pogingen?: number;
   prioriteit?: 'laag' | 'medium' | 'hoog' | 'urgent';
+  // Feature 2: Offerte → Project → Factuur keten
+  geconverteerd_naar_project_id?: string;
+  geconverteerd_naar_factuur_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -483,6 +493,10 @@ export interface Factuur {
   betalingsherinnering_verzonden?: boolean;
   notities: string;
   voorwaarden: string;
+  // Feature 2: Bron tracking
+  bron_type?: 'offerte' | 'project' | 'handmatig';
+  bron_offerte_id?: string;
+  bron_project_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -518,6 +532,8 @@ export interface Tijdregistratie {
   uurtarief: number;
   facturabel: boolean;
   gefactureerd: boolean;
+  // Feature 7: Link naar factuur na facturatie
+  factuur_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -536,6 +552,8 @@ export interface Medewerker {
   uurtarief: number;
   status: 'actief' | 'inactief';
   rol: 'admin' | 'medewerker' | 'monteur' | 'verkoop' | 'productie';
+  // Feature 4: App-brede rol voor rechten
+  app_rol?: 'admin' | 'medewerker' | 'viewer';
   vaardigheden: string[];
   start_datum: string;
   notities: string;
@@ -548,7 +566,7 @@ export interface Medewerker {
 export interface Notificatie {
   id: string;
   user_id: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'algemeen';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen';
   titel: string;
   bericht: string;
   link?: string;
@@ -577,4 +595,66 @@ export interface MontageAfspraak {
   notities: string;
   created_at: string;
   updated_at: string;
+}
+
+// ============ VERLOF & BESCHIKBAARHEID (Feature 3) ============
+
+export interface Verlof {
+  id: string;
+  user_id: string;
+  medewerker_id: string;
+  type: 'vakantie' | 'ziek' | 'ouderschapsverlof' | 'bijzonder' | 'bedrijfssluiting';
+  start_datum: string;
+  eind_datum: string;
+  status: 'aangevraagd' | 'goedgekeurd' | 'afgewezen';
+  opmerking?: string;
+  created_at: string;
+}
+
+export interface Bedrijfssluitingsdag {
+  id: string;
+  user_id: string;
+  datum: string;
+  omschrijving: string;
+  jaarlijks_herhalend: boolean;
+  created_at: string;
+}
+
+// ============ GEBRUIKERSRECHTEN (Feature 4) ============
+
+export interface ProjectToewijzing {
+  id: string;
+  user_id: string;
+  project_id: string;
+  medewerker_id: string;
+  rol: 'eigenaar' | 'medewerker' | 'viewer';
+  created_at: string;
+}
+
+// ============ BOOKING SYSTEEM (Feature 6) ============
+
+export interface BookingSlot {
+  id: string;
+  user_id: string;
+  dag_van_week: number;
+  start_tijd: string;
+  eind_tijd: string;
+  slot_duur_minuten: number;
+  actief: boolean;
+  created_at: string;
+}
+
+export interface BookingAfspraak {
+  id: string;
+  user_id: string;
+  klant_naam: string;
+  klant_email: string;
+  klant_telefoon?: string;
+  datum: string;
+  start_tijd: string;
+  eind_tijd: string;
+  onderwerp?: string;
+  status: 'gepland' | 'bevestigd' | 'geannuleerd';
+  token: string;
+  created_at: string;
 }
