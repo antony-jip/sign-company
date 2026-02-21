@@ -812,6 +812,9 @@ export function ProjectsList() {
             </table>
           </div>
         </Card>
+      ) : weergave === 'tijdlijn' ? (
+        /* ==================== TIMELINE / GANTT VIEW ==================== */
+        <ProjectTijdlijn projecten={gefilterdeProjecten} />
       ) : (
         /* ==================== GRID VIEW ==================== */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -966,10 +969,7 @@ export function ProjectsList() {
             )
           })}
         </div>
-      ) : weergave === 'tijdlijn' ? (
-        /* ==================== TIMELINE / GANTT VIEW ==================== */
-        <ProjectTijdlijn projecten={gefilterdeProjecten} />
-      ) : null}
+      )}
     </div>
   )
 }

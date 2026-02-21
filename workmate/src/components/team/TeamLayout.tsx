@@ -446,7 +446,7 @@ export function TeamLayout() {
       </div>
 
       {/* ──── Beschikbaarheid tab ──── */}
-      {activeTab === 'beschikbaarheid' && (
+      {activeTab === 'beschikbaarheid' && (<>
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -698,7 +698,7 @@ export function TeamLayout() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      )}
+      </>)}
 
       {/* ──── Vaardigheden tab ──── */}
       {activeTab === 'vaardigheden' && (

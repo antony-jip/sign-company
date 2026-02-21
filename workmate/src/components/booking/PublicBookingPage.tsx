@@ -136,7 +136,6 @@ export function PublicBookingPage() {
         eind_tijd: eindTijd,
         onderwerp: form.onderwerp || undefined,
         status: 'gepland',
-        token: `bk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       })
       setBevestigd(true)
     } catch {
