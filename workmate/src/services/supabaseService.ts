@@ -48,6 +48,7 @@ import type {
   LeadInzending,
   InternEmailNotitie,
 } from '@/types'
+import { round2 } from '@/utils/budgetUtils'
 
 // ============ HELPERS ============
 
@@ -2208,11 +2209,7 @@ export async function updateBookingAfspraak(id: string, updates: Partial<Booking
   return items[index]
 }
 
-// ============ HELPERS: round2 ============
-
-export function round2(val: number): number {
-  return Math.round((val + Number.EPSILON) * 100) / 100
-}
+// round2 imported from @/utils/budgetUtils at the top of this file
 
 // ============ WERKBONNEN (Tier 1 Feature 1) ============
 

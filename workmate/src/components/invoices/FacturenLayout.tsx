@@ -68,6 +68,7 @@ import {
 } from '@/services/supabaseService'
 import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate } from '@/types'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { round2 } from '@/utils/budgetUtils'
 import { toast } from 'sonner'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { sendEmail } from '@/services/gmailService'
@@ -177,8 +178,6 @@ function createEmptyLineItem(): LineItem {
     korting_percentage: 0,
   }
 }
-
-const round2 = (n: number) => Math.round(n * 100) / 100
 
 function calcLineTotal(item: LineItem): number {
   const subtotaal = item.aantal * item.eenheidsprijs
