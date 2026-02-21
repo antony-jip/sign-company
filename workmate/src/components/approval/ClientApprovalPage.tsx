@@ -110,11 +110,17 @@ export function ClientApprovalPage() {
         }
         setGoedkeuring(gk)
 
-        // Mark as bekeken if verzonden
-        if (gk.status === 'verzonden') {
-          await updateTekeningGoedkeuringByToken(token!, { status: 'bekeken' })
-          setGoedkeuring(prev => prev ? { ...prev, status: 'bekeken' } : null)
+        // Mark as bekeken if verzonden + update tracking
+        const trackingUpdates: Partial<TekeningGoedkeuring> = {
+          eerste_bekeken_op: gk.eerste_bekeken_op || new Date().toISOString(),
+          laatst_bekeken_op: new Date().toISOString(),
+          aantal_keer_bekeken: (gk.aantal_keer_bekeken || 0) + 1,
         }
+        if (gk.status === 'verzonden') {
+          trackingUpdates.status = 'bekeken'
+        }
+        await updateTekeningGoedkeuringByToken(token!, trackingUpdates)
+        setGoedkeuring(prev => prev ? { ...prev, ...trackingUpdates } : null)
 
         // Fetch related data
         const allDocs = await getDocumenten()

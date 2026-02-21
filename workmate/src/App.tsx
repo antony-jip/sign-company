@@ -46,6 +46,7 @@ import { WerkbonDetail } from '@/components/werkbonnen/WerkbonDetail'
 import { UitgavenLayout } from '@/components/uitgaven/UitgavenLayout'
 import { LeveranciersLayout } from '@/components/uitgaven/LeveranciersLayout'
 import { BetaalPagina } from '@/components/betaling/BetaalPagina'
+import { OffertePubliekPagina } from '@/components/offerte/OffertePubliekPagina'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -71,6 +72,8 @@ function AppContent() {
       <Route path="/boeken/:userId" element={<PublicBookingPage />} />
       {/* Publieke route - online factuur betalen (geen login vereist) */}
       <Route path="/betalen/:token" element={<BetaalPagina />} />
+      {/* Publieke route - offerte bekijken door klant (geen login vereist) */}
+      <Route path="/offerte-bekijken/:token" element={<OffertePubliekPagina />} />
       <Route path="/" element={
         <ProtectedRoute>
           <AppLayout />

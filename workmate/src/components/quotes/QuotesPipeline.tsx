@@ -26,6 +26,7 @@ import {
   DollarSign,
   BarChart3,
   Users,
+  Eye,
 } from 'lucide-react'
 import { getOffertes, updateOfferte } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -633,6 +634,9 @@ export function QuotesPipeline() {
                                 {followUpState === 'upcoming' && (
                                   <Bell className="h-3.5 w-3.5 text-blue-400" />
                                 )}
+                                {offerte.bekeken_door_klant && (
+                                  <Eye className="h-3.5 w-3.5 text-emerald-500" title={`Bekeken door klant${offerte.aantal_keer_bekeken ? ` (${offerte.aantal_keer_bekeken}x)` : ''}`} />
+                                )}
                               </div>
                             </div>
 
@@ -867,9 +871,14 @@ export function QuotesPipeline() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${statusBadgeColors[offerte.status] || ''}`}>
-                          {offerte.status.charAt(0).toUpperCase() + offerte.status.slice(1)}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${statusBadgeColors[offerte.status] || ''}`}>
+                            {offerte.status.charAt(0).toUpperCase() + offerte.status.slice(1)}
+                          </span>
+                          {offerte.bekeken_door_klant && (
+                            <Eye className="h-3.5 w-3.5 text-emerald-500" title={`Bekeken door klant${offerte.aantal_keer_bekeken ? ` (${offerte.aantal_keer_bekeken}x)` : ''}`} />
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${getDaysColor(daysOpen)}`}>
