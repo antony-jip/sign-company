@@ -113,6 +113,12 @@ export interface Offerte {
   // Feature 2: Offerte → Project → Factuur keten
   geconverteerd_naar_project_id?: string;
   geconverteerd_naar_factuur_id?: string;
+  // Tier 2 Feature 2: Offerte Bekijk-Notificatie
+  bekeken_door_klant?: boolean;
+  eerste_bekeken_op?: string;
+  laatst_bekeken_op?: string;
+  aantal_keer_bekeken?: number;
+  publiek_token?: string;
   created_at: string;
   updated_at: string;
 }
@@ -465,6 +471,10 @@ export interface TekeningGoedkeuring {
   // Revisie historie
   revisie_nummer: number;
   vorige_goedkeuring_id?: string;
+  // Tier 2 Feature 2: Offerte Bekijk-Notificatie
+  eerste_bekeken_op?: string;
+  laatst_bekeken_op?: string;
+  aantal_keer_bekeken?: number;
   created_at: string;
   updated_at: string;
 }
@@ -512,6 +522,12 @@ export interface Factuur {
   verrekende_voorschot_ids?: string[];
   // Tier 1 Feature 1: Werkbon koppeling
   werkbon_id?: string;
+  // Tier 2 Feature 1: Online Betaling
+  betaal_token?: string;
+  betaal_link?: string;
+  betaal_methode?: 'handmatig' | 'link' | 'qr';
+  online_bekeken?: boolean;
+  online_bekeken_op?: string;
   created_at: string;
   updated_at: string;
 }
@@ -787,4 +803,116 @@ export interface Uitgave {
   omschrijving: string;
   created_at: string;
   updated_at?: string;
+}
+
+// ============ BESTELBONNEN (Tier 2 Feature 3) ============
+
+export interface Bestelbon {
+  id: string;
+  user_id: string;
+  bestelbon_nummer: string;
+  leverancier_id: string;
+  offerte_id?: string;
+  project_id?: string;
+  status: 'concept' | 'besteld' | 'deels_ontvangen' | 'ontvangen' | 'geannuleerd';
+  besteld_op?: string;
+  verwachte_levering?: string;
+  ontvangen_op?: string;
+  subtotaal: number;
+  btw_bedrag: number;
+  totaal: number;
+  opmerkingen?: string;
+  interne_notitie?: string;
+  referentie?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface BestelbonRegel {
+  id: string;
+  user_id: string;
+  bestelbon_id: string;
+  omschrijving: string;
+  aantal: number;
+  eenheid?: string;
+  prijs_per_eenheid: number;
+  btw_percentage: number;
+  totaal: number;
+  aantal_ontvangen?: number;
+  volledig_ontvangen?: boolean;
+  offerte_item_id?: string;
+  created_at: string;
+}
+
+// ============ LEVERINGSBONNEN (Tier 2 Feature 4) ============
+
+export interface Leveringsbon {
+  id: string;
+  user_id: string;
+  leveringsbon_nummer: string;
+  klant_id: string;
+  project_id?: string;
+  werkbon_id?: string;
+  bestelbon_id?: string;
+  datum: string;
+  locatie_adres: string;
+  locatie_stad?: string;
+  locatie_postcode?: string;
+  status: 'concept' | 'geleverd' | 'getekend';
+  klant_handtekening?: string;
+  klant_naam_getekend?: string;
+  getekend_op?: string;
+  omschrijving?: string;
+  opmerkingen_klant?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface LeveringsbonRegel {
+  id: string;
+  user_id: string;
+  leveringsbon_id: string;
+  omschrijving: string;
+  aantal: number;
+  eenheid?: string;
+  opmerking?: string;
+  created_at: string;
+}
+
+// ============ VOORRAADBEHEER (Tier 2 Feature 5) ============
+
+export interface VoorraadArtikel {
+  id: string;
+  user_id: string;
+  naam: string;
+  sku?: string;
+  categorie: string;
+  eenheid: string;
+  huidige_voorraad: number;
+  minimum_voorraad: number;
+  maximum_voorraad?: number;
+  inkoop_prijs: number;
+  verkoop_prijs?: number;
+  leverancier_id?: string;
+  leverancier_artikelnummer?: string;
+  levertijd_dagen?: number;
+  opslaglocatie?: string;
+  actief: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface VoorraadMutatie {
+  id: string;
+  user_id: string;
+  artikel_id: string;
+  type: 'inkoop' | 'verbruik' | 'correctie' | 'retour';
+  aantal: number;
+  reden?: string;
+  project_id?: string;
+  bestelbon_id?: string;
+  werkbon_id?: string;
+  saldo_na_mutatie: number;
+  datum: string;
+  created_at: string;
 }
