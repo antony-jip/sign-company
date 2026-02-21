@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import {
   Plus, Search, Receipt, Trash2, Pencil, Download,
-  Filter, TrendingDown, DollarSign, Calendar
+  Filter, TrendingDown, DollarSign, Calendar, Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -296,7 +296,7 @@ export function UitgavenLayout() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }

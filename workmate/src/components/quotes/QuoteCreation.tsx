@@ -34,10 +34,11 @@ import {
   X,
   Plus,
 } from 'lucide-react'
-import { getKlanten, getProjecten, createOfferte, createOfferteItem } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project } from '@/types'
+import { round2 } from '@/utils/budgetUtils'
 import { generateOffertePDF } from '@/services/pdfService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
@@ -64,10 +65,13 @@ const steps = [
   { number: 2, label: 'Preview', icon: Eye },
 ]
 
-function generateOfferteNummer(prefix: string = 'OFF'): string {
+function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { nummer: string }[] = []): string {
   const year = new Date().getFullYear()
-  const num = String(Math.floor(Math.random() * 900) + 100)
-  return `${prefix}-${year}-${num}`
+  const jaarPrefix = `${prefix}-${year}-`
+  const maxNr = existingOffertes
+    .filter((o) => o.nummer.startsWith(jaarPrefix))
+    .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 // ============================================================
@@ -103,7 +107,7 @@ export function QuoteCreation() {
     d.setDate(d.getDate() + offerteGeldigheidDagen)
     return d.toISOString().split('T')[0]
   })
-  const [offerteNummer] = useState(() => generateOfferteNummer(offertePrefix))
+  const [offerteNummer, setOfferteNummer] = useState('')
 
   // ── Step 1: Items ──
   const [items, setItems] = useState<QuoteLineItem[]>([])
@@ -132,8 +136,6 @@ export function QuoteCreation() {
   // ── Calculations for sticky bar ──
   const prijsItems = items.filter((i) => i.soort === 'prijs')
 
-  const round2 = (n: number) => Math.round(n * 100) / 100
-
   const subtotaal = round2(prijsItems.reduce((sum, item) => {
     const bruto = item.aantal * item.eenheidsprijs
     return sum + round2(bruto - bruto * (item.korting_percentage / 100))
@@ -161,11 +163,12 @@ export function QuoteCreation() {
   // ── Data fetching ──
   useEffect(() => {
     let cancelled = false
-    Promise.all([getKlanten(), getProjecten()])
-      .then(([klantenData, projectenData]) => {
+    Promise.all([getKlanten(), getProjecten(), getOffertes().catch(() => [])])
+      .then(([klantenData, projectenData, offertesData]) => {
         if (!cancelled) {
           setKlanten(klantenData)
           setProjecten(projectenData)
+          setOfferteNummer(generateOfferteNummer(offertePrefix, offertesData))
         }
       })
       .catch((err) => {

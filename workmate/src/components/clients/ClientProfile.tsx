@@ -69,10 +69,11 @@ import {
   getOffertes,
   getFacturen,
   getDealsByKlant,
+  getTijdregistraties,
   updateKlant,
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
-import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal } from '@/types'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal, Tijdregistratie } from '@/types'
 
 function getStatusBarColor(status: string): string {
   switch (status) {
@@ -115,6 +116,7 @@ export function ClientProfile() {
   const [clientDocumenten, setClientDocumenten] = useState<DocType[]>([])
   const [clientFacturen, setClientFacturen] = useState<Factuur[]>([])
   const [clientDeals, setClientDeals] = useState<Deal[]>([])
+  const [clientTijdregistraties, setClientTijdregistraties] = useState<Tijdregistratie[]>([])
   const [clientOffertes, setClientOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('projecten')
@@ -135,7 +137,8 @@ export function ClientProfile() {
       getOffertes(),
       getFacturen().catch(() => []),
       getDealsByKlant(id).catch(() => []),
-    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals]) => {
+      getTijdregistraties().catch(() => []),
+    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals, allTijd]) => {
       setKlant(klantData)
       setClientProjecten(projecten)
       setNotitie(klantData?.notities || '')
@@ -155,6 +158,8 @@ export function ClientProfile() {
       setClientDocumenten(allDocs.filter((d) => d.klant_id === id))
       setClientFacturen(allFacturen.filter((f) => f.klant_id === id))
       setClientDeals(deals)
+      const projectIds = new Set(projecten.map((p) => p.id))
+      setClientTijdregistraties(allTijd.filter((t) => projectIds.has(t.project_id)))
       setIsLoading(false)
     })
   }, [id])
@@ -275,6 +280,7 @@ export function ClientProfile() {
     { key: 'deals', label: 'Deals', count: clientDeals.length, icon: CreditCard },
     { key: 'offertes', label: 'Offertes', count: clientOffertes.length, icon: FileText },
     { key: 'facturen', label: 'Facturen', count: clientFacturen.length, icon: Receipt },
+    { key: 'tijdregistratie', label: 'Uren', count: clientTijdregistraties.length, icon: Clock },
     { key: 'communicatie', label: 'Communicatie', count: clientEmails.length, icon: Mail },
     { key: 'documenten', label: 'Documenten', count: clientDocumenten.length, icon: FileIcon },
   ]
@@ -835,6 +841,48 @@ export function ClientProfile() {
                           <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground">{formatDate(factuur.factuurdatum)}</td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ════════ TIJDREGISTRATIE TAB ════════ */}
+          {activeTab === 'tijdregistratie' && (
+            <Card>
+              {clientTijdregistraties.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <Clock className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm text-muted-foreground">Nog geen uren geregistreerd</p>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        {['Datum', 'Project', 'Medewerker', 'Uren', 'Beschrijving'].map((h) => (
+                          <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {clientTijdregistraties
+                        .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+                        .map((t) => (
+                        <tr key={t.id} className="hover:bg-muted/50">
+                          <td className="px-4 py-2.5 text-sm">{t.datum}</td>
+                          <td className="px-4 py-2.5 text-sm">{t.project_naam || '-'}</td>
+                          <td className="px-4 py-2.5 text-sm">{t.medewerker_naam || '-'}</td>
+                          <td className="px-4 py-2.5 text-sm font-medium">{t.uren}u</td>
+                          <td className="px-4 py-2.5 text-sm text-muted-foreground">{t.beschrijving || '-'}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 font-semibold">
+                        <td className="px-4 py-2.5 text-sm" colSpan={3}>Totaal</td>
+                        <td className="px-4 py-2.5 text-sm">{clientTijdregistraties.reduce((s, t) => s + t.uren, 0).toFixed(1)}u</td>
+                        <td />
+                      </tr>
                     </tbody>
                   </table>
                 </div>
