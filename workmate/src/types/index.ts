@@ -175,6 +175,13 @@ export interface Email {
   internal_notes?: string;
   follow_up_at?: string;
   tracking?: EmailTracking;
+  // Tier 3 Feature 3: Gedeelde Inbox
+  inbox_type?: 'persoonlijk' | 'gedeeld';
+  toegewezen_aan?: string;
+  ticket_status?: 'open' | 'in_behandeling' | 'wacht_op_klant' | 'afgerond';
+  interne_notities?: InternEmailNotitie[];
+  prioriteit_inbox?: 'laag' | 'normaal' | 'hoog' | 'urgent';
+  categorie_inbox?: 'offerte_aanvraag' | 'klacht' | 'informatie' | 'support' | 'overig';
   created_at: string;
 }
 
@@ -916,4 +923,145 @@ export interface VoorraadMutatie {
   saldo_na_mutatie: number;
   datum: string;
   created_at: string;
+}
+
+// ============ DEALS / SALES PIPELINE (Tier 3 Feature 1) ============
+
+export interface Deal {
+  id: string;
+  user_id: string;
+
+  // Koppeling
+  klant_id: string;
+  contactpersoon_id?: string;
+
+  // Deal info
+  titel: string;
+  beschrijving?: string;
+  verwachte_waarde: number;
+  werkelijke_waarde?: number;
+
+  // Pipeline
+  fase: string;
+  fase_sinds: string;
+
+  // Status
+  status: 'open' | 'gewonnen' | 'verloren' | 'on-hold';
+  verloren_reden?: string;
+  gewonnen_op?: string;
+  verloren_op?: string;
+
+  // Verwachting
+  verwachte_sluitdatum?: string;
+  kans_percentage?: number;
+
+  // Bron
+  bron?: 'website' | 'telefoon' | 'email' | 'referentie' | 'social_media' | 'beurs' | 'overig';
+
+  // Koppelingen
+  offerte_ids?: string[];
+  project_id?: string;
+
+  // Eigenaar
+  medewerker_id?: string;
+
+  // Activiteiten
+  laatste_activiteit?: string;
+  volgende_actie?: string;
+  volgende_actie_datum?: string;
+
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface DealActiviteit {
+  id: string;
+  user_id: string;
+  deal_id: string;
+
+  type: 'notitie' | 'email' | 'telefoon' | 'vergadering' | 'offerte_verstuurd' | 'status_wijziging';
+  beschrijving: string;
+  datum: string;
+
+  email_id?: string;
+  offerte_id?: string;
+
+  created_at: string;
+}
+
+// ============ LEAD CAPTURE (Tier 3 Feature 2) ============
+
+export interface LeadFormulier {
+  id: string;
+  user_id: string;
+
+  naam: string;
+  beschrijving?: string;
+
+  velden: LeadFormulierVeld[];
+
+  bedank_tekst: string;
+  redirect_url?: string;
+  email_notificatie: boolean;
+  auto_deal_aanmaken: boolean;
+  deal_fase?: string;
+  standaard_bron: string;
+
+  knop_tekst: string;
+  kleur?: string;
+
+  publiek_token: string;
+
+  actief: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface LeadFormulierVeld {
+  id: string;
+  label: string;
+  type: 'tekst' | 'email' | 'telefoon' | 'textarea' | 'select' | 'checkbox';
+  verplicht: boolean;
+  placeholder?: string;
+  opties?: string[];
+  volgorde: number;
+}
+
+export interface LeadInzending {
+  id: string;
+  user_id: string;
+  formulier_id: string;
+
+  data: Record<string, string>;
+
+  ip_adres?: string;
+  browser?: string;
+  pagina_url?: string;
+
+  status: 'nieuw' | 'bekeken' | 'verwerkt';
+  deal_id?: string;
+  klant_id?: string;
+
+  created_at: string;
+}
+
+// ============ GEDEELDE INBOX UITBREIDING (Tier 3 Feature 3) ============
+
+export interface InternEmailNotitie {
+  id: string;
+  medewerker_id: string;
+  medewerker_naam: string;
+  tekst: string;
+  datum: string;
+}
+
+// ============ KVK LOOKUP (Tier 3 Feature 4) ============
+
+export interface KvkResultaat {
+  kvk_nummer: string;
+  bedrijfsnaam: string;
+  adres?: string;
+  postcode?: string;
+  stad?: string;
+  btw_nummer?: string;
 }

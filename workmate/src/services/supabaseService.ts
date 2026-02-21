@@ -42,6 +42,11 @@ import type {
   LeveringsbonRegel,
   VoorraadArtikel,
   VoorraadMutatie,
+  Deal,
+  DealActiviteit,
+  LeadFormulier,
+  LeadInzending,
+  InternEmailNotitie,
 } from '@/types'
 
 // ============ HELPERS ============
@@ -3149,4 +3154,327 @@ export async function deleteVoorraadMutatie(id: string): Promise<void> {
   }
   const items = getLocalData<VoorraadMutatie>('voorraad_mutaties')
   setLocalData('voorraad_mutaties', items.filter((m) => m.id !== id))
+}
+
+// ============ DEALS / SALES PIPELINE (Tier 3 Feature 1) ============
+
+export async function getDeals(): Promise<Deal[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('deals').select('*').order('updated_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Deal>('deals')
+}
+
+export async function getDeal(id: string): Promise<Deal | null> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('deals').select('*').eq('id', id).single()
+    if (error) return null
+    return data
+  }
+  return getLocalData<Deal>('deals').find((d) => d.id === id) || null
+}
+
+export async function getDealsByKlant(klantId: string): Promise<Deal[]> {
+  assertId(klantId, 'klant_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('deals').select('*').eq('klant_id', klantId).order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Deal>('deals').filter((d) => d.klant_id === klantId)
+}
+
+export async function getDealsByFase(fase: string): Promise<Deal[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('deals').select('*').eq('fase', fase)
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Deal>('deals').filter((d) => d.fase === fase)
+}
+
+export async function getDealsByMedewerker(medewerkerId: string): Promise<Deal[]> {
+  assertId(medewerkerId, 'medewerker_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('deals').select('*').eq('medewerker_id', medewerkerId)
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Deal>('deals').filter((d) => d.medewerker_id === medewerkerId)
+}
+
+export async function createDeal(data: Omit<Deal, 'id' | 'created_at' | 'updated_at'>): Promise<Deal> {
+  const newItem: Deal = { ...data, id: generateId(), created_at: now(), updated_at: now() } as Deal
+  if (isSupabaseConfigured() && supabase) {
+    const { data: saved, error } = await supabase.from('deals').insert(newItem).select().single()
+    if (error) throw error
+    return saved
+  }
+  const items = getLocalData<Deal>('deals')
+  items.unshift(newItem)
+  setLocalData('deals', items)
+  return newItem
+}
+
+export async function updateDeal(id: string, updates: Partial<Deal>): Promise<Deal> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('deals').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Deal>('deals')
+  const index = items.findIndex((d) => d.id === id)
+  if (index === -1) throw new Error('Deal niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('deals', items)
+  return items[index]
+}
+
+export async function deleteDeal(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('deals').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Deal>('deals')
+  setLocalData('deals', items.filter((d) => d.id !== id))
+}
+
+// Deal Activiteiten
+
+export async function getDealActiviteiten(dealId: string): Promise<DealActiviteit[]> {
+  assertId(dealId, 'deal_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('deal_activiteiten').select('*').eq('deal_id', dealId).order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<DealActiviteit>('deal_activiteiten').filter((a) => a.deal_id === dealId).sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+}
+
+export async function createDealActiviteit(data: Omit<DealActiviteit, 'id' | 'created_at'>): Promise<DealActiviteit> {
+  const newItem: DealActiviteit = { ...data, id: generateId(), created_at: now() } as DealActiviteit
+  if (isSupabaseConfigured() && supabase) {
+    const { data: saved, error } = await supabase.from('deal_activiteiten').insert(newItem).select().single()
+    if (error) throw error
+    return saved
+  }
+  const items = getLocalData<DealActiviteit>('deal_activiteiten')
+  items.unshift(newItem)
+  setLocalData('deal_activiteiten', items)
+  return newItem
+}
+
+export async function deleteDealActiviteit(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('deal_activiteiten').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<DealActiviteit>('deal_activiteiten')
+  setLocalData('deal_activiteiten', items.filter((a) => a.id !== id))
+}
+
+// ============ LEAD CAPTURE (Tier 3 Feature 2) ============
+
+export function generateLeadToken(): string {
+  return `lead_${generateId().replace(/-/g, '').slice(0, 24)}`
+}
+
+export async function getLeadFormulieren(): Promise<LeadFormulier[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('lead_formulieren').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<LeadFormulier>('lead_formulieren')
+}
+
+export async function getLeadFormulier(id: string): Promise<LeadFormulier | null> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('lead_formulieren').select('*').eq('id', id).single()
+    if (error) return null
+    return data
+  }
+  return getLocalData<LeadFormulier>('lead_formulieren').find((f) => f.id === id) || null
+}
+
+export async function getLeadFormulierByToken(token: string): Promise<LeadFormulier | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('lead_formulieren').select('*').eq('publiek_token', token).eq('actief', true).single()
+    if (error) return null
+    return data
+  }
+  return getLocalData<LeadFormulier>('lead_formulieren').find((f) => f.publiek_token === token && f.actief) || null
+}
+
+export async function createLeadFormulier(data: Omit<LeadFormulier, 'id' | 'publiek_token' | 'created_at' | 'updated_at'>): Promise<LeadFormulier> {
+  const publiek_token = generateLeadToken()
+  const newItem: LeadFormulier = { ...data, id: generateId(), publiek_token, created_at: now(), updated_at: now() } as LeadFormulier
+  if (isSupabaseConfigured() && supabase) {
+    const { data: saved, error } = await supabase.from('lead_formulieren').insert(newItem).select().single()
+    if (error) throw error
+    return saved
+  }
+  const items = getLocalData<LeadFormulier>('lead_formulieren')
+  items.unshift(newItem)
+  setLocalData('lead_formulieren', items)
+  return newItem
+}
+
+export async function updateLeadFormulier(id: string, updates: Partial<LeadFormulier>): Promise<LeadFormulier> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('lead_formulieren').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<LeadFormulier>('lead_formulieren')
+  const index = items.findIndex((f) => f.id === id)
+  if (index === -1) throw new Error('LeadFormulier niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('lead_formulieren', items)
+  return items[index]
+}
+
+export async function deleteLeadFormulier(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('lead_formulieren').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<LeadFormulier>('lead_formulieren')
+  setLocalData('lead_formulieren', items.filter((f) => f.id !== id))
+}
+
+// Lead Inzendingen
+
+export async function getLeadInzendingen(formulierId: string): Promise<LeadInzending[]> {
+  assertId(formulierId, 'formulier_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('lead_inzendingen').select('*').eq('formulier_id', formulierId).order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<LeadInzending>('lead_inzendingen').filter((i) => i.formulier_id === formulierId)
+}
+
+export async function getAllLeadInzendingen(): Promise<LeadInzending[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('lead_inzendingen').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<LeadInzending>('lead_inzendingen')
+}
+
+export async function getLeadInzendingenNieuw(): Promise<LeadInzending[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('lead_inzendingen').select('*').eq('status', 'nieuw').order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<LeadInzending>('lead_inzendingen').filter((i) => i.status === 'nieuw')
+}
+
+export async function createLeadInzending(data: Omit<LeadInzending, 'id' | 'created_at'>): Promise<LeadInzending> {
+  const newItem: LeadInzending = { ...data, id: generateId(), created_at: now() } as LeadInzending
+  if (isSupabaseConfigured() && supabase) {
+    const { data: saved, error } = await supabase.from('lead_inzendingen').insert(newItem).select().single()
+    if (error) throw error
+    return saved
+  }
+  const items = getLocalData<LeadInzending>('lead_inzendingen')
+  items.unshift(newItem)
+  setLocalData('lead_inzendingen', items)
+  return newItem
+}
+
+export async function updateLeadInzending(id: string, updates: Partial<LeadInzending>): Promise<LeadInzending> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('lead_inzendingen').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<LeadInzending>('lead_inzendingen')
+  const index = items.findIndex((i) => i.id === id)
+  if (index === -1) throw new Error('LeadInzending niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('lead_inzendingen', items)
+  return items[index]
+}
+
+// ============ GEDEELDE INBOX (Tier 3 Feature 3) ============
+
+export async function getGedeeldeEmails(): Promise<Email[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('emails').select('*').eq('inbox_type', 'gedeeld').order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Email>('emails').filter((e) => e.inbox_type === 'gedeeld')
+}
+
+export async function getGedeeldeEmailsByToewijzing(medewerkerId: string): Promise<Email[]> {
+  assertId(medewerkerId, 'medewerker_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('emails').select('*').eq('inbox_type', 'gedeeld').eq('toegewezen_aan', medewerkerId).order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Email>('emails').filter((e) => e.inbox_type === 'gedeeld' && e.toegewezen_aan === medewerkerId)
+}
+
+export async function updateEmailToewijzing(emailId: string, medewerkerId: string): Promise<Email> {
+  assertId(emailId, 'email_id')
+  return updateEmail(emailId, { toegewezen_aan: medewerkerId })
+}
+
+export async function updateEmailTicketStatus(emailId: string, ticketStatus: Email['ticket_status']): Promise<Email> {
+  assertId(emailId, 'email_id')
+  return updateEmail(emailId, { ticket_status: ticketStatus })
+}
+
+export async function addInterneNotitie(emailId: string, notitie: InternEmailNotitie): Promise<Email> {
+  assertId(emailId, 'email_id')
+  const email = await getEmail(emailId)
+  if (!email) throw new Error('Email niet gevonden')
+  const huidigeNotities = email.interne_notities || []
+  return updateEmail(emailId, { interne_notities: [...huidigeNotities, notitie] })
+}
+
+// Helper: getEmail (needed for addInterneNotitie)
+async function getEmail(id: string): Promise<Email | null> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('emails').select('*').eq('id', id).single()
+    if (error) return null
+    return data
+  }
+  return getLocalData<Email>('emails').find((e) => e.id === id) || null
+}
+
+// Helper: updateEmail
+async function updateEmail(id: string, updates: Partial<Email>): Promise<Email> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('emails').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Email>('emails')
+  const index = items.findIndex((e) => e.id === id)
+  if (index === -1) throw new Error('Email niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('emails', items)
+  return items[index]
 }
