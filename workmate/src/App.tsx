@@ -39,6 +39,8 @@ import { MontagePlanningLayout } from '@/components/montage/MontagePlanningLayou
 import { TeamLayout } from '@/components/team/TeamLayout'
 import { CommandPalette } from '@/components/shared/CommandPalette'
 import { ClientApprovalPage } from '@/components/approval/ClientApprovalPage'
+import { BookingBeheer } from '@/components/booking/BookingBeheer'
+import { PublicBookingPage } from '@/components/booking/PublicBookingPage'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -60,6 +62,8 @@ function AppContent() {
       <Route path="/register" element={<RegisterPage />} />
       {/* Publieke route - klant goedkeuring (geen login vereist) */}
       <Route path="/goedkeuring/:token" element={<ClientApprovalPage />} />
+      {/* Publieke route - klant booking (geen login vereist) */}
+      <Route path="/boeken/:userId" element={<PublicBookingPage />} />
       <Route path="/" element={
         <ProtectedRoute>
           <AppLayout />
@@ -88,6 +92,7 @@ function AppContent() {
         <Route path="nieuwsbrieven" element={<NewsletterBuilder />} />
         <Route path="importeren" element={<DataImportLayout />} />
         <Route path="ai" element={<WorkmateAIChat />} />
+        <Route path="booking" element={<BookingBeheer />} />
         <Route path="instellingen" element={<SettingsLayout />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

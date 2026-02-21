@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useMemo } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText, Files,
-  Mail, Calendar, PiggyBank, Bot, Settings, ChevronLeft,
+  Mail, Calendar, CalendarCheck, PiggyBank, Bot, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload,
   Sparkles, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
   type LucideIcon
@@ -47,6 +47,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Planning', icon: Calendar, path: '/kalender' },
       { label: 'Tijdregistratie', icon: Clock, path: '/tijdregistratie' },
+      { label: 'Booking', icon: CalendarCheck, path: '/booking' },
     ],
   },
   {
