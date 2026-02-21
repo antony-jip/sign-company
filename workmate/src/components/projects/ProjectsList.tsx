@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input'
 import {
   cn,
   formatDate,
+  formatCurrency,
   getStatusColor,
   getPriorityColor,
 } from '@/lib/utils'
@@ -807,6 +808,8 @@ export function ProjectsList() {
           {gefilterdeProjecten.map((project, index) => {
             const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
             const isOverdue = new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
+            const budgetPct = project.budget > 0 ? Math.round((project.besteed / project.budget) * 100) : 0
+            const budgetWaarschuwing = project.budget > 0 && budgetPct >= (project.budget_waarschuwing_pct ?? 80)
 
             return (
               <Link
@@ -885,6 +888,14 @@ export function ProjectsList() {
                       <Badge className={`${getPriorityColor(project.prioriteit)} text-xs`}>
                         {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
                       </Badge>
+                      {budgetWaarschuwing && (
+                        <Badge className={`text-xs ${budgetPct >= 100
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
+                        }`}>
+                          Budget {budgetPct}%
+                        </Badge>
+                      )}
                       {isOverdue && (
                         <Badge className="bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 text-xs">
                           Verlopen

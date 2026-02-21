@@ -39,6 +39,7 @@ import {
   Save,
   ChevronDown,
   ChevronUp,
+  AlertTriangle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -78,6 +79,7 @@ import {
   getKlant,
   createFactuur,
   createFactuurItem,
+  getTijdregistratiesByProject,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -86,7 +88,8 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
-import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur } from '@/types'
+import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie } from '@/types'
+import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
 const statusLabels: Record<string, string> = {
@@ -205,6 +208,9 @@ export function ProjectDetail() {
 
   // Invoice from offerte state
   const [creatingFactuurForOfferte, setCreatingFactuurForOfferte] = useState<string | null>(null)
+
+  // Budget tracking state
+  const [projectTijdregistraties, setProjectTijdregistraties] = useState<Tijdregistratie[]>([])
 
   // Email offerte state (simple offerte mail)
   const [emailOfferteOpen, setEmailOfferteOpen] = useState(false)
@@ -373,12 +379,13 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
           getOffertesByProject(id),
           getTekeningGoedkeuringen(id),
+          getTijdregistratiesByProject(id),
         ])
         if (!cancelled) {
           setProject(projectData)
@@ -386,6 +393,7 @@ export function ProjectDetail() {
           setProjectDocumenten(allDocumenten.filter((d) => d.project_id === id))
           setProjectOffertes(offertesData)
           setGoedkeuringen(goedkeuringenData)
+          setProjectTijdregistraties(tijdData)
         }
 
         // Fetch klant data
@@ -715,6 +723,43 @@ export function ProjectDetail() {
                 <p className="text-[10px] mt-0.5 text-wm-pale/60">afgerond</p>
               </div>
             </div>
+
+            {/* Budget waarschuwing */}
+            {(() => {
+              const bs = berekenBudgetStatus(project, projectTijdregistraties)
+              if (bs.budget <= 0 || bs.niveau === 'normaal') return null
+              return (
+                <div className={`mt-4 flex items-center gap-3 rounded-lg px-4 py-2 ${
+                  bs.niveau === 'overschreden'
+                    ? 'bg-red-500/20 border border-red-400/30'
+                    : 'bg-amber-500/20 border border-amber-400/30'
+                }`}>
+                  <AlertTriangle className={`h-5 w-5 flex-shrink-0 ${
+                    bs.niveau === 'overschreden' ? 'text-red-300' : 'text-amber-300'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white">
+                      {bs.niveau === 'overschreden'
+                        ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
+                        : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
+                    </p>
+                    <p className="text-xs text-wm-pale/70">
+                      {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)} gebruikt
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          bs.niveau === 'overschreden' ? 'bg-red-400' : 'bg-amber-400'
+                        }`}
+                        style={{ width: `${Math.min(bs.percentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         </div>
       </div>
