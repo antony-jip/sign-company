@@ -40,6 +40,8 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
+  Shield,
+  UserPlus,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -82,6 +84,10 @@ import {
   createFactuur,
   createFactuurItem,
   getTijdregistratiesByProject,
+  getMedewerkers,
+  getProjectToewijzingen,
+  createProjectToewijzing,
+  deleteProjectToewijzing,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -90,7 +96,7 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
-import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie } from '@/types'
+import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie, Medewerker, ProjectToewijzing } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
@@ -213,6 +219,12 @@ export function ProjectDetail() {
 
   // Budget tracking state
   const [projectTijdregistraties, setProjectTijdregistraties] = useState<Tijdregistratie[]>([])
+
+  // Project rechten state
+  const [alleMedewerkers, setAlleMedewerkers] = useState<Medewerker[]>([])
+  const [projectToewijzingen, setProjectToewijzingen] = useState<ProjectToewijzing[]>([])
+  const [toewijzingMedewerkerId, setToewijzingMedewerkerId] = useState('')
+  const [toewijzingRol, setToewijzingRol] = useState<ProjectToewijzing['rol']>('medewerker')
 
   // Project kopiëren state
   const [kopieDialogOpen, setKopieDialogOpen] = useState(false)
@@ -455,13 +467,15 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
           getOffertesByProject(id),
           getTekeningGoedkeuringen(id),
           getTijdregistratiesByProject(id),
+          getMedewerkers(),
+          getProjectToewijzingen(id),
         ])
         if (!cancelled) {
           setProject(projectData)
@@ -470,6 +484,8 @@ export function ProjectDetail() {
           setProjectOffertes(offertesData)
           setGoedkeuringen(goedkeuringenData)
           setProjectTijdregistraties(tijdData)
+          setAlleMedewerkers(medewerkersData || [])
+          setProjectToewijzingen(toewijzingenData || [])
         }
 
         // Fetch klant data
@@ -1217,6 +1233,98 @@ export function ProjectDetail() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* ── Projectrechten ── */}
+          <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                  <Shield className="h-3.5 w-3.5 text-white" />
+                </div>
+                Rechten
+                <span className="text-xs text-muted-foreground font-normal ml-auto">{projectToewijzingen.length}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Bestaande toewijzingen */}
+              {projectToewijzingen.length > 0 && (
+                <div className="space-y-1.5">
+                  {projectToewijzingen.map((tw) => {
+                    const mw = alleMedewerkers.find(m => m.id === tw.medewerker_id)
+                    return (
+                      <div key={tw.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                        <div className="h-6 w-6 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
+                          {getInitials(mw?.naam || '?')}
+                        </div>
+                        <span className="text-sm font-medium text-foreground truncate flex-1">{mw?.naam || 'Onbekend'}</span>
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+                          tw.rol === 'eigenaar' ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                          tw.rol === 'viewer' ? 'border-gray-300 bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400' :
+                          'border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                        }`}>
+                          {tw.rol}
+                        </Badge>
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-red-400 hover:text-red-600"
+                          onClick={async () => {
+                            try {
+                              await deleteProjectToewijzing(tw.id)
+                              setProjectToewijzingen(prev => prev.filter(t => t.id !== tw.id))
+                              toast.success('Toewijzing verwijderd')
+                            } catch { toast.error('Kon toewijzing niet verwijderen') }
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Toevoegen */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={toewijzingMedewerkerId}
+                  onChange={(e) => setToewijzingMedewerkerId(e.target.value)}
+                  className="flex-1 text-xs border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="">Medewerker...</option>
+                  {alleMedewerkers
+                    .filter(m => m.status === 'actief' && !projectToewijzingen.some(t => t.medewerker_id === m.id))
+                    .map(m => <option key={m.id} value={m.id}>{m.naam}</option>)
+                  }
+                </select>
+                <select
+                  value={toewijzingRol}
+                  onChange={(e) => setToewijzingRol(e.target.value as ProjectToewijzing['rol'])}
+                  className="w-24 text-xs border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="medewerker">Medewerker</option>
+                  <option value="eigenaar">Eigenaar</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
+                  disabled={!toewijzingMedewerkerId}
+                  onClick={async () => {
+                    if (!toewijzingMedewerkerId || !user) return
+                    try {
+                      const created = await createProjectToewijzing({
+                        user_id: user.id,
+                        project_id: id!,
+                        medewerker_id: toewijzingMedewerkerId,
+                        rol: toewijzingRol,
+                      })
+                      setProjectToewijzingen(prev => [...prev, created])
+                      setToewijzingMedewerkerId('')
+                      toast.success('Medewerker toegewezen')
+                    } catch { toast.error('Kon niet toewijzen') }
+                  }}
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
