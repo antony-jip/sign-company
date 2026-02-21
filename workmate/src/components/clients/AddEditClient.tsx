@@ -21,7 +21,8 @@ import {
 import { createKlant, updateKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
-import type { Klant } from '@/types'
+import type { Klant, KvkResultaat } from '@/types'
+import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
 
 interface AddEditClientProps {
   open: boolean
@@ -320,15 +321,21 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
 
           {/* Row 5: KvK + BTW */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="kvk_nummer">KvK Nummer</Label>
-              <Input
-                id="kvk_nummer"
-                value={formData.kvk_nummer}
-                onChange={(e) => handleChange('kvk_nummer', e.target.value)}
-                placeholder="12345678"
-              />
-            </div>
+            <KvkZoekVeld
+              kvkNummer={formData.kvk_nummer}
+              onKvkChange={(v) => handleChange('kvk_nummer', v)}
+              onResultSelect={(r: KvkResultaat) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  bedrijfsnaam: r.bedrijfsnaam || prev.bedrijfsnaam,
+                  adres: r.adres || prev.adres,
+                  postcode: r.postcode || prev.postcode,
+                  stad: r.stad || prev.stad,
+                  btw_nummer: r.btw_nummer || prev.btw_nummer,
+                  kvk_nummer: r.kvk_nummer,
+                }))
+              }}
+            />
             <div className="space-y-2">
               <Label htmlFor="btw_nummer">BTW Nummer</Label>
               <Input

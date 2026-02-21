@@ -3105,6 +3105,18 @@ function IntegratiesTab() {
         </div>
       ),
     },
+    {
+      id: 'kvk',
+      name: 'KvK API',
+      description: 'Kamer van Koophandel opzoeken voor bedrijfsgegevens',
+      connected: false,
+      icon: (
+        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+          <span className="text-blue-700 dark:text-blue-400 font-bold text-sm">KvK</span>
+        </div>
+      ),
+      details: 'Optioneel — zonder API key worden demogegevens gebruikt',
+    },
   ]
 
   return (

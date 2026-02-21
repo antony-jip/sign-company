@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Leverancier, Uitgave } from '@/types'
+import type { Leverancier, Uitgave, KvkResultaat } from '@/types'
+import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
 import {
   getLeveranciers, createLeverancier, updateLeverancier, deleteLeverancier,
   getUitgavenByLeverancier, round2,
@@ -298,7 +299,21 @@ export function LeveranciersLayout() {
               </div>
               <div><Label>Website</Label><Input value={formData.website} onChange={(e) => setFormData((p) => ({ ...p, website: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>KVK nummer</Label><Input value={formData.kvk_nummer} onChange={(e) => setFormData((p) => ({ ...p, kvk_nummer: e.target.value }))} /></div>
+                <KvkZoekVeld
+                  kvkNummer={formData.kvk_nummer}
+                  onKvkChange={(v) => setFormData((p) => ({ ...p, kvk_nummer: v }))}
+                  onResultSelect={(r: KvkResultaat) => {
+                    setFormData((p) => ({
+                      ...p,
+                      bedrijfsnaam: r.bedrijfsnaam || p.bedrijfsnaam,
+                      adres: r.adres || p.adres,
+                      postcode: r.postcode || p.postcode,
+                      stad: r.stad || p.stad,
+                      btw_nummer: r.btw_nummer || p.btw_nummer,
+                      kvk_nummer: r.kvk_nummer,
+                    }))
+                  }}
+                />
                 <div><Label>BTW nummer</Label><Input value={formData.btw_nummer} onChange={(e) => setFormData((p) => ({ ...p, btw_nummer: e.target.value }))} /></div>
               </div>
               <div><Label>IBAN</Label><Input value={formData.iban} onChange={(e) => setFormData((p) => ({ ...p, iban: e.target.value }))} /></div>
