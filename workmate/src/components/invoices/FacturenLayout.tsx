@@ -76,6 +76,7 @@ import { logger } from '../../utils/logger'
 // ============ TYPES ============
 
 type FactuurStatus = Factuur['status']
+type FactuurType = NonNullable<Factuur['factuur_type']>
 type FilterStatus = 'alle' | FactuurStatus | 'verlopen'
 type SortField = 'datum' | 'bedrag' | 'klantnaam'
 type SortDir = 'asc' | 'desc'
@@ -134,6 +135,13 @@ const STATUS_CONFIG: Record<FactuurStatus, { label: string; color: string; borde
     border: 'border-l-primary',
     dot: 'bg-primary',
   },
+}
+
+const TYPE_CONFIG: Record<FactuurType, { label: string; prefix: string; color: string }> = {
+  standaard: { label: 'Factuur', prefix: 'FAC', color: '' },
+  voorschot: { label: 'Voorschot', prefix: 'VS', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
+  creditnota: { label: 'Creditnota', prefix: 'CN', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+  eindafrekening: { label: 'Eindafrekening', prefix: 'EA', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
@@ -207,6 +215,18 @@ function generateFactuurNummer(existing: Factuur[]): string {
   return `${prefix}${String(maxNum + 1).padStart(3, '0')}`
 }
 
+function generateTypedNummer(existing: Factuur[], prefix: string): string {
+  const year = new Date().getFullYear()
+  const fullPrefix = `${prefix}-${year}-`
+  const maxNum = existing
+    .filter((f) => f.nummer.startsWith(fullPrefix))
+    .reduce((max, f) => {
+      const num = parseInt(f.nummer.replace(fullPrefix, ''), 10)
+      return isNaN(num) ? max : Math.max(max, num)
+    }, 0)
+  return `${fullPrefix}${String(maxNum + 1).padStart(3, '0')}`
+}
+
 function isThisMonth(dateStr: string): boolean {
   const d = new Date(dateStr)
   const now = new Date()
@@ -255,6 +275,16 @@ export function FacturenLayout() {
   const [herinneringFactuur, setHerinneringFactuur] = useState<Factuur | null>(null)
   const [herinneringType, setHerinneringType] = useState<HerinneringTemplate['type']>('herinnering_1')
   const [herinneringPreview, setHerinneringPreview] = useState('')
+
+  // Creditnota / Voorschot state
+  const [creditnotaDialogOpen, setCreditnotaDialogOpen] = useState(false)
+  const [creditnotaFactuur, setCreditnotaFactuur] = useState<Factuur | null>(null)
+  const [creditReden, setCreditReden] = useState('')
+  const [voorschotDialogOpen, setVoorschotDialogOpen] = useState(false)
+  const [voorschotOfferte, setVoorschotOfferte] = useState<Offerte | null>(null)
+  const [voorschotPercentage, setVoorschotPercentage] = useState(30)
+  const [eindafrekeningDialogOpen, setEindafrekeningDialogOpen] = useState(false)
+  const [eindafrekeningFactuur, setEindafrekeningFactuur] = useState<Factuur | null>(null)
 
   // URL params for workflow integration
   const [searchParams, setSearchParams] = useSearchParams()
@@ -767,6 +797,7 @@ export function FacturenLayout() {
         totaal: factuur.totaal,
         notities: factuur.notities || undefined,
         betaalvoorwaarden: factuur.voorwaarden || undefined,
+        factuur_type: factuur.factuur_type || 'standaard',
       }
 
       // Build items from factuur data (single line item based on totals)
@@ -925,6 +956,196 @@ export function FacturenLayout() {
       toast.error('Fout bij versturen herinnering')
     }
   }, [herinneringFactuur, klanten, herinneringTemplates, herinneringType, herinneringPreview])
+
+  // ============ CREDITNOTA / VOORSCHOT LOGIC ============
+
+  const handleOpenCreditnota = useCallback((factuur: Factuur) => {
+    setCreditnotaFactuur(factuur)
+    setCreditReden('')
+    setCreditnotaDialogOpen(true)
+  }, [])
+
+  const handleCreateCreditnota = useCallback(async () => {
+    if (!creditnotaFactuur) return
+    if (!creditReden.trim()) {
+      toast.error('Vul een reden in voor de creditnota')
+      return
+    }
+
+    try {
+      setIsSaving(true)
+      const nummer = generateTypedNummer(facturen, 'CN')
+      const selectedKlant = klanten.find((k) => k.id === creditnotaFactuur.klant_id)
+
+      const creditnota: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
+        user_id: '',
+        klant_id: creditnotaFactuur.klant_id,
+        klant_naam: selectedKlant?.bedrijfsnaam || creditnotaFactuur.klant_naam || '',
+        offerte_id: creditnotaFactuur.offerte_id,
+        project_id: creditnotaFactuur.project_id,
+        nummer,
+        titel: `Creditnota voor ${creditnotaFactuur.nummer}`,
+        status: 'concept',
+        subtotaal: round2(-creditnotaFactuur.subtotaal),
+        btw_bedrag: round2(-creditnotaFactuur.btw_bedrag),
+        totaal: round2(-creditnotaFactuur.totaal),
+        betaald_bedrag: 0,
+        factuurdatum: getTodayString(),
+        vervaldatum: getDefaultVervaldatum(getTodayString()),
+        notities: `Creditnota: ${creditReden}`,
+        voorwaarden: creditnotaFactuur.voorwaarden,
+        factuur_type: 'creditnota',
+        gerelateerde_factuur_id: creditnotaFactuur.id,
+        credit_reden: creditReden,
+      }
+
+      const saved = await createFactuur(creditnota)
+
+      // Mark original as gecrediteerd
+      await updateFactuur(creditnotaFactuur.id, { status: 'gecrediteerd' })
+      setFacturen((prev) => prev.map((f) =>
+        f.id === creditnotaFactuur.id ? { ...f, status: 'gecrediteerd' } : f
+      ))
+      setFacturen((prev) => [saved, ...prev])
+
+      setCreditnotaDialogOpen(false)
+      toast.success(`Creditnota ${nummer} aangemaakt`)
+    } catch {
+      toast.error('Fout bij aanmaken creditnota')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [creditnotaFactuur, creditReden, facturen, klanten])
+
+  const handleOpenVoorschot = useCallback((offerte: Offerte) => {
+    setVoorschotOfferte(offerte)
+    setVoorschotPercentage(30)
+    setVoorschotDialogOpen(true)
+    setOfferteDialogOpen(false)
+  }, [])
+
+  const handleCreateVoorschot = useCallback(async () => {
+    if (!voorschotOfferte) return
+    if (voorschotPercentage <= 0 || voorschotPercentage >= 100) {
+      toast.error('Percentage moet tussen 1 en 99 zijn')
+      return
+    }
+
+    try {
+      setIsSaving(true)
+      const nummer = generateTypedNummer(facturen, 'VS')
+      const selectedKlant = klanten.find((k) => k.id === voorschotOfferte.klant_id)
+
+      const subtotaal = round2(voorschotOfferte.subtotaal * (voorschotPercentage / 100))
+      const btwBedrag = round2(voorschotOfferte.btw_bedrag * (voorschotPercentage / 100))
+      const totaal = round2(subtotaal + btwBedrag)
+
+      const voorschotFactuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
+        user_id: '',
+        klant_id: voorschotOfferte.klant_id,
+        klant_naam: selectedKlant?.bedrijfsnaam || voorschotOfferte.klant_naam || '',
+        offerte_id: voorschotOfferte.id,
+        project_id: voorschotOfferte.project_id || undefined,
+        nummer,
+        titel: `Voorschotfactuur ${voorschotPercentage}% — ${voorschotOfferte.titel}`,
+        status: 'concept',
+        subtotaal,
+        btw_bedrag: btwBedrag,
+        totaal,
+        betaald_bedrag: 0,
+        factuurdatum: getTodayString(),
+        vervaldatum: getDefaultVervaldatum(getTodayString()),
+        notities: `Voorschot ${voorschotPercentage}% van offerte ${voorschotOfferte.nummer}`,
+        voorwaarden: 'Betaling binnen 14 dagen na factuurdatum.',
+        factuur_type: 'voorschot',
+        gerelateerde_factuur_id: undefined,
+        voorschot_percentage: voorschotPercentage,
+      }
+
+      const saved = await createFactuur(voorschotFactuur)
+      setFacturen((prev) => [saved, ...prev])
+
+      setVoorschotDialogOpen(false)
+      toast.success(`Voorschotfactuur ${nummer} aangemaakt (${voorschotPercentage}%)`)
+    } catch {
+      toast.error('Fout bij aanmaken voorschotfactuur')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [voorschotOfferte, voorschotPercentage, facturen, klanten])
+
+  const handleOpenEindafrekening = useCallback((factuur: Factuur) => {
+    setEindafrekeningFactuur(factuur)
+    setEindafrekeningDialogOpen(true)
+  }, [])
+
+  const betaaldeVoorschotten = useMemo(() => {
+    if (!eindafrekeningFactuur) return []
+    // Find voorschotfacturen for the same offerte that are betaald
+    return facturen.filter((f) =>
+      f.factuur_type === 'voorschot' &&
+      f.offerte_id === eindafrekeningFactuur.offerte_id &&
+      f.status === 'betaald' &&
+      !f.is_voorschot_verrekend
+    )
+  }, [eindafrekeningFactuur, facturen])
+
+  const handleCreateEindafrekening = useCallback(async () => {
+    if (!eindafrekeningFactuur) return
+
+    try {
+      setIsSaving(true)
+      const nummer = generateTypedNummer(facturen, 'EA')
+      const selectedKlant = klanten.find((k) => k.id === eindafrekeningFactuur.klant_id)
+
+      const voorschotTotaal = round2(betaaldeVoorschotten.reduce((s, f) => s + f.totaal, 0))
+      const restBedrag = round2(eindafrekeningFactuur.totaal - voorschotTotaal)
+      const restSubtotaal = round2(eindafrekeningFactuur.subtotaal - betaaldeVoorschotten.reduce((s, f) => s + f.subtotaal, 0))
+      const restBtw = round2(restBedrag - restSubtotaal)
+
+      const eindafrekening: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
+        user_id: '',
+        klant_id: eindafrekeningFactuur.klant_id,
+        klant_naam: selectedKlant?.bedrijfsnaam || eindafrekeningFactuur.klant_naam || '',
+        offerte_id: eindafrekeningFactuur.offerte_id,
+        project_id: eindafrekeningFactuur.project_id,
+        nummer,
+        titel: `Eindafrekening — ${eindafrekeningFactuur.titel}`,
+        status: 'concept',
+        subtotaal: restSubtotaal,
+        btw_bedrag: restBtw,
+        totaal: restBedrag,
+        betaald_bedrag: 0,
+        factuurdatum: getTodayString(),
+        vervaldatum: getDefaultVervaldatum(getTodayString()),
+        notities: `Eindafrekening na ${betaaldeVoorschotten.length} voorschot(ten) (${formatCurrency(voorschotTotaal)} verrekend)`,
+        voorwaarden: eindafrekeningFactuur.voorwaarden,
+        factuur_type: 'eindafrekening',
+        gerelateerde_factuur_id: eindafrekeningFactuur.id,
+        verrekende_voorschot_ids: betaaldeVoorschotten.map((f) => f.id),
+      }
+
+      const saved = await createFactuur(eindafrekening)
+
+      // Mark voorschotten as verrekend
+      for (const vs of betaaldeVoorschotten) {
+        await updateFactuur(vs.id, { is_voorschot_verrekend: true })
+      }
+      setFacturen((prev) => prev.map((f) =>
+        betaaldeVoorschotten.some((vs) => vs.id === f.id)
+          ? { ...f, is_voorschot_verrekend: true }
+          : f
+      ))
+      setFacturen((prev) => [saved, ...prev])
+
+      setEindafrekeningDialogOpen(false)
+      toast.success(`Eindafrekening ${nummer} aangemaakt — ${formatCurrency(restBedrag)} resterend`)
+    } catch {
+      toast.error('Fout bij aanmaken eindafrekening')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [eindafrekeningFactuur, betaaldeVoorschotten, facturen, klanten])
 
   const verlopenCount = useMemo(() => {
     const vandaag = getTodayString()
@@ -1222,12 +1443,19 @@ export function FacturenLayout() {
                   >
                     <td className="w-1" />
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => setViewingFactuur(factuur)}
-                        className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        {factuur.nummer}
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setViewingFactuur(factuur)}
+                          className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          {factuur.nummer}
+                        </button>
+                        {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
+                          <Badge variant="secondary" className={cn('text-[9px] px-1 py-0 h-4', TYPE_CONFIG[factuur.factuur_type].color)}>
+                            {TYPE_CONFIG[factuur.factuur_type].label}
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <a
@@ -1333,6 +1561,18 @@ export function FacturenLayout() {
                             <DropdownMenuItem onClick={() => openHerinneringDialog(factuur)}>
                               <Bell className="h-4 w-4 mr-2" />
                               Verstuur {getVolgendeHerinnering(factuur) === 'aanmaning' ? 'aanmaning' : 'herinnering'}
+                            </DropdownMenuItem>
+                          )}
+                          {factuur.status !== 'gecrediteerd' && factuur.factuur_type !== 'creditnota' && (
+                            <DropdownMenuItem onClick={() => handleOpenCreditnota(factuur)}>
+                              <X className="h-4 w-4 mr-2" />
+                              Maak creditnota
+                            </DropdownMenuItem>
+                          )}
+                          {factuur.offerte_id && factuur.factuur_type !== 'voorschot' && factuur.factuur_type !== 'creditnota' && (
+                            <DropdownMenuItem onClick={() => handleOpenEindafrekening(factuur)}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Maak eindafrekening
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
@@ -1469,6 +1709,18 @@ export function FacturenLayout() {
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Betalingsvoorwaarden</p>
                   <p className="text-sm text-gray-700 dark:text-gray-300">{viewingFactuur.voorwaarden}</p>
+                </div>
+              )}
+
+              {viewingFactuur.factuur_type && viewingFactuur.factuur_type !== 'standaard' && (
+                <div className={cn(
+                  'flex items-center gap-2 text-xs px-3 py-2 rounded-lg',
+                  TYPE_CONFIG[viewingFactuur.factuur_type].color
+                )}>
+                  <FileText className="h-3.5 w-3.5" />
+                  {TYPE_CONFIG[viewingFactuur.factuur_type].label}
+                  {viewingFactuur.credit_reden && ` — ${viewingFactuur.credit_reden}`}
+                  {viewingFactuur.voorschot_percentage && ` — ${viewingFactuur.voorschot_percentage}%`}
                 </div>
               )}
 
@@ -1788,10 +2040,9 @@ export function FacturenLayout() {
             ) : (
               <div className="space-y-2">
                 {goedgekeurdeOffertes.map((offerte) => (
-                  <button
+                  <div
                     key={offerte.id}
-                    onClick={() => handleConvertOfferte(offerte)}
-                    className="w-full text-left p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all group"
+                    className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -1822,11 +2073,201 @@ export function FacturenLayout() {
                         </p>
                       </div>
                     </div>
-                  </button>
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" variant="outline" className="text-xs h-7 flex-1" onClick={() => handleConvertOfferte(offerte)}>
+                        Volledige factuur
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-xs h-7 flex-1 text-purple-700 border-purple-200 hover:bg-purple-50 dark:text-purple-300 dark:border-purple-800 dark:hover:bg-purple-900/30" onClick={() => handleOpenVoorschot(offerte)}>
+                        Voorschotfactuur
+                      </Button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Creditnota Dialog ── */}
+      <Dialog open={creditnotaDialogOpen} onOpenChange={setCreditnotaDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <X className="h-5 w-5 text-red-500" />
+              Creditnota aanmaken
+            </DialogTitle>
+            <DialogDescription>
+              Maak een creditnota aan voor factuur {creditnotaFactuur?.nummer}.
+              De originele factuur wordt gemarkeerd als gecrediteerd.
+            </DialogDescription>
+          </DialogHeader>
+          {creditnotaFactuur && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Originele factuur</span>
+                  <span className="font-mono font-semibold">{creditnotaFactuur.nummer}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Bedrag</span>
+                  <span className="font-semibold">{formatCurrency(creditnotaFactuur.totaal)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Creditnota bedrag</span>
+                  <span className="font-semibold text-red-600">{formatCurrency(-creditnotaFactuur.totaal)}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Reden creditnota *</Label>
+                <Input
+                  value={creditReden}
+                  onChange={(e) => setCreditReden(e.target.value)}
+                  placeholder="Bijv. Foutieve facturatie, annulering..."
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreditnotaDialogOpen(false)} disabled={isSaving}>Annuleren</Button>
+            <Button onClick={handleCreateCreditnota} disabled={isSaving} className="bg-red-600 hover:bg-red-700 text-white">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <X className="h-4 w-4 mr-1" />}
+              Creditnota aanmaken
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Voorschot Dialog ── */}
+      <Dialog open={voorschotDialogOpen} onOpenChange={setVoorschotDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-purple-500" />
+              Voorschotfactuur aanmaken
+            </DialogTitle>
+            <DialogDescription>
+              Maak een voorschotfactuur aan op basis van offerte {voorschotOfferte?.nummer}.
+            </DialogDescription>
+          </DialogHeader>
+          {voorschotOfferte && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Offerte</span>
+                  <span className="font-mono font-semibold">{voorschotOfferte.nummer}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Offerte totaal</span>
+                  <span className="font-semibold">{formatCurrency(voorschotOfferte.totaal)}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Voorschot percentage</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={voorschotPercentage}
+                    onChange={(e) => setVoorschotPercentage(parseInt(e.target.value) || 0)}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-muted-foreground">%</span>
+                  <div className="flex gap-1">
+                    {[25, 30, 50].map((pct) => (
+                      <Button key={pct} variant="outline" size="sm" className="h-7 text-xs" onClick={() => setVoorschotPercentage(pct)}>
+                        {pct}%
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 space-y-1">
+                <div className="flex justify-between text-sm font-semibold">
+                  <span className="text-purple-700 dark:text-purple-300">Voorschotbedrag</span>
+                  <span className="text-purple-700 dark:text-purple-300">
+                    {formatCurrency(round2(voorschotOfferte.totaal * (voorschotPercentage / 100)))}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Resterend na voorschot</span>
+                  <span>{formatCurrency(round2(voorschotOfferte.totaal * ((100 - voorschotPercentage) / 100)))}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVoorschotDialogOpen(false)} disabled={isSaving}>Annuleren</Button>
+            <Button onClick={handleCreateVoorschot} disabled={isSaving} className="bg-purple-600 hover:bg-purple-700 text-white">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CreditCard className="h-4 w-4 mr-1" />}
+              Voorschotfactuur aanmaken
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Eindafrekening Dialog ── */}
+      <Dialog open={eindafrekeningDialogOpen} onOpenChange={setEindafrekeningDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-teal-500" />
+              Eindafrekening aanmaken
+            </DialogTitle>
+            <DialogDescription>
+              Maak een eindafrekening aan met verrekening van betaalde voorschotten.
+            </DialogDescription>
+          </DialogHeader>
+          {eindafrekeningFactuur && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Originele factuur</span>
+                  <span className="font-mono font-semibold">{eindafrekeningFactuur.nummer}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Totaalbedrag</span>
+                  <span className="font-semibold">{formatCurrency(eindafrekeningFactuur.totaal)}</span>
+                </div>
+              </div>
+
+              {betaaldeVoorschotten.length > 0 ? (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Betaalde voorschotten te verrekenen</Label>
+                  <div className="space-y-1">
+                    {betaaldeVoorschotten.map((vs) => (
+                      <div key={vs.id} className="flex justify-between text-sm p-2 rounded bg-emerald-50 dark:bg-emerald-900/20">
+                        <span className="font-mono text-emerald-700 dark:text-emerald-300">{vs.nummer}</span>
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-300">-{formatCurrency(vs.totaal)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  Geen betaalde voorschotten gevonden voor deze offerte
+                </div>
+              )}
+
+              <Separator />
+              <div className="flex justify-between text-sm font-bold p-2 rounded bg-teal-50 dark:bg-teal-900/20">
+                <span className="text-teal-700 dark:text-teal-300">Resterend bedrag</span>
+                <span className="text-teal-700 dark:text-teal-300">
+                  {formatCurrency(round2(
+                    eindafrekeningFactuur.totaal - betaaldeVoorschotten.reduce((s, f) => s + f.totaal, 0)
+                  ))}
+                </span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEindafrekeningDialogOpen(false)} disabled={isSaving}>Annuleren</Button>
+            <Button onClick={handleCreateEindafrekening} disabled={isSaving || betaaldeVoorschotten.length === 0} className="bg-teal-600 hover:bg-teal-700 text-white">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileText className="h-4 w-4 mr-1" />}
+              Eindafrekening aanmaken
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

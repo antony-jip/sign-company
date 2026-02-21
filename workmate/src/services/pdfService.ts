@@ -339,6 +339,7 @@ export function generateFactuurPDF(
     totaal: number
     notities?: string
     betaalvoorwaarden?: string
+    factuur_type?: string
   },
   items: OfferteItem[],
   klant: Partial<Klant>,
@@ -347,8 +348,15 @@ export function generateFactuurPDF(
   const doc = new jsPDF()
   const brand = getBrandColor(bedrijfsProfiel)
 
-  // Header
-  let y = addHeader(doc, bedrijfsProfiel, 'Factuur', factuurData.nummer)
+  // Header — adjust label for creditnota/voorschot/eindafrekening
+  const typeLabels: Record<string, string> = {
+    standaard: 'Factuur',
+    voorschot: 'Voorschotfactuur',
+    creditnota: 'Creditnota',
+    eindafrekening: 'Eindafrekening',
+  }
+  const headerLabel = typeLabels[factuurData.factuur_type || 'standaard'] || 'Factuur'
+  let y = addHeader(doc, bedrijfsProfiel, headerLabel, factuurData.nummer)
 
   // Client info
   y = addClientInfo(doc, klant, y)
