@@ -22,6 +22,7 @@ import {
   ArrowDown,
   ChevronDown,
   MoreHorizontal,
+  GanttChart,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -122,7 +123,7 @@ export function ProjectsList() {
   const [statusFilter, setStatusFilter] = useState('alle')
   const [prioriteitFilter, setPrioriteitFilter] = useState('alle')
   const [klantFilter, setKlantFilter] = useState('alle')
-  const [weergave, setWeergave] = useState<'grid' | 'list'>('grid')
+  const [weergave, setWeergave] = useState<'grid' | 'list' | 'tijdlijn'>('grid')
   const [sortField, setSortField] = useState<'naam' | 'voortgang' | 'eind_datum'>('eind_datum')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
@@ -428,11 +429,20 @@ export function ProjectsList() {
             <Button
               variant={weergave === 'list' ? 'default' : 'ghost'}
               size="icon"
-              className="rounded-l-none h-9 w-9"
+              className="rounded-none h-9 w-9"
               onClick={() => setWeergave('list')}
               title="Tabelweergave"
             >
               <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={weergave === 'tijdlijn' ? 'default' : 'ghost'}
+              size="icon"
+              className="rounded-l-none h-9 w-9"
+              onClick={() => setWeergave('tijdlijn')}
+              title="Tijdlijn / Gantt"
+            >
+              <GanttChart className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -956,7 +966,180 @@ export function ProjectsList() {
             )
           })}
         </div>
-      )}
+      ) : weergave === 'tijdlijn' ? (
+        /* ==================== TIMELINE / GANTT VIEW ==================== */
+        <ProjectTijdlijn projecten={gefilterdeProjecten} />
+      ) : null}
     </div>
+  )
+}
+
+/* ────────────── Gantt / Tijdlijn Component ────────────── */
+
+function ProjectTijdlijn({ projecten }: { projecten: Project[] }) {
+  const vandaag = new Date()
+
+  // Bereken tijdsbereik: min start_datum tot max eind_datum (of vandaag + 3 maanden)
+  const projectenMetDatums = projecten.filter(p => p.start_datum)
+  if (projectenMetDatums.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <GanttChart className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <p className="text-sm text-muted-foreground">Geen projecten met datums voor de tijdlijn</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const alleDatums = projectenMetDatums.flatMap(p => {
+    const datums = [new Date(p.start_datum)]
+    if (p.eind_datum) datums.push(new Date(p.eind_datum))
+    return datums
+  })
+  alleDatums.push(vandaag)
+
+  const minDatum = new Date(Math.min(...alleDatums.map(d => d.getTime())))
+  const maxDatum = new Date(Math.max(...alleDatums.map(d => d.getTime())))
+
+  // Voeg marge toe: 2 weken links, 4 weken rechts
+  const tijdlijnStart = new Date(minDatum)
+  tijdlijnStart.setDate(tijdlijnStart.getDate() - 14)
+  const tijdlijnEind = new Date(maxDatum)
+  tijdlijnEind.setDate(tijdlijnEind.getDate() + 28)
+
+  const totaalDagen = Math.max(1, Math.ceil((tijdlijnEind.getTime() - tijdlijnStart.getTime()) / (1000 * 60 * 60 * 24)))
+
+  function datumNaarProcent(datum: Date): number {
+    const dagen = (datum.getTime() - tijdlijnStart.getTime()) / (1000 * 60 * 60 * 24)
+    return (dagen / totaalDagen) * 100
+  }
+
+  // Genereer maandlabels
+  const maanden: { label: string; pct: number }[] = []
+  const cursor = new Date(tijdlijnStart.getFullYear(), tijdlijnStart.getMonth(), 1)
+  while (cursor <= tijdlijnEind) {
+    const pct = datumNaarProcent(new Date(cursor))
+    if (pct >= 0 && pct <= 100) {
+      maanden.push({
+        label: cursor.toLocaleDateString('nl-NL', { month: 'short', year: '2-digit' }),
+        pct,
+      })
+    }
+    cursor.setMonth(cursor.getMonth() + 1)
+  }
+
+  const vandaagPct = datumNaarProcent(vandaag)
+
+  const statusKleuren: Record<string, string> = {
+    gepland: 'bg-blue-400 dark:bg-blue-500',
+    actief: 'bg-emerald-500 dark:bg-emerald-400',
+    'in-review': 'bg-amber-400 dark:bg-amber-500',
+    afgerond: 'bg-green-600 dark:bg-green-500',
+    'on-hold': 'bg-orange-400 dark:bg-orange-500',
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="overflow-x-auto">
+          <div className="min-w-[700px]">
+            {/* Maand headers */}
+            <div className="relative h-8 border-b border-gray-200 dark:border-gray-700 mb-2">
+              {maanden.map((m, i) => (
+                <div
+                  key={i}
+                  className="absolute top-0 text-[10px] font-medium text-muted-foreground uppercase tracking-wider"
+                  style={{ left: `${Math.max(m.pct, 0)}%` }}
+                >
+                  {m.label}
+                </div>
+              ))}
+              {/* Vandaag markering */}
+              {vandaagPct >= 0 && vandaagPct <= 100 && (
+                <div
+                  className="absolute top-0 bottom-0 w-px bg-red-400 dark:bg-red-500 z-10"
+                  style={{ left: `${vandaagPct}%` }}
+                >
+                  <div className="absolute -top-0.5 -left-1.5 w-3 h-3 bg-red-400 dark:bg-red-500 rounded-full" />
+                </div>
+              )}
+            </div>
+
+            {/* Projectrijen */}
+            <div className="space-y-1">
+              {projectenMetDatums.map((project) => {
+                const start = new Date(project.start_datum)
+                const eind = project.eind_datum ? new Date(project.eind_datum) : new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000)
+                const startPct = datumNaarProcent(start)
+                const eindPct = datumNaarProcent(eind)
+                const breedte = Math.max(eindPct - startPct, 1)
+
+                return (
+                  <div key={project.id} className="relative flex items-center h-10 group">
+                    {/* Projectnaam (links) */}
+                    <div className="w-[180px] flex-shrink-0 pr-3">
+                      <Link
+                        to={`/projecten/${project.id}`}
+                        className="text-xs font-medium text-foreground truncate block hover:text-accent dark:hover:text-primary transition-colors"
+                        title={project.naam}
+                      >
+                        {project.naam}
+                      </Link>
+                    </div>
+
+                    {/* Bar area */}
+                    <div className="flex-1 relative h-full">
+                      {/* Vandaag lijn (verlengd) */}
+                      {vandaagPct >= 0 && vandaagPct <= 100 && (
+                        <div
+                          className="absolute top-0 bottom-0 w-px bg-red-200 dark:bg-red-900/40 z-0"
+                          style={{ left: `${vandaagPct}%` }}
+                        />
+                      )}
+
+                      {/* Project bar */}
+                      <Link
+                        to={`/projecten/${project.id}`}
+                        className="absolute top-1.5 h-7 rounded-md flex items-center px-2 text-white text-[10px] font-medium overflow-hidden group-hover:ring-2 ring-offset-1 ring-primary/30 transition-all cursor-pointer"
+                        style={{
+                          left: `${Math.max(startPct, 0)}%`,
+                          width: `${breedte}%`,
+                          minWidth: '40px',
+                        }}
+                        title={`${project.naam} (${project.voortgang}%)`}
+                      >
+                        {/* Achtergrond kleur */}
+                        <div className={cn('absolute inset-0 opacity-90', statusKleuren[project.status] || 'bg-gray-400')} />
+                        {/* Voortgang overlay */}
+                        <div
+                          className="absolute inset-y-0 left-0 bg-white/20 rounded-l-md"
+                          style={{ width: `${project.voortgang}%` }}
+                        />
+                        <span className="relative z-10 truncate">{project.voortgang}%</span>
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Legenda */}
+            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+              {Object.entries(statusKleuren).map(([status, kleur]) => (
+                <div key={status} className="flex items-center gap-1.5 text-xs">
+                  <div className={cn('w-3 h-3 rounded', kleur)} />
+                  <span className="text-muted-foreground capitalize">{status}</span>
+                </div>
+              ))}
+              <div className="flex items-center gap-1.5 text-xs ml-auto">
+                <div className="w-3 h-0.5 bg-red-400 dark:bg-red-500" />
+                <span className="text-muted-foreground">Vandaag</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
