@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
-  Plus, Search, Handshake, Trash2, Eye, Loader2,
+  Plus, Search, Briefcase, Trash2, Eye, Loader2,
   LayoutGrid, List, ArrowRight, Phone, Mail,
   Calendar as CalendarIcon, AlertTriangle, TrendingUp,
 } from 'lucide-react'
@@ -282,7 +282,7 @@ export function DealsLayout() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Handshake className="h-5 w-5 text-white" />
+            <Briefcase className="h-5 w-5 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-display">Sales Pipeline</h1>
@@ -429,7 +429,7 @@ export function DealsLayout() {
           <div className="overflow-x-auto">
             {gefilterd.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-                <Handshake className="h-10 w-10 opacity-30" />
+                <Briefcase className="h-10 w-10 opacity-30" />
                 <p className="text-sm font-medium">Geen deals gevonden</p>
               </div>
             ) : (

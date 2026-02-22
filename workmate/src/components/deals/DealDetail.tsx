@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
-  Handshake, ArrowLeft, Loader2, Save, Plus, Trash2,
+  Briefcase, ArrowLeft, Loader2, Save, Plus, Trash2,
   Phone, Mail, MessageSquare, Calendar, FileText, ArrowRight,
   Trophy, XCircle, Pause, Play, StickyNote,
 } from 'lucide-react'
@@ -264,7 +264,7 @@ export function DealDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Handshake className="h-5 w-5 text-white" />
+            <Briefcase className="h-5 w-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
