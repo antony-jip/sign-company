@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { Link, useNavigate, useSearchParams, useParams, useBlocker } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -138,9 +138,7 @@ export function QuoteCreation() {
   const [notities, setNotities] = useState('')
   const [voorwaarden, setVoorwaarden] = useState(DEFAULT_VOORWAARDEN)
 
-  // ── Navigation guard ──
-  const blocker = useBlocker(isDirty && !isSaving)
-
+  // ── Navigation guard (beforeunload only, BrowserRouter doesn't support useBlocker) ──
   useEffect(() => {
     if (!isDirty) return
     const handler = (e: BeforeUnloadEvent) => {
@@ -623,11 +621,16 @@ export function QuoteCreation() {
         {/* ──── Page Header ──── */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/offertes">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (isDirty && !window.confirm('Je hebt onopgeslagen wijzigingen. Weet je zeker dat je terug wilt?')) return
+                navigate('/offertes')
+              }}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <div>
               <h1 className="text-2xl font-bold text-foreground font-display">{pageTitle}</h1>
               <p className="text-sm text-muted-foreground mt-0.5">{offerteNummer}</p>
@@ -1213,23 +1216,6 @@ export function QuoteCreation() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Navigation blocker dialog ── */}
-      <AlertDialog open={blocker.state === 'blocked'}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Onopgeslagen wijzigingen</AlertDialogTitle>
-            <AlertDialogDescription>
-              Je hebt onopgeslagen wijzigingen in deze offerte. Weet je zeker dat je weg wilt navigeren?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => blocker.reset?.()}>Blijven</AlertDialogCancel>
-            <AlertDialogAction onClick={() => blocker.proceed?.()}>
-              Verlaten
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
