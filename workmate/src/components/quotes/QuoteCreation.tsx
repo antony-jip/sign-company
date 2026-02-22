@@ -35,11 +35,14 @@ import {
   Plus,
   AlertTriangle,
   StickyNote,
+  Copy,
+  LayoutTemplate,
+  History,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, getOfferteItems, getOfferteTemplates, getCalculatieProducten, createOfferte, createOfferteItem } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Project } from '@/types'
+import type { Klant, Project, Offerte, OfferteTemplate, CalculatieProduct } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -50,15 +53,6 @@ import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, DEFAULT_DETAIL_L
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import type { CalculatieRegel } from '@/types'
 import { logger } from '../../utils/logger'
-
-const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
-2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
-3. Alle genoemde bedragen zijn exclusief BTW, tenzij anders vermeld.
-4. Levertijd wordt in overleg bepaald na akkoord op deze offerte.
-5. Op al onze leveringen en diensten zijn onze algemene voorwaarden van toepassing.
-6. Kleuren en materialen kunnen licht afwijken van getoonde voorbeelden.
-7. Wijzigingen na akkoord kunnen tot meerkosten leiden.
-8. Garantie: 2 jaar op materiaal en constructie, 1 jaar op elektronica.`
 
 const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
@@ -92,6 +86,12 @@ export function QuoteCreation() {
   const [projecten, setProjecten] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  // Feature 1: Templates
+  const [templates, setTemplates] = useState<OfferteTemplate[]>([])
+  // Feature 2: Recente offertes kopiëren
+  const [alleOffertes, setAlleOffertes] = useState<Offerte[]>([])
+  // Feature 3: Product-catalogus
+  const [producten, setProducten] = useState<CalculatieProduct[]>([])
 
   // Query params van bijv. projecten-pagina
   const paramKlantId = searchParams.get('klant_id') || ''
@@ -116,7 +116,7 @@ export function QuoteCreation() {
   // ── Step 1: Items ──
   const [items, setItems] = useState<QuoteLineItem[]>([])
   const [notities, setNotities] = useState('')
-  const [voorwaarden, setVoorwaarden] = useState(DEFAULT_VOORWAARDEN)
+  const [voorwaarden, setVoorwaarden] = useState(settings.standaard_voorwaarden || '')
 
   // ── Computed ──
   const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
@@ -124,6 +124,15 @@ export function QuoteCreation() {
   const klantProjecten = useMemo(() =>
     projecten.filter((p) => p.klant_id === selectedKlantId),
     [projecten, selectedKlantId]
+  )
+
+  // Feature 2: Recente offertes van geselecteerde klant
+  const klantOffertes = useMemo(() =>
+    alleOffertes
+      .filter((o) => o.klant_id === selectedKlantId)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, 5),
+    [alleOffertes, selectedKlantId]
   )
 
   const filteredKlanten = useMemo(() => {
@@ -167,11 +176,20 @@ export function QuoteCreation() {
   // ── Data fetching ──
   useEffect(() => {
     let cancelled = false
-    Promise.all([getKlanten(), getProjecten(), getOffertes().catch(() => [])])
-      .then(([klantenData, projectenData, offertesData]) => {
+    Promise.all([
+      getKlanten(),
+      getProjecten(),
+      getOffertes().catch(() => []),
+      getOfferteTemplates().catch(() => []),
+      getCalculatieProducten().catch(() => []),
+    ])
+      .then(([klantenData, projectenData, offertesData, templateData, productenData]) => {
         if (!cancelled) {
           setKlanten(klantenData)
           setProjecten(projectenData)
+          setAlleOffertes(offertesData)
+          setTemplates(templateData.filter((t) => t.actief))
+          setProducten(productenData.filter((p) => p.actief))
           setOfferteNummer(generateOfferteNummer(offertePrefix, offertesData))
         }
       })
@@ -239,6 +257,103 @@ export function QuoteCreation() {
       korting_percentage: 0,
       totaal: 0,
     }
+  }
+
+  // ── Feature 1: Template importeren ──
+  const handleImportTemplate = (template: OfferteTemplate) => {
+    const labels = (settings.offerte_regel_velden && settings.offerte_regel_velden.length > 0)
+      ? settings.offerte_regel_velden
+      : DEFAULT_DETAIL_LABELS
+
+    const newItems: QuoteLineItem[] = template.regels.map((regel) => {
+      const detail_regels: DetailRegel[] = labels.map((l, i) => ({
+        id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+        label: l,
+        waarde: regel.extra_velden[l] || '',
+      }))
+
+      return {
+        id: `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        soort: regel.soort,
+        beschrijving: regel.beschrijving,
+        extra_velden: regel.extra_velden,
+        detail_regels,
+        aantal: regel.aantal,
+        eenheidsprijs: regel.eenheidsprijs,
+        btw_percentage: regel.btw_percentage || standaardBtw,
+        korting_percentage: regel.korting_percentage,
+        totaal: regel.aantal * regel.eenheidsprijs * (1 - regel.korting_percentage / 100),
+      }
+    })
+
+    setItems(newItems)
+    if (!offerteTitel && template.naam) {
+      setOfferteTitel(template.naam)
+    }
+    toast.success(`Template "${template.naam}" geladen`)
+  }
+
+  // ── Feature 2: Kopieer items uit eerdere offerte ──
+  const handleCopyFromOfferte = async (offerteId: string) => {
+    try {
+      const offerteItems = await getOfferteItems(offerteId)
+      if (offerteItems.length === 0) {
+        toast.error('Geen items gevonden in deze offerte')
+        return
+      }
+      const labels = (settings.offerte_regel_velden && settings.offerte_regel_velden.length > 0)
+        ? settings.offerte_regel_velden
+        : DEFAULT_DETAIL_LABELS
+
+      const newItems: QuoteLineItem[] = offerteItems
+        .sort((a, b) => a.volgorde - b.volgorde)
+        .map((oi) => {
+          const detail_regels: DetailRegel[] = labels.map((l, i) => ({
+            id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+            label: l,
+            waarde: '',
+          }))
+          return {
+            id: `copy-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            soort: 'prijs' as const,
+            beschrijving: oi.beschrijving,
+            extra_velden: {},
+            detail_regels,
+            aantal: oi.aantal,
+            eenheidsprijs: oi.eenheidsprijs,
+            btw_percentage: oi.btw_percentage,
+            korting_percentage: oi.korting_percentage,
+            totaal: oi.totaal,
+          }
+        })
+      setItems(newItems)
+      toast.success(`${newItems.length} items overgenomen`)
+    } catch (err) {
+      logger.error('Failed to copy offerte items:', err)
+      toast.error('Kon items niet kopiëren')
+    }
+  }
+
+  // ── Feature 4: Dupliceer item ──
+  const handleDuplicateItem = (id: string) => {
+    const source = items.find((i) => i.id === id)
+    if (!source) return
+    const copy: QuoteLineItem = {
+      ...source,
+      id: `dup-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      detail_regels: source.detail_regels?.map((dr) => ({
+        ...dr,
+        id: `dr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      })),
+      calculatie_regels: source.calculatie_regels?.map((cr) => ({
+        ...cr,
+        id: `cr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      })),
+    }
+    const idx = items.findIndex((i) => i.id === id)
+    const newItems = [...items]
+    newItems.splice(idx + 1, 0, copy)
+    setItems(newItems)
   }
 
   // ── Item handlers ──
@@ -594,6 +709,40 @@ export function QuoteCreation() {
                   </div>
                 )}
 
+                {/* Feature 2: Recente offertes van deze klant */}
+                {selectedKlantId && klantOffertes.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
+                      <History className="h-3.5 w-3.5" />
+                      Recente offertes — items overnemen
+                    </Label>
+                    <div className="space-y-1.5">
+                      {klantOffertes.map((o) => (
+                        <div
+                          key={o.id}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{o.titel || o.nummer}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {o.nummer} · {formatCurrency(o.totaal)} · {new Date(o.created_at).toLocaleDateString('nl-NL')}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs gap-1 flex-shrink-0"
+                            onClick={() => handleCopyFromOfferte(o.id)}
+                          >
+                            <Copy className="h-3 w-3" />
+                            Kopieer
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Project selectie (alleen als klant geselecteerd is) */}
                 {selectedKlantId && (
                   <div className="space-y-2">
@@ -690,6 +839,38 @@ export function QuoteCreation() {
               </CardContent>
             </Card>
 
+            {/* ── Feature 1: Template importeren ── */}
+            {templates.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                      <LayoutTemplate className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    Start vanuit template
+                    <span className="text-xs text-muted-foreground font-normal ml-1">(optioneel)</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {templates.map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        onClick={() => handleImportTemplate(tpl)}
+                        className="text-left rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors group"
+                      >
+                        <p className="text-sm font-medium text-foreground group-hover:text-accent truncate">{tpl.naam}</p>
+                        {tpl.beschrijving && (
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{tpl.beschrijving}</p>
+                        )}
+                        <p className="text-[10px] text-muted-foreground mt-1">{tpl.regels.length} items</p>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* ── Hoeveel items? ── */}
             <Card>
               <CardHeader className="pb-3">
@@ -764,7 +945,9 @@ export function QuoteCreation() {
                   onAddItem={handleAddItem}
                   onUpdateItem={handleUpdateItem}
                   onRemoveItem={handleRemoveItem}
+                  onDuplicateItem={handleDuplicateItem}
                   onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
+                  producten={producten}
                 />
               </CardContent>
             </Card>

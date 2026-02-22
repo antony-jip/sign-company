@@ -1565,6 +1565,14 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     calculatie_standaard_marge: 35,
     calculatie_toon_inkoop_in_offerte: false,
     offerte_regel_velden: ['Materiaal', 'Lay-out', 'Montage', 'Opmerking'],
+    standaard_voorwaarden: `1. Deze offerte is geldig gedurende de aangegeven termijn.
+2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
+3. Alle genoemde bedragen zijn exclusief BTW, tenzij anders vermeld.
+4. Levertijd wordt in overleg bepaald na akkoord op deze offerte.
+5. Op al onze leveringen en diensten zijn onze algemene voorwaarden van toepassing.
+6. Kleuren en materialen kunnen licht afwijken van getoonde voorbeelden.
+7. Wijzigingen na akkoord kunnen tot meerkosten leiden.
+8. Garantie: 2 jaar op materiaal en constructie, 1 jaar op elektronica.`,
     created_at: now(),
     updated_at: now(),
   }

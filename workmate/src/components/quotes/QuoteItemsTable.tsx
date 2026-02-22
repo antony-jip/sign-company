@@ -8,10 +8,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Search, Package } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
-import type { CalculatieRegel } from '@/types'
+import type { CalculatieRegel, CalculatieProduct } from '@/types'
 
 // ============================================================
 // OFFERTE ITEMS
@@ -62,6 +62,7 @@ interface QuoteItemsTableProps {
   onAddItem: () => void
   onUpdateItem: (id: string, field: keyof QuoteLineItem, value: QuoteLineItem[keyof QuoteLineItem]) => void
   onRemoveItem: (id: string) => void
+  onDuplicateItem?: (id: string) => void
   onUpdateItemWithCalculatie?: (
     id: string,
     data: {
@@ -70,6 +71,7 @@ interface QuoteItemsTableProps {
       calculatie_regels: CalculatieRegel[]
     }
   ) => void
+  producten?: CalculatieProduct[]
 }
 
 function calculateLineTotaal(item: QuoteLineItem): number {
@@ -86,13 +88,18 @@ export function QuoteItemsTable({
   onAddItem,
   onUpdateItem,
   onRemoveItem,
+  onDuplicateItem,
   onUpdateItemWithCalculatie,
+  producten = [],
 }: QuoteItemsTableProps) {
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
   // Collapsed state per item
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set())
+  // Product snelkiezer
+  const [productSearchId, setProductSearchId] = useState<string | null>(null)
+  const [productQuery, setProductQuery] = useState('')
 
   const activeItem = items.find((i) => i.id === activeItemId)
 
@@ -129,6 +136,20 @@ export function QuoteItemsTable({
       else next.add(id)
       return next
     })
+  }
+
+  // ── Product snelkiezer ──
+  const filteredProducten = producten.filter((p) => {
+    if (!productQuery) return true
+    const q = productQuery.toLowerCase()
+    return p.naam.toLowerCase().includes(q) || p.categorie.toLowerCase().includes(q)
+  }).slice(0, 8)
+
+  const applyProduct = (itemId: string, product: CalculatieProduct) => {
+    onUpdateItem(itemId, 'beschrijving', product.naam)
+    onUpdateItem(itemId, 'eenheidsprijs', product.verkoop_prijs)
+    setProductSearchId(null)
+    setProductQuery('')
   }
 
   // ── Detail regels handlers ──
@@ -200,12 +221,72 @@ export function QuoteItemsTable({
                 <span className="text-xs font-bold text-white">{index + 1}</span>
               </div>
 
-              <Input
-                value={item.beschrijving}
-                onChange={(e) => onUpdateItem(item.id, 'beschrijving', e.target.value)}
-                placeholder="Item naam..."
-                className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 text-sm font-semibold flex-1 placeholder:font-normal"
-              />
+              {/* Item naam + product snelkiezer */}
+              <div className="relative flex-1">
+                <Input
+                  value={item.beschrijving}
+                  onChange={(e) => onUpdateItem(item.id, 'beschrijving', e.target.value)}
+                  placeholder="Item naam..."
+                  className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 text-sm font-semibold placeholder:font-normal pr-8"
+                />
+                {/* Product snelkiezer knop */}
+                {producten.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setProductSearchId(productSearchId === item.id ? null : item.id)
+                      setProductQuery('')
+                    }}
+                    className={cn(
+                      'absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center transition-colors',
+                      productSearchId === item.id
+                        ? 'bg-primary/10 text-accent dark:text-primary'
+                        : 'text-gray-400 hover:text-accent hover:bg-gray-100 dark:hover:bg-gray-800'
+                    )}
+                    title="Product kiezen uit catalogus"
+                  >
+                    <Package className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
+                {/* Product zoekresultaten dropdown */}
+                {productSearchId === item.id && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
+                    <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                        <Input
+                          value={productQuery}
+                          onChange={(e) => setProductQuery(e.target.value)}
+                          placeholder="Zoek product..."
+                          className="h-8 text-xs pl-8"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {filteredProducten.length === 0 ? (
+                        <p className="text-xs text-muted-foreground p-3 text-center">Geen producten gevonden</p>
+                      ) : (
+                        filteredProducten.map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => applyProduct(item.id, p)}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-between gap-2"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{p.naam}</p>
+                              <p className="text-[10px] text-muted-foreground">{p.categorie} · {p.eenheid}</p>
+                            </div>
+                            <span className="text-xs font-semibold text-foreground flex-shrink-0 tabular-nums">
+                              {formatCurrency(p.verkoop_prijs)}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <span className="text-base font-bold text-foreground flex-shrink-0 min-w-[90px] text-right tabular-nums">
                 {formatCurrency(lineTotaal)}
@@ -217,6 +298,17 @@ export function QuoteItemsTable({
               >
                 {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </button>
+
+              {/* Dupliceer item */}
+              {onDuplicateItem && (
+                <button
+                  onClick={() => onDuplicateItem(item.id)}
+                  className="text-gray-400 hover:text-blue-500 flex-shrink-0 p-1"
+                  title="Dupliceer item"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              )}
 
               <button
                 onClick={() => onRemoveItem(item.id)}
