@@ -823,6 +823,7 @@ export function FacturenLayout() {
           korting_percentage: 0,
           totaal: factuur.subtotaal,
           volgorde: 1,
+          created_at: new Date().toISOString(),
         },
       ]
 
@@ -835,7 +836,7 @@ export function FacturenLayout() {
         toast.error('Kon PDF niet genereren')
       }
     },
-    [klanten, profile, primaireKleur]
+    [klanten, profile, primaireKleur, documentStyle]
   )
 
   const handleSendFactuur = useCallback(

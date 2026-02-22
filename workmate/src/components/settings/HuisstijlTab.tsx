@@ -59,9 +59,6 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
     loadGoogleFonts([style.heading_font, style.body_font])
   }, [style.heading_font, style.body_font])
 
-  const primaryRgb = hexToRgb(style.primaire_kleur)
-  const headerKleurRgb = hexToRgb(style.tabel_header_kleur)
-
   // A4 ratio: 210mm x 297mm
   const containerClass = fullscreen
     ? 'fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-8'
@@ -315,15 +312,6 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
       </div>
     </div>
   )
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace('#', '')
-  return [
-    parseInt(h.substring(0, 2), 16) || 0,
-    parseInt(h.substring(2, 4), 16) || 0,
-    parseInt(h.substring(4, 6), 16) || 0,
-  ]
 }
 
 // ============ COLLAPSIBLE SECTION ============

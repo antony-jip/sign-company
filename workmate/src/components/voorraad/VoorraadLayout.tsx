@@ -148,7 +148,7 @@ export function VoorraadLayout() {
 
   const getLeverancierNaam = useCallback((id?: string) => {
     if (!id) return '-'
-    return leveranciers.find((l) => l.id === id)?.naam || '-'
+    return leveranciers.find((l) => l.id === id)?.bedrijfsnaam || '-'
   }, [leveranciers])
 
   // ============ ARTIKEL CRUD ============
@@ -631,7 +631,7 @@ export function VoorraadLayout() {
                 <SelectTrigger><SelectValue placeholder="Selecteer leverancier" /></SelectTrigger>
                 <SelectContent>
                   {leveranciers.filter((l) => l.actief).map((l) => (
-                    <SelectItem key={l.id} value={l.id}>{l.naam}</SelectItem>
+                    <SelectItem key={l.id} value={l.id}>{l.bedrijfsnaam}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
