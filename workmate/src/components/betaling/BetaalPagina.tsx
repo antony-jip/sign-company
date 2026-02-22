@@ -416,7 +416,7 @@ export function BetaalPagina() {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-400 pb-8">
-          Factuur {factuur.nummer} &middot; Gegenereerd door Workmate
+          Factuur {factuur.nummer} &middot; Gegenereerd door Sign Company
         </p>
       </div>
     </div>

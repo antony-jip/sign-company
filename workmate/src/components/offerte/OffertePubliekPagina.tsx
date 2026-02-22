@@ -385,7 +385,7 @@ export function OffertePubliekPagina() {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-400 pb-8">
-          Offerte {offerte.nummer} &middot; Gegenereerd door Workmate
+          Offerte {offerte.nummer} &middot; Gegenereerd door Sign Company
         </p>
       </div>
     </div>

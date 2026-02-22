@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import { Mail, Lock, Eye, EyeOff, Globe, Loader2, Sparkles, ArrowRight, Shield, Zap, BarChart3 } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Globe, Loader2, PenTool, ArrowRight, Shield, Zap, BarChart3 } from 'lucide-react'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -46,19 +46,19 @@ export function LoginPage() {
         {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
+            <PenTool className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">Workmate</span>
+          <span className="text-xl font-bold text-white tracking-tight">Sign Company</span>
         </div>
 
         {/* Hero text */}
         <div className="max-w-md space-y-6">
           <h2 className="text-4xl font-bold text-white leading-tight">
-            Jouw bedrijf,<br />
-            <span className="text-wm-pale">slimmer beheerd.</span>
+            Jouw sign business,<br />
+            <span className="text-wm-pale">één platform.</span>
           </h2>
           <p className="text-white/60 text-lg leading-relaxed">
-            Alles wat je nodig hebt voor klantenbeheer, offertes, projecten en meer — in één platform.
+            Klanten, offertes, projecten, planning en facturatie — alles op één plek.
           </p>
 
           {/* Feature pills */}
@@ -80,7 +80,7 @@ export function LoginPage() {
 
         {/* Bottom tagline */}
         <p className="text-white/30 text-sm">
-          Workmate CRM — Gebouwd voor Nederlandse bedrijven
+          Sign Company — Gebouwd voor de sign industry
         </p>
       </div>
 
@@ -98,9 +98,9 @@ export function LoginPage() {
               {/* Mobile-only logo */}
               <div className="flex items-center justify-center gap-3 mb-6 lg:hidden">
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center shadow-lg shadow-primary/25">
-                  <Sparkles className="w-6 h-6 text-white" />
+                  <PenTool className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-2xl font-bold text-foreground">Workmate</span>
+                <span className="text-2xl font-bold text-foreground">Sign Company</span>
               </div>
               <CardTitle className="text-2xl font-bold">Welkom terug</CardTitle>
               <CardDescription className="text-base mt-1">Log in op je account</CardDescription>
@@ -173,7 +173,7 @@ export function LoginPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-gradient-to-r from-accent to-primary hover:from-[#2d5243] hover:to-[#4a9d8a] text-white shadow-lg shadow-primary/20 transition-all duration-200 rounded-xl group"
+                  className="w-full h-11 bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white shadow-lg shadow-primary/20 transition-all duration-200 rounded-xl group"
                   disabled={isLoading}
                 >
                   {isLoading ? (

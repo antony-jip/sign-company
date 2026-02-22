@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderKanban, Users, FileText, Files,
   Mail, Calendar, CalendarCheck, PiggyBank, Bot, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload,
-  Sparkles, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
+  PenTool, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
   ClipboardCheck, Truck, CreditCard, ShoppingCart, PackageCheck, Warehouse,
   Briefcase, UserPlus, TrendingUp,
   type LucideIcon
@@ -182,15 +182,12 @@ export function Sidebar() {
         )}
       >
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/25">
-          <Sparkles className="w-5 h-5 text-white" />
+          <PenTool className="w-5 h-5 text-white" />
         </div>
         {!isCollapsed && (
           <div>
             <span className="text-[15px] font-bold text-white tracking-tight font-display">
-              Workmate
-            </span>
-            <span className="text-[10px] text-primary/60 font-medium ml-1.5">
-              CRM
+              Sign Company
             </span>
           </div>
         )}

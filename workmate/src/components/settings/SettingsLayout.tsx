@@ -2863,7 +2863,7 @@ function EmailSettingsDialog({
             E-mail SMTP Instellingen
           </DialogTitle>
           <DialogDescription>
-            Configureer je SMTP server om e-mails te verzenden vanuit Workmate.
+            Configureer je SMTP server om e-mails te verzenden vanuit Sign Company.
           </DialogDescription>
         </DialogHeader>
 

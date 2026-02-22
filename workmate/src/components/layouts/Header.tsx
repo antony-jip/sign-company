@@ -33,7 +33,7 @@ const routeTitles: Record<string, string> = {
 function getPageTitle(pathname: string): string {
   if (routeTitles[pathname]) return routeTitles[pathname]
   const baseRoute = '/' + pathname.split('/')[1]
-  return routeTitles[baseRoute] || 'Workmate'
+  return routeTitles[baseRoute] || 'Sign Company'
 }
 
 export function Header() {

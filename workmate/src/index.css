@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 /* ================================================================
-   WORKMATE DESIGN SYSTEM v3
-   Earthy, premium, distinctive — #3D3522 #4A442D #386150 #58B09C #CAF7E2
+   SIGN COMPANY DESIGN SYSTEM
+   Warm, modern, strak — terracotta accent met warm off-white
    Fonts: DM Sans (headings + body)
    ================================================================ */
 
@@ -14,74 +14,74 @@
 
 @layer base {
   :root {
-    /* Core palette — warm earth + botanical teal/mint */
-    --background: 150 18% 97%;
-    --foreground: 42 28% 16%;
-    --card: 150 12% 99%;
-    --card-foreground: 42 28% 16%;
-    --popover: 150 12% 99%;
-    --popover-foreground: 42 28% 16%;
-    --primary: 163 36% 52%;
+    /* Core palette — warm off-white + terracotta accent */
+    --background: 30 20% 97%;
+    --foreground: 20 18% 16%;
+    --card: 30 14% 99%;
+    --card-foreground: 20 18% 16%;
+    --popover: 30 14% 99%;
+    --popover-foreground: 20 18% 16%;
+    --primary: 18 58% 56%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 152 18% 92%;
-    --secondary-foreground: 42 28% 16%;
-    --muted: 148 12% 93%;
-    --muted-foreground: 44 10% 44%;
-    --accent: 155 27% 30%;
+    --secondary: 28 16% 93%;
+    --secondary-foreground: 20 18% 16%;
+    --muted: 25 12% 93%;
+    --muted-foreground: 20 8% 46%;
+    --accent: 16 50% 36%;
     --accent-foreground: 0 0% 100%;
     --destructive: 4 68% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 148 12% 86%;
-    --input: 148 12% 86%;
-    --ring: 163 36% 52%;
-    --radius: 0.75rem;
+    --border: 25 12% 87%;
+    --input: 25 12% 87%;
+    --ring: 18 58% 56%;
+    --radius: 0.875rem;
 
-    /* Workmate design tokens — earthy-botanical palette */
-    --wm-gradient-start: #386150;
-    --wm-gradient-mid: #58B09C;
-    --wm-gradient-end: #CAF7E2;
-    --wm-sidebar-bg: 42 28% 17%;
-    --wm-sidebar-hover: 48 24% 22%;
-    --wm-sidebar-active: 163 36% 52%;
-    --wm-hover: 163 33% 45%;
-    --wm-light: 163 46% 66%;
-    --wm-pale: 146 76% 88%;
+    /* Sign Company design tokens — warm terracotta palette */
+    --wm-gradient-start: #8B4A2F;
+    --wm-gradient-mid: #D4714A;
+    --wm-gradient-end: #F5DDD0;
+    --wm-sidebar-bg: 20 30% 9%;
+    --wm-sidebar-hover: 20 24% 14%;
+    --wm-sidebar-active: 18 58% 56%;
+    --wm-hover: 18 55% 48%;
+    --wm-light: 18 56% 68%;
+    --wm-pale: 20 76% 90%;
     --wm-glass: rgba(255, 255, 255, 0.72);
     --wm-glass-border: rgba(255, 255, 255, 0.20);
-    --wm-shadow-color: 155 20% 40%;
-    --wm-glow: 0 0 40px rgba(88, 176, 156, 0.15);
+    --wm-shadow-color: 20 20% 40%;
+    --wm-glow: 0 0 40px rgba(212, 113, 74, 0.15);
     --wm-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
   }
 
   .dark {
-    --background: 42 28% 6%;
-    --foreground: 150 22% 93%;
-    --card: 42 24% 9%;
-    --card-foreground: 150 22% 93%;
-    --popover: 42 24% 9%;
-    --popover-foreground: 150 22% 93%;
-    --primary: 163 40% 58%;
+    --background: 20 18% 7%;
+    --foreground: 30 16% 93%;
+    --card: 20 16% 10%;
+    --card-foreground: 30 16% 93%;
+    --popover: 20 16% 10%;
+    --popover-foreground: 30 16% 93%;
+    --primary: 18 62% 62%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 42 18% 13%;
-    --secondary-foreground: 150 22% 93%;
-    --muted: 42 16% 12%;
-    --muted-foreground: 44 10% 55%;
-    --accent: 155 32% 40%;
+    --secondary: 20 16% 13%;
+    --secondary-foreground: 30 16% 93%;
+    --muted: 20 14% 12%;
+    --muted-foreground: 20 8% 55%;
+    --accent: 16 45% 42%;
     --accent-foreground: 0 0% 100%;
     --destructive: 4 62% 42%;
     --destructive-foreground: 0 0% 100%;
-    --border: 42 16% 14%;
-    --input: 42 16% 14%;
-    --ring: 163 40% 58%;
+    --border: 20 14% 15%;
+    --input: 20 14% 15%;
+    --ring: 18 62% 62%;
 
-    --wm-sidebar-bg: 42 30% 8%;
-    --wm-sidebar-hover: 48 24% 13%;
-    --wm-hover: 163 36% 50%;
-    --wm-light: 163 46% 70%;
-    --wm-pale: 146 76% 88%;
-    --wm-glass: rgba(20, 18, 12, 0.85);
+    --wm-sidebar-bg: 20 28% 8%;
+    --wm-sidebar-hover: 20 22% 13%;
+    --wm-hover: 18 55% 55%;
+    --wm-light: 18 56% 72%;
+    --wm-pale: 20 76% 90%;
+    --wm-glass: rgba(18, 14, 12, 0.85);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
-    --wm-glow: 0 0 40px rgba(88, 176, 156, 0.08);
+    --wm-glow: 0 0 40px rgba(212, 113, 74, 0.08);
   }
 }
 
@@ -179,8 +179,8 @@
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(88, 176, 156, 0.3); }
-  50% { box-shadow: 0 0 16px 3px rgba(88, 176, 156, 0.12); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 113, 74, 0.3); }
+  50% { box-shadow: 0 0 16px 3px rgba(212, 113, 74, 0.12); }
 }
 .animate-pulse-glow {
   animation: pulseGlow 2.5s ease-in-out infinite;
@@ -352,17 +352,17 @@
    ================================================================ */
 .wm-mesh-gradient {
   background:
-    radial-gradient(at 15% 85%, rgba(56, 97, 80, 0.07) 0, transparent 50%),
-    radial-gradient(at 85% 15%, rgba(88, 176, 156, 0.05) 0, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(202, 247, 226, 0.04) 0, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(139, 74, 47, 0.06) 0, transparent 50%),
+    radial-gradient(at 85% 15%, rgba(212, 113, 74, 0.04) 0, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(245, 221, 208, 0.05) 0, transparent 50%),
     hsl(var(--background));
 }
 
 .dark .wm-mesh-gradient {
   background:
-    radial-gradient(at 15% 85%, rgba(56, 97, 80, 0.06) 0, transparent 50%),
-    radial-gradient(at 85% 15%, rgba(88, 176, 156, 0.04) 0, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(202, 247, 226, 0.02) 0, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(139, 74, 47, 0.05) 0, transparent 50%),
+    radial-gradient(at 85% 15%, rgba(212, 113, 74, 0.03) 0, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(245, 221, 208, 0.02) 0, transparent 50%),
     hsl(var(--background));
 }
 
@@ -391,25 +391,25 @@
   background-clip: text;
 }
 
-/* Login page animated gradient — earthy botanical */
+/* Login page animated gradient — warm terracotta */
 .wm-login-bg {
   background: linear-gradient(-45deg,
-    #2a2316, #3D3522, #4A442D, var(--wm-gradient-start),
-    var(--wm-gradient-mid), var(--wm-gradient-start), #4A442D, #3D3522
+    #1A1210, #2A1E18, #3D2A1E, var(--wm-gradient-start),
+    var(--wm-gradient-mid), var(--wm-gradient-start), #3D2A1E, #2A1E18
   );
   background-size: 400% 400%;
   animation: loginGradient 20s ease infinite;
   position: relative;
 }
 
-/* Organic pattern overlay for login */
+/* Subtle pattern overlay for login */
 .wm-login-bg::before {
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 25% 25%, rgba(88, 176, 156, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(202, 247, 226, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 25% 25%, rgba(212, 113, 74, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(245, 221, 208, 0.05) 0%, transparent 50%),
     linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 60px 60px, 60px 60px;
@@ -531,9 +531,9 @@
    ================================================================ */
 .wm-welcome-banner {
   background: linear-gradient(135deg,
-    hsl(155 27% 30% / 0.07),
-    hsl(163 36% 52% / 0.05),
-    hsl(150 78% 88% / 0.06)
+    hsl(var(--accent) / 0.07),
+    hsl(var(--primary) / 0.05),
+    hsl(var(--wm-pale) / 0.06)
   );
   border: 1px solid hsl(var(--primary) / 0.10);
   position: relative;
@@ -542,9 +542,9 @@
 
 .dark .wm-welcome-banner {
   background: linear-gradient(135deg,
-    hsl(155 27% 30% / 0.08),
-    hsl(163 36% 52% / 0.05),
-    hsl(150 78% 88% / 0.02)
+    hsl(var(--accent) / 0.08),
+    hsl(var(--primary) / 0.05),
+    hsl(var(--wm-pale) / 0.02)
   );
   border-color: hsl(var(--primary) / 0.08);
 }
