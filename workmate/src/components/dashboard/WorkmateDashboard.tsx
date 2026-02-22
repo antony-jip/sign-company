@@ -11,12 +11,35 @@ import { CalendarMiniWidget } from './CalendarMiniWidget'
 import { SalesFollowUpWidget } from './SalesFollowUpWidget'
 import { WorkflowWidget } from './WorkflowWidget'
 import { SalesForecastWidget } from './SalesForecastWidget'
-import { Zap } from 'lucide-react'
+import { Wrench, FileText, FolderKanban } from 'lucide-react'
+import { getMontageAfspraken, getOffertes, getProjecten } from '@/services/supabaseService'
+import type { MontageAfspraak, Offerte, Project } from '@/types'
+import { isToday } from 'date-fns'
 
 export function WorkmateDashboard() {
   const { user } = useAuth()
   const { profile, toonFollowUpIndicatoren } = useAppSettings()
   const userName = profile?.voornaam || user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
+
+  const [heroCounts, setHeroCounts] = React.useState({ montagesVandaag: 0, openOffertes: 0, actieveProjecten: 0 })
+
+  React.useEffect(() => {
+    let cancelled = false
+    Promise.all([getMontageAfspraken(), getOffertes(), getProjecten()])
+      .then(([montages, offertes, projecten]: [MontageAfspraak[], Offerte[], Project[]]) => {
+        if (cancelled) return
+        const montagesVandaag = montages.filter(
+          (m) => m.status !== 'afgerond' && isToday(new Date(m.datum))
+        ).length
+        const openOffertes = offertes.filter((o) =>
+          ['verzonden', 'bekeken'].includes(o.status)
+        ).length
+        const actieveProjecten = projecten.filter((p) => p.status === 'actief').length
+        setHeroCounts({ montagesVandaag, openOffertes, actieveProjecten })
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -52,11 +75,26 @@ export function WorkmateDashboard() {
                 )}
               </h1>
             </div>
-            <div className="hidden lg:flex items-center gap-3">
-              <div className="flex items-center gap-2 text-xs font-medium text-primary bg-primary/5 border border-primary/10 px-3 py-1.5 rounded-full">
-                <Zap className="w-3.5 h-3.5" />
-                Pro Werkruimte
-              </div>
+            {/* Sign-industry status pills */}
+            <div className="hidden md:flex items-center gap-2">
+              {heroCounts.montagesVandaag > 0 && (
+                <div className="flex items-center gap-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/30 px-2.5 py-1.5 rounded-full">
+                  <Wrench className="w-3 h-3" />
+                  {heroCounts.montagesVandaag} montage{heroCounts.montagesVandaag !== 1 ? 's' : ''} vandaag
+                </div>
+              )}
+              {heroCounts.openOffertes > 0 && (
+                <div className="flex items-center gap-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 px-2.5 py-1.5 rounded-full">
+                  <FileText className="w-3 h-3" />
+                  {heroCounts.openOffertes} open offerte{heroCounts.openOffertes !== 1 ? 's' : ''}
+                </div>
+              )}
+              {heroCounts.actieveProjecten > 0 && (
+                <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 px-2.5 py-1.5 rounded-full">
+                  <FolderKanban className="w-3 h-3" />
+                  {heroCounts.actieveProjecten} actie{heroCounts.actieveProjecten !== 1 ? 've' : 'f'} project{heroCounts.actieveProjecten !== 1 ? 'en' : ''}
+                </div>
+              )}
             </div>
           </div>
           <WeatherWidget />

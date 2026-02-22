@@ -1,14 +1,16 @@
-import React, { useEffect, useRef, useMemo } from 'react'
+import React, { useEffect, useRef, useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText,
   Mail, Calendar, PiggyBank, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare,
-  PenTool, Receipt, BarChart3, Clock, Wrench, UsersRound,
+  Receipt, BarChart3, Clock, Wrench, UsersRound,
   ClipboardCheck, Truck, ShoppingCart, Warehouse,
   Briefcase, UserPlus,
   type LucideIcon
 } from 'lucide-react'
+import { getOffertes, getMontageAfspraken, getProjecten } from '@/services/supabaseService'
+import type { Offerte, MontageAfspraak, Project } from '@/types'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -179,7 +181,14 @@ export function Sidebar() {
         )}
       >
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/25">
-          <PenTool className="w-5 h-5 text-white" />
+          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="4" width="20" height="12" rx="2" />
+            <path d="M8 20h8" />
+            <path d="M12 16v4" />
+            <path d="M7 9h2" />
+            <path d="M15 9h2" />
+            <path d="M10 12h4" />
+          </svg>
         </div>
         {!isCollapsed && (
           <div>
@@ -212,6 +221,9 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Mini status bar — sign-industry pulse */}
+      {!isCollapsed && <SidebarPulse />}
 
       {/* User section */}
       <div className="border-t border-white/[0.05] p-3 space-y-2 flex-shrink-0">
@@ -316,5 +328,53 @@ export function Sidebar() {
         {sidebarContent}
       </aside>
     </>
+  )
+}
+
+function SidebarPulse() {
+  const [stats, setStats] = useState({ openOffertes: 0, montagesWeek: 0, actieveProjecten: 0 })
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([getOffertes(), getMontageAfspraken(), getProjecten()])
+      .then(([offertes, montages, projecten]: [Offerte[], MontageAfspraak[], Project[]]) => {
+        if (cancelled) return
+        const now = new Date()
+        const weekEnd = new Date(now)
+        weekEnd.setDate(weekEnd.getDate() + 7)
+
+        setStats({
+          openOffertes: offertes.filter((o) => ['verzonden', 'bekeken'].includes(o.status)).length,
+          montagesWeek: montages.filter((m) => {
+            const d = new Date(m.datum)
+            return m.status !== 'afgerond' && d >= now && d <= weekEnd
+          }).length,
+          actieveProjecten: projecten.filter((p) => p.status === 'actief').length,
+        })
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const items = [
+    { label: 'Open offertes', value: stats.openOffertes, color: 'text-blue-400' },
+    { label: 'Montages deze week', value: stats.montagesWeek, color: 'text-orange-400' },
+    { label: 'Actieve projecten', value: stats.actieveProjecten, color: 'text-emerald-400' },
+  ]
+
+  return (
+    <div className="mx-3 mb-1 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.04]">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-white/20 mb-2 px-0.5">
+        Status
+      </p>
+      <div className="space-y-1.5">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-center justify-between px-0.5">
+            <span className="text-[11px] text-gray-500">{item.label}</span>
+            <span className={`text-[11px] font-semibold ${item.color}`}>{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }

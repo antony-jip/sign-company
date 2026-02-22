@@ -213,10 +213,12 @@ export function TodayPlanningWidget() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
-            <CheckCircle2 className="w-8 h-8 mb-2 opacity-20" />
-            <p className="text-sm font-medium">Geen items voor vandaag</p>
-            <p className="text-xs mt-0.5 text-muted-foreground/60">Lekker, vrij schema!</p>
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
+              <CheckCircle2 className="w-6 h-6 text-primary/40" />
+            </div>
+            <p className="text-sm font-medium text-foreground/70">Geen montages of taken vandaag</p>
+            <p className="text-xs mt-1 text-muted-foreground/60">Tijd om offertes op te volgen of de werkplaats in te duiken</p>
           </div>
         )}
 

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import { Mail, Lock, Eye, EyeOff, User, Loader2, PenTool } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Loader2 } from 'lucide-react'
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0
@@ -97,7 +97,14 @@ export function RegisterPage() {
             {/* Sign Company Logo */}
             <div className="flex items-center justify-center gap-3 mb-6">
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center shadow-lg shadow-primary/25">
-                <PenTool className="w-6 h-6 text-white" />
+                <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="4" width="20" height="12" rx="2" />
+                  <path d="M8 20h8" />
+                  <path d="M12 16v4" />
+                  <path d="M7 9h2" />
+                  <path d="M15 9h2" />
+                  <path d="M10 12h4" />
+                </svg>
               </div>
               <span className="text-2xl font-bold text-foreground">Sign Company</span>
             </div>

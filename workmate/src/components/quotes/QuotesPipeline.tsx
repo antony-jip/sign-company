@@ -594,9 +594,11 @@ export function QuotesPipeline() {
                 <div className="flex-1 p-3 space-y-3 overflow-y-auto">
                   {colOffertes.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 text-center">
-                      <FileText className="h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" />
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        Geen offertes
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/8 to-accent/8 flex items-center justify-center mb-2">
+                        <FileText className="h-5 w-5 text-primary/30" />
+                      </div>
+                      <p className="text-xs text-muted-foreground/60">
+                        Geen offertes in deze fase
                       </p>
                     </div>
                   )}
@@ -817,8 +819,14 @@ export function QuotesPipeline() {
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
                 {sortedListOffertes.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-sm text-gray-400 dark:text-gray-500">
-                      Geen offertes gevonden
+                    <td colSpan={9} className="px-4 py-16 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                          <FileText className="h-6 w-6 text-primary/40" />
+                        </div>
+                        <p className="text-sm font-medium text-foreground">Nog geen offertes</p>
+                        <p className="text-xs text-muted-foreground">Maak een offerte voor je eerste sign-opdracht</p>
+                      </div>
                     </td>
                   </tr>
                 )}

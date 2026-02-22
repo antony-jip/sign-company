@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import { UserPlus, Search, LayoutGrid, List, Loader2, ArrowUpDown, Download, FileText } from 'lucide-react'
+import { UserPlus, Search, LayoutGrid, List, Loader2, ArrowUpDown, Download, FileText, Users } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
@@ -314,12 +314,20 @@ export function ClientsLayout() {
           <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
         </div>
       ) : filteredKlanten.length === 0 ? (
-        <Card>
+        <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <p className="text-gray-500 dark:text-gray-400 text-center">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
+              <Users className="h-7 w-7 text-primary/40" />
+            </div>
+            <p className="text-sm font-medium text-foreground">
               {searchQuery || statusFilter !== 'alle'
-                ? 'Geen klanten gevonden met de huidige filters.'
-                : 'Nog geen klanten toegevoegd.'}
+                ? 'Geen klanten gevonden'
+                : 'Nog geen opdrachtgevers'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 text-center">
+              {searchQuery || statusFilter !== 'alle'
+                ? 'Probeer andere zoektermen of filters.'
+                : 'Voeg je eerste klant toe — winkels, horeca, bedrijven die signing nodig hebben.'}
             </p>
             {(searchQuery || statusFilter !== 'alle') && (
               <Button

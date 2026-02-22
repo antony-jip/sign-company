@@ -11,29 +11,33 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 
-const routeTitles: Record<string, string> = {
-  '/': 'Dashboard',
-  '/projecten': 'Projecten',
-  '/klanten': 'Klanten',
-  '/offertes': 'Offertes',
-  '/facturen': 'Facturen',
-  '/documenten': 'Documenten',
-  '/email': 'Email',
-  '/kalender': 'Kalender',
-  '/montage': 'Montage Planning',
-  '/tijdregistratie': 'Tijdregistratie',
-  '/financieel': 'Financieel',
-  '/rapportages': 'Rapportages',
-  '/nacalculatie': 'Nacalculatie',
-  '/team': 'Team',
-  '/ai': 'AI Assistent',
-  '/instellingen': 'Instellingen',
+const routeMeta: Record<string, { title: string; subtitle?: string }> = {
+  '/': { title: 'Dashboard' },
+  '/projecten': { title: 'Projecten', subtitle: 'Lichtreclames, gevelbelettering & meer' },
+  '/klanten': { title: 'Klanten', subtitle: 'Opdrachtgevers & contactpersonen' },
+  '/offertes': { title: 'Offertes', subtitle: 'Van aanvraag tot akkoord' },
+  '/facturen': { title: 'Facturen', subtitle: 'Facturatie & betalingen' },
+  '/documenten': { title: 'Documenten' },
+  '/email': { title: 'Email', subtitle: 'Klantcommunicatie' },
+  '/kalender': { title: 'Kalender', subtitle: 'Afspraken & deadlines' },
+  '/montage': { title: 'Montage Planning', subtitle: 'Installaties & plaatsingen' },
+  '/tijdregistratie': { title: 'Tijdregistratie', subtitle: 'Uren per project' },
+  '/financieel': { title: 'Financieel', subtitle: 'Omzet & kosten' },
+  '/rapportages': { title: 'Rapportages' },
+  '/nacalculatie': { title: 'Nacalculatie' },
+  '/team': { title: 'Team', subtitle: 'Monteurs & medewerkers' },
+  '/ai': { title: 'AI Assistent' },
+  '/instellingen': { title: 'Instellingen' },
+  '/werkbonnen': { title: 'Werkbonnen', subtitle: 'Productie & uren' },
+  '/taken': { title: 'Taken', subtitle: 'Productie & opvolging' },
+  '/deals': { title: 'Deals', subtitle: 'Verkoopkansen' },
+  '/voorraad': { title: 'Voorraad', subtitle: 'Vinyl, dibond, LED & meer' },
 }
 
-function getPageTitle(pathname: string): string {
-  if (routeTitles[pathname]) return routeTitles[pathname]
+function getPageMeta(pathname: string): { title: string; subtitle?: string } {
+  if (routeMeta[pathname]) return routeMeta[pathname]
   const baseRoute = '/' + pathname.split('/')[1]
-  return routeTitles[baseRoute] || 'Sign Company'
+  return routeMeta[baseRoute] || { title: 'Sign Company' }
 }
 
 export function Header() {
@@ -47,7 +51,7 @@ export function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = React.useRef<HTMLDivElement>(null)
 
-  const pageTitle = getPageTitle(location.pathname)
+  const pageMeta = getPageMeta(location.pathname)
 
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -86,13 +90,18 @@ export function Header() {
 
   return (
     <header className="h-16 border-b border-border/50 wm-glass flex items-center justify-between px-4 md:px-6 flex-shrink-0 z-10">
-      {/* Left: Page title */}
+      {/* Left: Page title + subtitle */}
       <div className="flex items-center gap-4 min-w-0">
         <div className="w-10 md:hidden" />
-        <div>
-          <h1 className="text-lg font-semibold text-foreground truncate font-display">
-            {pageTitle}
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold text-foreground truncate font-display leading-tight">
+            {pageMeta.title}
           </h1>
+          {pageMeta.subtitle && (
+            <p className="text-[11px] text-muted-foreground/70 truncate hidden sm:block">
+              {pageMeta.subtitle}
+            </p>
+          )}
         </div>
       </div>
 

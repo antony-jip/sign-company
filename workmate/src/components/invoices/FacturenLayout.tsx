@@ -53,6 +53,7 @@ import {
   Link,
   Globe,
   Copy,
+  Receipt,
 } from 'lucide-react'
 import {
   getFacturen,
@@ -1432,13 +1433,15 @@ export function FacturenLayout() {
               {filteredFacturen.length === 0 && (
                 <tr>
                   <td colSpan={11} className="px-4 py-16 text-center">
-                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                      <FileText className="h-10 w-10 opacity-30" />
-                      <p className="text-sm font-medium">Geen facturen gevonden</p>
-                      <p className="text-xs">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                        <Receipt className="h-7 w-7 text-primary/50" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground">Geen facturen gevonden</p>
+                      <p className="text-xs text-muted-foreground">
                         {searchQuery || filterStatus !== 'alle'
                           ? 'Probeer een ander filter of zoekterm.'
-                          : 'Maak je eerste factuur aan.'}
+                          : 'Keur een offerte goed en factureer je eerste sign-opdracht.'}
                       </p>
                     </div>
                   </td>

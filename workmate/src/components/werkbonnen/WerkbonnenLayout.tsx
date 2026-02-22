@@ -217,11 +217,13 @@ export function WerkbonnenLayout() {
 
       {/* Table */}
       {gefilterd.length === 0 ? (
-        <Card>
+        <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <ClipboardCheck className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <p className="text-lg font-medium text-muted-foreground">Geen werkbonnen gevonden</p>
-            <p className="text-sm text-muted-foreground mt-1">Maak een nieuwe werkbon aan om te beginnen</p>
+            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-4">
+              <ClipboardCheck className="h-8 w-8 text-primary/50" />
+            </div>
+            <p className="text-lg font-medium text-foreground">Geen werkbonnen</p>
+            <p className="text-sm text-muted-foreground mt-1">Registreer uren en materialen per montage of productie-opdracht</p>
             <Button className="mt-4" onClick={() => navigate('/werkbonnen/nieuw')}>
               <Plus className="h-4 w-4 mr-1" /> Nieuwe werkbon
             </Button>

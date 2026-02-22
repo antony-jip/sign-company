@@ -563,12 +563,19 @@ export function ProjectsList() {
       {gefilterdeProjecten.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-16 text-center">
-            <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
-              <FolderKanban className="h-8 w-8 text-muted-foreground opacity-40" />
+            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4">
+              <svg className="h-8 w-8 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="12" rx="2" />
+                <path d="M8 20h8" />
+                <path d="M12 16v4" />
+                <path d="M7 9h2" />
+                <path d="M15 9h2" />
+                <path d="M10 12h4" />
+              </svg>
             </div>
-            <h3 className="text-lg font-medium text-foreground">Geen projecten gevonden</h3>
+            <h3 className="text-lg font-medium text-foreground">Nog geen sign-projecten</h3>
             <p className="text-sm text-muted-foreground mt-1 mb-4">
-              Pas je zoekcriteria aan of maak een nieuw project aan.
+              Start je eerste project — lichtreclame, gevelbelettering of raamsigning.
             </p>
             <Button asChild variant="outline" size="sm">
               <Link to="/projecten/nieuw">
