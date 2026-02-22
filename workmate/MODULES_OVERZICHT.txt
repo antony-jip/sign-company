@@ -1,0 +1,159 @@
+========================================================
+  WORKMATE CRM - MODULES OVERZICHT
+========================================================
+
+Laatste update: 22 februari 2026
+
+
+--------------------------------------------------------
+  1. OVERZICHT
+--------------------------------------------------------
+
+  Dashboard          /
+    - KPI's, omzet, taken, planning van vandaag,
+      sales forecast, AI-inzichten, snelle acties
+
+
+--------------------------------------------------------
+  2. WERK
+--------------------------------------------------------
+
+  Projecten          /projecten
+    - Projectbeheer met grid/lijst/Gantt-weergave,
+      status, voortgang, budget, teamleden
+    - Nieuw:  /projecten/nieuw
+    - Detail: /projecten/:id
+
+  Taken              /taken
+    - Weekkalender met uurtijden, drag & drop,
+      prioriteiten, snelle taak-aanmaak
+
+  Klanten            /klanten
+    - CRM klantenbeheer, grid/lijst, status
+      (actief/inactief/prospect), export CSV/Excel
+    - Detail: /klanten/:id  (Klant 360-profiel)
+
+  Deals              /deals
+    - Sales pipeline, Kanban/tabel, kansen,
+      winstkans, KPI's (pipeline waarde, win rate)
+    - Detail: /deals/:id
+
+  Offertes           /offertes
+    - Offerte-pipeline, opvolging, verloopdatum,
+      conversie-tracking
+    - Nieuw:  /offertes/nieuw
+    - Detail: /offertes/:id  (editor + preview)
+
+  Facturen           /facturen
+    - Factuurbeheer, betaalstatus, filters
+
+  Werkbonnen         /werkbonnen
+    - Werkbon aanmaken & beheren
+    - Detail: /werkbonnen/:id
+
+  Bestelbonnen       /bestelbonnen
+    - Inkooporders aanmaken & beheren
+    - Detail: /bestelbonnen/:id
+
+  Leveringsbonnen    /leveringsbonnen
+    - Leveringsbonnen beheren
+    - Detail: /leveringsbonnen/:id
+
+  Documenten         /documenten
+    - Documentbeheer, mappen, uploaden,
+      grid/lijst/pipeline weergave
+
+
+--------------------------------------------------------
+  3. PLANNING
+--------------------------------------------------------
+
+  Planning           /kalender
+    - Montage/installatie planning, kalender,
+      statusfilters
+
+  Tijdregistratie    /tijdregistratie
+    - Urenregistratie per medewerker/project
+
+  Booking            /booking
+    - Afsprakenbeheer, klant-selfservice
+
+
+--------------------------------------------------------
+  4. COMMUNICATIE
+--------------------------------------------------------
+
+  Email              /email
+    - Inbox, versturen, tracking, sequences,
+      gedeelde inbox, analytics
+
+  Lead Capture       /leads
+    - Lead-formulieren voor website-integratie
+    - Formulier editor:  /leads/formulieren/nieuw
+    - Formulier editor:  /leads/formulieren/:id
+    - Inzendingen:       /leads/inzendingen
+
+  Nieuwsbrieven      /nieuwsbrieven
+    - Nieuwsbrief-builder en campagnebeheer
+
+
+--------------------------------------------------------
+  5. BEHEER
+--------------------------------------------------------
+
+  Financieel         /financieel
+    - Financieel overzicht, BTW, kortingen,
+      grootboek
+
+  Uitgaven           /uitgaven
+    - Uitgaven registreren en beheren
+
+  Leveranciers       /leveranciers
+    - Leveranciersbeheer
+
+  Voorraad           /voorraad
+    - Voorraadbeheer / magazijn
+
+  Forecast           /forecast
+    - Omzetprognoses en projecties
+
+  Rapportages        /rapportages
+    - Bedrijfsrapporten en analyses
+
+  Nacalculatie       /nacalculatie
+    - Nacalculatie per project (kosten vs budget)
+
+  Team               /team
+    - Teamleden, rollen, verlof, prestaties
+
+  Importeren         /importeren
+    - Bulk data importeren
+
+  AI Assistent       /ai
+    - AI-chat assistent
+
+  Instellingen       /instellingen
+    - App-instellingen en configuratie
+
+
+--------------------------------------------------------
+  6. PUBLIEKE PAGINA'S (geen login nodig)
+--------------------------------------------------------
+
+  Login              /login
+  Registreren        /register
+  Goedkeuring        /goedkeuring/:token
+    - Klant kan document goedkeuren via link
+  Boeken             /boeken/:userId
+    - Publieke boekingspagina voor klanten
+  Betalen            /betalen/:token
+    - Online factuur betalen via link
+  Offerte bekijken   /offerte-bekijken/:token
+    - Klant bekijkt offerte via link
+  Formulier          /formulier/:token
+    - Publiek lead-formulier invullen
+
+
+========================================================
+  TOTAAL: 39 beschermde routes + 7 publieke pagina's
+========================================================
