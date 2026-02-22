@@ -36,6 +36,7 @@ import {
   Clock,
   Trash2,
   Copy,
+  MessageSquare,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, getOfferte, getOfferteItems, createOfferte, createOfferteItem, updateOfferte, updateOfferteItem, deleteOfferteItem, deleteOfferte } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -70,6 +71,10 @@ const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven t
 6. Kleuren en materialen kunnen licht afwijken van getoonde voorbeelden.
 7. Wijzigingen na akkoord kunnen tot meerkosten leiden.
 8. Garantie: 2 jaar op materiaal en constructie, 1 jaar op elektronica.`
+
+const DEFAULT_INLEIDING = `Hierbij ontvangt u onze offerte voor de door u gevraagde werkzaamheden. Graag lichten wij ons aanbod hieronder toe.`
+
+const DEFAULT_AFSLUITING = `Wij vertrouwen erop u hiermee een passend aanbod te hebben gedaan. Mocht u vragen hebben of de offerte willen bespreken, neem dan gerust contact met ons op.\n\nMet vriendelijke groet,`
 
 const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
@@ -125,6 +130,9 @@ export function QuoteCreation() {
   const [offerteTitel, setOfferteTitel] = useState(paramTitel)
   const [itemCount, setItemCount] = useState(1)
   const [contactpersoon, setContactpersoon] = useState('')
+  const [aanhef, setAanhef] = useState('')
+  const [inleidingTekst, setInleidingTekst] = useState(DEFAULT_INLEIDING)
+  const [afsluitingTekst, setAfsluitingTekst] = useState(DEFAULT_AFSLUITING)
   const [geldigTot, setGeldigTot] = useState(() => {
     const d = new Date()
     d.setDate(d.getDate() + offerteGeldigheidDagen)
@@ -252,6 +260,9 @@ export function QuoteCreation() {
           setNotities(offerte.notities || '')
           setVoorwaarden(offerte.voorwaarden || DEFAULT_VOORWAARDEN)
           setContactpersoon(offerte.klant_naam || '')
+          setAanhef(offerte.aanhef || '')
+          setInleidingTekst(offerte.inleiding_tekst || DEFAULT_INLEIDING)
+          setAfsluitingTekst(offerte.afsluiting_tekst || DEFAULT_AFSLUITING)
           setOriginalItemIds(offerteItems.map(i => i.id))
 
           // Convert OfferteItems to QuoteLineItems
@@ -319,10 +330,14 @@ export function QuoteCreation() {
     }
   }, [paramProjectId, projecten])
 
-  // Auto-fill contactpersoon from klant
+  // Auto-fill contactpersoon + aanhef from klant
   useEffect(() => {
     if (selectedKlant?.contactpersoon && !contactpersoon) {
       setContactpersoon(selectedKlant.contactpersoon)
+    }
+    if (selectedKlant && !aanhef) {
+      const naam = selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam || ''
+      if (naam) setAanhef(`Beste ${naam},`)
     }
   }, [selectedKlant])
 
@@ -467,6 +482,9 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           ...(selectedProjectId && selectedProjectId !== 'geen' ? { project_id: selectedProjectId } : {}),
           titel: offerteTitel,
+          aanhef: aanhef,
+          inleiding_tekst: inleidingTekst,
+          afsluiting_tekst: afsluitingTekst,
           status,
           subtotaal,
           btw_bedrag: btwBedrag,
@@ -513,6 +531,9 @@ export function QuoteCreation() {
           ...(paramDealId ? { deal_id: paramDealId } : {}),
           nummer: offerteNummer,
           titel: offerteTitel,
+          aanhef: aanhef,
+          inleiding_tekst: inleidingTekst,
+          afsluiting_tekst: afsluitingTekst,
           status,
           subtotaal,
           btw_bedrag: btwBedrag,
@@ -583,6 +604,9 @@ export function QuoteCreation() {
         klant_id: selectedKlantId,
         nummer: offerteNummer,
         titel: offerteTitel,
+        aanhef,
+        inleiding_tekst: inleidingTekst,
+        afsluiting_tekst: afsluitingTekst,
         status: 'concept' as const,
         subtotaal,
         btw_bedrag: btwBedrag,
@@ -597,6 +621,9 @@ export function QuoteCreation() {
         id: item.id,
         offerte_id: '',
         beschrijving: item.beschrijving,
+        detail_regels: (item.detail_regels || [])
+          .filter(r => r.waarde.trim() !== '')
+          .map(r => ({ label: r.label, waarde: r.waarde })),
         aantal: item.aantal,
         eenheidsprijs: item.eenheidsprijs,
         btw_percentage: item.btw_percentage,
@@ -906,6 +933,53 @@ export function QuoteCreation() {
               </CardContent>
             </Card>
 
+            {/* ── Offerte Teksten ── */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                    <MessageSquare className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Offerte Teksten
+                </CardTitle>
+                <p className="text-xs text-muted-foreground ml-9">Aanhef, inleiding en afsluiting worden op de offerte getoond</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="aanhef">Aanhef</Label>
+                  <Input
+                    id="aanhef"
+                    value={aanhef}
+                    onChange={(e) => { setAanhef(e.target.value); markDirty() }}
+                    placeholder="Beste [naam],"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="inleiding">Inleidende tekst</Label>
+                  <Textarea
+                    id="inleiding"
+                    value={inleidingTekst}
+                    onChange={(e) => { setInleidingTekst(e.target.value); markDirty() }}
+                    placeholder="Hierbij ontvangt u onze offerte..."
+                    className="text-sm min-h-[60px]"
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="afsluiting">Afsluitende tekst</Label>
+                  <Textarea
+                    id="afsluiting"
+                    value={afsluitingTekst}
+                    onChange={(e) => { setAfsluitingTekst(e.target.value); markDirty() }}
+                    placeholder="Met vriendelijke groet,..."
+                    className="text-sm min-h-[60px]"
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* ── Hoeveel items? ── */}
             <Card>
               <CardHeader className="pb-3">
@@ -1041,6 +1115,9 @@ export function QuoteCreation() {
               offerte={{
                 nummer: offerteNummer,
                 titel: offerteTitel,
+                aanhef,
+                inleiding_tekst: inleidingTekst,
+                afsluiting_tekst: afsluitingTekst,
                 status: 'concept',
                 klant_id: selectedKlantId,
                 geldig_tot: geldigTot,

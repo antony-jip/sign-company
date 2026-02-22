@@ -15,6 +15,9 @@ interface ForgeQuotePreviewProps {
   offerte?: {
     nummer: string
     titel: string
+    aanhef?: string
+    inleiding_tekst?: string
+    afsluiting_tekst?: string
     status: string
     klant_id: string
     geldig_tot: string
@@ -103,6 +106,9 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     offerteData = {
       nummer: fetchedOfferte.nummer,
       titel: fetchedOfferte.titel,
+      aanhef: fetchedOfferte.aanhef,
+      inleiding_tekst: fetchedOfferte.inleiding_tekst,
+      afsluiting_tekst: fetchedOfferte.afsluiting_tekst,
       status: fetchedOfferte.status,
       klant_id: fetchedOfferte.klant_id,
       geldig_tot: fetchedOfferte.geldig_tot,
@@ -508,6 +514,22 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           </h3>
         </div>
 
+        {/* Aanhef + Inleiding */}
+        {(offerteData.aanhef || offerteData.inleiding_tekst) && (
+          <div className="mx-10 mb-6 space-y-2">
+            {offerteData.aanhef && (
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                {offerteData.aanhef}
+              </p>
+            )}
+            {offerteData.inleiding_tekst && (
+              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                {offerteData.inleiding_tekst}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Items Table */}
         <div className="mx-10 mb-6">
           <table className="w-full text-sm">
@@ -605,6 +627,15 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             </div>
           </div>
         </div>
+
+        {/* Afsluiting */}
+        {offerteData.afsluiting_tekst && (
+          <div className="mx-10 mb-6">
+            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+              {offerteData.afsluiting_tekst}
+            </p>
+          </div>
+        )}
 
         {/* Notes & Terms */}
         <div className="mx-10 pb-10 space-y-6">

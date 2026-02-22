@@ -346,6 +346,7 @@ export function generateOffertePDF(
   const baseFontSize = getBaseFontSize(docStyle)
   const textColor = getTextColor(docStyle)
   const doc = new jsPDF()
+  const pageWidth = doc.internal.pageSize.getWidth()
 
   // Header
   let y = addHeader(doc, bedrijfsProfiel, 'Offerte', offerte.nummer, docStyle)
@@ -368,6 +369,26 @@ export function generateOffertePDF(
   if (offerte.geldig_tot) {
     doc.text(`Geldig tot: ${formatDate(offerte.geldig_tot)}`, margins.left, y)
     y += 8
+  }
+
+  // Aanhef + inleidende tekst
+  if (offerte.aanhef) {
+    y += 4
+    doc.setFont(bodyFont, 'bold')
+    doc.setFontSize(baseFontSize)
+    doc.setTextColor(...textColor)
+    doc.text(offerte.aanhef, margins.left, y)
+    doc.setFont(bodyFont, 'normal')
+    y += 7
+  }
+
+  if (offerte.inleiding_tekst) {
+    doc.setFont(bodyFont, 'normal')
+    doc.setFontSize(baseFontSize)
+    doc.setTextColor(...textColor)
+    const splitIntro = doc.splitTextToSize(offerte.inleiding_tekst, pageWidth - margins.left - margins.right)
+    doc.text(splitIntro, margins.left, y)
+    y += splitIntro.length * 5 + 6
   }
 
   // Items table — include detail_regels under beschrijving (skip empty)
@@ -395,7 +416,6 @@ export function generateOffertePDF(
   })
 
   const tableStyles = getAutoTableStyles(brand, docStyle)
-  const pageWidth = doc.internal.pageSize.getWidth()
 
   autoTable(doc, {
     startY: y,
@@ -446,8 +466,18 @@ export function generateOffertePDF(
   doc.text('Totaal:', totalsX, totalsY + 5)
   doc.text(formatCurrency(offerte.totaal), pageWidth - margins.right, totalsY + 5, { align: 'right' })
 
-  // Notes
+  // Afsluitende tekst
   totalsY += 20
+  if (offerte.afsluiting_tekst) {
+    doc.setFont(bodyFont, 'normal')
+    doc.setFontSize(baseFontSize)
+    doc.setTextColor(...textColor)
+    const splitClosing = doc.splitTextToSize(offerte.afsluiting_tekst, pageWidth - margins.left - margins.right)
+    doc.text(splitClosing, margins.left, totalsY)
+    totalsY += splitClosing.length * 5 + 10
+  }
+
+  // Notes
   if (offerte.notities) {
     doc.setFontSize(baseFontSize)
     doc.setFont(headingFont, 'bold')

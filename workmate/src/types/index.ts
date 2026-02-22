@@ -102,6 +102,9 @@ export interface Offerte {
   project_id?: string;
   nummer: string;
   titel: string;
+  aanhef?: string;
+  inleiding_tekst?: string;
+  afsluiting_tekst?: string;
   status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen';
   subtotaal: number;
   btw_bedrag: number;
