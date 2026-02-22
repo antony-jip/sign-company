@@ -594,7 +594,7 @@ export function QuotesPipeline() {
                 <div className="flex-1 p-3 space-y-3 overflow-y-auto">
                   {colOffertes.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 text-center">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/8 to-accent/8 flex items-center justify-center mb-2">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-2">
                         <FileText className="h-5 w-5 text-primary/30" />
                       </div>
                       <p className="text-xs text-muted-foreground/60">

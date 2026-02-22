@@ -340,14 +340,15 @@ function SidebarPulse() {
       .then(([offertes, montages, projecten]: [Offerte[], MontageAfspraak[], Project[]]) => {
         if (cancelled) return
         const now = new Date()
-        const weekEnd = new Date(now)
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const weekEnd = new Date(startOfToday)
         weekEnd.setDate(weekEnd.getDate() + 7)
 
         setStats({
           openOffertes: offertes.filter((o) => ['verzonden', 'bekeken'].includes(o.status)).length,
           montagesWeek: montages.filter((m) => {
             const d = new Date(m.datum)
-            return m.status !== 'afgerond' && d >= now && d <= weekEnd
+            return m.status !== 'afgerond' && d >= startOfToday && d <= weekEnd
           }).length,
           actieveProjecten: projecten.filter((p) => p.status === 'actief').length,
         })

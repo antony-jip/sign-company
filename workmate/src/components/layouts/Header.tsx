@@ -32,6 +32,9 @@ const routeMeta: Record<string, { title: string; subtitle?: string }> = {
   '/taken': { title: 'Taken', subtitle: 'Productie & opvolging' },
   '/deals': { title: 'Deals', subtitle: 'Verkoopkansen' },
   '/voorraad': { title: 'Voorraad', subtitle: 'Vinyl, dibond, LED & meer' },
+  '/leads': { title: 'Lead Capture', subtitle: 'Inkomende aanvragen' },
+  '/bestelbonnen': { title: 'Bestelbonnen', subtitle: 'Inkoop bij leveranciers' },
+  '/leveranciers': { title: 'Leveranciers', subtitle: 'Materiaal- & dienstverleners' },
 }
 
 function getPageMeta(pathname: string): { title: string; subtitle?: string } {
