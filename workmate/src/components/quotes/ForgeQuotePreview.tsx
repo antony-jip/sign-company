@@ -13,7 +13,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail, type EmailAttachment } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
-import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Send, Paperclip, X, FileText, Mail, Loader2 } from 'lucide-react'
+import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Send, Paperclip, X, FileText, Mail, Loader2, Clock, Upload } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import { logger } from '../../utils/logger'
 
@@ -251,7 +251,10 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   const [emailAttachments, setEmailAttachments] = useState<File[]>([])
   const [attachPdf, setAttachPdf] = useState(true)
   const [isSending, setIsSending] = useState(false)
+  const [scheduledAt, setScheduledAt] = useState('')
+  const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dropZoneRef = useRef<HTMLDivElement>(null)
 
   // Open email composer met pre-filled data
   const handleOpenEmailComposer = useCallback(() => {
@@ -285,6 +288,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     setEmailCc('')
     setEmailAttachments([])
     setAttachPdf(true)
+    setScheduledAt('')
     setEmailOpen(true)
   }, [fetchedOfferte, fetchedKlant, fetchedItems, bedrijfsnaam, primaireKleur])
 
@@ -299,6 +303,31 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
 
   const removeAttachment = useCallback((index: number) => {
     setEmailAttachments(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
+  // Drag & drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only set false if leaving the drop zone (not entering a child)
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setEmailAttachments(prev => [...prev, ...Array.from(e.dataTransfer.files)])
+    }
   }, [])
 
   // File to base64
@@ -388,6 +417,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         cc: emailCc || undefined,
         html,
         attachments: attachments.length > 0 ? attachments : undefined,
+        scheduledAt: scheduledAt || undefined,
       })
 
       // Update status naar 'verzonden'
@@ -396,7 +426,10 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         setFetchedOfferte(updated)
       }
 
-      toast.success('Offerte verzonden naar ' + emailTo)
+      toast.success(scheduledAt
+        ? `Offerte ingepland voor verzending op ${new Date(scheduledAt).toLocaleString('nl-NL')}`
+        : 'Offerte verzonden naar ' + emailTo
+      )
       setEmailOpen(false)
     } catch (err) {
       logger.error('Email verzenden mislukt:', err)
@@ -404,7 +437,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     } finally {
       setIsSending(false)
     }
-  }, [emailTo, emailCc, emailSubject, emailBody, emailAttachments, attachPdf, fetchedOfferte, fetchedKlant, fetchedItems, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, documentStyle])
+  }, [emailTo, emailCc, emailSubject, emailBody, emailAttachments, attachPdf, scheduledAt, fetchedOfferte, fetchedKlant, fetchedItems, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, documentStyle])
 
   function formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`
@@ -928,32 +961,93 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                 </div>
               </div>
 
-              {/* Bijlagen lijst */}
-              <div className="flex flex-wrap gap-2">
-                {attachPdf && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 text-xs">
-                    <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                    <span className="font-medium text-blue-700 dark:text-blue-300">{fetchedOfferte.nummer}.pdf</span>
-                    <span className="text-blue-500 dark:text-blue-400">(auto)</span>
-                  </div>
-                )}
-                {emailAttachments.map((file, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs"
-                  >
-                    <Paperclip className="h-3.5 w-3.5 text-gray-500" />
-                    <span className="font-medium text-foreground">{file.name}</span>
-                    <span className="text-muted-foreground">{formatFileSize(file.size)}</span>
-                    <button
-                      onClick={() => removeAttachment(idx)}
-                      className="text-gray-400 hover:text-red-500 transition-colors ml-1"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
+              {/* Drag & drop zone */}
+              <div
+                ref={dropZoneRef}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`relative rounded-lg border-2 border-dashed p-4 text-center cursor-pointer transition-colors ${
+                  isDragOver
+                    ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <Upload className={`h-5 w-5 mx-auto mb-1.5 ${isDragOver ? 'text-primary' : 'text-gray-400'}`} />
+                <p className={`text-xs ${isDragOver ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                  {isDragOver ? 'Laat los om bestanden toe te voegen' : 'Sleep bestanden hierheen of klik om te selecteren'}
+                </p>
               </div>
+
+              {/* Bijlagen lijst */}
+              {(attachPdf || emailAttachments.length > 0) && (
+                <div className="flex flex-wrap gap-2">
+                  {attachPdf && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 text-xs">
+                      <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                      <span className="font-medium text-blue-700 dark:text-blue-300">{fetchedOfferte.nummer}.pdf</span>
+                      <span className="text-blue-500 dark:text-blue-400">(auto)</span>
+                    </div>
+                  )}
+                  {emailAttachments.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs"
+                    >
+                      <Paperclip className="h-3.5 w-3.5 text-gray-500" />
+                      <span className="font-medium text-foreground">{file.name}</span>
+                      <span className="text-muted-foreground">{formatFileSize(file.size)}</span>
+                      <button
+                        onClick={() => removeAttachment(idx)}
+                        className="text-gray-400 hover:text-red-500 transition-colors ml-1"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Inplannen */}
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+              <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <div className="flex items-center gap-2 flex-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!scheduledAt}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        // Default: morgen 09:00
+                        const tomorrow = new Date()
+                        tomorrow.setDate(tomorrow.getDate() + 1)
+                        tomorrow.setHours(9, 0, 0, 0)
+                        setScheduledAt(tomorrow.toISOString().slice(0, 16))
+                      } else {
+                        setScheduledAt('')
+                      }
+                    }}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-xs font-medium text-foreground">Email inplannen</span>
+                </label>
+                {scheduledAt && (
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className="text-xs border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1.5 bg-white dark:bg-gray-800 text-foreground"
+                  />
+                )}
+              </div>
+              {scheduledAt && (
+                <span className="text-xs text-muted-foreground">
+                  Wordt verzonden op {new Date(scheduledAt).toLocaleString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
             </div>
 
             {/* Acties */}
@@ -974,7 +1068,12 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   {isSending ? (
                     <>
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Verzenden...
+                      {scheduledAt ? 'Inplannen...' : 'Verzenden...'}
+                    </>
+                  ) : scheduledAt ? (
+                    <>
+                      <Clock className="h-3.5 w-3.5" />
+                      Inplannen
                     </>
                   ) : (
                     <>
