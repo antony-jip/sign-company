@@ -206,22 +206,17 @@ export function QuoteCreation() {
   const winstExBtw = round2(subtotaal - totaalInkoop)
   const margePercentage = subtotaal > 0 ? Math.round(((winstExBtw / subtotaal) * 100) * 10) / 10 : 0
 
-  // Montage: som van alle calculatie_regels waarvan product_naam 'montage' bevat
-  const montageInfo = useMemo(() => {
+  // Montage-uren: som van alle calculatie_regels waarvan product_naam 'montage' bevat
+  const totaalMontageUren = useMemo(() => {
     let totaal = 0
-    let eenheid = ''
     prijsItems.forEach(item => {
       if (item.calculatie_regels && item.calculatie_regels.length > 0) {
-        const montageRegels = item.calculatie_regels.filter(r =>
-          r.product_naam.toLowerCase().includes('montage')
-        )
-        montageRegels.forEach(r => {
-          totaal += r.aantal
-          if (!eenheid && r.eenheid) eenheid = r.eenheid
-        })
+        item.calculatie_regels
+          .filter(r => r.product_naam.toLowerCase().includes('montage'))
+          .forEach(r => { totaal += r.aantal })
       }
     })
-    return { totaal, eenheid: eenheid || 'stuks' }
+    return totaal
   }, [prijsItems])
 
   // ── Data fetching ──
@@ -933,53 +928,6 @@ export function QuoteCreation() {
               </CardContent>
             </Card>
 
-            {/* ── Offerte Teksten ── */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-                    <MessageSquare className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Offerte Teksten
-                </CardTitle>
-                <p className="text-xs text-muted-foreground ml-9">Aanhef, inleiding en afsluiting worden op de offerte getoond</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="aanhef">Aanhef</Label>
-                  <Input
-                    id="aanhef"
-                    value={aanhef}
-                    onChange={(e) => { setAanhef(e.target.value); markDirty() }}
-                    placeholder="Beste [naam],"
-                    className="text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="inleiding">Inleidende tekst</Label>
-                  <Textarea
-                    id="inleiding"
-                    value={inleidingTekst}
-                    onChange={(e) => { setInleidingTekst(e.target.value); markDirty() }}
-                    placeholder="Hierbij ontvangt u onze offerte..."
-                    className="text-sm min-h-[60px]"
-                    rows={2}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="afsluiting">Afsluitende tekst</Label>
-                  <Textarea
-                    id="afsluiting"
-                    value={afsluitingTekst}
-                    onChange={(e) => { setAfsluitingTekst(e.target.value); markDirty() }}
-                    placeholder="Met vriendelijke groet,..."
-                    className="text-sm min-h-[60px]"
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
             {/* ── Hoeveel items? ── */}
             <Card>
               <CardHeader className="pb-3">
@@ -1035,61 +983,110 @@ export function QuoteCreation() {
         {/* STEP 1: ITEMS                                                    */}
         {/* ================================================================ */}
         {currentStep === 1 && (
-          <div className="space-y-5">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                    <FileText className="h-3.5 w-3.5 text-white" />
+          <div className="space-y-6">
+            {/* ── Items ── */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-sm">
+                    <ShoppingCart className="h-4 w-4 text-white" />
                   </div>
-                  Vul je items in
-                  <span className="text-xs text-muted-foreground font-normal ml-1">
-                    {items.length} {items.length === 1 ? 'item' : 'items'}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <QuoteItemsTable
-                  items={items}
-                  onAddItem={handleAddItem}
-                  onUpdateItem={handleUpdateItem}
-                  onRemoveItem={handleRemoveItem}
-                  onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
-                />
-              </CardContent>
-            </Card>
+                  <div>
+                    <h2 className="text-lg font-semibold">Items & Prijzen</h2>
+                    <p className="text-xs text-muted-foreground">
+                      {items.length} {items.length === 1 ? 'item' : 'items'} — vul de details en prijzen in
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-            {/* Notities & Voorwaarden */}
+              <QuoteItemsTable
+                items={items}
+                onAddItem={handleAddItem}
+                onUpdateItem={handleUpdateItem}
+                onRemoveItem={handleRemoveItem}
+                onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
+              />
+            </div>
+
+            {/* ── Offerte Teksten ── */}
+            <div className="rounded-xl border border-teal-200/60 dark:border-teal-800/40 bg-gradient-to-br from-teal-50/50 to-white dark:from-teal-950/20 dark:to-gray-900 overflow-hidden">
+              <div className="px-5 py-4 border-b border-teal-100/60 dark:border-teal-800/30">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-sm">
+                    <MessageSquare className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold">Offerte Teksten</h3>
+                    <p className="text-[11px] text-muted-foreground">Aanhef, inleiding en afsluiting op de offerte voor je klant</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="aanhef" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Aanhef</Label>
+                  <Input
+                    id="aanhef"
+                    value={aanhef}
+                    onChange={(e) => { setAanhef(e.target.value); markDirty() }}
+                    placeholder="Beste [naam],"
+                    className="text-sm bg-white/80 dark:bg-gray-900/50"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="inleiding" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Inleidende tekst</Label>
+                  <Textarea
+                    id="inleiding"
+                    value={inleidingTekst}
+                    onChange={(e) => { setInleidingTekst(e.target.value); markDirty() }}
+                    placeholder="Hierbij ontvangt u onze offerte..."
+                    className="text-sm min-h-[56px] bg-white/80 dark:bg-gray-900/50 resize-none"
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="afsluiting" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Afsluitende tekst</Label>
+                  <Textarea
+                    id="afsluiting"
+                    value={afsluitingTekst}
+                    onChange={(e) => { setAfsluitingTekst(e.target.value); markDirty() }}
+                    placeholder="Met vriendelijke groet,..."
+                    className="text-sm min-h-[68px] bg-white/80 dark:bg-gray-900/50 resize-none"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Notities & Voorwaarden ── */}
             <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Notities
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              <div className="rounded-xl border bg-card overflow-hidden">
+                <div className="px-4 py-3 border-b bg-muted/30">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notities</h3>
+                </div>
+                <div className="p-4">
                   <Textarea
                     value={notities}
-                    onChange={(e) => setNotities(e.target.value)}
-                    placeholder="Interne notities of opmerkingen voor de klant..."
-                    rows={4}
+                    onChange={(e) => { setNotities(e.target.value); markDirty() }}
+                    placeholder="Opmerkingen die op de offerte getoond worden..."
+                    rows={3}
+                    className="text-sm resize-none"
                   />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Voorwaarden
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card overflow-hidden">
+                <div className="px-4 py-3 border-b bg-muted/30">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Voorwaarden</h3>
+                </div>
+                <div className="p-4">
                   <Textarea
                     value={voorwaarden}
-                    onChange={(e) => setVoorwaarden(e.target.value)}
-                    rows={4}
+                    onChange={(e) => { setVoorwaarden(e.target.value); markDirty() }}
+                    rows={3}
+                    className="text-sm resize-none"
                   />
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
 
             {/* Navigation */}
@@ -1098,9 +1095,9 @@ export function QuoteCreation() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Vorige
               </Button>
-              <Button onClick={() => setCurrentStep(2)} disabled={!canProceedStep1} className="px-8">
+              <Button onClick={() => setCurrentStep(2)} disabled={!canProceedStep1} className="bg-gradient-to-r from-accent to-primary border-0 px-8" size="lg">
                 Preview bekijken
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <Eye className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </div>
@@ -1193,7 +1190,7 @@ export function QuoteCreation() {
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Montage</p>
                   <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                    {montageInfo.totaal > 0 ? `${montageInfo.totaal} ${montageInfo.eenheid}` : '—'}
+                    {totaalMontageUren > 0 ? `${totaalMontageUren} uur` : '—'}
                   </p>
                 </div>
               </div>
