@@ -11,7 +11,8 @@ import { CalendarMiniWidget } from './CalendarMiniWidget'
 import { SalesFollowUpWidget } from './SalesFollowUpWidget'
 import { WorkflowWidget } from './WorkflowWidget'
 import { SalesForecastWidget } from './SalesForecastWidget'
-import { Wrench, FileText, FolderKanban } from 'lucide-react'
+import { Wrench, FileText, FolderKanban, AlertTriangle } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { getMontageAfspraken, getOffertes, getProjecten } from '@/services/supabaseService'
 import type { MontageAfspraak, Offerte, Project } from '@/types'
 import { isToday } from 'date-fns'
@@ -21,7 +22,7 @@ export function WorkmateDashboard() {
   const { profile, toonFollowUpIndicatoren } = useAppSettings()
   const userName = profile?.voornaam || user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
 
-  const [heroCounts, setHeroCounts] = React.useState({ montagesVandaag: 0, openOffertes: 0, actieveProjecten: 0 })
+  const [heroCounts, setHeroCounts] = React.useState({ montagesVandaag: 0, openOffertes: 0, actieveProjecten: 0, verlopenDezeWeek: 0, verlopenTotaal: 0 })
 
   React.useEffect(() => {
     let cancelled = false
@@ -35,7 +36,18 @@ export function WorkmateDashboard() {
           ['verzonden', 'bekeken'].includes(o.status)
         ).length
         const actieveProjecten = projecten.filter((p) => p.status === 'actief').length
-        setHeroCounts({ montagesVandaag, openOffertes, actieveProjecten })
+
+        // Vervaldatum analyse
+        const now = new Date()
+        const endOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (7 - now.getDay()))
+        const activeOffertes = offertes.filter((o) => ['concept', 'verzonden', 'bekeken'].includes(o.status))
+        const verlopenTotaal = activeOffertes.filter((o) => new Date(o.geldig_tot) < now).length
+        const verlopenDezeWeek = activeOffertes.filter((o) => {
+          const expiry = new Date(o.geldig_tot)
+          return expiry >= now && expiry <= endOfWeek
+        }).length
+
+        setHeroCounts({ montagesVandaag, openOffertes, actieveProjecten, verlopenDezeWeek, verlopenTotaal })
       })
       .catch(() => {})
     return () => { cancelled = true }
@@ -103,6 +115,32 @@ export function WorkmateDashboard() {
 
       {/* Sales pulse — actionable metrics */}
       <SalesPulseWidget />
+
+      {/* Verlopen offertes waarschuwing */}
+      {(heroCounts.verlopenTotaal > 0 || heroCounts.verlopenDezeWeek > 0) && (
+        <Link to="/offertes" className="block">
+          <div className="rounded-xl border border-red-200 dark:border-red-800/40 bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-950/30 dark:to-amber-950/20 p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
+            <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-900/40 flex-shrink-0">
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-200">
+                {heroCounts.verlopenTotaal > 0 && (
+                  <span>{heroCounts.verlopenTotaal} offerte{heroCounts.verlopenTotaal !== 1 ? 's' : ''} verlopen</span>
+                )}
+                {heroCounts.verlopenTotaal > 0 && heroCounts.verlopenDezeWeek > 0 && ' · '}
+                {heroCounts.verlopenDezeWeek > 0 && (
+                  <span>{heroCounts.verlopenDezeWeek} verlo{heroCounts.verlopenDezeWeek !== 1 ? 'pen' : 'opt'} deze week</span>
+                )}
+              </p>
+              <p className="text-xs text-red-600/70 dark:text-red-400/70 mt-0.5">
+                Klik om naar het offerte overzicht te gaan
+              </p>
+            </div>
+            <span className="text-xs font-medium text-red-600 dark:text-red-400 flex-shrink-0">Bekijk →</span>
+          </div>
+        </Link>
+      )}
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

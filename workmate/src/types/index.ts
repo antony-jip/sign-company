@@ -121,6 +121,9 @@ export interface Offerte {
   laatst_bekeken_op?: string;
   aantal_keer_bekeken?: number;
   publiek_token?: string;
+  // Vervaldatum opvolging
+  herinnering_verstuurd_op?: string;
+  verlopen_notificatie_getoond?: boolean;
   created_at: string;
   updated_at: string;
 }

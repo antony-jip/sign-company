@@ -814,13 +814,28 @@ export function QuoteCreation() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="geldig-tot">Geldig tot</Label>
-                    <Input
-                      id="geldig-tot"
-                      type="date"
-                      value={geldigTot}
-                      onChange={(e) => setGeldigTot(e.target.value)}
-                      className="text-sm"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="geldig-tot"
+                        type="date"
+                        value={geldigTot}
+                        onChange={(e) => setGeldigTot(e.target.value)}
+                        className="text-sm"
+                      />
+                      {/* Vervaldatum kleurindicator */}
+                      {geldigTot && (() => {
+                        const daysLeft = Math.floor((new Date(geldigTot).getTime() - Date.now()) / 86400000)
+                        if (daysLeft < 0) return (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">Verlopen</span>
+                        )
+                        if (daysLeft <= 7) return (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{daysLeft}d</span>
+                        )
+                        return (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">{daysLeft}d</span>
+                        )
+                      })()}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="contactpersoon" className="flex items-center gap-1.5">

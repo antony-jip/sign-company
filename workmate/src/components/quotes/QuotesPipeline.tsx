@@ -27,6 +27,7 @@ import {
   BarChart3,
   Users,
   Eye,
+  Clock,
 } from 'lucide-react'
 import { getOffertes, updateOfferte } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -111,6 +112,7 @@ export function QuotesPipeline() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('alle')
+  const [expiryFilter, setExpiryFilter] = useState<'alle' | 'verlopen' | 'binnenkort'>('alle')
   const [sortOption, setSortOption] = useState<SortOption>('newest')
 
   // Build pipeline columns from settings
@@ -188,6 +190,16 @@ export function QuotesPipeline() {
       result = result.filter((o) => o.prioriteit === priorityFilter)
     }
 
+    if (expiryFilter !== 'alle') {
+      result = result.filter((o) => {
+        if (['goedgekeurd', 'afgewezen'].includes(o.status)) return false
+        const status = getExpiryStatus(o.geldig_tot)
+        if (expiryFilter === 'verlopen') return status === 'expired'
+        if (expiryFilter === 'binnenkort') return status === 'soon'
+        return true
+      })
+    }
+
     switch (sortOption) {
       case 'newest':
         result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -238,7 +250,19 @@ export function QuotesPipeline() {
 
     const thisMonthCount = offertes.filter((o) => isThisMonth(o.created_at)).length
 
-    return { openCount, openValue, conversionRate, avgValue, overdueFollowUps, thisMonthCount }
+    // Verlopen en binnenkort verlopen offertes (niet goedgekeurd/afgewezen)
+    const activeStatuses = ['concept', 'verzonden', 'bekeken']
+    const activeOffertes = offertes.filter((o) => activeStatuses.includes(o.status))
+    const verlopenCount = activeOffertes.filter((o) => getExpiryStatus(o.geldig_tot) === 'expired').length
+    const binnenkortCount = activeOffertes.filter((o) => getExpiryStatus(o.geldig_tot) === 'soon').length
+    const verlopenDezeWeek = activeOffertes.filter((o) => {
+      const expiry = new Date(o.geldig_tot)
+      const now = new Date()
+      const endOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (7 - now.getDay()))
+      return expiry >= now && expiry <= endOfWeek
+    }).length
+
+    return { openCount, openValue, conversionRate, avgValue, overdueFollowUps, thisMonthCount, verlopenCount, binnenkortCount, verlopenDezeWeek }
   }, [offertes])
 
   const totalCount = offertes.length
@@ -503,6 +527,53 @@ export function QuotesPipeline() {
           )}
         </div>
       </div>
+
+      {/* ── Vervaldatum Filter Pills ───────────────────────────── */}
+      {(kpis.verlopenCount > 0 || kpis.binnenkortCount > 0) && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium text-muted-foreground mr-1">
+            <Clock className="h-3.5 w-3.5 inline-block mr-1" />
+            Vervaldatum:
+          </span>
+          <button
+            onClick={() => setExpiryFilter(expiryFilter === 'verlopen' ? 'alle' : 'verlopen')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              expiryFilter === 'verlopen'
+                ? 'bg-red-500 text-white shadow-sm'
+                : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/40 hover:bg-red-100 dark:hover:bg-red-900/40'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${expiryFilter === 'verlopen' ? 'bg-white' : 'bg-red-500'}`} />
+            Verlopen
+            <Badge variant="secondary" className="h-4 px-1.5 text-[10px] rounded-full ml-0.5">
+              {kpis.verlopenCount}
+            </Badge>
+          </button>
+          <button
+            onClick={() => setExpiryFilter(expiryFilter === 'binnenkort' ? 'alle' : 'binnenkort')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              expiryFilter === 'binnenkort'
+                ? 'bg-amber-500 text-white shadow-sm'
+                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${expiryFilter === 'binnenkort' ? 'bg-white' : 'bg-amber-500'}`} />
+            Verloopt binnenkort
+            <Badge variant="secondary" className="h-4 px-1.5 text-[10px] rounded-full ml-0.5">
+              {kpis.binnenkortCount}
+            </Badge>
+          </button>
+          {expiryFilter !== 'alle' && (
+            <button
+              onClick={() => setExpiryFilter('alle')}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            >
+              <X className="h-3 w-3" />
+              Reset
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── Sales KPI Cards ──────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -895,14 +966,21 @@ export function QuotesPipeline() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className={`text-sm ${
+                            expiryStatus === 'expired' ? 'text-red-600 dark:text-red-400 font-semibold' :
+                            expiryStatus === 'soon' ? 'text-amber-600 dark:text-amber-400 font-medium' :
+                            'text-gray-600 dark:text-gray-400'
+                          }`}>
                             {formatDate(offerte.geldig_tot)}
                           </span>
                           {expiryStatus === 'expired' && (
-                            <span className="w-2 h-2 rounded-full bg-red-500" title="Verlopen" />
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">Verlopen</span>
                           )}
                           {expiryStatus === 'soon' && (
-                            <span className="w-2 h-2 rounded-full bg-orange-500" title="Verloopt binnenkort" />
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Binnenkort</span>
+                          )}
+                          {expiryStatus === 'ok' && (
+                            <span className="w-2 h-2 rounded-full bg-emerald-400" title="Nog ruim op tijd" />
                           )}
                         </div>
                       </td>
