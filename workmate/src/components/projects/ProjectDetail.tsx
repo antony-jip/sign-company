@@ -476,8 +476,8 @@ export function ProjectDetail() {
             werkbonnen={werkbonnen}
             uitgaven={uitgaven}
             onToewijzingenChanged={setToewijzingen}
-            onOfferteView={(id) => navigate(`/offertes/${id}`)}
-            onOfferteEdit={(id) => setEditOfferteId(id)}
+            onOfferteView={(id) => navigate(`/offertes/${id}/bewerken`)}
+            onOfferteEdit={(id) => navigate(`/offertes/${id}/bewerken`)}
             onOfferteEmail={handleOfferteEmail}
             onOfferteFactuur={handleCreateFactuurFromOfferte}
             onNieuweOfferte={openNieuweOfferte}

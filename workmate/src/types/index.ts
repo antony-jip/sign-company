@@ -129,10 +129,16 @@ export interface Offerte {
   updated_at: string;
 }
 
+export interface OfferteItemDetailRegel {
+  label: string;
+  waarde: string;
+}
+
 export interface OfferteItem {
   id: string;
   offerte_id: string;
   beschrijving: string;
+  detail_regels?: OfferteItemDetailRegel[];
   aantal: number;
   eenheidsprijs: number;
   btw_percentage: number;

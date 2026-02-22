@@ -370,16 +370,29 @@ export function generateOffertePDF(
     y += 8
   }
 
-  // Items table
-  const tableBody = items.map((item, index) => [
-    (index + 1).toString(),
-    item.beschrijving,
-    item.aantal.toString(),
-    formatCurrency(item.eenheidsprijs),
-    item.btw_percentage > 0 ? `${item.btw_percentage}%` : '-',
-    item.korting_percentage > 0 ? `${item.korting_percentage}%` : '-',
-    formatCurrency(item.totaal),
-  ])
+  // Items table — include detail_regels under beschrijving (skip empty)
+  const tableBody = items.map((item, index) => {
+    let beschrijving = item.beschrijving
+    if (item.detail_regels && Array.isArray(item.detail_regels)) {
+      const filledRegels = item.detail_regels.filter(
+        (r: { label: string; waarde: string }) => r.waarde && r.waarde.trim() !== ''
+      )
+      if (filledRegels.length > 0) {
+        beschrijving += '\n' + filledRegels
+          .map((r: { label: string; waarde: string }) => `${r.label}: ${r.waarde}`)
+          .join('\n')
+      }
+    }
+    return [
+      (index + 1).toString(),
+      beschrijving,
+      item.aantal.toString(),
+      formatCurrency(item.eenheidsprijs),
+      item.btw_percentage > 0 ? `${item.btw_percentage}%` : '-',
+      item.korting_percentage > 0 ? `${item.korting_percentage}%` : '-',
+      formatCurrency(item.totaal),
+    ]
+  })
 
   const tableStyles = getAutoTableStyles(brand, docStyle)
   const pageWidth = doc.internal.pageSize.getWidth()

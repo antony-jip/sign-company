@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import { Link, useNavigate, useSearchParams, useParams, useBlocker } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,11 +33,24 @@ import {
   ShoppingCart,
   X,
   Plus,
+  Clock,
+  Trash2,
+  Copy,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, getOfferte, getOfferteItems, createOfferte, createOfferteItem, updateOfferte, updateOfferteItem, deleteOfferteItem, deleteOfferte } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Project } from '@/types'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import type { Klant, Project, Offerte, OfferteItem } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -82,6 +95,7 @@ function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { numme
 export function QuoteCreation() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { id: editId } = useParams<{ id: string }>()
   const { user } = useAuth()
   const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
   const documentStyle = useDocumentStyle()
@@ -90,6 +104,13 @@ export function QuoteCreation() {
   const [projecten, setProjecten] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  // Edit/duplicate mode
+  const isDuplicate = searchParams.get('duplicate') === 'true'
+  const isEditMode = !!editId && !isDuplicate
+  const pageTitle = isEditMode ? 'Offerte bewerken' : isDuplicate ? 'Offerte dupliceren' : 'Nieuwe Offerte'
 
   // Query params van bijv. projecten-pagina
   const paramKlantId = searchParams.get('klant_id') || ''
@@ -110,11 +131,28 @@ export function QuoteCreation() {
     return d.toISOString().split('T')[0]
   })
   const [offerteNummer, setOfferteNummer] = useState('')
+  const [originalItemIds, setOriginalItemIds] = useState<string[]>([])
 
   // ── Step 1: Items ──
   const [items, setItems] = useState<QuoteLineItem[]>([])
   const [notities, setNotities] = useState('')
   const [voorwaarden, setVoorwaarden] = useState(DEFAULT_VOORWAARDEN)
+
+  // ── Navigation guard ──
+  const blocker = useBlocker(isDirty && !isSaving)
+
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
+  // Mark dirty on any change
+  const markDirty = useCallback(() => setIsDirty(true), [])
 
   // ── Computed ──
   const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
@@ -162,24 +200,106 @@ export function QuoteCreation() {
   const winstExBtw = round2(subtotaal - totaalInkoop)
   const margePercentage = subtotaal > 0 ? Math.round(((winstExBtw / subtotaal) * 100) * 10) / 10 : 0
 
+  // Montage-uren: som van alle calculatie_regels met eenheid 'uur'
+  const totaalMontageUren = useMemo(() => {
+    return prijsItems.reduce((sum, item) => {
+      if (item.calculatie_regels && item.calculatie_regels.length > 0) {
+        return sum + item.calculatie_regels
+          .filter(r => r.eenheid === 'uur')
+          .reduce((s, r) => s + r.aantal, 0)
+      }
+      return sum
+    }, 0)
+  }, [prijsItems])
+
   // ── Data fetching ──
   useEffect(() => {
     let cancelled = false
-    Promise.all([getKlanten(), getProjecten(), getOffertes().catch(() => [])])
-      .then(([klantenData, projectenData, offertesData]) => {
-        if (!cancelled) {
-          setKlanten(klantenData)
-          setProjecten(projectenData)
+    async function fetchData() {
+      try {
+        const [klantenData, projectenData, offertesData] = await Promise.all([
+          getKlanten(),
+          getProjecten(),
+          getOffertes().catch(() => []),
+        ])
+        if (cancelled) return
+        setKlanten(klantenData)
+        setProjecten(projectenData)
+
+        // Edit or duplicate mode: load existing offerte
+        if (editId) {
+          const [offerte, offerteItems] = await Promise.all([
+            getOfferte(editId),
+            getOfferteItems(editId),
+          ])
+          if (cancelled || !offerte) return
+
+          setSelectedKlantId(isDuplicate ? '' : offerte.klant_id)
+          setSelectedProjectId(offerte.project_id || '')
+          setOfferteTitel(offerte.titel)
+          setGeldigTot(isDuplicate
+            ? (() => { const d = new Date(); d.setDate(d.getDate() + offerteGeldigheidDagen); return d.toISOString().split('T')[0] })()
+            : offerte.geldig_tot
+          )
+          setOfferteNummer(isDuplicate
+            ? generateOfferteNummer(offertePrefix, offertesData)
+            : offerte.nummer
+          )
+          setNotities(offerte.notities || '')
+          setVoorwaarden(offerte.voorwaarden || DEFAULT_VOORWAARDEN)
+          setContactpersoon(offerte.klant_naam || '')
+          setOriginalItemIds(offerteItems.map(i => i.id))
+
+          // Convert OfferteItems to QuoteLineItems
+          const loadedItems: QuoteLineItem[] = offerteItems.map((item) => {
+            const labels = (settings.offerte_regel_velden && settings.offerte_regel_velden.length > 0)
+              ? settings.offerte_regel_velden
+              : DEFAULT_DETAIL_LABELS
+            const defaultRegels: { id: string; label: string; waarde: string }[] = labels.map((l, i) => ({
+              id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+              label: l,
+              waarde: '',
+            }))
+
+            return {
+              id: isDuplicate ? `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}` : item.id,
+              soort: 'prijs' as const,
+              beschrijving: item.beschrijving,
+              extra_velden: {},
+              detail_regels: item.detail_regels
+                ? (item.detail_regels as { label: string; waarde: string }[]).map((dr, i) => ({
+                    id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+                    label: dr.label,
+                    waarde: dr.waarde,
+                  }))
+                : defaultRegels,
+              aantal: item.aantal,
+              eenheidsprijs: item.eenheidsprijs,
+              btw_percentage: item.btw_percentage,
+              korting_percentage: item.korting_percentage,
+              totaal: item.totaal,
+            }
+          })
+          setItems(loadedItems)
+
+          if (isDuplicate) {
+            setCurrentStep(0)
+          } else {
+            setCurrentStep(1)
+          }
+        } else {
           setOfferteNummer(generateOfferteNummer(offertePrefix, offertesData))
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         logger.error('Failed to fetch data:', err)
         if (!cancelled) toast.error('Kon data niet laden')
-      })
-      .finally(() => { if (!cancelled) setIsLoading(false) })
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+    fetchData()
     return () => { cancelled = true }
-  }, [])
+  }, [editId])
 
   // Auto-fill from project params
   useEffect(() => {
@@ -242,9 +362,11 @@ export function QuoteCreation() {
   // ── Item handlers ──
   const handleAddItem = () => {
     setItems([...items, createEmptyItem()])
+    markDirty()
   }
 
   const handleUpdateItem = (id: string, field: keyof QuoteLineItem, value: QuoteLineItem[keyof QuoteLineItem]) => {
+    markDirty()
     setItems(
       items.map((item) => {
         if (item.id !== id) return item
@@ -260,6 +382,7 @@ export function QuoteCreation() {
 
   const handleRemoveItem = (id: string) => {
     setItems(items.filter((item) => item.id !== id))
+    markDirty()
   }
 
   const handleUpdateItemWithCalculatie = (
@@ -302,6 +425,23 @@ export function QuoteCreation() {
     setCurrentStep(1)
   }
 
+  // ── Delete (edit mode only) ──
+  const handleDeleteOfferte = async () => {
+    if (!editId) return
+    setIsSaving(true)
+    try {
+      await deleteOfferte(editId)
+      setIsDirty(false)
+      toast.success('Offerte verwijderd')
+      navigate('/offertes')
+    } catch (err) {
+      logger.error('Failed to delete offerte:', err)
+      toast.error('Kon offerte niet verwijderen')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   // ── Save ──
   const saveOfferte = async (status: 'concept' | 'verzonden') => {
     if (isSaving) return
@@ -311,59 +451,113 @@ export function QuoteCreation() {
     }
     setIsSaving(true)
     try {
-      const newOfferte = await createOfferte({
-        user_id: user.id,
-        klant_id: selectedKlantId,
-        ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-        ...(paramDealId ? { deal_id: paramDealId } : {}),
-        nummer: offerteNummer,
-        titel: offerteTitel,
-        status,
-        subtotaal,
-        btw_bedrag: btwBedrag,
-        totaal: round2(subtotaal + btwBedrag),
-        geldig_tot: geldigTot,
-        notities,
-        voorwaarden,
-      })
-
-      await Promise.all(
-        items.map((item, index) =>
-          createOfferteItem({
-            offerte_id: newOfferte.id,
-            beschrijving: item.beschrijving,
-            aantal: item.aantal,
-            eenheidsprijs: item.eenheidsprijs,
-            btw_percentage: item.btw_percentage,
-            korting_percentage: item.korting_percentage,
-            totaal: item.totaal,
-            volgorde: index + 1,
-          })
-        )
-      )
-
-      if (status === 'verzonden' && selectedKlant?.email) {
-        try {
-          const { subject, html } = offerteVerzendTemplate({
-            klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
-            offerteNummer,
-            offerteTitel,
-            totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(subtotaal + btwBedrag)),
-            geldigTot,
-          })
-          await sendEmail(selectedKlant.email, subject, '', { html })
-        } catch (emailErr) {
-          logger.error('Email verzenden mislukt:', emailErr)
-          toast.error('Offerte opgeslagen maar email niet verzonden')
-        }
+      // Filter detail_regels: only non-empty ones
+      const buildDetailRegels = (item: QuoteLineItem) => {
+        const regels = (item.detail_regels || []).filter(r => r.waarde.trim() !== '')
+        return regels.length > 0 ? regels.map(r => ({ label: r.label, waarde: r.waarde })) : undefined
       }
 
-      toast.success(
-        status === 'concept'
-          ? 'Offerte opgeslagen als concept'
-          : 'Offerte verzonden naar klant'
-      )
-      navigate('/offertes')
+      if (isEditMode && editId) {
+        // ── UPDATE existing offerte ──
+        await updateOfferte(editId, {
+          klant_id: selectedKlantId,
+          ...(selectedProjectId && selectedProjectId !== 'geen' ? { project_id: selectedProjectId } : {}),
+          titel: offerteTitel,
+          status,
+          subtotaal,
+          btw_bedrag: btwBedrag,
+          totaal: round2(subtotaal + btwBedrag),
+          geldig_tot: geldigTot,
+          notities,
+          voorwaarden,
+        })
+
+        // Delete removed items
+        const currentItemIds = items.filter(i => !i.id.startsWith('new-')).map(i => i.id)
+        const deletedIds = originalItemIds.filter(id => !currentItemIds.includes(id))
+        await Promise.all(deletedIds.map(id => deleteOfferteItem(id)))
+
+        // Update existing + create new items
+        await Promise.all(
+          items.map((item, index) => {
+            const itemData = {
+              beschrijving: item.beschrijving,
+              detail_regels: buildDetailRegels(item),
+              aantal: item.aantal,
+              eenheidsprijs: item.eenheidsprijs,
+              btw_percentage: item.btw_percentage,
+              korting_percentage: item.korting_percentage,
+              totaal: item.totaal,
+              volgorde: index + 1,
+            }
+            if (item.id.startsWith('new-')) {
+              return createOfferteItem({ ...itemData, offerte_id: editId })
+            }
+            return updateOfferteItem(item.id, itemData)
+          })
+        )
+
+        setIsDirty(false)
+        toast.success('Offerte bijgewerkt')
+        navigate('/offertes')
+      } else {
+        // ── CREATE new offerte ──
+        const newOfferte = await createOfferte({
+          user_id: user.id,
+          klant_id: selectedKlantId,
+          ...(selectedProjectId && selectedProjectId !== 'geen' ? { project_id: selectedProjectId } : {}),
+          ...(paramDealId ? { deal_id: paramDealId } : {}),
+          nummer: offerteNummer,
+          titel: offerteTitel,
+          status,
+          subtotaal,
+          btw_bedrag: btwBedrag,
+          totaal: round2(subtotaal + btwBedrag),
+          geldig_tot: geldigTot,
+          notities,
+          voorwaarden,
+        })
+
+        await Promise.all(
+          items.map((item, index) =>
+            createOfferteItem({
+              offerte_id: newOfferte.id,
+              beschrijving: item.beschrijving,
+              detail_regels: buildDetailRegels(item),
+              aantal: item.aantal,
+              eenheidsprijs: item.eenheidsprijs,
+              btw_percentage: item.btw_percentage,
+              korting_percentage: item.korting_percentage,
+              totaal: item.totaal,
+              volgorde: index + 1,
+            })
+          )
+        )
+
+        if (status === 'verzonden' && selectedKlant?.email) {
+          try {
+            const { subject, html } = offerteVerzendTemplate({
+              klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
+              offerteNummer,
+              offerteTitel,
+              totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(subtotaal + btwBedrag)),
+              geldigTot,
+            })
+            await sendEmail(selectedKlant.email, subject, '', { html })
+          } catch (emailErr) {
+            logger.error('Email verzenden mislukt:', emailErr)
+            toast.error('Offerte opgeslagen maar email niet verzonden')
+          }
+        }
+
+        setIsDirty(false)
+        toast.success(
+          status === 'concept'
+            ? 'Offerte opgeslagen als concept'
+            : 'Offerte verzonden naar klant'
+        )
+        navigate('/offertes')
+      }
     } catch (err) {
       logger.error('Failed to save offerte:', err)
       toast.error('Kon offerte niet opslaan')
@@ -435,25 +629,51 @@ export function QuoteCreation() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-foreground font-display">Nieuwe Offerte</h1>
+              <h1 className="text-2xl font-bold text-foreground font-display">{pageTitle}</h1>
               <p className="text-sm text-muted-foreground mt-0.5">{offerteNummer}</p>
             </div>
           </div>
-          {/* Quick info badges */}
-          {selectedKlant && (
-            <div className="hidden md:flex items-center gap-2">
-              <Badge variant="outline" className="gap-1.5">
-                <Building2 className="h-3 w-3" />
-                {selectedKlant.bedrijfsnaam}
-              </Badge>
-              {selectedProject && (
+          <div className="hidden md:flex items-center gap-2">
+            {/* Quick info badges */}
+            {selectedKlant && (
+              <>
                 <Badge variant="outline" className="gap-1.5">
-                  <FolderOpen className="h-3 w-3" />
-                  {selectedProject.naam}
+                  <Building2 className="h-3 w-3" />
+                  {selectedKlant.bedrijfsnaam}
                 </Badge>
-              )}
-            </div>
-          )}
+                {selectedProject && (
+                  <Badge variant="outline" className="gap-1.5">
+                    <FolderOpen className="h-3 w-3" />
+                    {selectedProject.naam}
+                  </Badge>
+                )}
+              </>
+            )}
+            {/* Duplicate button (edit mode only) */}
+            {isEditMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/offertes/${editId}/bewerken?duplicate=true`)}
+                className="gap-1.5"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Dupliceer
+              </Button>
+            )}
+            {/* Delete button (edit mode only) */}
+            {isEditMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Verwijder
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* ──── Step Indicator ──── */}
@@ -841,12 +1061,14 @@ export function QuoteCreation() {
                 </Button>
                 <Button variant="secondary" onClick={() => saveOfferte('concept')} disabled={isSaving}>
                   <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Opslaan...' : 'Opslaan als Concept'}
+                  {isSaving ? 'Opslaan...' : isEditMode ? 'Opslaan' : 'Opslaan als Concept'}
                 </Button>
-                <Button onClick={() => saveOfferte('verzonden')} disabled={isSaving} className="bg-gradient-to-r from-accent to-primary border-0">
-                  <Send className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Verzenden...' : 'Verzenden'}
-                </Button>
+                {!isEditMode && (
+                  <Button onClick={() => saveOfferte('verzonden')} disabled={isSaving} className="bg-gradient-to-r from-accent to-primary border-0">
+                    <Send className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Verzenden...' : 'Verzenden'}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -854,110 +1076,160 @@ export function QuoteCreation() {
       </div>
 
       {/* ================================================================ */}
-      {/* STICKY BOTTOM BAR — Inkoop, Marge, Winst                        */}
-      {/* Altijd zichtbaar in stap 1 en 2                                  */}
+      {/* STICKY BOTTOM BAR — Inkoop, Montage, Marge, Winst, Totaal      */}
+      {/* Altijd zichtbaar — glaseffect                                   */}
       {/* ================================================================ */}
-      {(currentStep === 1 || currentStep === 2) && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-          <div className="max-w-5xl mx-auto px-6 py-3">
-            <div className="flex items-center justify-between gap-6">
-              {/* Left: Inkoop info */}
-              <div className="flex items-center gap-6">
-                {/* Inkoop */}
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                    <ShoppingCart className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Inkoop</p>
-                    <p className="text-sm font-bold text-orange-600 dark:text-orange-400">
-                      {formatCurrency(totaalInkoop)}
-                    </p>
-                  </div>
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl border-t border-white/20 dark:border-gray-700/50 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]">
+        <div className="max-w-5xl mx-auto px-6 py-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Inkoop + Montage-uren + Marge + Winst */}
+            <div className="flex items-center gap-5">
+              {/* Inkoop */}
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-orange-100/80 dark:bg-orange-900/30 flex items-center justify-center backdrop-blur-sm">
+                  <ShoppingCart className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
-
-                {/* Divider */}
-                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-
-                {/* Marge % */}
-                <div className="flex items-center gap-2">
-                  <div className={cn(
-                    'h-8 w-8 rounded-lg flex items-center justify-center',
-                    margePercentage >= 30 ? 'bg-green-100 dark:bg-green-900/30' :
-                    margePercentage >= 15 ? 'bg-yellow-100 dark:bg-yellow-900/30' :
-                    'bg-red-100 dark:bg-red-900/30'
-                  )}>
-                    <Percent className={cn(
-                      'h-4 w-4',
-                      margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
-                      margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
-                      'text-red-600 dark:text-red-400'
-                    )} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Marge</p>
-                    <p className={cn(
-                      'text-sm font-bold',
-                      margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
-                      margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
-                      'text-red-600 dark:text-red-400'
-                    )}>
-                      {totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-
-                {/* Winst ex BTW */}
-                <div className="flex items-center gap-2">
-                  <div className={cn(
-                    'h-8 w-8 rounded-lg flex items-center justify-center',
-                    winstExBtw > 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-800'
-                  )}>
-                    <TrendingUp className={cn(
-                      'h-4 w-4',
-                      winstExBtw > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
-                    )} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Winst ex BTW</p>
-                    <p className={cn(
-                      'text-sm font-bold',
-                      winstExBtw > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
-                    )}>
-                      {formatCurrency(winstExBtw)}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Inkoop</p>
+                  <p className="text-sm font-bold text-orange-600 dark:text-orange-400">
+                    {formatCurrency(totaalInkoop)}
+                  </p>
                 </div>
               </div>
 
-              {/* Right: Totaal */}
-              <div className="flex items-center gap-6">
-                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
+              <div className="w-px h-10 bg-gray-300/50 dark:bg-gray-600/50" />
 
-                <div className="flex items-center gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Subtotaal ex BTW</p>
-                    <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(subtotaal)}</p>
-                  </div>
-                  <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">BTW</p>
-                    <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(btwBedrag)}</p>
-                  </div>
-                  <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-                  <div className="bg-gradient-to-r from-accent to-primary rounded-xl px-5 py-2">
-                    <p className="text-[10px] uppercase tracking-wider text-white/70 font-medium">Totaal incl BTW</p>
-                    <p className="text-lg font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
-                  </div>
+              {/* Montage-uren */}
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-blue-100/80 dark:bg-blue-900/30 flex items-center justify-center backdrop-blur-sm">
+                  <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Montage</p>
+                  <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                    {totaalMontageUren > 0 ? `${totaalMontageUren} uur` : '—'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-px h-10 bg-gray-300/50 dark:bg-gray-600/50" />
+
+              {/* Marge % */}
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  'h-8 w-8 rounded-lg flex items-center justify-center backdrop-blur-sm',
+                  margePercentage >= 30 ? 'bg-green-100/80 dark:bg-green-900/30' :
+                  margePercentage >= 15 ? 'bg-yellow-100/80 dark:bg-yellow-900/30' :
+                  'bg-red-100/80 dark:bg-red-900/30'
+                )}>
+                  <Percent className={cn(
+                    'h-4 w-4',
+                    margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
+                    margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
+                    'text-red-600 dark:text-red-400'
+                  )} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Marge</p>
+                  <p className={cn(
+                    'text-sm font-bold',
+                    margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
+                    margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
+                    'text-red-600 dark:text-red-400'
+                  )}>
+                    {totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-px h-10 bg-gray-300/50 dark:bg-gray-600/50" />
+
+              {/* Winst ex BTW */}
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  'h-8 w-8 rounded-lg flex items-center justify-center backdrop-blur-sm',
+                  winstExBtw > 0 ? 'bg-green-100/80 dark:bg-green-900/30' : 'bg-gray-100/80 dark:bg-gray-800/50'
+                )}>
+                  <TrendingUp className={cn(
+                    'h-4 w-4',
+                    winstExBtw > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+                  )} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Winst</p>
+                  <p className={cn(
+                    'text-sm font-bold',
+                    winstExBtw > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                  )}>
+                    {formatCurrency(winstExBtw)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Subtotaal + BTW = Totaal ex BTW */}
+            <div className="flex items-center gap-4">
+              <div className="w-px h-10 bg-gray-300/50 dark:bg-gray-600/50" />
+
+              <div className="flex items-center gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Subtotaal</p>
+                  <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(subtotaal)}</p>
+                </div>
+                <div className="w-px h-10 bg-gray-300/50 dark:bg-gray-600/50" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">BTW</p>
+                  <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(btwBedrag)}</p>
+                </div>
+                <div className="w-px h-10 bg-gray-300/50 dark:bg-gray-600/50" />
+                <div className="bg-gradient-to-r from-accent to-primary rounded-xl px-5 py-2 shadow-lg shadow-primary/20">
+                  <p className="text-[10px] uppercase tracking-wider text-white/70 font-medium">Totaal ex BTW</p>
+                  <p className="text-lg font-bold text-white">{formatCurrency(subtotaal)}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* ── Delete confirmation dialog ── */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Offerte verwijderen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Weet je zeker dat je offerte "{offerteTitel}" ({offerteNummer}) wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteOfferte}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Verwijderen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Navigation blocker dialog ── */}
+      <AlertDialog open={blocker.state === 'blocked'}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Onopgeslagen wijzigingen</AlertDialogTitle>
+            <AlertDialogDescription>
+              Je hebt onopgeslagen wijzigingen in deze offerte. Weet je zeker dat je weg wilt navigeren?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>Blijven</AlertDialogCancel>
+            <AlertDialogAction onClick={() => blocker.proceed?.()}>
+              Verlaten
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

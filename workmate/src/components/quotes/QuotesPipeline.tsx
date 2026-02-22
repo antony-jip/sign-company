@@ -612,7 +612,7 @@ export function QuotesPipeline() {
                     return (
                       <div key={offerte.id} className="relative group">
                         <Link
-                          to={`/offertes/${offerte.id}`}
+                          to={`/offertes/${offerte.id}/bewerken`}
                           className="block"
                         >
                           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-200/60 dark:border-gray-700/60 p-3 space-y-2.5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
@@ -857,19 +857,19 @@ export function QuotesPipeline() {
                     >
                       <td className="px-4 py-3">
                         <Link
-                          to={`/offertes/${offerte.id}`}
+                          to={`/offertes/${offerte.id}/bewerken`}
                           className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                         >
                           {offerte.nummer}
                         </Link>
                       </td>
                       <td className="px-4 py-3">
-                        <Link to={`/offertes/${offerte.id}`} className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                        <Link to={`/offertes/${offerte.id}/bewerken`} className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                           {offerte.klant_naam || 'Onbekende klant'}
                         </Link>
                       </td>
                       <td className="px-4 py-3 max-w-[200px]">
-                        <Link to={`/offertes/${offerte.id}`} className="text-sm text-gray-700 dark:text-gray-300 truncate block hover:text-gray-900 dark:hover:text-white transition-colors">
+                        <Link to={`/offertes/${offerte.id}/bewerken`} className="text-sm text-gray-700 dark:text-gray-300 truncate block hover:text-gray-900 dark:hover:text-white transition-colors">
                           {offerte.titel}
                         </Link>
                       </td>
