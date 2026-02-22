@@ -72,14 +72,14 @@ export function ProjectsList() {
   const prioriteitFilter = searchParams.get('prioriteit') || 'alle'
   const klantFilter = searchParams.get('klant') || 'alle'
   const weergave = (searchParams.get('view') || 'grid') as 'grid' | 'list' | 'tijdlijn'
-  const sortField = (searchParams.get('sort') || 'eind_datum') as 'naam' | 'voortgang' | 'eind_datum'
-  const sortDir = (searchParams.get('dir') || 'asc') as 'asc' | 'desc'
+  const sortField = (searchParams.get('sort') || 'created_at') as 'naam' | 'voortgang' | 'eind_datum' | 'created_at'
+  const sortDir = (searchParams.get('dir') || 'desc') as 'asc' | 'desc'
   const currentPage = parseInt(searchParams.get('page') || '1', 10)
 
   // Helpers to update URL params without losing other params
   const updateParam = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams)
-    if (value === 'alle' || value === '' || value === 'grid' || (key === 'sort' && value === 'eind_datum') || (key === 'dir' && value === 'asc') || (key === 'page' && value === '1')) {
+    if (value === 'alle' || value === '' || value === 'grid' || (key === 'sort' && value === 'created_at') || (key === 'dir' && value === 'desc') || (key === 'page' && value === '1')) {
       next.delete(key)
     } else {
       next.set(key, value)
@@ -175,6 +175,9 @@ export function ProjectsList() {
           break
         case 'eind_datum':
           cmp = new Date(a.eind_datum).getTime() - new Date(b.eind_datum).getTime()
+          break
+        case 'created_at':
+          cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           break
       }
       return sortDir === 'asc' ? cmp : -cmp
@@ -513,6 +516,7 @@ export function ProjectsList() {
           <ArrowUpDown className="w-3 h-3" />
           <span>Sorteer:</span>
           {([
+            { field: 'created_at' as const, label: 'Nieuwste' },
             { field: 'naam' as const, label: 'Naam' },
             { field: 'voortgang' as const, label: 'Voortgang' },
             { field: 'eind_datum' as const, label: 'Datum' },
