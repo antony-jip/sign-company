@@ -198,16 +198,22 @@ export function QuoteCreation() {
   const winstExBtw = round2(subtotaal - totaalInkoop)
   const margePercentage = subtotaal > 0 ? Math.round(((winstExBtw / subtotaal) * 100) * 10) / 10 : 0
 
-  // Montage-uren: som van alle calculatie_regels met eenheid 'uur'
-  const totaalMontageUren = useMemo(() => {
-    return prijsItems.reduce((sum, item) => {
+  // Montage: som van alle calculatie_regels waarvan product_naam 'montage' bevat
+  const montageInfo = useMemo(() => {
+    let totaal = 0
+    let eenheid = ''
+    prijsItems.forEach(item => {
       if (item.calculatie_regels && item.calculatie_regels.length > 0) {
-        return sum + item.calculatie_regels
-          .filter(r => r.eenheid === 'uur')
-          .reduce((s, r) => s + r.aantal, 0)
+        const montageRegels = item.calculatie_regels.filter(r =>
+          r.product_naam.toLowerCase().includes('montage')
+        )
+        montageRegels.forEach(r => {
+          totaal += r.aantal
+          if (!eenheid && r.eenheid) eenheid = r.eenheid
+        })
       }
-      return sum
-    }, 0)
+    })
+    return { totaal, eenheid: eenheid || 'stuks' }
   }, [prijsItems])
 
   // ── Data fetching ──
@@ -1110,7 +1116,7 @@ export function QuoteCreation() {
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Montage</p>
                   <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                    {totaalMontageUren > 0 ? `${totaalMontageUren} uur` : '—'}
+                    {montageInfo.totaal > 0 ? `${montageInfo.totaal} ${montageInfo.eenheid}` : '—'}
                   </p>
                 </div>
               </div>
