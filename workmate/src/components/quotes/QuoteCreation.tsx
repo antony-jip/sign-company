@@ -76,6 +76,42 @@ const DEFAULT_INLEIDING = `Hierbij ontvangt u onze offerte voor de door u gevraa
 
 const DEFAULT_AFSLUITING = `Wij vertrouwen erop u hiermee een passend aanbod te hebben gedaan. Mocht u vragen hebben of de offerte willen bespreken, neem dan gerust contact met ons op.\n\nMet vriendelijke groet,`
 
+const BUILTIN_VOORWAARDEN: { naam: string; tekst: string }[] = [
+  {
+    naam: 'Standaard',
+    tekst: `1. Deze offerte is geldig gedurende de aangegeven termijn.
+2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
+3. Alle genoemde bedragen zijn exclusief BTW, tenzij anders vermeld.
+4. Levertijd wordt in overleg bepaald na akkoord op deze offerte.
+5. Op al onze leveringen en diensten zijn onze algemene voorwaarden van toepassing.
+6. Kleuren en materialen kunnen licht afwijken van getoonde voorbeelden.
+7. Wijzigingen na akkoord kunnen tot meerkosten leiden.
+8. Garantie: 2 jaar op materiaal en constructie, 1 jaar op elektronica.`,
+  },
+  {
+    naam: 'Kort',
+    tekst: `1. Offerte geldig gedurende aangegeven termijn.
+2. Betaling binnen 30 dagen na factuurdatum.
+3. Alle bedragen excl. BTW.
+4. Algemene voorwaarden van toepassing.`,
+  },
+  {
+    naam: 'Uitgebreid',
+    tekst: `1. Deze offerte is geldig gedurende de aangegeven termijn.
+2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
+3. Alle genoemde bedragen zijn exclusief BTW, tenzij anders vermeld.
+4. Levertijd wordt in overleg bepaald na akkoord op deze offerte.
+5. Op al onze leveringen en diensten zijn onze algemene voorwaarden van toepassing.
+6. Kleuren en materialen kunnen licht afwijken van getoonde voorbeelden.
+7. Wijzigingen na akkoord kunnen tot meerkosten leiden.
+8. Garantie: 2 jaar op materiaal en constructie, 1 jaar op elektronica.
+9. Eigendomsvoorbehoud: geleverde zaken blijven ons eigendom tot volledige betaling.
+10. Annulering na akkoord: reeds gemaakte kosten worden in rekening gebracht.
+11. Intellectueel eigendom: ontwerpen blijven eigendom van opdrachtnemer tot volledige betaling.
+12. Overmacht: bij onvoorziene omstandigheden behouden wij ons het recht voor de levertijd aan te passen.`,
+  },
+]
+
 const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
 const steps = [
@@ -102,7 +138,7 @@ export function QuoteCreation() {
   const [searchParams] = useSearchParams()
   const { id: editId } = useParams<{ id: string }>()
   const { user } = useAuth()
-  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
+  const { settings, updateSettings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [currentStep, setCurrentStep] = useState(0)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -111,6 +147,8 @@ export function QuoteCreation() {
   const [isSaving, setIsSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showSaveTemplateInput, setShowSaveTemplateInput] = useState(false)
+  const [templateNaam, setTemplateNaam] = useState('')
 
   // Edit/duplicate mode
   const isDuplicate = searchParams.get('duplicate') === 'true'
@@ -397,6 +435,58 @@ export function QuoteCreation() {
   const handleRemoveItem = (id: string) => {
     setItems(items.filter((item) => item.id !== id))
     markDirty()
+  }
+
+  const handleDuplicateItem = (id: string) => {
+    const source = items.find((item) => item.id === id)
+    if (!source) return
+    const newItem: QuoteLineItem = {
+      ...source,
+      id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      beschrijving: `${source.beschrijving} (kopie)`,
+      detail_regels: source.detail_regels?.map((r, i) => ({
+        ...r,
+        id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+      })),
+      calculatie_regels: source.calculatie_regels?.map(r => ({
+        ...r,
+        id: `cr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      })),
+    }
+    const idx = items.findIndex((item) => item.id === id)
+    const newItems = [...items]
+    newItems.splice(idx + 1, 0, newItem)
+    setItems(newItems)
+    markDirty()
+    toast.success('Item gedupliceerd')
+  }
+
+  // ── Voorwaarden templates ──
+  const customTemplates = settings.voorwaarden_templates || []
+  const allVoorwaardenTemplates = [...BUILTIN_VOORWAARDEN, ...customTemplates]
+
+  const handleSaveVoorwaardenTemplate = async () => {
+    if (!templateNaam.trim()) return
+    const newTemplate = { naam: templateNaam.trim(), tekst: voorwaarden }
+    const updated = [...customTemplates, newTemplate]
+    try {
+      await updateSettings({ voorwaarden_templates: updated })
+      toast.success(`Template "${templateNaam}" opgeslagen`)
+      setShowSaveTemplateInput(false)
+      setTemplateNaam('')
+    } catch {
+      toast.error('Kon template niet opslaan')
+    }
+  }
+
+  const handleDeleteVoorwaardenTemplate = async (naam: string) => {
+    const updated = customTemplates.filter(t => t.naam !== naam)
+    try {
+      await updateSettings({ voorwaarden_templates: updated })
+      toast.success('Template verwijderd')
+    } catch {
+      toast.error('Kon template niet verwijderen')
+    }
   }
 
   const handleUpdateItemWithCalculatie = (
@@ -1005,6 +1095,7 @@ export function QuoteCreation() {
                 onAddItem={handleAddItem}
                 onUpdateItem={handleUpdateItem}
                 onRemoveItem={handleRemoveItem}
+                onDuplicateItem={handleDuplicateItem}
                 onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
               />
             </div>
@@ -1075,10 +1166,64 @@ export function QuoteCreation() {
                 </div>
               </div>
               <div className="rounded-xl border bg-card overflow-hidden">
-                <div className="px-4 py-3 border-b bg-muted/30">
+                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Voorwaarden</h3>
+                  <Select
+                    value=""
+                    onValueChange={(val) => {
+                      if (val === '__save__') {
+                        setShowSaveTemplateInput(true)
+                        return
+                      }
+                      if (val.startsWith('__delete__:')) {
+                        handleDeleteVoorwaardenTemplate(val.replace('__delete__:', ''))
+                        return
+                      }
+                      const tmpl = allVoorwaardenTemplates.find(t => t.naam === val)
+                      if (tmpl) {
+                        setVoorwaarden(tmpl.tekst)
+                        markDirty()
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs border-dashed">
+                      <SelectValue placeholder="Template laden..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allVoorwaardenTemplates.map((tmpl, i) => (
+                        <SelectItem key={`${tmpl.naam}-${i}`} value={tmpl.naam} className="text-xs">
+                          {tmpl.naam}
+                          {i >= BUILTIN_VOORWAARDEN.length && (
+                            <span className="ml-1 text-muted-foreground">(eigen)</span>
+                          )}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="__save__" className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                        + Huidige opslaan als template
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="p-4">
+                <div className="p-4 space-y-2">
+                  {showSaveTemplateInput && (
+                    <div className="flex gap-2">
+                      <Input
+                        value={templateNaam}
+                        onChange={(e) => setTemplateNaam(e.target.value)}
+                        placeholder="Template naam..."
+                        className="text-xs h-8 flex-1"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVoorwaardenTemplate(); if (e.key === 'Escape') setShowSaveTemplateInput(false) }}
+                      />
+                      <Button size="sm" className="h-8 text-xs px-3" onClick={handleSaveVoorwaardenTemplate} disabled={!templateNaam.trim()}>
+                        <Save className="h-3 w-3 mr-1" />
+                        Opslaan
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 text-xs px-2" onClick={() => setShowSaveTemplateInput(false)}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                   <Textarea
                     value={voorwaarden}
                     onChange={(e) => { setVoorwaarden(e.target.value); markDirty() }}

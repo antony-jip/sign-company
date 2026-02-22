@@ -349,6 +349,8 @@ export interface AppSettings {
   // Offerte regel velden - welke tekstvelden wil je per offerte-item?
   // Bijv. ["Materiaal", "Lay-out", "Montage", "Opmerking"]
   offerte_regel_velden: string[];
+  // Voorwaarden templates
+  voorwaarden_templates?: { naam: string; tekst: string }[];
   // KvK integratie
   kvk_api_key?: string;
   kvk_api_enabled?: boolean;
