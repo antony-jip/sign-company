@@ -80,11 +80,17 @@ export async function getEmailDetail(messageId: string): Promise<Email | null> {
   return data
 }
 
+export interface EmailAttachment {
+  filename: string
+  content: string // base64 encoded
+  contentType: string
+}
+
 export async function sendEmail(
   to: string,
   subject: string,
   body: string,
-  options?: { cc?: string; html?: string; scheduledAt?: string }
+  options?: { cc?: string; html?: string; scheduledAt?: string; attachments?: EmailAttachment[] }
 ): Promise<{ success: boolean; message: string }> {
   const token = await getAuthToken()
 
@@ -101,6 +107,7 @@ export async function sendEmail(
       cc: options?.cc,
       html: options?.html,
       scheduledAt: options?.scheduledAt,
+      attachments: options?.attachments,
     }),
   })
 

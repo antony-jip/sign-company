@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject, createProject } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
+import { sendEmail, type EmailAttachment } from '@/services/gmailService'
+import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
-import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight } from 'lucide-react'
+import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Send, Paperclip, X, FileText, Mail, Loader2 } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import { logger } from '../../utils/logger'
 
@@ -236,6 +242,176 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     }
   }
 
+  // ── Email Composer State ──
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [emailTo, setEmailTo] = useState('')
+  const [emailCc, setEmailCc] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [emailAttachments, setEmailAttachments] = useState<File[]>([])
+  const [attachPdf, setAttachPdf] = useState(true)
+  const [isSending, setIsSending] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Open email composer met pre-filled data
+  const handleOpenEmailComposer = useCallback(() => {
+    if (!fetchedOfferte || !fetchedKlant) return
+
+    // Pre-fill email adres
+    setEmailTo(fetchedKlant.email || '')
+
+    // Pre-fill subject en body vanuit template
+    const totaalFormatted = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(
+      fetchedItems.reduce((sum, item) => {
+        const bruto = item.aantal * item.eenheidsprijs
+        const netto = bruto - bruto * (item.korting_percentage / 100)
+        const btw = netto * (item.btw_percentage / 100)
+        return sum + netto + btw
+      }, 0)
+    )
+
+    const { subject, text } = offerteVerzendTemplate({
+      klantNaam: fetchedKlant.contactpersoon || fetchedKlant.bedrijfsnaam,
+      offerteNummer: fetchedOfferte.nummer,
+      offerteTitel: fetchedOfferte.titel,
+      totaalBedrag: totaalFormatted,
+      geldigTot: formatDate(fetchedOfferte.geldig_tot),
+      bedrijfsnaam: bedrijfsnaam || undefined,
+      primaireKleur: primaireKleur || undefined,
+    })
+
+    setEmailSubject(subject)
+    setEmailBody(text)
+    setEmailCc('')
+    setEmailAttachments([])
+    setAttachPdf(true)
+    setEmailOpen(true)
+  }, [fetchedOfferte, fetchedKlant, fetchedItems, bedrijfsnaam, primaireKleur])
+
+  // File bijlagen toevoegen
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setEmailAttachments(prev => [...prev, ...Array.from(e.target.files!)])
+    }
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [])
+
+  const removeAttachment = useCallback((index: number) => {
+    setEmailAttachments(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
+  // File to base64
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        // Strip data URL prefix
+        resolve(result.split(',')[1] || result)
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Verzend email
+  const handleSendEmail = useCallback(async () => {
+    if (!emailTo.trim()) {
+      toast.error('Vul een e-mailadres in')
+      return
+    }
+    if (!fetchedOfferte) return
+
+    setIsSending(true)
+    try {
+      // Bouw attachments lijst
+      const attachments: EmailAttachment[] = []
+
+      // Auto-attach PDF
+      if (attachPdf && fetchedItems.length > 0) {
+        try {
+          const doc = generateOffertePDF(
+            fetchedOfferte,
+            fetchedItems,
+            fetchedKlant || {},
+            {
+              bedrijfsnaam: bedrijfsnaam || 'Uw Bedrijf',
+              bedrijfs_adres: bedrijfsAdres || '',
+              kvk_nummer: kvkNummer || '',
+              btw_nummer: btwNummer || '',
+              primaireKleur: primaireKleur || '#2563eb',
+            },
+            documentStyle
+          )
+          const pdfBase64 = doc.output('datauristring').split(',')[1]
+          attachments.push({
+            filename: `${fetchedOfferte.nummer}.pdf`,
+            content: pdfBase64,
+            contentType: 'application/pdf',
+          })
+        } catch (pdfErr) {
+          logger.error('PDF generatie voor bijlage mislukt:', pdfErr)
+        }
+      }
+
+      // Handmatige bijlagen
+      for (const file of emailAttachments) {
+        const content = await fileToBase64(file)
+        attachments.push({
+          filename: file.name,
+          content,
+          contentType: file.type || 'application/octet-stream',
+        })
+      }
+
+      // HTML versie genereren vanuit template
+      const totaalFormatted = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(
+        fetchedItems.reduce((sum, item) => {
+          const bruto = item.aantal * item.eenheidsprijs
+          const netto = bruto - bruto * (item.korting_percentage / 100)
+          const btw = netto * (item.btw_percentage / 100)
+          return sum + netto + btw
+        }, 0)
+      )
+      const { html } = offerteVerzendTemplate({
+        klantNaam: fetchedKlant?.contactpersoon || fetchedKlant?.bedrijfsnaam || '',
+        offerteNummer: fetchedOfferte.nummer,
+        offerteTitel: fetchedOfferte.titel,
+        totaalBedrag: totaalFormatted,
+        geldigTot: formatDate(fetchedOfferte.geldig_tot),
+        bedrijfsnaam: bedrijfsnaam || undefined,
+        primaireKleur: primaireKleur || undefined,
+      })
+
+      await sendEmail(emailTo, emailSubject, emailBody, {
+        cc: emailCc || undefined,
+        html,
+        attachments: attachments.length > 0 ? attachments : undefined,
+      })
+
+      // Update status naar 'verzonden'
+      if (fetchedOfferte.status === 'concept') {
+        const updated = await updateOfferte(fetchedOfferte.id, { status: 'verzonden' })
+        setFetchedOfferte(updated)
+      }
+
+      toast.success('Offerte verzonden naar ' + emailTo)
+      setEmailOpen(false)
+    } catch (err) {
+      logger.error('Email verzenden mislukt:', err)
+      toast.error('Kon email niet verzenden')
+    } finally {
+      setIsSending(false)
+    }
+  }, [emailTo, emailCc, emailSubject, emailBody, emailAttachments, attachPdf, fetchedOfferte, fetchedKlant, fetchedItems, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, documentStyle])
+
+  function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
   // Loading state
   if (isLoading) {
     return (
@@ -408,6 +584,15 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               </svg>
               Download PDF
             </button>
+            {fetchedKlant && (
+              <button
+                onClick={handleOpenEmailComposer}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white text-sm font-medium rounded-lg transition-all shadow-md"
+              >
+                <Send className="h-4 w-4" />
+                Verzenden naar klant
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -638,6 +823,171 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           </div>
         </div>
       </div>
+
+      {/* ── Email Composer Panel ─────────────────────────────────── */}
+      {emailOpen && fetchedOfferte && (
+        <div className="mt-6 bg-white dark:bg-gray-900 shadow-xl rounded-lg border border-primary/30 dark:border-primary/20 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-accent/10 to-primary/10 dark:from-accent/20 dark:to-primary/20 border-b border-primary/20">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                <Mail className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Offerte verzenden per e-mail</h3>
+                <p className="text-xs text-muted-foreground">Pas de email aan en voeg bijlagen toe</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setEmailOpen(false)}
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-4">
+            {/* Aan / CC */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Aan</Label>
+                <Input
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                  placeholder="email@klant.nl"
+                  type="email"
+                  className="text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">CC <span className="text-muted-foreground font-normal">(optioneel)</span></Label>
+                <Input
+                  value={emailCc}
+                  onChange={(e) => setEmailCc(e.target.value)}
+                  placeholder="cc@bedrijf.nl"
+                  type="email"
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Onderwerp */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Onderwerp</Label>
+              <Input
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                className="text-sm"
+              />
+            </div>
+
+            {/* Bericht */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Bericht</Label>
+              <Textarea
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                rows={8}
+                className="text-sm font-mono"
+              />
+            </div>
+
+            {/* Bijlagen sectie */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium">Bijlagen</Label>
+                <div className="flex items-center gap-3">
+                  {/* Auto-attach PDF toggle */}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={attachPdf}
+                      onChange={(e) => setAttachPdf(e.target.checked)}
+                      className="rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <span className="text-xs text-muted-foreground">Offerte PDF meesturen</span>
+                  </label>
+
+                  {/* File picker */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-xs gap-1.5"
+                  >
+                    <Paperclip className="h-3.5 w-3.5" />
+                    Bestand toevoegen
+                  </Button>
+                </div>
+              </div>
+
+              {/* Bijlagen lijst */}
+              <div className="flex flex-wrap gap-2">
+                {attachPdf && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 text-xs">
+                    <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    <span className="font-medium text-blue-700 dark:text-blue-300">{fetchedOfferte.nummer}.pdf</span>
+                    <span className="text-blue-500 dark:text-blue-400">(auto)</span>
+                  </div>
+                )}
+                {emailAttachments.map((file, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs"
+                  >
+                    <Paperclip className="h-3.5 w-3.5 text-gray-500" />
+                    <span className="font-medium text-foreground">{file.name}</span>
+                    <span className="text-muted-foreground">{formatFileSize(file.size)}</span>
+                    <button
+                      onClick={() => removeAttachment(idx)}
+                      className="text-gray-400 hover:text-red-500 transition-colors ml-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Acties */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+              <p className="text-xs text-muted-foreground">
+                {fetchedOfferte.status === 'concept' && 'Status wordt automatisch gewijzigd naar "Verzonden"'}
+              </p>
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="sm" onClick={() => setEmailOpen(false)} className="text-xs">
+                  Annuleren
+                </Button>
+                <Button
+                  onClick={handleSendEmail}
+                  disabled={isSending || !emailTo.trim()}
+                  className="bg-gradient-to-r from-accent to-primary border-0 text-xs gap-2 px-5"
+                  size="sm"
+                >
+                  {isSending ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Verzenden...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3.5 w-3.5" />
+                      Verzenden
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
