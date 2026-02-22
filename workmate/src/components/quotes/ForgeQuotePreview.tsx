@@ -131,13 +131,39 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       setFetchedOfferte(updated)
       toast.success(`Status bijgewerkt naar "${newStatus}"`)
 
-      // Auto-activate project when quote is approved
-      if (newStatus === 'goedgekeurd' && fetchedOfferte.project_id) {
+      // Auto-activate or create project when quote is approved
+      if (newStatus === 'goedgekeurd') {
         try {
-          const project = await getProject(fetchedOfferte.project_id)
-          if (project && project.status === 'gepland') {
-            await updateProject(project.id, { status: 'actief' })
-            toast.success(`Project "${project.naam}" is nu actief`)
+          if (fetchedOfferte.project_id) {
+            // Activate existing project
+            const project = await getProject(fetchedOfferte.project_id)
+            if (project && project.status === 'gepland') {
+              await updateProject(project.id, { status: 'actief' })
+              toast.success(`Project "${project.naam}" is nu actief`)
+            }
+          } else {
+            // Auto-create project from approved quote
+            const project = await createProject({
+              user_id: fetchedOfferte.user_id,
+              klant_id: fetchedOfferte.klant_id,
+              naam: fetchedOfferte.titel,
+              beschrijving: `Aangemaakt vanuit offerte ${fetchedOfferte.nummer}`,
+              status: 'actief',
+              prioriteit: 'medium',
+              start_datum: new Date().toISOString().split('T')[0],
+              eind_datum: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+              budget: fetchedOfferte.totaal || 0,
+              besteed: 0,
+              voortgang: 0,
+              team_leden: [],
+              bron_offerte_id: fetchedOfferte.id,
+            })
+            const updatedWithProject = await updateOfferte(fetchedOfferte.id, {
+              project_id: project.id,
+              geconverteerd_naar_project_id: project.id,
+            })
+            setFetchedOfferte(updatedWithProject)
+            toast.success(`Project "${project.naam}" automatisch aangemaakt`)
           }
         } catch {
           // Non-critical: don't block the status update
@@ -334,26 +360,41 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               </div>
             )}
 
-            {/* Maak Project button - voor goedgekeurde offertes zonder project */}
-            {fetchedOfferte.status === 'goedgekeurd' && !fetchedOfferte.project_id && (
-              <button
-                onClick={handleMaakProject}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent/90 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-              >
-                <FolderPlus className="h-4 w-4" />
-                Maak Project
-              </button>
-            )}
-
-            {/* Factureer button - only for goedgekeurde offertes */}
+            {/* Pipeline acties voor goedgekeurde offertes */}
             {fetchedOfferte.status === 'goedgekeurd' && (
-              <button
-                onClick={() => navigate(`/facturen?convert_offerte=${fetchedOfferte.id}`)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-              >
-                <Receipt className="h-4 w-4" />
-                Factureer
-              </button>
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300 mr-1">Volgende stap:</span>
+                {fetchedOfferte.project_id ? (
+                  <button
+                    onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors"
+                  >
+                    <FolderPlus className="h-3.5 w-3.5" />
+                    Bekijk Project
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleMaakProject}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors"
+                  >
+                    <FolderPlus className="h-3.5 w-3.5" />
+                    Maak Project
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate(`/montage`)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-md transition-colors"
+                >
+                  Plan Montage
+                </button>
+                <button
+                  onClick={() => navigate(`/facturen?convert_offerte=${fetchedOfferte.id}`)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-md transition-colors"
+                >
+                  <Receipt className="h-3.5 w-3.5" />
+                  Factureer
+                </button>
+              </div>
             )}
             <button
               onClick={handleDownloadPDF}

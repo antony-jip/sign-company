@@ -20,8 +20,8 @@ function useServiceData<T>(fetcher: () => Promise<T[]>): UseDataResult<T> {
     try {
       const result = await fetcher()
       setData(result)
-    } catch (e: any) {
-      setError(e.message || 'Er is een fout opgetreden')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Er is een fout opgetreden')
     } finally {
       setIsLoading(false)
     }

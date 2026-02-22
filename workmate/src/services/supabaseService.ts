@@ -1,5 +1,6 @@
 import supabase, { isSupabaseConfigured } from './supabaseClient'
 import type {
+  Contactpersoon,
   Klant,
   Project,
   Taak,
@@ -77,7 +78,7 @@ function now(): string {
 
 // ============ KLANTEN ============
 
-function ensureContactpersonen(klant: any): Klant {
+function ensureContactpersonen(klant: Omit<Klant, 'contactpersonen'> & { contactpersonen?: Contactpersoon[] }): Klant {
   return { ...klant, contactpersonen: klant.contactpersonen || [] }
 }
 
@@ -171,7 +172,7 @@ export async function getProjecten(): Promise<Project[]> {
       .select('*, klanten(bedrijfsnaam)')
       .order('created_at', { ascending: false })
     if (error) throw error
-    return (data || []).map((p: any) => ({
+    return (data || []).map((p: Project & { klanten?: { bedrijfsnaam?: string } }) => ({
       ...p,
       klant_naam: p.klanten?.bedrijfsnaam || '',
     }))
@@ -376,7 +377,7 @@ export async function getOffertes(): Promise<Offerte[]> {
       .select('*, klanten(bedrijfsnaam)')
       .order('created_at', { ascending: false })
     if (error) throw error
-    return (data || []).map((o: any) => ({
+    return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
       ...o,
       klant_naam: o.klanten?.bedrijfsnaam || '',
     }))
@@ -416,7 +417,7 @@ export async function getOffertesByProject(projectId: string): Promise<Offerte[]
       .eq('project_id', projectId)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return (data || []).map((o: any) => ({
+    return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
       ...o,
       klant_naam: o.klanten?.bedrijfsnaam || '',
     }))

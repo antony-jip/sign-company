@@ -242,7 +242,7 @@ export function QuoteCreation() {
     setItems([...items, createEmptyItem()])
   }
 
-  const handleUpdateItem = (id: string, field: keyof QuoteLineItem, value: any) => {
+  const handleUpdateItem = (id: string, field: keyof QuoteLineItem, value: QuoteLineItem[keyof QuoteLineItem]) => {
     setItems(
       items.map((item) => {
         if (item.id !== id) return item

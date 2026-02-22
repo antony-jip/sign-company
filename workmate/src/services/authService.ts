@@ -59,7 +59,16 @@ export async function resetPassword(email: string) {
   if (error) throw error
 }
 
-export function onAuthStateChange(callback: (event: string, session: any) => void) {
+export interface AuthSession {
+  access_token: string
+  user?: {
+    id: string
+    email: string
+    user_metadata?: Record<string, string>
+  }
+}
+
+export function onAuthStateChange(callback: (event: string, session: AuthSession | null) => void) {
   if (!isSupabaseConfigured() || !supabase) {
     // Demo mode - check localStorage
     const user = localStorage.getItem('workmate_demo_user')

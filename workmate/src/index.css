@@ -107,6 +107,18 @@
 }
 
 /* ================================================================
+   RESPONSIVE TABLES — Hide secondary columns on mobile
+   ================================================================ */
+@layer utilities {
+  .col-mobile-hide {
+    @apply hidden sm:table-cell;
+  }
+  .col-tablet-hide {
+    @apply hidden md:table-cell;
+  }
+}
+
+/* ================================================================
    SCROLLBAR — Ultra-thin, elegant
    ================================================================ */
 ::-webkit-scrollbar { width: 4px; height: 4px; }

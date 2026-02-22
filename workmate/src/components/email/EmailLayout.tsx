@@ -682,9 +682,9 @@ export function EmailLayout() {
       const saved = await createEmail(newEmail)
       setEmails((prev) => [saved, ...prev])
       toast.success(isScheduled ? 'Email ingepland' : 'Email verzonden')
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Email verzenden mislukt:', err)
-      toast.error(err.message || 'Email kon niet worden verzonden')
+      toast.error(err instanceof Error ? err.message : 'Email kon niet worden verzonden')
     }
 
     setViewMode('idle')
@@ -738,7 +738,7 @@ export function EmailLayout() {
       })
       setKlanten((prev) => [...prev, newKlant])
       toast.success(`${data?.contactpersoon || email} toegevoegd aan klanten`)
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Klant aanmaken mislukt:', err)
       toast.error('Kon contact niet opslaan')
     }
@@ -763,7 +763,7 @@ export function EmailLayout() {
         geschatte_tijd: 0,
         bestede_tijd: 0,
       })
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Taak aanmaken mislukt:', err)
       toast.error('Kon taak niet aanmaken')
     }

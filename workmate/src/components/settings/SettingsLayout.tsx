@@ -2813,10 +2813,10 @@ function EmailSettingsDialog({
       setSuccess('E-mailinstellingen opgeslagen!')
       onSaved()
       setTimeout(() => onOpenChange(false), 800)
-    } catch (err: any) {
+    } catch (err: unknown) {
       // If Supabase save fails, local save already succeeded
       if (isSupabaseConfigured()) {
-        setError(`Server fout: ${err.message}. Instellingen zijn lokaal opgeslagen.`)
+        setError(`Server fout: ${err instanceof Error ? err.message : 'Onbekende fout'}. Instellingen zijn lokaal opgeslagen.`)
       } else {
         setSuccess('E-mailinstellingen lokaal opgeslagen (demo modus)')
         onSaved()

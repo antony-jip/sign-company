@@ -1408,20 +1408,20 @@ export function FacturenLayout() {
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/80">
                 <th className="w-1" />
                 {[
-                  { key: 'nummer', label: 'Nummer' },
-                  { key: 'klant', label: 'Klant' },
-                  { key: 'titel', label: 'Titel' },
-                  { key: 'factuurdatum', label: 'Datum' },
-                  { key: 'vervaldatum', label: 'Vervaldatum' },
-                  { key: 'bedrag', label: 'Bedrag' },
-                  { key: 'status', label: 'Status' },
-                  { key: 'verlopen', label: 'Verlopen' },
-                  { key: 'bekeken', label: 'Online' },
-                  { key: 'acties', label: '' },
+                  { key: 'nummer', label: 'Nummer', hide: '' },
+                  { key: 'klant', label: 'Klant', hide: '' },
+                  { key: 'titel', label: 'Titel', hide: 'hidden md:table-cell' },
+                  { key: 'factuurdatum', label: 'Datum', hide: 'hidden sm:table-cell' },
+                  { key: 'vervaldatum', label: 'Vervaldatum', hide: 'hidden lg:table-cell' },
+                  { key: 'bedrag', label: 'Bedrag', hide: '' },
+                  { key: 'status', label: 'Status', hide: '' },
+                  { key: 'verlopen', label: 'Verlopen', hide: 'hidden lg:table-cell' },
+                  { key: 'bekeken', label: 'Online', hide: 'hidden lg:table-cell' },
+                  { key: 'acties', label: '', hide: 'hidden md:table-cell' },
                 ].map((col) => (
                   <th
                     key={col.key}
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    className={`px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider ${col.hide}`}
                   >
                     {col.label}
                   </th>
@@ -1484,17 +1484,17 @@ export function FacturenLayout() {
                         {factuur.klant_naam || 'Onbekende klant'}
                       </a>
                     </td>
-                    <td className="px-4 py-3 max-w-[220px]">
+                    <td className="px-4 py-3 max-w-[220px] hidden md:table-cell">
                       <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">
                         {factuur.titel}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden sm:table-cell">
                       <span className="text-sm text-gray-600 dark:text-gray-400">
                         {formatDate(factuur.factuurdatum)}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden lg:table-cell">
                       <div className="flex items-center gap-1.5">
                         <span
                           className={cn(
@@ -1526,7 +1526,7 @@ export function FacturenLayout() {
                         {isOverdue && ' (vervallen)'}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden lg:table-cell">
                       {isOverdue && (
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-medium text-red-600">{getDagenVerlopen(factuur)}d</span>
@@ -1539,7 +1539,7 @@ export function FacturenLayout() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden lg:table-cell">
                       {factuur.online_bekeken ? (
                         <div className="flex items-center gap-1.5" title={factuur.online_bekeken_op ? `Bekeken op ${new Date(factuur.online_bekeken_op).toLocaleString('nl-NL')}` : 'Online bekeken'}>
                           <Globe className="h-3.5 w-3.5 text-blue-500" />
@@ -1549,7 +1549,7 @@ export function FacturenLayout() {
                         <span className="text-xs text-gray-400">—</span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden md:table-cell">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button

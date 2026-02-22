@@ -37,7 +37,18 @@ const MUTATIE_TYPE_CONFIG: Record<VoorraadMutatie['type'], { label: string; icon
   retour: { label: 'Retour', icon: Undo2, color: 'text-amber-600' },
 }
 
-const CATEGORIEEN = ['Plaat', 'Profiel', 'Vinyl', 'LED', 'Bevestiging', 'Verf', 'Elektrisch', 'Overig']
+const CATEGORIEEN = [
+  'Vinyl & Folie',
+  'Plaat & Dibond',
+  'Profiel & Montage',
+  'LED & Verlichting',
+  'Freesletters & 3D',
+  'Print & Laminaat',
+  'Bevestiging',
+  'Elektrisch',
+  'Verf & Coating',
+  'Overig',
+]
 
 // ============ COMPONENT ============
 

@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useMemo } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, FolderKanban, Users, FileText, Files,
-  Mail, Calendar, CalendarCheck, PiggyBank, Bot, Settings, ChevronLeft,
-  ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload,
-  PenTool, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
-  ClipboardCheck, Truck, CreditCard, ShoppingCart, PackageCheck, Warehouse,
-  Briefcase, UserPlus, TrendingUp,
+  LayoutDashboard, FolderKanban, Users, FileText,
+  Mail, Calendar, PiggyBank, Settings, ChevronLeft,
+  ChevronRight, LogOut, Menu, X, CheckSquare,
+  PenTool, Receipt, BarChart3, Clock, Wrench, UsersRound,
+  ClipboardCheck, Truck, ShoppingCart, Warehouse,
+  Briefcase, UserPlus,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -34,18 +34,21 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    section: 'Werk',
+    section: 'Verkoop',
     items: [
-      { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
-      { label: 'Taken', icon: CheckSquare, path: '/taken' },
       { label: 'Klanten', icon: Users, path: '/klanten' },
       { label: 'Deals', icon: Briefcase, path: '/deals' },
       { label: 'Offertes', icon: FileText, path: '/offertes' },
       { label: 'Facturen', icon: Receipt, path: '/facturen' },
+    ],
+  },
+  {
+    section: 'Productie',
+    items: [
+      { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
+      { label: 'Taken', icon: CheckSquare, path: '/taken' },
+      { label: 'Montage', icon: Wrench, path: '/montage' },
       { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
-      { label: 'Bestelbonnen', icon: ShoppingCart, path: '/bestelbonnen' },
-      { label: 'Leveringsbonnen', icon: PackageCheck, path: '/leveringsbonnen' },
-      { label: 'Documenten', icon: Files, path: '/documenten' },
     ],
   },
   {
@@ -53,7 +56,6 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Planning', icon: Calendar, path: '/kalender' },
       { label: 'Tijdregistratie', icon: Clock, path: '/tijdregistratie' },
-      { label: 'Booking', icon: CalendarCheck, path: '/booking' },
     ],
   },
   {
@@ -61,22 +63,17 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
       { label: 'Lead Capture', icon: UserPlus, path: '/leads' },
-      { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
     ],
   },
   {
     section: 'Beheer',
     items: [
-      { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
-      { label: 'Uitgaven', icon: CreditCard, path: '/uitgaven' },
-      { label: 'Leveranciers', icon: Truck, path: '/leveranciers' },
       { label: 'Voorraad', icon: Warehouse, path: '/voorraad' },
-      { label: 'Forecast', icon: TrendingUp, path: '/forecast' },
+      { label: 'Bestelbonnen', icon: ShoppingCart, path: '/bestelbonnen' },
+      { label: 'Leveranciers', icon: Truck, path: '/leveranciers' },
+      { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
       { label: 'Rapportages', icon: BarChart3, path: '/rapportages' },
-      { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
       { label: 'Team', icon: UsersRound, path: '/team' },
-      { label: 'Importeren', icon: Upload, path: '/importeren' },
-      { label: 'AI Assistent', icon: Bot, path: '/ai' },
       { label: 'Instellingen', icon: Settings, path: '/instellingen' },
     ],
   },
@@ -93,9 +90,9 @@ export function Sidebar() {
     const sidebarItems = settings.sidebar_items
     // Als sidebar_items niet is ingesteld of leeg is, toon alles
     if (!sidebarItems || sidebarItems.length === 0) return navSections
-    // Migratie: 'Kalender' → 'Planning', 'Montage' → 'Planning'
+    // Migratie: 'Kalender' → 'Planning'
     const normalized = sidebarItems.map((s: string) =>
-      s === 'Kalender' || s === 'Montage' ? 'Planning' : s
+      s === 'Kalender' ? 'Planning' : s
     )
     return navSections
       .map((section) => ({

@@ -54,12 +54,18 @@ export async function deleteFile(path: string): Promise<void> {
   if (error) throw error
 }
 
-export async function listFiles(folder: string): Promise<any[]> {
+interface StorageFile {
+  name: string
+  id: string
+  metadata?: { size?: number; mimetype?: string }
+}
+
+export async function listFiles(folder: string): Promise<StorageFile[]> {
   if (!isSupabaseConfigured() || !supabase) {
-    const stored = JSON.parse(localStorage.getItem('workmate_files') || '{}')
+    const stored = JSON.parse(localStorage.getItem('workmate_files') || '{}') as Record<string, { name: string; size: number; type: string }>
     return Object.entries(stored)
       .filter(([key]) => key.startsWith(folder))
-      .map(([key, val]: [string, any]) => ({ name: val.name, id: key, metadata: { size: val.size, mimetype: val.type } }))
+      .map(([key, val]) => ({ name: val.name, id: key, metadata: { size: val.size, mimetype: val.type } }))
   }
   const { data, error } = await supabase.storage.from(BUCKET).list(folder)
   if (error) throw error

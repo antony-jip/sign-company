@@ -74,8 +74,8 @@ export function RegisterPage() {
       await register(email, password, { voornaam, achternaam })
       toast.success('Account succesvol aangemaakt')
       navigate('/')
-    } catch (error: any) {
-      toast.error(error?.message || 'Registreren mislukt. Probeer opnieuw.')
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Registreren mislukt. Probeer opnieuw.')
     } finally {
       setIsLoading(false)
     }

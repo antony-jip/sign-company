@@ -12,9 +12,10 @@ import {
   Loader2,
   ArrowRight,
   MapPin,
+  Wrench,
 } from 'lucide-react'
-import { getTaken, getProjecten, getEvents } from '@/services/supabaseService'
-import type { Taak, Project, CalendarEvent } from '@/types'
+import { getTaken, getProjecten, getEvents, getMontageAfspraken } from '@/services/supabaseService'
+import type { Taak, Project, CalendarEvent, MontageAfspraak } from '@/types'
 import { getPriorityColor } from '@/lib/utils'
 import { format, isToday, isTomorrow, parseISO, isAfter, isBefore, addDays } from 'date-fns'
 import { nl } from 'date-fns/locale'
@@ -22,7 +23,7 @@ import { logger } from '../../utils/logger'
 
 interface TimelineItem {
   id: string
-  type: 'task' | 'event'
+  type: 'task' | 'event' | 'montage'
   title: string
   subtitle: string
   time?: string
@@ -38,16 +39,18 @@ export function TodayPlanningWidget() {
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [montages, setMontages] = useState<MontageAfspraak[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getTaken(), getProjecten(), getEvents()])
-      .then(([t, p, e]) => {
+    Promise.all([getTaken(), getProjecten(), getEvents(), getMontageAfspraken()])
+      .then(([t, p, e, m]) => {
         if (!cancelled) {
           setTaken(t)
           setProjecten(p)
           setEvents(e)
+          setMontages(m)
         }
       })
       .catch(logger.error)
@@ -115,16 +118,39 @@ export function TodayPlanningWidget() {
         }
       })
 
-    // Sort today: events by time first, then tasks by priority
+    // Add montage afspraken for today and tomorrow
+    montages
+      .filter((m) => m.status !== 'afgerond')
+      .forEach((montage) => {
+        const montageDate = new Date(montage.datum)
+        const item: TimelineItem = {
+          id: `montage-${montage.id}`,
+          type: 'montage',
+          title: montage.titel,
+          subtitle: montage.locatie ? `${montage.locatie}` : montage.klant_naam || '',
+          time: montage.start_tijd || undefined,
+          link: '/montage',
+          color: '#e27b40',
+          status: montage.status,
+        }
+
+        if (isToday(montageDate)) {
+          today.push(item)
+        } else if (isTomorrow(montageDate)) {
+          tomorrow.push(item)
+        }
+      })
+
+    // Sort today: timed items first (by time), then untimed by type
     today.sort((a, b) => {
-      if (a.type === 'event' && b.type === 'task') return -1
-      if (a.type === 'task' && b.type === 'event') return 1
       if (a.time && b.time) return a.time.localeCompare(b.time)
+      if (a.time && !b.time) return -1
+      if (!a.time && b.time) return 1
       return 0
     })
 
     return { todayItems: today, tomorrowItems: tomorrow, overdueTasks: overdue }
-  }, [taken, projecten, events])
+  }, [taken, projecten, events, montages])
 
   if (loading) {
     return (
@@ -234,7 +260,9 @@ function TimelineRow({
       }`}
     >
       {/* Left indicator */}
-      {item.type === 'event' ? (
+      {item.type === 'montage' ? (
+        <Wrench className="h-4 w-4 flex-shrink-0 text-primary" />
+      ) : item.type === 'event' ? (
         <div
           className="w-1.5 h-8 rounded-full flex-shrink-0"
           style={{ backgroundColor: item.color }}
@@ -258,7 +286,7 @@ function TimelineRow({
         </p>
         {item.subtitle && (
           <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
-            {item.type === 'event' && item.subtitle && <MapPin className="h-2.5 w-2.5" />}
+            {(item.type === 'event' || item.type === 'montage') && item.subtitle && <MapPin className="h-2.5 w-2.5" />}
             {item.subtitle}
           </p>
         )}

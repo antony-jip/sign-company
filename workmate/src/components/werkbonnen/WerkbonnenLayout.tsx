@@ -235,11 +235,11 @@ export function WerkbonnenLayout() {
                 <tr className="border-b bg-gray-50 dark:bg-gray-800/50">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Nummer</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Klant</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Project</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Datum</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Project</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell">Datum</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Bedrag</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Acties</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell">Bedrag</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Acties</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -250,17 +250,17 @@ export function WerkbonnenLayout() {
                       onClick={() => navigate(`/werkbonnen/${wb.id}`)}>
                       <td className="px-4 py-3 font-mono text-sm font-medium">{wb.werkbon_nummer}</td>
                       <td className="px-4 py-3 text-sm">{getKlantNaam(wb.klant_id)}</td>
-                      <td className="px-4 py-3 text-sm">{getProjectNaam(wb.project_id)}</td>
-                      <td className="px-4 py-3 text-sm">{new Date(wb.datum).toLocaleDateString('nl-NL')}</td>
+                      <td className="px-4 py-3 text-sm hidden md:table-cell">{getProjectNaam(wb.project_id)}</td>
+                      <td className="px-4 py-3 text-sm hidden sm:table-cell">{new Date(wb.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3">
                         <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', cfg.bg, cfg.color)}>
                           {cfg.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-right font-medium">
+                      <td className="px-4 py-3 text-sm text-right font-medium hidden sm:table-cell">
                         {formatCurrency(bedragen[wb.id] || 0)}
                       </td>
-                      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3 text-right hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-8 w-8"
                             onClick={() => navigate(`/werkbonnen/${wb.id}`)}>

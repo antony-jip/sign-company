@@ -94,7 +94,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
     }
   }, [open, offerteId, fetchData])
 
-  const handleUpdateItem = (index: number, field: keyof OfferteItem, value: any) => {
+  const handleUpdateItem = (index: number, field: keyof OfferteItem, value: string | number) => {
     setItems(prev => {
       const updated = [...prev]
       const item = { ...updated[index], [field]: value }

@@ -189,7 +189,7 @@ function AddContactForm({
 
   const availableTags = ['klant', 'prospect', 'leverancier', 'partner', 'particulier']
 
-  const update = useCallback((field: keyof AddCustomerData, value: any) => {
+  const update = useCallback((field: keyof AddCustomerData, value: string | string[] | boolean) => {
     setForm(prev => ({ ...prev, [field]: value }))
   }, [])
 

@@ -555,8 +555,8 @@ export function EmailCompose({
         setEditorEmpty(false)
       }
       toast.success('AI tekst gegenereerd')
-    } catch (err: any) {
-      toast.error(err.message || 'AI generatie mislukt')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'AI generatie mislukt')
     }
   }
 

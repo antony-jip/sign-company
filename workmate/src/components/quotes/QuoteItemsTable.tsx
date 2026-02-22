@@ -60,7 +60,7 @@ export interface QuoteLineItem {
 interface QuoteItemsTableProps {
   items: QuoteLineItem[]
   onAddItem: () => void
-  onUpdateItem: (id: string, field: keyof QuoteLineItem, value: any) => void
+  onUpdateItem: (id: string, field: keyof QuoteLineItem, value: QuoteLineItem[keyof QuoteLineItem]) => void
   onRemoveItem: (id: string) => void
   onUpdateItemWithCalculatie?: (
     id: string,

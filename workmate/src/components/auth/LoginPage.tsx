@@ -32,8 +32,8 @@ export function LoginPage() {
       await login(email, password)
       toast.success('Succesvol ingelogd')
       navigate('/')
-    } catch (error: any) {
-      toast.error(error?.message || 'Inloggen mislukt. Controleer je gegevens.')
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Inloggen mislukt. Controleer je gegevens.')
     } finally {
       setIsLoading(false)
     }
