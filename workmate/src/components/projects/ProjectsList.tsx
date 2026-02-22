@@ -120,12 +120,12 @@ export function ProjectsList() {
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [zoekterm, setZoekterm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('alle')
+  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set(['gepland', 'actief', 'in-review']))
   const [prioriteitFilter, setPrioriteitFilter] = useState('alle')
   const [klantFilter, setKlantFilter] = useState('alle')
   const [weergave, setWeergave] = useState<'grid' | 'list' | 'tijdlijn'>('grid')
-  const [sortField, setSortField] = useState<'naam' | 'voortgang' | 'eind_datum'>('eind_datum')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [sortField, setSortField] = useState<'naam' | 'voortgang' | 'eind_datum' | 'created_at' | 'updated_at'>('created_at')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   useEffect(() => {
     let cancelled = false
@@ -184,8 +184,8 @@ export function ProjectsList() {
       )
     }
 
-    if (statusFilter !== 'alle') {
-      result = result.filter((p) => p.status === statusFilter)
+    if (statusFilter.size > 0 && statusFilter.size < 5) {
+      result = result.filter((p) => statusFilter.has(p.status))
     }
 
     if (prioriteitFilter !== 'alle') {
@@ -209,6 +209,12 @@ export function ProjectsList() {
         case 'eind_datum':
           cmp = new Date(a.eind_datum).getTime() - new Date(b.eind_datum).getTime()
           break
+        case 'created_at':
+          cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          break
+        case 'updated_at':
+          cmp = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+          break
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
@@ -221,7 +227,8 @@ export function ProjectsList() {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
     } else {
       setSortField(field)
-      setSortDir('asc')
+      // Nieuwste/gewijzigd standaard aflopend, rest oplopend
+      setSortDir(field === 'created_at' || field === 'updated_at' ? 'desc' : 'asc')
     }
   }
 
@@ -450,20 +457,63 @@ export function ProjectsList() {
 
       {/* ── Filter pills + Sort ── */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        {/* Status pills */}
+        {/* Status quick presets */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          {statusOpties.map((optie) => {
-            const count = optie.value === 'alle'
-              ? projecten.length
-              : projecten.filter((p) => p.status === optie.value).length
+          <button
+            onClick={() => setStatusFilter(new Set(['gepland', 'actief', 'in-review']))}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+              statusFilter.size === 3 && statusFilter.has('gepland') && statusFilter.has('actief') && statusFilter.has('in-review') && !statusFilter.has('afgerond') && !statusFilter.has('on-hold')
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            )}
+          >
+            Open
+            <span className="ml-1.5 text-[10px] opacity-70">
+              {projecten.filter((p) => ['gepland', 'actief', 'in-review'].includes(p.status)).length}
+            </span>
+          </button>
+          <button
+            onClick={() => setStatusFilter(new Set(['gepland', 'actief', 'in-review', 'afgerond', 'on-hold']))}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+              statusFilter.size === 5
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            )}
+          >
+            Alle
+            <span className="ml-1.5 text-[10px] opacity-70">{projecten.length}</span>
+          </button>
+
+          <div className="h-4 w-px bg-border" />
+
+          {/* Individual status toggles */}
+          {statusOpties.filter((o) => o.value !== 'alle').map((optie) => {
+            const isActive = statusFilter.has(optie.value)
+            const count = projecten.filter((p) => p.status === optie.value).length
             return (
               <button
                 key={optie.value}
-                onClick={() => setStatusFilter(optie.value)}
+                onClick={() => {
+                  setStatusFilter((prev) => {
+                    const next = new Set(prev)
+                    if (next.has(optie.value)) {
+                      next.delete(optie.value)
+                    } else {
+                      next.add(optie.value)
+                    }
+                    return next
+                  })
+                }}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
-                  statusFilter === optie.value
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                  'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                  isActive
+                    ? optie.value === 'actief' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+                    : optie.value === 'afgerond' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                    : optie.value === 'on-hold' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
+                    : optie.value === 'in-review' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
@@ -536,9 +586,11 @@ export function ProjectsList() {
           <ArrowUpDown className="w-3 h-3" />
           <span>Sorteer:</span>
           {([
+            { field: 'created_at' as const, label: 'Nieuwste' },
+            { field: 'updated_at' as const, label: 'Gewijzigd' },
             { field: 'naam' as const, label: 'Naam' },
             { field: 'voortgang' as const, label: 'Voortgang' },
-            { field: 'eind_datum' as const, label: 'Datum' },
+            { field: 'eind_datum' as const, label: 'Deadline' },
           ]).map(({ field, label }) => (
             <button
               key={field}
