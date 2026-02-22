@@ -1,13 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Plus,
   Search,
   FolderKanban,
   TrendingUp,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
   Briefcase,
   ArrowUpRight,
   CalendarDays,
@@ -23,6 +20,7 @@ import {
   ChevronDown,
   MoreHorizontal,
   GanttChart,
+  CheckCircle2,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -47,85 +45,54 @@ import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
+import {
+  statusOpties,
+  statusLabels,
+  statusIcons,
+  prioriteitOpties,
+  getStatusBorderColor,
+  getStatusCellBg,
+  getStatusDotColor,
+  ganttStatusKleuren,
+} from '@/constants/projectConstants'
 
-const statusOpties = [
-  { value: 'alle', label: 'Alle statussen' },
-  { value: 'gepland', label: 'Gepland' },
-  { value: 'actief', label: 'Actief' },
-  { value: 'in-review', label: 'In review' },
-  { value: 'afgerond', label: 'Afgerond' },
-  { value: 'on-hold', label: 'On-hold' },
-]
-
-const prioriteitOpties = [
-  { value: 'alle', label: 'Alle prioriteiten' },
-  { value: 'laag', label: 'Laag' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'hoog', label: 'Hoog' },
-  { value: 'kritiek', label: 'Kritiek' },
-]
-
-const statusLabels: Record<string, string> = {
-  gepland: 'Gepland',
-  actief: 'Actief',
-  'in-review': 'In review',
-  afgerond: 'Afgerond',
-  'on-hold': 'On-hold',
-}
-
-const statusIcons: Record<string, React.ReactNode> = {
-  gepland: <Clock className="h-3 w-3" />,
-  actief: <TrendingUp className="h-3 w-3" />,
-  'in-review': <BarChart3 className="h-3 w-3" />,
-  afgerond: <CheckCircle2 className="h-3 w-3" />,
-  'on-hold': <AlertTriangle className="h-3 w-3" />,
-}
-
-function getStatusBorderColor(status: string): string {
-  switch (status) {
-    case 'actief': return 'border-l-green-500'
-    case 'gepland': return 'border-l-primary'
-    case 'in-review': return 'border-l-amber-500'
-    case 'afgerond': return 'border-l-emerald-500'
-    case 'on-hold': return 'border-l-red-500'
-    default: return 'border-l-gray-400'
-  }
-}
-
-function getStatusCellBg(status: string): string {
-  switch (status) {
-    case 'actief': return 'bg-green-50 dark:bg-green-950/30'
-    case 'gepland': return 'bg-blue-50 dark:bg-blue-950/30'
-    case 'in-review': return 'bg-amber-50 dark:bg-amber-950/30'
-    case 'afgerond': return 'bg-emerald-50 dark:bg-emerald-950/30'
-    case 'on-hold': return 'bg-red-50 dark:bg-red-950/30'
-    default: return 'bg-gray-50 dark:bg-gray-800/30'
-  }
-}
-
-function getStatusDotColor(status: string): string {
-  switch (status) {
-    case 'actief': return 'bg-green-500'
-    case 'gepland': return 'bg-primary'
-    case 'in-review': return 'bg-amber-500'
-    case 'afgerond': return 'bg-emerald-500'
-    case 'on-hold': return 'bg-red-500'
-    default: return 'bg-gray-400'
-  }
-}
+const ITEMS_PER_PAGE = 20
 
 export function ProjectsList() {
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [projecten, setProjecten] = useState<Project[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [zoekterm, setZoekterm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('alle')
-  const [prioriteitFilter, setPrioriteitFilter] = useState('alle')
-  const [klantFilter, setKlantFilter] = useState('alle')
-  const [weergave, setWeergave] = useState<'grid' | 'list' | 'tijdlijn'>('grid')
-  const [sortField, setSortField] = useState<'naam' | 'voortgang' | 'eind_datum'>('eind_datum')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  // Read filters from URL params with fallback defaults
+  const zoekterm = searchParams.get('q') || ''
+  const statusFilter = searchParams.get('status') || 'alle'
+  const prioriteitFilter = searchParams.get('prioriteit') || 'alle'
+  const klantFilter = searchParams.get('klant') || 'alle'
+  const weergave = (searchParams.get('view') || 'grid') as 'grid' | 'list' | 'tijdlijn'
+  const sortField = (searchParams.get('sort') || 'eind_datum') as 'naam' | 'voortgang' | 'eind_datum'
+  const sortDir = (searchParams.get('dir') || 'asc') as 'asc' | 'desc'
+  const currentPage = parseInt(searchParams.get('page') || '1', 10)
+
+  // Helpers to update URL params without losing other params
+  const updateParam = (key: string, value: string) => {
+    const next = new URLSearchParams(searchParams)
+    if (value === 'alle' || value === '' || value === 'grid' || (key === 'sort' && value === 'eind_datum') || (key === 'dir' && value === 'asc') || (key === 'page' && value === '1')) {
+      next.delete(key)
+    } else {
+      next.set(key, value)
+    }
+    if (key !== 'page') next.delete('page') // Reset page on filter change
+    setSearchParams(next, { replace: true })
+  }
+  const setZoekterm = (v: string) => updateParam('q', v)
+  const setStatusFilter = (v: string) => updateParam('status', v)
+  const setPrioriteitFilter = (v: string) => updateParam('prioriteit', v)
+  const setKlantFilter = (v: string) => updateParam('klant', v)
+  const setWeergave = (v: 'grid' | 'list' | 'tijdlijn') => updateParam('view', v)
+  const setCurrentPage = (p: number) => updateParam('page', String(p))
 
   useEffect(() => {
     let cancelled = false
@@ -217,13 +184,23 @@ export function ProjectsList() {
   }, [projecten, klanten, zoekterm, statusFilter, prioriteitFilter, klantFilter, sortField, sortDir])
 
   function handleSort(field: typeof sortField) {
+    const next = new URLSearchParams(searchParams)
     if (field === sortField) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+      next.set('dir', sortDir === 'asc' ? 'desc' : 'asc')
     } else {
-      setSortField(field)
-      setSortDir('asc')
+      next.set('sort', field)
+      next.set('dir', 'asc')
     }
+    next.delete('page')
+    setSearchParams(next, { replace: true })
   }
+
+  // Paginatie
+  const totalPages = Math.max(1, Math.ceil(gefilterdeProjecten.length / ITEMS_PER_PAGE))
+  const gepagineerdeProjecten = gefilterdeProjecten.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
 
   async function handleStatusChange(projectId: string, newStatus: Project['status']) {
     try {
@@ -644,7 +621,7 @@ export function ProjectsList() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {gefilterdeProjecten.map((project) => {
+                {gepagineerdeProjecten.map((project) => {
                   const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
                   const contactpersoon = getKlantContactpersoon(project.klant_id)
 
@@ -652,7 +629,7 @@ export function ProjectsList() {
                     <tr
                       key={project.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
-                      onClick={() => window.location.href = `/projecten/${project.id}`}
+                      onClick={() => navigate(`/projecten/${project.id}`)}
                     >
                       {/* Status - links met kleur-achtergrond */}
                       <td className="py-0 px-0">
@@ -782,7 +759,7 @@ export function ProjectsList() {
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation()
-                                window.location.href = `/projecten/${project.id}`
+                                navigate(`/projecten/${project.id}`)
                               }}
                             >
                               Bekijken
@@ -790,20 +767,15 @@ export function ProjectsList() {
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation()
-                                const csv = [
-                                  'Project;' + project.naam,
-                                  'Klant;' + klantNaam,
-                                  'Status;' + (statusLabels[project.status] || project.status),
-                                  'Voortgang;' + project.voortgang + '%',
-                                  'Start;' + formatDate(project.start_datum),
-                                ].join('\n')
-                                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                                const url = URL.createObjectURL(blob)
-                                const a = document.createElement('a')
-                                a.href = url
-                                a.download = `${project.naam.replace(/\s+/g, '-').toLowerCase()}.csv`
-                                a.click()
-                                URL.revokeObjectURL(url)
+                                const headers = ['Project', 'Klant', 'Status', 'Voortgang', 'Start']
+                                const rows = [[
+                                  project.naam,
+                                  klantNaam,
+                                  statusLabels[project.status] || project.status,
+                                  project.voortgang + '%',
+                                  formatDate(project.start_datum),
+                                ]]
+                                exportCSV(project.naam.replace(/\s+/g, '-').toLowerCase(), headers, rows)
                               }}
                             >
                               <Download className="w-3.5 h-3.5 mr-2" />
@@ -825,7 +797,7 @@ export function ProjectsList() {
       ) : (
         /* ==================== GRID VIEW ==================== */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {gefilterdeProjecten.map((project, index) => {
+          {gepagineerdeProjecten.map((project, index) => {
             const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
             const isOverdue = new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
             const budgetPct = project.budget > 0 ? Math.round((project.besteed / project.budget) * 100) : 0
@@ -977,6 +949,47 @@ export function ProjectsList() {
           })}
         </div>
       )}
+
+      {/* ── Paginatie ── */}
+      {totalPages > 1 && weergave !== 'tijdlijn' && (
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-sm text-muted-foreground">
+            {gefilterdeProjecten.length} projecten, pagina {currentPage} van {totalPages}
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+            >
+              Vorige
+            </Button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const page = totalPages <= 5 ? i + 1 : Math.max(1, Math.min(currentPage - 2, totalPages - 4)) + i
+              return (
+                <Button
+                  key={page}
+                  variant={page === currentPage ? 'default' : 'outline'}
+                  size="sm"
+                  className={page === currentPage ? 'bg-gradient-to-r from-accent to-primary border-0' : ''}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </Button>
+              )
+            })}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+            >
+              Volgende
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1038,13 +1051,7 @@ function ProjectTijdlijn({ projecten }: { projecten: Project[] }) {
 
   const vandaagPct = datumNaarProcent(vandaag)
 
-  const statusKleuren: Record<string, string> = {
-    gepland: 'bg-blue-400 dark:bg-blue-500',
-    actief: 'bg-emerald-500 dark:bg-emerald-400',
-    'in-review': 'bg-amber-400 dark:bg-amber-500',
-    afgerond: 'bg-green-600 dark:bg-green-500',
-    'on-hold': 'bg-orange-400 dark:bg-orange-500',
-  }
+  const statusKleuren = ganttStatusKleuren
 
   return (
     <Card>

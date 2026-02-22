@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { projectTypeOpties, productieFasen } from '@/constants/projectConstants'
 import { logger } from '../../utils/logger'
 
 export function ProjectCreate() {
@@ -35,6 +36,8 @@ export function ProjectCreate() {
   const [eindDatum, setEindDatum] = useState('');
   const [budget, setBudget] = useState('');
   const [teamLeden, setTeamLeden] = useState('');
+  const [type, setType] = useState('');
+  const [fase, setFase] = useState('ontwerp');
 
   useEffect(() => {
     const fetchKlanten = async () => {
@@ -74,6 +77,7 @@ export function ProjectCreate() {
     setLoading(true);
 
     try {
+      const selectedKlant = klanten.find(k => k.id === klantId);
       const teamLedenArray = teamLeden
         .split(',')
         .map((lid) => lid.trim())
@@ -82,6 +86,7 @@ export function ProjectCreate() {
       await createProject({
         user_id: user.id,
         klant_id: klantId,
+        klant_naam: selectedKlant?.bedrijfsnaam || selectedKlant?.contactpersoon || '',
         naam: naam.trim(),
         beschrijving: beschrijving.trim(),
         status,
@@ -92,6 +97,8 @@ export function ProjectCreate() {
         besteed: 0,
         voortgang: 0,
         team_leden: teamLedenArray,
+        type: type || undefined,
+        fase: fase || undefined,
       });
 
       toast.success('Project succesvol aangemaakt');
@@ -187,6 +194,36 @@ export function ProjectCreate() {
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="hoog">Hoog</SelectItem>
                     <SelectItem value="kritiek">Kritiek</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="type">Project type</Label>
+                <Select value={type} onValueChange={setType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecteer type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projectTypeOpties.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="fase">Productiefase</Label>
+                <Select value={fase} onValueChange={setFase}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productieFasen.map((f) => (
+                      <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

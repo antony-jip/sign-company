@@ -17,6 +17,7 @@ import { WorkmateDashboard } from '@/components/dashboard/WorkmateDashboard'
 import { ProjectsList } from '@/components/projects/ProjectsList'
 import { ProjectDetail } from '@/components/projects/ProjectDetail'
 import { ProjectCreate } from '@/components/projects/ProjectCreate'
+import { ProjectEdit } from '@/components/projects/ProjectEdit'
 import { ClientsLayout } from '@/components/clients/ClientsLayout'
 import { ClientProfile } from '@/components/clients/ClientProfile'
 import { QuotesPipeline } from '@/components/quotes/QuotesPipeline'
@@ -97,6 +98,7 @@ function AppContent() {
         <Route path="projecten" element={<ProjectsList />} />
         <Route path="projecten/nieuw" element={<ProjectCreate />} />
         <Route path="projecten/:id" element={<ProjectDetail />} />
+        <Route path="projecten/:id/bewerken" element={<ProjectEdit />} />
         <Route path="klanten" element={<ClientsLayout />} />
         <Route path="klanten/:id" element={<ClientProfile />} />
         <Route path="deals" element={<DealsLayout />} />

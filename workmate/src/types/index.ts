@@ -63,11 +63,15 @@ export interface Project {
   besteed: number;
   voortgang: number;
   team_leden: string[];
-  // Feature 1: Budget meldingen
+  // Sign-industrie projecttype
+  type?: 'lichtreclame' | 'gevelbelettering' | 'voertuigbelettering' | 'raamsigning' | 'interieur' | 'wayfinding' | 'overig';
+  // Productiefase
+  fase?: 'ontwerp' | 'goedkeuring' | 'productie' | 'montage' | 'oplevering';
+  // Budget meldingen
   budget_waarschuwing_pct?: number;
-  // Feature 2: Offerte → Project keten
+  // Offerte → Project keten
   bron_offerte_id?: string;
-  // Feature 8: Project kopiëren / template
+  // Project kopiëren / template
   is_template?: boolean;
   bron_project_id?: string;
   created_at: string;

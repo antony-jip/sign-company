@@ -5,32 +5,12 @@ import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { formatDate, getStatusColor, getPriorityColor } from '@/lib/utils'
 import type { Taak } from '@/types'
 import type { SortDirection } from '@/types'
+import { taakStatusLabels, taakPrioriteitWaarde, taakStatusWaarde } from '@/constants/projectConstants'
 
 type SortField = 'titel' | 'status' | 'prioriteit' | 'toegewezen_aan' | 'deadline'
 
 interface ProjectTasksTableProps {
   taken: Taak[]
-}
-
-const prioriteitWaarde: Record<string, number> = {
-  kritiek: 4,
-  hoog: 3,
-  medium: 2,
-  laag: 1,
-}
-
-const statusWaarde: Record<string, number> = {
-  todo: 1,
-  bezig: 2,
-  review: 3,
-  klaar: 4,
-}
-
-const statusLabels: Record<string, string> = {
-  todo: 'Todo',
-  bezig: 'Bezig',
-  review: 'Review',
-  klaar: 'Klaar',
 }
 
 export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
@@ -55,10 +35,10 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
           comparison = a.titel.localeCompare(b.titel, 'nl')
           break
         case 'status':
-          comparison = (statusWaarde[a.status] || 0) - (statusWaarde[b.status] || 0)
+          comparison = (taakStatusWaarde[a.status] || 0) - (taakStatusWaarde[b.status] || 0)
           break
         case 'prioriteit':
-          comparison = (prioriteitWaarde[a.prioriteit] || 0) - (prioriteitWaarde[b.prioriteit] || 0)
+          comparison = (taakPrioriteitWaarde[a.prioriteit] || 0) - (taakPrioriteitWaarde[b.prioriteit] || 0)
           break
         case 'toegewezen_aan':
           comparison = a.toegewezen_aan.localeCompare(b.toegewezen_aan, 'nl')
@@ -139,7 +119,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
                 </td>
                 <td className="py-3 px-4">
                   <Badge className={getStatusColor(taak.status)}>
-                    {statusLabels[taak.status] || taak.status}
+                    {taakStatusLabels[taak.status] || taak.status}
                   </Badge>
                 </td>
                 <td className="py-3 px-4">

@@ -571,6 +571,20 @@ export async function getDocumenten(): Promise<Document[]> {
   return getLocalData<Document>('documenten')
 }
 
+export async function getDocumentenByProject(projectId: string): Promise<Document[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('documenten')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Document>('documenten').filter((d) => d.project_id === projectId)
+}
+
 export async function getDocument(id: string): Promise<Document | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
