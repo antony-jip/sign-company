@@ -54,6 +54,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportCSV, exportExcel } from '@/lib/export';
 import { generateRapportPDF } from '@/services/pdfService';
+import { useDocumentStyle } from '@/hooks/useDocumentStyle';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
 
 
@@ -112,6 +113,7 @@ const MAAND_NAMEN = [
 
 export function RapportagesLayout() {
   const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings();
+  const documentStyle = useDocumentStyle();
   const [periode, setPeriode] = useState<Periode>('dit_jaar');
   const [facturen, setFacturen] = useState<Factuur[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
@@ -491,6 +493,7 @@ export function RapportagesLayout() {
         },
         'financieel',
         bedrijfsProfiel,
+        documentStyle,
       );
       doc.save(`omzet-rapport-${new Date().getFullYear()}.pdf`);
       toast.success('PDF gedownload');
@@ -524,6 +527,7 @@ export function RapportagesLayout() {
         },
         'klant',
         bedrijfsProfiel,
+        documentStyle,
       );
       doc.save(`top-klanten-rapport.pdf`);
       toast.success('PDF gedownload');
@@ -558,6 +562,7 @@ export function RapportagesLayout() {
         },
         'project',
         bedrijfsProfiel,
+        documentStyle,
       );
       doc.save(`project-winstgevendheid-rapport.pdf`);
       toast.success('PDF gedownload');
@@ -593,6 +598,7 @@ export function RapportagesLayout() {
         },
         'algemeen',
         bedrijfsProfiel,
+        documentStyle,
       );
       doc.save(`offerte-conversie-rapport.pdf`);
       toast.success('PDF gedownload');

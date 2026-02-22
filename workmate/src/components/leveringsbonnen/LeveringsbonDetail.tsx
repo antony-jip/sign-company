@@ -20,6 +20,7 @@ import {
   getKlanten, getProjecten,
 } from '@/services/supabaseService'
 import { generateLeveringsbonPDF } from '@/services/pdfService'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 // ============ HELPERS ============
@@ -46,6 +47,7 @@ export function LeveringsbonDetail() {
   const navigate = useNavigate()
   const isNew = id === 'nieuw'
   const { profile, primaireKleur } = useAppSettings()
+  const documentStyle = useDocumentStyle()
 
   // Data
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -336,14 +338,15 @@ export function LeveringsbonDetail() {
           eenheid: r.eenheid,
         })),
         klant || {},
-        { ...profile, primaireKleur }
+        { ...profile, primaireKleur },
+        documentStyle
       )
       doc.save(`leveringsbon-${leveringsbonNummer}.pdf`)
       toast.success('PDF gedownload')
     } catch {
       toast.error('Kon PDF niet genereren')
     }
-  }, [leveringsbonNummer, omschrijving, datum, opmerkingenKlant, handtekeningData, regels, klanten, klantId, profile, primaireKleur])
+  }, [leveringsbonNummer, omschrijving, datum, opmerkingenKlant, handtekeningData, regels, klanten, klantId, profile, primaireKleur, documentStyle])
 
   // ============ RENDER ============
 

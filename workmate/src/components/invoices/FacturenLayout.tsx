@@ -75,6 +75,7 @@ import { exportCSV, exportExcel } from '@/lib/export'
 import { sendEmail } from '@/services/gmailService'
 import { factuurHerinneringTemplate, factuurVerzendTemplate } from '@/services/emailTemplateService'
 import { generateFactuurPDF } from '@/services/pdfService'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSearchParams } from 'react-router-dom'
 import { logger } from '../../utils/logger'
@@ -242,6 +243,7 @@ function isThisMonth(dateStr: string): boolean {
 export function FacturenLayout() {
   // App settings (bedrijfsprofiel for PDF generation)
   const { profile, primaireKleur, emailHandtekening, bedrijfsnaam } = useAppSettings()
+  const documentStyle = useDocumentStyle()
 
   // Data state
   const [facturen, setFacturen] = useState<Factuur[]>([])
@@ -825,7 +827,7 @@ export function FacturenLayout() {
       ]
 
       try {
-        const doc = generateFactuurPDF(factuurData, items, klant, bedrijfsProfiel)
+        const doc = generateFactuurPDF(factuurData, items, klant, bedrijfsProfiel, documentStyle)
         doc.save(`factuur-${factuur.nummer}.pdf`)
         toast.success(`PDF gedownload voor ${factuur.nummer}`)
       } catch (err) {

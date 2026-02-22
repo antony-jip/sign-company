@@ -53,6 +53,7 @@ import {
   Server,
   Info,
   ExternalLink,
+  FileText,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -80,10 +81,12 @@ import {
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
+import { HuisstijlTab } from './HuisstijlTab'
 
 const settingsTabs = [
   { id: 'profiel', label: 'Profiel', icon: User, description: 'Uw persoonlijke gegevens' },
   { id: 'bedrijf', label: 'Bedrijf', icon: Building2, description: 'Bedrijfsinformatie en logo' },
+  { id: 'huisstijl', label: 'Huisstijl', icon: FileText, description: 'Document styling en briefpapier' },
   { id: 'calculatie', label: 'Calculatie', icon: Calculator, description: 'Producten, marges en eenheden' },
   { id: 'aanpassingen', label: 'Aanpassingen', icon: Sliders, description: 'Pipeline, statussen en workflows' },
   { id: 'meldingen', label: 'Meldingen', icon: Bell, description: 'E-mail en pushnotificaties' },
@@ -96,6 +99,7 @@ function renderTabContent(tabId: string) {
   switch (tabId) {
     case 'profiel': return <ProfielTab />
     case 'bedrijf': return <BedrijfTab />
+    case 'huisstijl': return <HuisstijlTab />
     case 'calculatie': return <CalculatieTab />
     case 'aanpassingen': return <AanpassingenTab />
     case 'meldingen': return <MeldingenTab />

@@ -48,6 +48,7 @@ import type {
   LeadFormulier,
   LeadInzending,
   InternEmailNotitie,
+  DocumentStyle,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -3451,3 +3452,115 @@ export async function addInterneNotitie(emailId: string, notitie: InternEmailNot
 }
 
 // getEmail and updateEmail are exported above (lines 653, 689) — used by shared inbox functions
+
+// ============ DOCUMENT STYLES / HUISSTIJL ============
+
+export async function getDocumentStyle(userId: string): Promise<DocumentStyle | null> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('document_styles')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+    return data
+  }
+  const styles = getLocalData<DocumentStyle>('document_styles')
+  return styles.find((s) => s.user_id === userId) || null
+}
+
+export async function upsertDocumentStyle(userId: string, style: Partial<DocumentStyle>): Promise<DocumentStyle> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data: existing } = await supabase
+      .from('document_styles')
+      .select('id')
+      .eq('user_id', userId)
+      .single()
+
+    if (existing) {
+      const { data, error } = await supabase
+        .from('document_styles')
+        .update({ ...style, updated_at: now() })
+        .eq('user_id', userId)
+        .select()
+        .single()
+      if (error) throw error
+      return data
+    } else {
+      const { data, error } = await supabase
+        .from('document_styles')
+        .insert({ ...style, user_id: userId, created_at: now(), updated_at: now() })
+        .select()
+        .single()
+      if (error) throw error
+      return data
+    }
+  }
+
+  const styles = getLocalData<DocumentStyle>('document_styles')
+  const index = styles.findIndex((s) => s.user_id === userId)
+  if (index === -1) {
+    const newStyle: DocumentStyle = {
+      id: crypto.randomUUID(),
+      user_id: userId,
+      template: 'modern',
+      heading_font: 'Montserrat',
+      body_font: 'Inter',
+      font_grootte_basis: 10,
+      primaire_kleur: '#2563eb',
+      secundaire_kleur: '#7c3aed',
+      accent_kleur: '#06b6d4',
+      tekst_kleur: '#111827',
+      marge_boven: 15,
+      marge_onder: 20,
+      marge_links: 20,
+      marge_rechts: 20,
+      logo_positie: 'links',
+      logo_grootte: 100,
+      briefpapier_url: '',
+      briefpapier_modus: 'geen',
+      toon_header: true,
+      toon_footer: true,
+      footer_tekst: '',
+      tabel_stijl: 'striped',
+      tabel_header_kleur: '#2563eb',
+      created_at: now(),
+      updated_at: now(),
+      ...style,
+    }
+    styles.push(newStyle)
+    setLocalData('document_styles', styles)
+    return newStyle
+  }
+  styles[index] = { ...styles[index], ...style, updated_at: now() }
+  setLocalData('document_styles', styles)
+  return styles[index]
+}
+
+export async function uploadBriefpapier(userId: string, file: File): Promise<string> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const ext = file.name.split('.').pop() || 'png'
+    const path = `${userId}/briefpapier_${Date.now()}.${ext}`
+    const { error } = await supabase.storage
+      .from('briefpapier')
+      .upload(path, file, { upsert: true })
+    if (error) throw error
+    const { data: urlData } = supabase.storage
+      .from('briefpapier')
+      .getPublicUrl(path)
+    return urlData.publicUrl
+  }
+  // localStorage fallback: store as data URL
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}

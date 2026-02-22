@@ -22,6 +22,7 @@ import {
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
 import { generateBestelbonPDF } from '@/services/pdfService'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 // ============ HELPERS ============
@@ -52,6 +53,7 @@ export function BestelbonDetail() {
   const navigate = useNavigate()
   const isNew = id === 'nieuw'
   const { profile, primaireKleur } = useAppSettings()
+  const documentStyle = useDocumentStyle()
 
   // Data
   const [leveranciers, setLeveranciers] = useState<Leverancier[]>([])
@@ -301,14 +303,15 @@ export function BestelbonDetail() {
           eenheid: r.eenheid,
         })),
         leverancier ? { naam: leverancier.naam, adres: leverancier.adres, postcode: leverancier.postcode, stad: leverancier.stad } : {},
-        { ...profile, primaireKleur }
+        { ...profile, primaireKleur },
+        documentStyle
       )
       doc.save(`bestelbon-${bestelbonNummer}.pdf`)
       toast.success('PDF gedownload')
     } catch {
       toast.error('Kon PDF niet genereren')
     }
-  }, [bestelbonNummer, referentie, besteldOp, verwachteLevering, opmerkingen, berekenTotaal, regels, leveranciers, leverancierId, profile, primaireKleur])
+  }, [bestelbonNummer, referentie, besteldOp, verwachteLevering, opmerkingen, berekenTotaal, regels, leveranciers, leverancierId, profile, primaireKleur, documentStyle])
 
   // ============ RENDER ============
 

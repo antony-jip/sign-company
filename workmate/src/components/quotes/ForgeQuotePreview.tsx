@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject, createProject } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
@@ -39,6 +40,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, pipelineStappen, valuta } = useAppSettings()
+  const documentStyle = useDocumentStyle()
 
   // Parse address components from combined string
   const adresParts = bedrijfsAdres ? bedrijfsAdres.split(', ') : []
@@ -223,7 +225,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           kvk_nummer: kvkNummer || '',
           btw_nummer: btwNummer || '',
           primaireKleur: primaireKleur || '#2563eb',
-        }
+        },
+        documentStyle
       )
       doc.save(`${fetchedOfferte.nummer}.pdf`)
       toast.success('PDF gedownload')

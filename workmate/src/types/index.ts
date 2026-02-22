@@ -1069,3 +1069,45 @@ export interface KvkResultaat {
   stad?: string;
   btw_nummer?: string;
 }
+
+// ============ DOCUMENT STYLING / HUISSTIJL ============
+
+export type DocumentTemplateId = 'klassiek' | 'modern' | 'minimaal' | 'industrieel';
+export type LogoPositie = 'links' | 'rechts' | 'midden';
+export type BriefpapierModus = 'geen' | 'achtergrond' | 'alleen_eerste_pagina';
+
+export interface DocumentStyle {
+  id: string;
+  user_id: string;
+  // Template basis
+  template: DocumentTemplateId;
+  // Lettertypen
+  heading_font: string;
+  body_font: string;
+  font_grootte_basis: number;
+  // Kleuren
+  primaire_kleur: string;
+  secundaire_kleur: string;
+  accent_kleur: string;
+  tekst_kleur: string;
+  // Marges (in mm)
+  marge_boven: number;
+  marge_onder: number;
+  marge_links: number;
+  marge_rechts: number;
+  // Logo
+  logo_positie: LogoPositie;
+  logo_grootte: number;
+  // Briefpapier
+  briefpapier_url: string;
+  briefpapier_modus: BriefpapierModus;
+  // Header / Footer
+  toon_header: boolean;
+  toon_footer: boolean;
+  footer_tekst: string;
+  // Tabel styling
+  tabel_stijl: 'striped' | 'grid' | 'plain';
+  tabel_header_kleur: string;
+  created_at: string;
+  updated_at: string;
+}

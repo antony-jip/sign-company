@@ -40,6 +40,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateOffertePDF } from '@/services/pdfService'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -83,6 +84,7 @@ export function QuoteCreation() {
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
+  const documentStyle = useDocumentStyle()
   const [currentStep, setCurrentStep] = useState(0)
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -411,7 +413,7 @@ export function QuoteCreation() {
         kvk_nummer: kvkNummer || '',
         btw_nummer: btwNummer || '',
         primaireKleur: primaireKleur || '#2563eb',
-      })
+      }, documentStyle)
       doc.save(`${offerteNummer}.pdf`)
       toast.success('PDF gedownload')
     } catch (err) {
