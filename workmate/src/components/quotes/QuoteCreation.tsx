@@ -33,6 +33,8 @@ import {
   ShoppingCart,
   X,
   Plus,
+  AlertTriangle,
+  StickyNote,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -581,6 +583,17 @@ export function QuoteCreation() {
                   </div>
                 )}
 
+                {/* Klant notities - interne waarschuwingen */}
+                {selectedKlant && selectedKlant.notities && selectedKlant.notities.trim() !== '' && (
+                  <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-3">
+                    <StickyNote className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Interne notitie over deze klant</p>
+                      <p className="text-sm text-amber-700 dark:text-amber-400 mt-0.5 whitespace-pre-line">{selectedKlant.notities}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Project selectie (alleen als klant geselecteerd is) */}
                 {selectedKlantId && (
                   <div className="space-y-2">
@@ -859,6 +872,18 @@ export function QuoteCreation() {
       {/* ================================================================ */}
       {(currentStep === 1 || currentStep === 2) && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          {/* Margebewaker waarschuwing */}
+          {totaalInkoop > 0 && margePercentage < (settings.calculatie_standaard_marge ?? 35) && (
+            <div className={cn(
+              'px-6 py-1.5 text-center text-xs font-medium flex items-center justify-center gap-1.5',
+              margePercentage < 15
+                ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300'
+                : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
+            )}>
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Marge ({margePercentage.toFixed(1)}%) ligt onder je minimumdrempel van {settings.calculatie_standaard_marge ?? 35}%
+            </div>
+          )}
           <div className="max-w-5xl mx-auto px-6 py-3">
             <div className="flex items-center justify-between gap-6">
               {/* Left: Inkoop info */}
