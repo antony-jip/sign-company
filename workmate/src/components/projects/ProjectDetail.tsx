@@ -44,6 +44,7 @@ import {
   UserPlus,
   ClipboardCheck,
 } from 'lucide-react'
+import { DocumentChainIndicator } from '@/components/shared/DocumentChainIndicator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -709,6 +710,13 @@ export function ProjectDetail() {
             </>
           )}
         </div>
+
+        {/* Keten indicator */}
+        {project.bron_offerte_id && (
+          <div className="mb-2">
+            <DocumentChainIndicator type="project" project={project} />
+          </div>
+        )}
 
         {/* Project Hero Banner */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#3D3522] via-accent to-[#3D3522] p-6 text-white">

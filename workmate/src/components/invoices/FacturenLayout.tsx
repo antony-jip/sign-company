@@ -78,6 +78,7 @@ import { generateFactuurPDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSearchParams } from 'react-router-dom'
+import { DocumentChainIndicator } from '@/components/shared/DocumentChainIndicator'
 import { logger } from '../../utils/logger'
 
 // ============ TYPES ============
@@ -1655,6 +1656,10 @@ export function FacturenLayout() {
           </DialogHeader>
           {viewingFactuur && (
             <div className="space-y-4">
+              {/* Keten indicator */}
+              {(viewingFactuur.offerte_id || viewingFactuur.bron_offerte_id || viewingFactuur.project_id) && (
+                <DocumentChainIndicator type="factuur" factuur={viewingFactuur} />
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Klant</p>

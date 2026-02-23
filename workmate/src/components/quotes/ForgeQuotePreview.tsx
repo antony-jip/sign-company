@@ -9,6 +9,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
+import { DocumentChainIndicator } from '@/components/shared/DocumentChainIndicator'
 import { logger } from '../../utils/logger'
 
 interface ForgeQuotePreviewProps {
@@ -333,35 +334,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
 
           <div className="flex items-center gap-2">
             {/* Conversieketen indicator */}
-            {(fetchedOfferte.project_id || fetchedOfferte.geconverteerd_naar_factuur_id) && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mr-2">
-                <Badge className={getStatusColor(fetchedOfferte.status) + ' text-[10px]'}>
-                  {fetchedOfferte.nummer}
-                </Badge>
-                {fetchedOfferte.project_id && (
-                  <>
-                    <ArrowRight className="h-3 w-3" />
-                    <button
-                      onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
-                      className="text-accent dark:text-primary hover:underline font-medium"
-                    >
-                      Project
-                    </button>
-                  </>
-                )}
-                {fetchedOfferte.geconverteerd_naar_factuur_id && (
-                  <>
-                    <ArrowRight className="h-3 w-3" />
-                    <button
-                      onClick={() => navigate('/facturen')}
-                      className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
-                    >
-                      Factuur
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+            <DocumentChainIndicator type="offerte" offerte={fetchedOfferte} />
 
             {/* Pipeline acties voor goedgekeurde offertes */}
             {fetchedOfferte.status === 'goedgekeurd' && (

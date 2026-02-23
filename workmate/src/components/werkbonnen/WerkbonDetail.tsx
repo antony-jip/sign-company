@@ -19,6 +19,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
+import { DocumentChainIndicator } from '@/components/shared/DocumentChainIndicator'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Werkbon, WerkbonRegel, WerkbonFoto, Klant, Project, Medewerker } from '@/types'
 import {
@@ -79,6 +80,9 @@ export function WerkbonDetail() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
 
+  // Full werkbon data for chain indicator
+  const [werkbonData, setWerkbonData] = useState<Werkbon | null>(null)
+
   // Factuur dialog
   const [factureerDialogOpen, setFactureerDialogOpen] = useState(false)
 
@@ -105,6 +109,7 @@ export function WerkbonDetail() {
             return
           }
           if (cancelled) return
+          setWerkbonData(wb)
           setWerkbonId(wb.id)
           setWerkbonNummer(wb.werkbon_nummer)
           setKlantId(wb.klant_id)
@@ -514,6 +519,11 @@ export function WerkbonDetail() {
           </Button>
         </div>
       </div>
+
+      {/* Keten indicator */}
+      {werkbonData && (
+        <DocumentChainIndicator type="werkbon" werkbon={werkbonData} />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Linker kolom: formulier */}
