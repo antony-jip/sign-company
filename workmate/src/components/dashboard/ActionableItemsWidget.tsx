@@ -9,9 +9,9 @@ import {
   Clock,
   ArrowRight,
   CheckCircle2,
-  Loader2,
   Zap,
 } from 'lucide-react'
+import { DashboardWidgetSkeleton } from '@/components/shared/SkeletonLoaders'
 import { getOffertes, getFacturen, getTaken, getProjecten } from '@/services/supabaseService'
 import type { Offerte, Factuur, Taak, Project } from '@/types'
 import { isBefore, parseISO, differenceInDays } from 'date-fns'
@@ -144,13 +144,7 @@ export function ActionableItemsWidget() {
   }, [])
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-5 flex items-center justify-center h-32">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    )
+    return <DashboardWidgetSkeleton />
   }
 
   if (items.length === 0) {

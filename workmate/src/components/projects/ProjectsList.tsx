@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
+import { CardGridSkeleton } from '@/components/shared/SkeletonLoaders'
 import { Link } from 'react-router-dom'
 import {
   Plus,
@@ -253,8 +254,12 @@ export function ProjectsList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="space-y-6 animate-fade-in-up">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-muted" />
+          <div className="h-6 w-32 bg-muted rounded animate-pulse" />
+        </div>
+        <CardGridSkeleton count={6} />
       </div>
     )
   }

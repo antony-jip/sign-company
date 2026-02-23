@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { cn, formatCurrency, formatDate, getInitials } from '@/lib/utils'
 import type { Deal, Klant, Medewerker } from '@/types'
+import { CardGridSkeleton } from '@/components/shared/SkeletonLoaders'
 import {
   getDeals, createDeal, updateDeal, deleteDeal,
   getKlanten, getMedewerkers,
@@ -276,11 +277,12 @@ export function DealsLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-gray-500">Deals laden...</p>
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-muted" />
+          <div className="h-6 w-24 bg-muted rounded animate-pulse" />
         </div>
+        <CardGridSkeleton count={6} />
       </div>
     )
   }

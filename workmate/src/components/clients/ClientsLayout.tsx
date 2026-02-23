@@ -10,6 +10,7 @@ import { cn, getStatusColor } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
 import type { Klant, Project } from '@/types'
+import { TableSkeleton } from '@/components/shared/SkeletonLoaders'
 import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
@@ -319,9 +320,7 @@ export function ClientsLayout() {
 
       {/* Content */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-        </div>
+        <TableSkeleton rows={6} cols={4} />
       ) : filteredKlanten.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">

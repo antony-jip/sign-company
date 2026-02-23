@@ -79,6 +79,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSearchParams } from 'react-router-dom'
 import { DocumentChainIndicator } from '@/components/shared/DocumentChainIndicator'
+import { ListPageSkeleton } from '@/components/shared/SkeletonLoaders'
 import { logger } from '../../utils/logger'
 
 // ============ TYPES ============
@@ -1188,14 +1189,7 @@ export function FacturenLayout() {
   // ============ RENDER ============
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Facturen laden...</p>
-        </div>
-      </div>
-    )
+    return <ListPageSkeleton rows={6} />
   }
 
   return (

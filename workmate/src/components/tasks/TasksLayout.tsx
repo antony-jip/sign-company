@@ -47,6 +47,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten } from '@/services/supabaseService'
+import { ListPageSkeleton } from '@/components/shared/SkeletonLoaders'
 import type { Taak, Project } from '@/types'
 import { logger } from '../../utils/logger'
 
@@ -435,12 +436,7 @@ export function TasksLayout() {
   // === RENDER ===
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-4" />
-        <p className="text-muted-foreground">Taken laden...</p>
-      </div>
-    )
+    return <ListPageSkeleton rows={8} />
   }
 
   return (
