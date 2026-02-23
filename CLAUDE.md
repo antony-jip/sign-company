@@ -1,179 +1,130 @@
 # CLAUDE.md - AI Assistant Guide for sign-company
 
-This document provides essential context for AI assistants working with this codebase.
-
 ## Project Overview
 
 **Repository:** sign-company
-**Status:** New project - initial setup in progress
-**Last Updated:** 2025-12-05
+**Eigenaar:** signcompany.nl
+**Status:** Actief - Workmate CRM app + marketingwebsite
+**Last Updated:** 2026-02-23
 
-<!-- TODO: Add project description once defined -->
-<!-- Example: This is a [web app/CLI tool/library] that [primary purpose] -->
+Dit project bevat twee applicaties:
+1. **Marketing website** (root) - Next.js landingspagina's voor signcompany.nl
+2. **Workmate App** (`/workmate/`) - Vite + React CRM/bedrijfsmanagement app
 
 ## Repository Structure
 
 ```
 sign-company/
-├── CLAUDE.md          # This file - AI assistant guide
-└── (project structure to be defined)
+├── CLAUDE.md              # Dit bestand
+├── BLUEPRINT.md           # Uitgebreide Workmate app documentatie
+├── package.json           # Next.js website dependencies
+├── tasks/
+│   ├── todo.md            # Huidige taken en prioriteiten
+│   └── lessons.md         # Geleerde lessen en patronen
+├── src/                   # Next.js marketing website
+│   ├── app/               # App Router pagina's
+│   │   ├── werkplaats/    # Interne werkplaats routes
+│   │   └── [slug]/        # Dynamische landingspagina's
+│   ├── components/        # Website componenten
+│   ├── data/              # Landingspagina data
+│   └── lib/               # Utilities
+└── workmate/              # Vite + React CRM app
+    ├── src/
+    │   ├── components/    # 143 React componenten (37 subdirectories)
+    │   ├── contexts/      # 6 Context Providers
+    │   ├── hooks/         # 5 Custom hooks
+    │   ├── services/      # Backend services (Supabase)
+    │   ├── types/         # TypeScript interfaces
+    │   ├── lib/           # Utilities
+    │   └── utils/         # Helpers
+    ├── supabase/          # Database schema en migrations
+    ├── api/               # Serverless API functies
+    └── package.json       # Workmate dependencies
 ```
-
-<!-- Update this section as the project structure develops -->
 
 ## Development Setup
 
 ### Prerequisites
-
-<!-- TODO: List required tools and versions -->
-<!-- Example:
 - Node.js >= 18.x
-- npm or yarn
-- Docker (optional)
--->
+- npm
 
-### Installation
-
+### Marketing Website (root)
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd sign-company
-
-# Install dependencies (update based on actual package manager)
-# npm install
-# yarn install
-# pip install -r requirements.txt
+npm install
+npm run dev          # Next.js dev server
+npm run build        # Production build
 ```
 
-### Running the Project
-
-<!-- TODO: Add run commands once project is set up -->
+### Workmate App
 ```bash
-# Development server
-# npm run dev
-
-# Build for production
-# npm run build
-
-# Run tests
-# npm test
+cd workmate
+npm install
+npm run dev          # Vite dev server
+npm run build        # tsc + vite build
 ```
+
+### Environment Variables (workmate/.env)
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `VITE_SUPABASE_URL` | Supabase project URL | Ja (localStorage fallback) |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon key | Ja (localStorage fallback) |
+| `OPENAI_API_KEY` | OpenAI API key (server-side) | Nee |
 
 ## Key Commands
 
-| Command | Description |
-|---------|-------------|
-| `git status` | Check current changes |
-| `git push -u origin <branch>` | Push changes to remote |
-
-<!-- TODO: Add project-specific commands as they are established -->
+| Command | Directory | Description |
+|---------|-----------|-------------|
+| `npm run dev` | root | Next.js dev server |
+| `npm run dev` | workmate/ | Vite dev server |
+| `npm run build` | workmate/ | TypeScript check + production build |
+| `npx tsc --noEmit` | workmate/ | TypeScript only check |
 
 ## Code Conventions
 
-### General Guidelines
-
-- Write clear, self-documenting code
-- Follow consistent naming conventions
-- Keep functions focused and small
-- Add comments only where logic isn't self-evident
-
-### Git Workflow
-
-- Branch naming: `feature/<description>`, `fix/<description>`, `claude/<session-id>`
-- Write descriptive commit messages explaining "why" not "what"
-- Keep commits atomic and focused
+### Naamgeving
+- **Business logica**: Nederlands (klant, offerte, factuur, medewerker)
+- **Technische code**: Engels (hooks, utils, services, components)
+- **Types**: Nederlands met PascalCase (Klant, Offerte, OfferteItem)
 
 ### File Organization
+- UI componenten (shadcn/ui): `workmate/src/components/ui/`
+- Feature componenten: `workmate/src/components/<feature>/`
+- Alle types: `workmate/src/types/index.ts`
+- Hoofd service: `workmate/src/services/supabaseService.ts`
 
-<!-- TODO: Define conventions as the project structure emerges -->
-<!-- Example:
-- Source code in `src/`
-- Tests alongside source files as `*.test.ts` or in `__tests__/`
-- Configuration files in project root
--->
+### Git Workflow
+- Branch naming: `claude/<description>-<session-id>`
+- Commit messages in het Engels
+- Check `tasks/todo.md` bij sessie start
+- Check `tasks/lessons.md` voor bekende patronen
 
-## Testing
+## Tech Stack
 
-<!-- TODO: Add testing framework and conventions once established -->
-<!-- Example:
-- Framework: Jest/Pytest/Go test
-- Run all tests: `npm test`
-- Run specific test: `npm test -- <pattern>`
-- Coverage threshold: 80%
--->
+### Marketing Website
+- Next.js 14, React 18, TypeScript 5, Tailwind CSS 3
+
+### Workmate App
+- Vite 5, React 18, TypeScript 5.3, Tailwind CSS 3.4
+- shadcn/ui (Radix UI), Lucide React 0.312
+- Supabase (auth + database), Zod (validatie)
+- jsPDF (PDF generatie), Recharts (grafieken), date-fns, Sonner (toasts)
 
 ## Architecture Notes
 
-<!-- TODO: Document key architectural decisions -->
-<!-- Example:
-- Component-based architecture
-- State management: Redux/Zustand/Context
-- API layer: REST/GraphQL
--->
+### Workmate App
+- **State**: 6 React Context providers (Auth, Theme, Palette, Language, Sidebar, AppSettings)
+- **Data**: Supabase met localStorage fallback (offline support)
+- **Routing**: React Router v6 - 49 routes (7 public, 42 protected)
+- **Auth**: Supabase Auth met ProtectedRoute wrapper
+- **Styling**: Tailwind + 9 kleurpaletten (dynamische CSS variabelen)
+- **i18n**: Ingebouwd NL/EN via LanguageContext
 
-## Common Tasks for AI Assistants
+### Bekende Beperkingen
+- EmailSequence types bestaan maar service functies ontbreken
+- Geen test suite (Vitest aanbevolen)
 
-### When Making Changes
-
-1. Read relevant files before modifying
-2. Understand existing patterns in the codebase
-3. Run tests after changes if test suite exists
-4. Keep changes minimal and focused on the task
-
-### When Adding Features
-
-1. Follow existing code patterns
-2. Add appropriate tests
-3. Update documentation if needed
-4. Consider backwards compatibility
-
-### When Fixing Bugs
-
-1. Understand the root cause before fixing
-2. Add a test that reproduces the bug
-3. Fix with minimal changes
-4. Verify the fix doesn't introduce regressions
-
-## Environment Variables
-
-<!-- TODO: Document required environment variables -->
-<!-- Example:
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `API_KEY` | External API key | Yes |
-| `DEBUG` | Enable debug mode | No |
--->
-
-## External Dependencies
-
-<!-- TODO: List and explain key dependencies -->
-
-## Troubleshooting
-
-<!-- TODO: Add common issues and solutions -->
-<!-- Example:
-### Issue: Build fails with X error
-**Solution:** Run `npm clean-install` to refresh dependencies
--->
-
-## Additional Resources
-
-<!-- TODO: Add relevant links -->
-<!-- Example:
-- [Project Documentation](link)
-- [API Reference](link)
-- [Design Documents](link)
--->
-
----
-
-## Maintenance Notes
-
-This CLAUDE.md should be updated when:
-- New major features are added
-- Development workflow changes
-- New conventions are established
-- Dependencies significantly change
-- Architecture evolves
-
-Keep this document concise but comprehensive - it should give an AI assistant everything needed to work effectively with this codebase.
+## Session Start Checklist
+1. Lees `tasks/todo.md` voor huidige prioriteiten
+2. Lees `tasks/lessons.md` voor bekende patronen en fouten
+3. Check git status voor ongecommitte wijzigingen
+4. Raadpleeg `BLUEPRINT.md` voor gedetailleerde app documentatie
