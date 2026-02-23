@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -198,6 +198,38 @@ export function NotificatieCenter() {
 
   const aantalOngelezen = notificaties.filter((n) => !n.gelezen).length;
 
+  // Group notifications by date
+  const grouped = useMemo(() => {
+    const groups: { label: string; items: Notificatie[] }[] = [];
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+    const dayMap = new Map<string, Notificatie[]>();
+    for (const n of notificaties) {
+      const dateStr = n.created_at.slice(0, 10);
+      if (!dayMap.has(dateStr)) dayMap.set(dateStr, []);
+      dayMap.get(dateStr)!.push(n);
+    }
+
+    // Sort days descending
+    const sortedDays = [...dayMap.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+
+    for (const [dateStr, items] of sortedDays) {
+      let label: string;
+      if (dateStr === todayStr) label = 'Vandaag';
+      else if (dateStr === yesterdayStr) label = 'Gisteren';
+      else {
+        const d = new Date(dateStr);
+        label = d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+      }
+      groups.push({ label, items });
+    }
+    return groups;
+  }, [notificaties]);
+
   const laadNotificaties = useCallback(async () => {
     try {
       const data = await getNotificaties();
@@ -306,8 +338,20 @@ export function NotificatieCenter() {
           <Separator />
 
           {laden ? (
-            <div className="flex items-center justify-center py-8">
-              <p className="text-sm text-muted-foreground">Laden...</p>
+            <div className="flex flex-col">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-start gap-3 px-4 py-3 animate-pulse">
+                  <div className="mt-0.5 h-8 w-8 rounded-full bg-muted shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="h-3.5 w-32 bg-muted rounded" />
+                      <div className="h-3 w-16 bg-muted rounded" />
+                    </div>
+                    <div className="h-3 w-full bg-muted rounded" />
+                    <div className="h-3 w-2/3 bg-muted rounded" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : notificaties.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12">
@@ -319,49 +363,58 @@ export function NotificatieCenter() {
           ) : (
             <ScrollArea className="max-h-96">
               <div className="flex flex-col">
-                {notificaties.map((notificatie) => {
-                  const config = typeConfig[notificatie.type];
-                  const Icon = config.icon;
+                {grouped.map((group) => (
+                  <div key={group.label}>
+                    <div className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm px-4 py-1.5">
+                      <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                        {group.label}
+                      </span>
+                    </div>
+                    {group.items.map((notificatie) => {
+                      const config = typeConfig[notificatie.type];
+                      const Icon = config.icon;
 
-                  return (
-                    <button
-                      key={notificatie.id}
-                      onClick={() => handleNotificatieKlik(notificatie)}
-                      className={cn(
-                        "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent",
-                        !notificatie.gelezen && "bg-accent/50"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                          config.bgClass
-                        )}
-                      >
-                        <Icon className={cn("h-4 w-4", config.colorClass)} />
-                      </div>
-
-                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-medium text-foreground">
-                            {notificatie.titel}
-                          </span>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {formatTijdGeleden(notificatie.created_at)}
-                            </span>
-                            {!notificatie.gelezen && (
-                              <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                      return (
+                        <button
+                          key={notificatie.id}
+                          onClick={() => handleNotificatieKlik(notificatie)}
+                          className={cn(
+                            "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent",
+                            !notificatie.gelezen && "bg-accent/50"
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                              config.bgClass
                             )}
+                          >
+                            <Icon className={cn("h-4 w-4", config.colorClass)} />
                           </div>
-                        </div>
-                        <p className="line-clamp-2 text-xs text-muted-foreground">
-                          {notificatie.bericht}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
+
+                          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate text-sm font-medium text-foreground">
+                                {notificatie.titel}
+                              </span>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {formatTijdGeleden(notificatie.created_at)}
+                                </span>
+                                {!notificatie.gelezen && (
+                                  <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                                )}
+                              </div>
+                            </div>
+                            <p className="line-clamp-2 text-xs text-muted-foreground">
+                              {notificatie.bericht}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </ScrollArea>
           )}
