@@ -78,6 +78,7 @@ import {
   updateKlant,
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
+import { EmptyState } from '@/components/shared/EmptyState'
 import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal, Tijdregistratie, Werkbon } from '@/types'
 
 function getStatusBarColor(status: string): string {
@@ -727,9 +728,14 @@ export function ClientProfile() {
           {activeTab === 'projecten' && (
             <Card>
               {clientProjecten.length === 0 ? (
-                <CardContent className="py-12 text-center">
-                  <FolderKanban className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-muted-foreground">Geen projecten voor deze klant</p>
+                <CardContent className="py-0">
+                  <EmptyState
+                    icon={FolderKanban}
+                    title="Geen projecten"
+                    description="Start een nieuw project voor deze klant — lichtreclame, gevelbelettering of raamsigning."
+                    action={{ label: 'Nieuw project', href: `/projecten/nieuw?klant=${id}` }}
+                    compact
+                  />
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
@@ -860,9 +866,14 @@ export function ClientProfile() {
           {activeTab === 'offertes' && (
             <Card>
               {clientOffertes.length === 0 ? (
-                <CardContent className="py-12 text-center">
-                  <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-muted-foreground">Geen offertes voor deze klant</p>
+                <CardContent className="py-0">
+                  <EmptyState
+                    icon={FileText}
+                    title="Geen offertes"
+                    description="Maak een offerte aan voor deze klant met je producten en prijzen."
+                    action={{ label: 'Nieuwe offerte', href: `/offertes/nieuw?klant_id=${id}` }}
+                    compact
+                  />
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
@@ -919,9 +930,14 @@ export function ClientProfile() {
           {activeTab === 'deals' && (
             <Card>
               {clientDeals.length === 0 ? (
-                <CardContent className="py-12 text-center">
-                  <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-muted-foreground">Geen deals voor deze klant</p>
+                <CardContent className="py-0">
+                  <EmptyState
+                    icon={Briefcase}
+                    title="Geen deals"
+                    description="Track verkoopkansen en volg het traject van lead tot klant."
+                    action={{ label: 'Nieuwe deal', href: `/deals?nieuw=true&klant=${id}` }}
+                    compact
+                  />
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
@@ -969,9 +985,14 @@ export function ClientProfile() {
           {activeTab === 'facturen' && (
             <Card>
               {clientFacturen.length === 0 ? (
-                <CardContent className="py-12 text-center">
-                  <Receipt className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-muted-foreground">Geen facturen voor deze klant</p>
+                <CardContent className="py-0">
+                  <EmptyState
+                    icon={Receipt}
+                    title="Geen facturen"
+                    description="Maak een factuur aan vanuit een goedgekeurde offerte of handmatig."
+                    action={{ label: 'Nieuwe factuur', href: `/facturen?klant=${id}` }}
+                    compact
+                  />
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
