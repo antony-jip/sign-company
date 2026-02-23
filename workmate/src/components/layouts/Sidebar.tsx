@@ -1,21 +1,22 @@
-import React, { useEffect, useRef, useMemo, useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText,
   Mail, Calendar, PiggyBank, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare,
   Receipt, BarChart3, Clock, Wrench, UsersRound,
   ClipboardCheck, Truck, ShoppingCart, Warehouse,
-  Briefcase, UserPlus,
+  Briefcase, UserPlus, History, Star, StarOff,
   type LucideIcon
 } from 'lucide-react'
-import { getOffertes, getMontageAfspraken, getProjecten } from '@/services/supabaseService'
-import type { Offerte, MontageAfspraak, Project } from '@/types'
+import { getOffertes, getMontageAfspraken, getProjecten, getFacturen } from '@/services/supabaseService'
+import type { Offerte, MontageAfspraak, Project, Factuur } from '@/types'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Button } from '@/components/ui/button'
+import { useRecentItems } from '@/hooks/useRecentItems'
 
 interface NavItem {
   label: string
@@ -81,11 +82,60 @@ const navSections: NavSection[] = [
   },
 ]
 
+// Favorites persistence
+const FAVORITES_KEY = 'wm_sidebar_favorites'
+function getFavorites(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]')
+  } catch { return [] }
+}
+function setFavoritesStorage(favs: string[]) {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs))
+}
+
 export function Sidebar() {
   const { isCollapsed, toggleSidebar } = useSidebar()
   const { user, logout } = useAuth()
   const { settings } = useAppSettings()
   const location = useLocation()
+  const navigate = useNavigate()
+  const recentItems = useRecentItems()
+  const [favorites, setFavorites] = useState<string[]>(getFavorites)
+  const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({})
+
+  // Toggle favorite
+  const toggleFavorite = useCallback((path: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
+      setFavoritesStorage(next)
+      return next
+    })
+  }, [])
+
+  // Load badge counts
+  useEffect(() => {
+    let cancelled = false
+    async function loadBadges() {
+      try {
+        const [offertes, facturen] = await Promise.all([
+          getOffertes(),
+          getFacturen().catch(() => [] as Factuur[]),
+        ])
+        if (cancelled) return
+        const openOffertes = offertes.filter((o) => ['verzonden', 'bekeken'].includes(o.status)).length
+        const vervallenFacturen = facturen.filter((f) => {
+          if (f.status !== 'verzonden') return false
+          return f.vervaldatum && new Date(f.vervaldatum) < new Date()
+        }).length
+        setBadgeCounts({
+          '/offertes': openOffertes,
+          '/facturen': vervallenFacturen,
+        })
+      } catch {}
+    }
+    loadBadges()
+    return () => { cancelled = true }
+  }, [])
 
   // Filter navigatie op basis van instellingen — Instellingen is altijd zichtbaar
   const filteredNavSections = useMemo(() => {
@@ -136,6 +186,7 @@ export function Sidebar() {
         ? location.pathname === '/'
         : location.pathname.startsWith(item.path)
     const Icon = item.icon
+    const badgeCount = badgeCounts[item.path] || 0
 
     const link = (
       <NavLink
@@ -152,7 +203,19 @@ export function Sidebar() {
           'w-[17px] h-[17px] flex-shrink-0 transition-colors duration-200',
           isActive ? 'text-primary' : 'text-gray-500 group-hover:text-gray-400'
         )} />
-        {!isCollapsed && <span className="truncate">{item.label}</span>}
+        {!isCollapsed && (
+          <>
+            <span className="truncate flex-1">{item.label}</span>
+            {badgeCount > 0 && (
+              <span className="flex items-center justify-center h-4.5 min-w-[18px] px-1 text-[10px] font-bold rounded-full bg-primary/20 text-primary">
+                {badgeCount}
+              </span>
+            )}
+          </>
+        )}
+        {isCollapsed && badgeCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
+        )}
       </NavLink>
     )
 
@@ -162,13 +225,31 @@ export function Sidebar() {
           {link}
           <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 wm-tooltip opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none">
             {item.label}
+            {badgeCount > 0 && <span className="ml-1.5 text-primary font-bold">({badgeCount})</span>}
             <div className="absolute right-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-[hsl(42,28%,14%)]" />
           </div>
         </div>
       )
     }
 
-    return <React.Fragment key={item.path}>{link}</React.Fragment>
+    return (
+      <div key={item.path} className="relative group/fav flex items-center">
+        {link}
+        {item.path !== '/' && item.path !== '/instellingen' && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item.path) }}
+            className={cn(
+              'absolute right-1 p-0.5 rounded transition-all',
+              favorites.includes(item.path)
+                ? 'text-yellow-400 opacity-100'
+                : 'text-gray-600 opacity-0 group-hover/fav:opacity-100 hover:text-yellow-400'
+            )}
+          >
+            <Star className={cn('w-3 h-3', favorites.includes(item.path) && 'fill-yellow-400')} />
+          </button>
+        )}
+      </div>
+    )
   }
 
   const sidebarContent = (
@@ -221,6 +302,67 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Favorites section */}
+      {!isCollapsed && favorites.length > 0 && (
+        <div className="mx-3 mb-1">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-white/20 mb-1.5 px-0.5 flex items-center gap-1">
+            <Star className="w-2.5 h-2.5" />
+            Favorieten
+          </p>
+          <div className="space-y-0.5">
+            {favorites.map((path) => {
+              const allItems = navSections.flatMap((s) => s.items)
+              const item = allItems.find((i) => i.path === path)
+              if (!item) return null
+              const Icon = item.icon
+              const isActive = location.pathname.startsWith(item.path)
+              return (
+                <div key={path} className="flex items-center group">
+                  <NavLink
+                    to={item.path}
+                    className={cn(
+                      'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-colors',
+                      isActive ? 'text-white bg-white/[0.06]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span className="truncate">{item.label}</span>
+                  </NavLink>
+                  <button
+                    onClick={() => toggleFavorite(path)}
+                    className="p-1 rounded opacity-0 group-hover:opacity-100 text-gray-600 hover:text-yellow-400 transition-all"
+                  >
+                    <StarOff className="w-3 h-3" />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent items section */}
+      {!isCollapsed && recentItems.length > 0 && (
+        <div className="mx-3 mb-1">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-white/20 mb-1.5 px-0.5 flex items-center gap-1">
+            <History className="w-2.5 h-2.5" />
+            Recent bezocht
+          </p>
+          <div className="space-y-0.5">
+            {recentItems.slice(0, 5).map((item) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-gray-500 hover:text-gray-300 hover:bg-white/[0.03] transition-colors text-left"
+              >
+                <span className="truncate flex-1">{item.label}</span>
+                <span className="text-[10px] text-gray-600 flex-shrink-0">{item.type}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Mini status bar — sign-industry pulse */}
       {!isCollapsed && <SidebarPulse />}
