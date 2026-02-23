@@ -2,6 +2,7 @@ import React from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { SalesPulseWidget } from './SalesPulseWidget'
+import { ActionableItemsWidget } from './ActionableItemsWidget'
 import { TodayPlanningWidget } from './TodayPlanningWidget'
 import { WeatherWidget } from './WeatherWidget'
 import { QuickActions } from './QuickActions'
@@ -108,6 +109,7 @@ export function WorkmateDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left column — planning & tasks */}
         <div className="lg:col-span-2 space-y-5">
+          <ActionableItemsWidget />
           <TodayPlanningWidget />
           <PriorityTasks />
           <QuickActions />
