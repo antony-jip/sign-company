@@ -51,9 +51,11 @@ import {
   deleteTijdregistratie,
   getProjecten,
   getKlanten,
+  getFacturen,
   createFactuur,
   createFactuurItem,
 } from "@/services/supabaseService";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
 import type { Tijdregistratie, Project, Klant } from "@/types";
 import { round2 } from "@/utils/budgetUtils";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -172,6 +174,7 @@ const EMPTY_FORM: FormData = {
 };
 
 export function TijdregistratieLayout() {
+  const { standaardBtw } = useAppSettings();
   const [registraties, setRegistraties] = useState<Tijdregistratie[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [klanten, setKlanten] = useState<Klant[]>([]);
@@ -522,6 +525,7 @@ export function TijdregistratieLayout() {
         const klant = project ? klanten.find((k) => k.id === project.klant_id) : null;
 
         // Bereken factuuritems per uurregistratie
+        const btwPercentage = standaardBtw ?? 21;
         const items = regs.map((r, i) => {
           const uren = round2(r.duur_minuten / 60);
           const totaal = round2(uren * r.uurtarief);
@@ -529,7 +533,7 @@ export function TijdregistratieLayout() {
             beschrijving: `${r.datum} - ${r.omschrijving} (${uren}u)`,
             aantal: uren,
             eenheidsprijs: r.uurtarief,
-            btw_percentage: 21,
+            btw_percentage: btwPercentage,
             korting_percentage: 0,
             totaal,
             volgorde: i,
@@ -537,15 +541,27 @@ export function TijdregistratieLayout() {
         });
 
         const subtotaal = round2(items.reduce((sum, item) => sum + item.totaal, 0));
-        const btwBedrag = round2(subtotaal * 0.21);
+        const btwBedrag = round2(subtotaal * (btwPercentage / 100));
         const totaal = round2(subtotaal + btwBedrag);
+
+        // Generate sequential factuur nummer
+        const existingFacturen = await getFacturen().catch(() => []);
+        const year = new Date().getFullYear();
+        const facPrefix = `FAC-${year}-`;
+        const maxNum = existingFacturen
+          .filter((f) => f.nummer.startsWith(facPrefix))
+          .reduce((max, f) => {
+            const num = parseInt(f.nummer.replace(facPrefix, ''), 10);
+            return isNaN(num) ? max : Math.max(max, num);
+          }, 0);
+        const factuurNummer = `${facPrefix}${String(maxNum + 1).padStart(3, '0')}`;
 
         const factuur = await createFactuur({
           user_id: regs[0].user_id,
           klant_id: klant?.id || "",
           klant_naam: klant?.bedrijfsnaam || project?.klant_naam || "",
           project_id: projectId,
-          nummer: `FAC-${Date.now().toString(36).toUpperCase()}`,
+          nummer: factuurNummer,
           titel: `Uren ${project?.naam || "project"} - ${new Date().toLocaleDateString("nl-NL")}`,
           status: "concept",
           subtotaal,

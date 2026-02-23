@@ -20,13 +20,14 @@ import {
 } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Werkbon, WerkbonRegel, WerkbonFoto, Klant, Project, Medewerker } from '@/types'
 import {
   getWerkbon, createWerkbon, updateWerkbon,
   getWerkbonRegels, createWerkbonRegel, updateWerkbonRegel, deleteWerkbonRegel,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
   getKlanten, getProjecten, getProjectenByKlant, getMedewerkers,
-  createFactuur, createFactuurItem,
+  createFactuur, createFactuurItem, getFacturen,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -43,6 +44,7 @@ export function WerkbonDetail() {
   const { user } = useAuth()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
+  const { standaardBtw } = useAppSettings()
 
   // Data
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -207,13 +209,22 @@ export function WerkbonDetail() {
 
   // Indienen
   const handleIndienen = useCallback(async () => {
-    await handleSave()
-    if (werkbonId) {
+    if (isNew) {
+      // For new werkbonnen, we must save first, which navigates to the new page.
+      // The status update happens after navigation via the new werkbonId.
+      toast.info('Sla de werkbon eerst op voordat je deze indient')
+      return
+    }
+    if (!werkbonId) return
+    try {
+      await handleSave()
       await updateWerkbon(werkbonId, { status: 'ingediend' })
       setStatus('ingediend')
       toast.success('Werkbon ingediend')
+    } catch {
+      toast.error('Fout bij indienen werkbon')
     }
-  }, [handleSave, werkbonId])
+  }, [handleSave, werkbonId, isNew])
 
   // Regel toevoegen
   const handleRegelToevoegen = useCallback(async (type: WerkbonRegel['type']) => {
@@ -271,10 +282,11 @@ export function WerkbonDetail() {
     const subtotaal = round2(regels.filter((r) => r.factureerbaar).reduce((sum, r) => sum + r.totaal, 0))
     const kmKosten = round2((kilometers || 0) * (kmTarief || 0))
     const totaalExcl = round2(subtotaal + kmKosten)
-    const btw = round2(totaalExcl * 0.21)
+    const btwPercentage = standaardBtw ?? 21
+    const btw = round2(totaalExcl * (btwPercentage / 100))
     const totaalIncl = round2(totaalExcl + btw)
     return { subtotaal, kmKosten, totaalExcl, btw, totaalIncl }
-  }, [regels, kilometers, kmTarief])
+  }, [regels, kilometers, kmTarief, standaardBtw])
 
   // Handtekening canvas
   const startDraw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -354,6 +366,7 @@ export function WerkbonDetail() {
   // Werkbon → Factuur conversie
   const handleFactureer = useCallback(async () => {
     try {
+      const btwPercentage = standaardBtw ?? 21
       const factureerRegels = regels.filter((r) => r.factureerbaar)
       const klant = klanten.find((k) => k.id === klantId)
       const project = projecten.find((p) => p.id === projectId)
@@ -368,7 +381,7 @@ export function WerkbonDetail() {
             beschrijving: `${regel.omschrijving}${regel.medewerker_id ? ` - ${medewerkers.find((m) => m.id === regel.medewerker_id)?.naam || ''}` : ''}`,
             aantal: regel.uren || 1,
             eenheidsprijs: regel.uurtarief || 0,
-            btw_percentage: 21,
+            btw_percentage: btwPercentage,
             korting_percentage: 0,
             totaal: regel.totaal,
             volgorde,
@@ -378,7 +391,7 @@ export function WerkbonDetail() {
             beschrijving: regel.omschrijving,
             aantal: regel.aantal || 1,
             eenheidsprijs: regel.prijs_per_eenheid || 0,
-            btw_percentage: 21,
+            btw_percentage: btwPercentage,
             korting_percentage: 0,
             totaal: regel.totaal,
             volgorde,
@@ -393,7 +406,7 @@ export function WerkbonDetail() {
           beschrijving: `Kilometervergoeding (${kilometers} km × €${kmTarief.toFixed(2)})`,
           aantal: kilometers,
           eenheidsprijs: kmTarief,
-          btw_percentage: 21,
+          btw_percentage: btwPercentage,
           korting_percentage: 0,
           totaal: round2(kilometers * kmTarief),
           volgorde,
@@ -401,14 +414,26 @@ export function WerkbonDetail() {
       }
 
       const subtotaal = round2(factuurItems.reduce((sum, i) => sum + i.totaal, 0))
-      const btw = round2(subtotaal * 0.21)
+      const btw = round2(subtotaal * (btwPercentage / 100))
+
+      // Generate a proper unique factuur nummer
+      const existingFacturen = await getFacturen().catch(() => [])
+      const year = new Date().getFullYear()
+      const prefix = `FAC-${year}-`
+      const maxNum = existingFacturen
+        .filter((f) => f.nummer.startsWith(prefix))
+        .reduce((max, f) => {
+          const num = parseInt(f.nummer.replace(prefix, ''), 10)
+          return isNaN(num) ? max : Math.max(max, num)
+        }, 0)
+      const factuurNummer = `${prefix}${String(maxNum + 1).padStart(3, '0')}`
 
       const factuur = await createFactuur({
         user_id: userId,
         klant_id: klantId,
         klant_naam: klant?.bedrijfsnaam,
         project_id: projectId,
-        nummer: `F-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
+        nummer: factuurNummer,
         titel: `Werkbon ${werkbonNummer} - ${project?.naam || ''}`,
         status: 'concept',
         subtotaal,
@@ -824,7 +849,7 @@ export function WerkbonDetail() {
                 <span className="font-medium">{formatCurrency(totalen.totaalExcl)}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
-                <span>BTW (21%)</span>
+                <span>BTW ({standaardBtw ?? 21}%)</span>
                 <span>{formatCurrency(totalen.btw)}</span>
               </div>
               <Separator />

@@ -314,7 +314,7 @@ export function QuoteCreation() {
       const newOfferte = await createOfferte({
         user_id: user.id,
         klant_id: selectedKlantId,
-        ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+        ...(selectedProjectId && selectedProjectId !== 'geen' ? { project_id: selectedProjectId } : {}),
         ...(paramDealId ? { deal_id: paramDealId } : {}),
         nummer: offerteNummer,
         titel: offerteTitel,
@@ -328,18 +328,21 @@ export function QuoteCreation() {
       })
 
       await Promise.all(
-        items.map((item, index) =>
-          createOfferteItem({
+        items.map((item, index) => {
+          // Recalculate totaal at save time to avoid stale state
+          const bruto = item.aantal * item.eenheidsprijs
+          const lineTotal = round2(bruto - bruto * (item.korting_percentage / 100))
+          return createOfferteItem({
             offerte_id: newOfferte.id,
             beschrijving: item.beschrijving,
             aantal: item.aantal,
             eenheidsprijs: item.eenheidsprijs,
             btw_percentage: item.btw_percentage,
             korting_percentage: item.korting_percentage,
-            totaal: item.totaal,
+            totaal: lineTotal,
             volgorde: index + 1,
           })
-        )
+        })
       )
 
       if (status === 'verzonden' && selectedKlant?.email) {
@@ -395,18 +398,22 @@ export function QuoteCreation() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
-      const offerteItems = items.map((item, index) => ({
-        id: item.id,
-        offerte_id: '',
-        beschrijving: item.beschrijving,
-        aantal: item.aantal,
-        eenheidsprijs: item.eenheidsprijs,
-        btw_percentage: item.btw_percentage,
-        korting_percentage: item.korting_percentage,
-        totaal: item.totaal,
-        volgorde: index + 1,
-        created_at: new Date().toISOString(),
-      }))
+      const offerteItems = items.map((item, index) => {
+        const bruto = item.aantal * item.eenheidsprijs
+        const lineTotal = round2(bruto - bruto * (item.korting_percentage / 100))
+        return {
+          id: item.id,
+          offerte_id: '',
+          beschrijving: item.beschrijving,
+          aantal: item.aantal,
+          eenheidsprijs: item.eenheidsprijs,
+          btw_percentage: item.btw_percentage,
+          korting_percentage: item.korting_percentage,
+          totaal: lineTotal,
+          volgorde: index + 1,
+          created_at: new Date().toISOString(),
+        }
+      })
       const doc = generateOffertePDF(offerteData, offerteItems, selectedKlant, {
         bedrijfsnaam: bedrijfsnaam || 'Uw Bedrijf',
         bedrijfs_adres: bedrijfsAdres || '',

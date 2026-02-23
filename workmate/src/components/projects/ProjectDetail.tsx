@@ -91,6 +91,7 @@ import {
   deleteProjectToewijzing,
   getWerkbonnenByProject,
   getUitgavenByProject,
+  getFacturen,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -277,8 +278,17 @@ export function ProjectDetail() {
       // Get offerte items
       const offerteItems = await getOfferteItems(offerte.id)
 
-      // Create factuur
-      const factuurNummer = `FAC-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`
+      // Generate sequential factuur nummer
+      const existingFacturen = await getFacturen().catch(() => [])
+      const year = new Date().getFullYear()
+      const facPrefix = `FAC-${year}-`
+      const maxNum = existingFacturen
+        .filter((f) => f.nummer.startsWith(facPrefix))
+        .reduce((max, f) => {
+          const num = parseInt(f.nummer.replace(facPrefix, ''), 10)
+          return isNaN(num) ? max : Math.max(max, num)
+        }, 0)
+      const factuurNummer = `${facPrefix}${String(maxNum + 1).padStart(3, '0')}`
       const vervaldatum = new Date()
       vervaldatum.setDate(vervaldatum.getDate() + 30)
 

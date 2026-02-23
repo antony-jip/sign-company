@@ -333,7 +333,7 @@ export function QuoteItemsTable({
                       <label className="text-[11px] font-medium text-muted-foreground">BTW</label>
                       <Select
                         value={String(item.btw_percentage)}
-                        onValueChange={(value) => onUpdateItem(item.id, 'btw_percentage', parseInt(value))}
+                        onValueChange={(value) => onUpdateItem(item.id, 'btw_percentage', parseFloat(value))}
                       >
                         <SelectTrigger className="h-9 text-sm">
                           <SelectValue />

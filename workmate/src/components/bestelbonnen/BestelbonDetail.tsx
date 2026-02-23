@@ -140,9 +140,14 @@ export function BestelbonDetail() {
     setRegels((prev) => prev.filter((r) => r.id !== regelId))
   }, [])
 
-  const berekenTotaal = useMemo(() => {
-    return round2(regels.reduce((sum, r) => sum + round2(r.aantal * r.prijs_per_eenheid), 0))
+  const berekenTotalen = useMemo(() => {
+    const subtotaal = round2(regels.reduce((sum, r) => sum + round2(r.aantal * r.prijs_per_eenheid), 0))
+    const btwBedrag = round2(regels.reduce((s, r) => s + round2(round2(r.aantal * r.prijs_per_eenheid) * (r.btw_percentage || 21) / 100), 0))
+    const totaal = round2(subtotaal + btwBedrag)
+    return { subtotaal, btwBedrag, totaal }
   }, [regels])
+  // Keep backwards-compatible alias used by PDF generation
+  const berekenTotaal = berekenTotalen.subtotaal
 
   // ============ ONTVANGST ============
 
@@ -531,9 +536,19 @@ export function BestelbonDetail() {
 
               <Separator />
 
-              <div className="flex justify-between items-center px-1">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Totaal</span>
-                <span className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(berekenTotaal)}</span>
+              <div className="space-y-1 px-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Subtotaal excl. BTW</span>
+                  <span className="text-sm font-medium">{formatCurrency(berekenTotalen.subtotaal)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">BTW</span>
+                  <span className="text-sm font-medium">{formatCurrency(berekenTotalen.btwBedrag)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Totaal incl. BTW</span>
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(berekenTotalen.totaal)}</span>
+                </div>
               </div>
 
               {ontvangenStatus && (
