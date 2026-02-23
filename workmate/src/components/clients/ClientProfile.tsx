@@ -50,6 +50,10 @@ import {
   ChevronDown,
   CalendarPlus,
   Receipt,
+  History,
+  Briefcase,
+  ClipboardCheck,
+  ArrowRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -70,10 +74,11 @@ import {
   getFacturen,
   getDealsByKlant,
   getTijdregistraties,
+  getWerkbonnenByKlant,
   updateKlant,
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
-import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal, Tijdregistratie } from '@/types'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal, Tijdregistratie, Werkbon } from '@/types'
 
 function getStatusBarColor(status: string): string {
   switch (status) {
@@ -118,8 +123,9 @@ export function ClientProfile() {
   const [clientDeals, setClientDeals] = useState<Deal[]>([])
   const [clientTijdregistraties, setClientTijdregistraties] = useState<Tijdregistratie[]>([])
   const [clientOffertes, setClientOffertes] = useState<Offerte[]>([])
+  const [clientWerkbonnen, setClientWerkbonnen] = useState<Werkbon[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('projecten')
+  const [activeTab, setActiveTab] = useState('timeline')
   const [notitie, setNotitie] = useState('')
   const [savingNotitie, setSavingNotitie] = useState(false)
   // Contact person form
@@ -138,7 +144,8 @@ export function ClientProfile() {
       getFacturen().catch(() => []),
       getDealsByKlant(id).catch(() => []),
       getTijdregistraties().catch(() => []),
-    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals, allTijd]) => {
+      getWerkbonnenByKlant(id).catch(() => []),
+    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals, allTijd, werkbonnen]) => {
       setKlant(klantData)
       setClientProjecten(projecten)
       setNotitie(klantData?.notities || '')
@@ -158,6 +165,7 @@ export function ClientProfile() {
       setClientDocumenten(allDocs.filter((d) => d.klant_id === id))
       setClientFacturen(allFacturen.filter((f) => f.klant_id === id))
       setClientDeals(deals)
+      setClientWerkbonnen(werkbonnen)
       const projectIds = new Set(projecten.map((p) => p.id))
       setClientTijdregistraties(allTijd.filter((t) => projectIds.has(t.project_id)))
       setIsLoading(false)
@@ -275,7 +283,76 @@ export function ClientProfile() {
   }
 
   const contactpersonen = klant.contactpersonen || []
+
+  // Build synthesized timeline from all client data
+  const timelineItems = useMemo(() => {
+    interface TimelineItem {
+      id: string
+      type: 'project' | 'deal' | 'offerte' | 'factuur' | 'email' | 'werkbon'
+      title: string
+      subtitle: string
+      date: string
+      icon: typeof FolderKanban
+      color: string
+      bg: string
+      link?: string
+      status?: string
+    }
+    const items: TimelineItem[] = []
+
+    clientProjecten.forEach((p) => items.push({
+      id: `project-${p.id}`, type: 'project', title: p.naam,
+      subtitle: `Status: ${statusLabels[p.status] || p.status}`,
+      date: p.created_at, icon: FolderKanban,
+      color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20',
+      link: `/projecten/${p.id}`, status: p.status,
+    }))
+
+    clientDeals.forEach((d) => items.push({
+      id: `deal-${d.id}`, type: 'deal', title: d.titel,
+      subtitle: `${formatCurrency(d.verwachte_waarde)} — ${d.status}`,
+      date: d.created_at, icon: Briefcase,
+      color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20',
+      link: `/deals/${d.id}`, status: d.status,
+    }))
+
+    clientOffertes.forEach((o) => items.push({
+      id: `offerte-${o.id}`, type: 'offerte', title: `${o.nummer} — ${o.titel}`,
+      subtitle: `${formatCurrency(o.totaal)} — ${o.status}`,
+      date: o.created_at, icon: FileText,
+      color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20',
+      link: `/offertes/${o.id}`, status: o.status,
+    }))
+
+    clientFacturen.forEach((f) => items.push({
+      id: `factuur-${f.id}`, type: 'factuur', title: `${f.nummer} — ${f.titel}`,
+      subtitle: `${formatCurrency(f.totaal)} — ${f.status}`,
+      date: f.created_at, icon: Receipt,
+      color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+      link: `/facturen`, status: f.status,
+    }))
+
+    clientWerkbonnen.forEach((w) => items.push({
+      id: `werkbon-${w.id}`, type: 'werkbon', title: w.werkbon_nummer,
+      subtitle: `${w.locatie_adres || 'Geen adres'} — ${w.status}`,
+      date: w.created_at, icon: ClipboardCheck,
+      color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20',
+      link: `/werkbonnen/${w.id}`, status: w.status,
+    }))
+
+    clientEmails.forEach((e) => items.push({
+      id: `email-${e.id}`, type: 'email', title: e.onderwerp,
+      subtitle: e.van || '',
+      date: e.datum, icon: Mail,
+      color: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-50 dark:bg-gray-900/20',
+    }))
+
+    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    return items
+  }, [clientProjecten, clientDeals, clientOffertes, clientFacturen, clientWerkbonnen, clientEmails])
+
   const tabs = [
+    { key: 'timeline', label: 'Tijdlijn', count: timelineItems.length, icon: History },
     { key: 'projecten', label: 'Projecten', count: clientProjecten.length, icon: FolderKanban },
     { key: 'deals', label: 'Deals', count: clientDeals.length, icon: CreditCard },
     { key: 'offertes', label: 'Offertes', count: clientOffertes.length, icon: FileText },
@@ -318,6 +395,32 @@ export function ClientProfile() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Quick-action buttons */}
+          {klant.email && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => navigate(`/email?compose=true&to=${encodeURIComponent(klant.email)}`)}
+            >
+              <Mail className="w-3.5 h-3.5" />
+              Mail
+            </Button>
+          )}
+          {klant.telefoon && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              asChild
+            >
+              <a href={`tel:${klant.telefoon}`}>
+                <Phone className="w-3.5 h-3.5" />
+                Bel
+              </a>
+            </Button>
+          )}
+
           {/* Toevoegen dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -357,9 +460,16 @@ export function ClientProfile() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="gap-2 cursor-pointer"
+                onClick={() => navigate(`/werkbonnen/nieuw?klant_id=${id}`)}
+              >
+                <ClipboardCheck className="w-4 h-4 text-amber-500" />
+                Werkbon
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer"
                 onClick={() => openAddContact()}
               >
-                <Users className="w-4 h-4 text-amber-500" />
+                <Users className="w-4 h-4 text-orange-500" />
                 Contactpersoon
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -557,6 +667,61 @@ export function ClientProfile() {
               )
             })}
           </div>
+
+          {/* ════════ TIMELINE TAB ════════ */}
+          {activeTab === 'timeline' && (
+            <Card>
+              {timelineItems.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <History className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Nog geen activiteiten voor deze klant</p>
+                  <p className="text-xs text-muted-foreground mt-1">Maak een project, offerte of deal aan om te beginnen</p>
+                </CardContent>
+              ) : (
+                <CardContent className="py-4">
+                  <div className="relative">
+                    {/* Vertical timeline line */}
+                    <div className="absolute left-[19px] top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
+
+                    <div className="space-y-1">
+                      {timelineItems.slice(0, 30).map((item) => {
+                        const Icon = item.icon
+                        return (
+                          <div
+                            key={item.id}
+                            className="relative flex items-start gap-3 pl-0 py-2 group cursor-pointer hover:bg-muted/30 rounded-lg px-2 transition-colors"
+                            onClick={() => item.link && navigate(item.link)}
+                          >
+                            <div className={cn('relative z-10 flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 border-2 border-white dark:border-gray-900', item.bg)}>
+                              <Icon className={cn('w-4 h-4', item.color)} />
+                            </div>
+                            <div className="flex-1 min-w-0 pt-1">
+                              <p className="text-sm font-medium text-foreground truncate group-hover:text-accent transition-colors">
+                                {item.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">{item.subtitle}</p>
+                              <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                                {formatDateTime(item.date)}
+                              </p>
+                            </div>
+                            {item.link && (
+                              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-2 flex-shrink-0" />
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {timelineItems.length > 30 && (
+                      <p className="text-xs text-muted-foreground text-center mt-4">
+                        +{timelineItems.length - 30} meer items
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          )}
 
           {/* ════════ PROJECTEN TAB ════════ */}
           {activeTab === 'projecten' && (
