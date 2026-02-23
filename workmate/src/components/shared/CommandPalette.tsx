@@ -60,6 +60,18 @@ const actionItems: CommandItem[] = [
   { id: 'act-nieuwe-werkbon', label: 'Nieuwe Werkbon', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/werkbonnen/nieuw', category: 'Acties' },
 ]
 
+const settingsItems: CommandItem[] = [
+  { id: 'set-profiel', label: 'Profiel', subtitle: 'Uw persoonlijke gegevens', icon: <Settings className="w-4 h-4" />, path: '/instellingen?tab=profiel', category: 'Instellingen' },
+  { id: 'set-bedrijf', label: 'Bedrijfsgegevens', subtitle: 'Bedrijfsinformatie en logo', icon: <Settings className="w-4 h-4" />, path: '/instellingen?tab=bedrijf', category: 'Instellingen' },
+  { id: 'set-huisstijl', label: 'Huisstijl', subtitle: 'Document styling en briefpapier', icon: <Settings className="w-4 h-4" />, path: '/instellingen?tab=huisstijl', category: 'Instellingen' },
+  { id: 'set-calculatie', label: 'Calculatie', subtitle: 'Producten, marges en eenheden', icon: <Settings className="w-4 h-4" />, path: '/instellingen?tab=calculatie', category: 'Instellingen' },
+  { id: 'set-aanpassingen', label: 'Aanpassingen', subtitle: 'Pipeline, statussen en workflows', icon: <Settings className="w-4 h-4" />, path: '/instellingen?tab=aanpassingen', category: 'Instellingen' },
+  { id: 'set-meldingen', label: 'Meldingen', subtitle: 'E-mail en pushnotificaties', icon: <Settings className="w-4 h-4" />, path: '/instellingen?tab=meldingen', category: 'Instellingen' },
+  { id: 'set-integraties', label: 'Integraties', subtitle: 'Koppelingen met externe diensten', icon: <Settings className="w-4 h-4" />, path: '/instellingen?tab=integraties', category: 'Instellingen' },
+  { id: 'set-beveiliging', label: 'Beveiliging', subtitle: 'Wachtwoord en sessies', icon: <Settings className="w-4 h-4" />, path: '/instellingen?tab=beveiliging', category: 'Instellingen' },
+  { id: 'set-weergave', label: 'Weergave', subtitle: 'Thema, taal en lay-out', icon: <Settings className="w-4 h-4" />, path: '/instellingen?tab=weergave', category: 'Instellingen' },
+]
+
 function mapOffertesToItems(offertes: Offerte[]): CommandItem[] {
   return offertes.map((o) => ({
     id: `offerte-${o.id}`,
@@ -223,6 +235,7 @@ export function CommandPalette() {
     const matchRecent = recentCommandItems.filter(matchItem)
     const matchNav = navigationItems.filter(matchItem)
     const matchActions = actionItems.filter(matchItem)
+    const matchSettings = settingsItems.filter(matchItem)
     const matchOffertes = offerteItems.filter(matchItem)
     const matchKlanten = klantItems.filter(matchItem)
     const matchProjecten = projectItems.filter(matchItem)
@@ -234,6 +247,7 @@ export function CommandPalette() {
       ...matchRecent,
       ...matchNav,
       ...matchActions,
+      ...matchSettings,
       ...matchOffertes,
       ...matchKlanten,
       ...matchProjecten,

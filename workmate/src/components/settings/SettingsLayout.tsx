@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -110,8 +111,23 @@ function renderTabContent(tabId: string) {
   }
 }
 
+const VALID_TABS = new Set(['profiel', 'bedrijf', 'huisstijl', 'calculatie', 'aanpassingen', 'meldingen', 'integraties', 'beveiliging', 'weergave'])
+
 export function SettingsLayout() {
-  const [activeTab, setActiveTab] = useState('profiel')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [activeTab, setActiveTab] = useState(() => {
+    const tabParam = searchParams.get('tab')
+    return tabParam && VALID_TABS.has(tabParam) ? tabParam : 'profiel'
+  })
+
+  // Handle ?tab= URL param (e.g. from Command Palette)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && VALID_TABS.has(tabParam)) {
+      setActiveTab(tabParam)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   return (
     <div className="space-y-6">
