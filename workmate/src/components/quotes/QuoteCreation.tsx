@@ -58,7 +58,7 @@ const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven t
 7. Wijzigingen na akkoord kunnen tot meerkosten leiden.
 8. Garantie: 2 jaar op materiaal en constructie, 1 jaar op elektronica.`
 
-const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
+const ITEM_COUNT_PRESETS = [1, 2, 3, 5, 10] as const
 
 const steps = [
   { number: 0, label: 'Klant & Details', icon: User },
@@ -691,8 +691,8 @@ export function QuoteCreation() {
                 <p className="text-sm text-muted-foreground mb-3">
                   Elk item is een complete prijsberekening met omschrijving en details. Je kunt later altijd nog items toevoegen of verwijderen.
                 </p>
-                <div className="flex items-center gap-2">
-                  {ITEM_COUNT_OPTIONS.map((count) => (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {ITEM_COUNT_PRESETS.map((count) => (
                     <button
                       key={count}
                       onClick={() => setItemCount(count)}
@@ -706,7 +706,32 @@ export function QuoteCreation() {
                       {count}
                     </button>
                   ))}
-                  <span className="text-sm text-muted-foreground ml-2">
+                  <div className="flex items-center gap-1.5 ml-2">
+                    <button
+                      onClick={() => setItemCount(Math.max(1, itemCount - 1))}
+                      className="h-8 w-8 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-muted transition-colors text-sm font-bold"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={99}
+                      value={itemCount}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10)
+                        if (!isNaN(val) && val >= 1 && val <= 99) setItemCount(val)
+                      }}
+                      className="h-8 w-14 rounded-lg border border-gray-200 dark:border-gray-700 text-center text-sm font-bold bg-transparent"
+                    />
+                    <button
+                      onClick={() => setItemCount(Math.min(99, itemCount + 1))}
+                      className="h-8 w-8 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-muted transition-colors text-sm font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
                     {itemCount === 1 ? 'item' : 'items'}
                   </span>
                 </div>
