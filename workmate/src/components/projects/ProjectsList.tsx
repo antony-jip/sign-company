@@ -656,7 +656,7 @@ export function ProjectsList() {
                   return (
                     <tr
                       key={project.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                      className="wm-row-hover cursor-pointer"
                       onClick={() => window.location.href = `/projecten/${project.id}`}
                     >
                       {/* Status - links met kleur-achtergrond */}
@@ -843,7 +843,7 @@ export function ProjectsList() {
                 className="group block"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <Card className="h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5 border-gray-200/80 dark:border-gray-700/80 relative">
+                <Card className="h-full overflow-hidden wm-card-hover border-gray-200/80 dark:border-gray-700/80 relative">
                   {/* Top accent line */}
                   <div className={`absolute top-0 left-0 right-0 h-0.5 ${
                     project.status === 'actief' ? 'bg-gradient-to-r from-green-400 to-emerald-500' :

@@ -248,7 +248,7 @@ export function WerkbonnenLayout() {
                 {gefilterd.map((wb) => {
                   const cfg = STATUS_CONFIG[wb.status] || STATUS_CONFIG.concept
                   return (
-                    <tr key={wb.id} className="group hover:bg-gray-50/80 dark:hover:bg-gray-800/50 cursor-pointer"
+                    <tr key={wb.id} className="group wm-row-hover cursor-pointer"
                       onClick={() => navigate(`/werkbonnen/${wb.id}`)}>
                       <td className="px-4 py-3 font-mono text-sm font-medium">{wb.werkbon_nummer}</td>
                       <td className="px-4 py-3 text-sm">{getKlantNaam(wb.klant_id)}</td>

@@ -17,7 +17,7 @@ export function ClientCard({ klant, projectCount }: ClientCardProps) {
 
   return (
     <Card
-      className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800"
+      className="cursor-pointer wm-card-hover hover:border-blue-200 dark:hover:border-blue-800"
       onClick={() => navigate(`/klanten/${klant.id}`)}
     >
       <CardHeader className="pb-3">

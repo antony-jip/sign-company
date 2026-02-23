@@ -403,6 +403,43 @@
   background-clip: text;
 }
 
+/* ================================================================
+   HOVER ANIMATIONS
+   ================================================================ */
+
+/* Card lift on hover — subtle shadow + translate */
+.wm-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.wm-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 10px -6px rgba(0, 0, 0, 0.04);
+}
+.dark .wm-card-hover:hover {
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3), 0 4px 10px -6px rgba(0, 0, 0, 0.2);
+}
+
+/* Row highlight — border accent on hover */
+.wm-row-hover {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  border-left: 3px solid transparent;
+}
+.wm-row-hover:hover {
+  background-color: hsl(var(--accent) / 0.04);
+  border-left-color: hsl(var(--primary));
+}
+
+/* Scale micro-interaction for buttons/icons */
+.wm-scale-hover {
+  transition: transform 0.15s ease;
+}
+.wm-scale-hover:hover {
+  transform: scale(1.05);
+}
+.wm-scale-hover:active {
+  transform: scale(0.98);
+}
+
 /* Login page animated gradient — warm terracotta */
 .wm-login-bg {
   background: linear-gradient(-45deg,

@@ -396,7 +396,7 @@ export function DealsLayout() {
                         draggable
                         onDragStart={(e) => handleDragStart(e, deal.id)}
                         onClick={() => navigate(`/deals/${deal.id}`)}
-                        className="bg-white/80 dark:bg-gray-800/80 rounded-xl border p-3 space-y-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                        className="bg-white/80 dark:bg-gray-800/80 rounded-xl border p-3 space-y-2 wm-card-hover cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-500">{getKlantNaam(deal.klant_id)}</span>
