@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Uitgave, Leverancier, Project } from '@/types'
 import {
   getUitgaven, createUitgave, updateUitgave, deleteUitgave,
@@ -87,6 +88,7 @@ const EMPTY_FORM: FormData = {
 
 export function UitgavenLayout() {
   const { user } = useAuth()
+  const { settings } = useAppSettings()
   const userId = user?.id || ''
 
   const [uitgaven, setUitgaven] = useState<Uitgave[]>([])
@@ -233,7 +235,7 @@ export function UitgavenLayout() {
         setUitgaven((prev) => prev.map((u) => u.id === editingId ? { ...u, ...updated } : u))
         toast.success('Uitgave bijgewerkt')
       } else {
-        const created = await createUitgave(data as Parameters<typeof createUitgave>[0])
+        const created = await createUitgave(data as Parameters<typeof createUitgave>[0], settings?.uitgave_prefix)
         setUitgaven((prev) => [created, ...prev])
         toast.success(`Uitgave ${created.uitgave_nummer} aangemaakt`)
       }

@@ -52,7 +52,7 @@ export function BestelbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const isNew = id === 'nieuw'
-  const { profile, primaireKleur } = useAppSettings()
+  const { profile, settings, primaireKleur } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   // Data
@@ -109,7 +109,7 @@ export function BestelbonDetail() {
           navigate('/bestelbonnen')
         }
       } else {
-        const nr = await generateBestelbonNummer()
+        const nr = await generateBestelbonNummer(settings?.bestelbon_prefix)
         if (!cancelled) setBestelbonNummer(nr)
       }
       if (!cancelled) setIsLoading(false)
@@ -197,7 +197,7 @@ export function BestelbonDetail() {
           opmerkingen: opmerkingen || undefined,
           referentie: referentie.trim(),
         }
-        const saved = await createBestelbon(newBst)
+        const saved = await createBestelbon(newBst, settings?.bestelbon_prefix)
         setBestelbonId(saved.id)
 
         for (const r of validRegels) {

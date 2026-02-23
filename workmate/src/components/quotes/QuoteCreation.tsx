@@ -79,7 +79,7 @@ export function QuoteCreation() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
-  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
+  const { settings, profile, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [currentStep, setCurrentStep] = useState(0)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -529,7 +529,10 @@ export function QuoteCreation() {
         bedrijfs_adres: bedrijfsAdres || '',
         kvk_nummer: kvkNummer || '',
         btw_nummer: btwNummer || '',
+        iban: profile?.iban || '',
+        bic: profile?.bic || '',
         primaireKleur: primaireKleur || '#2563eb',
+        algemene_voorwaarden_url: settings?.algemene_voorwaarden_url || '',
       }, documentStyle)
       doc.save(`${offerteNummer}.pdf`)
       toast.success('PDF gedownload')

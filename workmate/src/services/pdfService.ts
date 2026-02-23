@@ -6,6 +6,7 @@ import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 // Extended profile type for PDF with branding
 interface PdfBedrijfsProfiel extends Partial<Profile> {
   primaireKleur?: string
+  algemene_voorwaarden_url?: string
 }
 
 // ============ HELPERS ============
@@ -463,6 +464,21 @@ export function generateOffertePDF(
     doc.setFontSize(baseFontSize - 2)
     const splitTerms = doc.splitTextToSize(offerte.voorwaarden, pageWidth - margins.left - margins.right)
     doc.text(splitTerms, margins.left, totalsY)
+    totalsY += splitTerms.length * 4 + 3
+  }
+
+  // Algemene voorwaarden URL
+  if (bedrijfsProfiel.algemene_voorwaarden_url) {
+    totalsY += 3
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(80, 80, 80)
+    doc.setFontSize(baseFontSize - 2)
+    doc.text('Algemene voorwaarden: ', margins.left, totalsY)
+    const labelWidth = doc.getTextWidth('Algemene voorwaarden: ')
+    doc.setTextColor(41, 98, 218)
+    doc.textWithLink(bedrijfsProfiel.algemene_voorwaarden_url, margins.left + labelWidth, totalsY, {
+      url: bedrijfsProfiel.algemene_voorwaarden_url,
+    })
   }
 
   // Footer
@@ -608,10 +624,24 @@ export function generateFactuurPDF(
 
   const splitPayment = doc.splitTextToSize(betaalInfo, pageWidth - margins.left - margins.right)
   doc.text(splitPayment, margins.left, totalsY)
+  totalsY += splitPayment.length * 5
+
+  // IBAN/BIC
+  if (bedrijfsProfiel.iban) {
+    totalsY += 3
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
+    doc.setFontSize(baseFontSize - 1)
+    doc.text(`IBAN: ${bedrijfsProfiel.iban}`, margins.left, totalsY)
+    if (bedrijfsProfiel.bic) {
+      totalsY += 5
+      doc.text(`BIC: ${bedrijfsProfiel.bic}`, margins.left, totalsY)
+    }
+  }
 
   // Notes
   if (factuurData.notities) {
-    totalsY += splitPayment.length * 5 + 8
+    totalsY += 8
     doc.setFontSize(baseFontSize)
     doc.setFont(headingFont, 'bold')
     doc.setTextColor(...brand)

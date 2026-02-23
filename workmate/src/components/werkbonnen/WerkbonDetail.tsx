@@ -187,7 +187,7 @@ export function WerkbonDetail() {
       }
 
       if (isNew) {
-        const created = await createWerkbon(data as Parameters<typeof createWerkbon>[0])
+        const created = await createWerkbon(data as Parameters<typeof createWerkbon>[0], settings?.werkbon_prefix)
         setWerkbonId(created.id)
         setWerkbonNummer(created.werkbon_nummer)
         toast.success(`Werkbon ${created.werkbon_nummer} aangemaakt`)
@@ -223,16 +223,36 @@ export function WerkbonDetail() {
       toast.error('Sla de werkbon eerst op')
       return
     }
+    const defaultUurtarief = settings?.standaard_uurtarief ?? 45
     const newRegel = await createWerkbonRegel({
       user_id: userId,
       werkbon_id: werkbonId,
       type,
       omschrijving: type === 'arbeid' ? 'Arbeid' : type === 'materiaal' ? 'Materiaal' : 'Overig',
       uren: type === 'arbeid' ? 1 : undefined,
-      uurtarief: type === 'arbeid' ? 55 : undefined,
+      uurtarief: type === 'arbeid' ? defaultUurtarief : undefined,
       aantal: type !== 'arbeid' ? 1 : undefined,
       prijs_per_eenheid: type !== 'arbeid' ? 0 : undefined,
-      totaal: type === 'arbeid' ? 55 : 0,
+      totaal: type === 'arbeid' ? defaultUurtarief : 0,
+      factureerbaar: true,
+    })
+    setRegels((prev) => [...prev, newRegel])
+  }, [werkbonId, userId, settings?.standaard_uurtarief])
+
+  // Materiaal snel toevoegen met vooringevulde naam
+  const handleMateriaalSnelToevoegen = useCallback(async (materiaalNaam: string) => {
+    if (!werkbonId) {
+      toast.error('Sla de werkbon eerst op')
+      return
+    }
+    const newRegel = await createWerkbonRegel({
+      user_id: userId,
+      werkbon_id: werkbonId,
+      type: 'materiaal',
+      omschrijving: materiaalNaam,
+      aantal: 1,
+      prijs_per_eenheid: 0,
+      totaal: 0,
       factureerbaar: true,
     })
     setRegels((prev) => [...prev, newRegel])
@@ -597,9 +617,33 @@ export function WerkbonDetail() {
                   <Button size="sm" variant="outline" onClick={() => handleRegelToevoegen('arbeid')} disabled={isNew}>
                     <Plus className="h-3 w-3 mr-1" /> Arbeid
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleRegelToevoegen('materiaal')} disabled={isNew}>
-                    <Plus className="h-3 w-3 mr-1" /> Materiaal
-                  </Button>
+                  {settings?.standaard_materialen && settings.standaard_materialen.length > 0 ? (
+                    <Select
+                      onValueChange={(val) => {
+                        if (val === '__nieuw__') {
+                          handleRegelToevoegen('materiaal')
+                        } else {
+                          handleMateriaalSnelToevoegen(val)
+                        }
+                      }}
+                      disabled={isNew}
+                    >
+                      <SelectTrigger className="h-8 w-auto gap-1 text-xs px-2">
+                        <Plus className="h-3 w-3" />
+                        <span>Materiaal</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__nieuw__">Leeg (handmatig)</SelectItem>
+                        {settings.standaard_materialen.map((mat) => (
+                          <SelectItem key={mat} value={mat}>{mat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => handleRegelToevoegen('materiaal')} disabled={isNew}>
+                      <Plus className="h-3 w-3 mr-1" /> Materiaal
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={() => handleRegelToevoegen('overig')} disabled={isNew}>
                     <Plus className="h-3 w-3 mr-1" /> Overig
                   </Button>

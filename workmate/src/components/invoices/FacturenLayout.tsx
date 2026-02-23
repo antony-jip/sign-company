@@ -198,9 +198,9 @@ function calcBtwBedrag(items: LineItem[]): number {
   }, 0))
 }
 
-function getDefaultVervaldatum(factuurdatum: string): string {
+function getDefaultVervaldatum(factuurdatum: string, betalingstermijn: number = 30): string {
   const d = new Date(factuurdatum)
-  d.setDate(d.getDate() + 30)
+  d.setDate(d.getDate() + betalingstermijn)
   return d.toISOString().split('T')[0]
 }
 
@@ -208,9 +208,9 @@ function getTodayString(): string {
   return new Date().toISOString().split('T')[0]
 }
 
-function generateFactuurNummer(existing: Factuur[]): string {
+function generateFactuurNummer(existing: Factuur[], factuurPrefix: string = 'FAC'): string {
   const year = new Date().getFullYear()
-  const prefix = `FAC-${year}-`
+  const prefix = `${factuurPrefix}-${year}-`
   const maxNum = existing
     .filter((f) => f.nummer.startsWith(prefix))
     .reduce((max, f) => {
@@ -242,7 +242,7 @@ function isThisMonth(dateStr: string): boolean {
 
 export function FacturenLayout() {
   // App settings (bedrijfsprofiel for PDF generation)
-  const { profile, primaireKleur, emailHandtekening, bedrijfsnaam } = useAppSettings()
+  const { profile, settings, primaireKleur, emailHandtekening, bedrijfsnaam } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   // Data state
@@ -269,7 +269,7 @@ export function FacturenLayout() {
     klant_id: '',
     titel: '',
     factuurdatum: getTodayString(),
-    vervaldatum: getDefaultVervaldatum(getTodayString()),
+    vervaldatum: getDefaultVervaldatum(getTodayString(), settings?.standaard_betalingstermijn),
     voorwaarden: 'Betaling binnen 30 dagen na factuurdatum.',
     notities: '',
     items: [createEmptyLineItem()],
@@ -420,7 +420,7 @@ export function FacturenLayout() {
       klant_id: '',
       titel: '',
       factuurdatum: getTodayString(),
-      vervaldatum: getDefaultVervaldatum(getTodayString()),
+      vervaldatum: getDefaultVervaldatum(getTodayString(), settings?.standaard_betalingstermijn),
       voorwaarden: 'Betaling binnen 30 dagen na factuurdatum.',
       notities: '',
       items: [createEmptyLineItem()],
@@ -501,7 +501,7 @@ export function FacturenLayout() {
         setFacturen((prev) => prev.map((f) => (f.id === editingFactuur.id ? { ...f, ...updated } : f)))
         toast.success('Factuur bijgewerkt')
       } else {
-        const nummer = generateFactuurNummer(facturen)
+        const nummer = generateFactuurNummer(facturen, settings?.factuur_prefix || 'FAC')
         const betaalToken = generateBetaalToken()
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
         const newFactuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
@@ -695,7 +695,7 @@ export function FacturenLayout() {
         project_id: offerte.project_id || undefined,
         titel: offerte.titel,
         factuurdatum: getTodayString(),
-        vervaldatum: getDefaultVervaldatum(getTodayString()),
+        vervaldatum: getDefaultVervaldatum(getTodayString(), settings?.standaard_betalingstermijn),
         voorwaarden: offerte.voorwaarden || 'Betaling binnen 30 dagen na factuurdatum.',
         notities: offerte.notities || '',
         items: lineItems,
@@ -795,6 +795,7 @@ export function FacturenLayout() {
       const bedrijfsProfiel = {
         ...profile,
         primaireKleur,
+        algemene_voorwaarden_url: settings?.algemene_voorwaarden_url,
       }
 
       const factuurData = {
@@ -1003,7 +1004,7 @@ export function FacturenLayout() {
         totaal: round2(-creditnotaFactuur.totaal),
         betaald_bedrag: 0,
         factuurdatum: getTodayString(),
-        vervaldatum: getDefaultVervaldatum(getTodayString()),
+        vervaldatum: getDefaultVervaldatum(getTodayString(), settings?.standaard_betalingstermijn),
         notities: `Creditnota: ${creditReden}`,
         voorwaarden: creditnotaFactuur.voorwaarden,
         factuur_type: 'creditnota',
@@ -1069,7 +1070,7 @@ export function FacturenLayout() {
         totaal,
         betaald_bedrag: 0,
         factuurdatum: getTodayString(),
-        vervaldatum: getDefaultVervaldatum(getTodayString()),
+        vervaldatum: getDefaultVervaldatum(getTodayString(), settings?.standaard_betalingstermijn),
         notities: `Voorschot ${voorschotPercentage}% van offerte ${voorschotOfferte.nummer}`,
         voorwaarden: 'Betaling binnen 14 dagen na factuurdatum.',
         factuur_type: 'voorschot',
@@ -1135,7 +1136,7 @@ export function FacturenLayout() {
         totaal: restBedrag,
         betaald_bedrag: 0,
         factuurdatum: getTodayString(),
-        vervaldatum: getDefaultVervaldatum(getTodayString()),
+        vervaldatum: getDefaultVervaldatum(getTodayString(), settings?.standaard_betalingstermijn),
         notities: `Eindafrekening na ${betaaldeVoorschotten.length} voorschot(ten) (${formatCurrency(voorschotTotaal)} verrekend)`,
         voorwaarden: eindafrekeningFactuur.voorwaarden,
         factuur_type: 'eindafrekening',
@@ -1909,13 +1910,13 @@ export function FacturenLayout() {
                       setFormData((prev) => ({
                         ...prev,
                         factuurdatum: newDate,
-                        vervaldatum: getDefaultVervaldatum(newDate),
+                        vervaldatum: getDefaultVervaldatum(newDate, settings?.standaard_betalingstermijn),
                       }))
                     }}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="vervaldatum">Vervaldatum (standaard 30 dagen)</Label>
+                  <Label htmlFor="vervaldatum">Vervaldatum (standaard {settings?.standaard_betalingstermijn || 30} dagen)</Label>
                   <Input
                     id="vervaldatum"
                     type="date"

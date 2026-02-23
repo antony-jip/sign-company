@@ -46,7 +46,7 @@ export function LeveringsbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const isNew = id === 'nieuw'
-  const { profile, primaireKleur } = useAppSettings()
+  const { profile, settings, primaireKleur } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   // Data
@@ -245,7 +245,7 @@ export function LeveringsbonDetail() {
           klant_naam_getekend: klantNaamGetekend || undefined,
           getekend_op: handtekeningData ? new Date().toISOString() : undefined,
         }
-        const saved = await createLeveringsbon(newLb)
+        const saved = await createLeveringsbon(newLb, settings?.leveringsbon_prefix)
         setLeveringsbonId(saved.id)
         setLeveringsbonNummer(saved.leveringsbon_nummer)
 

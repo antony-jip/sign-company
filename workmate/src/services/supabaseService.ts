@@ -2241,15 +2241,17 @@ export async function updateBookingAfspraak(id: string, updates: Partial<Booking
 
 // ============ WERKBONNEN (Tier 1 Feature 1) ============
 
-async function generateWerkbonNummer(): Promise<string> {
+async function generateWerkbonNummer(prefix: string = 'WB'): Promise<string> {
   const jaar = new Date().getFullYear()
   const werkbonnen = await getWerkbonnen()
-  const ditJaar = werkbonnen.filter((w) => w.werkbon_nummer.startsWith(`WB-${jaar}-`))
+  const fullPrefix = `${prefix}-${jaar}-`
+  const ditJaar = werkbonnen.filter((w) => w.werkbon_nummer.startsWith(fullPrefix))
   const maxNr = ditJaar.reduce((max, w) => {
-    const nr = parseInt(w.werkbon_nummer.split('-')[2], 10)
+    const parts = w.werkbon_nummer.split('-')
+    const nr = parseInt(parts[parts.length - 1], 10)
     return nr > max ? nr : max
   }, 0)
-  return `WB-${jaar}-${String(maxNr + 1).padStart(3, '0')}`
+  return `${fullPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 export async function getWerkbonnen(): Promise<Werkbon[]> {
@@ -2291,8 +2293,8 @@ export async function getWerkbonnenByKlant(klantId: string): Promise<Werkbon[]> 
   return getLocalData<Werkbon>('werkbonnen').filter((w) => w.klant_id === klantId)
 }
 
-export async function createWerkbon(werkbon: Omit<Werkbon, 'id' | 'werkbon_nummer' | 'created_at' | 'updated_at'>): Promise<Werkbon> {
-  const werkbon_nummer = await generateWerkbonNummer()
+export async function createWerkbon(werkbon: Omit<Werkbon, 'id' | 'werkbon_nummer' | 'created_at' | 'updated_at'>, prefix?: string): Promise<Werkbon> {
+  const werkbon_nummer = await generateWerkbonNummer(prefix)
   const newWerkbon: Werkbon = { ...werkbon, id: generateId(), werkbon_nummer, created_at: now(), updated_at: now() } as Werkbon
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('werkbonnen').insert(newWerkbon).select().single()
@@ -2571,15 +2573,17 @@ export async function deleteLeverancier(id: string): Promise<void> {
 
 // ============ UITGAVEN (Tier 1 Feature 3) ============
 
-async function generateUitgaveNummer(): Promise<string> {
+async function generateUitgaveNummer(prefix: string = 'UIT'): Promise<string> {
   const jaar = new Date().getFullYear()
   const uitgaven = await getUitgaven()
-  const ditJaar = uitgaven.filter((u) => u.uitgave_nummer.startsWith(`UIT-${jaar}-`))
+  const fullPrefix = `${prefix}-${jaar}-`
+  const ditJaar = uitgaven.filter((u) => u.uitgave_nummer.startsWith(fullPrefix))
   const maxNr = ditJaar.reduce((max, u) => {
-    const nr = parseInt(u.uitgave_nummer.split('-')[2], 10)
+    const parts = u.uitgave_nummer.split('-')
+    const nr = parseInt(parts[parts.length - 1], 10)
     return nr > max ? nr : max
   }, 0)
-  return `UIT-${jaar}-${String(maxNr + 1).padStart(3, '0')}`
+  return `${fullPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 export async function getUitgaven(): Promise<Uitgave[]> {
@@ -2621,8 +2625,8 @@ export async function getUitgavenByLeverancier(leverancierId: string): Promise<U
   return getLocalData<Uitgave>('uitgaven').filter((u) => u.leverancier_id === leverancierId)
 }
 
-export async function createUitgave(uitgave: Omit<Uitgave, 'id' | 'uitgave_nummer' | 'created_at' | 'updated_at'>): Promise<Uitgave> {
-  const uitgave_nummer = await generateUitgaveNummer()
+export async function createUitgave(uitgave: Omit<Uitgave, 'id' | 'uitgave_nummer' | 'created_at' | 'updated_at'>, prefix?: string): Promise<Uitgave> {
+  const uitgave_nummer = await generateUitgaveNummer(prefix)
   const newUitgave: Uitgave = { ...uitgave, id: generateId(), uitgave_nummer, created_at: now(), updated_at: now() } as Uitgave
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('uitgaven').insert(newUitgave).select().single()
@@ -2764,16 +2768,16 @@ export async function respondOpOfferte(token: string, reactie: { type: 'goedgeke
 
 // ============ BESTELBONNEN (Tier 2 Feature 3) ============
 
-export async function generateBestelbonNummer(): Promise<string> {
+export async function generateBestelbonNummer(prefix: string = 'BB'): Promise<string> {
   const jaar = new Date().getFullYear()
   const items = await getBestelbonnen()
-  const prefix = `BST-${jaar}-`
-  const maxNr = items.filter((b) => b.bestelbon_nummer.startsWith(prefix)).reduce((max, b) => {
+  const fullPrefix = `${prefix}-${jaar}-`
+  const maxNr = items.filter((b) => b.bestelbon_nummer.startsWith(fullPrefix)).reduce((max, b) => {
     const parts = b.bestelbon_nummer.split('-')
     const nr = parseInt(parts[parts.length - 1], 10)
     return nr > max ? nr : max
   }, 0)
-  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
+  return `${fullPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 export async function getBestelbonnen(): Promise<Bestelbon[]> {
@@ -2815,8 +2819,8 @@ export async function getBestelbonnenByLeverancier(leverancierId: string): Promi
   return getLocalData<Bestelbon>('bestelbonnen').filter((b) => b.leverancier_id === leverancierId)
 }
 
-export async function createBestelbon(data: Omit<Bestelbon, 'id' | 'bestelbon_nummer' | 'created_at' | 'updated_at'>): Promise<Bestelbon> {
-  const bestelbon_nummer = await generateBestelbonNummer()
+export async function createBestelbon(data: Omit<Bestelbon, 'id' | 'bestelbon_nummer' | 'created_at' | 'updated_at'>, prefix?: string): Promise<Bestelbon> {
+  const bestelbon_nummer = await generateBestelbonNummer(prefix)
   const newItem: Bestelbon = { ...data, id: generateId(), bestelbon_nummer, created_at: now(), updated_at: now() } as Bestelbon
   if (isSupabaseConfigured() && supabase) {
     const { data: saved, error } = await supabase.from('bestelbonnen').insert(newItem).select().single()
@@ -2906,15 +2910,16 @@ export async function deleteBestelbonRegel(id: string): Promise<void> {
 
 // ============ LEVERINGSBONNEN (Tier 2 Feature 4) ============
 
-async function generateLeveringsbonNummer(): Promise<string> {
+async function generateLeveringsbonNummer(prefix: string = 'LB'): Promise<string> {
   const jaar = new Date().getFullYear()
   const items = await getLeveringsbonnen()
-  const prefix = `LB-${jaar}-`
-  const maxNr = items.filter((l) => l.leveringsbon_nummer.startsWith(prefix)).reduce((max, l) => {
-    const nr = parseInt(l.leveringsbon_nummer.split('-')[2], 10)
+  const fullPrefix = `${prefix}-${jaar}-`
+  const maxNr = items.filter((l) => l.leveringsbon_nummer.startsWith(fullPrefix)).reduce((max, l) => {
+    const parts = l.leveringsbon_nummer.split('-')
+    const nr = parseInt(parts[parts.length - 1], 10)
     return nr > max ? nr : max
   }, 0)
-  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
+  return `${fullPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 export async function getLeveringsbonnen(): Promise<Leveringsbon[]> {
@@ -2956,8 +2961,8 @@ export async function getLeveringsbonnenByKlant(klantId: string): Promise<Leveri
   return getLocalData<Leveringsbon>('leveringsbonnen').filter((l) => l.klant_id === klantId)
 }
 
-export async function createLeveringsbon(data: Omit<Leveringsbon, 'id' | 'leveringsbon_nummer' | 'created_at' | 'updated_at'>): Promise<Leveringsbon> {
-  const leveringsbon_nummer = await generateLeveringsbonNummer()
+export async function createLeveringsbon(data: Omit<Leveringsbon, 'id' | 'leveringsbon_nummer' | 'created_at' | 'updated_at'>, prefix?: string): Promise<Leveringsbon> {
+  const leveringsbon_nummer = await generateLeveringsbonNummer(prefix)
   const newItem: Leveringsbon = { ...data, id: generateId(), leveringsbon_nummer, created_at: now(), updated_at: now() } as Leveringsbon
   if (isSupabaseConfigured() && supabase) {
     const { data: saved, error } = await supabase.from('leveringsbonnen').insert(newItem).select().single()

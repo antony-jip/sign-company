@@ -45,7 +45,7 @@ function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; kort
 export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: ForgeQuotePreviewProps) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, pipelineStappen, valuta } = useAppSettings()
+  const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, pipelineStappen, valuta, profile, settings } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   // Parse address components from combined string
@@ -230,7 +230,10 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           bedrijfs_adres: bedrijfsAdres || '',
           kvk_nummer: kvkNummer || '',
           btw_nummer: btwNummer || '',
+          iban: profile?.iban || '',
+          bic: profile?.bic || '',
           primaireKleur: primaireKleur || '#2563eb',
+          algemene_voorwaarden_url: settings?.algemene_voorwaarden_url || '',
         },
         documentStyle
       )
@@ -369,7 +372,10 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               bedrijfs_adres: bedrijfsAdres || '',
               kvk_nummer: kvkNummer || '',
               btw_nummer: btwNummer || '',
+              iban: profile?.iban || '',
+              bic: profile?.bic || '',
               primaireKleur: primaireKleur || '#2563eb',
+              algemene_voorwaarden_url: settings?.algemene_voorwaarden_url || '',
             },
             documentStyle
           )
