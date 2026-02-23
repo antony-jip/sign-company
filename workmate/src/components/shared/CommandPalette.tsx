@@ -19,9 +19,12 @@ import {
   Receipt,
   Briefcase,
   ClipboardList,
+  Clock,
 } from 'lucide-react'
 import { getOffertes, getKlanten, getProjecten, getDeals, getFacturen, getWerkbonnen } from '@/services/supabaseService'
 import type { Offerte, Klant, Project, Deal, Factuur, Werkbon } from '@/types'
+import { useRecentItems, trackRecentItem } from '@/hooks/useRecentItems'
+import type { RecentItem } from '@/hooks/useRecentItems'
 import { logger } from '../../utils/logger'
 
 interface CommandItem {
@@ -123,8 +126,30 @@ function mapWerkbonnenToItems(werkbonnen: Werkbon[]): CommandItem[] {
   }))
 }
 
+const RECENT_TYPE_ICONS: Record<RecentItem['type'], React.ReactNode> = {
+  klant: <Users className="w-4 h-4" />,
+  project: <FolderKanban className="w-4 h-4" />,
+  offerte: <FileText className="w-4 h-4" />,
+  deal: <Briefcase className="w-4 h-4" />,
+  factuur: <Receipt className="w-4 h-4" />,
+  werkbon: <ClipboardList className="w-4 h-4" />,
+  pagina: <Clock className="w-4 h-4" />,
+}
+
+function mapRecentToItems(items: RecentItem[]): CommandItem[] {
+  return items.map((r, i) => ({
+    id: `recent-${i}-${r.path}`,
+    label: r.label,
+    subtitle: r.subtitle,
+    icon: RECENT_TYPE_ICONS[r.type] || <Clock className="w-4 h-4" />,
+    path: r.path,
+    category: 'Recent',
+  }))
+}
+
 export function CommandPalette() {
   const navigate = useNavigate()
+  const recentItems = useRecentItems()
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -179,19 +204,23 @@ export function CommandPalette() {
     }
   }, [])
 
+  // Map recent items for display
+  const recentCommandItems = useMemo(() => mapRecentToItems(recentItems), [recentItems])
+
   // Build filtered results
   const filteredResults = useMemo(() => {
     const q = query.toLowerCase().trim()
 
     if (!q) {
-      // Show navigation + actions when no query
-      return [...navigationItems, ...actionItems]
+      // Show recent items (if any), then navigation + actions
+      return [...recentCommandItems, ...navigationItems, ...actionItems]
     }
 
     const matchItem = (item: CommandItem) =>
       item.label.toLowerCase().includes(q) ||
       item.subtitle.toLowerCase().includes(q)
 
+    const matchRecent = recentCommandItems.filter(matchItem)
     const matchNav = navigationItems.filter(matchItem)
     const matchActions = actionItems.filter(matchItem)
     const matchOffertes = offerteItems.filter(matchItem)
@@ -202,6 +231,7 @@ export function CommandPalette() {
     const matchWerkbonnen = werkbonItems.filter(matchItem)
 
     return [
+      ...matchRecent,
       ...matchNav,
       ...matchActions,
       ...matchOffertes,
@@ -211,7 +241,7 @@ export function CommandPalette() {
       ...matchFacturen,
       ...matchWerkbonnen,
     ]
-  }, [query, offerteItems, klantItems, projectItems, dealItems, factuurItems, werkbonItems])
+  }, [query, recentCommandItems, offerteItems, klantItems, projectItems, dealItems, factuurItems, werkbonItems])
 
   // Group results by category for rendering
   const groupedResults = useMemo(() => {
@@ -252,6 +282,24 @@ export function CommandPalette() {
   const selectItem = useCallback(
     (item: CommandItem) => {
       close()
+      // Track navigatable items (not actions/navigation) as recent
+      const categoryToType: Record<string, RecentItem['type']> = {
+        Klanten: 'klant',
+        Projecten: 'project',
+        Offertes: 'offerte',
+        Deals: 'deal',
+        Facturen: 'factuur',
+        Werkbonnen: 'werkbon',
+      }
+      const type = categoryToType[item.category]
+      if (type) {
+        trackRecentItem({
+          path: item.path,
+          label: item.label,
+          subtitle: item.subtitle,
+          type,
+        })
+      }
       navigate(item.path)
     },
     [close, navigate]
