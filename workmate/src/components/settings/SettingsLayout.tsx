@@ -54,6 +54,7 @@ import {
   Info,
   ExternalLink,
   FileText,
+  X,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -1844,13 +1845,17 @@ function ProfielTab() {
 
 function BedrijfTab() {
   const { user } = useAuth()
-  const { refreshProfile } = useAppSettings()
+  const { refreshProfile, refreshSettings } = useAppSettings()
   const [bedrijfsnaam, setBedrijfsnaam] = useState('')
   const [adres, setAdres] = useState('')
   const [postcode, setPostcode] = useState('')
   const [stad, setStad] = useState('')
   const [kvkNummer, setKvkNummer] = useState('')
   const [btwNummer, setBtwNummer] = useState('')
+  const [iban, setIban] = useState('')
+  const [bic, setBic] = useState('')
+  const [betalingstermijn, setBetalingstermijn] = useState('30')
+  const [algemeneVoorwaardenUrl, setAlgemeneVoorwaardenUrl] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -1860,11 +1865,16 @@ function BedrijfTab() {
     if (!user?.id) return
     try {
       setIsLoading(true)
-      const profile = await getProfile(user.id)
+      const [profile, appSettings] = await Promise.all([
+        getProfile(user.id),
+        getAppSettings(user.id),
+      ])
       if (profile) {
         setBedrijfsnaam(profile.bedrijfsnaam || '')
         setKvkNummer(profile.kvk_nummer || '')
         setBtwNummer(profile.btw_nummer || '')
+        setIban(profile.iban || '')
+        setBic(profile.bic || '')
         if (profile.logo_url) setLogoPreview(profile.logo_url)
         // Parse bedrijfs_adres back into components if stored as combined string
         if (profile.bedrijfs_adres) {
@@ -1877,6 +1887,10 @@ function BedrijfTab() {
             setAdres(profile.bedrijfs_adres)
           }
         }
+      }
+      if (appSettings) {
+        setBetalingstermijn(String(appSettings.standaard_betalingstermijn ?? 30))
+        setAlgemeneVoorwaardenUrl(appSettings.algemene_voorwaarden_url || '')
       }
     } catch (err) {
       logger.error('Fout bij laden bedrijfsgegevens:', err)
@@ -1914,14 +1928,22 @@ function BedrijfTab() {
       setIsSaving(true)
       // Combine address components into a single bedrijfs_adres string
       const bedrijfsAdres = [adres, postcode, stad].filter(Boolean).join(', ')
-      await updateProfile(user.id, {
-        bedrijfsnaam,
-        bedrijfs_adres: bedrijfsAdres,
-        kvk_nummer: kvkNummer,
-        btw_nummer: btwNummer,
-        ...(logoPreview ? { logo_url: logoPreview } : {}),
-      })
-      await refreshProfile()
+      await Promise.all([
+        updateProfile(user.id, {
+          bedrijfsnaam,
+          bedrijfs_adres: bedrijfsAdres,
+          kvk_nummer: kvkNummer,
+          btw_nummer: btwNummer,
+          iban,
+          bic,
+          ...(logoPreview ? { logo_url: logoPreview } : {}),
+        }),
+        updateAppSettings(user.id, {
+          standaard_betalingstermijn: parseInt(betalingstermijn) || 30,
+          algemene_voorwaarden_url: algemeneVoorwaardenUrl,
+        }),
+      ])
+      await Promise.all([refreshProfile(), refreshSettings()])
       toast.success('Bedrijfsgegevens succesvol opgeslagen')
     } catch (err) {
       logger.error('Fout bij opslaan bedrijfsgegevens:', err)
@@ -2031,6 +2053,63 @@ function BedrijfTab() {
           </div>
         </div>
 
+        <Separator />
+
+        {/* Bankgegevens */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="iban">IBAN</Label>
+            <Input
+              id="iban"
+              value={iban}
+              onChange={(e) => setIban(e.target.value.toUpperCase())}
+              placeholder="NL00 BANK 0000 0000 00"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bic">BIC / SWIFT</Label>
+            <Input
+              id="bic"
+              value={bic}
+              onChange={(e) => setBic(e.target.value.toUpperCase())}
+              placeholder="ABNANL2A"
+            />
+          </div>
+        </div>
+
+        {/* Betalingstermijn */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="betalingstermijn">Standaard betalingstermijn</Label>
+            <Select value={betalingstermijn} onValueChange={setBetalingstermijn}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">7 dagen</SelectItem>
+                <SelectItem value="14">14 dagen</SelectItem>
+                <SelectItem value="21">21 dagen</SelectItem>
+                <SelectItem value="30">30 dagen</SelectItem>
+                <SelectItem value="45">45 dagen</SelectItem>
+                <SelectItem value="60">60 dagen</SelectItem>
+                <SelectItem value="90">90 dagen</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="av-url">Algemene voorwaarden</Label>
+            <Input
+              id="av-url"
+              value={algemeneVoorwaardenUrl}
+              onChange={(e) => setAlgemeneVoorwaardenUrl(e.target.value)}
+              placeholder="https://uwbedrijf.nl/voorwaarden of tekst..."
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              URL of verwijzing naar uw algemene voorwaarden
+            </p>
+          </div>
+        </div>
+
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={isSaving || isLoading}>
             {isSaving ? 'Opslaan...' : 'Opslaan'}
@@ -2082,6 +2161,22 @@ function AanpassingenTab() {
   const [toonConversieRate, setToonConversieRate] = useState(true)
   const [toonDagenOpen, setToonDagenOpen] = useState(true)
   const [toonFollowUpIndicatoren, setToonFollowUpIndicatoren] = useState(true)
+  // Nummering
+  const [factuurPrefix, setFactuurPrefix] = useState('FAC')
+  const [factuurVolgnummer, setFactuurVolgnummer] = useState('1')
+  const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
+  const [werkbonVolgnummer, setWerkbonVolgnummer] = useState('1')
+  const [bestelbonPrefix, setBestelbonPrefix] = useState('BB')
+  const [bestelbonVolgnummer, setBestelbonVolgnummer] = useState('1')
+  const [leveringsbonPrefix, setLeveringsbonPrefix] = useState('LB')
+  const [leveringsbonVolgnummer, setLeveringsbonVolgnummer] = useState('1')
+  const [uitgavePrefix, setUitgavePrefix] = useState('UIT')
+  const [uitgaveVolgnummer, setUitgaveVolgnummer] = useState('1')
+  // Werkbon instellingen
+  const [standaardKmTarief, setStandaardKmTarief] = useState('0.23')
+  const [standaardUurtarief, setStandaardUurtarief] = useState('45')
+  const [standaardMaterialen, setStandaardMaterialen] = useState<string[]>([])
+  const [nieuwMateriaal, setNieuwMateriaal] = useState('')
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
@@ -2104,6 +2199,21 @@ function AanpassingenTab() {
       setToonConversieRate(data.toon_conversie_rate)
       setToonDagenOpen(data.toon_dagen_open)
       setToonFollowUpIndicatoren(data.toon_follow_up_indicatoren)
+      // Nummering
+      setFactuurPrefix(data.factuur_prefix || 'FAC')
+      setFactuurVolgnummer(String(data.factuur_volgnummer ?? 1))
+      setWerkbonPrefix(data.werkbon_prefix || 'WB')
+      setWerkbonVolgnummer(String(data.werkbon_volgnummer ?? 1))
+      setBestelbonPrefix(data.bestelbon_prefix || 'BB')
+      setBestelbonVolgnummer(String(data.bestelbon_volgnummer ?? 1))
+      setLeveringsbonPrefix(data.leveringsbon_prefix || 'LB')
+      setLeveringsbonVolgnummer(String(data.leveringsbon_volgnummer ?? 1))
+      setUitgavePrefix(data.uitgave_prefix || 'UIT')
+      setUitgaveVolgnummer(String(data.uitgave_volgnummer ?? 1))
+      // Werkbon instellingen
+      setStandaardKmTarief(String(data.standaard_km_tarief ?? 0.23))
+      setStandaardUurtarief(String(data.standaard_uurtarief ?? 45))
+      setStandaardMaterialen(data.standaard_materialen || [])
     } catch (err) {
       logger.error('Fout bij laden instellingen:', err)
       toast.error('Kon instellingen niet laden')
@@ -2171,6 +2281,21 @@ function AanpassingenTab() {
         toon_conversie_rate: toonConversieRate,
         toon_dagen_open: toonDagenOpen,
         toon_follow_up_indicatoren: toonFollowUpIndicatoren,
+        // Nummering
+        factuur_prefix: factuurPrefix,
+        factuur_volgnummer: parseInt(factuurVolgnummer) || 1,
+        werkbon_prefix: werkbonPrefix,
+        werkbon_volgnummer: parseInt(werkbonVolgnummer) || 1,
+        bestelbon_prefix: bestelbonPrefix,
+        bestelbon_volgnummer: parseInt(bestelbonVolgnummer) || 1,
+        leveringsbon_prefix: leveringsbonPrefix,
+        leveringsbon_volgnummer: parseInt(leveringsbonVolgnummer) || 1,
+        uitgave_prefix: uitgavePrefix,
+        uitgave_volgnummer: parseInt(uitgaveVolgnummer) || 1,
+        // Werkbon instellingen
+        standaard_km_tarief: parseFloat(standaardKmTarief) || 0.23,
+        standaard_uurtarief: parseFloat(standaardUurtarief) || 45,
+        standaard_materialen: standaardMaterialen,
       })
       await refreshSettings()
       toast.success('Aanpassingen opgeslagen')
@@ -2318,6 +2443,146 @@ function AanpassingenTab() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Document Nummering */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Document Nummering</CardTitle>
+          <CardDescription>Configureer prefix en startnummer per documenttype</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[
+            { label: 'Factuur', prefix: factuurPrefix, setPrefix: setFactuurPrefix, volgnummer: factuurVolgnummer, setVolgnummer: setFactuurVolgnummer },
+            { label: 'Werkbon', prefix: werkbonPrefix, setPrefix: setWerkbonPrefix, volgnummer: werkbonVolgnummer, setVolgnummer: setWerkbonVolgnummer },
+            { label: 'Bestelbon', prefix: bestelbonPrefix, setPrefix: setBestelbonPrefix, volgnummer: bestelbonVolgnummer, setVolgnummer: setBestelbonVolgnummer },
+            { label: 'Leveringsbon', prefix: leveringsbonPrefix, setPrefix: setLeveringsbonPrefix, volgnummer: leveringsbonVolgnummer, setVolgnummer: setLeveringsbonVolgnummer },
+            { label: 'Uitgave', prefix: uitgavePrefix, setPrefix: setUitgavePrefix, volgnummer: uitgaveVolgnummer, setVolgnummer: setUitgaveVolgnummer },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-4">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-28 flex-shrink-0">{item.label}</span>
+              <div className="flex items-center gap-2 flex-1">
+                <Input
+                  value={item.prefix}
+                  onChange={(e) => item.setPrefix(e.target.value.toUpperCase())}
+                  placeholder="Prefix"
+                  maxLength={5}
+                  className="w-24"
+                />
+                <span className="text-gray-400">-</span>
+                <Input
+                  type="number"
+                  min="1"
+                  value={item.volgnummer}
+                  onChange={(e) => item.setVolgnummer(e.target.value)}
+                  placeholder="Start"
+                  className="w-24"
+                />
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Voorbeeld: {item.prefix}-2026-{String(parseInt(item.volgnummer) || 1).padStart(4, '0')}
+                </span>
+              </div>
+            </div>
+          ))}
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Offerte prefix wordt hierboven apart ingesteld bij &quot;Offerte Instellingen&quot;
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Werkbon Standaardwaarden */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Werkbon Instellingen</CardTitle>
+          <CardDescription>Standaardwaarden voor nieuwe werkbonnen</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="km-tarief">Standaard km-tarief</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">&euro;</span>
+                <Input
+                  id="km-tarief"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={standaardKmTarief}
+                  onChange={(e) => setStandaardKmTarief(e.target.value)}
+                  className="pl-7"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Per kilometer</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="uurtarief">Standaard uurtarief</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">&euro;</span>
+                <Input
+                  id="uurtarief"
+                  type="number"
+                  step="0.50"
+                  min="0"
+                  value={standaardUurtarief}
+                  onChange={(e) => setStandaardUurtarief(e.target.value)}
+                  className="pl-7"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Per uur</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <Label>Standaard materialen</Label>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Veelgebruikte materialen die snel geselecteerd kunnen worden op werkbonnen</p>
+            <div className="flex flex-wrap gap-2">
+              {standaardMaterialen.map((mat, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-sm"
+                >
+                  {mat}
+                  <button
+                    onClick={() => setStandaardMaterialen(standaardMaterialen.filter((_, j) => j !== i))}
+                    className="ml-1 text-blue-400 hover:text-red-500"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={nieuwMateriaal}
+                onChange={(e) => setNieuwMateriaal(e.target.value)}
+                placeholder="Nieuw materiaal toevoegen..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && nieuwMateriaal.trim()) {
+                    e.preventDefault()
+                    setStandaardMaterialen([...standaardMaterialen, nieuwMateriaal.trim()])
+                    setNieuwMateriaal('')
+                  }
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (nieuwMateriaal.trim()) {
+                    setStandaardMaterialen([...standaardMaterialen, nieuwMateriaal.trim()])
+                    setNieuwMateriaal('')
+                  }
+                }}
+                className="gap-1 flex-shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                Toevoegen
+              </Button>
             </div>
           </div>
         </CardContent>

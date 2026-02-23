@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Werkbon, WerkbonRegel, WerkbonFoto, Klant, Project, Medewerker } from '@/types'
 import {
   getWerkbon, createWerkbon, updateWerkbon,
@@ -41,6 +42,7 @@ export function WerkbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { settings } = useAppSettings()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
 
@@ -65,7 +67,7 @@ export function WerkbonDetail() {
   const [eindTijd, setEindTijd] = useState('16:00')
   const [pauzeMinuten, setPauzeMinuten] = useState(30)
   const [kilometers, setKilometers] = useState(0)
-  const [kmTarief, setKmTarief] = useState(0.23)
+  const [kmTarief, setKmTarief] = useState(settings?.standaard_km_tarief ?? 0.23)
   const [omschrijving, setOmschrijving] = useState('')
   const [interneNotitie, setInterneNotitie] = useState('')
   const [status, setStatus] = useState<Werkbon['status']>('concept')
@@ -116,7 +118,7 @@ export function WerkbonDetail() {
           setEindTijd(wb.eind_tijd || '16:00')
           setPauzeMinuten(wb.pauze_minuten ?? 30)
           setKilometers(wb.kilometers || 0)
-          setKmTarief(wb.km_tarief || 0.23)
+          setKmTarief(wb.km_tarief || settings?.standaard_km_tarief || 0.23)
           setOmschrijving(wb.omschrijving || '')
           setInterneNotitie(wb.interne_notitie || '')
           setStatus(wb.status)

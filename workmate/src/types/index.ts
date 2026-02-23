@@ -11,6 +11,7 @@ export interface Profile {
   kvk_nummer: string;
   btw_nummer: string;
   iban?: string;
+  bic?: string;
   taal: 'nl' | 'en';
   theme: 'light' | 'dark';
   created_at: string;
@@ -341,6 +342,24 @@ export interface AppSettings {
   offerte_regel_velden: string[];
   // Standaard voorwaarden voor offertes
   standaard_voorwaarden: string;
+  // Bedrijf / facturatie
+  standaard_betalingstermijn: number;
+  algemene_voorwaarden_url: string;
+  // Document nummering
+  factuur_prefix: string;
+  factuur_volgnummer: number;
+  werkbon_prefix: string;
+  werkbon_volgnummer: number;
+  bestelbon_prefix: string;
+  bestelbon_volgnummer: number;
+  leveringsbon_prefix: string;
+  leveringsbon_volgnummer: number;
+  uitgave_prefix: string;
+  uitgave_volgnummer: number;
+  // Werkbon instellingen
+  standaard_km_tarief: number;
+  standaard_uurtarief: number;
+  standaard_materialen: string[];
   // KvK integratie
   kvk_api_key?: string;
   kvk_api_enabled?: boolean;
