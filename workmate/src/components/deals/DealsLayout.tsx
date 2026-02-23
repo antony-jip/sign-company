@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Plus, Search, Briefcase, Trash2, Eye, Loader2,
@@ -55,6 +55,7 @@ type ViewMode = 'kanban' | 'tabel'
 
 export function DealsLayout() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { pipelineStappen } = useAppSettings()
 
   const [deals, setDeals] = useState<Deal[]>([])
@@ -68,6 +69,14 @@ export function DealsLayout() {
 
   // New deal dialog
   const [newDealOpen, setNewDealOpen] = useState(false)
+
+  // Open new deal dialog via ?nieuw=true (from Command Palette)
+  useEffect(() => {
+    if (searchParams.get('nieuw') === 'true') {
+      setNewDealOpen(true)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
   const [newTitel, setNewTitel] = useState('')
   const [newKlantId, setNewKlantId] = useState('')
   const [newWaarde, setNewWaarde] = useState(0)

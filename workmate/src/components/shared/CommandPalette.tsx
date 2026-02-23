@@ -16,9 +16,12 @@ import {
   Plus,
   ChevronRight,
   Loader2,
+  Receipt,
+  Briefcase,
+  ClipboardList,
 } from 'lucide-react'
-import { getOffertes, getKlanten, getProjecten } from '@/services/supabaseService'
-import type { Offerte, Klant, Project } from '@/types'
+import { getOffertes, getKlanten, getProjecten, getDeals, getFacturen, getWerkbonnen } from '@/services/supabaseService'
+import type { Offerte, Klant, Project, Deal, Factuur, Werkbon } from '@/types'
 import { logger } from '../../utils/logger'
 
 interface CommandItem {
@@ -47,6 +50,11 @@ const navigationItems: CommandItem[] = [
 const actionItems: CommandItem[] = [
   { id: 'act-nieuwe-offerte', label: 'Nieuwe Offerte', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/offertes/nieuw', category: 'Acties' },
   { id: 'act-nieuw-project', label: 'Nieuw Project', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/projecten/nieuw', category: 'Acties' },
+  { id: 'act-nieuwe-klant', label: 'Nieuwe Klant', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/klanten?nieuw=true', category: 'Acties' },
+  { id: 'act-nieuwe-factuur', label: 'Nieuwe Factuur', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/facturen?nieuw=true', category: 'Acties' },
+  { id: 'act-nieuwe-taak', label: 'Nieuwe Taak', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/taken?nieuw=true', category: 'Acties' },
+  { id: 'act-nieuwe-deal', label: 'Nieuwe Deal', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/deals?nieuw=true', category: 'Acties' },
+  { id: 'act-nieuwe-werkbon', label: 'Nieuwe Werkbon', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/werkbonnen/nieuw', category: 'Acties' },
 ]
 
 function mapOffertesToItems(offertes: Offerte[]): CommandItem[] {
@@ -82,6 +90,39 @@ function mapProjectenToItems(projecten: Project[]): CommandItem[] {
   }))
 }
 
+function mapDealsToItems(deals: Deal[]): CommandItem[] {
+  return deals.map((d) => ({
+    id: `deal-${d.id}`,
+    label: d.titel,
+    subtitle: `${d.status} — €${d.verwachte_waarde.toLocaleString('nl-NL')}`,
+    icon: <Briefcase className="w-4 h-4" />,
+    path: `/deals/${d.id}`,
+    category: 'Deals',
+  }))
+}
+
+function mapFacturenToItems(facturen: Factuur[]): CommandItem[] {
+  return facturen.map((f) => ({
+    id: `factuur-${f.id}`,
+    label: `${f.nummer} - ${f.titel}`,
+    subtitle: f.klant_naam || `€${f.totaal.toLocaleString('nl-NL')}`,
+    icon: <Receipt className="w-4 h-4" />,
+    path: `/facturen`,
+    category: 'Facturen',
+  }))
+}
+
+function mapWerkbonnenToItems(werkbonnen: Werkbon[]): CommandItem[] {
+  return werkbonnen.map((w) => ({
+    id: `werkbon-${w.id}`,
+    label: w.werkbon_nummer,
+    subtitle: w.locatie_adres || 'Werkbon',
+    icon: <ClipboardList className="w-4 h-4" />,
+    path: `/werkbonnen/${w.id}`,
+    category: 'Werkbonnen',
+  }))
+}
+
 export function CommandPalette() {
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
@@ -92,6 +133,9 @@ export function CommandPalette() {
   const [offerteItems, setOfferteItems] = useState<CommandItem[]>([])
   const [klantItems, setKlantItems] = useState<CommandItem[]>([])
   const [projectItems, setProjectItems] = useState<CommandItem[]>([])
+  const [dealItems, setDealItems] = useState<CommandItem[]>([])
+  const [factuurItems, setFactuurItems] = useState<CommandItem[]>([])
+  const [werkbonItems, setWerkbonItems] = useState<CommandItem[]>([])
 
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -104,15 +148,21 @@ export function CommandPalette() {
     async function loadData() {
       setIsLoading(true)
       try {
-        const [offertes, klanten, projecten] = await Promise.all([
+        const [offertes, klanten, projecten, deals, facturen, werkbonnen] = await Promise.all([
           getOffertes(),
           getKlanten(),
           getProjecten(),
+          getDeals(),
+          getFacturen(),
+          getWerkbonnen(),
         ])
         if (!cancelled) {
           setOfferteItems(mapOffertesToItems(offertes))
           setKlantItems(mapKlantenToItems(klanten))
           setProjectItems(mapProjectenToItems(projecten))
+          setDealItems(mapDealsToItems(deals))
+          setFactuurItems(mapFacturenToItems(facturen))
+          setWerkbonItems(mapWerkbonnenToItems(werkbonnen))
         }
       } catch (error) {
         logger.error('CommandPalette: failed to load data', error)
@@ -138,30 +188,30 @@ export function CommandPalette() {
       return [...navigationItems, ...actionItems]
     }
 
-    const matchNav = navigationItems.filter(
-      (item) => item.label.toLowerCase().includes(q)
-    )
-    const matchActions = actionItems.filter(
-      (item) => item.label.toLowerCase().includes(q)
-    )
-    const matchOffertes = offerteItems.filter(
-      (item) =>
-        item.label.toLowerCase().includes(q) ||
-        item.subtitle.toLowerCase().includes(q)
-    )
-    const matchKlanten = klantItems.filter(
-      (item) =>
-        item.label.toLowerCase().includes(q) ||
-        item.subtitle.toLowerCase().includes(q)
-    )
-    const matchProjecten = projectItems.filter(
-      (item) =>
-        item.label.toLowerCase().includes(q) ||
-        item.subtitle.toLowerCase().includes(q)
-    )
+    const matchItem = (item: CommandItem) =>
+      item.label.toLowerCase().includes(q) ||
+      item.subtitle.toLowerCase().includes(q)
 
-    return [...matchNav, ...matchActions, ...matchOffertes, ...matchKlanten, ...matchProjecten]
-  }, [query, offerteItems, klantItems, projectItems])
+    const matchNav = navigationItems.filter(matchItem)
+    const matchActions = actionItems.filter(matchItem)
+    const matchOffertes = offerteItems.filter(matchItem)
+    const matchKlanten = klantItems.filter(matchItem)
+    const matchProjecten = projectItems.filter(matchItem)
+    const matchDeals = dealItems.filter(matchItem)
+    const matchFacturen = factuurItems.filter(matchItem)
+    const matchWerkbonnen = werkbonItems.filter(matchItem)
+
+    return [
+      ...matchNav,
+      ...matchActions,
+      ...matchOffertes,
+      ...matchKlanten,
+      ...matchProjecten,
+      ...matchDeals,
+      ...matchFacturen,
+      ...matchWerkbonnen,
+    ]
+  }, [query, offerteItems, klantItems, projectItems, dealItems, factuurItems, werkbonItems])
 
   // Group results by category for rendering
   const groupedResults = useMemo(() => {

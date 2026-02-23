@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -130,6 +131,7 @@ function getHourFromDeadline(deadline: string): number | null {
 
 export function TasksLayout() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -140,6 +142,14 @@ export function TasksLayout() {
 
   // FAB state
   const [fabOpen, setFabOpen] = useState(false)
+
+  // Open FAB via ?nieuw=true (from Command Palette)
+  useEffect(() => {
+    if (searchParams.get('nieuw') === 'true') {
+      setFabOpen(true)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
   const [fabTitle, setFabTitle] = useState('')
   const [fabPriority, setFabPriority] = useState<TaakPrioriteit>('medium')
   const [fabDeadline, setFabDeadline] = useState('')

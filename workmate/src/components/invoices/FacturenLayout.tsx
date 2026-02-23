@@ -715,7 +715,12 @@ export function FacturenLayout() {
     const convertOfferteId = searchParams.get('convert_offerte')
     const klantId = searchParams.get('klant')
 
-    if (convertOfferteId && offertes.length > 0) {
+    const isNieuw = searchParams.get('nieuw') === 'true'
+
+    if (isNieuw) {
+      setCreateDialogOpen(true)
+      setSearchParams({}, { replace: true })
+    } else if (convertOfferteId && offertes.length > 0) {
       const offerte = offertes.find((o) => o.id === convertOfferteId)
       if (offerte) {
         handleConvertOfferte(offerte)

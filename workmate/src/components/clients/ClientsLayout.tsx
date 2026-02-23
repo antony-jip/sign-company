@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,10 +21,19 @@ type SortDir = 'asc' | 'desc'
 
 export function ClientsLayout() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+
+  // Open new client dialog via ?nieuw=true (from Command Palette)
+  useEffect(() => {
+    if (searchParams.get('nieuw') === 'true') {
+      setAddDialogOpen(true)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
