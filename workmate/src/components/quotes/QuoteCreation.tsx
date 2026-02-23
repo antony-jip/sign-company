@@ -34,10 +34,16 @@ import {
   X,
   Plus,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, getOfferteItems, getOfferteTemplates, createOfferte, createOfferteItem } from '@/services/supabaseService'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Project } from '@/types'
+import type { Klant, Project, Offerte, OfferteTemplate } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -111,6 +117,13 @@ export function QuoteCreation() {
   })
   const [offerteNummer, setOfferteNummer] = useState('')
 
+  // ── Template & Kopieer ──
+  const [templates, setTemplates] = useState<OfferteTemplate[]>([])
+  const [allOffertes, setAllOffertes] = useState<Offerte[]>([])
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false)
+  const [showCopyDialog, setShowCopyDialog] = useState(false)
+  const [copySearch, setCopySearch] = useState('')
+
   // ── Step 1: Items ──
   const [items, setItems] = useState<QuoteLineItem[]>([])
   const [notities, setNotities] = useState('')
@@ -165,12 +178,19 @@ export function QuoteCreation() {
   // ── Data fetching ──
   useEffect(() => {
     let cancelled = false
-    Promise.all([getKlanten(), getProjecten(), getOffertes().catch(() => [])])
-      .then(([klantenData, projectenData, offertesData]) => {
+    Promise.all([
+      getKlanten(),
+      getProjecten(),
+      getOffertes().catch(() => []),
+      getOfferteTemplates().catch(() => []),
+    ])
+      .then(([klantenData, projectenData, offertesData, templatesData]) => {
         if (!cancelled) {
           setKlanten(klantenData)
           setProjecten(projectenData)
           setOfferteNummer(generateOfferteNummer(offertePrefix, offertesData))
+          setAllOffertes(offertesData)
+          setTemplates(templatesData.filter((t: OfferteTemplate) => t.actief))
         }
       })
       .catch((err) => {
@@ -286,6 +306,62 @@ export function QuoteCreation() {
       })
     )
   }
+
+  // ── Template import ──
+  const handleImportTemplate = (template: OfferteTemplate) => {
+    const newItems: QuoteLineItem[] = template.regels.map((regel, i) => ({
+      id: `tpl-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 9)}`,
+      soort: regel.soort,
+      beschrijving: regel.beschrijving,
+      extra_velden: regel.extra_velden,
+      aantal: regel.aantal,
+      eenheidsprijs: regel.eenheidsprijs,
+      btw_percentage: regel.btw_percentage,
+      korting_percentage: regel.korting_percentage,
+      totaal: regel.aantal * regel.eenheidsprijs * (1 - regel.korting_percentage / 100),
+    }))
+    setItems(newItems)
+    setItemCount(newItems.length)
+    setShowTemplateDialog(false)
+    toast.success(`Template "${template.naam}" geladen met ${newItems.length} items`)
+  }
+
+  // ── Kopieer vanuit vorige offerte ──
+  const handleCopyOfferte = async (offerte: Offerte) => {
+    try {
+      const offerteItems = await getOfferteItems(offerte.id)
+      const newItems: QuoteLineItem[] = offerteItems.map((item, i) => ({
+        id: `copy-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 9)}`,
+        soort: 'prijs' as const,
+        beschrijving: item.beschrijving,
+        extra_velden: {},
+        aantal: item.aantal,
+        eenheidsprijs: item.eenheidsprijs,
+        btw_percentage: item.btw_percentage,
+        korting_percentage: item.korting_percentage,
+        totaal: item.totaal,
+      }))
+      setItems(newItems)
+      setItemCount(newItems.length)
+      if (!offerteTitel) setOfferteTitel(offerte.titel)
+      if (!selectedKlantId && offerte.klant_id) setSelectedKlantId(offerte.klant_id)
+      setShowCopyDialog(false)
+      toast.success(`${newItems.length} items gekopieerd van ${offerte.nummer}`)
+    } catch {
+      toast.error('Kon offerte items niet laden')
+    }
+  }
+
+  const filteredOffertes = useMemo(() => {
+    if (!copySearch) return allOffertes.slice(0, 20)
+    const q = copySearch.toLowerCase()
+    return allOffertes.filter(
+      (o) =>
+        o.nummer.toLowerCase().includes(q) ||
+        o.titel.toLowerCase().includes(q) ||
+        (o.klant_naam || '').toLowerCase().includes(q)
+    ).slice(0, 20)
+  }, [allOffertes, copySearch])
 
   // ── Step navigation ──
   const canProceedStep0 = selectedKlantId && offerteTitel.trim().length > 0
@@ -738,6 +814,42 @@ export function QuoteCreation() {
               </CardContent>
             </Card>
 
+            {/* Snelstart: template of kopieer */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Snelstart
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {templates.length > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowTemplateDialog(true)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Importeer template
+                    </Button>
+                  )}
+                  {allOffertes.length > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowCopyDialog(true)}
+                    >
+                      <FolderOpen className="h-4 w-4 mr-2" />
+                      Kopieer vorige offerte
+                    </Button>
+                  )}
+                </div>
+                {items.length > 0 && (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
+                    {items.length} items geladen
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Navigation */}
             <div className="flex justify-end">
               <Button
@@ -750,6 +862,67 @@ export function QuoteCreation() {
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
+
+            {/* Template import dialog */}
+            <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Importeer template</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {templates.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      onClick={() => handleImportTemplate(tpl)}
+                      className="w-full text-left p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <p className="text-sm font-medium">{tpl.naam}</p>
+                      <p className="text-xs text-muted-foreground">{tpl.beschrijving || `${tpl.regels.length} items`}</p>
+                    </button>
+                  ))}
+                  {templates.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Geen templates beschikbaar. Maak ze aan bij Instellingen &gt; Calculatie.
+                    </p>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Copy offerte dialog */}
+            <Dialog open={showCopyDialog} onOpenChange={setShowCopyDialog}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Kopieer vanuit offerte</DialogTitle>
+                </DialogHeader>
+                <Input
+                  placeholder="Zoek op nummer, titel of klant..."
+                  value={copySearch}
+                  onChange={(e) => setCopySearch(e.target.value)}
+                  className="mb-3"
+                />
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {filteredOffertes.map((o) => (
+                    <button
+                      key={o.id}
+                      onClick={() => handleCopyOfferte(o)}
+                      className="w-full text-left p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{o.nummer} — {o.titel}</p>
+                        <Badge variant="secondary" className="text-[10px]">{o.status}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{o.klant_naam || 'Geen klant'} · €{o.totaal.toLocaleString('nl-NL')}</p>
+                    </button>
+                  ))}
+                  {filteredOffertes.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Geen offertes gevonden
+                    </p>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
