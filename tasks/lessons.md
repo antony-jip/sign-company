@@ -32,3 +32,7 @@
 - CSS opacity: gebruik 0-1 range, niet procenten
 - Datums: altijd via date-fns formatteren, niet handmatig
 - EmailSequence types bestaan maar service functies ontbreken nog - niet gebruiken tot geïmplementeerd
+
+### Workflow
+- CLAUDE.md moet de workflow instructies bevatten (Communication, Workflow Orchestration, Task Management, Core Principles) BOVENAAN het bestand, gevolgd door technische documentatie
+- Schrijf CLAUDE.md niet als puur technische docs — het is de primaire instructieset voor AI sessies
