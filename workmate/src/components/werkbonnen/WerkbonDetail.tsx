@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft, Save, Send, FileText, Receipt, Plus, Trash2,
@@ -40,6 +40,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 export function WerkbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
@@ -141,6 +142,36 @@ export function WerkbonDetail() {
     loadData()
     return () => { cancelled = true }
   }, [id, isNew, navigate])
+
+  // Pre-fill from URL params (e.g. from ProjectDetail)
+  useEffect(() => {
+    if (!isNew || isLoading) return
+    const paramProject = searchParams.get('project_id')
+    const paramKlant = searchParams.get('klant_id')
+    if (paramProject) {
+      setProjectId(paramProject)
+      const project = projecten.find((p) => p.id === paramProject)
+      if (project && !klantId) {
+        setKlantId(project.klant_id)
+        const kl = klanten.find((k) => k.id === project.klant_id)
+        if (kl) {
+          setLocatieAdres(kl.adres || '')
+          setLocatieStad(kl.stad || '')
+          setLocatiePostcode(kl.postcode || '')
+        }
+      }
+      setSearchParams({}, { replace: true })
+    } else if (paramKlant) {
+      setKlantId(paramKlant)
+      const kl = klanten.find((k) => k.id === paramKlant)
+      if (kl) {
+        setLocatieAdres(kl.adres || '')
+        setLocatieStad(kl.stad || '')
+        setLocatiePostcode(kl.postcode || '')
+      }
+      setSearchParams({}, { replace: true })
+    }
+  }, [isNew, isLoading, searchParams, projecten, klanten, klantId, setSearchParams])
 
   // Filter projecten bij klant selectie
   const handleKlantChange = useCallback((newKlantId: string) => {

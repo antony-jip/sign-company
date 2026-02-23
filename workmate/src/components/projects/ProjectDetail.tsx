@@ -1351,7 +1351,7 @@ export function ProjectDetail() {
                 </CardTitle>
                 <Button
                   variant="ghost" size="icon" className="h-7 w-7"
-                  onClick={() => navigate(`/werkbonnen/nieuw`)}
+                  onClick={() => navigate(`/werkbonnen/nieuw?project_id=${project.id}&klant_id=${project.klant_id || ''}`)}
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </Button>
