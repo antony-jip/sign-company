@@ -55,13 +55,16 @@ import {
   ExternalLink,
   FileText,
   X,
+  Users,
+  Download,
+  UserPlus,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { usePalette, PALETTES } from '@/contexts/PaletteContext'
-import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
+import { getProfile, updateProfile, getAppSettings, updateAppSettings, getKlanten, getProjecten, getOffertes, getFacturen, getWerkbonnen, getUitgaven, getBestelbonnen, getLeveringsbonnen } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
 import type { AppSettings, PipelineStap, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel } from '@/types'
@@ -92,6 +95,8 @@ const settingsTabs = [
   { id: 'aanpassingen', label: 'Aanpassingen', icon: Sliders, description: 'Pipeline, statussen en workflows' },
   { id: 'meldingen', label: 'Meldingen', icon: Bell, description: 'E-mail en pushnotificaties' },
   { id: 'integraties', label: 'Integraties', icon: Puzzle, description: 'Koppelingen met externe diensten' },
+  { id: 'team', label: 'Team', icon: Users, description: 'Teamleden uitnodigen en beheren' },
+  { id: 'export', label: 'Data Export', icon: Download, description: 'Exporteer data als CSV' },
   { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
   { id: 'weergave', label: 'Weergave', icon: Palette, description: 'Thema, taal en lay-out' },
 ] as const
@@ -105,6 +110,8 @@ function renderTabContent(tabId: string) {
     case 'aanpassingen': return <AanpassingenTab />
     case 'meldingen': return <MeldingenTab />
     case 'integraties': return <IntegratiesTab />
+    case 'team': return <TeamTab />
+    case 'export': return <ExportTab />
     case 'beveiliging': return <BeveiligingTab />
     case 'weergave': return <WeergaveTab />
     default: return null
@@ -3691,6 +3698,291 @@ function BeveiligingTab() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+// ============ TEAM TAB ============
+
+interface TeamLid {
+  id: string
+  email: string
+  naam: string
+  status: 'uitgenodigd' | 'actief'
+  uitgenodigd_op: string
+}
+
+function TeamTab() {
+  const { user } = useAuth()
+  const [teamLeden, setTeamLeden] = useState<TeamLid[]>([])
+  const [uitnodigEmail, setUitnodigEmail] = useState('')
+  const [uitnodigNaam, setUitnodigNaam] = useState('')
+  const [isInviting, setIsInviting] = useState(false)
+
+  useEffect(() => {
+    // Load team members from localStorage (Supabase integration later)
+    const stored = localStorage.getItem(`workmate_team_${user?.id}`)
+    if (stored) {
+      try {
+        setTeamLeden(JSON.parse(stored))
+      } catch { /* ignore */ }
+    }
+  }, [user?.id])
+
+  const saveTeamLeden = (leden: TeamLid[]) => {
+    setTeamLeden(leden)
+    localStorage.setItem(`workmate_team_${user?.id}`, JSON.stringify(leden))
+  }
+
+  const handleUitnodigen = async () => {
+    if (!uitnodigEmail.trim()) {
+      toast.error('Vul een e-mailadres in')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(uitnodigEmail)) {
+      toast.error('Ongeldig e-mailadres')
+      return
+    }
+    if (teamLeden.some((l) => l.email === uitnodigEmail.trim())) {
+      toast.error('Dit e-mailadres is al uitgenodigd')
+      return
+    }
+    setIsInviting(true)
+    try {
+      const nieuwLid: TeamLid = {
+        id: `team_${Date.now()}`,
+        email: uitnodigEmail.trim(),
+        naam: uitnodigNaam.trim() || uitnodigEmail.trim().split('@')[0],
+        status: 'uitgenodigd',
+        uitgenodigd_op: new Date().toISOString(),
+      }
+      saveTeamLeden([...teamLeden, nieuwLid])
+      setUitnodigEmail('')
+      setUitnodigNaam('')
+      toast.success(`Uitnodiging klaargezet voor ${nieuwLid.email}`)
+    } finally {
+      setIsInviting(false)
+    }
+  }
+
+  const handleVerwijderen = (id: string) => {
+    saveTeamLeden(teamLeden.filter((l) => l.id !== id))
+    toast.success('Teamlid verwijderd')
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="w-5 h-5" />
+            Team Uitnodigen
+          </CardTitle>
+          <CardDescription>Nodig teamleden uit om samen te werken in Workmate</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="uitnodig-email">E-mailadres</Label>
+              <Input
+                id="uitnodig-email"
+                type="email"
+                value={uitnodigEmail}
+                onChange={(e) => setUitnodigEmail(e.target.value)}
+                placeholder="collega@bedrijf.nl"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleUitnodigen()
+                  }
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="uitnodig-naam">Naam (optioneel)</Label>
+              <Input
+                id="uitnodig-naam"
+                value={uitnodigNaam}
+                onChange={(e) => setUitnodigNaam(e.target.value)}
+                placeholder="Jan de Vries"
+              />
+            </div>
+          </div>
+          <Button onClick={handleUitnodigen} disabled={isInviting} className="gap-2">
+            <UserPlus className="w-4 h-4" />
+            {isInviting ? 'Uitnodigen...' : 'Uitnodigen'}
+          </Button>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Uitnodigingen worden verstuurd zodra e-mail is gekoppeld. Alle teamleden hebben dezelfde rechten.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Teamleden ({teamLeden.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {teamLeden.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+              Nog geen teamleden uitgenodigd
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {teamLeden.map((lid) => (
+                <div
+                  key={lid.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 text-sm font-medium">
+                      {lid.naam.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{lid.naam}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{lid.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={lid.status === 'actief' ? 'default' : 'secondary'}>
+                      {lid.status === 'actief' ? 'Actief' : 'Uitgenodigd'}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleVerwijderen(lid.id)}
+                      className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// ============ EXPORT TAB ============
+
+const EXPORT_MODULES = [
+  { key: 'klanten', label: 'Klanten', icon: Building2, fetch: getKlanten },
+  { key: 'projecten', label: 'Projecten', icon: FileText, fetch: getProjecten },
+  { key: 'offertes', label: 'Offertes', icon: FileText, fetch: getOffertes },
+  { key: 'facturen', label: 'Facturen', icon: FileText, fetch: getFacturen },
+  { key: 'werkbonnen', label: 'Werkbonnen', icon: FileText, fetch: getWerkbonnen },
+  { key: 'uitgaven', label: 'Uitgaven', icon: FileText, fetch: getUitgaven },
+  { key: 'bestelbonnen', label: 'Bestelbonnen', icon: FileText, fetch: getBestelbonnen },
+  { key: 'leveringsbonnen', label: 'Leveringsbonnen', icon: FileText, fetch: getLeveringsbonnen },
+] as const
+
+function objectToCsvRow(obj: Record<string, unknown>): string {
+  return Object.values(obj).map((val) => {
+    const str = val === null || val === undefined ? '' : String(val)
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`
+    }
+    return str
+  }).join(',')
+}
+
+function downloadCsv(filename: string, data: Record<string, unknown>[]) {
+  if (data.length === 0) return
+  const headers = Object.keys(data[0]).join(',')
+  const rows = data.map(objectToCsvRow)
+  const csv = [headers, ...rows].join('\n')
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function ExportTab() {
+  const [exporting, setExporting] = useState<string | null>(null)
+
+  const handleExport = async (moduleKey: string, label: string, fetchFn: () => Promise<unknown[]>) => {
+    setExporting(moduleKey)
+    try {
+      const data = await fetchFn()
+      if (data.length === 0) {
+        toast.error(`Geen ${label.toLowerCase()} gevonden om te exporteren`)
+        return
+      }
+      // Flatten nested objects for CSV
+      const flatData = data.map((item) => {
+        const flat: Record<string, unknown> = {}
+        for (const [key, val] of Object.entries(item as Record<string, unknown>)) {
+          if (Array.isArray(val)) {
+            flat[key] = JSON.stringify(val)
+          } else if (typeof val === 'object' && val !== null) {
+            flat[key] = JSON.stringify(val)
+          } else {
+            flat[key] = val
+          }
+        }
+        return flat
+      })
+      downloadCsv(moduleKey, flatData)
+      toast.success(`${label} geëxporteerd als CSV (${data.length} rijen)`)
+    } catch (err) {
+      logger.error(`Export ${moduleKey} mislukt:`, err)
+      toast.error(`Kon ${label.toLowerCase()} niet exporteren`)
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Download className="w-5 h-5" />
+          Data Exporteren
+        </CardTitle>
+        <CardDescription>Download uw data als CSV-bestand per module</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {EXPORT_MODULES.map((mod) => (
+          <div
+            key={mod.key}
+            className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center gap-3">
+              <mod.icon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{mod.label}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleExport(mod.key, mod.label, mod.fetch as () => Promise<unknown[]>)}
+              disabled={exporting !== null}
+              className="gap-2"
+            >
+              {exporting === mod.key ? (
+                <>Exporteren...</>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  CSV
+                </>
+              )}
+            </Button>
+          </div>
+        ))}
+        <p className="text-xs text-gray-500 dark:text-gray-400 pt-2">
+          CSV-bestanden kunnen geopend worden in Excel, Google Sheets of andere spreadsheet-programma&apos;s.
+          Het bestand bevat een BOM-marker voor correcte weergave van speciale tekens.
+        </p>
+      </CardContent>
+    </Card>
   )
 }
 
