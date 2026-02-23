@@ -33,6 +33,7 @@ interface CommandItem {
   subtitle: string
   icon: React.ReactNode
   path: string
+  shortcut?: string
   category: string
 }
 
@@ -51,13 +52,13 @@ const navigationItems: CommandItem[] = [
 ]
 
 const actionItems: CommandItem[] = [
-  { id: 'act-nieuwe-offerte', label: 'Nieuwe Offerte', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/offertes/nieuw', category: 'Acties' },
-  { id: 'act-nieuw-project', label: 'Nieuw Project', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/projecten/nieuw', category: 'Acties' },
-  { id: 'act-nieuwe-klant', label: 'Nieuwe Klant', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/klanten?nieuw=true', category: 'Acties' },
-  { id: 'act-nieuwe-factuur', label: 'Nieuwe Factuur', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/facturen?nieuw=true', category: 'Acties' },
-  { id: 'act-nieuwe-taak', label: 'Nieuwe Taak', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/taken?nieuw=true', category: 'Acties' },
-  { id: 'act-nieuwe-deal', label: 'Nieuwe Deal', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/deals?nieuw=true', category: 'Acties' },
-  { id: 'act-nieuwe-werkbon', label: 'Nieuwe Werkbon', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/werkbonnen/nieuw', category: 'Acties' },
+  { id: 'act-nieuwe-offerte', label: 'Nieuwe Offerte', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/offertes/nieuw', category: 'Acties', shortcut: 'N O' },
+  { id: 'act-nieuw-project', label: 'Nieuw Project', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/projecten/nieuw', category: 'Acties', shortcut: 'N P' },
+  { id: 'act-nieuwe-klant', label: 'Nieuwe Klant', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/klanten?nieuw=true', category: 'Acties', shortcut: 'N K' },
+  { id: 'act-nieuwe-factuur', label: 'Nieuwe Factuur', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/facturen?nieuw=true', category: 'Acties', shortcut: 'N F' },
+  { id: 'act-nieuwe-taak', label: 'Nieuwe Taak', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/taken?nieuw=true', category: 'Acties', shortcut: 'N T' },
+  { id: 'act-nieuwe-deal', label: 'Nieuwe Deal', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/deals?nieuw=true', category: 'Acties', shortcut: 'N D' },
+  { id: 'act-nieuwe-werkbon', label: 'Nieuwe Werkbon', subtitle: 'Actie', icon: <Plus className="w-4 h-4" />, path: '/werkbonnen/nieuw', category: 'Acties', shortcut: 'N W' },
 ]
 
 const settingsItems: CommandItem[] = [
@@ -532,6 +533,18 @@ export function CommandPalette() {
                         </p>
                       )}
                     </div>
+                    {item.shortcut && (
+                      <span className="hidden sm:flex items-center gap-0.5 flex-shrink-0">
+                        {item.shortcut.split(' ').map((k, ki) => (
+                          <kbd
+                            key={ki}
+                            className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded bg-gray-100 dark:bg-gray-800 text-[10px] font-semibold text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700"
+                          >
+                            {k}
+                          </kbd>
+                        ))}
+                      </span>
+                    )}
                     <ChevronRight
                       className={`
                         w-4 h-4 flex-shrink-0 transition-opacity duration-75

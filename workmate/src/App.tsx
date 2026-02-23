@@ -60,9 +60,11 @@ import { LeadFormulierPubliek } from '@/components/leads/LeadFormulierPubliek'
 import { LeadInzendingenLayout } from '@/components/leads/LeadInzendingenLayout'
 import { ForecastLayout } from '@/components/forecast/ForecastLayout'
 import { useDataInit } from '@/hooks/useDataInit'
+import { useGlobalShortcuts } from '@/hooks/useGlobalShortcuts'
 
 function AppContent() {
   const { isReady } = useDataInit()
+  useGlobalShortcuts()
 
   if (!isReady) {
     return (
