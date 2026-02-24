@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -88,6 +88,7 @@ function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { numme
 export function QuoteCreation() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
   const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
   const documentStyle = useDocumentStyle()
@@ -103,7 +104,8 @@ export function QuoteCreation() {
   const paramProjectId = searchParams.get('project_id') || ''
   const paramDealId = searchParams.get('deal_id') || ''
   const paramTitel = searchParams.get('titel') || ''
-  const editOfferteId = searchParams.get('edit') || ''
+  // Support both /offertes/:id (routeId) and /offertes/nieuw?edit=id (search param)
+  const editOfferteId = routeId || searchParams.get('edit') || ''
 
   // ── Step 0: Klant + Project + Details ──
   const [selectedKlantId, setSelectedKlantId] = useState(paramKlantId)
@@ -249,14 +251,19 @@ export function QuoteCreation() {
           .sort((a, b) => (a.volgorde || 0) - (b.volgorde || 0))
           .map((item) => ({
             id: item.id,
-            soort: 'prijs' as const,
+            soort: (item.soort || 'prijs') as 'prijs' | 'tekst',
             beschrijving: item.beschrijving,
-            extra_velden: {},
+            extra_velden: item.extra_velden || {},
+            detail_regels: item.detail_regels,
             aantal: item.aantal,
             eenheidsprijs: item.eenheidsprijs,
             btw_percentage: item.btw_percentage,
             korting_percentage: item.korting_percentage,
             totaal: item.totaal || 0,
+            calculatie_regels: item.calculatie_regels,
+            heeft_calculatie: item.heeft_calculatie,
+            prijs_varianten: item.prijs_varianten,
+            actieve_variant_id: item.actieve_variant_id,
           }))
 
         if (mappedItems.length > 0) {
@@ -529,6 +536,13 @@ export function QuoteCreation() {
               korting_percentage: item.korting_percentage,
               totaal: item.totaal,
               volgorde: index + 1,
+              soort: item.soort,
+              extra_velden: item.extra_velden,
+              detail_regels: item.detail_regels,
+              calculatie_regels: item.calculatie_regels,
+              heeft_calculatie: item.heeft_calculatie,
+              prijs_varianten: item.prijs_varianten,
+              actieve_variant_id: item.actieve_variant_id,
             })
           )
         )
@@ -562,6 +576,13 @@ export function QuoteCreation() {
               korting_percentage: item.korting_percentage,
               totaal: item.totaal,
               volgorde: index + 1,
+              soort: item.soort,
+              extra_velden: item.extra_velden,
+              detail_regels: item.detail_regels,
+              calculatie_regels: item.calculatie_regels,
+              heeft_calculatie: item.heeft_calculatie,
+              prijs_varianten: item.prijs_varianten,
+              actieve_variant_id: item.actieve_variant_id,
             })
           )
         )
@@ -590,7 +611,7 @@ export function QuoteCreation() {
             ? 'Offerte opgeslagen als concept'
             : 'Offerte verzonden naar klant'
       )
-      navigate(isEditMode ? `/offertes/${savedOfferteId}` : '/offertes')
+      navigate(`/offertes/${savedOfferteId}/preview`)
     } catch (err) {
       logger.error('Failed to save offerte:', err)
       toast.error('Kon offerte niet opslaan')

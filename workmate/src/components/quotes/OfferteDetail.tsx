@@ -446,7 +446,7 @@ export function OfferteDetail() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => navigate(`/offertes/nieuw?edit=${offerte.id}`)}
+                onClick={() => navigate(`/offertes/${offerte.id}`)}
               >
                 <FileText className="h-4 w-4 mr-1" />
                 Calculatie bewerken

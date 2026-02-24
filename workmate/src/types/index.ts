@@ -157,7 +157,31 @@ export interface OfferteItem {
   korting_percentage: number;
   totaal: number;
   volgorde: number;
+  soort?: 'prijs' | 'tekst';
+  extra_velden?: Record<string, string>;
+  detail_regels?: OfferteItemDetailRegel[];
+  calculatie_regels?: CalculatieRegel[];
+  heeft_calculatie?: boolean;
+  prijs_varianten?: OfferteItemPrijsVariant[];
+  actieve_variant_id?: string;
   created_at: string;
+}
+
+export interface OfferteItemDetailRegel {
+  id: string;
+  label: string;
+  waarde: string;
+}
+
+export interface OfferteItemPrijsVariant {
+  id: string;
+  label: string;
+  aantal: number;
+  eenheidsprijs: number;
+  btw_percentage: number;
+  korting_percentage: number;
+  calculatie_regels?: CalculatieRegel[];
+  heeft_calculatie?: boolean;
 }
 
 export interface Document {
