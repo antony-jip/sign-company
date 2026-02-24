@@ -6,7 +6,8 @@ import {
   ChevronRight, LogOut, Menu, X, CheckSquare,
   Receipt, BarChart3, Clock, Wrench, UsersRound,
   ClipboardCheck, Truck, ShoppingCart, Warehouse,
-  Briefcase, UserPlus,
+  Briefcase, UserPlus, CreditCard, Files, Newspaper,
+  Upload, Bot, Calculator, TrendingUp, PackageCheck,
   type LucideIcon
 } from 'lucide-react'
 import { getOffertes, getMontageAfspraken, getProjecten } from '@/services/supabaseService'
@@ -51,6 +52,7 @@ const navSections: NavSection[] = [
       { label: 'Taken', icon: CheckSquare, path: '/taken' },
       { label: 'Montage', icon: Wrench, path: '/montage' },
       { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
+      { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
     ],
   },
   {
@@ -64,18 +66,30 @@ const navSections: NavSection[] = [
     section: 'Communicatie',
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
+      { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
       { label: 'Lead Capture', icon: UserPlus, path: '/leads' },
+    ],
+  },
+  {
+    section: 'Financieel',
+    items: [
+      { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
+      { label: 'Uitgaven', icon: CreditCard, path: '/uitgaven' },
+      { label: 'Leveranciers', icon: Truck, path: '/leveranciers' },
+      { label: 'Forecast', icon: TrendingUp, path: '/forecast' },
     ],
   },
   {
     section: 'Beheer',
     items: [
+      { label: 'Documenten', icon: Files, path: '/documenten' },
       { label: 'Voorraad', icon: Warehouse, path: '/voorraad' },
       { label: 'Bestelbonnen', icon: ShoppingCart, path: '/bestelbonnen' },
-      { label: 'Leveranciers', icon: Truck, path: '/leveranciers' },
-      { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
+      { label: 'Leveringsbonnen', icon: PackageCheck, path: '/leveringsbonnen' },
       { label: 'Rapportages', icon: BarChart3, path: '/rapportages' },
       { label: 'Team', icon: UsersRound, path: '/team' },
+      { label: 'Importeren', icon: Upload, path: '/importeren' },
+      { label: 'AI Assistent', icon: Bot, path: '/ai' },
       { label: 'Instellingen', icon: Settings, path: '/instellingen' },
     ],
   },
