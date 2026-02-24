@@ -1,0 +1,1358 @@
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import {
+  TrendingUp,
+  TrendingDown,
+  Euro,
+  BarChart3,
+  Users,
+  FileText,
+  Download,
+  FileSpreadsheet,
+  Target,
+  PieChart,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  CalendarDays,
+} from 'lucide-react';
+import {
+  getKlanten,
+  getProjecten,
+  getOffertes,
+  getFacturen,
+  getTijdregistraties,
+  getMedewerkers,
+  getVoorraadArtikelen,
+} from '@/services/supabaseService';
+import type {
+  Klant,
+  Project,
+  Offerte,
+  Factuur,
+  Tijdregistratie,
+  Medewerker,
+  VoorraadArtikel,
+} from '@/types';
+import { cn, formatCurrency } from '@/lib/utils';
+import { toast } from 'sonner';
+import { exportCSV, exportExcel } from '@/lib/export';
+import { generateRapportPDF } from '@/services/pdfService';
+import { useDocumentStyle } from '@/hooks/useDocumentStyle';
+import { useAppSettings } from '@/contexts/AppSettingsContext';
+
+
+
+// ---------------------------------------------------------------------------
+// Period type and helpers
+// ---------------------------------------------------------------------------
+
+type Periode = 'deze_maand' | 'dit_kwartaal' | 'dit_jaar' | 'aangepast';
+
+function getPeriodeLabel(p: Periode): string {
+  switch (p) {
+    case 'deze_maand': return 'Deze maand';
+    case 'dit_kwartaal': return 'Dit kwartaal';
+    case 'dit_jaar': return 'Dit jaar';
+    case 'aangepast': return 'Aangepast';
+  }
+}
+
+function getPeriodeRange(p: Periode): { start: Date; end: Date } {
+  const now = new Date();
+  switch (p) {
+    case 'deze_maand':
+      return {
+        start: new Date(now.getFullYear(), now.getMonth(), 1),
+        end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
+      };
+    case 'dit_kwartaal': {
+      const q = Math.floor(now.getMonth() / 3);
+      return {
+        start: new Date(now.getFullYear(), q * 3, 1),
+        end: new Date(now.getFullYear(), q * 3 + 3, 0, 23, 59, 59),
+      };
+    }
+    case 'dit_jaar':
+      return {
+        start: new Date(now.getFullYear(), 0, 1),
+        end: new Date(now.getFullYear(), 11, 31, 23, 59, 59),
+      };
+    case 'aangepast':
+      return {
+        start: new Date(now.getFullYear(), 0, 1),
+        end: new Date(now.getFullYear(), 11, 31, 23, 59, 59),
+      };
+  }
+}
+
+const MAAND_NAMEN = [
+  'Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec',
+];
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export function RapportagesLayout() {
+  const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings();
+  const documentStyle = useDocumentStyle();
+  const [periode, setPeriode] = useState<Periode>('dit_jaar');
+  const [facturen, setFacturen] = useState<Factuur[]>([]);
+  const [projecten, setProjecten] = useState<Project[]>([]);
+  const [offertes, setOffertes] = useState<Offerte[]>([]);
+  const [tijdregistraties, setTijdregistraties] = useState<Tijdregistratie[]>([]);
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
+  const [voorraadArtikelen, setVoorraadArtikelen] = useState<VoorraadArtikel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data on mount
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const [facturenData, projectenData, offertesData, tijdData, mwData, vaData] = await Promise.all([
+          getFacturen(),
+          getProjecten(),
+          getOffertes(),
+          getTijdregistraties(),
+          getMedewerkers().catch(() => []),
+          getVoorraadArtikelen().catch(() => []),
+        ]);
+
+        setFacturen(facturenData);
+        setProjecten(projectenData);
+        setOffertes(offertesData);
+        setTijdregistraties(tijdData);
+        setMedewerkers(mwData);
+        setVoorraadArtikelen(vaData);
+      } catch {
+        toast.error('Fout bij het laden van rapportagegegevens');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Filter data by selected period
+  const range = useMemo(() => getPeriodeRange(periode), [periode]);
+
+  const gefilterdeFacturen = useMemo(
+    () =>
+      facturen.filter((f) => {
+        const d = new Date(f.factuurdatum);
+        return d >= range.start && d <= range.end;
+      }),
+    [facturen, range],
+  );
+
+  const gefilterdeOffertes = useMemo(
+    () =>
+      offertes.filter((o) => {
+        const d = new Date(o.created_at);
+        return d >= range.start && d <= range.end;
+      }),
+    [offertes, range],
+  );
+
+  // ---------------------------------------------------------------------------
+  // KPI calculations
+  // ---------------------------------------------------------------------------
+
+  const totaleOmzet = useMemo(
+    () => gefilterdeFacturen.reduce((sum, f) => sum + f.totaal, 0),
+    [gefilterdeFacturen],
+  );
+
+  const totaleWinst = useMemo(() => {
+    const kosten = gefilterdeFacturen.reduce((sum, f) => sum + f.totaal * 0.35, 0);
+    return totaleOmzet - kosten;
+  }, [gefilterdeFacturen, totaleOmzet]);
+
+  const conversieRatio = useMemo(() => {
+    if (gefilterdeOffertes.length === 0) return 0;
+    const goedgekeurd = gefilterdeOffertes.filter((o) => o.status === 'goedgekeurd').length;
+    return Math.round((goedgekeurd / gefilterdeOffertes.length) * 100);
+  }, [gefilterdeOffertes]);
+
+  const gemiddeldeProjectwaarde = useMemo(() => {
+    if (projecten.length === 0) return 0;
+    return projecten.reduce((sum, p) => sum + p.budget, 0) / projecten.length;
+  }, [projecten]);
+
+  // ---------------------------------------------------------------------------
+  // Monthly revenue data for bar chart (full year)
+  // ---------------------------------------------------------------------------
+
+  const maandelijksOmzet = useMemo(() => {
+    const jaar = new Date().getFullYear();
+    const data = Array.from({ length: 12 }, (_, i) => ({
+      maand: MAAND_NAMEN[i],
+      waarde: 0,
+    }));
+    facturen.forEach((f) => {
+      const d = new Date(f.factuurdatum);
+      if (d.getFullYear() === jaar) {
+        data[d.getMonth()].waarde += f.totaal;
+      }
+    });
+    return data;
+  }, [facturen]);
+
+  const maxMaandOmzet = useMemo(
+    () => Math.max(...maandelijksOmzet.map((m) => m.waarde), 1),
+    [maandelijksOmzet],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Top clients by revenue
+  // ---------------------------------------------------------------------------
+
+  const topKlanten = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        naam: string;
+        aantalProjecten: number;
+        totaalGefactureerd: number;
+        openstaand: number;
+        laatsteFactuur: string;
+      }
+    >();
+
+    gefilterdeFacturen.forEach((f) => {
+      const naam = f.klant_naam || f.klant_id;
+      if (!map.has(naam)) {
+        map.set(naam, {
+          naam,
+          aantalProjecten: 0,
+          totaalGefactureerd: 0,
+          openstaand: 0,
+          laatsteFactuur: f.factuurdatum,
+        });
+      }
+      const entry = map.get(naam)!;
+      entry.totaalGefactureerd += f.totaal;
+      if (f.status === 'verzonden' || f.status === 'vervallen') {
+        entry.openstaand += f.totaal - f.betaald_bedrag;
+      }
+      if (f.factuurdatum > entry.laatsteFactuur) {
+        entry.laatsteFactuur = f.factuurdatum;
+      }
+    });
+
+    // Count projects per client
+    projecten.forEach((p) => {
+      const naam = p.klant_naam || p.klant_id;
+      if (map.has(naam)) {
+        map.get(naam)!.aantalProjecten += 1;
+      }
+    });
+
+    return [...map.values()]
+      .sort((a, b) => b.totaalGefactureerd - a.totaalGefactureerd)
+      .slice(0, 5);
+  }, [gefilterdeFacturen, projecten]);
+
+  // ---------------------------------------------------------------------------
+  // Project profitability
+  // ---------------------------------------------------------------------------
+
+  const projectWinstgevendheid = useMemo(
+    () =>
+      projecten.map((p) => {
+        const marge =
+          p.budget > 0
+            ? Math.round(((p.budget - p.besteed) / p.budget) * 100)
+            : 0;
+        return { ...p, marge };
+      }),
+    [projecten],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Offerte conversion breakdown
+  // ---------------------------------------------------------------------------
+
+  const offerteStats = useMemo(() => {
+    const totaal = gefilterdeOffertes.length;
+    const goedgekeurd = gefilterdeOffertes.filter((o) => o.status === 'goedgekeurd').length;
+    const afgewezen = gefilterdeOffertes.filter((o) => o.status === 'afgewezen').length;
+    const inBehandeling = gefilterdeOffertes.filter(
+      (o) => o.status === 'verzonden' || o.status === 'bekeken' || o.status === 'concept',
+    ).length;
+    const ratio = totaal > 0 ? Math.round((goedgekeurd / totaal) * 100) : 0;
+    return { totaal, goedgekeurd, afgewezen, inBehandeling, ratio };
+  }, [gefilterdeOffertes]);
+
+  // ---------------------------------------------------------------------------
+  // Medewerker productiviteit
+  // ---------------------------------------------------------------------------
+
+  const medewerkerProductiviteit = useMemo(() => {
+    return medewerkers
+      .filter((m) => m.status === 'actief')
+      .map((m) => {
+        const uren = tijdregistraties
+          .filter((t) => t.medewerker_id === m.id)
+          .reduce((s, t) => s + (t.duur || 0), 0);
+        const projectIds = new Set(
+          tijdregistraties.filter((t) => t.medewerker_id === m.id).map((t) => t.project_id)
+        );
+        return {
+          id: m.id,
+          naam: m.naam,
+          functie: m.functie,
+          uren: Math.round(uren * 10) / 10,
+          projecten: projectIds.size,
+          uurtarief: m.uurtarief,
+          omzet: Math.round(uren * m.uurtarief * 100) / 100,
+        };
+      })
+      .sort((a, b) => b.uren - a.uren);
+  }, [medewerkers, tijdregistraties]);
+
+  // ---------------------------------------------------------------------------
+  // Voorraad rapportage
+  // ---------------------------------------------------------------------------
+
+  const voorraadStats = useMemo(() => {
+    const totaalArtikelen = voorraadArtikelen.length;
+    const onderMinimum = voorraadArtikelen.filter(
+      (a) => a.huidige_voorraad <= (a.minimum_voorraad || 0)
+    ).length;
+    const totaleVoorraadWaarde = voorraadArtikelen.reduce(
+      (s, a) => s + (a.huidige_voorraad * (a.inkoop_prijs || 0)),
+      0
+    );
+    return {
+      totaalArtikelen,
+      onderMinimum,
+      totaleVoorraadWaarde: Math.round(totaleVoorraadWaarde * 100) / 100,
+      artikelen: [...voorraadArtikelen].sort((a, b) =>
+        (a.huidige_voorraad <= (a.minimum_voorraad || 0) ? 0 : 1) -
+        (b.huidige_voorraad <= (b.minimum_voorraad || 0) ? 0 : 1)
+      ).slice(0, 15),
+    };
+  }, [voorraadArtikelen]);
+
+  // ---------------------------------------------------------------------------
+  // Export handlers
+  // ---------------------------------------------------------------------------
+
+  function handleExportKlanten(type: 'csv' | 'excel') {
+    const headers = ['Klant', 'Aantal projecten', 'Totaal gefactureerd', 'Openstaand', 'Laatste factuur'];
+    const data = topKlanten.map((k) => ({
+      Klant: k.naam,
+      'Aantal projecten': k.aantalProjecten,
+      'Totaal gefactureerd': k.totaalGefactureerd,
+      Openstaand: k.openstaand,
+      'Laatste factuur': k.laatsteFactuur,
+    }));
+    if (type === 'csv') {
+      exportCSV('top-klanten', headers, data);
+    } else {
+      exportExcel('top-klanten', headers, data);
+    }
+    toast.success(`Top klanten geexporteerd als ${type.toUpperCase()}`);
+  }
+
+  function handleExportProjecten(type: 'csv' | 'excel') {
+    const headers = ['Project', 'Klant', 'Budget', 'Besteed', 'Marge %', 'Status'];
+    const data = projectWinstgevendheid.map((p) => ({
+      Project: p.naam,
+      Klant: p.klant_naam || p.klant_id,
+      Budget: p.budget,
+      Besteed: p.besteed,
+      'Marge %': p.marge,
+      Status: p.status,
+    }));
+    if (type === 'csv') {
+      exportCSV('project-winstgevendheid', headers, data);
+    } else {
+      exportExcel('project-winstgevendheid', headers, data);
+    }
+    toast.success(`Projecten geexporteerd als ${type.toUpperCase()}`);
+  }
+
+  function handleExportOffertes(type: 'csv' | 'excel') {
+    const headers = ['Nummer', 'Titel', 'Klant', 'Status', 'Totaal', 'Datum'];
+    const data = gefilterdeOffertes.map((o) => ({
+      Nummer: o.nummer,
+      Titel: o.titel,
+      Klant: o.klant_naam || o.klant_id,
+      Status: o.status,
+      Totaal: o.totaal,
+      Datum: o.created_at.split('T')[0],
+    }));
+    if (type === 'csv') {
+      exportCSV('offertes', headers, data);
+    } else {
+      exportExcel('offertes', headers, data);
+    }
+    toast.success(`Offertes geexporteerd als ${type.toUpperCase()}`);
+  }
+
+  function handleExportOmzet(type: 'csv' | 'excel') {
+    const headers = ['Maand', 'Omzet'];
+    const data = maandelijksOmzet.map((m) => ({
+      Maand: m.maand,
+      Omzet: Math.round(m.waarde * 100) / 100,
+    }));
+    if (type === 'csv') {
+      exportCSV('maandelijkse-omzet', headers, data);
+    } else {
+      exportExcel('maandelijkse-omzet', headers, data);
+    }
+    toast.success(`Omzetgegevens geexporteerd als ${type.toUpperCase()}`);
+  }
+
+  function handleExportMedewerkers(type: 'csv' | 'excel') {
+    const headers = ['Medewerker', 'Functie', 'Uren', 'Projecten', 'Uurtarief', 'Omzet'];
+    const data = medewerkerProductiviteit.map((m) => ({
+      Medewerker: m.naam,
+      Functie: m.functie,
+      Uren: m.uren,
+      Projecten: m.projecten,
+      Uurtarief: m.uurtarief,
+      Omzet: m.omzet,
+    }));
+    if (type === 'csv') {
+      exportCSV('medewerker-productiviteit', headers, data);
+    } else {
+      exportExcel('medewerker-productiviteit', headers, data);
+    }
+    toast.success(`Medewerker rapport geexporteerd als ${type.toUpperCase()}`);
+  }
+
+  function handleExportVoorraad(type: 'csv' | 'excel') {
+    const headers = ['Artikel', 'Categorie', 'Huidig', 'Minimum', 'Inkoopprijs', 'Waarde'];
+    const data = voorraadArtikelen.map((a) => ({
+      Artikel: a.naam,
+      Categorie: a.categorie || '-',
+      Huidig: a.huidige_voorraad,
+      Minimum: a.minimum_voorraad || 0,
+      Inkoopprijs: a.inkoop_prijs || 0,
+      Waarde: Math.round(a.huidige_voorraad * (a.inkoop_prijs || 0) * 100) / 100,
+    }));
+    if (type === 'csv') {
+      exportCSV('voorraad-rapport', headers, data);
+    } else {
+      exportExcel('voorraad-rapport', headers, data);
+    }
+    toast.success(`Voorraad rapport geexporteerd als ${type.toUpperCase()}`);
+  }
+
+  // ---------------------------------------------------------------------------
+  // PDF download handlers
+  // ---------------------------------------------------------------------------
+
+  const bedrijfsProfiel = {
+    bedrijfsnaam: bedrijfsnaam || 'Uw Bedrijf',
+    bedrijfs_adres: bedrijfsAdres || '',
+    kvk_nummer: kvkNummer || '',
+    btw_nummer: btwNummer || '',
+    primaireKleur: primaireKleur || '#2563eb',
+  };
+
+  function handleDownloadOmzetPDF() {
+    try {
+      const doc = generateRapportPDF(
+        {
+          titel: `Omzet per maand - ${new Date().getFullYear()}`,
+          datum: new Date().toISOString(),
+          samenvatting: `Totale omzet: ${formatCurrency(totaleOmzet)} | Totale winst: ${formatCurrency(totaleWinst)} | Conversieratio: ${conversieRatio}%`,
+          secties: [
+            {
+              kop: 'Maandelijks overzicht',
+              inhoud: 'Onderstaande tabel toont de gefactureerde omzet per maand.',
+              tabel: {
+                headers: ['Maand', 'Omzet'],
+                rijen: maandelijksOmzet.map((m) => [m.maand, formatCurrency(m.waarde)]),
+              },
+            },
+          ],
+        },
+        'financieel',
+        bedrijfsProfiel,
+        documentStyle,
+      );
+      doc.save(`omzet-rapport-${new Date().getFullYear()}.pdf`);
+      toast.success('PDF gedownload');
+    } catch {
+      toast.error('Kon PDF niet genereren');
+    }
+  }
+
+  function handleDownloadKlantenPDF() {
+    try {
+      const doc = generateRapportPDF(
+        {
+          titel: `Top klanten - ${getPeriodeLabel(periode)}`,
+          datum: new Date().toISOString(),
+          secties: [
+            {
+              kop: 'Top 5 klanten op basis van omzet',
+              inhoud: 'Onderstaande tabel toont de top klanten op basis van gefactureerde omzet.',
+              tabel: {
+                headers: ['Klant', 'Projecten', 'Gefactureerd', 'Openstaand', 'Laatste factuur'],
+                rijen: topKlanten.map((k) => [
+                  k.naam,
+                  String(k.aantalProjecten),
+                  formatCurrency(k.totaalGefactureerd),
+                  formatCurrency(k.openstaand),
+                  formatDatum(k.laatsteFactuur),
+                ]),
+              },
+            },
+          ],
+        },
+        'klant',
+        bedrijfsProfiel,
+        documentStyle,
+      );
+      doc.save(`top-klanten-rapport.pdf`);
+      toast.success('PDF gedownload');
+    } catch {
+      toast.error('Kon PDF niet genereren');
+    }
+  }
+
+  function handleDownloadProjectenPDF() {
+    try {
+      const doc = generateRapportPDF(
+        {
+          titel: 'Project winstgevendheid',
+          datum: new Date().toISOString(),
+          secties: [
+            {
+              kop: 'Budget versus bestede kosten',
+              inhoud: 'Onderstaande tabel toont het budget, de bestede kosten en de marge per project.',
+              tabel: {
+                headers: ['Project', 'Klant', 'Budget', 'Besteed', 'Marge %', 'Status'],
+                rijen: projectWinstgevendheid.map((p) => [
+                  p.naam,
+                  p.klant_naam || p.klant_id,
+                  formatCurrency(p.budget),
+                  formatCurrency(p.besteed),
+                  `${p.marge}%`,
+                  statusNaarNederlands(p.status),
+                ]),
+              },
+            },
+          ],
+        },
+        'project',
+        bedrijfsProfiel,
+        documentStyle,
+      );
+      doc.save(`project-winstgevendheid-rapport.pdf`);
+      toast.success('PDF gedownload');
+    } catch {
+      toast.error('Kon PDF niet genereren');
+    }
+  }
+
+  function handleDownloadOffertesPDF() {
+    try {
+      const doc = generateRapportPDF(
+        {
+          titel: `Offerte conversie - ${getPeriodeLabel(periode)}`,
+          datum: new Date().toISOString(),
+          samenvatting: `Totaal: ${offerteStats.totaal} offertes | Goedgekeurd: ${offerteStats.goedgekeurd} | Afgewezen: ${offerteStats.afgewezen} | In behandeling: ${offerteStats.inBehandeling} | Conversieratio: ${offerteStats.ratio}%`,
+          secties: [
+            {
+              kop: 'Offertes overzicht',
+              inhoud: 'Onderstaande tabel toont alle offertes voor de geselecteerde periode.',
+              tabel: {
+                headers: ['Nummer', 'Titel', 'Klant', 'Status', 'Totaal', 'Datum'],
+                rijen: gefilterdeOffertes.map((o) => [
+                  o.nummer,
+                  o.titel,
+                  o.klant_naam || o.klant_id,
+                  o.status,
+                  formatCurrency(o.totaal),
+                  o.created_at.split('T')[0],
+                ]),
+              },
+            },
+          ],
+        },
+        'algemeen',
+        bedrijfsProfiel,
+        documentStyle,
+      );
+      doc.save(`offerte-conversie-rapport.pdf`);
+      toast.success('PDF gedownload');
+    } catch {
+      toast.error('Kon PDF niet genereren');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  function formatDatum(datum: string): string {
+    const d = new Date(datum);
+    return d.toLocaleDateString('nl-NL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  }
+
+  function margeKleur(marge: number): string {
+    if (marge >= 20) return 'text-green-600';
+    if (marge >= 5) return 'text-yellow-600';
+    return 'text-red-600';
+  }
+
+  function margeBadgeVariant(marge: number): 'default' | 'secondary' | 'destructive' | 'outline' {
+    if (marge >= 20) return 'default';
+    if (marge >= 5) return 'secondary';
+    return 'destructive';
+  }
+
+  function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+    switch (status) {
+      case 'actief': return 'default';
+      case 'afgerond': return 'secondary';
+      case 'gepland': return 'outline';
+      default: return 'outline';
+    }
+  }
+
+  function statusNaarNederlands(status: string): string {
+    switch (status) {
+      case 'actief': return 'Actief';
+      case 'afgerond': return 'Afgerond';
+      case 'gepland': return 'Gepland';
+      case 'gepauzeerd': return 'Gepauzeerd';
+      default: return status;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Rapportages laden...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* ------------------------------------------------------------------ */}
+      {/* Header */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight font-display">Rapportages</h1>
+          <p className="text-muted-foreground">
+            Inzicht in omzet, projecten en offertes van uw signbedrijf
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+          <Select
+            value={periode}
+            onValueChange={(v) => setPeriode(v as Periode)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Selecteer periode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="deze_maand">Deze maand</SelectItem>
+              <SelectItem value="dit_kwartaal">Dit kwartaal</SelectItem>
+              <SelectItem value="dit_jaar">Dit jaar</SelectItem>
+              <SelectItem value="aangepast">Aangepast</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* KPI Cards */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Totale omzet */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Totale omzet</CardTitle>
+            <Euro className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totaleOmzet)}</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <TrendingUp className="h-3 w-3 text-green-500" />
+              {getPeriodeLabel(periode)}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Totale winst */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Totale winst</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totaleWinst)}</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <span className="text-green-500 font-medium">65%</span> marge
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Conversieratio */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversieratio</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{conversieRatio}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Offertes naar facturen
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Gemiddelde projectwaarde */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Gem. projectwaarde
+            </CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(gemiddeldeProjectwaarde)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Over {projecten.length} projecten
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Omzet Grafiek (bar chart) */}
+      {/* ------------------------------------------------------------------ */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Omzet per maand
+              </CardTitle>
+              <CardDescription>
+                Maandelijks gefactureerde omzet voor {new Date().getFullYear()}
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadOmzetPDF}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportOmzet('csv')}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportOmzet('excel')}
+              >
+                <FileSpreadsheet className="mr-1 h-3 w-3" />
+                Excel
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-2 h-[240px] pt-4">
+            {maandelijksOmzet.map((m, i) => {
+              const barHeight = maxMaandOmzet > 0 ? (m.waarde / maxMaandOmzet) * 200 : 0;
+              return (
+                <div
+                  key={i}
+                  className="flex flex-1 flex-col items-center justify-end gap-1"
+                >
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    {m.waarde > 0
+                      ? formatCurrency(m.waarde).replace(/\s/g, '')
+                      : ''}
+                  </span>
+                  <div
+                    className={cn(
+                      'w-full max-w-[48px] rounded-t-md transition-all duration-500',
+                      m.waarde > 0
+                        ? 'bg-primary hover:bg-primary/80'
+                        : 'bg-muted',
+                    )}
+                    style={{
+                      height: `${Math.max(barHeight, 2)}px`,
+                    }}
+                    title={`${m.maand}: ${formatCurrency(m.waarde)}`}
+                  />
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {m.maand}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Top Klanten Tabel */}
+      {/* ------------------------------------------------------------------ */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Top klanten
+              </CardTitle>
+              <CardDescription>
+                Top 5 klanten op basis van gefactureerde omzet
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadKlantenPDF}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportKlanten('csv')}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportKlanten('excel')}
+              >
+                <FileSpreadsheet className="mr-1 h-3 w-3" />
+                Excel
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left">
+                  <th className="pb-3 font-medium text-muted-foreground">Klant</th>
+                  <th className="pb-3 font-medium text-muted-foreground text-right">
+                    Aantal projecten
+                  </th>
+                  <th className="pb-3 font-medium text-muted-foreground text-right">
+                    Totaal gefactureerd
+                  </th>
+                  <th className="pb-3 font-medium text-muted-foreground text-right">
+                    Openstaand
+                  </th>
+                  <th className="pb-3 font-medium text-muted-foreground text-right">
+                    Laatste factuur
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {topKlanten.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      Geen klantgegevens beschikbaar voor deze periode.
+                    </td>
+                  </tr>
+                ) : (
+                  topKlanten.map((k, i) => (
+                    <tr
+                      key={i}
+                      className="border-b last:border-0 hover:bg-muted/50 transition-colors"
+                    >
+                      <td className="py-3 font-medium">{k.naam}</td>
+                      <td className="py-3 text-right">{k.aantalProjecten}</td>
+                      <td className="py-3 text-right font-medium">
+                        {formatCurrency(k.totaalGefactureerd)}
+                      </td>
+                      <td className="py-3 text-right">
+                        <span
+                          className={cn(
+                            k.openstaand > 0
+                              ? 'text-orange-600'
+                              : 'text-green-600',
+                          )}
+                        >
+                          {formatCurrency(k.openstaand)}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right text-muted-foreground">
+                        {formatDatum(k.laatsteFactuur)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Project Winstgevendheid */}
+      {/* ------------------------------------------------------------------ */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="h-5 w-5" />
+                Project winstgevendheid
+              </CardTitle>
+              <CardDescription>
+                Budget versus bestede kosten per project
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadProjectenPDF}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportProjecten('csv')}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportProjecten('excel')}
+              >
+                <FileSpreadsheet className="mr-1 h-3 w-3" />
+                Excel
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left">
+                  <th className="pb-3 font-medium text-muted-foreground">Project</th>
+                  <th className="pb-3 font-medium text-muted-foreground">Klant</th>
+                  <th className="pb-3 font-medium text-muted-foreground text-right">
+                    Budget
+                  </th>
+                  <th className="pb-3 font-medium text-muted-foreground text-right">
+                    Besteed
+                  </th>
+                  <th className="pb-3 font-medium text-muted-foreground text-right">
+                    Marge %
+                  </th>
+                  <th className="pb-3 font-medium text-muted-foreground text-center">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {projectWinstgevendheid.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      Geen projectgegevens beschikbaar.
+                    </td>
+                  </tr>
+                ) : (
+                  projectWinstgevendheid.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-b last:border-0 hover:bg-muted/50 transition-colors"
+                    >
+                      <td className="py-3 font-medium max-w-[220px] truncate">
+                        {p.naam}
+                      </td>
+                      <td className="py-3 text-muted-foreground">
+                        {p.klant_naam || p.klant_id}
+                      </td>
+                      <td className="py-3 text-right">
+                        {formatCurrency(p.budget)}
+                      </td>
+                      <td className="py-3 text-right">
+                        {formatCurrency(p.besteed)}
+                      </td>
+                      <td className="py-3 text-right">
+                        <span className="inline-flex items-center gap-1">
+                          {p.marge > 0 ? (
+                            <ArrowUpRight className="h-3 w-3 text-green-600" />
+                          ) : p.marge < 0 ? (
+                            <ArrowDownRight className="h-3 w-3 text-red-600" />
+                          ) : (
+                            <Minus className="h-3 w-3 text-yellow-600" />
+                          )}
+                          <span className={cn('font-medium', margeKleur(p.marge))}>
+                            {p.marge}%
+                          </span>
+                        </span>
+                      </td>
+                      <td className="py-3 text-center">
+                        <Badge variant={statusBadgeVariant(p.status)}>
+                          {statusNaarNederlands(p.status)}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Offerte Conversie */}
+      {/* ------------------------------------------------------------------ */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Offerte conversie
+              </CardTitle>
+              <CardDescription>
+                Overzicht van offertes en conversieratio voor{' '}
+                {getPeriodeLabel(periode).toLowerCase()}
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadOffertesPDF}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportOffertes('csv')}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportOffertes('excel')}
+              >
+                <FileSpreadsheet className="mr-1 h-3 w-3" />
+                Excel
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Totaal offertes */}
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Totaal offertes</p>
+              <p className="text-3xl font-bold">{offerteStats.totaal}</p>
+            </div>
+
+            {/* Goedgekeurd */}
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Goedgekeurd</p>
+              <p className="text-3xl font-bold text-green-600">
+                {offerteStats.goedgekeurd}
+              </p>
+            </div>
+
+            {/* Afgewezen */}
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Afgewezen</p>
+              <p className="text-3xl font-bold text-red-600">
+                {offerteStats.afgewezen}
+              </p>
+            </div>
+
+            {/* In behandeling */}
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">In behandeling</p>
+              <p className="text-3xl font-bold text-yellow-600">
+                {offerteStats.inBehandeling}
+              </p>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
+          {/* Conversieratio visual */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Conversieratio</p>
+              <p className="text-sm font-bold">{offerteStats.ratio}%</p>
+            </div>
+            <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                style={{ width: `${offerteStats.ratio}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>0%</span>
+              <span>
+                {offerteStats.goedgekeurd} van {offerteStats.totaal} offertes
+                goedgekeurd
+              </span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
+          {/* Visual breakdown bar */}
+          <div className="space-y-3">
+            <p className="text-sm font-medium">Verdeling offertestatus</p>
+            <div className="flex h-6 w-full overflow-hidden rounded-full">
+              {offerteStats.goedgekeurd > 0 && (
+                <div
+                  className="bg-green-500 transition-all duration-500"
+                  style={{
+                    width: `${(offerteStats.goedgekeurd / Math.max(offerteStats.totaal, 1)) * 100}%`,
+                  }}
+                  title={`Goedgekeurd: ${offerteStats.goedgekeurd}`}
+                />
+              )}
+              {offerteStats.inBehandeling > 0 && (
+                <div
+                  className="bg-yellow-400 transition-all duration-500"
+                  style={{
+                    width: `${(offerteStats.inBehandeling / Math.max(offerteStats.totaal, 1)) * 100}%`,
+                  }}
+                  title={`In behandeling: ${offerteStats.inBehandeling}`}
+                />
+              )}
+              {offerteStats.afgewezen > 0 && (
+                <div
+                  className="bg-red-500 transition-all duration-500"
+                  style={{
+                    width: `${(offerteStats.afgewezen / Math.max(offerteStats.totaal, 1)) * 100}%`,
+                  }}
+                  title={`Afgewezen: ${offerteStats.afgewezen}`}
+                />
+              )}
+            </div>
+            <div className="flex flex-wrap gap-4 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                Goedgekeurd ({offerteStats.goedgekeurd})
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+                In behandeling ({offerteStats.inBehandeling})
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                Afgewezen ({offerteStats.afgewezen})
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Medewerker Productiviteit */}
+      {/* ------------------------------------------------------------------ */}
+      {medewerkerProductiviteit.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Medewerker productiviteit
+                </CardTitle>
+                <CardDescription>
+                  Uren, projecten en omzet per medewerker
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleExportMedewerkers('csv')}>
+                  <Download className="mr-1 h-3 w-3" /> CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleExportMedewerkers('excel')}>
+                  <FileSpreadsheet className="mr-1 h-3 w-3" /> Excel
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="pb-3 font-medium text-muted-foreground">Medewerker</th>
+                    <th className="pb-3 font-medium text-muted-foreground">Functie</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Uren</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Projecten</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Uurtarief</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Omzet</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {medewerkerProductiviteit.map((m) => (
+                    <tr key={m.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                      <td className="py-3 font-medium">{m.naam}</td>
+                      <td className="py-3 text-muted-foreground">{m.functie || '-'}</td>
+                      <td className="py-3 text-right">{m.uren}u</td>
+                      <td className="py-3 text-right">{m.projecten}</td>
+                      <td className="py-3 text-right">{formatCurrency(m.uurtarief)}/u</td>
+                      <td className="py-3 text-right font-medium">{formatCurrency(m.omzet)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Voorraad Rapportage */}
+      {/* ------------------------------------------------------------------ */}
+      {voorraadArtikelen.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Voorraad rapport
+                </CardTitle>
+                <CardDescription>
+                  {voorraadStats.totaalArtikelen} artikelen | Waarde: {formatCurrency(voorraadStats.totaleVoorraadWaarde)}
+                  {voorraadStats.onderMinimum > 0 && (
+                    <Badge variant="destructive" className="ml-2 text-[10px]">
+                      {voorraadStats.onderMinimum} onder minimum
+                    </Badge>
+                  )}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleExportVoorraad('csv')}>
+                  <Download className="mr-1 h-3 w-3" /> CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleExportVoorraad('excel')}>
+                  <FileSpreadsheet className="mr-1 h-3 w-3" /> Excel
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="pb-3 font-medium text-muted-foreground">Artikel</th>
+                    <th className="pb-3 font-medium text-muted-foreground">Categorie</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Huidig</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Minimum</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Inkoopprijs</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Waarde</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {voorraadStats.artikelen.map((a) => {
+                    const onderMin = a.huidige_voorraad <= (a.minimum_voorraad || 0);
+                    return (
+                      <tr key={a.id} className={cn(
+                        'border-b last:border-0 hover:bg-muted/50 transition-colors',
+                        onderMin && 'bg-red-50 dark:bg-red-900/10'
+                      )}>
+                        <td className="py-3 font-medium">
+                          {a.naam}
+                          {onderMin && <Badge variant="destructive" className="ml-2 text-[10px]">Laag</Badge>}
+                        </td>
+                        <td className="py-3 text-muted-foreground">{a.categorie || '-'}</td>
+                        <td className={cn('py-3 text-right', onderMin && 'text-red-600 font-bold')}>
+                          {a.huidige_voorraad} {a.eenheid || ''}
+                        </td>
+                        <td className="py-3 text-right text-muted-foreground">{a.minimum_voorraad || '-'}</td>
+                        <td className="py-3 text-right">{formatCurrency(a.inkoop_prijs || 0)}</td>
+                        <td className="py-3 text-right font-medium">
+                          {formatCurrency(a.huidige_voorraad * (a.inkoop_prijs || 0))}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

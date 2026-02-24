@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Company</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Global error catcher — shows runtime errors on screen
+      window.addEventListener('error', function(e) {
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;padding:24px;background:#fee2e2;border-bottom:2px solid #dc2626;font-family:monospace;font-size:14px;color:#991b1b;white-space:pre-wrap;max-height:50vh;overflow:auto';
+        d.textContent = 'ERROR: ' + e.message + '\n\nFile: ' + e.filename + ':' + e.lineno + ':' + e.colno + '\n\nStack: ' + (e.error && e.error.stack ? e.error.stack : 'no stack');
+        document.body.prepend(d);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;padding:24px;background:#fef3c7;border-bottom:2px solid #d97706;font-family:monospace;font-size:14px;color:#92400e;white-space:pre-wrap;max-height:50vh;overflow:auto';
+        d.textContent = 'UNHANDLED PROMISE: ' + (e.reason && e.reason.stack ? e.reason.stack : String(e.reason));
+        document.body.prepend(d);
+      });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
