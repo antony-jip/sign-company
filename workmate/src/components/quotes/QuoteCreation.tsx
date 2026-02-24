@@ -33,11 +33,17 @@ import {
   ShoppingCart,
   X,
   Plus,
+  UserPlus,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Hash,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Project } from '@/types'
+import type { Klant, Project, Contactpersoon } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -104,6 +110,12 @@ export function QuoteCreation() {
   const [offerteTitel, setOfferteTitel] = useState(paramTitel)
   const [itemCount, setItemCount] = useState(1)
   const [contactpersoon, setContactpersoon] = useState('')
+  const [selectedContactId, setSelectedContactId] = useState('')
+  const [showNewContact, setShowNewContact] = useState(false)
+  const [newContactNaam, setNewContactNaam] = useState('')
+  const [newContactFunctie, setNewContactFunctie] = useState('')
+  const [newContactEmail, setNewContactEmail] = useState('')
+  const [newContactTelefoon, setNewContactTelefoon] = useState('')
   const [geldigTot, setGeldigTot] = useState(() => {
     const d = new Date()
     d.setDate(d.getDate() + offerteGeldigheidDagen)
@@ -221,9 +233,20 @@ export function QuoteCreation() {
 
   // Auto-fill contactpersoon from klant
   useEffect(() => {
-    if (selectedKlant?.contactpersoon && !contactpersoon) {
+    if (!selectedKlant) return
+    // Try to select primary contact from contactpersonen array
+    const primair = selectedKlant.contactpersonen?.find(c => c.is_primair)
+    if (primair) {
+      setSelectedContactId(primair.id)
+      setContactpersoon(primair.naam)
+    } else if (selectedKlant.contactpersonen?.length > 0) {
+      setSelectedContactId(selectedKlant.contactpersonen[0].id)
+      setContactpersoon(selectedKlant.contactpersonen[0].naam)
+    } else if (selectedKlant.contactpersoon) {
+      setSelectedContactId('')
       setContactpersoon(selectedKlant.contactpersoon)
     }
+    setShowNewContact(false)
   }, [selectedKlant])
 
   // Reset project when klant changes
@@ -335,6 +358,59 @@ export function QuoteCreation() {
         return { ...item, prijs_varianten: updatedVarianten }
       })
     )
+  }
+
+  // ── Contactpersoon toevoegen ──
+  const handleAddContact = async () => {
+    if (!selectedKlant || !newContactNaam.trim()) {
+      toast.error('Vul minimaal een naam in')
+      return
+    }
+    const newContact: Contactpersoon = {
+      id: `cp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      naam: newContactNaam.trim(),
+      functie: newContactFunctie.trim(),
+      email: newContactEmail.trim(),
+      telefoon: newContactTelefoon.trim(),
+      is_primair: !selectedKlant.contactpersonen?.length,
+    }
+    const updatedContactpersonen = [...(selectedKlant.contactpersonen || []), newContact]
+    try {
+      await updateKlant(selectedKlant.id, { contactpersonen: updatedContactpersonen })
+      // Update local state
+      setKlanten(prev => prev.map(k =>
+        k.id === selectedKlant.id ? { ...k, contactpersonen: updatedContactpersonen } : k
+      ))
+      setSelectedContactId(newContact.id)
+      setContactpersoon(newContact.naam)
+      setShowNewContact(false)
+      setNewContactNaam('')
+      setNewContactFunctie('')
+      setNewContactEmail('')
+      setNewContactTelefoon('')
+      toast.success(`${newContact.naam} toegevoegd als contactpersoon`)
+    } catch {
+      toast.error('Kon contactpersoon niet opslaan')
+    }
+  }
+
+  const handleSelectContact = (contactId: string) => {
+    if (contactId === '__new__') {
+      setShowNewContact(true)
+      setSelectedContactId('')
+      return
+    }
+    if (contactId === '__manual__') {
+      setSelectedContactId('')
+      setShowNewContact(false)
+      return
+    }
+    const contact = selectedKlant?.contactpersonen?.find(c => c.id === contactId)
+    if (contact) {
+      setSelectedContactId(contact.id)
+      setContactpersoon(contact.naam)
+      setShowNewContact(false)
+    }
   }
 
   // ── Step navigation ──
@@ -476,34 +552,52 @@ export function QuoteCreation() {
   return (
     <div className="pb-36">
       <div className="space-y-6 max-w-5xl mx-auto">
-        {/* ──── Page Header ──── */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/offertes">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground font-display">Nieuwe Offerte</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">{offerteNummer}</p>
+        {/* ──── Page Header met introductie ──── */}
+        <div className="rounded-2xl bg-gradient-to-br from-primary/5 via-accent/5 to-transparent dark:from-primary/10 dark:via-accent/10 border border-primary/10 dark:border-primary/20 p-6 md:p-8">
+          <div className="flex items-start justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <Link to="/offertes">
+                <Button variant="ghost" size="icon" className="mt-0.5 hover:bg-white/50 dark:hover:bg-gray-800/50">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-2xl font-bold text-foreground font-display">Nieuwe Offerte</h1>
+                  <Badge variant="outline" className="text-xs font-mono bg-white/50 dark:bg-gray-800/50">
+                    <Hash className="h-3 w-3 mr-1" />
+                    {offerteNummer}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
+                  Stel een professionele offerte samen voor je klant. Selecteer de klant en contactpersoon,
+                  vul de details in en bouw je offerte stap voor stap op.
+                </p>
+              </div>
             </div>
-          </div>
-          {/* Quick info badges */}
-          {selectedKlant && (
-            <div className="hidden md:flex items-center gap-2">
-              <Badge variant="outline" className="gap-1.5">
-                <Building2 className="h-3 w-3" />
-                {selectedKlant.bedrijfsnaam}
-              </Badge>
-              {selectedProject && (
-                <Badge variant="outline" className="gap-1.5">
-                  <FolderOpen className="h-3 w-3" />
-                  {selectedProject.naam}
+
+            {/* Quick info badges rechts */}
+            {selectedKlant && (
+              <div className="hidden lg:flex flex-col items-end gap-1.5 flex-shrink-0">
+                <Badge className="gap-1.5 bg-white/80 dark:bg-gray-800/80 text-foreground border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <Building2 className="h-3 w-3 text-primary" />
+                  {selectedKlant.bedrijfsnaam}
                 </Badge>
-              )}
-            </div>
-          )}
+                {contactpersoon && (
+                  <Badge variant="outline" className="gap-1.5 bg-white/60 dark:bg-gray-800/60">
+                    <User className="h-3 w-3" />
+                    t.a.v. {contactpersoon}
+                  </Badge>
+                )}
+                {selectedProject && (
+                  <Badge variant="outline" className="gap-1.5 bg-white/60 dark:bg-gray-800/60">
+                    <FolderOpen className="h-3 w-3" />
+                    {selectedProject.naam}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ──── Step Indicator ──── */}
@@ -512,7 +606,6 @@ export function QuoteCreation() {
             {steps.map((step, index) => {
               const isActive = currentStep === step.number
               const isCompleted = currentStep > step.number
-              const Icon = step.icon
 
               return (
                 <React.Fragment key={step.number}>
@@ -554,119 +647,306 @@ export function QuoteCreation() {
         </div>
 
         {/* ================================================================ */}
-        {/* STEP 0: KLANT + PROJECT + TEMPLATE + DETAILS (samengevoegd)      */}
+        {/* STEP 0: KLANT + CONTACTPERSOON + DETAILS                        */}
         {/* ================================================================ */}
         {currentStep === 0 && (
           <div className="space-y-5">
-            {/* ── Klant selectie ── */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                    <User className="h-3.5 w-3.5 text-white" />
+
+            {/* ── Klant selectie + Contactpersoon (twee kolommen) ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
+              {/* Linker kolom: Klant zoeken (3/5) */}
+              <Card className="lg:col-span-3">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                      <Building2 className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    Voor wie is deze offerte?
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Klant zoeken + selecteren */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Klant</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        value={klantSearch}
+                        onChange={(e) => setKlantSearch(e.target.value)}
+                        placeholder="Zoek op bedrijfsnaam, contactpersoon of email..."
+                        className="pl-10"
+                      />
+                    </div>
+                    <Select value={selectedKlantId} onValueChange={(val) => {
+                      setSelectedKlantId(val)
+                      setKlantSearch('')
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecteer een klant..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredKlanten.map((klant) => (
+                          <SelectItem key={klant.id} value={klant.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{klant.bedrijfsnaam}</span>
+                              {klant.contactpersoon && (
+                                <>
+                                  <span className="text-gray-400">-</span>
+                                  <span className="text-gray-500">{klant.contactpersoon}</span>
+                                </>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  Klant & Project
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Klant zoeken + selecteren */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Klant</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      value={klantSearch}
-                      onChange={(e) => setKlantSearch(e.target.value)}
-                      placeholder="Zoek op bedrijfsnaam, contactpersoon of email..."
-                      className="pl-10"
-                    />
-                  </div>
-                  <Select value={selectedKlantId} onValueChange={(val) => {
-                    setSelectedKlantId(val)
-                    setKlantSearch('')
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecteer een klant..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredKlanten.map((klant) => (
-                        <SelectItem key={klant.id} value={klant.id}>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{klant.bedrijfsnaam}</span>
-                            {klant.contactpersoon && (
-                              <>
-                                <span className="text-gray-400">-</span>
-                                <span className="text-gray-500">{klant.contactpersoon}</span>
-                              </>
+
+                  {/* Geselecteerde klant kaart */}
+                  {selectedKlant && (
+                    <div className="bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10 border border-primary/15 dark:border-primary/25 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0 shadow-sm">
+                          <span className="text-white font-bold text-lg">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-foreground">{selectedKlant.bedrijfsnaam}</h4>
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5">
+                            {selectedKlant.email && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Mail className="h-3 w-3" />
+                                {selectedKlant.email}
+                              </span>
+                            )}
+                            {selectedKlant.telefoon && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Phone className="h-3 w-3" />
+                                {selectedKlant.telefoon}
+                              </span>
+                            )}
+                            {(selectedKlant.adres || selectedKlant.stad) && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <MapPin className="h-3 w-3" />
+                                {[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}
+                              </span>
                             )}
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Selected klant info card */}
-                {selectedKlant && (
-                  <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 rounded-xl p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-4 w-4 text-accent dark:text-primary" />
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => {
+                          setSelectedKlantId('')
+                          setSelectedProjectId('')
+                          setContactpersoon('')
+                          setSelectedContactId('')
+                        }}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm text-foreground">{selectedKlant.bedrijfsnaam}</h4>
-                        <p className="text-xs text-muted-foreground">{selectedKlant.contactpersoon}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          {[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}
-                        </p>
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                        setSelectedKlantId('')
-                        setSelectedProjectId('')
-                        setContactpersoon('')
-                      }}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Project selectie (alleen als klant geselecteerd is) */}
-                {selectedKlantId && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-1.5">
-                      <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                      Project
-                      <span className="text-xs text-muted-foreground font-normal">(optioneel)</span>
-                    </Label>
-                    {klantProjecten.length > 0 ? (
-                      <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Koppel aan een project..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="geen">
-                            <span className="text-muted-foreground">Geen project</span>
-                          </SelectItem>
-                          {klantProjecten.map((project) => (
-                            <SelectItem key={project.id} value={project.id}>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{project.naam}</span>
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                  {project.status}
-                                </Badge>
-                              </div>
+                  {/* Project selectie (alleen als klant geselecteerd is) */}
+                  {selectedKlantId && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium flex items-center gap-1.5">
+                        <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                        Project
+                        <span className="text-xs text-muted-foreground font-normal">(optioneel)</span>
+                      </Label>
+                      {klantProjecten.length > 0 ? (
+                        <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Koppel aan een project..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="geen">
+                              <span className="text-muted-foreground">Geen project</span>
                             </SelectItem>
+                            {klantProjecten.map((project) => (
+                              <SelectItem key={project.id} value={project.id}>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{project.naam}</span>
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                    {project.status}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-xs text-muted-foreground py-2">Geen projecten gevonden voor deze klant</p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Rechter kolom: Contactpersoon (2/5) */}
+              <Card className="lg:col-span-2">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <Contact className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    Contactpersoon
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {selectedKlant ? (
+                    <>
+                      {/* Contactpersonen lijst */}
+                      {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
+                        <div className="space-y-1.5">
+                          {/* Bestaande contactpersonen uit array */}
+                          {selectedKlant.contactpersonen?.map((cp) => (
+                            <button
+                              key={cp.id}
+                              onClick={() => handleSelectContact(cp.id)}
+                              className={cn(
+                                'w-full text-left rounded-lg border p-2.5 transition-all',
+                                selectedContactId === cp.id
+                                  ? 'border-primary/50 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 ring-1 ring-primary/20'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={cn(
+                                  'w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold',
+                                  selectedContactId === cp.id
+                                    ? 'bg-primary text-white'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                                )}>
+                                  {cp.naam[0]?.toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">{cp.naam}</p>
+                                  {cp.functie && <p className="text-[11px] text-muted-foreground truncate">{cp.functie}</p>}
+                                </div>
+                                {cp.is_primair && (
+                                  <span className="text-[9px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">
+                                    primair
+                                  </span>
+                                )}
+                              </div>
+                            </button>
                           ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <p className="text-xs text-muted-foreground py-2">Geen projecten gevonden voor deze klant</p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+
+                          {/* Fallback: single contactpersoon string (als er geen array is) */}
+                          {(!selectedKlant.contactpersonen || selectedKlant.contactpersonen.length === 0) && selectedKlant.contactpersoon && (
+                            <div className="rounded-lg border border-primary/50 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 ring-1 ring-primary/20 p-2.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                                  {selectedKlant.contactpersoon[0]?.toUpperCase()}
+                                </div>
+                                <p className="text-sm font-medium text-foreground">{selectedKlant.contactpersoon}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Nieuwe contactpersoon toevoegen */}
+                      {!showNewContact ? (
+                        <button
+                          onClick={() => setShowNewContact(true)}
+                          className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-accent transition-colors py-2 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        >
+                          <UserPlus className="h-3.5 w-3.5" />
+                          Nieuwe contactpersoon toevoegen
+                        </button>
+                      ) : (
+                        <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10 p-3 space-y-2">
+                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                            <UserPlus className="h-3.5 w-3.5" />
+                            Nieuwe contactpersoon
+                          </p>
+                          <Input
+                            value={newContactNaam}
+                            onChange={(e) => setNewContactNaam(e.target.value)}
+                            placeholder="Naam *"
+                            className="h-8 text-sm bg-white dark:bg-gray-900"
+                            autoFocus
+                          />
+                          <Input
+                            value={newContactFunctie}
+                            onChange={(e) => setNewContactFunctie(e.target.value)}
+                            placeholder="Functie (bijv. Directeur)"
+                            className="h-8 text-sm bg-white dark:bg-gray-900"
+                          />
+                          <Input
+                            value={newContactEmail}
+                            onChange={(e) => setNewContactEmail(e.target.value)}
+                            placeholder="E-mailadres"
+                            type="email"
+                            className="h-8 text-sm bg-white dark:bg-gray-900"
+                          />
+                          <Input
+                            value={newContactTelefoon}
+                            onChange={(e) => setNewContactTelefoon(e.target.value)}
+                            placeholder="Telefoonnummer"
+                            className="h-8 text-sm bg-white dark:bg-gray-900"
+                          />
+                          <div className="flex items-center gap-2 pt-1">
+                            <Button
+                              size="sm"
+                              onClick={handleAddContact}
+                              disabled={!newContactNaam.trim()}
+                              className="h-7 text-xs gap-1"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Toevoegen
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowNewContact(false)
+                                setNewContactNaam('')
+                                setNewContactFunctie('')
+                                setNewContactEmail('')
+                                setNewContactTelefoon('')
+                              }}
+                              className="h-7 text-xs"
+                            >
+                              Annuleren
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Handmatig contactpersoon invullen als alternatief */}
+                      {!showNewContact && (
+                        <div className="space-y-1.5 pt-1 border-t border-gray-100 dark:border-gray-800">
+                          <Label className="text-[11px] text-muted-foreground">Of typ een naam</Label>
+                          <Input
+                            value={contactpersoon}
+                            onChange={(e) => {
+                              setContactpersoon(e.target.value)
+                              setSelectedContactId('')
+                            }}
+                            placeholder="Contactpersoon naam..."
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-6">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-2">
+                        <User className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Selecteer eerst een klant
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        De contactpersonen verschijnen hier
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
             {/* ── Offerte details ── */}
             <Card>
@@ -675,7 +955,7 @@ export function QuoteCreation() {
                   <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
                     <FileText className="h-3.5 w-3.5 text-white" />
                   </div>
-                  Offerte Details
+                  Offerte details
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -690,9 +970,12 @@ export function QuoteCreation() {
                     autoFocus
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="offerte-nummer">Nummer</Label>
+                    <Label htmlFor="offerte-nummer" className="flex items-center gap-1.5">
+                      <Hash className="h-3 w-3 text-muted-foreground" />
+                      Nummer
+                    </Label>
                     <Input
                       id="offerte-nummer"
                       value={offerteNummer}
@@ -701,25 +984,15 @@ export function QuoteCreation() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="geldig-tot">Geldig tot</Label>
+                    <Label htmlFor="geldig-tot" className="flex items-center gap-1.5">
+                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                      Geldig tot
+                    </Label>
                     <Input
                       id="geldig-tot"
                       type="date"
                       value={geldigTot}
                       onChange={(e) => setGeldigTot(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contactpersoon" className="flex items-center gap-1.5">
-                      <Contact className="h-3 w-3 text-muted-foreground" />
-                      Contactpersoon
-                    </Label>
-                    <Input
-                      id="contactpersoon"
-                      value={contactpersoon}
-                      onChange={(e) => setContactpersoon(e.target.value)}
-                      placeholder="Naam..."
                       className="text-sm"
                     />
                   </div>
