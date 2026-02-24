@@ -4,6 +4,14 @@
 
 type ExportRow = Record<string, string | number>
 
+/** Voorkom CSV formula injection (=CMD(), +cmd, -cmd, @SUM) */
+function sanitizeCsvValue(val: string): string {
+  if (val.length > 0 && '=+-@\t\r'.includes(val[0])) {
+    return "'" + val
+  }
+  return val
+}
+
 /**
  * Genereer en download een CSV bestand (Excel-compatible met BOM)
  */
@@ -15,7 +23,8 @@ export function exportCSV(filename: string, headers: string[], rows: ExportRow[]
     headers.join(sep),
     ...rows.map((row) =>
       headers.map((h) => {
-        const val = String(row[h] ?? '')
+        const raw = String(row[h] ?? '')
+        const val = sanitizeCsvValue(raw)
         // Escape values die het scheidingsteken of aanhalingstekens bevatten
         if (val.includes(sep) || val.includes('"') || val.includes('\n')) {
           return `"${val.replace(/"/g, '""')}"`
