@@ -1616,6 +1616,9 @@ export function ProjectDetail() {
                   onClick={async () => {
                     setIsEmailVerzenden(true)
                     try {
+                      if (klant?.email) {
+                        await sendEmail(klant.email, emailOnderwerp, '', { html: emailBericht.replace(/\n/g, '<br>') })
+                      }
                       if (emailOfferteId) {
                         await updateOfferte(emailOfferteId, { status: 'verzonden' })
                       }
