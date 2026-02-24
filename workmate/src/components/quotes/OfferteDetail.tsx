@@ -446,10 +446,10 @@ export function OfferteDetail() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => navigate(`/offertes/${offerte.id}`)}
+                onClick={() => navigate(`/offertes/nieuw?edit=${offerte.id}`)}
               >
                 <FileText className="h-4 w-4 mr-1" />
-                Offerte bewerken
+                Calculatie bewerken
               </Button>
               <Button size="sm" onClick={openSendDialog}>
                 <Send className="h-4 w-4 mr-1" />

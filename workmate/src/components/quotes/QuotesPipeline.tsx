@@ -1031,11 +1031,11 @@ export function QuotesPipeline() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              navigate(`/offertes/${offerte.id}/detail`)
+                              navigate(`/offertes/nieuw?edit=${offerte.id}`)
                             }}
                             className="text-xs text-primary hover:underline"
                           >
-                            PDF
+                            Bewerk
                           </button>
                         </td>
                       </tr>

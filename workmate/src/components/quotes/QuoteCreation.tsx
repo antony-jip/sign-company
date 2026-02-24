@@ -208,7 +208,10 @@ export function QuoteCreation() {
         if (!cancelled) {
           setKlanten(klantenData)
           setProjecten(projectenData)
-          setOfferteNummer(generateOfferteNummer(offertePrefix, offertesData))
+          // Don't overwrite nummer in edit mode — it gets set from the loaded offerte
+          if (!editOfferteId) {
+            setOfferteNummer(generateOfferteNummer(offertePrefix, offertesData))
+          }
         }
       })
       .catch((err) => {
