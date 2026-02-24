@@ -121,6 +121,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       eenheidsprijs: i.eenheidsprijs,
       btw_percentage: i.btw_percentage,
       korting_percentage: i.korting_percentage,
+      prijs_varianten: i.prijs_varianten,
+      actieve_variant_id: i.actieve_variant_id,
     }))
     klant = fetchedKlant
   }

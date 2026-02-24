@@ -10,8 +10,11 @@ import {
   createOfferteItem,
   deleteOfferte,
   getOffertesByKlant,
+  createFactuur,
+  createFactuurItem,
+  getFacturen,
 } from '@/services/supabaseService'
-import type { Offerte, OfferteItem, Klant, OfferteActiviteit } from '@/types'
+import type { Offerte, OfferteItem, Klant, OfferteActiviteit, FactuurItem } from '@/types'
 import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -45,6 +48,7 @@ import {
   Check,
   X,
   ChevronDown,
+  Receipt,
 } from 'lucide-react'
 import { logger } from '../../utils/logger'
 
@@ -113,6 +117,7 @@ export function OfferteDetail() {
   const [isDuplicating, setIsDuplicating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isCreatingFactuur, setIsCreatingFactuur] = useState(false)
 
   // Fetch data
   useEffect(() => {
@@ -339,6 +344,81 @@ export function OfferteDetail() {
     }
   }, [offerte, navigate])
 
+  // Create factuur from offerte
+  const handleMaakFactuur = useCallback(async () => {
+    if (!offerte || !user?.id) return
+    setIsCreatingFactuur(true)
+    try {
+      // Generate factuur nummer
+      const bestaandeFacturen = await getFacturen()
+      const volgNr = bestaandeFacturen.length + 1
+      const factuurNummer = `FAC-${new Date().getFullYear()}-${String(volgNr).padStart(4, '0')}`
+
+      const vervaldatum = new Date()
+      vervaldatum.setDate(vervaldatum.getDate() + 30)
+
+      const newFactuur = await createFactuur({
+        user_id: user.id,
+        klant_id: offerte.klant_id,
+        klant_naam: offerte.klant_naam,
+        offerte_id: offerte.id,
+        project_id: offerte.project_id,
+        nummer: factuurNummer,
+        titel: offerte.titel,
+        status: 'concept',
+        subtotaal: round2(subtotaal),
+        btw_bedrag: round2(totaalBtw),
+        totaal: round2(totaal),
+        betaald_bedrag: 0,
+        factuurdatum: new Date().toISOString().split('T')[0],
+        vervaldatum: vervaldatum.toISOString().split('T')[0],
+        notities: '',
+        voorwaarden: offerte.voorwaarden || '',
+        bron_type: 'offerte',
+        bron_offerte_id: offerte.id,
+        bron_project_id: offerte.project_id,
+      })
+
+      // Copy offerte items to factuur items
+      for (const item of items) {
+        const lineTotaal = calculateLineTotaal(item)
+        await createFactuurItem({
+          factuur_id: newFactuur.id,
+          beschrijving: item.beschrijving,
+          aantal: item.aantal,
+          eenheidsprijs: item.eenheidsprijs,
+          btw_percentage: item.btw_percentage,
+          korting_percentage: item.korting_percentage,
+          totaal: round2(lineTotaal),
+          volgorde: item.volgorde,
+        })
+      }
+
+      // Update offerte status + link
+      const now_ts = new Date().toISOString()
+      const newActivity: OfferteActiviteit = {
+        datum: now_ts,
+        type: 'gefactureerd',
+        beschrijving: `Factuur ${factuurNummer} aangemaakt`,
+        medewerker: user.email || undefined,
+      }
+      const updated = await updateOfferte(offerte.id, {
+        status: 'gefactureerd',
+        geconverteerd_naar_factuur_id: newFactuur.id,
+        activiteiten: [...(offerte.activiteiten || []), newActivity],
+      })
+      setOfferte(updated)
+
+      toast.success('Factuur aangemaakt', { description: factuurNummer })
+      navigate(`/facturen`)
+    } catch (err) {
+      logger.error('Failed to create factuur:', err)
+      toast.error('Kon factuur niet aanmaken')
+    } finally {
+      setIsCreatingFactuur(false)
+    }
+  }, [offerte, items, user, navigate, subtotaal, totaalBtw, totaal])
+
   // Loading
   if (isLoading) {
     return (
@@ -455,6 +535,12 @@ export function OfferteDetail() {
                 <Send className="h-4 w-4 mr-1" />
                 Versturen
               </Button>
+              {offerte.status === 'goedgekeurd' && !offerte.geconverteerd_naar_factuur_id && (
+                <Button size="sm" onClick={handleMaakFactuur} disabled={isCreatingFactuur} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  {isCreatingFactuur ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Receipt className="h-4 w-4 mr-1" />}
+                  Maak factuur
+                </Button>
+              )}
               <Button size="sm" variant="outline" onClick={handleDuplicate} disabled={isDuplicating}>
                 {isDuplicating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Copy className="h-4 w-4 mr-1" />}
                 Dupliceren
