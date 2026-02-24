@@ -1036,28 +1036,7 @@ export function QuoteCreation() {
               </CardContent>
             </Card>
 
-            {/* Navigation */}
-            <div className="flex justify-end">
-              <Button
-                onClick={handleStep0Next}
-                disabled={!canProceedStep0}
-                className="bg-gradient-to-r from-accent to-primary border-0 px-8"
-                size="lg"
-              >
-                Items toevoegen
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* STEP 1: ITEMS                                                    */}
-        {/* ================================================================ */}
-        {currentStep === 1 && (
-          <div className="space-y-5">
-
-            {/* ── Offerte Teksten (bovenaan) ── */}
+            {/* ── Offerte Teksten ── */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -1090,6 +1069,26 @@ export function QuoteCreation() {
               </CardContent>
             </Card>
 
+            {/* Navigation */}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleStep0Next}
+                disabled={!canProceedStep0}
+                className="bg-gradient-to-r from-accent to-primary border-0 px-8"
+                size="lg"
+              >
+                Items toevoegen
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================ */}
+        {/* STEP 1: ITEMS                                                    */}
+        {/* ================================================================ */}
+        {currentStep === 1 && (
+          <div className="space-y-5">
             {/* ── Items ── */}
             <Card>
               <CardHeader className="pb-3">
