@@ -9,7 +9,18 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
+import type { PrijsVariant } from './QuoteItemsTable'
 import { logger } from '../../utils/logger'
+
+interface PreviewItem {
+  beschrijving: string
+  aantal: number
+  eenheidsprijs: number
+  btw_percentage: number
+  korting_percentage: number
+  prijs_varianten?: PrijsVariant[]
+  actieve_variant_id?: string
+}
 
 interface ForgeQuotePreviewProps {
   offerte?: {
@@ -22,13 +33,7 @@ interface ForgeQuotePreviewProps {
     voorwaarden: string
     created_at: string
   }
-  items?: {
-    beschrijving: string
-    aantal: number
-    eenheidsprijs: number
-    btw_percentage: number
-    korting_percentage: number
-  }[]
+  items?: PreviewItem[]
 }
 
 function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; korting_percentage: number }) {
@@ -535,6 +540,70 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             </thead>
             <tbody>
               {items.map((item, index) => {
+                const hasVarianten = item.prijs_varianten && item.prijs_varianten.length > 0
+
+                if (hasVarianten) {
+                  // Render item with multiple price variants
+                  return (
+                    <React.Fragment key={index}>
+                      {/* Item header row spanning full width */}
+                      <tr className={`border-b border-gray-100 dark:border-gray-800 ${index % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-gray-800/20'}`}>
+                        <td className="py-3 px-2 text-gray-500 dark:text-gray-400 align-top">{index + 1}</td>
+                        <td colSpan={5} className="py-3 px-2">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{item.beschrijving}</span>
+                        </td>
+                      </tr>
+                      {/* Variant sub-rows */}
+                      {item.prijs_varianten!.map((variant) => {
+                        const isActive = variant.id === item.actieve_variant_id
+                        const variantBruto = variant.aantal * variant.eenheidsprijs
+                        const variantTotaal = variantBruto - variantBruto * (variant.korting_percentage / 100)
+                        return (
+                          <tr
+                            key={variant.id}
+                            className={`border-b border-gray-50 dark:border-gray-800/50 ${
+                              isActive
+                                ? 'bg-blue-50/50 dark:bg-blue-900/10'
+                                : 'bg-gray-50/30 dark:bg-gray-800/10'
+                            }`}
+                          >
+                            <td className="py-2 px-2" />
+                            <td className="py-2 px-2 text-gray-700 dark:text-gray-300">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className={`inline-block w-2 h-2 rounded-full ${isActive ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                                <span className="text-xs font-medium">{variant.label}</span>
+                                {isActive && (
+                                  <span className="text-[9px] font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-1 py-0.5 rounded">
+                                    geselecteerd
+                                  </span>
+                                )}
+                              </span>
+                              {variant.korting_percentage > 0 && (
+                                <span className="ml-2 text-xs text-green-600 dark:text-green-400">
+                                  (-{variant.korting_percentage}% korting)
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2 px-2 text-right text-gray-600 dark:text-gray-400 text-xs">
+                              {variant.aantal}
+                            </td>
+                            <td className="py-2 px-2 text-right text-gray-600 dark:text-gray-400 text-xs">
+                              {formatCurrency(variant.eenheidsprijs)}
+                            </td>
+                            <td className="py-2 px-2 text-right text-gray-400 dark:text-gray-500 text-xs">
+                              {variant.btw_percentage}%
+                            </td>
+                            <td className="py-2 px-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300">
+                              {formatCurrency(variantTotaal)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </React.Fragment>
+                  )
+                }
+
+                // Regular item without variants
                 const lineTotaal = calculateLineTotaal(item)
                 return (
                   <tr

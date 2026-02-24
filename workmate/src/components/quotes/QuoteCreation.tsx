@@ -44,7 +44,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
-import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
+import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import type { CalculatieRegel } from '@/types'
 import { logger } from '../../utils/logger'
@@ -135,25 +135,49 @@ export function QuoteCreation() {
     )
   }, [klantSearch, klanten])
 
+  // ── Helper: get active price data from item (supports variants) ──
+  const getActivePriceData = (item: QuoteLineItem) => {
+    if (item.prijs_varianten && item.prijs_varianten.length > 0) {
+      const active = item.prijs_varianten.find(v => v.id === item.actieve_variant_id) || item.prijs_varianten[0]
+      return {
+        aantal: active.aantal,
+        eenheidsprijs: active.eenheidsprijs,
+        btw_percentage: active.btw_percentage,
+        korting_percentage: active.korting_percentage,
+        calculatie_regels: active.calculatie_regels,
+      }
+    }
+    return {
+      aantal: item.aantal,
+      eenheidsprijs: item.eenheidsprijs,
+      btw_percentage: item.btw_percentage,
+      korting_percentage: item.korting_percentage,
+      calculatie_regels: item.calculatie_regels,
+    }
+  }
+
   // ── Calculations for sticky bar ──
   const prijsItems = items.filter((i) => i.soort === 'prijs')
 
   const subtotaal = round2(prijsItems.reduce((sum, item) => {
-    const bruto = item.aantal * item.eenheidsprijs
-    return sum + round2(bruto - bruto * (item.korting_percentage / 100))
+    const data = getActivePriceData(item)
+    const bruto = data.aantal * data.eenheidsprijs
+    return sum + round2(bruto - bruto * (data.korting_percentage / 100))
   }, 0))
 
   const btwBedrag = round2(prijsItems.reduce((sum, item) => {
-    const bruto = item.aantal * item.eenheidsprijs
-    const netto = round2(bruto - bruto * (item.korting_percentage / 100))
-    return sum + round2(netto * (item.btw_percentage / 100))
+    const data = getActivePriceData(item)
+    const bruto = data.aantal * data.eenheidsprijs
+    const netto = round2(bruto - bruto * (data.korting_percentage / 100))
+    return sum + round2(netto * (data.btw_percentage / 100))
   }, 0))
 
   // Inkoop = sum of all calculatie_regels inkoop_prijs * aantal
   const totaalInkoop = useMemo(() => {
     return round2(prijsItems.reduce((sum, item) => {
-      if (item.calculatie_regels && item.calculatie_regels.length > 0) {
-        return sum + item.calculatie_regels.reduce((s, r) => s + round2(r.inkoop_prijs * r.aantal), 0)
+      const data = getActivePriceData(item)
+      if (data.calculatie_regels && data.calculatie_regels.length > 0) {
+        return sum + data.calculatie_regels.reduce((s, r) => s + round2(r.inkoop_prijs * r.aantal), 0)
       }
       return sum
     }, 0))
@@ -283,6 +307,32 @@ export function QuoteCreation() {
         const bruto = updated.aantal * updated.eenheidsprijs
         updated.totaal = bruto - bruto * (updated.korting_percentage / 100)
         return updated
+      })
+    )
+  }
+
+  const handleUpdateItemWithVariantCalculatie = (
+    itemId: string,
+    variantId: string,
+    data: {
+      beschrijving: string
+      eenheidsprijs: number
+      calculatie_regels: CalculatieRegel[]
+    }
+  ) => {
+    setItems(
+      items.map((item) => {
+        if (item.id !== itemId || !item.prijs_varianten) return item
+        const updatedVarianten = item.prijs_varianten.map(v => {
+          if (v.id !== variantId) return v
+          return {
+            ...v,
+            eenheidsprijs: data.eenheidsprijs,
+            calculatie_regels: data.calculatie_regels,
+            heeft_calculatie: true,
+          }
+        })
+        return { ...item, prijs_varianten: updatedVarianten }
       })
     )
   }
@@ -752,6 +802,7 @@ export function QuoteCreation() {
                   onUpdateItem={handleUpdateItem}
                   onRemoveItem={handleRemoveItem}
                   onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
+                  onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
                 />
               </CardContent>
             </Card>
@@ -819,13 +870,18 @@ export function QuoteCreation() {
                 voorwaarden,
                 created_at: new Date().toISOString(),
               }}
-              items={items.map((item) => ({
-                beschrijving: item.beschrijving,
-                aantal: item.aantal,
-                eenheidsprijs: item.eenheidsprijs,
-                btw_percentage: item.btw_percentage,
-                korting_percentage: item.korting_percentage,
-              }))}
+              items={items.map((item) => {
+                const data = getActivePriceData(item)
+                return {
+                  beschrijving: item.beschrijving,
+                  aantal: data.aantal,
+                  eenheidsprijs: data.eenheidsprijs,
+                  btw_percentage: data.btw_percentage,
+                  korting_percentage: data.korting_percentage,
+                  prijs_varianten: item.prijs_varianten,
+                  actieve_variant_id: item.actieve_variant_id,
+                }
+              })}
             />
 
             {/* Actions */}
