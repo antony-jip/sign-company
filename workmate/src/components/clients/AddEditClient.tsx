@@ -144,7 +144,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         adres: formData.adres.trim(),
         postcode: formData.postcode.trim(),
         stad: formData.stad.trim(),
-        land: 'Nederland',
+        land: klant?.land || 'Nederland',
         website: formData.website.trim(),
         kvk_nummer: formData.kvk_nummer.trim(),
         btw_nummer: formData.btw_nummer.trim(),

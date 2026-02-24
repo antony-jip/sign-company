@@ -64,6 +64,8 @@ import {
   getOffertes,
   getOfferteItems,
   createFactuurItem,
+  getFactuurItems,
+  deleteFactuurItem,
   getHerinneringTemplates,
   generateBetaalToken,
 } from '@/services/supabaseService'
@@ -434,8 +436,38 @@ export function FacturenLayout() {
   }, [resetForm])
 
   const handleOpenEdit = useCallback(
-    (factuur: Factuur) => {
+    async (factuur: Factuur) => {
       setEditingFactuur(factuur)
+      // Load actual factuur items from database instead of reconstructing as single item
+      let loadedItems: LineItem[] = []
+      try {
+        const dbItems = await getFactuurItems(factuur.id)
+        if (dbItems.length > 0) {
+          loadedItems = dbItems.map((item) => ({
+            id: item.id,
+            beschrijving: item.beschrijving,
+            aantal: item.aantal,
+            eenheidsprijs: item.eenheidsprijs,
+            btw_percentage: item.btw_percentage,
+            korting_percentage: item.korting_percentage,
+          }))
+        }
+      } catch {
+        logger.error('Kon factuuritems niet laden, fallback naar samenvatting')
+      }
+
+      // Fallback: if no items found, create single summary item
+      if (loadedItems.length === 0) {
+        loadedItems = [{
+          id: crypto.randomUUID(),
+          beschrijving: factuur.titel,
+          aantal: 1,
+          eenheidsprijs: factuur.subtotaal,
+          btw_percentage: factuur.subtotaal > 0 ? Math.round((factuur.btw_bedrag / factuur.subtotaal) * 100) : 21,
+          korting_percentage: 0,
+        }]
+      }
+
       setFormData({
         klant_id: factuur.klant_id,
         titel: factuur.titel,
@@ -443,16 +475,7 @@ export function FacturenLayout() {
         vervaldatum: factuur.vervaldatum,
         voorwaarden: factuur.voorwaarden,
         notities: factuur.notities,
-        items: [
-          {
-            id: crypto.randomUUID(),
-            beschrijving: factuur.titel,
-            aantal: 1,
-            eenheidsprijs: factuur.subtotaal,
-            btw_percentage: factuur.subtotaal > 0 ? Math.round((factuur.btw_bedrag / factuur.subtotaal) * 100) : 21,
-            korting_percentage: 0,
-          },
-        ],
+        items: loadedItems,
       })
       setCreateDialogOpen(true)
     },
@@ -498,6 +521,30 @@ export function FacturenLayout() {
         }
 
         const updated = await updateFactuur(editingFactuur.id, updates)
+
+        // Sync factuur items: delete old items, create new ones
+        try {
+          const existingItems = await getFactuurItems(editingFactuur.id)
+          for (const oldItem of existingItems) {
+            await deleteFactuurItem(oldItem.id)
+          }
+          for (let i = 0; i < validItems.length; i++) {
+            const item = validItems[i]
+            await createFactuurItem({
+              factuur_id: editingFactuur.id,
+              beschrijving: item.beschrijving,
+              aantal: item.aantal,
+              eenheidsprijs: item.eenheidsprijs,
+              btw_percentage: item.btw_percentage,
+              korting_percentage: item.korting_percentage,
+              totaal: calcLineTotal(item),
+              volgorde: i + 1,
+            })
+          }
+        } catch (itemErr) {
+          logger.error('Factuuritems bijwerken mislukt:', itemErr)
+        }
+
         setFacturen((prev) => prev.map((f) => (f.id === editingFactuur.id ? { ...f, ...updated } : f)))
         toast.success('Factuur bijgewerkt')
       } else {

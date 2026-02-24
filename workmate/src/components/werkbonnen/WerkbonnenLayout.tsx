@@ -63,7 +63,7 @@ export function WerkbonnenLayout() {
           try {
             const regels = await getWerkbonRegels(wb.id)
             if (cancelled) return
-            bedragenMap[wb.id] = round2(regels.reduce((sum, r) => sum + r.totaal, 0))
+            bedragenMap[wb.id] = round2(regels.filter((r) => r.factureerbaar).reduce((sum, r) => sum + r.totaal, 0))
           } catch {
             bedragenMap[wb.id] = 0
           }

@@ -10,12 +10,20 @@ try {
     </React.StrictMode>,
   )
 } catch (err) {
-  // Show fatal render errors on screen
+  // Show fatal render errors on screen (using textContent to prevent XSS)
   const root = document.getElementById('root')
   if (root) {
-    root.innerHTML = `<div style="padding:24px;font-family:monospace;color:#991b1b;background:#fee2e2;min-height:100vh">
-      <h1 style="font-size:20px;margin-bottom:12px">Fatal Render Error</h1>
-      <pre style="white-space:pre-wrap">${err instanceof Error ? err.stack || err.message : String(err)}</pre>
-    </div>`
+    const wrapper = document.createElement('div')
+    wrapper.style.cssText = 'padding:24px;font-family:monospace;color:#991b1b;background:#fee2e2;min-height:100vh'
+    const h1 = document.createElement('h1')
+    h1.style.cssText = 'font-size:20px;margin-bottom:12px'
+    h1.textContent = 'Fatal Render Error'
+    const pre = document.createElement('pre')
+    pre.style.cssText = 'white-space:pre-wrap'
+    pre.textContent = err instanceof Error ? err.stack || err.message : String(err)
+    wrapper.appendChild(h1)
+    wrapper.appendChild(pre)
+    root.innerHTML = ''
+    root.appendChild(wrapper)
   }
 }

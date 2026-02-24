@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select'
 import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
+import { round2 } from '@/utils/budgetUtils'
 import { CalculatieModal } from './CalculatieModal'
 import type { CalculatieRegel } from '@/types'
 
@@ -74,7 +75,7 @@ interface QuoteItemsTableProps {
 
 function calculateLineTotaal(item: QuoteLineItem): number {
   const bruto = item.aantal * item.eenheidsprijs
-  return bruto - bruto * (item.korting_percentage / 100)
+  return round2(bruto - bruto * (item.korting_percentage / 100))
 }
 
 function genId(): string {

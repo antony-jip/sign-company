@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -56,6 +56,8 @@ export function OffertePubliekPagina() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
+  const hasTracked = useRef(false)
+
   useEffect(() => {
     let cancelled = false
     async function load() {
@@ -65,8 +67,11 @@ export function OffertePubliekPagina() {
         return
       }
       try {
-        // Track the view
-        await updateOfferteTracking(token).catch(() => {})
+        // Track the view (only once per page load)
+        if (!hasTracked.current) {
+          hasTracked.current = true
+          await updateOfferteTracking(token).catch(() => {})
+        }
 
         const data = await getOfferteByPubliekToken(token)
         if (!cancelled) {

@@ -396,7 +396,7 @@ export function MontagePlanningLayout() {
       monteurs: formData.monteurs,
       materialen: materialenArr,
       notities: formData.notities,
-      status: "gepland" as const,
+      status: editingAfspraak ? editingAfspraak.status : ("gepland" as const),
     };
 
     try {

@@ -1761,6 +1761,32 @@ export async function createFactuurItem(item: Omit<FactuurItem, 'id' | 'created_
   return newItem
 }
 
+export async function updateFactuurItem(id: string, updates: Partial<FactuurItem>): Promise<FactuurItem> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('factuur_items').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<FactuurItem>('factuur_items')
+  const index = items.findIndex((i) => i.id === id)
+  if (index === -1) throw new Error('Factuur item niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('factuur_items', items)
+  return items[index]
+}
+
+export async function deleteFactuurItem(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('factuur_items').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<FactuurItem>('factuur_items')
+  setLocalData('factuur_items', items.filter((i) => i.id !== id))
+}
+
 // ============ TIJDREGISTRATIE ============
 
 export async function getTijdregistraties(): Promise<Tijdregistratie[]> {

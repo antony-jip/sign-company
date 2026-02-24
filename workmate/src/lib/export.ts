@@ -47,7 +47,7 @@ export function exportExcel(filename: string, headers: string[], rows: ExportRow
           const val = row[h]
           const isNum = typeof val === 'number' || (typeof val === 'string' && /^-?\d+([.,]\d+)?$/.test(val) && val !== '')
           if (isNum) {
-            const numStr = String(val).replace(',', '.')
+            const numStr = String(val).replace(/,/g, '.')
             return `<Cell><Data ss:Type="Number">${numStr}</Data></Cell>`
           }
           return `<Cell><Data ss:Type="String">${escXml(String(val ?? ''))}</Data></Cell>`

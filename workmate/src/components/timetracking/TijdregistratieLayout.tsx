@@ -240,7 +240,7 @@ export function TijdregistratieLayout() {
     setTimer((prev) => ({
       ...prev,
       status: "running",
-      startTijd: new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }),
+      startTijd: `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`,
       elapsedSeconds: 0,
     }));
 
@@ -284,7 +284,7 @@ export function TijdregistratieLayout() {
 
     const duurMinuten = Math.round(timer.elapsedSeconds / 60);
     const now = new Date();
-    const eindTijd = now.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+    const eindTijd = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
     const nieuweRegistratie: Partial<Tijdregistratie> = {
       project_id: timer.projectId,
