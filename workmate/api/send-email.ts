@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const userId = await verifyUser(req)
-    const { to, cc, subject, body, html, scheduledAt } = req.body
+    const { to, cc, bcc, subject, body, html, scheduledAt, attachments } = req.body
 
     if (!to || !subject) {
       return res.status(400).json({ error: 'Ontvanger en onderwerp zijn verplicht' })
@@ -89,13 +89,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       text: body,
     }
     if (cc) mailOptions.cc = cc
+    if (bcc) mailOptions.bcc = bcc
     if (html) mailOptions.html = html
+
+    // Handle attachments (base64 encoded)
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      mailOptions.attachments = attachments.map((att: { filename: string; content: string; contentType?: string }) => ({
+        filename: att.filename,
+        content: Buffer.from(att.content, 'base64'),
+        contentType: att.contentType || 'application/octet-stream',
+      }))
+    }
+
+    const bijlagenCount = attachments?.length || 0
 
     if (scheduledAt) {
       await supabase.from('emails').insert({
         user_id: userId, gmail_id: '', van: emailSettings.email, aan: to,
         onderwerp: subject, inhoud: body || '', datum: new Date().toISOString(),
-        gelezen: true, starred: false, labels: ['gepland'], bijlagen: 0,
+        gelezen: true, starred: false, labels: ['gepland'], bijlagen: bijlagenCount,
         map: 'gepland', scheduled_at: scheduledAt,
       })
       return res.status(200).json({ success: true, message: `Email ingepland`, scheduled: true })
@@ -106,7 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await supabase.from('emails').insert({
       user_id: userId, gmail_id: '', van: emailSettings.email, aan: to,
       onderwerp: subject, inhoud: body || '', datum: new Date().toISOString(),
-      gelezen: true, starred: false, labels: ['verzonden'], bijlagen: 0, map: 'verzonden',
+      gelezen: true, starred: false, labels: ['verzonden'], bijlagen: bijlagenCount, map: 'verzonden',
     })
 
     return res.status(200).json({ success: true, message: 'Email verzonden' })
