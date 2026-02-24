@@ -3,6 +3,14 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 
+// Suppress benign ResizeObserver loop error (browser noise, not a real bug)
+const resizeObserverErr = (e: ErrorEvent) => {
+  if (e.message?.includes('ResizeObserver loop')) {
+    e.stopImmediatePropagation()
+  }
+}
+window.addEventListener('error', resizeObserverErr)
+
 try {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
