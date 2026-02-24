@@ -473,13 +473,9 @@ export function OfferteDetail() {
       {/* Top bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/offertes')}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Terug
-          </button>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/offertes')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <h1 className="text-xl font-bold text-foreground tracking-tight">
             {offerte.nummer}
           </h1>

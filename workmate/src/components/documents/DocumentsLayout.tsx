@@ -188,7 +188,7 @@ export function DocumentsLayout() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Zoek documenten..."
-                className="pl-9"
+                className="pl-10"
               />
             </div>
 

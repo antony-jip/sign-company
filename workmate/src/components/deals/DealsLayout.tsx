@@ -269,7 +269,7 @@ export function DealsLayout() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-gray-500">Deals laden...</p>
         </div>
       </div>
@@ -329,7 +329,7 @@ export function DealsLayout() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input placeholder="Zoek op titel of klant..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+          <Input placeholder="Zoek op titel of klant..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
         <Select value={filterBron} onValueChange={setFilterBron}>
           <SelectTrigger className="w-36"><SelectValue placeholder="Bron" /></SelectTrigger>

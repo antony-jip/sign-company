@@ -850,7 +850,7 @@ export function TeamLayout() {
             placeholder="Zoek op naam, e-mail of functie..."
             value={zoekterm}
             onChange={(e) => setZoekterm(e.target.value)}
-            className="pl-9"
+            className="pl-10"
           />
         </div>
 

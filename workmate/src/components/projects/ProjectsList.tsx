@@ -366,7 +366,7 @@ export function ProjectsList() {
             placeholder="Zoek op project of klant..."
             value={zoekterm}
             onChange={(e) => setZoekterm(e.target.value)}
-            className="pl-9 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-gray-200/80"
+            className="pl-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-gray-200/80"
           />
         </div>
 

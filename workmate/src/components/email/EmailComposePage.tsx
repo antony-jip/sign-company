@@ -213,7 +213,7 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/email')}
           className="flex-shrink-0"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -228,7 +228,7 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Button variant="outline" onClick={() => navigate(-1)}>
+          <Button variant="outline" onClick={() => navigate('/email')}>
             Annuleren
           </Button>
           <Button

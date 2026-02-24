@@ -248,7 +248,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="text-gray-500 dark:text-gray-400">Offerte laden...</p>
         </div>
       </div>

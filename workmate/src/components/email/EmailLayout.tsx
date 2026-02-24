@@ -838,7 +838,7 @@ export function EmailLayout() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Zoek emails..."
-                  className="pl-9 h-9"
+                  className="pl-10 h-9"
                 />
               </div>
               <Button onClick={handleCompose} size="sm" className="gap-1.5 h-9 flex-shrink-0">
