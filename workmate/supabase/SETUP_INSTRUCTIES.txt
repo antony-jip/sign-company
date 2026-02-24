@@ -1,0 +1,182 @@
+================================================================================
+  SUPABASE SETUP INSTRUCTIES — Workmate App
+  Volg deze stappen in volgorde
+================================================================================
+
+
+STAP 1: Supabase Project Aanmaken
+================================================================================
+
+  1. Ga naar https://supabase.com en log in (of maak account aan)
+  2. Klik "New Project"
+  3. Vul in:
+     - Name: workmate
+     - Database Password: [kies een sterk wachtwoord]
+     - Region: EU West (Frankfurt) — dichtst bij NL
+  4. Wacht tot het project klaar is (~2 minuten)
+
+
+STAP 2: API Keys Ophalen
+================================================================================
+
+  1. Ga naar Project Settings > API
+  2. Noteer deze waarden:
+
+     PROJECT URL:         https://[jouw-project].supabase.co
+     ANON PUBLIC KEY:     eyJ... (begint met eyJ)
+     SERVICE ROLE KEY:    eyJ... (begint met eyJ, andere waarde)
+
+
+STAP 3: Database Schema Uitvoeren
+================================================================================
+
+  Ga naar: SQL Editor (linkermenu)
+
+  Voer deze bestanden uit IN VOLGORDE (kopieer/plak per bestand):
+
+  1. supabase/schema.sql
+     → Maakt basis tabellen aan (profiles, klanten, projecten, etc.)
+     → Maakt RLS policies, triggers, storage bucket
+
+  2. supabase/migrations/001_missing_tables.sql
+     → Voegt facturen, tijdregistraties, medewerkers, montage, etc. toe
+     → Voegt RLS, triggers, indexes toe
+
+  3. supabase/migrations/002_document_styles.sql
+     → Voegt document_styles tabel toe voor huisstijl
+     → Maakt briefpapier storage bucket aan
+
+  4. supabase/migrations/003_complete_schema.sql
+     → Voegt 21 ontbrekende tabellen toe (werkbonnen, deals, etc.)
+     → Voegt 40+ ontbrekende kolommen toe aan bestaande tabellen
+     → Corrigeert CHECK constraints (offerte status, notificatie types)
+     → Maakt 80+ indexes aan voor performance
+     → Maakt RLS policies aan voor alle nieuwe tabellen
+
+  BELANGRIJK: Elk bestand moet GROEN (succesvol) zijn voordat je het
+  volgende uitvoert. Als er een fout is, los die eerst op.
+
+
+STAP 4: (Optioneel) Demo Data Laden
+================================================================================
+
+  5. supabase/seed.sql
+     → Laadt 8 demo klanten, 10 projecten, 30 taken, etc.
+     → ALLEEN uitvoeren als je demo data wilt
+
+  LET OP: seed.sql gebruikt een hardcoded user_id placeholder.
+  Je moet eerst een gebruiker registreren, het UUID ophalen uit
+  auth.users, en de `uid` variabele aanpassen in seed.sql.
+
+
+STAP 5: .env Bestand Aanmaken
+================================================================================
+
+  Maak het bestand workmate/.env aan:
+
+  ┌─────────────────────────────────────────────────────────┐
+  │  VITE_SUPABASE_URL=https://[jouw-project].supabase.co  │
+  │  VITE_SUPABASE_ANON_KEY=[jouw-anon-public-key]         │
+  └─────────────────────────────────────────────────────────┘
+
+  Dit zijn de ENIGE twee variabelen die nodig zijn om de app
+  te laten overschakelen van localStorage naar Supabase.
+
+
+STAP 6: Vercel Environment Variables (voor productie)
+================================================================================
+
+  Ga naar: Vercel Dashboard > Project > Settings > Environment Variables
+
+  Voeg toe:
+  ┌─────────────────────────────┬────────────────────────────────┐
+  │ Variable                    │ Waarde                         │
+  ├─────────────────────────────┼────────────────────────────────┤
+  │ VITE_SUPABASE_URL           │ https://[project].supabase.co  │
+  │ VITE_SUPABASE_ANON_KEY      │ [anon public key]              │
+  │ SUPABASE_SERVICE_ROLE_KEY   │ [service role key]             │
+  │ OPENAI_API_KEY              │ [optioneel, voor AI module]    │
+  │ EMAIL_ENCRYPTION_KEY        │ [optioneel, voor email SMTP]   │
+  └─────────────────────────────┴────────────────────────────────┘
+
+  VITE_ variabelen worden meegebundeld in de frontend (publiek).
+  Zonder VITE_ prefix = alleen beschikbaar in serverless functions.
+
+
+STAP 7: Testen
+================================================================================
+
+  1. Start de app lokaal:
+     cd workmate
+     npm install
+     npm run dev
+
+  2. Open http://localhost:5173
+  3. Registreer een account
+  4. Check dat data wordt opgeslagen in Supabase:
+     - Ga naar Supabase Dashboard > Table Editor
+     - Controleer dat er rijen verschijnen in 'profiles' na registratie
+     - Maak een klant aan en check de 'klanten' tabel
+
+  Als de app nog localStorage gebruikt, check:
+  - .env bestand bestaat en is correct
+  - Browser console op fouten
+  - Herstart dev server na .env wijziging
+
+
+STAP 8: Supabase Auth Instellingen
+================================================================================
+
+  Ga naar: Authentication > Providers
+
+  1. Email:
+     - "Enable Email provider" = AAN
+     - "Confirm email" = UIT (voor development) of AAN (voor productie)
+
+  2. (Optioneel) Redirect URL's:
+     - Ga naar Authentication > URL Configuration
+     - Site URL: https://jouw-domein.com (of http://localhost:5173)
+     - Redirect URLs: voeg toe:
+       http://localhost:5173/**
+       https://jouw-domein.com/**
+
+
+================================================================================
+  CHECKLIST NA SETUP
+================================================================================
+
+  [ ] Supabase project aangemaakt
+  [ ] Alle 4 SQL bestanden uitgevoerd (in volgorde)
+  [ ] .env bestand aangemaakt met URL + anon key
+  [ ] npm install && npm run dev succesvol
+  [ ] Account geregistreerd
+  [ ] Data verschijnt in Supabase tabellen
+  [ ] Auth werkt (login/logout/registratie)
+
+
+================================================================================
+  PROBLEMEN OPLOSSEN
+================================================================================
+
+  "relation does not exist"
+  → Je hebt niet alle SQL bestanden uitgevoerd. Draai ze opnieuw.
+
+  "new row violates row-level security policy"
+  → De user_id in de insert komt niet overeen met de ingelogde gebruiker.
+  → Check of auth.uid() correct wordt meegegeven in de service calls.
+
+  "permission denied for table"
+  → RLS is ingeschakeld maar policies ontbreken.
+  → Draai 003_complete_schema.sql opnieuw.
+
+  App blijft localStorage gebruiken
+  → Check .env bestand (VITE_ prefix verplicht)
+  → Herstart dev server
+  → Check browser console voor fouten
+
+  Build faalt
+  → Draai: npm install (dependencies installeren)
+  → Draai: npm run build (check op fouten)
+
+
+================================================================================
