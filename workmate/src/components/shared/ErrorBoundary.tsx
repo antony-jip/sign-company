@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] px-4 text-center">
+        <div role="alert" aria-live="assertive" className="flex flex-col items-center justify-center min-h-[40vh] px-4 text-center">
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="w-8 h-8 text-red-500 dark:text-red-400" />
           </div>
@@ -54,6 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
           )}
           <button
             onClick={this.handleReset}
+            aria-label="Opnieuw proberen"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <RotateCcw className="w-4 h-4" />

@@ -77,6 +77,7 @@ function AppContent() {
   return (
     <>
     <CommandPalette />
+    <ErrorBoundary>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -142,6 +143,7 @@ function AppContent() {
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </ErrorBoundary>
     </>
   )
 }

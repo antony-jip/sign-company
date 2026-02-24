@@ -158,6 +158,7 @@ export function Header() {
           className="w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
           onClick={toggleLanguage}
           title={language === 'nl' ? 'Switch to English' : 'Wissel naar Nederlands'}
+          aria-label={language === 'nl' ? 'Switch to English' : 'Wissel naar Nederlands'}
         >
           <span className="text-xs font-bold">{language.toUpperCase()}</span>
         </Button>
@@ -169,6 +170,7 @@ export function Header() {
           className="w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
           onClick={toggleTheme}
           title={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
+          aria-label={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
         >
           {theme === 'light' ? (
             <Moon className="w-4 h-4" />
@@ -194,6 +196,9 @@ export function Header() {
               'hover:bg-muted/60',
               userMenuOpen && 'bg-muted/60'
             )}
+            aria-label="Gebruikersmenu"
+            aria-expanded={userMenuOpen}
+            aria-haspopup="true"
           >
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-primary/10">
               <span className="text-white text-xs font-semibold">

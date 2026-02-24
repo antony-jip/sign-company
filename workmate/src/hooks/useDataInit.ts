@@ -610,47 +610,31 @@ export function useDataInit() {
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    // Ensure all localStorage keys exist as empty arrays if not present
-    for (const key of storageKeys) {
-      if (!localStorage.getItem(key)) {
-        localStorage.setItem(key, '[]')
+    try {
+      // Ensure all localStorage keys exist as empty arrays if not present
+      for (const key of storageKeys) {
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, '[]')
+        }
       }
-    }
 
-    // Seed demo data if empty (first-time users get example content)
-    const existingEmails = JSON.parse(localStorage.getItem('workmate_emails') || '[]')
-    if (existingEmails.length === 0) {
-      localStorage.setItem('workmate_emails', JSON.stringify(demoEmails))
-    }
+      // Seed demo data if empty (first-time users get example content)
+      const seedIfEmpty = (key: string, data: unknown[]) => {
+        const existing = JSON.parse(localStorage.getItem(key) || '[]')
+        if (existing.length === 0) {
+          localStorage.setItem(key, JSON.stringify(data))
+        }
+      }
 
-    const existingKlanten = JSON.parse(localStorage.getItem('workmate_klanten') || '[]')
-    if (existingKlanten.length === 0) {
-      localStorage.setItem('workmate_klanten', JSON.stringify(demoKlanten))
-    }
-
-    const existingProjecten = JSON.parse(localStorage.getItem('workmate_projecten') || '[]')
-    if (existingProjecten.length === 0) {
-      localStorage.setItem('workmate_projecten', JSON.stringify(demoProjecten))
-    }
-
-    const existingOffertes = JSON.parse(localStorage.getItem('workmate_offertes') || '[]')
-    if (existingOffertes.length === 0) {
-      localStorage.setItem('workmate_offertes', JSON.stringify(demoOffertes))
-    }
-
-    const existingOfferteItems = JSON.parse(localStorage.getItem('workmate_offerte_items') || '[]')
-    if (existingOfferteItems.length === 0) {
-      localStorage.setItem('workmate_offerte_items', JSON.stringify(demoOfferteItems))
-    }
-
-    const existingTaken = JSON.parse(localStorage.getItem('workmate_taken') || '[]')
-    if (existingTaken.length === 0) {
-      localStorage.setItem('workmate_taken', JSON.stringify(demoTaken))
-    }
-
-    const existingMontages = JSON.parse(localStorage.getItem('workmate_montage_afspraken') || '[]')
-    if (existingMontages.length === 0) {
-      localStorage.setItem('workmate_montage_afspraken', JSON.stringify(demoMontageAfspraken))
+      seedIfEmpty('workmate_emails', demoEmails)
+      seedIfEmpty('workmate_klanten', demoKlanten)
+      seedIfEmpty('workmate_projecten', demoProjecten)
+      seedIfEmpty('workmate_offertes', demoOffertes)
+      seedIfEmpty('workmate_offerte_items', demoOfferteItems)
+      seedIfEmpty('workmate_taken', demoTaken)
+      seedIfEmpty('workmate_montage_afspraken', demoMontageAfspraken)
+    } catch (e) {
+      console.warn('localStorage init failed:', e)
     }
 
     setIsReady(true)

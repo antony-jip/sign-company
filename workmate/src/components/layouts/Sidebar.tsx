@@ -103,9 +103,9 @@ export function Sidebar() {
 
   // Filter navigatie op basis van instellingen — Instellingen is altijd zichtbaar
   const filteredNavSections = useMemo(() => {
-    const sidebarItems = settings.sidebar_items
+    const sidebarItems = settings?.sidebar_items
     // Als sidebar_items niet is ingesteld of leeg is, toon alles
-    if (!sidebarItems || sidebarItems.length === 0) return navSections
+    if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return navSections
     // Migratie: 'Kalender' → 'Planning'
     const normalized = sidebarItems.map((s: string) =>
       s === 'Kalender' ? 'Planning' : s
@@ -262,6 +262,7 @@ export function Sidebar() {
               className="w-7 h-7 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-200 rounded-lg"
               onClick={logout}
               title="Uitloggen"
+              aria-label="Uitloggen"
             >
               <LogOut className="w-3.5 h-3.5" />
             </Button>
@@ -289,6 +290,7 @@ export function Sidebar() {
             isCollapsed && 'px-0 justify-center'
           )}
           onClick={toggleSidebar}
+          aria-label={isCollapsed ? 'Sidebar uitklappen' : 'Sidebar inklappen'}
         >
           {isCollapsed ? (
             <ChevronRight className="w-4 h-4" />
