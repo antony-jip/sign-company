@@ -83,20 +83,21 @@
         .hero { width: 100%; background: var(--off-white); padding: 80px 20px 60px; text-align: center; position: relative; overflow: hidden; }
         .hero::before { content: ''; position: absolute; top: -140px; right: -100px; width: 420px; height: 420px; background: radial-gradient(ellipse, rgba(229,115,36,0.08), transparent 70%); border-radius: 50%; filter: blur(35px); }
         .hero-badge { display: inline-block; padding: 8px 20px; background: linear-gradient(135deg, var(--yellow), var(--orange)); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 50px; margin-bottom: 24px; }
-        .hero h1 { font-family: 'Excon', sans-serif; font-size: 42px; font-weight: 900; color: var(--navy); line-height: 1.1; letter-spacing: -2px; margin-bottom: 16px; }
+        .hero h1 { font-family: 'Satoshi', sans-serif; font-size: 42px; font-weight: 900; color: var(--navy); line-height: 1.1; letter-spacing: -2px; margin-bottom: 16px; }
         .hero h1 .highlight { background: linear-gradient(135deg, var(--yellow), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .hero-intro { font-size: 18px; color: var(--gray-text); max-width: 600px; margin: 0 auto; line-height: 1.7; }
         .hero-intro strong { color: var(--navy); }
         .hero-stats { display: flex; justify-content: center; gap: 40px; margin-top: 32px; flex-wrap: wrap; }
         .stat { text-align: center; }
-        .stat-number { font-family: 'Excon', sans-serif; font-size: 32px; font-weight: 900; background: linear-gradient(135deg, var(--orange), var(--yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-number { font-family: 'Satoshi', sans-serif; font-size: 32px; font-weight: 900; background: linear-gradient(135deg, var(--orange), var(--yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .stat-label { font-size: 13px; color: var(--gray-text); margin-top: 4px; }
 
         .categories { max-width: 1200px; margin: 0 auto; padding: 60px 20px 80px; }
 
         .category { margin-bottom: 56px; }
         .category-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--gray-tint); }
-        .category-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; }
+        .category-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; }
+        .category-icon svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .cat-gevel .category-icon { background: linear-gradient(135deg, var(--orange), #c45a10); }
         .cat-auto .category-icon { background: linear-gradient(135deg, var(--yellow), #d4940a); }
         .cat-raam .category-icon { background: linear-gradient(135deg, var(--teal), #00997d); }
@@ -104,7 +105,7 @@
         .cat-boot .category-icon { background: linear-gradient(135deg, #2196F3, #1976D2); }
         .cat-event .category-icon { background: linear-gradient(135deg, var(--pink), #a82745); }
         .cat-algemeen .category-icon { background: linear-gradient(135deg, var(--navy), #0f2233); }
-        .category-title { font-family: 'Excon', sans-serif; font-size: 24px; font-weight: 800; color: var(--navy); }
+        .category-title { font-family: 'Satoshi', sans-serif; font-size: 24px; font-weight: 800; color: var(--navy); }
         .category-count { font-size: 14px; color: var(--gray-text); margin-left: auto; }
 
         .articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
@@ -116,8 +117,8 @@
         .article-card:hover .arrow { opacity: 1; }
 
         .cta-section { background: var(--navy); padding: 64px 20px; text-align: center; }
-        .cta-section h2 { font-family: 'Excon', sans-serif; font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 16px; }
-        .cta-section p { color: rgba(255,255,255,0.7); font-size: 16px; margin-bottom: 32px; }
+        .cta-section h2 { font-family: 'Satoshi', sans-serif; font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 16px; }
+        .cta-section p { color: rgba(255,255,255,0.7); font-size: 16px; margin-bottom: 32px; max-width: 520px; margin-left: auto; margin-right: auto; }
         .cta-btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; background: linear-gradient(135deg, var(--yellow), var(--orange)); color: #fff; text-decoration: none; font-weight: 700; font-size: 15px; border-radius: 50px; transition: all 0.3s ease; }
         .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(240,170,4,0.3); }
 
@@ -126,7 +127,7 @@
             .hero h1 { font-size: 56px; }
             .categories { padding: 80px 40px 100px; }
         }
-    /* Enhanced Hover Animations */.btn-primary{position:relative;overflow:hidden}.btn-primary::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:translateX(-100%);transition:none}.btn-primary:hover::after{transform:translateX(100%);transition:transform 0.6s ease}.btn-secondary{position:relative;overflow:hidden}.btn-secondary::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(216,50,85,0.15) 0%,transparent 70%);opacity:0;transition:opacity 0.3s ease}.btn-secondary:hover::before{opacity:1}.client-logo{transform:translateY(0);transition:opacity 0.3s ease,transform 0.3s cubic-bezier(0.34,1.56,0.64,1)}.client-logo:hover{opacity:1;transform:translateY(-4px) scale(1.05)}.related-link{position:relative}.related-link::after{content:'';position:absolute;inset:0;border-radius:12px;box-shadow:0 0 0 0 rgba(229,115,36,0);transition:box-shadow 0.3s ease}.related-link:hover::after{box-shadow:0 0 0 2px rgba(229,115,36,0.15)}.faq-question{position:relative}.faq-question::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(240,170,4,0.03),transparent 50%);opacity:0;transition:opacity 0.3s ease}.faq-question:hover::before{opacity:1}.price-row{position:relative}.price-row::before{content:'';position:absolute;inset:0;border-radius:10px;background:linear-gradient(135deg,rgba(240,170,4,0.02),rgba(229,115,36,0.02));opacity:0;transition:opacity 0.3s ease}.price-row:hover::before{opacity:1}.website-link{position:relative;overflow:hidden}.website-link::after{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:rgba(0,191,165,0.1);border-radius:50%;transform:translate(-50%,-50%);transition:width 0.4s ease,height 0.4s ease}.website-link:hover::after{width:200%;height:200%}.strip-card{position:relative}.strip-card::after{content:'';position:absolute;inset:0;border-radius:12px;opacity:0;transition:opacity 0.3s ease}.strip-gevel::after{background:linear-gradient(135deg,rgba(229,115,36,0.03),rgba(240,170,4,0.03))}.strip-auto::after{background:linear-gradient(135deg,rgba(240,170,4,0.03),rgba(255,179,71,0.03))}.strip-event::after{background:linear-gradient(135deg,rgba(216,50,85,0.03),rgba(155,77,202,0.03))}.strip-interieur::after{background:linear-gradient(135deg,rgba(0,191,165,0.03),rgba(81,57,226,0.03))}.strip-card:hover::after{opacity:1}.article-image{overflow:hidden}.article-image img{transition:transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)}.article-image:hover img{transform:scale(1.03)}.whatsapp-sticky{animation:wa-pulse 2s ease-in-out infinite}@keyframes wa-pulse{0%,100%{box-shadow:0 2px 8px rgba(37,211,102,0.2),0 6px 20px rgba(37,211,102,0.25)}50%{box-shadow:0 2px 12px rgba(37,211,102,0.3),0 8px 28px rgba(37,211,102,0.35)}}.hero-badge{transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease}.hero-badge:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(240,170,4,0.3),0 2px 6px rgba(229,115,36,0.2)}</style>
+</style>
 </head>
 <body>
 
@@ -146,7 +147,7 @@
     <!-- GEVELRECLAME -->
     <section class="category cat-gevel" id="gevelreclame">
         <div class="category-header">
-            <div class="category-icon">🏢</div>
+            <div class="category-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M13 21V3l6 4v14M9 9v.01M9 13v.01M9 17v.01M17 9v.01M17 13v.01M17 17v.01"/></svg></div>
             <h2 class="category-title">Gevelreclame</h2>
             <span class="category-count">26 artikelen</span>
         </div>
@@ -183,7 +184,7 @@
     <!-- AUTOBELETTERING -->
     <section class="category cat-auto" id="autobelettering">
         <div class="category-header">
-            <div class="category-icon">🚗</div>
+            <div class="category-icon"><svg viewBox="0 0 24 24"><path d="M5 17h14M6 17l1-5h10l1 5M7 12l1-4h8l1 4"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg></div>
             <h2 class="category-title">Autobelettering</h2>
             <span class="category-count">25 artikelen</span>
         </div>
@@ -219,7 +220,7 @@
     <!-- RAAMFOLIE -->
     <section class="category cat-raam" id="raamfolie">
         <div class="category-header">
-            <div class="category-icon">🪟</div>
+            <div class="category-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/></svg></div>
             <h2 class="category-title">Raamfolie</h2>
             <span class="category-count">17 artikelen</span>
         </div>
@@ -247,7 +248,7 @@
     <!-- INTERIEUR -->
     <section class="category cat-interieur" id="interieur">
         <div class="category-header">
-            <div class="category-icon">🏠</div>
+            <div class="category-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
             <h2 class="category-title">Interieur</h2>
             <span class="category-count">9 artikelen</span>
         </div>
@@ -267,7 +268,7 @@
     <!-- BOOTSTICKERS -->
     <section class="category cat-boot" id="bootstickers">
         <div class="category-header">
-            <div class="category-icon">⛵</div>
+            <div class="category-icon"><svg viewBox="0 0 24 24"><path d="M2 20h20M12 4v12M5 16l7-12M19 16l-7-12M4 16h16"/></svg></div>
             <h2 class="category-title">Bootstickers</h2>
             <span class="category-count">4 artikelen</span>
         </div>
@@ -282,7 +283,7 @@
     <!-- EVENT & PROMOTIE -->
     <section class="category cat-event" id="event-promotie">
         <div class="category-header">
-            <div class="category-icon">🎪</div>
+            <div class="category-icon"><svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
             <h2 class="category-title">Event & Promotie</h2>
             <span class="category-count">6 artikelen</span>
         </div>
@@ -299,7 +300,7 @@
     <!-- ALGEMEEN -->
     <section class="category cat-algemeen" id="algemeen">
         <div class="category-header">
-            <div class="category-icon">📚</div>
+            <div class="category-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
             <h2 class="category-title">Algemeen</h2>
             <span class="category-count">18 artikelen</span>
         </div>
