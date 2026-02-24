@@ -25,6 +25,7 @@ import { ForgeQuotePreview } from '@/components/quotes/ForgeQuotePreview'
 import { OfferteDetail } from '@/components/quotes/OfferteDetail'
 import { DocumentsLayout } from '@/components/documents/DocumentsLayout'
 import { EmailLayout } from '@/components/email/EmailLayout'
+import { EmailComposePage } from '@/components/email/EmailComposePage'
 import { CalendarLayout } from '@/components/calendar/CalendarLayout'
 import { FinancialLayout } from '@/components/financial/FinancialLayout'
 import { TasksLayout } from '@/components/tasks/TasksLayout'
@@ -109,6 +110,7 @@ function AppContent() {
         <Route path="offertes/:id/detail" element={<OfferteDetail />} />
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
+        <Route path="email/compose" element={<EmailComposePage />} />
         <Route path="kalender" element={<CalendarLayout />} />
         <Route path="financieel" element={<FinancialLayout />} />
         <Route path="taken" element={<TasksLayout />} />

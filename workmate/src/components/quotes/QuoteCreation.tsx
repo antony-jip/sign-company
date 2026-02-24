@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -131,6 +131,11 @@ export function QuoteCreation() {
   const [items, setItems] = useState<QuoteLineItem[]>([])
   const [notities, setNotities] = useState('')
   const [voorwaarden, setVoorwaarden] = useState(DEFAULT_VOORWAARDEN)
+
+  // ── Autosave state ──
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const autoSaveIdRef = useRef<string | null>(null) // tracks created offerte id for new quotes
 
   // ── Computed ──
   const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
@@ -358,8 +363,8 @@ export function QuoteCreation() {
   }
 
   const handleUpdateItem = (id: string, field: keyof QuoteLineItem, value: QuoteLineItem[keyof QuoteLineItem]) => {
-    setItems(
-      items.map((item) => {
+    setItems(prev =>
+      prev.map((item) => {
         if (item.id !== id) return item
         const updated = { ...item, [field]: value }
         if (updated.soort === 'prijs') {
@@ -372,7 +377,7 @@ export function QuoteCreation() {
   }
 
   const handleRemoveItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id))
+    setItems(prev => prev.filter((item) => item.id !== id))
   }
 
   const handleUpdateItemWithCalculatie = (
@@ -383,8 +388,8 @@ export function QuoteCreation() {
       calculatie_regels: CalculatieRegel[]
     }
   ) => {
-    setItems(
-      items.map((item) => {
+    setItems(prev =>
+      prev.map((item) => {
         if (item.id !== id) return item
         const updated = {
           ...item,
@@ -409,8 +414,8 @@ export function QuoteCreation() {
       calculatie_regels: CalculatieRegel[]
     }
   ) => {
-    setItems(
-      items.map((item) => {
+    setItems(prev =>
+      prev.map((item) => {
         if (item.id !== itemId || !item.prijs_varianten) return item
         const updatedVarianten = item.prijs_varianten.map(v => {
           if (v.id !== variantId) return v
@@ -425,6 +430,135 @@ export function QuoteCreation() {
       })
     )
   }
+
+  // ── Autosave logic (debounced 3 sec) ──
+  const performAutoSave = useCallback(async () => {
+    if (!user?.id || !selectedKlantId || !offerteTitel.trim() || items.length === 0) return
+    if (isSaving) return
+
+    setAutoSaveStatus('saving')
+    try {
+      const klant = klanten.find((k) => k.id === selectedKlantId)
+      const prijsItems = items.filter((i) => i.soort === 'prijs')
+      const sub = round2(prijsItems.reduce((sum, item) => {
+        const data = getActivePriceData(item)
+        const bruto = data.aantal * data.eenheidsprijs
+        return sum + round2(bruto - bruto * (data.korting_percentage / 100))
+      }, 0))
+      const btw = round2(prijsItems.reduce((sum, item) => {
+        const data = getActivePriceData(item)
+        const bruto = data.aantal * data.eenheidsprijs
+        const netto = round2(bruto - bruto * (data.korting_percentage / 100))
+        return sum + round2(netto * (data.btw_percentage / 100))
+      }, 0))
+
+      const currentId = editOfferteId || autoSaveIdRef.current
+
+      if (currentId) {
+        // Update existing
+        await updateOfferte(currentId, {
+          klant_id: selectedKlantId,
+          klant_naam: klant?.bedrijfsnaam,
+          ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+          titel: offerteTitel,
+          status: 'concept',
+          subtotaal: sub,
+          btw_bedrag: btw,
+          totaal: round2(sub + btw),
+          geldig_tot: geldigTot,
+          notities,
+          voorwaarden,
+        })
+
+        // Delete old items, re-create
+        const oldItems = await getOfferteItems(currentId)
+        await Promise.all(oldItems.map((item) => deleteOfferteItem(item.id)))
+        await Promise.all(
+          items.map((item, index) =>
+            createOfferteItem({
+              offerte_id: currentId,
+              beschrijving: item.beschrijving,
+              aantal: item.aantal,
+              eenheidsprijs: item.eenheidsprijs,
+              btw_percentage: item.btw_percentage,
+              korting_percentage: item.korting_percentage,
+              totaal: item.totaal,
+              volgorde: index + 1,
+              soort: item.soort,
+              extra_velden: item.extra_velden,
+              detail_regels: item.detail_regels,
+              calculatie_regels: item.calculatie_regels,
+              heeft_calculatie: item.heeft_calculatie,
+              prijs_varianten: item.prijs_varianten,
+              actieve_variant_id: item.actieve_variant_id,
+            })
+          )
+        )
+      } else {
+        // Create new as concept
+        const newOfferte = await createOfferte({
+          user_id: user.id,
+          klant_id: selectedKlantId,
+          klant_naam: klant?.bedrijfsnaam,
+          ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+          nummer: offerteNummer,
+          titel: offerteTitel,
+          status: 'concept',
+          subtotaal: sub,
+          btw_bedrag: btw,
+          totaal: round2(sub + btw),
+          geldig_tot: geldigTot,
+          notities,
+          voorwaarden,
+        })
+        autoSaveIdRef.current = newOfferte.id
+
+        await Promise.all(
+          items.map((item, index) =>
+            createOfferteItem({
+              offerte_id: newOfferte.id,
+              beschrijving: item.beschrijving,
+              aantal: item.aantal,
+              eenheidsprijs: item.eenheidsprijs,
+              btw_percentage: item.btw_percentage,
+              korting_percentage: item.korting_percentage,
+              totaal: item.totaal,
+              volgorde: index + 1,
+              soort: item.soort,
+              extra_velden: item.extra_velden,
+              detail_regels: item.detail_regels,
+              calculatie_regels: item.calculatie_regels,
+              heeft_calculatie: item.heeft_calculatie,
+              prijs_varianten: item.prijs_varianten,
+              actieve_variant_id: item.actieve_variant_id,
+            })
+          )
+        )
+      }
+
+      setAutoSaveStatus('saved')
+      // Reset indicator after 3 seconds
+      setTimeout(() => setAutoSaveStatus('idle'), 3000)
+    } catch (err) {
+      logger.error('Autosave failed:', err)
+      setAutoSaveStatus('idle')
+    }
+  }, [user?.id, selectedKlantId, selectedProjectId, offerteTitel, items, geldigTot, notities, voorwaarden, editOfferteId, offerteNummer, isSaving, klanten])
+
+  // Debounced autosave: trigger 3s after last change (only on step 1/2)
+  useEffect(() => {
+    if (currentStep < 1) return
+    if (!selectedKlantId || !offerteTitel.trim() || items.length === 0) return
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+    autoSaveTimerRef.current = setTimeout(() => {
+      performAutoSave()
+    }, 3000)
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+    }
+  }, [items, offerteTitel, notities, voorwaarden, geldigTot, selectedKlantId, selectedProjectId, currentStep])
 
   // ── Contactpersoon toevoegen ──
   const handleAddContact = async () => {
@@ -505,10 +639,12 @@ export function QuoteCreation() {
     try {
       let savedOfferteId: string
 
-      if (isEditMode && editOfferteId) {
+      if ((isEditMode && editOfferteId) || autoSaveIdRef.current) {
+        const existingId = editOfferteId || autoSaveIdRef.current!
         // Update existing offerte
-        await updateOfferte(editOfferteId, {
+        await updateOfferte(existingId, {
           klant_id: selectedKlantId,
+          klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
           titel: offerteTitel,
           status,
@@ -519,16 +655,16 @@ export function QuoteCreation() {
           notities,
           voorwaarden,
         })
-        savedOfferteId = editOfferteId
+        savedOfferteId = existingId
 
         // Delete old items, then re-create
-        const oldItems = await getOfferteItems(editOfferteId)
+        const oldItems = await getOfferteItems(existingId)
         await Promise.all(oldItems.map((item) => deleteOfferteItem(item.id)))
 
         await Promise.all(
           items.map((item, index) =>
             createOfferteItem({
-              offerte_id: editOfferteId,
+              offerte_id: existingId,
               beschrijving: item.beschrijving,
               aantal: item.aantal,
               eenheidsprijs: item.eenheidsprijs,
@@ -551,6 +687,7 @@ export function QuoteCreation() {
         const newOfferte = await createOfferte({
           user_id: user.id,
           klant_id: selectedKlantId,
+          klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
           ...(paramDealId ? { deal_id: paramDealId } : {}),
           nummer: offerteNummer,
@@ -670,6 +807,68 @@ export function QuoteCreation() {
     }
   }
 
+  // ── Verstuur offerte → navigeer naar email compose pagina ──
+  const handleVerstuurOfferte = async () => {
+    if (!user?.id || !selectedKlant) {
+      toast.error('Selecteer eerst een klant')
+      return
+    }
+    // Save first as concept if not yet saved
+    const quoteId = editOfferteId || autoSaveIdRef.current
+    if (!quoteId) {
+      // Need to save first
+      toast.info('Offerte wordt eerst opgeslagen...')
+      await saveOfferte('concept')
+      const savedId = editOfferteId || autoSaveIdRef.current
+      if (savedId) {
+        navigate(`/email/compose?quote_id=${savedId}`)
+      }
+      return
+    }
+    // Save latest state as concept before navigating
+    try {
+      await updateOfferte(quoteId, {
+        klant_id: selectedKlantId,
+        klant_naam: selectedKlant?.bedrijfsnaam,
+        ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+        titel: offerteTitel,
+        status: 'concept',
+        subtotaal,
+        btw_bedrag: btwBedrag,
+        totaal: round2(subtotaal + btwBedrag),
+        geldig_tot: geldigTot,
+        notities,
+        voorwaarden,
+      })
+      const existingItems = await getOfferteItems(quoteId)
+      await Promise.all(existingItems.map((item) => deleteOfferteItem(item.id)))
+      await Promise.all(
+        items.map((item, index) =>
+          createOfferteItem({
+            offerte_id: quoteId,
+            beschrijving: item.beschrijving,
+            aantal: item.aantal,
+            eenheidsprijs: item.eenheidsprijs,
+            btw_percentage: item.btw_percentage,
+            korting_percentage: item.korting_percentage,
+            totaal: item.totaal,
+            volgorde: index + 1,
+            soort: item.soort,
+            extra_velden: item.extra_velden,
+            detail_regels: item.detail_regels,
+            calculatie_regels: item.calculatie_regels,
+            heeft_calculatie: item.heeft_calculatie,
+            prijs_varianten: item.prijs_varianten,
+            actieve_variant_id: item.actieve_variant_id,
+          })
+        )
+      )
+    } catch (err) {
+      logger.error('Failed to save before sending:', err)
+    }
+    navigate(`/email/compose?quote_id=${quoteId}`)
+  }
+
   // ── Render ──
   return (
     <div className="pb-36">
@@ -691,12 +890,40 @@ export function QuoteCreation() {
                     {offerteNummer}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-                  Stel een professionele offerte samen voor je klant. Selecteer de klant en contactpersoon,
-                  vul de details in en bouw je offerte stap voor stap op.
-                </p>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
+                    Stel een professionele offerte samen voor je klant.
+                  </p>
+                  {/* Autosave indicator */}
+                  {autoSaveStatus === 'saving' && (
+                    <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                      <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                      Opslaan...
+                    </span>
+                  )}
+                  {autoSaveStatus === 'saved' && (
+                    <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                      <Check className="h-3 w-3" />
+                      Opgeslagen
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Right side: Verstuur offerte + badges */}
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+              {/* Verstuur offerte button - visible on step 1+ when klant is selected */}
+              {currentStep >= 1 && selectedKlant && (
+                <Button
+                  onClick={handleVerstuurOfferte}
+                  className="bg-gradient-to-r from-accent to-primary border-0 gap-2"
+                  size="sm"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Verstuur offerte
+                </Button>
+              )}
 
             {/* Quick info badges rechts */}
             {selectedKlant && (
@@ -719,6 +946,7 @@ export function QuoteCreation() {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
 
