@@ -40,7 +40,7 @@ import {
   Calendar,
   Hash,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon } from '@/types'
@@ -96,12 +96,14 @@ export function QuoteCreation() {
   const [projecten, setProjecten] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
 
   // Query params van bijv. projecten-pagina
   const paramKlantId = searchParams.get('klant_id') || ''
   const paramProjectId = searchParams.get('project_id') || ''
   const paramDealId = searchParams.get('deal_id') || ''
   const paramTitel = searchParams.get('titel') || ''
+  const editOfferteId = searchParams.get('edit') || ''
 
   // ── Step 0: Klant + Project + Details ──
   const [selectedKlantId, setSelectedKlantId] = useState(paramKlantId)
@@ -216,6 +218,60 @@ export function QuoteCreation() {
       .finally(() => { if (!cancelled) setIsLoading(false) })
     return () => { cancelled = true }
   }, [])
+
+  // ── Edit mode: load existing offerte ──
+  useEffect(() => {
+    if (!editOfferteId || isLoading) return
+    let cancelled = false
+
+    async function loadEditData() {
+      try {
+        const [offerte, offerteItems] = await Promise.all([
+          getOfferte(editOfferteId),
+          getOfferteItems(editOfferteId),
+        ])
+        if (cancelled || !offerte) return
+
+        setIsEditMode(true)
+        setSelectedKlantId(offerte.klant_id)
+        setSelectedProjectId(offerte.project_id || '')
+        setOfferteTitel(offerte.titel)
+        setOfferteNummer(offerte.nummer)
+        setGeldigTot(offerte.geldig_tot?.split('T')[0] || '')
+        setNotities(offerte.notities || '')
+        setVoorwaarden(offerte.voorwaarden || DEFAULT_VOORWAARDEN)
+
+        // Map OfferteItem[] → QuoteLineItem[]
+        const mappedItems: QuoteLineItem[] = offerteItems
+          .sort((a, b) => (a.volgorde || 0) - (b.volgorde || 0))
+          .map((item) => ({
+            id: item.id,
+            soort: 'prijs' as const,
+            beschrijving: item.beschrijving,
+            extra_velden: {},
+            aantal: item.aantal,
+            eenheidsprijs: item.eenheidsprijs,
+            btw_percentage: item.btw_percentage,
+            korting_percentage: item.korting_percentage,
+            totaal: item.totaal || 0,
+          }))
+
+        if (mappedItems.length > 0) {
+          setItems(mappedItems)
+          setItemCount(mappedItems.length)
+        }
+
+        // Start on step 1 (items) so user can edit right away
+        setCurrentStep(1)
+      } catch (err) {
+        logger.error('Failed to load offerte for edit:', err)
+        toast.error('Kon offerte niet laden voor bewerking')
+      }
+    }
+
+    loadEditData()
+    return () => { cancelled = true }
+  }, [editOfferteId, isLoading])
 
   // Auto-fill from project params
   useEffect(() => {
@@ -437,36 +493,76 @@ export function QuoteCreation() {
     }
     setIsSaving(true)
     try {
-      const newOfferte = await createOfferte({
-        user_id: user.id,
-        klant_id: selectedKlantId,
-        ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-        ...(paramDealId ? { deal_id: paramDealId } : {}),
-        nummer: offerteNummer,
-        titel: offerteTitel,
-        status,
-        subtotaal,
-        btw_bedrag: btwBedrag,
-        totaal: round2(subtotaal + btwBedrag),
-        geldig_tot: geldigTot,
-        notities,
-        voorwaarden,
-      })
+      let savedOfferteId: string
 
-      await Promise.all(
-        items.map((item, index) =>
-          createOfferteItem({
-            offerte_id: newOfferte.id,
-            beschrijving: item.beschrijving,
-            aantal: item.aantal,
-            eenheidsprijs: item.eenheidsprijs,
-            btw_percentage: item.btw_percentage,
-            korting_percentage: item.korting_percentage,
-            totaal: item.totaal,
-            volgorde: index + 1,
-          })
+      if (isEditMode && editOfferteId) {
+        // Update existing offerte
+        await updateOfferte(editOfferteId, {
+          klant_id: selectedKlantId,
+          ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+          titel: offerteTitel,
+          status,
+          subtotaal,
+          btw_bedrag: btwBedrag,
+          totaal: round2(subtotaal + btwBedrag),
+          geldig_tot: geldigTot,
+          notities,
+          voorwaarden,
+        })
+        savedOfferteId = editOfferteId
+
+        // Delete old items, then re-create
+        const oldItems = await getOfferteItems(editOfferteId)
+        await Promise.all(oldItems.map((item) => deleteOfferteItem(item.id)))
+
+        await Promise.all(
+          items.map((item, index) =>
+            createOfferteItem({
+              offerte_id: editOfferteId,
+              beschrijving: item.beschrijving,
+              aantal: item.aantal,
+              eenheidsprijs: item.eenheidsprijs,
+              btw_percentage: item.btw_percentage,
+              korting_percentage: item.korting_percentage,
+              totaal: item.totaal,
+              volgorde: index + 1,
+            })
+          )
         )
-      )
+      } else {
+        // Create new offerte
+        const newOfferte = await createOfferte({
+          user_id: user.id,
+          klant_id: selectedKlantId,
+          ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+          ...(paramDealId ? { deal_id: paramDealId } : {}),
+          nummer: offerteNummer,
+          titel: offerteTitel,
+          status,
+          subtotaal,
+          btw_bedrag: btwBedrag,
+          totaal: round2(subtotaal + btwBedrag),
+          geldig_tot: geldigTot,
+          notities,
+          voorwaarden,
+        })
+        savedOfferteId = newOfferte.id
+
+        await Promise.all(
+          items.map((item, index) =>
+            createOfferteItem({
+              offerte_id: newOfferte.id,
+              beschrijving: item.beschrijving,
+              aantal: item.aantal,
+              eenheidsprijs: item.eenheidsprijs,
+              btw_percentage: item.btw_percentage,
+              korting_percentage: item.korting_percentage,
+              totaal: item.totaal,
+              volgorde: index + 1,
+            })
+          )
+        )
+      }
 
       if (status === 'verzonden' && selectedKlant?.email) {
         try {
@@ -485,11 +581,13 @@ export function QuoteCreation() {
       }
 
       toast.success(
-        status === 'concept'
-          ? 'Offerte opgeslagen als concept'
-          : 'Offerte verzonden naar klant'
+        isEditMode
+          ? 'Offerte bijgewerkt'
+          : status === 'concept'
+            ? 'Offerte opgeslagen als concept'
+            : 'Offerte verzonden naar klant'
       )
-      navigate('/offertes')
+      navigate(isEditMode ? `/offertes/${savedOfferteId}` : '/offertes')
     } catch (err) {
       logger.error('Failed to save offerte:', err)
       toast.error('Kon offerte niet opslaan')
@@ -563,7 +661,7 @@ export function QuoteCreation() {
               </Link>
               <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl font-bold text-foreground font-display">Nieuwe Offerte</h1>
+                  <h1 className="text-2xl font-bold text-foreground font-display">{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
                   <Badge variant="outline" className="text-xs font-mono bg-white/50 dark:bg-gray-800/50">
                     <Hash className="h-3 w-3 mr-1" />
                     {offerteNummer}
