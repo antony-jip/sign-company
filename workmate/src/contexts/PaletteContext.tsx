@@ -32,7 +32,7 @@ export const PALETTES: ColorPalette[] = [
   {
     id: 'terracotta',
     naam: 'Terracotta',
-    beschrijving: 'Warm & modern — de Sign Company stijl',
+    beschrijving: 'Warm & modern — terracotta accent',
     preview: ['#8B4A2F', '#D4714A', '#F5DDD0'],
     light: {
       primary: '18 58% 56%',
@@ -57,28 +57,28 @@ export const PALETTES: ColorPalette[] = [
   },
   {
     id: 'jade',
-    naam: 'Jade',
-    beschrijving: 'Botanisch groen — fris & natuurlijk',
-    preview: ['#386150', '#58B09C', '#CAF7E2'],
+    naam: 'Teal',
+    beschrijving: 'Stoer & industrieel — de Sign Company stijl',
+    preview: ['#1A5C54', '#2BA89E', '#C0EDE8'],
     light: {
-      primary: '163 36% 52%',
-      accent: '155 27% 31%',
-      ring: '163 36% 52%',
-      sidebarActive: '163 36% 52%',
-      wmHover: '163 33% 45%',
-      wmLight: '163 46% 66%',
-      wmPale: '146 76% 88%',
-      gradientStart: '#386150',
-      gradientMid: '#58B09C',
-      gradientEnd: '#CAF7E2',
-      glow: '0 0 40px rgba(88, 176, 156, 0.15)',
+      primary: '174 50% 38%',
+      accent: '176 44% 26%',
+      ring: '174 50% 38%',
+      sidebarActive: '174 50% 38%',
+      wmHover: '174 46% 32%',
+      wmLight: '174 42% 58%',
+      wmPale: '170 56% 88%',
+      gradientStart: '#1A5C54',
+      gradientMid: '#2BA89E',
+      gradientEnd: '#C0EDE8',
+      glow: '0 0 40px rgba(43, 168, 158, 0.15)',
     },
     dark: {
-      primary: '163 40% 58%',
-      accent: '155 32% 38%',
-      ring: '163 40% 58%',
-      wmHover: '163 36% 50%',
-      wmLight: '163 46% 70%',
+      primary: '174 52% 48%',
+      accent: '176 40% 34%',
+      ring: '174 52% 48%',
+      wmHover: '174 48% 40%',
+      wmLight: '174 44% 62%',
     },
   },
   {
@@ -301,7 +301,7 @@ function applyPalette(palette: ColorPalette, isDark: boolean) {
 
 export function PaletteProvider({ children }: { children: ReactNode }) {
   const [paletteId, setPaletteIdState] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEY) || 'terracotta'
+    return localStorage.getItem(STORAGE_KEY) || 'jade'
   })
 
   const palette = PALETTES.find((p) => p.id === paletteId) || PALETTES[0]

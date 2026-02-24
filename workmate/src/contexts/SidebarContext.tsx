@@ -11,7 +11,8 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const stored = localStorage.getItem('workmate_sidebar_collapsed')
-    return stored === 'true'
+    // Default collapsed for compact icon sidebar
+    return stored === null ? true : stored === 'true'
   })
 
   const toggleSidebar = () => {
