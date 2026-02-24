@@ -71,9 +71,10 @@ import {
   getDealsByKlant,
   getTijdregistraties,
   updateKlant,
+  getUitgaven,
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
-import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal, Tijdregistratie } from '@/types'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal, Tijdregistratie, Uitgave } from '@/types'
 
 function getStatusBarColor(status: string): string {
   switch (status) {
@@ -118,6 +119,7 @@ export function ClientProfile() {
   const [clientDeals, setClientDeals] = useState<Deal[]>([])
   const [clientTijdregistraties, setClientTijdregistraties] = useState<Tijdregistratie[]>([])
   const [clientOffertes, setClientOffertes] = useState<Offerte[]>([])
+  const [clientUitgaven, setClientUitgaven] = useState<Uitgave[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('projecten')
   const [notitie, setNotitie] = useState('')
@@ -138,7 +140,8 @@ export function ClientProfile() {
       getFacturen().catch(() => []),
       getDealsByKlant(id).catch(() => []),
       getTijdregistraties().catch(() => []),
-    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals, allTijd]) => {
+      getUitgaven().catch(() => []),
+    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals, allTijd, allUitgaven]) => {
       setKlant(klantData)
       setClientProjecten(projecten)
       setNotitie(klantData?.notities || '')
@@ -160,6 +163,8 @@ export function ClientProfile() {
       setClientDeals(deals)
       const projectIds = new Set(projecten.map((p) => p.id))
       setClientTijdregistraties(allTijd.filter((t) => projectIds.has(t.project_id)))
+      // Uitgaven gekoppeld via projecten van deze klant
+      setClientUitgaven(allUitgaven.filter((u: Uitgave) => u.project_id && projectIds.has(u.project_id)))
       setIsLoading(false)
     })
   }, [id])
@@ -238,6 +243,9 @@ export function ClientProfile() {
 
   async function handleDeleteContact(contactId: string) {
     if (!klant) return
+    const contact = (klant.contactpersonen || []).find((c) => c.id === contactId)
+    const naam = contact?.naam || 'deze contactpersoon'
+    if (!window.confirm(`Weet je zeker dat je ${naam} wilt verwijderen?`)) return
     const updated = (klant.contactpersonen || []).filter((c) => c.id !== contactId)
     try {
       const updatedKlant = await updateKlant(klant.id, { contactpersonen: updated })
@@ -280,6 +288,7 @@ export function ClientProfile() {
     { key: 'deals', label: 'Deals', count: clientDeals.length, icon: CreditCard },
     { key: 'offertes', label: 'Offertes', count: clientOffertes.length, icon: FileText },
     { key: 'facturen', label: 'Facturen', count: clientFacturen.length, icon: Receipt },
+    { key: 'uitgaven', label: 'Uitgaven', count: clientUitgaven.length, icon: CreditCard },
     { key: 'tijdregistratie', label: 'Uren', count: clientTijdregistraties.length, icon: Clock },
     { key: 'communicatie', label: 'Communicatie', count: clientEmails.length, icon: Mail },
     { key: 'documenten', label: 'Documenten', count: clientDocumenten.length, icon: FileIcon },
@@ -896,6 +905,62 @@ export function ClientProfile() {
                           </td>
                           <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(factuur.totaal)}</td>
                           <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground">{formatDate(factuur.factuurdatum)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ════════ UITGAVEN TAB ════════ */}
+          {activeTab === 'uitgaven' && (
+            <Card>
+              {clientUitgaven.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Geen uitgaven gekoppeld aan projecten van deze klant</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => navigate('/uitgaven')}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Naar uitgaven
+                  </Button>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Omschrijving</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bedrag</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Datum</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {clientUitgaven.map((uitgave) => (
+                        <tr key={uitgave.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => navigate('/uitgaven')}>
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{uitgave.uitgave_nummer}</span>
+                          </td>
+                          <td className="py-3 px-4 text-sm">{uitgave.omschrijving}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={cn('text-xs capitalize',
+                              uitgave.status === 'betaald' ? 'bg-emerald-100 text-emerald-700' :
+                              uitgave.status === 'verlopen' ? 'bg-red-100 text-red-700' :
+                              'bg-amber-100 text-amber-700'
+                            )}>
+                              {uitgave.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(uitgave.bedrag_incl_btw)}</td>
+                          <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground">{formatDate(uitgave.datum)}</td>
                         </tr>
                       ))}
                     </tbody>
