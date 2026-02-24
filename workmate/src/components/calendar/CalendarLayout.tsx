@@ -274,7 +274,7 @@ export function CalendarLayout() {
       setAfspraken(aData)
       setProjecten(pData)
       setKlanten(kData)
-      setProjectTaken(tData.filter((t) => t.project_id && t.deadline && t.status !== 'done'))
+      setProjectTaken(tData.filter((t) => t.project_id && t.deadline && t.status !== 'klaar'))
     } catch (err) {
       logger.error('Fout bij laden data:', err)
       toast.error('Kon planningsdata niet laden')

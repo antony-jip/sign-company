@@ -1660,6 +1660,7 @@ export async function updateProfile(userId: string, updates: Partial<Profile>): 
       email: '',
       telefoon: '',
       avatar_url: '',
+      logo_url: '',
       bedrijfsnaam: '',
       bedrijfs_adres: '',
       kvk_nummer: '',

@@ -357,7 +357,6 @@ export function ProjectDetail() {
         user_id: user.id,
         naam: kopieNaam.trim(),
         klant_id: kopieKlantId || project.klant_id,
-        klant_naam: gekozenKlant?.bedrijfsnaam || project.klant_naam,
         beschrijving: project.beschrijving,
         status: 'gepland',
         prioriteit: project.prioriteit,
@@ -367,8 +366,6 @@ export function ProjectDetail() {
         besteed: 0,
         voortgang: 0,
         team_leden: [...project.team_leden],
-        tags: [...project.tags],
-        categorie: project.categorie,
         budget_waarschuwing_pct: project.budget_waarschuwing_pct,
         bron_project_id: project.id,
       })

@@ -823,6 +823,7 @@ export function FacturenLayout() {
           korting_percentage: 0,
           totaal: factuur.subtotaal,
           volgorde: 1,
+          created_at: new Date().toISOString(),
         },
       ]
 

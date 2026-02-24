@@ -1,0 +1,418 @@
+================================================================================
+  STAPPENPLAN: TYPESCRIPT BUILD ERRORS FIXEN
+  Workmate App — Fase 1
+  Datum: 24 februari 2026
+================================================================================
+
+  DOEL: `npm run build` (tsc -b && vite build) laten slagen zonder fouten
+  AANPAK: Van bron naar gevolg — eerst root causes fixen, dan afgeleide fouten
+
+  Totaal gevonden:  ~14.800 fouten bij `tsc --noEmit`
+  Na analyse:        ~14.600 komen door ontbrekende node_modules (npm install)
+                     ~182 zijn echte code fouten in 57 bestanden
+
+  De echte fouten vallen in 8 categorieën.
+  We pakken ze aan in volgorde van impact (grootste eerst).
+
+
+================================================================================
+  VOORBEREIDING
+================================================================================
+
+  Stap 0: Dependencies installeren
+  ─────────────────────────────────
+  Wat:    npm install uitvoeren
+  Waarom: 98% van de fouten (TS7026, TS2307, TS2875) verdwijnt hiermee
+  Check:  node_modules/ map bestaat, npx tsc --noEmit toont alleen echte fouten
+
+  OPMERKING: npm registry is momenteel geblokkeerd in deze omgeving.
+  Dit stap moet handmatig uitgevoerd worden of de omgeving moet dit toestaan.
+  De overige stappen hieronder fixen ALLE echte code-fouten ongeacht npm.
+
+
+================================================================================
+  STAP 1: Badge component — ROOT CAUSE van 128 fouten
+================================================================================
+
+  Bestand:  src/components/ui/badge.tsx
+  Fouten:   128x TS2322 "Type '...' is not assignable to type 'BadgeProps'"
+  Impact:   50+ bestanden verspreid over de hele app
+  Risico:   LAAG — puur type-aanpassing, geen functionaliteit wijzigt
+
+  PROBLEEM:
+  BadgeProps extends React.HTMLAttributes<HTMLDivElement> + VariantProps.
+  Maar zonder node_modules herkent TS de HTMLAttributes niet, waardoor
+  `children`, `className` en `variant` niet geaccepteerd worden.
+  OOK met node_modules: variant accepteert alleen "default" | "secondary" |
+  "destructive" | "outline", maar code stuurt ook willekeurige strings.
+
+  OPLOSSING:
+  Badge component aanpassen zodat variant flexibeler is:
+
+  VOOR:
+    export interface BadgeProps
+      extends React.HTMLAttributes<HTMLDivElement>,
+        VariantProps<typeof badgeVariants> {}
+
+  NA:
+    export interface BadgeProps
+      extends React.HTMLAttributes<HTMLDivElement>,
+        VariantProps<typeof badgeVariants> {
+      variant?: string;       // <-- overschrijft strikte VariantProps
+    }
+
+  Of beter: voeg de ontbrekende variant waarden toe aan badgeVariants:
+    variants: {
+      variant: {
+        default: "...",
+        secondary: "...",
+        destructive: "...",
+        outline: "...",
+        success: "...",         // NIEUW
+        warning: "...",         // NIEUW
+      }
+    }
+
+  AANBEVOLEN AANPAK: Optie 2 (extra variants) want dat geeft ook
+  correcte styling. Check welke variant strings in de codebase gebruikt
+  worden en voeg die allemaal toe.
+
+  VERIFICATIE:
+    npx tsc --noEmit 2>&1 | grep "BadgeProps" | wc -l
+    Verwacht: 0
+
+
+================================================================================
+  STAP 2: Vite import.meta.env types — 3 fouten
+================================================================================
+
+  Bestanden: src/services/supabaseClient.ts (2x)
+             src/utils/logger.ts (1x)
+             src/components/settings/SettingsLayout.tsx (1x)
+  Fout:      TS2339 "Property 'env' does not exist on type 'ImportMeta'"
+  Risico:    LAAG — alleen type declaratie toevoegen
+
+  PROBLEEM:
+  Het bestand src/vite-env.d.ts bestaat al met:
+    /// <reference types="vite/client" />
+  Maar zonder node_modules kan TS het vite/client type niet resolven.
+
+  OPLOSSING:
+  Toevoegen aan tsconfig.json onder compilerOptions:
+    "types": ["vite/client"]
+
+  OF een eigen type declaratie toevoegen als fallback:
+  In src/vite-env.d.ts:
+    /// <reference types="vite/client" />
+    // Fallback voor wanneer vite types niet beschikbaar zijn
+    interface ImportMetaEnv {
+      readonly VITE_SUPABASE_URL: string;
+      readonly VITE_SUPABASE_ANON_KEY: string;
+      readonly DEV: boolean;
+      readonly PROD: boolean;
+      readonly MODE: string;
+    }
+    interface ImportMeta {
+      readonly env: ImportMetaEnv;
+    }
+
+  VERIFICATIE:
+    npx tsc --noEmit 2>&1 | grep "import.meta.env\|ImportMeta" | wc -l
+    Verwacht: 0
+
+
+================================================================================
+  STAP 3: useDataInit.ts seed data — 11 fouten
+================================================================================
+
+  Bestand: src/hooks/useDataInit.ts
+  Fouten:  4x TS2353 (Offerte: onbekende property 'beschrijving')
+           3x TS2353 (OfferteItem: onbekende property 'user_id')
+           4x TS2322 (Taak status: "open" is geen geldige waarde)
+           3x TS2739 (Taak: ontbrekende velden)
+           2x TS2739 (MontageAfspraak: ontbrekende velden)
+  Risico:  LAAG — alleen demo seed data, geen productie-impact
+
+  PROBLEMEN EN OPLOSSINGEN:
+
+  3a. Offerte objecten gebruiken 'beschrijving' — dat veld bestaat niet
+      → Verwijder 'beschrijving' uit seed Offerte objecten
+        (of voeg beschrijving toe als optioneel veld in Offerte type)
+
+  3b. OfferteItem objecten bevatten 'user_id' — dat veld bestaat niet
+      → Verwijder 'user_id' uit seed OfferteItem objecten
+
+  3c. Taak status "open" is niet geldig (moet "todo"|"bezig"|"review"|"klaar")
+      → Vervang status: "open" door status: "todo" in alle 4 seed taken
+
+  3d. Taak objecten missen velden: toegewezen_aan, geschatte_tijd, bestede_tijd
+      → Voeg toe aan seed taken:
+        toegewezen_aan: '',
+        geschatte_tijd: 0,
+        bestede_tijd: 0,
+
+  3e. MontageAfspraak objecten missen velden: materialen, notities
+      → Voeg toe aan beide seed montage-afspraken:
+        materialen: [],
+        notities: '',
+
+  VERIFICATIE:
+    npx tsc --noEmit 2>&1 | grep "useDataInit" | wc -l
+    Verwacht: 0
+
+
+================================================================================
+  STAP 4: ErrorBoundary class component — 7 fouten
+================================================================================
+
+  Bestand: src/components/shared/ErrorBoundary.tsx
+  Fouten:  7x TS2339 "Property 'state/props/setState' does not exist"
+  Risico:  LAAG — de code is correct, probleem is TS kan React.Component
+           niet resolven zonder node_modules
+
+  PROBLEEM:
+  ErrorBoundary extends Component<Props, State> maar TS herkent de
+  Component base class niet zonder @types/react.
+
+  OPLOSSING:
+  Dit lost zichzelf op zodra node_modules geïnstalleerd zijn (Stap 0).
+
+  ALTERNATIEF (als npm blijft geblokkeerd):
+  Voeg expliciete type annotations toe:
+    export class ErrorBoundary extends Component<Props, State> {
+      state: State = { hasError: false, error: null }  // expliciet
+      ...
+    }
+
+  VERIFICATIE:
+    npx tsc --noEmit 2>&1 | grep "ErrorBoundary" | wc -l
+    Verwacht: 0
+
+
+================================================================================
+  STAP 5: NotificatieCenter — 1 fout (2 ontbrekende types)
+================================================================================
+
+  Bestand: src/components/notifications/NotificatieCenter.tsx
+  Fout:    TS2739 "Missing properties: budget_waarschuwing, booking_nieuw"
+  Risico:  LAAG — twee icoon-definities toevoegen
+
+  PROBLEEM:
+  Het Notificatie type heeft 11 mogelijke types, maar de icoon-mapping
+  in NotificatieCenter bevat er maar 9. Er ontbreken:
+    - budget_waarschuwing
+    - booking_nieuw
+
+  OPLOSSING:
+  Voeg de ontbrekende entries toe aan de iconConfig Record:
+    budget_waarschuwing: {
+      icon: AlertTriangle,  // of ander passend icoon
+      colorClass: 'text-orange-500',
+      bgClass: 'bg-orange-100 dark:bg-orange-900/30'
+    },
+    booking_nieuw: {
+      icon: CalendarCheck,  // of ander passend icoon
+      colorClass: 'text-purple-500',
+      bgClass: 'bg-purple-100 dark:bg-purple-900/30'
+    },
+
+  VERIFICATIE:
+    npx tsc --noEmit 2>&1 | grep "NotificatieCenter" | wc -l
+    Verwacht: 0
+
+
+================================================================================
+  STAP 6: CalendarLayout — status vergelijking — 1 fout
+================================================================================
+
+  Bestand: src/components/calendar/CalendarLayout.tsx, regel 277
+  Fout:    TS2367 "types 'todo|bezig|review|klaar' and 'done' have no overlap"
+  Risico:  LAAG — logica-fix, filter werkte al niet correct
+
+  PROBLEEM:
+  Code vergelijkt taak.status === "done" maar de Taak type kent
+  alleen "todo" | "bezig" | "review" | "klaar".
+
+  OPLOSSING:
+  Vervang "done" door "klaar":
+    VOOR:  .filter(t => t.status === "done")
+    NA:    .filter(t => t.status === "klaar")
+
+  VERIFICATIE:
+    npx tsc --noEmit 2>&1 | grep "CalendarLayout.*2367" | wc -l
+    Verwacht: 0
+
+
+================================================================================
+  STAP 7: Dashboard widgets — 6 fouten
+================================================================================
+
+  7a. PriorityTasks.tsx (regels 59, 61)
+      Fout:    TS2322 "Type '{}' is not assignable to type 'string'"
+      Oorzaak: Een variabele die string verwacht krijgt een leeg object {}
+      Fix:     Vervang {} door '' (lege string)
+
+  7b. TodayPlanningWidget.tsx (regels 202, 212, 238)
+      Fout:    TS2322 prop types komen niet overeen met TimelineItem
+      Oorzaak: Component krijgt `any` typed items i.p.v. TimelineItem
+      Fix:     Type annotations toevoegen aan de data die als prop
+               wordt doorgegeven, of de items correct casten
+
+  7c. TodayPlanningWidget.tsx (regel 106)
+      Fout:    TS2322 "Type '{}' is not assignable to type 'string'"
+      Fix:     Zelfde als 7a — {} → ''
+
+  VERIFICATIE:
+    npx tsc --noEmit 2>&1 | grep "PriorityTasks\|TodayPlanning" | wc -l
+    Verwacht: 0
+
+
+================================================================================
+  STAP 8: Overige individuele fouten — 8 fouten
+================================================================================
+
+  8a. EmailLayout.tsx (regels 446, 463, 473)
+      Fout:    TS2345 "Argument of type 'unknown' is not assignable to 'string'"
+      Fix:     Cast of type guard: (value as string) of String(value)
+
+  8b. FacturenLayout.tsx (regel 816)
+      Fout:    TS2741 "Property 'created_at' is missing in type OfferteItem"
+      Fix:     Voeg created_at toe aan het OfferteItem object:
+               created_at: new Date().toISOString()
+
+  8c. ProjectDetail.tsx (regel 360)
+      Fout:    TS2353 "'klant_naam' does not exist in Omit<Project, ...>"
+      Fix:     Verwijder klant_naam uit het object, of pas de Omit type aan
+               zodat klant_naam wel toegestaan is
+
+  8d. TasksLayout.tsx (regel 587)
+      Fout:    TS2322 Component prop type mismatch
+      Fix:     Zorg dat de doorgegeven props matchen met het verwachte type
+               (waarschijnlijk een Promise<void> vs void verschil in
+               onQuickAddAtTime callback)
+
+  8e. supabaseService.ts (regel 1656)
+      Fout:    TS2322 Profile type mismatch
+      Fix:     Controleer welk veld afwijkt en corrigeer de mapping
+               (waarschijnlijk een optioneel veld dat verplicht is geworden)
+
+  VERIFICATIE PER FIX:
+    Na elke wijziging: npx tsc --noEmit 2>&1 | grep "<bestandsnaam>" | wc -l
+    Verwacht: 0
+
+
+================================================================================
+  VOLGORDE VAN UITVOERING
+================================================================================
+
+  ┌────┬───────────────────────────────────┬────────┬──────────┬──────────┐
+  │ #  │ Stap                              │ Fouten │ Bestanden│ Risico   │
+  ├────┼───────────────────────────────────┼────────┼──────────┼──────────┤
+  │ 0  │ npm install                       │ ~14600 │ 0        │ Geen     │
+  │ 1  │ Badge component variant types     │ 128    │ 1        │ Laag     │
+  │ 2  │ Vite import.meta.env types        │ 4      │ 1-2      │ Laag     │
+  │ 3  │ useDataInit.ts seed data          │ 11     │ 1        │ Laag     │
+  │ 4  │ ErrorBoundary class types         │ 7      │ 1        │ Laag     │
+  │ 5  │ NotificatieCenter ontbrekende map │ 1      │ 1        │ Laag     │
+  │ 6  │ CalendarLayout "done" → "klaar"   │ 1      │ 1        │ Laag     │
+  │ 7  │ Dashboard widgets type fixes      │ 6      │ 2        │ Laag     │
+  │ 8  │ Overige individuele fouten        │ 8      │ 5        │ Laag     │
+  ├────┼───────────────────────────────────┼────────┼──────────┼──────────┤
+  │    │ TOTAAL                            │ ~14766 │ ~15      │          │
+  └────┴───────────────────────────────────┴────────┴──────────┴──────────┘
+
+
+================================================================================
+  CONTROLE NA ELKE STAP
+================================================================================
+
+  Na elke stap:
+  1. Draai: npx tsc --noEmit 2>&1 | grep "error TS" | wc -l
+  2. Vergelijk met verwacht resterend aantal
+  3. Commit als het aantal daalt zoals verwacht
+  4. Ga door naar volgende stap
+
+  Eindcontrole:
+  1. npx tsc --noEmit                  → 0 errors
+  2. npm run build                     → Succesvol
+  3. npm run dev                       → App start zonder fouten
+  4. Open app in browser               → Alle modules laden correct
+
+
+================================================================================
+  COMMIT STRATEGIE
+================================================================================
+
+  Commit per logische stap om rollback mogelijk te maken:
+
+  Commit 1: "fix(ui): extend Badge component variant types"
+             → Stap 1
+
+  Commit 2: "fix(types): add Vite ImportMeta env type declarations"
+             → Stap 2
+
+  Commit 3: "fix(demo): correct seed data types in useDataInit"
+             → Stap 3
+
+  Commit 4: "fix(types): resolve ErrorBoundary class component types"
+             → Stap 4
+
+  Commit 5: "fix(notifications): add missing notification type icons"
+             → Stap 5
+
+  Commit 6: "fix(calendar): use correct task status enum value"
+             → Stap 6
+
+  Commit 7: "fix(dashboard): resolve widget type mismatches"
+             → Stap 7
+
+  Commit 8: "fix(types): resolve remaining individual type errors"
+             → Stap 8
+
+  Eindcommit: "chore: verify clean TypeScript build"
+              → Alleen als alles slaagt
+
+
+================================================================================
+  WAT KAN MISGAAN (RISICO'S)
+================================================================================
+
+  1. npm install blijft geblokkeerd
+     → We fixen dan alle code-fouten handmatig
+     → ~14600 dependency-fouten blijven, maar die lossen op bij deploy
+     → Lokale verificatie beperkt tot de 182 echte fouten
+
+  2. Badge variant wijziging breekt styling
+     → Mitigatie: bestaande variants niet wijzigen, alleen toevoegen
+     → Fallback: de "default" variant vangt onbekende waarden op
+
+  3. Type wijziging in index.ts heeft cascade-effect
+     → Mitigatie: we voegen alleen OPTIONELE velden toe (met ?)
+     → Verplichte velden alleen aanpassen in seed data, niet in types
+
+  4. CalendarLayout "klaar" fix verandert business logica
+     → Mitigatie: "done" was al niet functioneel (geen match)
+     → "klaar" is de correcte Nederlandse vertaling
+
+
+================================================================================
+  GESCHATTE DOORLOOPTIJD
+================================================================================
+
+  Stap 0: 1 minuut (npm install)
+  Stap 1: 5 minuten (Badge component)
+  Stap 2: 2 minuten (Vite types)
+  Stap 3: 10 minuten (useDataInit.ts, meeste handmatige wijzigingen)
+  Stap 4: 2 minuten (ErrorBoundary, lost op met npm install)
+  Stap 5: 3 minuten (NotificatieCenter)
+  Stap 6: 1 minuut (CalendarLayout)
+  Stap 7: 5 minuten (Dashboard widgets)
+  Stap 8: 10 minuten (5 individuele bestanden)
+  Verificatie: 5 minuten
+
+  TOTAAL: ~45 minuten
+
+
+================================================================================
+  EINDE STAPPENPLAN
+================================================================================
