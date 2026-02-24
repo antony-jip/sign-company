@@ -1,0 +1,610 @@
+================================================================================
+  WORKMATE — PROJECT BLUEPRINT
+  Sign Company Bedrijfsmanagement Applicatie
+  Datum: 24 februari 2026
+================================================================================
+
+
+1. PROJECT OVERZICHT
+================================================================================
+
+  Naam:           Workmate
+  Type:           Single Page Application (SPA)
+  Doel:           Alles-in-een bedrijfsmanagement tool voor signbedrijven
+  Stack:          React 18 + TypeScript + Vite + Tailwind CSS + Supabase
+  Deployment:     Vercel (serverless)
+  Taal interface: Nederlands (primair) + Engels
+  Status:         ~65% gereed — UI compleet, backend niet aangesloten
+
+  Bronbestanden:  146 bestanden, ~68.000 regels code
+  Modules:        17 functionele modules + 37 componentmappen
+  Routes:         46 (39 beschermd + 7 publiek)
+  Database:       30+ tabellen gedefinieerd (Supabase/PostgreSQL)
+
+
+2. TECH STACK
+================================================================================
+
+  FRONTEND
+  --------
+  React             18.2       UI framework
+  TypeScript         5.3       Type safety
+  Vite               5.0       Build tool & dev server
+  Tailwind CSS       3.4       Utility-first styling
+  Radix UI          div.       38 accessible UI primitives
+  React Router       6.22      Client-side routing
+  Recharts           2.12      Grafieken & dashboards
+  Lucide React       0.312     Iconen
+  date-fns           3.3       Datumformattering
+  Zod                3.22      Schema validatie
+  Sonner             1.4       Toast notificaties
+  jsPDF              2.5       PDF generatie
+  clsx + twMerge               Conditional classNames
+
+  BACKEND
+  -------
+  Supabase           2.39      Database + Auth + Storage
+  Vercel Serverless            API routes (/api/*)
+  OpenAI API                   AI assistent (via serverless)
+
+  DEVELOPMENT
+  -----------
+  PostCSS            8.4       CSS processing
+  Autoprefixer      10.4       Browser compatibility
+
+
+3. ARCHITECTUUR
+================================================================================
+
+  workmate/
+  ├── api/                          Vercel serverless functions
+  │   ├── ai.ts                       OpenAI integratie
+  │   ├── email-settings.ts           E-mail configuratie
+  │   └── send-email.ts               E-mail verzending
+  │
+  ├── public/                       Statische bestanden
+  │
+  ├── src/
+  │   ├── components/
+  │   │   ├── ai/                     AI Assistent module
+  │   │   ├── approval/               Offerte goedkeuring (publiek)
+  │   │   ├── auth/                   Login, Register, Protected routes
+  │   │   ├── bestelbonnen/           Inkooporders
+  │   │   ├── betaling/               Online betalingen (publiek)
+  │   │   ├── booking/                Afspraken plannen
+  │   │   ├── calendar/               Kalender
+  │   │   ├── clients/                Klantenbeheer
+  │   │   ├── dashboard/              Hoofddashboard
+  │   │   ├── deals/                  Sales pipeline
+  │   │   ├── documents/              Documentbeheer
+  │   │   ├── email/                  E-mail client
+  │   │   ├── financial/              Financieel overzicht
+  │   │   ├── forecast/               Omzetprognose
+  │   │   ├── import/                 CSV data import
+  │   │   ├── invoices/               Facturatie
+  │   │   ├── layouts/                App layout & navigatie
+  │   │   ├── leads/                  Lead capture & formulieren
+  │   │   ├── leveringsbonnen/        Leveringsbonnen
+  │   │   ├── montage/                Montageplanning
+  │   │   ├── nacalculatie/           Nacalculatie
+  │   │   ├── newsletter/             Nieuwsbrieven
+  │   │   ├── notifications/          Notificaties
+  │   │   ├── offerte/                Offertes (publieke preview)
+  │   │   ├── projects/               Projectbeheer
+  │   │   ├── quotes/                 Offertes opstellen
+  │   │   ├── reports/                Rapportages
+  │   │   ├── settings/               Instellingen & huisstijl
+  │   │   ├── shared/                 Gedeelde componenten
+  │   │   ├── tasks/                  Takenbeheer
+  │   │   ├── team/                   Teambeheer
+  │   │   ├── timetracking/           Tijdregistratie
+  │   │   ├── ui/                     UI primitives (38 componenten)
+  │   │   ├── uitgaven/               Uitgavenbeheer
+  │   │   ├── voorraad/               Voorraadbeheer
+  │   │   └── werkbonnen/             Werkbonnen
+  │   │
+  │   ├── contexts/
+  │   │   ├── AuthContext.tsx            Authenticatie state
+  │   │   ├── ThemeContext.tsx           Light/dark mode
+  │   │   ├── PaletteContext.tsx         Kleurenschema
+  │   │   ├── LanguageContext.tsx        i18n (NL/EN)
+  │   │   ├── SidebarContext.tsx         Navigatie state
+  │   │   └── AppSettingsContext.tsx      App configuratie
+  │   │
+  │   ├── hooks/
+  │   │   ├── useAuth.ts                Auth hook
+  │   │   ├── useData.ts                Data fetching
+  │   │   ├── useDataInit.ts            Demo data seeding
+  │   │   ├── useDebounce.ts            Input debouncing
+  │   │   ├── useDocumentStyle.ts       Document styling
+  │   │   └── useLocalStorage.ts        LocalStorage wrapper
+  │   │
+  │   ├── services/
+  │   │   ├── supabaseClient.ts         Supabase verbinding (14 regels)
+  │   │   ├── supabaseService.ts        100+ CRUD functies (3.570 regels)
+  │   │   ├── authService.ts            Auth functies (81 regels)
+  │   │   ├── aiService.ts              AI assistent
+  │   │   ├── emailService.ts           E-mail functies
+  │   │   ├── emailTemplateService.ts   E-mail templates
+  │   │   └── gmailService.ts           Gmail integratie
+  │   │
+  │   ├── types/
+  │   │   └── index.ts                  TypeScript types (1.159 regels)
+  │   │
+  │   ├── lib/
+  │   │   └── utils.ts                  Utility functies
+  │   │
+  │   ├── App.tsx                       Root component + routing
+  │   ├── main.tsx                      Entry point
+  │   └── index.css                     Tailwind imports + custom CSS
+  │
+  ├── supabase/
+  │   ├── schema.sql                    Database schema (370 regels)
+  │   ├── seed.sql                      Demo data (294 regels)
+  │   └── migrations/
+  │       ├── 001_missing_tables.sql    Extra tabellen (398 regels)
+  │       └── 002_document_styles.sql   Huisstijl tabel (80 regels)
+  │
+  ├── package.json
+  ├── tsconfig.json
+  ├── vite.config.ts
+  ├── tailwind.config.js
+  ├── postcss.config.js
+  ├── vercel.json
+  └── .env.example
+
+
+4. DATABASE SCHEMA (30+ TABELLEN)
+================================================================================
+
+  KERN
+  ----
+  profiles                 Gebruikersprofiel (gekoppeld aan Supabase Auth)
+  klanten                  Klanten / bedrijven
+  projecten                Projecten per klant
+  taken                    Taken per project
+
+  COMMERCIEEL
+  -----------
+  offertes                 Offertes
+  offerte_items            Offerte regelitems
+  facturen                 Facturen
+  factuur_items            Factuur regelitems
+  deals                    Sales pipeline deals
+  deal_activiteiten        Activiteitenlog per deal
+
+  OPERATIONEEL
+  ------------
+  werkbonnen               Werkbonnen
+  werkbon_regels           Werkbon regelitems
+  werkbon_fotos            Foto's bij werkbonnen
+  montage_afspraken        Montage planning
+  tijdregistraties         Urenregistratie
+  bestelbonnen             Inkooporders
+  bestelbon_regelingen     Inkooporder regelitems
+  leveringsbonnen          Leveringsbonnen
+  leveringsbon_regelingen  Leveringsbon regelitems
+  voorraad_artikelen       Voorraad artikelen
+  voorraad_mutaties        Voorraadmutaties (in/uit)
+
+  TEAM & PLANNING
+  ---------------
+  medewerkers              Teamleden
+  team_members             Team rollen & rechten
+  verlof                   Verlofaanvragen
+  bedrijfssluitingsdagen   Collectieve sluitingsdagen
+  project_toewijzingen     Medewerker-project koppeling
+
+  COMMUNICATIE
+  ------------
+  emails                   E-mail berichten
+  documents                Documenten & bestanden
+  calendar_events          Kalender items
+  notificaties             Notificaties
+  nieuwsbrieven            Nieuwsbrieven
+
+  FINANCIEEL
+  ----------
+  grootboek                Grootboekrekeningen
+  btw_codes                BTW tarieven
+  kortingen                Kortingsregelingen
+  uitgaven                 Uitgaven
+  leveranciers             Leveranciers
+
+  LEADS & EXTERN
+  --------------
+  lead_formulieren         Lead capture formulieren
+  lead_inzendingen         Formulier inzendingen
+  booking_slots            Beschikbare tijdsloten
+  booking_afspraken        Geboekte afspraken
+  herinneringstemplate     Herinneringssjablonen
+  app_settings             Applicatie-instellingen
+
+  BEVEILIGING
+  -----------
+  Alle tabellen hebben:
+  - user_id kolom (koppeling aan auth.uid())
+  - Row Level Security (RLS) policies
+  - created_at / updated_at timestamps
+  - Foreign key constraints
+
+
+5. MODULES — FUNCTIONEEL OVERZICHT
+================================================================================
+
+  #   MODULE              ROUTE              UI    LOGICA  DB     STATUS
+  --- ------------------- ------------------ ----- ------- ------ ----------
+  1   Dashboard           /                  [x]   [x]     [ ]    Frontend OK
+  2   Projecten           /projecten         [x]   [x]     [ ]    Frontend OK
+  3   Klanten             /klanten           [x]   [x]     [ ]    Frontend OK
+  4   Offertes            /offertes          [x]   [x]     [ ]    Frontend OK
+  5   Facturen            /facturen          [x]   [x]     [ ]    Frontend OK
+  6   Taken               /taken             [x]   [x]     [ ]    Frontend OK
+  7   Kalender            /kalender          [x]   [x]     [ ]    Frontend OK
+  8   E-mail              /email             [x]   [x]     [ ]    Frontend OK
+  9   Werkbonnen          /werkbonnen        [x]   [x]     [ ]    Frontend OK
+  10  Montage             /montage           [x]   [x]     [ ]    Frontend OK
+  11  Tijdregistratie     /tijdregistratie   [x]   [x]     [ ]    Frontend OK
+  12  Deals               /deals             [x]   [x]     [ ]    Frontend OK
+  13  Forecast            /forecast          [x]   [x]     [ ]    Frontend OK
+  14  Voorraad            /voorraad          [x]   [x]     [ ]    Frontend OK
+  15  Bestelbonnen        /bestelbonnen      [x]   [x]     [ ]    Frontend OK
+  16  Leveringsbonnen     /leveringsbonnen   [x]   [x]     [ ]    Frontend OK
+  17  Rapportages         /rapportages       [x]   [x]     [ ]    Frontend OK
+  18  Team                /team              [x]   [x]     [ ]    Frontend OK
+  19  Nacalculatie        /nacalculatie      [x]   [x]     [ ]    Frontend OK
+  20  Nieuwsbrieven       /nieuwsbrieven     [x]   [x]     [ ]    Frontend OK
+  21  Lead Capture        /leads             [x]   [x]     [ ]    Frontend OK
+  22  Data Import         /importeren        [x]   [x]     [ ]    Frontend OK
+  23  AI Assistent        /ai                [x]   [x]     [ ]    Frontend OK
+  24  Instellingen        /instellingen      [x]   [x]     [ ]    Frontend OK
+  25  Financieel          /financieel        [x]   [x]     [ ]    Frontend OK
+  26  Uitgaven            /uitgaven          [x]   [x]     [ ]    Frontend OK
+  27  Leveranciers        /leveranciers      [x]   [x]     [ ]    Frontend OK
+  28  Booking             /booking           [x]   [x]     [ ]    Frontend OK
+  29  Documenten          /documenten        [x]   [x]     [ ]    Frontend OK
+
+  PUBLIEKE ROUTES (geen auth vereist)
+  -----------------------------------
+  -   Login               /login
+  -   Registreren         /register
+  -   Offerte bekijken    /offerte-bekijken/:token
+  -   Offerte goedkeuren  /goedkeuring/:token
+  -   Online betalen      /betalen/:token
+  -   Afspraak boeken     /boeken/:userId
+  -   Lead formulier      /formulier/:token
+
+  [x] = Aanwezig    [ ] = Ontbreekt
+
+  DB kolom: Alle modules gebruiken momenteel localStorage.
+  Supabase queries zijn geschreven maar worden overgeslagen
+  zolang .env niet geconfigureerd is.
+
+
+6. DATA-LAAG: DUAL-MODE ARCHITECTUUR
+================================================================================
+
+  De app heeft een uniek "Supabase-first, localStorage-fallback" systeem:
+
+  ┌─────────────────────────────────────────────────┐
+  │  supabaseService.ts — Elke CRUD functie:        │
+  │                                                  │
+  │  if (isSupabaseConfigured() && supabase) {       │
+  │    → Echte Supabase query                        │
+  │  } else {                                        │
+  │    → localStorage fallback                       │
+  │  }                                               │
+  └─────────────────────────────────────────────────┘
+
+  HUIDIGE MODUS:    localStorage (demo)
+  REDEN:            Geen .env bestand met Supabase credentials
+  OMSCHAKELEN:      .env aanmaken met VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+
+  Demo mode gedrag:
+  - Bij eerste bezoek worden voorbeelddata geladen via useDataInit.ts
+  - 5 voorbeeldklanten, 3 projecten, 4 offertes, 5 taken
+  - Auth werkt met een "demo-user" in localStorage
+  - Data verdwijnt bij browser cache wissen
+
+
+7. AUTHENTICATIE
+================================================================================
+
+  HUIDIGE STAAT:    Demo mode (localStorage)
+  DOEL:             Supabase Auth
+
+  Aanwezig:
+  [x] Login pagina (LoginPage.tsx)
+  [x] Registratie pagina (RegisterPage.tsx)
+  [x] Protected routes (ProtectedRoute component)
+  [x] AuthContext met session management
+  [x] Supabase signIn / signUp / signOut functies
+  [x] Password reset functie (resetPassword)
+  [x] onAuthStateChange listener
+
+  Ontbreekt:
+  [ ] Werkende Supabase koppeling
+  [ ] E-mail verificatie flow
+  [ ] Wachtwoord reset UI pagina
+  [ ] 2FA / MFA ondersteuning
+  [ ] OAuth providers (Google, Microsoft)
+  [ ] Sessie verlopen / refresh token handling
+
+
+8. HUIDIGE PROBLEMEN
+================================================================================
+
+  KRITIEK (blokkeert deployment)
+  ------------------------------
+
+  K1. TypeScript Build Errors (~28 fouten)
+      - useDataInit.ts: seed data heeft verkeerde veldnamen
+      - Offerte type mist 'beschrijving' veld
+      - Taak status "open" bestaat niet (moet "todo"|"bezig"|"review"|"klaar")
+      - MontageAfspraak mist velden (materialen, notities)
+      - Diverse type mismatches in demo data
+      Impact: `npm run build` faalt, deployment onmogelijk
+
+  K2. Geen actieve database
+      - Supabase niet geconfigureerd
+      - Alle data in localStorage (verdwijnt bij cache wissen)
+      - Geen multi-user ondersteuning
+      - Geen data persistentie tussen apparaten
+
+  HOOG (blokkeert productie)
+  --------------------------
+
+  H1. Geen tests
+      - 0 test bestanden
+      - Geen test framework geconfigureerd
+      - Geen test scripts in package.json
+
+  H2. Geen CI/CD pipeline
+      - Geen GitHub Actions
+      - Geen automatische builds of checks
+      - Handmatige deployment enige optie
+
+  H3. Demo modus onveilig
+      - Auth tokens in localStorage als plaintext
+      - Geen sessie expiratie
+      - "demo-user" ID voorspelbaar
+
+  MEDIUM (voor productie-kwaliteit)
+  ---------------------------------
+
+  M1. CORS te breed
+      - Access-Control-Allow-Origin: * in vercel.json
+      - Moet beperkt worden tot eigen domein
+
+  M2. Geen PWA ondersteuning
+      - Geen manifest.json
+      - Geen service worker
+      - Niet installeerbaar op mobiel
+
+  M3. Geen error monitoring
+      - Geen Sentry of vergelijkbaar
+      - Fouten verdwijnen onopgemerkt in productie
+
+  M4. Geen Content Security Policy
+      - Geen CSP headers geconfigureerd
+
+  M5. i18n beperkingen
+      - Vertalingen hardcoded in LanguageContext (~29K regels)
+      - Geen dynamische loading
+      - Geen pluralisatie
+
+
+9. ROADMAP — VAN PROTOTYPE NAAR PRODUCTIE
+================================================================================
+
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  FASE 1: BOUWBAAR MAKEN                      Prioriteit: 1 ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║                                                             ║
+  ║  1.1  Fix TypeScript build errors (~28 fouten)              ║
+  ║       - Corrigeer type mismatches in useDataInit.ts         ║
+  ║       - Voeg ontbrekende velden toe aan types               ║
+  ║       - Fix enum waarden (taak status, etc.)                ║
+  ║                                                             ║
+  ║  1.2  Verifieer succesvolle build                           ║
+  ║       - npm run build moet zonder fouten draaien            ║
+  ║       - npm run dev moet werkende app opleveren             ║
+  ║                                                             ║
+  ║  Resultaat: App is bouwbaar en deploybaar                   ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  FASE 2: DATABASE AANSLUITEN                  Prioriteit: 2 ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║                                                             ║
+  ║  2.1  Supabase project aanmaken                             ║
+  ║       - Nieuw project op supabase.com                       ║
+  ║       - URL + anon key ophalen                              ║
+  ║                                                             ║
+  ║  2.2  Database schema deployen                              ║
+  ║       - schema.sql uitvoeren in SQL Editor                  ║
+  ║       - 001_missing_tables.sql uitvoeren                    ║
+  ║       - 002_document_styles.sql uitvoeren                   ║
+  ║       - RLS policies verifiëren                             ║
+  ║                                                             ║
+  ║  2.3  .env configureren                                     ║
+  ║       - VITE_SUPABASE_URL invullen                          ║
+  ║       - VITE_SUPABASE_ANON_KEY invullen                     ║
+  ║       - Vercel environment variables instellen              ║
+  ║                                                             ║
+  ║  2.4  Seed data laden (optioneel)                           ║
+  ║       - seed.sql uitvoeren voor demo data                   ║
+  ║                                                             ║
+  ║  2.5  Testen dat alle modules Supabase gebruiken            ║
+  ║       - CRUD operaties per module verifiëren                ║
+  ║       - RLS policies testen met meerdere users              ║
+  ║                                                             ║
+  ║  Resultaat: Echte data persistentie + multi-user            ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  FASE 3: AUTHENTICATIE VOLTOOIEN              Prioriteit: 3 ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║                                                             ║
+  ║  3.1  E-mail verificatie flow bouwen                        ║
+  ║  3.2  Wachtwoord reset pagina maken                         ║
+  ║  3.3  Sessie management (expiratie, refresh)                ║
+  ║  3.4  Demo modus beveiligen of verwijderen                  ║
+  ║  3.5  (Optioneel) OAuth: Google / Microsoft login           ║
+  ║                                                             ║
+  ║  Resultaat: Veilige authenticatie voor echte gebruikers     ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  FASE 4: KWALITEIT & TESTING                  Prioriteit: 4 ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║                                                             ║
+  ║  4.1  Vitest opzetten (past bij Vite)                       ║
+  ║       - vitest + @testing-library/react installeren         ║
+  ║       - Test configuratie in vite.config.ts                 ║
+  ║       - "test" script toevoegen aan package.json            ║
+  ║                                                             ║
+  ║  4.2  Service layer tests                                   ║
+  ║       - supabaseService.ts functies testen                  ║
+  ║       - authService.ts functies testen                      ║
+  ║                                                             ║
+  ║  4.3  Component tests voor kritieke flows                   ║
+  ║       - Login/registratie flow                              ║
+  ║       - CRUD operaties (klant aanmaken, etc.)               ║
+  ║       - Offerte/factuur generatie                           ║
+  ║                                                             ║
+  ║  4.4  E2E tests (optioneel, Playwright)                     ║
+  ║                                                             ║
+  ║  Resultaat: Testbaar en betrouwbaar systeem                 ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  FASE 5: CI/CD & DEPLOYMENT                   Prioriteit: 5 ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║                                                             ║
+  ║  5.1  GitHub Actions workflow                               ║
+  ║       - Build check bij elke PR                             ║
+  ║       - TypeScript type check                               ║
+  ║       - Tests draaien                                       ║
+  ║       - Lint check (ESLint toevoegen)                       ║
+  ║                                                             ║
+  ║  5.2  Vercel deployment koppelen                            ║
+  ║       - Automatische preview deploys per PR                 ║
+  ║       - Productie deploy bij merge naar main                ║
+  ║                                                             ║
+  ║  5.3  Environment management                                ║
+  ║       - Staging omgeving opzetten                           ║
+  ║       - Productie omgeving configureren                     ║
+  ║                                                             ║
+  ║  Resultaat: Geautomatiseerde, betrouwbare deployments       ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  FASE 6: SECURITY HARDENING                   Prioriteit: 6 ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║                                                             ║
+  ║  6.1  CORS beperken tot eigen domein                        ║
+  ║  6.2  Content Security Policy headers toevoegen             ║
+  ║  6.3  Rate limiting op API routes                           ║
+  ║  6.4  Input sanitization audit                              ║
+  ║  6.5  RLS policies audit met meerdere test-users            ║
+  ║  6.6  CSRF bescherming                                      ║
+  ║                                                             ║
+  ║  Resultaat: Productie-waardige beveiliging                  ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  FASE 7: POLISH & OPTIMALISATIE               Prioriteit: 7 ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║                                                             ║
+  ║  7.1  PWA ondersteuning (manifest + service worker)         ║
+  ║  7.2  Error monitoring (Sentry integratie)                  ║
+  ║  7.3  Performance optimalisatie                             ║
+  ║       - Code splitting per route (React.lazy)               ║
+  ║       - Image optimalisatie                                 ║
+  ║       - Bundle size analyse                                 ║
+  ║  7.4  Accessibility audit (WCAG 2.1)                        ║
+  ║  7.5  SEO voor publieke pagina's                            ║
+  ║  7.6  Analytics integratie                                  ║
+  ║                                                             ║
+  ║  Resultaat: Gepolijste, professionele applicatie            ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+
+10. ENVIRONMENT VARIABELEN
+================================================================================
+
+  Variabele                     Scope       Vereist   Beschrijving
+  ----------------------------- ----------- --------- ---------------------------
+  VITE_SUPABASE_URL             Frontend    Ja        Supabase project URL
+  VITE_SUPABASE_ANON_KEY        Frontend    Ja        Supabase public anon key
+  OPENAI_API_KEY                Server      Nee*      OpenAI API key (AI module)
+  EMAIL_ENCRYPTION_KEY          Server      Nee*      E-mail wachtwoord encryptie
+  SUPABASE_SERVICE_ROLE_KEY     Server      Nee*      Supabase admin key
+
+  * Vereist voor betreffende functionaliteit, niet voor basis werking.
+
+  VITE_ prefix = wordt meegebundeld in frontend JavaScript (publiek zichtbaar)
+  Zonder prefix = alleen beschikbaar in serverless functions (veilig)
+
+
+11. SERVERLESS API ROUTES
+================================================================================
+
+  Route                     Methode   Beschrijving
+  ------------------------- --------- ----------------------------------------
+  /api/ai                   POST      AI chat (OpenAI proxy, auth vereist)
+  /api/email-settings       GET/POST  E-mail SMTP instellingen ophalen/opslaan
+  /api/send-email           POST      E-mail verzenden via SMTP
+
+
+12. DESIGN SYSTEEM
+================================================================================
+
+  Lettertype:     DM Sans (Google Fonts)
+  Kleurenpalet:   Warm terracotta thema (aanpasbaar via PaletteContext)
+  Componenten:    Radix UI primitives met Tailwind styling
+  Iconen:         Lucide React
+  Thema's:        Light + Dark mode
+  Responsief:     Mobile-first Tailwind breakpoints
+
+  Primaire kleuren (standaard):
+  - Primary:      Terracotta/warm oranje
+  - Background:   Warm wit / donkergrijs
+  - Accenten:     Via Tailwind CSS variabelen
+
+  De gebruiker kan het kleurenpalet aanpassen via Instellingen > Huisstijl.
+
+
+13. SAMENVATTING STATUS
+================================================================================
+
+  ┌──────────────────────────┬────────────┬──────────────────────────────┐
+  │ Onderdeel                │ Status     │ Toelichting                  │
+  ├──────────────────────────┼────────────┼──────────────────────────────┤
+  │ UI Componenten           │ COMPLEET   │ 37 modules, 146 bestanden   │
+  │ Routing                  │ COMPLEET   │ 46 routes correct opgezet   │
+  │ TypeScript Types         │ COMPLEET   │ 1.159 regels type definities│
+  │ Service Layer            │ COMPLEET   │ 100+ CRUD functies          │
+  │ Database Schema          │ COMPLEET   │ 30+ tabellen + RLS          │
+  │ Tailwind Design          │ COMPLEET   │ Custom thema + dark mode    │
+  │ i18n (NL + EN)           │ COMPLEET   │ Basisvertalingen aanwezig   │
+  │ Error Boundary           │ BASIS      │ Alleen top-level            │
+  │ Auth Scaffolding         │ BASIS      │ Werkt alleen in demo mode   │
+  │ Vercel Config            │ BASIS      │ vercel.json aanwezig        │
+  ├──────────────────────────┼────────────┼──────────────────────────────┤
+  │ TypeScript Build         │ KAPOT      │ ~28 fouten, build faalt     │
+  │ Supabase Koppeling       │ INACTIEF   │ Geen .env, alles localStorage│
+  │ Tests                    │ AFWEZIG    │ 0 tests, geen framework     │
+  │ CI/CD                    │ AFWEZIG    │ Geen GitHub Actions         │
+  │ PWA                      │ AFWEZIG    │ Geen manifest/SW            │
+  │ Error Monitoring         │ AFWEZIG    │ Geen Sentry                 │
+  │ Security Headers         │ AFWEZIG    │ Geen CSP, brede CORS        │
+  └──────────────────────────┴────────────┴──────────────────────────────┘
+
+
+================================================================================
+  EINDE BLUEPRINT
+  Gegenereerd: 24 februari 2026
+  Project: Workmate — Sign Company Bedrijfsmanagement
+================================================================================
