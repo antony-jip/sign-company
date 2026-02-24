@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { exportCSV } from '@/lib/export'
 import {
   Plus, Search, ClipboardCheck, Trash2, Eye, FileText,
   ArrowUpDown, Filter, Download, Loader2
@@ -128,17 +129,16 @@ export function WerkbonnenLayout() {
   }, [deleteTarget])
 
   const handleExportCSV = useCallback(() => {
-    const header = 'Nummer,Klant,Project,Datum,Status,Bedrag\n'
-    const rows = gefilterd.map((wb) =>
-      `${wb.werkbon_nummer},"${getKlantNaam(wb.klant_id)}","${getProjectNaam(wb.project_id)}",${wb.datum},${wb.status},${bedragen[wb.id] || 0}`
-    ).join('\n')
-    const blob = new Blob([header + rows], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `werkbonnen-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    const headers = ['Nummer', 'Klant', 'Project', 'Datum', 'Status', 'Bedrag']
+    const rows = gefilterd.map((wb) => ({
+      'Nummer': wb.werkbon_nummer,
+      'Klant': getKlantNaam(wb.klant_id),
+      'Project': getProjectNaam(wb.project_id),
+      'Datum': wb.datum,
+      'Status': wb.status,
+      'Bedrag': bedragen[wb.id] || 0,
+    }))
+    exportCSV(`werkbonnen-${new Date().toISOString().split('T')[0]}`, headers, rows)
     toast.success('CSV geëxporteerd')
   }, [gefilterd, getKlantNaam, getProjectNaam, bedragen])
 

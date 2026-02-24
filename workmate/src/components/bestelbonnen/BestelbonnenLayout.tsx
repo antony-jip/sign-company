@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { exportCSV } from '@/lib/export'
 import {
   Plus, Search, ShoppingCart, Trash2, Eye,
   Download, Loader2,
@@ -137,15 +138,15 @@ export function BestelbonnenLayout() {
 
   const handleExportCSV = useCallback(() => {
     const headers = ['Nummer', 'Leverancier', 'Project', 'Datum', 'Status', 'Bedrag']
-    const rows = gefilterd.map((b) =>
-      [b.bestelbon_nummer, getLeverancierNaam(b.leverancier_id), getProjectNaam(b.project_id), b.besteld_op || '', STATUS_CONFIG[b.status].label, (bedragen[b.id] || 0).toFixed(2)].join(',')
-    )
-    const csv = [headers.join(','), ...rows].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = 'bestelbonnen.csv'; a.click()
-    URL.revokeObjectURL(url)
+    const rows = gefilterd.map((b) => ({
+      'Nummer': b.bestelbon_nummer,
+      'Leverancier': getLeverancierNaam(b.leverancier_id),
+      'Project': getProjectNaam(b.project_id),
+      'Datum': b.besteld_op || '',
+      'Status': STATUS_CONFIG[b.status].label,
+      'Bedrag': bedragen[b.id] || 0,
+    }))
+    exportCSV('bestelbonnen', headers, rows)
     toast.success('CSV gedownload')
   }, [gefilterd, getLeverancierNaam, getProjectNaam, bedragen])
 

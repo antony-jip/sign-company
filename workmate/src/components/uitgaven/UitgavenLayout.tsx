@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
+import { exportCSV } from '@/lib/export'
 import {
   Plus, Search, Receipt, Trash2, Pencil, Download,
   Filter, TrendingDown, DollarSign, Calendar, Loader2
@@ -278,17 +279,18 @@ export function UitgavenLayout() {
   }, [nieuweLevNaam, userId])
 
   const handleExportCSV = useCallback(() => {
-    const header = 'Nummer,Leverancier,Project,Omschrijving,Categorie,Datum,Bedrag incl BTW,Status\n'
-    const rows = gefilterd.map((u) =>
-      `${u.uitgave_nummer},"${getLeverancierNaam(u.leverancier_id)}","${getProjectNaam(u.project_id)}","${u.omschrijving}",${u.categorie},${u.datum},${u.bedrag_incl_btw},${u.status}`
-    ).join('\n')
-    const blob = new Blob([header + rows], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `uitgaven-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    const headers = ['Nummer', 'Leverancier', 'Project', 'Omschrijving', 'Categorie', 'Datum', 'Bedrag incl BTW', 'Status']
+    const rows = gefilterd.map((u) => ({
+      'Nummer': u.uitgave_nummer,
+      'Leverancier': getLeverancierNaam(u.leverancier_id),
+      'Project': getProjectNaam(u.project_id),
+      'Omschrijving': u.omschrijving,
+      'Categorie': u.categorie,
+      'Datum': u.datum,
+      'Bedrag incl BTW': u.bedrag_incl_btw,
+      'Status': u.status,
+    }))
+    exportCSV(`uitgaven-${new Date().toISOString().split('T')[0]}`, headers, rows)
     toast.success('CSV geëxporteerd')
   }, [gefilterd, getLeverancierNaam, getProjectNaam])
 
