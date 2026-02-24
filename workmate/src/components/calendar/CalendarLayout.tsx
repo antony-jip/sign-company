@@ -259,36 +259,33 @@ export function CalendarLayout() {
   const [activeMedewerker, setActiveMedewerker] = useState<string | null>(null)
 
   // ---- Data loading ----
-  useEffect(() => {
-    let cancelled = false
-    async function loadData() {
-      try {
-        setIsLoading(true)
-        const [aData, pData, mData, kData, tData] = await Promise.all([
-          getMontageAfspraken(),
-          getProjecten(),
-          getMedewerkers(),
-          getKlanten(),
-          getTaken(),
-        ])
-        if (!cancelled) {
-          const activeMw = mData.filter((m) => m.status === 'actief')
-          setMedewerkers(activeMw)
-          setAfspraken(aData)
-          setProjecten(pData)
-          setKlanten(kData)
-          setProjectTaken(tData.filter((t) => t.project_id && t.deadline && t.status !== 'done'))
-        }
-      } catch (err) {
-        logger.error('Fout bij laden data:', err)
-        if (!cancelled) toast.error('Kon planningsdata niet laden')
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const [aData, pData, mData, kData, tData] = await Promise.all([
+        getMontageAfspraken(),
+        getProjecten(),
+        getMedewerkers(),
+        getKlanten(),
+        getTaken(),
+      ])
+      const activeMw = mData.filter((m) => m.status === 'actief')
+      setMedewerkers(activeMw)
+      setAfspraken(aData)
+      setProjecten(pData)
+      setKlanten(kData)
+      setProjectTaken(tData.filter((t) => t.project_id && t.deadline && t.status !== 'done'))
+    } catch (err) {
+      logger.error('Fout bij laden data:', err)
+      toast.error('Kon planningsdata niet laden')
+    } finally {
+      setIsLoading(false)
     }
-    loadData()
-    return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   // ---- Week dates ----
   const weekDates = useMemo(() => {

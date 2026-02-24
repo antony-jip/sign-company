@@ -9,7 +9,6 @@ import {
   createOfferte,
   createOfferteItem,
   deleteOfferte,
-  getOffertesByKlant,
   createFactuur,
   createFactuurItem,
   getFacturen,
@@ -357,6 +356,16 @@ export function OfferteDetail() {
       const vervaldatum = new Date()
       vervaldatum.setDate(vervaldatum.getDate() + 30)
 
+      // Calculate totals from items
+      const calcSubtotaal = round2(items.reduce((sum, item) => sum + calculateLineTotaal(item), 0))
+      const calcBtwGroups: Record<number, number> = {}
+      items.forEach((item) => {
+        const lt = calculateLineTotaal(item)
+        calcBtwGroups[item.btw_percentage] = round2((calcBtwGroups[item.btw_percentage] || 0) + round2(lt * (item.btw_percentage / 100)))
+      })
+      const calcBtw = round2(Object.values(calcBtwGroups).reduce((s, v) => s + v, 0))
+      const calcTotaal = round2(calcSubtotaal + calcBtw)
+
       const newFactuur = await createFactuur({
         user_id: user.id,
         klant_id: offerte.klant_id,
@@ -366,9 +375,9 @@ export function OfferteDetail() {
         nummer: factuurNummer,
         titel: offerte.titel,
         status: 'concept',
-        subtotaal: round2(subtotaal),
-        btw_bedrag: round2(totaalBtw),
-        totaal: round2(totaal),
+        subtotaal: calcSubtotaal,
+        btw_bedrag: calcBtw,
+        totaal: calcTotaal,
         betaald_bedrag: 0,
         factuurdatum: new Date().toISOString().split('T')[0],
         vervaldatum: vervaldatum.toISOString().split('T')[0],
@@ -417,7 +426,7 @@ export function OfferteDetail() {
     } finally {
       setIsCreatingFactuur(false)
     }
-  }, [offerte, items, user, navigate, subtotaal, totaalBtw, totaal])
+  }, [offerte, items, user, navigate])
 
   // Loading
   if (isLoading) {

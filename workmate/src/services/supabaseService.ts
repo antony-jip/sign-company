@@ -433,7 +433,7 @@ export async function getOffertesByProject(projectId: string): Promise<Offerte[]
     }))
 }
 
-export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' | 'updated_at' | 'klant_naam'>): Promise<Offerte> {
+export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' | 'updated_at'>): Promise<Offerte> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offertes')
