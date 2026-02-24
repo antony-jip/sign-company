@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
+import { sanitizeHtml } from '@/lib/sanitize'
 import {
   Loader2, Users, UserPlus, MessageSquare, Send, AlertCircle,
   CheckCircle2, Clock, Filter,
@@ -361,7 +362,7 @@ export function GedeeldeInboxLayout() {
                   <span>{formatDateTime(selectedEmail.datum)}</span>
                 </div>
                 <div className="p-3 bg-muted/50 rounded-lg text-sm max-h-[200px] overflow-y-auto"
-                  dangerouslySetInnerHTML={{ __html: selectedEmail.inhoud || '' }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedEmail.inhoud || '') }}
                 />
               </div>
 

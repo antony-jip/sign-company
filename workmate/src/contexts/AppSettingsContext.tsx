@@ -34,6 +34,7 @@ interface AppSettingsContextType {
   btwNummer: string
   logoUrl: string
   openaiApiKey: string
+  standaardUurtarief: number
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined)
@@ -137,6 +138,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     btwNummer: profile?.btw_nummer || '',
     logoUrl: profile?.logo_url || '',
     openaiApiKey,
+    standaardUurtarief: settings.standaard_uurtarief ?? 65,
   }
 
   return (

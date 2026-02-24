@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
+import { logger } from '../../utils/logger'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -430,7 +431,7 @@ export function EmailReader({
   // ── Save internal notes ──
   const handleSaveNotes = useCallback(() => {
     if (!email) return
-    updateEmail(email.id, { internal_notes: noteText } as Partial<Email>).catch(() => {})
+    updateEmail(email.id, { internal_notes: noteText } as Partial<Email>).catch((err) => logger.error('Notitie opslaan mislukt:', err))
     onUpdateEmail?.(email, { internal_notes: noteText })
     toast.success('Notitie opgeslagen')
     setShowNotes(false)
@@ -440,7 +441,7 @@ export function EmailReader({
   const handleSetFollowUp = useCallback(() => {
     if (!email || !followUpDate) return
     const followUpAt = `${followUpDate}T${followUpTime}`
-    updateEmail(email.id, { follow_up_at: followUpAt } as Partial<Email>).catch(() => {})
+    updateEmail(email.id, { follow_up_at: followUpAt } as Partial<Email>).catch((err) => logger.error('Follow-up instellen mislukt:', err))
     onUpdateEmail?.(email, { follow_up_at: followUpAt })
     toast.success(`Follow-up ingesteld op ${formatDateTime(followUpAt)}`)
     setShowFollowUp(false)
@@ -448,7 +449,7 @@ export function EmailReader({
 
   const handleClearFollowUp = useCallback(() => {
     if (!email) return
-    updateEmail(email.id, { follow_up_at: null }).catch(() => {})
+    updateEmail(email.id, { follow_up_at: null }).catch((err) => logger.error('Follow-up verwijderen mislukt:', err))
     onUpdateEmail?.(email, { follow_up_at: undefined })
     setFollowUpDate('')
     toast.success('Follow-up verwijderd')

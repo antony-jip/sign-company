@@ -1565,6 +1565,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     calculatie_standaard_marge: 35,
     calculatie_toon_inkoop_in_offerte: false,
     offerte_regel_velden: ['Materiaal', 'Lay-out', 'Montage', 'Opmerking'],
+    standaard_uurtarief: 65,
     created_at: now(),
     updated_at: now(),
   }

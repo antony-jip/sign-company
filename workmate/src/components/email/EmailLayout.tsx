@@ -385,7 +385,7 @@ export function EmailLayout() {
       setEmails((prev) =>
         prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
       )
-      updateEmail(email.id, { gelezen: true }).catch(() => {})
+      updateEmail(email.id, { gelezen: true }).catch((err) => logger.error('Email markeren als gelezen mislukt:', err))
     }
   }, [])
 
@@ -397,7 +397,7 @@ export function EmailLayout() {
     setSelectedEmail((prev) =>
       prev?.id === email.id ? { ...prev, starred: newStarred } : prev
     )
-    updateEmail(email.id, { starred: newStarred }).catch(() => {})
+    updateEmail(email.id, { starred: newStarred }).catch((err) => logger.error('Email ster-status wijzigen mislukt:', err))
   }, [])
 
   const handleToggleRead = useCallback((email: Email) => {
@@ -408,7 +408,7 @@ export function EmailLayout() {
     setSelectedEmail((prev) =>
       prev?.id === email.id ? { ...prev, gelezen: newGelezen } : prev
     )
-    updateEmail(email.id, { gelezen: newGelezen }).catch(() => {})
+    updateEmail(email.id, { gelezen: newGelezen }).catch((err) => logger.error('Email gelezen-status wijzigen mislukt:', err))
   }, [])
 
   const handleArchive = useCallback((email: Email) => {
@@ -421,14 +421,14 @@ export function EmailLayout() {
   const handleDelete = useCallback((email: Email) => {
     if (email.map === 'prullenbak') {
       setEmails((prev) => prev.filter((e) => e.id !== email.id))
-      deleteEmail(email.id).catch(() => {})
+      deleteEmail(email.id).catch((err) => logger.error('Email verwijderen mislukt:', err))
     } else {
       setEmails((prev) =>
         prev.map((e) =>
           e.id === email.id ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e
         )
       )
-      updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
+      updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch((err) => logger.error('Email naar prullenbak verplaatsen mislukt:', err))
     }
     setSelectedEmail(null)
     setViewMode('idle')
@@ -443,7 +443,7 @@ export function EmailLayout() {
         ids.includes(e.id) ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e
       )
     )
-    ids.forEach((id) => updateEmail(id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {}))
+    ids.forEach((id) => updateEmail(id, { map: 'prullenbak', labels: ['prullenbak'] }).catch((err) => logger.error('Bulk email verwijderen mislukt:', err)))
     setCheckedEmails(new Set())
     toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} verwijderd`)
   }, [checkedEmails])
@@ -460,7 +460,7 @@ export function EmailLayout() {
     setEmails((prev) =>
       prev.map((e) => ids.includes(e.id) ? { ...e, gelezen: true } : e)
     )
-    ids.forEach((id) => updateEmail(id, { gelezen: true }).catch(() => {}))
+    ids.forEach((id) => updateEmail(id, { gelezen: true }).catch((err) => logger.error('Bulk gelezen markeren mislukt:', err)))
     setCheckedEmails(new Set())
     toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} als gelezen gemarkeerd`)
   }, [checkedEmails])
@@ -470,7 +470,7 @@ export function EmailLayout() {
     setEmails((prev) =>
       prev.map((e) => ids.includes(e.id) ? { ...e, gelezen: false } : e)
     )
-    ids.forEach((id) => updateEmail(id, { gelezen: false }).catch(() => {}))
+    ids.forEach((id) => updateEmail(id, { gelezen: false }).catch((err) => logger.error('Bulk ongelezen markeren mislukt:', err)))
     setCheckedEmails(new Set())
     toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} als ongelezen gemarkeerd`)
   }, [checkedEmails])
@@ -484,7 +484,7 @@ export function EmailLayout() {
     setSelectedEmail((prev) =>
       prev?.id === email.id ? { ...prev, pinned: newPinned } : prev
     )
-    updateEmail(email.id, { pinned: newPinned } as Partial<Email>).catch(() => {})
+    updateEmail(email.id, { pinned: newPinned } as Partial<Email>).catch((err) => logger.error('Email pin-status wijzigen mislukt:', err))
     toast.success(newPinned ? 'Email vastgepind' : 'Pin verwijderd')
   }, [])
 
@@ -513,7 +513,7 @@ export function EmailLayout() {
     setEmails((prev) =>
       prev.map((e) => (e.id === email.id ? { ...e, snoozed_until: snoozedUntil } : e))
     )
-    updateEmail(email.id, { snoozed_until: snoozedUntil } as Partial<Email>).catch(() => {})
+    updateEmail(email.id, { snoozed_until: snoozedUntil } as Partial<Email>).catch((err) => logger.error('Email snoozen mislukt:', err))
     setShowSnoozeMenu(null)
     setSelectedEmail(null)
     setViewMode('idle')
@@ -524,7 +524,7 @@ export function EmailLayout() {
     setEmails((prev) =>
       prev.map((e) => (e.id === email.id ? { ...e, snoozed_until: undefined, map: 'inbox' } : e))
     )
-    updateEmail(email.id, { snoozed_until: null }).catch(() => {})
+    updateEmail(email.id, { snoozed_until: null }).catch((err) => logger.error('Snooze verwijderen mislukt:', err))
     toast.success('Snooze verwijderd')
   }, [])
 

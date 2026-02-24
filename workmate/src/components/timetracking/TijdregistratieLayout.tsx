@@ -59,6 +59,7 @@ import { round2 } from "@/utils/budgetUtils";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportCSV, exportExcel } from "@/lib/export";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
 
 type FilterType = "alle" | "deze_week" | "deze_maand" | "facturabel" | "niet_facturabel" | "gefactureerd" | "niet_gefactureerd";
 
@@ -160,18 +161,21 @@ function isCurrentMonth(datum: string): boolean {
 
 const DAG_NAMEN = ["Ma", "Di", "Wo", "Do", "Vr"];
 
-const EMPTY_FORM: FormData = {
-  project_id: "",
-  taak_id: "",
-  omschrijving: "",
-  datum: new Date().toISOString().split("T")[0],
-  start_tijd: "08:00",
-  eind_tijd: "17:00",
-  uurtarief: 65,
-  facturabel: true,
-};
+function makeEmptyForm(uurtarief: number): FormData {
+  return {
+    project_id: "",
+    taak_id: "",
+    omschrijving: "",
+    datum: new Date().toISOString().split("T")[0],
+    start_tijd: "08:00",
+    eind_tijd: "17:00",
+    uurtarief,
+    facturabel: true,
+  };
+}
 
 export function TijdregistratieLayout() {
+  const { standaardUurtarief } = useAppSettings();
   const [registraties, setRegistraties] = useState<Tijdregistratie[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [klanten, setKlanten] = useState<Klant[]>([]);
@@ -181,7 +185,7 @@ export function TijdregistratieLayout() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
+  const [formData, setFormData] = useState<FormData>(makeEmptyForm(standaardUurtarief));
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const [timer, setTimer] = useState<TimerState>({
@@ -294,7 +298,7 @@ export function TijdregistratieLayout() {
       start_tijd: timer.startTijd,
       eind_tijd: eindTijd,
       duur_minuten: duurMinuten,
-      uurtarief: 65,
+      uurtarief: standaardUurtarief,
       facturabel: true,
       gefactureerd: false,
     };
@@ -314,7 +318,7 @@ export function TijdregistratieLayout() {
         start_tijd: timer.startTijd,
         eind_tijd: eindTijd,
         duur_minuten: duurMinuten,
-        uurtarief: 65,
+        uurtarief: standaardUurtarief,
         facturabel: true,
         gefactureerd: false,
         created_at: now.toISOString(),
@@ -392,7 +396,7 @@ export function TijdregistratieLayout() {
 
   function openNewDialog() {
     setEditingId(null);
-    setFormData(EMPTY_FORM);
+    setFormData(makeEmptyForm(standaardUurtarief));
     setDialogOpen(true);
   }
 
@@ -485,7 +489,7 @@ export function TijdregistratieLayout() {
 
     setDialogOpen(false);
     setEditingId(null);
-    setFormData(EMPTY_FORM);
+    setFormData(makeEmptyForm(standaardUurtarief));
   }
 
   async function handleDelete(id: string) {

@@ -336,6 +336,8 @@ export interface AppSettings {
   // Offerte regel velden - welke tekstvelden wil je per offerte-item?
   // Bijv. ["Materiaal", "Lay-out", "Montage", "Opmerking"]
   offerte_regel_velden: string[];
+  // Standaard uurtarief voor tijdregistratie en werkbonnen
+  standaard_uurtarief: number;
   // KvK integratie
   kvk_api_key?: string;
   kvk_api_enabled?: boolean;

@@ -10,20 +10,24 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(() => {
-    const stored = localStorage.getItem('workmate_sidebar_collapsed')
-    return stored === 'true'
+    try {
+      const stored = localStorage.getItem('workmate_sidebar_collapsed')
+      return stored === 'true'
+    } catch {
+      return false
+    }
   })
 
   const toggleSidebar = () => {
     setIsCollapsed(prev => {
-      localStorage.setItem('workmate_sidebar_collapsed', String(!prev))
+      try { localStorage.setItem('workmate_sidebar_collapsed', String(!prev)) } catch { /* storage unavailable */ }
       return !prev
     })
   }
 
   const setCollapsed = (collapsed: boolean) => {
     setIsCollapsed(collapsed)
-    localStorage.setItem('workmate_sidebar_collapsed', String(collapsed))
+    try { localStorage.setItem('workmate_sidebar_collapsed', String(collapsed)) } catch { /* storage unavailable */ }
   }
 
   return (

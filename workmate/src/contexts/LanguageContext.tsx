@@ -930,12 +930,16 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
-    const stored = localStorage.getItem('workmate_language')
-    return stored === 'en' ? 'en' : 'nl'
+    try {
+      const stored = localStorage.getItem('workmate_language')
+      return stored === 'en' ? 'en' : 'nl'
+    } catch {
+      return 'nl'
+    }
   })
 
   useEffect(() => {
-    localStorage.setItem('workmate_language', language)
+    try { localStorage.setItem('workmate_language', language) } catch { /* storage unavailable */ }
     document.documentElement.lang = language
   }, [language])
 

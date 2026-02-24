@@ -97,8 +97,9 @@ export function CommandPalette() {
   const listRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map())
 
-  // Load data on mount
+  // Reload data each time the palette is opened so results stay fresh
   useEffect(() => {
+    if (!isOpen) return
     let cancelled = false
 
     async function loadData() {
@@ -127,7 +128,7 @@ export function CommandPalette() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isOpen])
 
   // Build filtered results
   const filteredResults = useMemo(() => {

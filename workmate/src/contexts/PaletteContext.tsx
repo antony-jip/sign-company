@@ -301,13 +301,17 @@ function applyPalette(palette: ColorPalette, isDark: boolean) {
 
 export function PaletteProvider({ children }: { children: ReactNode }) {
   const [paletteId, setPaletteIdState] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEY) || 'terracotta'
+    try {
+      return localStorage.getItem(STORAGE_KEY) || 'terracotta'
+    } catch {
+      return 'terracotta'
+    }
   })
 
   const palette = PALETTES.find((p) => p.id === paletteId) || PALETTES[0]
 
   const setPaletteId = useCallback((id: string) => {
-    localStorage.setItem(STORAGE_KEY, id)
+    try { localStorage.setItem(STORAGE_KEY, id) } catch { /* storage unavailable */ }
     setPaletteIdState(id)
   }, [])
 

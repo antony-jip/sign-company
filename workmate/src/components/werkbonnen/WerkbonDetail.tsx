@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Werkbon, WerkbonRegel, WerkbonFoto, Klant, Project, Medewerker } from '@/types'
 import {
   getWerkbon, createWerkbon, updateWerkbon,
@@ -41,6 +42,7 @@ export function WerkbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { standaardUurtarief } = useAppSettings()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
 
@@ -227,10 +229,10 @@ export function WerkbonDetail() {
       type,
       omschrijving: type === 'arbeid' ? 'Arbeid' : type === 'materiaal' ? 'Materiaal' : 'Overig',
       uren: type === 'arbeid' ? 1 : undefined,
-      uurtarief: type === 'arbeid' ? 55 : undefined,
+      uurtarief: type === 'arbeid' ? standaardUurtarief : undefined,
       aantal: type !== 'arbeid' ? 1 : undefined,
       prijs_per_eenheid: type !== 'arbeid' ? 0 : undefined,
-      totaal: type === 'arbeid' ? 55 : 0,
+      totaal: type === 'arbeid' ? standaardUurtarief : 0,
       factureerbaar: true,
     })
     setRegels((prev) => [...prev, newRegel])

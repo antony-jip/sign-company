@@ -1839,7 +1839,9 @@ export function FacturenLayout() {
                       onClick={() => {
                         navigator.clipboard.writeText(viewingFactuur.betaal_link!).then(() => {
                           toast.success('Betaallink gekopieerd')
-                        }).catch(() => {})
+                        }).catch(() => {
+                          toast.error('Kon link niet kopiëren')
+                        })
                       }}
                     >
                       <Copy className="h-3 w-3" />

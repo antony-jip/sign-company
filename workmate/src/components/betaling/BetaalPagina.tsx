@@ -167,7 +167,9 @@ export function BetaalPagina() {
     navigator.clipboard.writeText(iban.replace(/\s/g, '')).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    }).catch(() => {})
+    }).catch(() => {
+      // Clipboard API may not be available (e.g. non-HTTPS)
+    })
   }, [])
 
   // Loading

@@ -784,24 +784,28 @@ function MetricCardSmall({ metric }: { key?: React.Key; metric: MetricCard }) {
   )
 }
 
+function renderBoldText(text: string): React.ReactNode {
+  const parts = text.split(/\*\*(.*?)\*\*/g)
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+  )
+}
+
 function FormattedText({ text }: { text: string }) {
+  const lines = text.split('\n')
   return (
     <>
-      {text.split('\n').map((line, i) => (
+      {lines.map((line, i) => (
         <React.Fragment key={i}>
           {line.startsWith('•') ? (
             <div className="flex items-start gap-1.5 ml-1 my-0.5">
               <span className="mt-[7px] w-1 h-1 rounded-full bg-current flex-shrink-0 opacity-40" />
-              <span dangerouslySetInnerHTML={{
-                __html: line.slice(1).trim().replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              }} />
+              <span>{renderBoldText(line.slice(1).trim())}</span>
             </div>
           ) : (
-            <span dangerouslySetInnerHTML={{
-              __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            }} />
+            <span>{renderBoldText(line)}</span>
           )}
-          {i < text.split('\n').length - 1 && <br />}
+          {i < lines.length - 1 && <br />}
         </React.Fragment>
       ))}
     </>
