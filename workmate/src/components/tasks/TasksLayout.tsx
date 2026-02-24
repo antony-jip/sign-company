@@ -42,11 +42,13 @@ import {
   GripVertical,
   Clock,
   Check,
+  MapPin,
+  User2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
-import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten } from '@/services/supabaseService'
-import type { Taak, Project } from '@/types'
+import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten } from '@/services/supabaseService'
+import type { Taak, Project, Klant } from '@/types'
 import { logger } from '../../utils/logger'
 
 type TaakStatus = Taak['status']
@@ -87,11 +89,14 @@ interface TaakFormData {
   geschatte_tijd: number
   bestede_tijd: number
   project_id: string
+  klant_id: string
+  locatie: string
 }
 
 const EMPTY_FORM: TaakFormData = {
   titel: '', beschrijving: '', status: 'todo', prioriteit: 'medium',
   toegewezen_aan: '', deadline: '', geschatte_tijd: 0, bestede_tijd: 0, project_id: '',
+  klant_id: '', locatie: '',
 }
 
 // === HELPERS ===
@@ -133,7 +138,9 @@ export function TasksLayout() {
 
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
+  const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
 
   const [weekOffset, setWeekOffset] = useState(0)
   const [showCompleted, setShowCompleted] = useState(false)
@@ -174,10 +181,11 @@ export function TasksLayout() {
     async function loadData() {
       setIsLoading(true)
       try {
-        const [takenData, projectenData] = await Promise.all([getTaken(), getProjecten()])
+        const [takenData, projectenData, klantenData] = await Promise.all([getTaken(), getProjecten(), getKlanten()])
         if (!cancelled) {
           setTaken(takenData)
           setProjecten(projectenData)
+          setKlanten(klantenData)
         }
       } catch (error) {
         logger.error('Fout bij laden:', error)
@@ -219,6 +227,12 @@ export function TasksLayout() {
     return map
   }, [projecten])
 
+  const klantMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    klanten.forEach((k) => { map[k.id] = k.bedrijfsnaam })
+    return map
+  }, [klanten])
+
   const today = useMemo(() => {
     const d = new Date()
     d.setHours(0, 0, 0, 0)
@@ -240,7 +254,14 @@ export function TasksLayout() {
     const map = new Map<string, Taak[]>()
     weekDays.forEach((d) => map.set(d.toDateString(), []))
 
-    const activeTaken = showCompleted ? taken : taken.filter((t) => t.status !== 'klaar')
+    let activeTaken = showCompleted ? taken : taken.filter((t) => t.status !== 'klaar')
+
+    // Apply task type filter
+    if (taskFilter === 'project') {
+      activeTaken = activeTaken.filter((t) => !!t.project_id)
+    } else if (taskFilter === 'los') {
+      activeTaken = activeTaken.filter((t) => !t.project_id)
+    }
 
     activeTaken.forEach((t) => {
       if (!t.deadline) return
@@ -267,7 +288,7 @@ export function TasksLayout() {
     })
 
     return map
-  }, [taken, weekDays, showCompleted])
+  }, [taken, weekDays, showCompleted, taskFilter])
 
   // Week range label
   const weekLabel = useMemo(() => {
@@ -358,7 +379,10 @@ export function TasksLayout() {
       titel: taak.titel, beschrijving: taak.beschrijving, status: taak.status,
       prioriteit: taak.prioriteit, toegewezen_aan: taak.toegewezen_aan,
       deadline: taak.deadline ? taak.deadline.split('T')[0] : '',
-      geschatte_tijd: taak.geschatte_tijd, bestede_tijd: taak.bestede_tijd, project_id: taak.project_id,
+      geschatte_tijd: taak.geschatte_tijd, bestede_tijd: taak.bestede_tijd,
+      project_id: taak.project_id || '',
+      klant_id: taak.klant_id || '',
+      locatie: taak.locatie || '',
     })
     setEditDialogOpen(true)
   }
@@ -372,7 +396,9 @@ export function TasksLayout() {
         status: formData.status, prioriteit: formData.prioriteit,
         toegewezen_aan: formData.toegewezen_aan.trim(), deadline: formData.deadline || '',
         geschatte_tijd: formData.geschatte_tijd, bestede_tijd: formData.bestede_tijd,
-        project_id: formData.project_id,
+        project_id: formData.project_id || undefined,
+        klant_id: formData.klant_id || undefined,
+        locatie: formData.locatie.trim() || undefined,
       })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
       toast.success('Taak bijgewerkt')
@@ -458,6 +484,22 @@ export function TasksLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
+              {([['alle', 'Alle'], ['project', 'Projecttaken'], ['los', 'Losse taken']] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setTaskFilter(key)}
+                  className={cn(
+                    'text-xs px-2.5 py-1 rounded-md transition-all duration-200',
+                    taskFilter === key
+                      ? 'bg-background text-foreground shadow-sm font-medium'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => setShowCompleted(!showCompleted)}
               className={cn(
@@ -549,6 +591,7 @@ export function TasksLayout() {
                   isPast={isPast}
                   tasks={dayTasks}
                   projectMap={projectMap}
+                  klantMap={klantMap}
                   nowLineTop={isCurrentWeek && isToday ? nowLineTop : null}
                   draggingTaakId={draggingTaakId}
                   dropTarget={dropTarget}
@@ -650,7 +693,7 @@ export function TasksLayout() {
       <EditTaskDialog
         open={editDialogOpen} onOpenChange={setEditDialogOpen}
         formData={formData} setFormData={setFormData}
-        onSave={handleSave} isSaving={isSaving} projecten={projecten}
+        onSave={handleSave} isSaving={isSaving} projecten={projecten} klanten={klanten}
       />
 
       {/* Delete dialog */}
@@ -676,7 +719,7 @@ export function TasksLayout() {
 // === DAY COLUMN ===
 
 function DayColumn({
-  day, dayIndex, isToday, isPast, tasks, projectMap, nowLineTop,
+  day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, nowLineTop,
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
   onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime,
@@ -687,6 +730,7 @@ function DayColumn({
   isPast: boolean
   tasks: Taak[]
   projectMap: Record<string, string>
+  klantMap: Record<string, string>
   nowLineTop: number | null
   draggingTaakId: string | null
   dropTarget: { dayIndex: number; hour: number } | null
@@ -823,7 +867,8 @@ function DayColumn({
           >
             <TaskCard
               taak={taak}
-              projectNaam={projectMap[taak.project_id]}
+              projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
+              klantNaam={taak.klant_id ? klantMap[taak.klant_id] : undefined}
               isPast={isPast}
               scheduled
               onDragStart={() => onDragStart(taak.id)}
@@ -842,7 +887,8 @@ function DayColumn({
           <div key={taak.id} className="pointer-events-auto">
             <TaskCard
               taak={taak}
-              projectNaam={projectMap[taak.project_id]}
+              projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
+              klantNaam={taak.klant_id ? klantMap[taak.klant_id] : undefined}
               isPast={isPast}
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}
@@ -890,10 +936,11 @@ function DayColumn({
 // === TASK CARD ===
 
 function TaskCard({
-  taak, projectNaam, isPast, scheduled, onDragStart, onDragEnd, onToggle, onEdit, onDelete,
+  taak, projectNaam, klantNaam, isPast, scheduled, onDragStart, onDragEnd, onToggle, onEdit, onDelete,
 }: {
   taak: Taak
   projectNaam?: string
+  klantNaam?: string
   isPast: boolean
   scheduled?: boolean
   onDragStart: () => void
@@ -960,10 +1007,20 @@ function TaskCard({
               {taak.titel}
             </p>
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {projectNaam && (
               <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5">
                 <Hash className="w-2 h-2" />{projectNaam}
+              </span>
+            )}
+            {!projectNaam && klantNaam && (
+              <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5">
+                <User2 className="w-2 h-2" />{klantNaam}
+              </span>
+            )}
+            {taak.locatie && (
+              <span className="text-[10px] text-muted-foreground/40 flex items-center gap-0.5">
+                <MapPin className="w-2 h-2" />{taak.locatie}
               </span>
             )}
             {scheduled && hour !== null && (
@@ -1022,11 +1079,11 @@ function TaskCard({
 // === EDIT DIALOG ===
 
 function EditTaskDialog({
-  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten,
+  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten,
 }: {
   open: boolean; onOpenChange: (open: boolean) => void
   formData: TaakFormData; setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
-  onSave: () => void; isSaving: boolean; projecten: Project[]
+  onSave: () => void; isSaving: boolean; projecten: Project[]; klanten: Klant[]
 }) {
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -1068,14 +1125,70 @@ function EditTaskDialog({
             </div>
           </div>
           <div className="grid gap-2">
-            <Label>Project (optioneel)</Label>
-            <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
-              <SelectTrigger><SelectValue placeholder="Geen project" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="geen">Geen project</SelectItem>
-                {projecten.map((p) => (<SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>))}
-              </SelectContent>
-            </Select>
+            <Label>Type taak</Label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => { updateField('project_id', ''); updateField('klant_id', '') }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  !formData.project_id && !formData.klant_id
+                    ? 'bg-primary/10 text-primary border-primary/30'
+                    : 'bg-muted text-muted-foreground border-transparent'
+                }`}
+              >
+                Intern
+              </button>
+              <button
+                type="button"
+                onClick={() => updateField('klant_id', '')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  formData.project_id
+                    ? 'bg-primary/10 text-primary border-primary/30'
+                    : 'bg-muted text-muted-foreground border-transparent'
+                }`}
+              >
+                Projecttaak
+              </button>
+              <button
+                type="button"
+                onClick={() => { updateField('project_id', ''); updateField('klant_id', formData.klant_id || '') }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  !formData.project_id && formData.klant_id
+                    ? 'bg-primary/10 text-primary border-primary/30'
+                    : 'bg-muted text-muted-foreground border-transparent'
+                }`}
+              >
+                Losse taak
+              </button>
+            </div>
+          </div>
+          {formData.project_id !== undefined && (
+            <div className="grid gap-2">
+              <Label>Project (optioneel)</Label>
+              <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Geen project" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="geen">Geen project</SelectItem>
+                  {projecten.map((p) => (<SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {!formData.project_id && (
+            <div className="grid gap-2">
+              <Label>Klant (optioneel)</Label>
+              <Select value={formData.klant_id || 'geen'} onValueChange={(v) => updateField('klant_id', v === 'geen' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="geen">Intern (geen klant)</SelectItem>
+                  {klanten.map((k) => (<SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="grid gap-2">
+            <Label htmlFor="edit-locatie">Locatie</Label>
+            <Input id="edit-locatie" value={formData.locatie} onChange={(e) => updateField('locatie', e.target.value)} placeholder="Bijv. Hoofdstraat 1, Amsterdam" />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="edit-toegewezen">Toegewezen aan</Label>

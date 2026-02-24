@@ -31,6 +31,14 @@ interface AddEditClientProps {
   onSaved?: (klant: Klant) => void
 }
 
+const KLANT_LABEL_OPTIES = [
+  { waarde: 'vooruit_betalen', label: 'Vooruit betalen', kleur: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
+  { waarde: 'niet_helpen', label: 'Niet helpen', kleur: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+  { waarde: 'voorrang', label: 'Voorrang klant', kleur: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+  { waarde: 'grote_klant', label: 'Grote klant', kleur: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+  { waarde: 'wanbetaler', label: 'Wanbetaler', kleur: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+] as const
+
 interface FormData {
   bedrijfsnaam: string
   contactpersoon: string
@@ -45,6 +53,8 @@ interface FormData {
   status: 'actief' | 'inactief' | 'prospect'
   tags: string
   notities: string
+  klant_labels: string[]
+  gepinde_notitie: string
 }
 
 const initialFormData: FormData = {
@@ -61,6 +71,8 @@ const initialFormData: FormData = {
   status: 'prospect',
   tags: '',
   notities: '',
+  klant_labels: [],
+  gepinde_notitie: '',
 }
 
 export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditClientProps) {
@@ -87,6 +99,8 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         status: klant.status,
         tags: klant.tags.join(', '),
         notities: klant.notities,
+        klant_labels: klant.klant_labels || [],
+        gepinde_notitie: klant.gepinde_notitie || '',
       })
     } else {
       setFormData(initialFormData)
@@ -152,6 +166,8 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         tags: tagsArray,
         notities: formData.notities.trim(),
         contactpersonen: klant?.contactpersonen || [],
+        klant_labels: formData.klant_labels,
+        gepinde_notitie: formData.gepinde_notitie.trim(),
       }
 
       let savedKlant: Klant
@@ -361,7 +377,54 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
             </p>
           </div>
 
-          {/* Row 7: Notities */}
+          {/* Row 7: Klant Labels */}
+          <div className="space-y-2">
+            <Label>Klant Labels</Label>
+            <div className="flex flex-wrap gap-2">
+              {KLANT_LABEL_OPTIES.map((opt) => {
+                const isSelected = formData.klant_labels.includes(opt.waarde)
+                return (
+                  <button
+                    key={opt.waarde}
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        klant_labels: isSelected
+                          ? prev.klant_labels.filter((l) => l !== opt.waarde)
+                          : [...prev.klant_labels, opt.waarde],
+                      }))
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      isSelected
+                        ? opt.kleur + ' border-current shadow-sm'
+                        : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    {isSelected && <span className="mr-1">&#10003;</span>}
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Row 8: Gepinde Notitie */}
+          <div className="space-y-2">
+            <Label htmlFor="gepinde_notitie">Gepinde Notitie</Label>
+            <Textarea
+              id="gepinde_notitie"
+              value={formData.gepinde_notitie}
+              onChange={(e) => handleChange('gepinde_notitie', e.target.value)}
+              placeholder="Belangrijke opmerking die altijd zichtbaar is..."
+              rows={2}
+            />
+            <p className="text-xs text-muted-foreground">
+              Wordt als gele banner getoond op het klantprofiel
+            </p>
+          </div>
+
+          {/* Row 9: Notities */}
           <div className="space-y-2">
             <Label htmlFor="notities">Notities</Label>
             <Textarea

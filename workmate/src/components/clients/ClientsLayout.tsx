@@ -30,6 +30,7 @@ export function ClientsLayout() {
   const [loading, setLoading] = useState(true)
   const [sortField, setSortField] = useState<SortField>('bedrijfsnaam')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [labelFilter, setLabelFilter] = useState<string>('alle')
 
   const fetchData = useCallback(() => {
     setLoading(true)
@@ -62,6 +63,11 @@ export function ClientsLayout() {
     // Status filter
     if (statusFilter !== 'alle') {
       result = result.filter((k) => k.status === statusFilter)
+    }
+
+    // Label filter
+    if (labelFilter !== 'alle') {
+      result = result.filter((k) => (k.klant_labels || []).includes(labelFilter))
     }
 
     // Search filter
@@ -102,7 +108,7 @@ export function ClientsLayout() {
     })
 
     return result
-  }, [klanten, searchQuery, statusFilter, sortField, sortDir])
+  }, [klanten, searchQuery, statusFilter, labelFilter, sortField, sortDir])
 
   function handleSort(field: SortField) {
     if (field === sortField) {
@@ -275,6 +281,33 @@ export function ClientsLayout() {
               </button>
             )
           })}
+        </div>
+
+        <div className="h-4 w-px bg-border hidden sm:block" />
+
+        {/* Label filter */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {[
+            { value: 'alle', label: 'Alle labels' },
+            { value: 'vooruit_betalen', label: 'Vooruit betalen' },
+            { value: 'niet_helpen', label: 'Niet helpen' },
+            { value: 'voorrang', label: 'Voorrang' },
+            { value: 'grote_klant', label: 'Grote klant' },
+            { value: 'wanbetaler', label: 'Wanbetaler' },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setLabelFilter(opt.value)}
+              className={cn(
+                'px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors',
+                labelFilter === opt.value
+                  ? 'bg-primary/10 text-primary border border-primary/30'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent'
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
 
         <div className="h-4 w-px bg-border hidden sm:block" />

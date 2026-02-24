@@ -372,6 +372,63 @@ export function ClientProfile() {
         </div>
       </div>
 
+      {/* ── Klant Labels + Waarschuwingen ── */}
+      {(klant.klant_labels || []).length > 0 && (
+        <div className="space-y-2">
+          {/* Waarschuwing banners */}
+          {(klant.klant_labels || []).includes('niet_helpen') && (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span className="text-sm font-medium">Let op: deze klant heeft het label &quot;Niet helpen&quot;</span>
+            </div>
+          )}
+          {(klant.klant_labels || []).includes('vooruit_betalen') && (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300">
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span className="text-sm font-medium">Let op: deze klant moet vooruit betalen</span>
+            </div>
+          )}
+          {(klant.klant_labels || []).includes('wanbetaler') && (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span className="text-sm font-medium">Let op: deze klant staat geregistreerd als wanbetaler</span>
+            </div>
+          )}
+          {/* Label badges */}
+          <div className="flex flex-wrap gap-1.5">
+            {(klant.klant_labels || []).map((label) => {
+              const colors: Record<string, string> = {
+                vooruit_betalen: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+                niet_helpen: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+                voorrang: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+                grote_klant: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                wanbetaler: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+              }
+              const labels: Record<string, string> = {
+                vooruit_betalen: 'Vooruit betalen',
+                niet_helpen: 'Niet helpen',
+                voorrang: 'Voorrang klant',
+                grote_klant: 'Grote klant',
+                wanbetaler: 'Wanbetaler',
+              }
+              return (
+                <Badge key={label} className={colors[label] || 'bg-gray-100 text-gray-700'}>
+                  {labels[label] || label}
+                </Badge>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Gepinde Notitie ── */}
+      {klant.gepinde_notitie && (
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+          <StickyNote className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800 dark:text-amber-200 whitespace-pre-wrap">{klant.gepinde_notitie}</p>
+        </div>
+      )}
+
       {/* ── Info Cards Row ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Contactpersonen */}

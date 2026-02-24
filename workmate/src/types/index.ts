@@ -44,6 +44,9 @@ export interface Klant {
   tags: string[];
   notities: string;
   contactpersonen: Contactpersoon[];
+  // Klant labels + gepinde notitie
+  klant_labels?: string[];
+  gepinde_notitie?: string;
   created_at: string;
   updated_at: string;
 }
@@ -77,7 +80,8 @@ export interface Project {
 export interface Taak {
   id: string;
   user_id: string;
-  project_id: string;
+  project_id?: string;
+  klant_id?: string;
   titel: string;
   beschrijving: string;
   status: 'todo' | 'bezig' | 'review' | 'klaar';
@@ -86,6 +90,7 @@ export interface Taak {
   deadline: string;
   geschatte_tijd: number;
   bestede_tijd: number;
+  locatie?: string;
   created_at: string;
   updated_at: string;
 }
@@ -98,7 +103,7 @@ export interface Offerte {
   project_id?: string;
   nummer: string;
   titel: string;
-  status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen';
+  status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd';
   subtotaal: number;
   btw_bedrag: number;
   totaal: number;
@@ -121,8 +126,25 @@ export interface Offerte {
   laatst_bekeken_op?: string;
   aantal_keer_bekeken?: number;
   publiek_token?: string;
+  // Sales tracking
+  verloopdatum?: string;
+  verstuurd_op?: string;
+  verstuurd_naar?: string;
+  akkoord_op?: string;
+  // Teksten
+  intro_tekst?: string;
+  outro_tekst?: string;
+  // Activiteit log
+  activiteiten?: OfferteActiviteit[];
   created_at: string;
   updated_at: string;
+}
+
+export interface OfferteActiviteit {
+  datum: string;
+  type: 'aangemaakt' | 'bewerkt' | 'verstuurd' | 'bekeken' | 'akkoord' | 'afgewezen' | 'gefactureerd';
+  beschrijving: string;
+  medewerker?: string;
 }
 
 export interface OfferteItem {

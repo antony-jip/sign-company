@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ListTodo, CheckCircle2, Loader2 } from 'lucide-react'
-import { getTaken, getProjecten } from '@/services/supabaseService'
-import type { Taak, Project } from '@/types'
+import { getTaken, getProjecten, getKlanten } from '@/services/supabaseService'
+import type { Taak, Project, Klant } from '@/types'
 import { formatDate, getPriorityColor, getStatusColor } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
@@ -19,15 +19,17 @@ export function PriorityTasks() {
   const navigate = useNavigate()
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
+  const [klanten, setKlanten] = useState<Klant[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getTaken(), getProjecten()])
-      .then(([t, p]) => {
+    Promise.all([getTaken(), getProjecten(), getKlanten()])
+      .then(([t, p, k]) => {
         if (!cancelled) {
           setTaken(t)
           setProjecten(p)
+          setKlanten(k)
         }
       })
       .catch(logger.error)
@@ -39,6 +41,9 @@ export function PriorityTasks() {
     const projectMap = new Map(
       projecten.map((p) => [p.id, p.naam])
     )
+    const klantMap = new Map(
+      klanten.map((k) => [k.id, k.bedrijfsnaam])
+    )
 
     return [...taken]
       .filter((t) => t.status !== 'klaar')
@@ -48,11 +53,18 @@ export function PriorityTasks() {
           (priorityOrder[b.prioriteit] ?? 99)
       )
       .slice(0, 5)
-      .map((task) => ({
-        ...task,
-        projectNaam: projectMap.get(task.project_id) ?? 'Onbekend project',
-      }))
-  }, [taken, projecten])
+      .map((task) => {
+        let contextLabel: string
+        if (task.project_id) {
+          contextLabel = projectMap.get(task.project_id) ?? 'Onbekend project'
+        } else if (task.klant_id) {
+          contextLabel = klantMap.get(task.klant_id) ?? 'Losse taak'
+        } else {
+          contextLabel = 'Intern'
+        }
+        return { ...task, projectNaam: contextLabel }
+      })
+  }, [taken, projecten, klanten])
 
   return (
     <Card>
@@ -90,7 +102,7 @@ export function PriorityTasks() {
           {topTasks.map((task) => (
             <div
               key={task.id}
-              onClick={() => navigate(`/projecten/${task.project_id}`)}
+              onClick={() => navigate(task.project_id ? `/projecten/${task.project_id}` : '/taken')}
               className="grid grid-cols-[80px_1fr_140px_100px_90px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-all duration-150 cursor-pointer group"
             >
               <div>
