@@ -82,14 +82,14 @@
 
         .hero { width: 100%; background: var(--off-white); padding: 80px 20px 60px; text-align: center; position: relative; overflow: hidden; }
         .hero::before { content: ''; position: absolute; top: -140px; right: -100px; width: 420px; height: 420px; background: radial-gradient(ellipse, rgba(229,115,36,0.08), transparent 70%); border-radius: 50%; filter: blur(35px); }
-        .hero-badge { display: inline-block; padding: 8px 20px; background: linear-gradient(135deg, var(--yellow), var(--orange)); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 50px; margin-bottom: 24px; }
-        .hero h1 { font-family: 'Satoshi', sans-serif; font-size: 42px; font-weight: 900; color: var(--navy); line-height: 1.1; letter-spacing: -2px; margin-bottom: 16px; }
-        .hero h1 .highlight { background: linear-gradient(135deg, var(--yellow), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero-badge { font-family: 'Excon', sans-serif !important; display: inline-block; padding: 8px 20px; background: linear-gradient(135deg, var(--yellow), var(--orange)); color: #fff !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 1.5px !important; text-transform: uppercase; border-radius: 50px; margin-bottom: 24px; }
+        .hero h1 { font-family: 'Excon', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; font-size: 42px !important; font-weight: 900 !important; color: var(--navy) !important; line-height: 1.1 !important; letter-spacing: -2px !important; margin-bottom: 16px; }
+        .hero h1 .highlight { background: linear-gradient(135deg, var(--yellow), var(--orange)) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
         .hero-intro { font-size: 18px; color: var(--gray-text); max-width: 600px; margin: 0 auto; line-height: 1.7; }
         .hero-intro strong { color: var(--navy); }
         .hero-stats { display: flex; justify-content: center; gap: 40px; margin-top: 32px; flex-wrap: wrap; }
         .stat { text-align: center; }
-        .stat-number { font-family: 'Satoshi', sans-serif; font-size: 32px; font-weight: 900; background: linear-gradient(135deg, var(--orange), var(--yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-number { font-family: 'Excon', sans-serif !important; font-size: 32px !important; font-weight: 900 !important; background: linear-gradient(135deg, var(--orange), var(--yellow)) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
         .stat-label { font-size: 13px; color: var(--gray-text); margin-top: 4px; }
 
         .categories { max-width: 1200px; margin: 0 auto; padding: 60px 20px 80px; }
@@ -105,7 +105,7 @@
         .cat-boot .category-icon { background: linear-gradient(135deg, #2196F3, #1976D2); }
         .cat-event .category-icon { background: linear-gradient(135deg, var(--pink), #a82745); }
         .cat-algemeen .category-icon { background: linear-gradient(135deg, var(--navy), #0f2233); }
-        .category-title { font-family: 'Satoshi', sans-serif; font-size: 24px; font-weight: 800; color: var(--navy); }
+        .category-title { font-family: 'Excon', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; font-size: 24px !important; font-weight: 700 !important; color: var(--navy) !important; letter-spacing: -1px !important; }
         .category-count { font-size: 14px; color: var(--gray-text); margin-left: auto; }
 
         .articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
@@ -117,14 +117,14 @@
         .article-card:hover .arrow { opacity: 1; }
 
         .cta-section { background: var(--navy); padding: 64px 20px; text-align: center; }
-        .cta-section h2 { font-family: 'Satoshi', sans-serif; font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 16px; }
+        .cta-section h2 { font-family: 'Excon', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; font-size: 32px !important; font-weight: 900 !important; color: #fff !important; letter-spacing: -1.5px !important; margin-bottom: 16px; }
         .cta-section p { color: rgba(255,255,255,0.7); font-size: 16px; margin-bottom: 32px; max-width: 520px; margin-left: auto; margin-right: auto; }
-        .cta-btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; background: linear-gradient(135deg, var(--yellow), var(--orange)); color: #fff; text-decoration: none; font-weight: 700; font-size: 15px; border-radius: 50px; transition: all 0.3s ease; }
+        .cta-btn { font-family: 'Excon', sans-serif !important; display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; background: linear-gradient(135deg, var(--yellow), var(--orange)); color: #fff !important; text-decoration: none; font-weight: 700 !important; font-size: 15px !important; letter-spacing: 0.3px !important; border-radius: 50px; transition: all 0.3s ease; }
         .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(240,170,4,0.3); }
 
         @media (min-width: 768px) {
             .hero { padding: 100px 40px 80px; }
-            .hero h1 { font-size: 56px; }
+            .hero h1 { font-size: 56px !important; letter-spacing: -3px !important; }
             .categories { padding: 80px 40px 100px; }
         }
 </style>
