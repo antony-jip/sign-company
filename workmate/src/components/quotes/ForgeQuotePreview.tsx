@@ -7,7 +7,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
-import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight } from 'lucide-react'
+import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Pencil, Download, ChevronRight } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import type { PrijsVariant } from './QuoteItemsTable'
 import { logger } from '../../utils/logger'
@@ -280,98 +280,109 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     <div className="max-w-4xl mx-auto">
       {/* Action bar - only shown when accessed via route (service data available) */}
       {fetchedOfferte && (
-        <div className="flex items-center justify-between mb-4 px-1">
-          <div className="flex items-center gap-3">
-            {/* Back navigation */}
+        <div className="mb-6 space-y-3">
+          {/* Row 1: Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 px-1">
             <button
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              onClick={() => navigate('/offertes')}
+              className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Terug
+              Offertes
             </button>
-
-            {/* Breadcrumb links */}
+            <ChevronRight className="h-3.5 w-3.5" />
             {fetchedKlant && (
-              <button
-                onClick={() => navigate(`/klanten/${fetchedKlant.id}`)}
-                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                {fetchedKlant.bedrijfsnaam}
-                <ExternalLink className="h-3 w-3" />
-              </button>
+              <>
+                <button
+                  onClick={() => navigate(`/klanten/${fetchedKlant.id}`)}
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {fetchedKlant.bedrijfsnaam}
+                </button>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </>
             )}
-            {fetchedOfferte.project_id && (
+            <span className="text-gray-900 dark:text-white font-medium">{offerteData.nummer}</span>
+          </div>
+
+          {/* Row 2: Title + Status + Actions */}
+          <div className="flex items-start justify-between gap-4 px-1">
+            <div className="flex items-center gap-3 min-w-0">
               <button
-                onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
-                className="inline-flex items-center gap-1 text-xs text-accent dark:text-primary hover:underline"
+                onClick={() => navigate(-1)}
+                className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                Bekijk project
-                <ExternalLink className="h-3 w-3" />
+                <ArrowLeft className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               </button>
-            )}
+              <div className="min-w-0">
+                <h1 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                  {offerteData.titel}
+                </h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <select
+                    value={offerteData.status}
+                    onChange={(e) => handleStatusUpdate(e.target.value as Offerte['status'])}
+                    className="text-xs border border-gray-300 dark:border-gray-600 rounded-md px-2 py-0.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                  >
+                    {(pipelineStappen && pipelineStappen.length > 0
+                      ? pipelineStappen.filter(s => s.actief).sort((a, b) => a.volgorde - b.volgorde)
+                      : [
+                          { key: 'concept', label: 'Concept' },
+                          { key: 'verzonden', label: 'Verzonden' },
+                          { key: 'bekeken', label: 'Bekeken' },
+                          { key: 'goedgekeurd', label: 'Goedgekeurd' },
+                          { key: 'afgewezen', label: 'Afgewezen' },
+                        ]
+                    ).map(stap => (
+                      <option key={stap.key} value={stap.key}>{stap.label}</option>
+                    ))}
+                  </select>
+                  {/* Conversieketen */}
+                  {fetchedOfferte.project_id && (
+                    <button
+                      onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
+                      className="inline-flex items-center gap-1 text-xs text-accent dark:text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Project
+                    </button>
+                  )}
+                  {fetchedOfferte.geconverteerd_naar_factuur_id && (
+                    <button
+                      onClick={() => navigate('/facturen')}
+                      className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Factuur
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
 
-            <div className="h-4 w-px bg-gray-300 dark:bg-gray-600" />
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Status:</span>
-              <select
-                value={offerteData.status}
-                onChange={(e) => handleStatusUpdate(e.target.value as Offerte['status'])}
-                className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => navigate(`/offertes/${fetchedOfferte.id}/detail`)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                {(pipelineStappen && pipelineStappen.length > 0
-                  ? pipelineStappen.filter(s => s.actief).sort((a, b) => a.volgorde - b.volgorde)
-                  : [
-                      { key: 'concept', label: 'Concept' },
-                      { key: 'verzonden', label: 'Verzonden' },
-                      { key: 'bekeken', label: 'Bekeken' },
-                      { key: 'goedgekeurd', label: 'Goedgekeurd' },
-                      { key: 'afgewezen', label: 'Afgewezen' },
-                    ]
-                ).map(stap => (
-                  <option key={stap.key} value={stap.key}>{stap.label}</option>
-                ))}
-              </select>
+                <Pencil className="h-3.5 w-3.5" />
+                Bewerk offerte
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download PDF
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Conversieketen indicator */}
-            {(fetchedOfferte.project_id || fetchedOfferte.geconverteerd_naar_factuur_id) && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mr-2">
-                <Badge className={getStatusColor(fetchedOfferte.status) + ' text-[10px]'}>
-                  {fetchedOfferte.nummer}
-                </Badge>
-                {fetchedOfferte.project_id && (
-                  <>
-                    <ArrowRight className="h-3 w-3" />
-                    <button
-                      onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
-                      className="text-accent dark:text-primary hover:underline font-medium"
-                    >
-                      Project
-                    </button>
-                  </>
-                )}
-                {fetchedOfferte.geconverteerd_naar_factuur_id && (
-                  <>
-                    <ArrowRight className="h-3 w-3" />
-                    <button
-                      onClick={() => navigate('/facturen')}
-                      className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
-                    >
-                      Factuur
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Pipeline acties voor goedgekeurde offertes */}
-            {fetchedOfferte.status === 'goedgekeurd' && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300 mr-1">Volgende stap:</span>
+          {/* Row 3: Next step card (only for goedgekeurd) */}
+          {fetchedOfferte.status === 'goedgekeurd' && (
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800 mx-1">
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Volgende stap:</span>
+              <div className="flex items-center gap-2">
                 {fetchedOfferte.project_id ? (
                   <button
                     onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
@@ -390,7 +401,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   </button>
                 )}
                 <button
-                  onClick={() => navigate(`/montage`)}
+                  onClick={() => navigate('/montage')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-md transition-colors"
                 >
                   Plan Montage
@@ -403,17 +414,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   Factureer
                 </button>
               </div>
-            )}
-            <button
-              onClick={handleDownloadPDF}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Download PDF
-            </button>
-          </div>
+            </div>
+          )}
         </div>
       )}
 
