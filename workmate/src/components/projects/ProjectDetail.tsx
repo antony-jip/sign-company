@@ -99,7 +99,6 @@ import { analyzeProject } from '@/services/aiService'
 import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
-import { ProjectOfferteEditor } from './ProjectOfferteEditor'
 import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Uitgave } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
@@ -191,8 +190,6 @@ export function ProjectDetail() {
   const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false)
   const [aiAnalysisResult, setAiAnalysisResult] = useState<string | null>(null)
 
-  // Offerte editor state
-  const [editOfferteId, setEditOfferteId] = useState<string | null>(null)
 
   // Offerte aanmaken - navigeert naar de volledige offerte-pagina
   const openNieuweOfferte = () => {
@@ -240,12 +237,6 @@ export function ProjectDetail() {
   const [alleKlanten, setAlleKlanten] = useState<Klant[]>([])
   const [kopieBezig, setKopieBezig] = useState(false)
 
-  // Email offerte state (simple offerte mail)
-  const [emailOfferteOpen, setEmailOfferteOpen] = useState(false)
-  const [emailOnderwerp, setEmailOnderwerp] = useState('')
-  const [emailBericht, setEmailBericht] = useState('')
-  const [emailOfferteId, setEmailOfferteId] = useState<string | null>(null)
-  const [isEmailVerzenden, setIsEmailVerzenden] = useState(false)
 
   // Initialize briefing text when project loads
   useEffect(() => {
@@ -1492,7 +1483,7 @@ export function ProjectDetail() {
                           variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-xs"
-                          onClick={() => navigate(`/offertes/${offerte.id}`)}
+                          onClick={() => navigate(`/offertes/${offerte.id}/detail`)}
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           Bekijk
@@ -1501,7 +1492,7 @@ export function ProjectDetail() {
                           variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-xs"
-                          onClick={() => setEditOfferteId(offerte.id)}
+                          onClick={() => navigate(`/offertes/${offerte.id}`)}
                         >
                           <Pencil className="h-3 w-3 mr-1" />
                           Bewerk
@@ -1510,34 +1501,26 @@ export function ProjectDetail() {
                           variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-xs"
-                          onClick={() => {
-                            setEmailOfferteId(offerte.id)
-                            setEmailOnderwerp(`Offerte ${offerte.nummer} - ${offerte.titel}`)
-                            setEmailBericht(
-                              `Beste ${project.klant_naam || 'klant'},\n\nHierbij ontvangt u onze offerte "${offerte.titel}" (${offerte.nummer}) ter waarde van ${formatCurrency(offerte.totaal)}.\n\nDeze offerte is geldig tot ${formatDate(offerte.geldig_tot)}.\n\nMocht u vragen hebben, neem dan gerust contact met ons op.\n\nMet vriendelijke groet`
-                            )
-                            setEmailOfferteOpen(true)
-                          }}
+                          onClick={() => navigate(`/email/compose?quote_id=${offerte.id}`)}
                         >
                           <Mail className="h-3 w-3 mr-1" />
                           Mail
                         </Button>
-                        {offerte.status === 'goedgekeurd' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
-                            disabled={creatingFactuurForOfferte === offerte.id}
-                            onClick={() => handleCreateFactuurFromOfferte(offerte)}
-                          >
-                            {creatingFactuurForOfferte === offerte.id ? (
-                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                            ) : (
-                              <CreditCard className="h-3 w-3 mr-1" />
-                            )}
-                            Factuur
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
+                          disabled={creatingFactuurForOfferte === offerte.id || offerte.status === 'gefactureerd'}
+                          onClick={() => handleCreateFactuurFromOfferte(offerte)}
+                          title={offerte.status === 'gefactureerd' ? 'Offerte is al gefactureerd' : 'Maak factuur van deze offerte'}
+                        >
+                          {creatingFactuurForOfferte === offerte.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <CreditCard className="h-3 w-3 mr-1" />
+                          )}
+                          Factuur
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -1546,96 +1529,7 @@ export function ProjectDetail() {
             </CardContent>
           </Card>
 
-          {/* Offerte Editor Dialog */}
-          {editOfferteId && (
-            <ProjectOfferteEditor
-              offerteId={editOfferteId}
-              open={!!editOfferteId}
-              onClose={() => setEditOfferteId(null)}
-              onSaved={fetchOffertes}
-            />
-          )}
 
-          {/* Email offerte dialog */}
-          <Dialog open={emailOfferteOpen} onOpenChange={(open) => {
-            setEmailOfferteOpen(open)
-            if (!open) {
-              setEmailOnderwerp('')
-              setEmailBericht('')
-              setEmailOfferteId(null)
-            }
-          }}>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-accent" />
-                  Offerte versturen via e-mail
-                </DialogTitle>
-                <DialogDescription>
-                  Verstuur deze offerte naar {project.klant_naam || 'de klant'}.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-aan">Aan</Label>
-                  <Input
-                    id="email-aan"
-                    value={klant?.email || project.klant_naam || 'Klant'}
-                    readOnly
-                    className="bg-gray-50 dark:bg-gray-800"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email-onderwerp">Onderwerp</Label>
-                  <Input
-                    id="email-onderwerp"
-                    value={emailOnderwerp}
-                    onChange={(e) => setEmailOnderwerp(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email-bericht">Bericht</Label>
-                  <Textarea
-                    id="email-bericht"
-                    value={emailBericht}
-                    onChange={(e) => setEmailBericht(e.target.value)}
-                    rows={8}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setEmailOfferteOpen(false)}>
-                  Annuleren
-                </Button>
-                <Button
-                  disabled={isEmailVerzenden || !emailOnderwerp.trim()}
-                  className="bg-gradient-to-r from-accent to-primary border-0"
-                  onClick={async () => {
-                    setIsEmailVerzenden(true)
-                    try {
-                      if (emailOfferteId) {
-                        await updateOfferte(emailOfferteId, { status: 'verzonden' })
-                      }
-                      toast.success('Offerte succesvol verzonden via e-mail!')
-                      setEmailOfferteOpen(false)
-                      setEmailOnderwerp('')
-                      setEmailBericht('')
-                      setEmailOfferteId(null)
-                      await fetchOffertes()
-                    } catch (err) {
-                      logger.error('Fout bij verzenden offerte:', err)
-                      toast.error('Kon offerte niet verzenden')
-                    } finally {
-                      setIsEmailVerzenden(false)
-                    }
-                  }}
-                >
-                  <Send className="mr-1.5 h-4 w-4" />
-                  {isEmailVerzenden ? 'Verzenden...' : 'Versturen'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
           {/* ── Bestanden (drag & drop + upload button) ── */}
           <Card className="border-gray-200/80 dark:border-gray-700/80">
