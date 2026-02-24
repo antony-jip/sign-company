@@ -42,7 +42,7 @@ export function WerkbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { standaardUurtarief } = useAppSettings()
+  const { standaardUurtarief, standaardBtw } = useAppSettings()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
 
@@ -273,10 +273,10 @@ export function WerkbonDetail() {
     const subtotaal = round2(regels.filter((r) => r.factureerbaar).reduce((sum, r) => sum + r.totaal, 0))
     const kmKosten = round2((kilometers || 0) * (kmTarief || 0))
     const totaalExcl = round2(subtotaal + kmKosten)
-    const btw = round2(totaalExcl * 0.21)
+    const btw = round2(totaalExcl * (standaardBtw / 100))
     const totaalIncl = round2(totaalExcl + btw)
     return { subtotaal, kmKosten, totaalExcl, btw, totaalIncl }
-  }, [regels, kilometers, kmTarief])
+  }, [regels, kilometers, kmTarief, standaardBtw])
 
   // Handtekening canvas
   const startDraw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -370,7 +370,7 @@ export function WerkbonDetail() {
             beschrijving: `${regel.omschrijving}${regel.medewerker_id ? ` - ${medewerkers.find((m) => m.id === regel.medewerker_id)?.naam || ''}` : ''}`,
             aantal: regel.uren || 1,
             eenheidsprijs: regel.uurtarief || 0,
-            btw_percentage: 21,
+            btw_percentage: standaardBtw,
             korting_percentage: 0,
             totaal: regel.totaal,
             volgorde,
@@ -380,7 +380,7 @@ export function WerkbonDetail() {
             beschrijving: regel.omschrijving,
             aantal: regel.aantal || 1,
             eenheidsprijs: regel.prijs_per_eenheid || 0,
-            btw_percentage: 21,
+            btw_percentage: standaardBtw,
             korting_percentage: 0,
             totaal: regel.totaal,
             volgorde,
@@ -403,7 +403,7 @@ export function WerkbonDetail() {
       }
 
       const subtotaal = round2(factuurItems.reduce((sum, i) => sum + i.totaal, 0))
-      const btw = round2(subtotaal * 0.21)
+      const btw = round2(subtotaal * (standaardBtw / 100))
 
       const factuur = await createFactuur({
         user_id: userId,
@@ -826,7 +826,7 @@ export function WerkbonDetail() {
                 <span className="font-medium">{formatCurrency(totalen.totaalExcl)}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
-                <span>BTW (21%)</span>
+                <span>BTW ({standaardBtw}%)</span>
                 <span>{formatCurrency(totalen.btw)}</span>
               </div>
               <Separator />
