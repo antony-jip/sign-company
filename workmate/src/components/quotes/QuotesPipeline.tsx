@@ -1031,7 +1031,7 @@ export function QuotesPipeline() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              navigate(`/offertes/${offerte.id}/pdf`)
+                              navigate(`/offertes/${offerte.id}/detail`)
                             }}
                             className="text-xs text-primary hover:underline"
                           >

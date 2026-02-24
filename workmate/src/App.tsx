@@ -104,8 +104,8 @@ function AppContent() {
         <Route path="deals/:id" element={<DealDetail />} />
         <Route path="offertes" element={<QuotesPipeline />} />
         <Route path="offertes/nieuw" element={<QuoteCreation />} />
-        <Route path="offertes/:id" element={<OfferteDetail />} />
-        <Route path="offertes/:id/pdf" element={<ForgeQuotePreview />} />
+        <Route path="offertes/:id" element={<ForgeQuotePreview />} />
+        <Route path="offertes/:id/detail" element={<OfferteDetail />} />
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
         <Route path="kalender" element={<CalendarLayout />} />
