@@ -1056,6 +1056,41 @@ export function QuoteCreation() {
         {/* ================================================================ */}
         {currentStep === 1 && (
           <div className="space-y-5">
+
+            {/* ── Offerte Teksten (bovenaan) ── */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                    <FileText className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Offerte Teksten
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Notities</Label>
+                    <Textarea
+                      value={notities}
+                      onChange={(e) => setNotities(e.target.value)}
+                      placeholder="Interne notities of opmerkingen voor de klant..."
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Voorwaarden</Label>
+                    <Textarea
+                      value={voorwaarden}
+                      onChange={(e) => setVoorwaarden(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ── Items ── */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -1079,39 +1114,6 @@ export function QuoteCreation() {
                 />
               </CardContent>
             </Card>
-
-            {/* Notities & Voorwaarden */}
-            <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Notities
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={notities}
-                    onChange={(e) => setNotities(e.target.value)}
-                    placeholder="Interne notities of opmerkingen voor de klant..."
-                    rows={4}
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Voorwaarden
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={voorwaarden}
-                    onChange={(e) => setVoorwaarden(e.target.value)}
-                    rows={4}
-                  />
-                </CardContent>
-              </Card>
-            </div>
 
             {/* Navigation */}
             <div className="flex justify-between">
