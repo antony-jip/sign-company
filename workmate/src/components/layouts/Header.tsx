@@ -35,6 +35,12 @@ const routeMeta: Record<string, { title: string; subtitle?: string }> = {
   '/leads': { title: 'Lead Capture', subtitle: 'Inkomende aanvragen' },
   '/bestelbonnen': { title: 'Bestelbonnen', subtitle: 'Inkoop bij leveranciers' },
   '/leveranciers': { title: 'Leveranciers', subtitle: 'Materiaal- & dienstverleners' },
+  '/leveringsbonnen': { title: 'Leveringsbonnen', subtitle: 'Ontvangst & levering' },
+  '/uitgaven': { title: 'Uitgaven', subtitle: 'Kosten & declaraties' },
+  '/forecast': { title: 'Forecast', subtitle: 'Omzetprognose' },
+  '/nieuwsbrieven': { title: 'Nieuwsbrieven', subtitle: 'Klantcommunicatie' },
+  '/importeren': { title: 'Importeren', subtitle: 'Data importeren' },
+  '/booking': { title: 'Booking', subtitle: 'Afspraken & planning' },
 }
 
 function getPageMeta(pathname: string): { title: string; subtitle?: string } {

@@ -8,6 +8,7 @@ import {
   ClipboardCheck, Truck, ShoppingCart, Warehouse,
   Briefcase, UserPlus, CreditCard, Files, Newspaper,
   Upload, Bot, Calculator, TrendingUp, PackageCheck,
+  CalendarCheck,
   type LucideIcon
 } from 'lucide-react'
 import { getOffertes, getMontageAfspraken, getProjecten } from '@/services/supabaseService'
@@ -60,6 +61,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Planning', icon: Calendar, path: '/kalender' },
       { label: 'Tijdregistratie', icon: Clock, path: '/tijdregistratie' },
+      { label: 'Booking', icon: CalendarCheck, path: '/booking' },
     ],
   },
   {

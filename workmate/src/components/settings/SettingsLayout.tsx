@@ -3445,6 +3445,7 @@ const ALL_SIDEBAR_ITEMS = [
   { label: 'Nacalculatie', section: 'Productie' },
   { label: 'Planning', section: 'Planning' },
   { label: 'Tijdregistratie', section: 'Planning' },
+  { label: 'Booking', section: 'Planning' },
   { label: 'Email', section: 'Communicatie' },
   { label: 'Nieuwsbrieven', section: 'Communicatie' },
   { label: 'Lead Capture', section: 'Communicatie' },
