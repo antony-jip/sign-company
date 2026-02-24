@@ -63,6 +63,7 @@ interface QuoteItemsTableProps {
   onAddItem: () => void
   onUpdateItem: (id: string, field: keyof QuoteLineItem, value: QuoteLineItem[keyof QuoteLineItem]) => void
   onRemoveItem: (id: string) => void
+  onDuplicateItem?: (id: string) => void
   onUpdateItemWithCalculatie?: (
     id: string,
     data: {
@@ -87,6 +88,7 @@ export function QuoteItemsTable({
   onAddItem,
   onUpdateItem,
   onRemoveItem,
+  onDuplicateItem,
   onUpdateItemWithCalculatie,
 }: QuoteItemsTableProps) {
   // Calculatie modal
@@ -218,6 +220,16 @@ export function QuoteItemsTable({
               >
                 {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </button>
+
+              {onDuplicateItem && (
+                <button
+                  onClick={() => onDuplicateItem(item.id)}
+                  className="text-gray-400 hover:text-blue-500 flex-shrink-0 p-1"
+                  title="Item dupliceren"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              )}
 
               <button
                 onClick={() => onRemoveItem(item.id)}

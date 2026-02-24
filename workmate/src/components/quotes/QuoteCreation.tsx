@@ -262,6 +262,29 @@ export function QuoteCreation() {
     setItems(items.filter((item) => item.id !== id))
   }
 
+  const handleDuplicateItem = (id: string) => {
+    const original = items.find((item) => item.id === id)
+    if (!original) return
+    const newId = `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    const copy: QuoteLineItem = {
+      ...original,
+      id: newId,
+      beschrijving: original.beschrijving ? `${original.beschrijving} (kopie)` : '',
+      detail_regels: original.detail_regels?.map((r) => ({
+        ...r,
+        id: `dr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      })),
+      calculatie_regels: original.calculatie_regels?.map((r) => ({
+        ...r,
+        id: `cr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      })),
+    }
+    const idx = items.findIndex((item) => item.id === id)
+    const updated = [...items]
+    updated.splice(idx + 1, 0, copy)
+    setItems(updated)
+  }
+
   const handleUpdateItemWithCalculatie = (
     id: string,
     data: {
@@ -751,6 +774,7 @@ export function QuoteCreation() {
                   onAddItem={handleAddItem}
                   onUpdateItem={handleUpdateItem}
                   onRemoveItem={handleRemoveItem}
+                  onDuplicateItem={handleDuplicateItem}
                   onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
                 />
               </CardContent>
