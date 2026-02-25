@@ -7,3 +7,5 @@ export { CTA } from './CTA';
 export { Location } from './Location';
 export { Header } from './Header';
 export { Footer } from './Footer';
+export { FontLoader } from './FontLoader';
+export { FontSelector } from './FontSelector';

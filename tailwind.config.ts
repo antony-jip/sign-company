@@ -35,8 +35,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        heading: ['Poppins', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-family)', 'Manrope', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-family)', 'Manrope', 'system-ui', 'sans-serif'],
       },
     },
   },
