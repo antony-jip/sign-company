@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-Fix all kennisbank URLs for WordPress child-page structure.
+Fix all kennisbank URLs for WordPress production.
 
 Changes:
 1. www.signcompany.nl → signcompany.nl  (remove www)
-2. /kennisbank-  → /kennisbank/          (flat → nested under parent)
+2. Keep /kennisbank-{slug} format (NOT /kennisbank/{slug})
 3. Add trailing slash to all /kennisbank URLs that lack one
+
+URL format: signcompany.nl/kennisbank-gevelreclame-wat-kost-gevelreclame/
+Main page:  signcompany.nl/kennisbank/
 
 Applies to: href, canonical, og:url, JSON-LD, and all other occurrences
 in every .html file under kennisbank/.
@@ -13,7 +16,6 @@ in every .html file under kennisbank/.
 
 import os
 import re
-import sys
 
 KENNISBANK_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kennisbank')
 
@@ -24,12 +26,13 @@ def fix_content(content):
     # Step A: Remove www from signcompany.nl
     content = content.replace('www.signcompany.nl', 'signcompany.nl')
 
-    # Step B: Flat → nested:  /kennisbank-  →  /kennisbank/
-    content = content.replace('/kennisbank-', '/kennisbank/')
+    # Step B: Revert /kennisbank/ back to /kennisbank- when followed by a slug
+    # /kennisbank/gevelreclame-... → /kennisbank-gevelreclame-...
+    # But keep /kennisbank/" as-is (that's the main page)
+    content = re.sub(r'/kennisbank/([^"/ ])', r'/kennisbank-\1', content)
 
     # Step C: Add trailing slash to kennisbank URLs missing one.
     # Matches /kennisbank... up to a closing " where the last char is not /
-    # Uses negative lookbehind to avoid double-slashing.
     content = re.sub(
         r'(/kennisbank[^"]*?)(?<!/)"',
         r'\1/"',
