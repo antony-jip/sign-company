@@ -2,6 +2,7 @@ export interface AppWeergaveInstellingen {
   id: string;
   user_id: string;
   font_family: string;
+  font_size: FontSize;
   updated_at: string;
 }
 
@@ -10,6 +11,24 @@ export interface BeschikbaarFont {
   readonly label: string;
   readonly beschrijving: string;
 }
+
+export type FontSize = 'klein' | 'normaal' | 'groot' | 'extra-groot';
+
+export interface BeschikbareFontSize {
+  readonly value: FontSize;
+  readonly label: string;
+  readonly beschrijving: string;
+  readonly cssValue: string;
+}
+
+export const BESCHIKBARE_FONT_SIZES: readonly BeschikbareFontSize[] = [
+  { value: 'klein', label: 'Klein', beschrijving: 'Compact weergave', cssValue: '14px' },
+  { value: 'normaal', label: 'Normaal', beschrijving: 'Standaard grootte', cssValue: '16px' },
+  { value: 'groot', label: 'Groot', beschrijving: 'Beter leesbaar', cssValue: '18px' },
+  { value: 'extra-groot', label: 'Extra groot', beschrijving: 'Maximale leesbaarheid', cssValue: '20px' },
+] as const;
+
+export const DEFAULT_FONT_SIZE: FontSize = 'normaal';
 
 export const BESCHIKBARE_FONTS: readonly BeschikbaarFont[] = [
   { value: 'Manrope', label: 'Manrope', beschrijving: 'Modern & geometrisch' },

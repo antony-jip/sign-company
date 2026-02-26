@@ -4,11 +4,13 @@
 
 :root {
   --font-family: 'Manrope';
+  --font-size: 16px;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    font-size: var(--font-size);
   }
 
   body {
