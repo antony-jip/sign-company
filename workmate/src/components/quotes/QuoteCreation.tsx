@@ -45,6 +45,11 @@ import {
   Paperclip,
   CalendarClock,
   Trash2,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Copy,
+  Image,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -133,6 +138,9 @@ export function QuoteCreation() {
     return d.toISOString().split('T')[0]
   })
   const [offerteNummer, setOfferteNummer] = useState('')
+
+  // ── FIX 7: Client details panel ──
+  const [klantPanelOpen, setKlantPanelOpen] = useState(true)
 
   // ── Step 1: Items ──
   const [items, setItems] = useState<QuoteLineItem[]>([])
@@ -317,6 +325,7 @@ export function QuoteCreation() {
         setIsEditMode(true)
         setSelectedKlantId(offerte.klant_id)
         setSelectedProjectId(offerte.project_id || '')
+        if (offerte.contactpersoon_id) setSelectedContactId(offerte.contactpersoon_id)
         setOfferteTitel(offerte.titel)
         setOfferteNummer(offerte.nummer)
         setGeldigTot(offerte.geldig_tot?.split('T')[0] || '')
@@ -343,6 +352,12 @@ export function QuoteCreation() {
             heeft_calculatie: item.heeft_calculatie,
             prijs_varianten: item.prijs_varianten,
             actieve_variant_id: item.actieve_variant_id,
+            breedte_mm: item.breedte_mm,
+            hoogte_mm: item.hoogte_mm,
+            oppervlakte_m2: item.oppervlakte_m2,
+            afmeting_vrij: item.afmeting_vrij,
+            foto_url: item.foto_url,
+            foto_op_offerte: item.foto_op_offerte,
           }))
 
         if (mappedItems.length > 0) {
@@ -534,6 +549,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: klant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+          ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
           titel: offerteTitel,
           status: 'concept',
           subtotaal: sub,
@@ -567,6 +583,12 @@ export function QuoteCreation() {
               heeft_calculatie: item.heeft_calculatie,
               prijs_varianten: item.prijs_varianten,
               actieve_variant_id: item.actieve_variant_id,
+              breedte_mm: item.breedte_mm,
+              hoogte_mm: item.hoogte_mm,
+              oppervlakte_m2: item.oppervlakte_m2,
+              afmeting_vrij: item.afmeting_vrij,
+              foto_url: item.foto_url,
+              foto_op_offerte: item.foto_op_offerte,
             })
           )
         )
@@ -577,6 +599,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: klant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+          ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
           nummer: offerteNummer,
           titel: offerteTitel,
           status: 'concept',
@@ -609,6 +632,12 @@ export function QuoteCreation() {
               heeft_calculatie: item.heeft_calculatie,
               prijs_varianten: item.prijs_varianten,
               actieve_variant_id: item.actieve_variant_id,
+              breedte_mm: item.breedte_mm,
+              hoogte_mm: item.hoogte_mm,
+              oppervlakte_m2: item.oppervlakte_m2,
+              afmeting_vrij: item.afmeting_vrij,
+              foto_url: item.foto_url,
+              foto_op_offerte: item.foto_op_offerte,
             })
           )
         )
@@ -724,6 +753,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+          ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
           titel: offerteTitel,
           status,
           subtotaal,
@@ -759,6 +789,12 @@ export function QuoteCreation() {
               heeft_calculatie: item.heeft_calculatie,
               prijs_varianten: item.prijs_varianten,
               actieve_variant_id: item.actieve_variant_id,
+              breedte_mm: item.breedte_mm,
+              hoogte_mm: item.hoogte_mm,
+              oppervlakte_m2: item.oppervlakte_m2,
+              afmeting_vrij: item.afmeting_vrij,
+              foto_url: item.foto_url,
+              foto_op_offerte: item.foto_op_offerte,
             })
           )
         )
@@ -769,6 +805,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+          ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
           ...(paramDealId ? { deal_id: paramDealId } : {}),
           nummer: offerteNummer,
           titel: offerteTitel,
@@ -802,6 +839,12 @@ export function QuoteCreation() {
               heeft_calculatie: item.heeft_calculatie,
               prijs_varianten: item.prijs_varianten,
               actieve_variant_id: item.actieve_variant_id,
+              breedte_mm: item.breedte_mm,
+              hoogte_mm: item.hoogte_mm,
+              oppervlakte_m2: item.oppervlakte_m2,
+              afmeting_vrij: item.afmeting_vrij,
+              foto_url: item.foto_url,
+              foto_op_offerte: item.foto_op_offerte,
             })
           )
         )
@@ -872,6 +915,11 @@ export function QuoteCreation() {
         korting_percentage: item.korting_percentage,
         totaal: item.totaal,
         volgorde: index + 1,
+        breedte_mm: item.breedte_mm,
+        hoogte_mm: item.hoogte_mm,
+        oppervlakte_m2: item.oppervlakte_m2,
+        foto_url: item.foto_url,
+        foto_op_offerte: item.foto_op_offerte,
         created_at: new Date().toISOString(),
       }))
       const doc = generateOffertePDF(offerteData, offerteItems, selectedKlant, {
@@ -988,6 +1036,7 @@ export function QuoteCreation() {
         klant_id: selectedKlantId,
         klant_naam: selectedKlant?.bedrijfsnaam,
         ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
+        ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
         titel: offerteTitel,
         status: 'concept',
         subtotaal,
@@ -1602,7 +1651,9 @@ export function QuoteCreation() {
         {/* STEP 1: ITEMS                                                    */}
         {/* ================================================================ */}
         {currentStep === 1 && (
-          <div className="space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+            {/* ── LEFT: Items content ── */}
+            <div className="space-y-5">
             {/* ── Introductietekst ── */}
             <Card>
               <CardHeader className="pb-3">
@@ -1718,6 +1769,148 @@ export function QuoteCreation() {
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
+            </div>{/* end LEFT column */}
+
+            {/* ── RIGHT: Client details panel (FIX 7) ── */}
+            <div className="hidden lg:block space-y-4">
+              {/* Klantgegevens panel */}
+              {selectedKlant ? (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm sticky top-4">
+                  {/* Panel header */}
+                  <button
+                    onClick={() => setKlantPanelOpen(!klantPanelOpen)}
+                    className="w-full flex items-center gap-2 px-4 py-3 bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{selectedKlant.bedrijfsnaam}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}
+                      </p>
+                    </div>
+                    {klantPanelOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+                  </button>
+
+                  {klantPanelOpen && (
+                    <div className="p-4 space-y-4">
+                      {/* Contactpersoon dropdown */}
+                      {selectedKlant.contactpersonen?.length > 0 && (
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Contactpersoon</label>
+                          <Select value={selectedContactId} onValueChange={(val) => handleSelectContact(val)}>
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Selecteer..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedKlant.contactpersonen.map((cp) => (
+                                <SelectItem key={cp.id} value={cp.id}>
+                                  <div className="flex items-center gap-1.5">
+                                    <span>{cp.naam}</span>
+                                    {cp.is_primair && <span className="text-[9px] text-primary">(primair)</span>}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="__new__">
+                                <span className="text-blue-600 dark:text-blue-400">+ Nieuwe contactpersoon</span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {/* Adresgegevens */}
+                      {(selectedKlant.adres || selectedKlant.stad) && (
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Adres</label>
+                          <div className="text-xs text-foreground space-y-0.5">
+                            {selectedKlant.adres && <p>{selectedKlant.adres}</p>}
+                            {(selectedKlant.postcode || selectedKlant.stad) && (
+                              <p>{[selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(' ')}</p>
+                            )}
+                            {selectedKlant.land && selectedKlant.land !== 'Nederland' && <p>{selectedKlant.land}</p>}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* KvK / BTW */}
+                      {(selectedKlant.kvk_nummer || selectedKlant.btw_nummer) && (
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Registratie</label>
+                          <div className="text-xs text-foreground space-y-0.5">
+                            {selectedKlant.kvk_nummer && <p>KvK: {selectedKlant.kvk_nummer}</p>}
+                            {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Quick actions */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Acties</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedKlant.telefoon && (
+                            <a
+                              href={`tel:${selectedKlant.telefoon}`}
+                              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                            >
+                              <Phone className="h-3 w-3" />
+                              Bellen
+                            </a>
+                          )}
+                          {selectedKlant.email && (
+                            <a
+                              href={`mailto:${selectedKlant.email}`}
+                              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                            >
+                              <Mail className="h-3 w-3" />
+                              Email
+                            </a>
+                          )}
+                          <button
+                            onClick={() => {
+                              const adres = [selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')
+                              if (adres) {
+                                navigator.clipboard.writeText(adres)
+                                toast.success('Adres gekopieerd')
+                              }
+                            }}
+                            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <Copy className="h-3 w-3" />
+                            Kopieer adres
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Link naar klantprofiel */}
+                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <Link
+                          to={`/klanten/${selectedKlant.id}`}
+                          className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Klantprofiel bekijken
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-6 text-center">
+                  <Building2 className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">Geen klant geselecteerd</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 text-xs h-7"
+                    onClick={() => setCurrentStep(0)}
+                  >
+                    Klant kiezen
+                  </Button>
+                </div>
+              )}
+            </div>{/* end RIGHT column */}
           </div>
         )}
 
@@ -1749,6 +1942,11 @@ export function QuoteCreation() {
                   korting_percentage: data.korting_percentage,
                   prijs_varianten: item.prijs_varianten,
                   actieve_variant_id: item.actieve_variant_id,
+                  breedte_mm: item.breedte_mm,
+                  hoogte_mm: item.hoogte_mm,
+                  oppervlakte_m2: item.oppervlakte_m2,
+                  foto_url: item.foto_url,
+                  foto_op_offerte: item.foto_op_offerte,
                 }
               })}
             />

@@ -134,6 +134,8 @@ export interface Offerte {
   // Teksten
   intro_tekst?: string;
   outro_tekst?: string;
+  // Contactpersoon koppeling
+  contactpersoon_id?: string;
   // Activiteit log
   activiteiten?: OfferteActiviteit[];
   created_at: string;
@@ -164,6 +166,14 @@ export interface OfferteItem {
   heeft_calculatie?: boolean;
   prijs_varianten?: OfferteItemPrijsVariant[];
   actieve_variant_id?: string;
+  // Afmetingen (FIX 9)
+  breedte_mm?: number;
+  hoogte_mm?: number;
+  oppervlakte_m2?: number;
+  afmeting_vrij?: boolean;
+  // Foto (FIX 10)
+  foto_url?: string;
+  foto_op_offerte?: boolean;
   created_at: string;
 }
 

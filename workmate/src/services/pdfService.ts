@@ -370,16 +370,27 @@ export function generateOffertePDF(
     y += 8
   }
 
-  // Items table
-  const tableBody = items.map((item, index) => [
-    (index + 1).toString(),
-    item.beschrijving,
-    item.aantal.toString(),
-    formatCurrency(item.eenheidsprijs),
-    item.btw_percentage > 0 ? `${item.btw_percentage}%` : '-',
-    item.korting_percentage > 0 ? `${item.korting_percentage}%` : '-',
-    formatCurrency(item.totaal),
-  ])
+  // Check if any items have photos enabled for the offerte
+  const hasPhotos = items.some(i => i.foto_op_offerte && i.foto_url)
+
+  // Items table — add dimension info to description
+  const tableBody = items.map((item, index) => {
+    let beschrijving = item.beschrijving
+    // FIX 9: Append dimension info
+    if (item.breedte_mm && item.hoogte_mm) {
+      const m2 = item.oppervlakte_m2 || ((item.breedte_mm / 1000) * (item.hoogte_mm / 1000))
+      beschrijving += `\nAfmeting: ${item.breedte_mm} × ${item.hoogte_mm} mm (${m2.toFixed(2)} m²)`
+    }
+    return [
+      (index + 1).toString(),
+      beschrijving,
+      item.aantal.toString(),
+      formatCurrency(item.eenheidsprijs),
+      item.btw_percentage > 0 ? `${item.btw_percentage}%` : '-',
+      item.korting_percentage > 0 ? `${item.korting_percentage}%` : '-',
+      formatCurrency(item.totaal),
+    ]
+  })
 
   const tableStyles = getAutoTableStyles(brand, docStyle)
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -463,6 +474,67 @@ export function generateOffertePDF(
     doc.setFontSize(baseFontSize - 2)
     const splitTerms = doc.splitTextToSize(offerte.voorwaarden, pageWidth - margins.left - margins.right)
     doc.text(splitTerms, margins.left, totalsY)
+  }
+
+  // FIX 10: Add photo pages (landscape) if any items have foto_op_offerte
+  if (hasPhotos) {
+    const photoItems = items.filter(i => i.foto_op_offerte && i.foto_url)
+    for (const photoItem of photoItems) {
+      // Add new landscape page
+      doc.addPage('a4', 'landscape')
+      const pgW = doc.internal.pageSize.getWidth()
+      const pgH = doc.internal.pageSize.getHeight()
+      addBriefpapierBackground(doc, docStyle, doc.getNumberOfPages())
+
+      // Left half: photo
+      const photoMargin = 15
+      const photoMaxW = pgW / 2 - photoMargin * 1.5
+      const photoMaxH = pgH - photoMargin * 2 - 20
+
+      try {
+        doc.addImage(photoItem.foto_url!, 'JPEG', photoMargin, photoMargin + 15, photoMaxW, photoMaxH, undefined, 'MEDIUM')
+      } catch {
+        // Photo failed to load, draw placeholder
+        doc.setDrawColor(200, 200, 200)
+        doc.setLineWidth(0.3)
+        doc.rect(photoMargin, photoMargin + 15, photoMaxW, photoMaxH)
+        doc.setFontSize(10)
+        doc.setFont(bodyFont, 'normal')
+        doc.setTextColor(180, 180, 180)
+        doc.text('Foto niet beschikbaar', photoMargin + photoMaxW / 2, photoMargin + 15 + photoMaxH / 2, { align: 'center' })
+      }
+
+      // Right half: item details
+      const rightX = pgW / 2 + photoMargin / 2
+      let rY = photoMargin + 15
+
+      doc.setFontSize(baseFontSize + 2)
+      doc.setFont(headingFont, 'bold')
+      doc.setTextColor(...brand)
+      doc.text(photoItem.beschrijving || `Item`, rightX, rY)
+      rY += 10
+
+      doc.setFontSize(baseFontSize)
+      doc.setFont(bodyFont, 'normal')
+      doc.setTextColor(...textColor)
+
+      if (photoItem.breedte_mm && photoItem.hoogte_mm) {
+        const m2 = photoItem.oppervlakte_m2 || ((photoItem.breedte_mm / 1000) * (photoItem.hoogte_mm / 1000))
+        doc.text(`Afmeting: ${photoItem.breedte_mm} × ${photoItem.hoogte_mm} mm`, rightX, rY)
+        rY += 6
+        doc.text(`Oppervlakte: ${m2.toFixed(2)} m²`, rightX, rY)
+        rY += 6
+      }
+
+      doc.text(`Aantal: ${photoItem.aantal}`, rightX, rY)
+      rY += 6
+      doc.text(`Prijs: ${formatCurrency(photoItem.eenheidsprijs)} per stuk`, rightX, rY)
+      rY += 6
+
+      doc.setFont(headingFont, 'bold')
+      doc.setTextColor(...brand)
+      doc.text(`Totaal: ${formatCurrency(photoItem.totaal)}`, rightX, rY)
+    }
   }
 
   // Footer

@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, Image, X, Ruler, ToggleLeft, ToggleRight } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import type { CalculatieRegel } from '@/types'
@@ -68,6 +68,14 @@ export interface QuoteLineItem {
   heeft_calculatie?: boolean
   prijs_varianten?: PrijsVariant[]
   actieve_variant_id?: string
+  // Afmetingen (FIX 9)
+  breedte_mm?: number
+  hoogte_mm?: number
+  oppervlakte_m2?: number
+  afmeting_vrij?: boolean
+  // Foto (FIX 10)
+  foto_url?: string
+  foto_op_offerte?: boolean
 }
 
 export interface OmschrijvingSuggestie {
@@ -119,6 +127,51 @@ function calculateVariantTotaal(variant: PrijsVariant): number {
 
 function genId(): string {
   return `dr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+}
+
+// ── Margin calculation per item (FIX 8) ──
+function calculateItemMargin(regels?: CalculatieRegel[]): { inkoop: number; verkoop: number; marge: number; percentage: number } | null {
+  if (!regels || regels.length === 0) return null
+  const inkoop = regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0)
+  const verkoop = regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0)
+  const marge = verkoop - inkoop
+  const percentage = verkoop > 0 ? (marge / verkoop) * 100 : 0
+  return { inkoop: Math.round(inkoop * 100) / 100, verkoop: Math.round(verkoop * 100) / 100, marge: Math.round(marge * 100) / 100, percentage: Math.round(percentage * 10) / 10 }
+}
+
+function getMargeColor(pct: number): { text: string; bg: string; bar: string } {
+  if (pct >= 40) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500' }
+  if (pct >= 20) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', bar: 'bg-amber-500' }
+  return { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', bar: 'bg-red-500' }
+}
+
+// ── Image compression utility (FIX 10) ──
+function compressImage(file: File, maxWidth: number = 1200, quality: number = 0.7): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new window.Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let w = img.width
+        let h = img.height
+        if (w > maxWidth) {
+          h = Math.round((h * maxWidth) / w)
+          w = maxWidth
+        }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Canvas not supported')); return }
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = reject
+      img.src = e.target?.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
 function AutocompleteInput({
@@ -479,9 +532,149 @@ export function QuoteItemsTable({
               </button>
             </div>
 
-            {/* ──── BODY: beschrijving-regels + prijsberekening ──── */}
+            {/* ──── BODY: afmetingen + foto + beschrijving-regels + prijsberekening ──── */}
             {!isCollapsed && (
               <>
+                {/* ── FIX 9: Afmetingen B×H ── */}
+                <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Afmetingen</span>
+                    <button
+                      onClick={() => onUpdateItem(item.id, 'afmeting_vrij', !item.afmeting_vrij)}
+                      className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                      title={item.afmeting_vrij ? 'Schakel naar B×H invoer' : 'Schakel naar vrije tekst'}
+                    >
+                      {item.afmeting_vrij ? <ToggleRight className="h-3.5 w-3.5 text-primary" /> : <ToggleLeft className="h-3.5 w-3.5" />}
+                      {item.afmeting_vrij ? 'Vrij tekst' : 'B × H'}
+                    </button>
+                  </div>
+
+                  {item.afmeting_vrij ? (
+                    // Free-text fallback: use the "Afmeting" detail regel if exists, or show an input
+                    <Input
+                      value={(() => {
+                        const afmetingRegel = detailRegels.find(r => r.label.toLowerCase() === 'afmeting')
+                        return afmetingRegel?.waarde || ''
+                      })()}
+                      onChange={(e) => {
+                        const afmetingRegel = detailRegels.find(r => r.label.toLowerCase() === 'afmeting')
+                        if (afmetingRegel) {
+                          updateDetailRegelField(item.id, afmetingRegel.id, 'waarde', e.target.value)
+                        }
+                      }}
+                      placeholder="Bijv. 3000 x 1500 mm, 2 m²"
+                      className="h-8 text-sm"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="space-y-0.5 w-24">
+                        <label className="text-[10px] text-muted-foreground">Breedte (mm)</label>
+                        <Input
+                          type="number"
+                          value={item.breedte_mm || ''}
+                          onChange={(e) => {
+                            const b = Math.max(0, parseFloat(e.target.value) || 0)
+                            onUpdateItem(item.id, 'breedte_mm', b)
+                            const h = item.hoogte_mm || 0
+                            if (b > 0 && h > 0) {
+                              onUpdateItem(item.id, 'oppervlakte_m2', Math.round((b / 1000) * (h / 1000) * 10000) / 10000)
+                            }
+                          }}
+                          min={0}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <span className="text-muted-foreground text-sm pt-4">×</span>
+                      <div className="space-y-0.5 w-24">
+                        <label className="text-[10px] text-muted-foreground">Hoogte (mm)</label>
+                        <Input
+                          type="number"
+                          value={item.hoogte_mm || ''}
+                          onChange={(e) => {
+                            const h = Math.max(0, parseFloat(e.target.value) || 0)
+                            onUpdateItem(item.id, 'hoogte_mm', h)
+                            const b = item.breedte_mm || 0
+                            if (b > 0 && h > 0) {
+                              onUpdateItem(item.id, 'oppervlakte_m2', Math.round((b / 1000) * (h / 1000) * 10000) / 10000)
+                            }
+                          }}
+                          min={0}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      {((item.breedte_mm || 0) > 0 && (item.hoogte_mm || 0) > 0) && (
+                        <div className="pt-4 flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">=</span>
+                          <span className="text-sm font-semibold text-foreground tabular-nums">
+                            {(item.oppervlakte_m2 || ((item.breedte_mm || 0) / 1000) * ((item.hoogte_mm || 0) / 1000)).toFixed(2)} m²
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── FIX 10: Foto per item ── */}
+                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2">
+                    <Image className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Foto</span>
+                    {item.foto_url && (
+                      <label className="ml-auto flex items-center gap-1 text-[10px] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={item.foto_op_offerte || false}
+                          onChange={(e) => onUpdateItem(item.id, 'foto_op_offerte', e.target.checked)}
+                          className="rounded border-gray-300 h-3 w-3"
+                        />
+                        <span className="text-muted-foreground">Op offerte PDF</span>
+                      </label>
+                    )}
+                  </div>
+
+                  {item.foto_url ? (
+                    <div className="mt-2 relative inline-block group">
+                      <img
+                        src={item.foto_url}
+                        alt={item.beschrijving || 'Item foto'}
+                        className="h-20 w-auto rounded-lg border border-gray-200 dark:border-gray-700 object-cover"
+                      />
+                      <button
+                        onClick={() => {
+                          onUpdateItem(item.id, 'foto_url', '')
+                          onUpdateItem(item.id, 'foto_op_offerte', false)
+                        }}
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                        title="Foto verwijderen"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors cursor-pointer">
+                      <Plus className="h-3 w-3" />
+                      Foto toevoegen
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          try {
+                            const compressed = await compressImage(file)
+                            onUpdateItem(item.id, 'foto_url', compressed)
+                          } catch {
+                            // Silent fail
+                          }
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
                 {/* Beschrijving-regels (dynamisch) */}
                 <div className="px-4 py-3 space-y-1.5 border-b border-gray-100 dark:border-gray-800">
                   {detailRegels.map((regel) => (
@@ -641,6 +834,29 @@ export function QuoteItemsTable({
                             Inkoop {formatCurrency(item.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0))} |
                             Verkoop {formatCurrency(item.calculatie_regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0))}
                           </button>
+
+                          {/* FIX 8: Marge indicator per item */}
+                          {(() => {
+                            const margeData = calculateItemMargin(item.calculatie_regels)
+                            if (!margeData) return null
+                            const colors = getMargeColor(margeData.percentage)
+                            return (
+                              <div className="mt-1.5 flex items-center gap-2">
+                                <span className={cn('text-[11px] font-semibold', colors.text)}>
+                                  Marge: {margeData.percentage.toFixed(1)}%
+                                </span>
+                                <span className="text-[11px] text-muted-foreground">
+                                  ({formatCurrency(margeData.marge)})
+                                </span>
+                                <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 max-w-[120px]">
+                                  <div
+                                    className={cn('h-full rounded-full transition-all', colors.bar)}
+                                    style={{ width: `${Math.min(100, Math.max(0, margeData.percentage))}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )
+                          })()}
                         </div>
                       )}
 
@@ -814,6 +1030,29 @@ export function QuoteItemsTable({
                                   Inkoop {formatCurrency(variant.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0))} |
                                   Verkoop {formatCurrency(variant.calculatie_regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0))}
                                 </button>
+
+                                {/* FIX 8: Marge indicator per variant */}
+                                {(() => {
+                                  const margeData = calculateItemMargin(variant.calculatie_regels)
+                                  if (!margeData) return null
+                                  const colors = getMargeColor(margeData.percentage)
+                                  return (
+                                    <div className="mt-1 flex items-center gap-2">
+                                      <span className={cn('text-[10px] font-semibold', colors.text)}>
+                                        Marge: {margeData.percentage.toFixed(1)}%
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        ({formatCurrency(margeData.marge)})
+                                      </span>
+                                      <div className="flex-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700 max-w-[100px]">
+                                        <div
+                                          className={cn('h-full rounded-full transition-all', colors.bar)}
+                                          style={{ width: `${Math.min(100, Math.max(0, margeData.percentage))}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )
+                                })()}
                               </div>
                             )}
                           </div>
