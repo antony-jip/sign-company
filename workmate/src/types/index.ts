@@ -90,7 +90,7 @@ export interface Offerte {
   project_id?: string;
   nummer: string;
   titel: string;
-  status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen';
+  status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd';
   subtotaal: number;
   btw_bedrag: number;
   totaal: number;
@@ -103,8 +103,30 @@ export interface Offerte {
   follow_up_status?: 'geen' | 'gepland' | 'achterstallig' | 'afgerond';
   contact_pogingen?: number;
   prioriteit?: 'laag' | 'medium' | 'hoog' | 'urgent';
+  deal_id?: string;
+  geconverteerd_naar_project_id?: string;
+  geconverteerd_naar_factuur_id?: string;
+  bekeken_door_klant?: boolean;
+  eerste_bekeken_op?: string;
+  laatst_bekeken_op?: string;
+  aantal_keer_bekeken?: number;
+  publiek_token?: string;
+  verloopdatum?: string;
+  verstuurd_op?: string;
+  verstuurd_naar?: string;
+  akkoord_op?: string;
+  intro_tekst?: string;
+  outro_tekst?: string;
+  activiteiten?: OfferteActiviteit[];
   created_at: string;
   updated_at: string;
+}
+
+export interface OfferteActiviteit {
+  datum: string;
+  type: 'aangemaakt' | 'bewerkt' | 'verstuurd' | 'bekeken' | 'akkoord' | 'afgewezen' | 'gefactureerd';
+  beschrijving: string;
+  medewerker?: string;
 }
 
 export interface OfferteItem {

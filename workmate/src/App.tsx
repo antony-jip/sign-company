@@ -22,6 +22,7 @@ import { ClientProfile } from '@/components/clients/ClientProfile'
 import { QuotesPipeline } from '@/components/quotes/QuotesPipeline'
 import { QuoteCreation } from '@/components/quotes/QuoteCreation'
 import { ForgeQuotePreview } from '@/components/quotes/ForgeQuotePreview'
+import { OfferteDetail } from '@/components/quotes/OfferteDetail'
 import { DocumentsLayout } from '@/components/documents/DocumentsLayout'
 import { EmailLayout } from '@/components/email/EmailLayout'
 import { CalendarLayout } from '@/components/calendar/CalendarLayout'
@@ -74,6 +75,7 @@ function AppContent() {
         <Route path="offertes" element={<QuotesPipeline />} />
         <Route path="offertes/nieuw" element={<QuoteCreation />} />
         <Route path="offertes/:id" element={<ForgeQuotePreview />} />
+        <Route path="offertes/:id/detail" element={<OfferteDetail />} />
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
         <Route path="kalender" element={<CalendarLayout />} />

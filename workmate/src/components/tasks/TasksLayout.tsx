@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -422,6 +422,17 @@ export function TasksLayout() {
     await handleQuickAdd(title, 'medium', toDateTimeStr(day, hour), '')
   }
 
+  // Resize task duration
+  async function handleResizeTask(taakId: string, newDurationHours: number) {
+    try {
+      const updated = await updateTaak(taakId, { geschatte_tijd: newDurationHours })
+      setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+    } catch (error) {
+      logger.error('Fout bij resizen:', error)
+      toast.error('Kon duur niet aanpassen')
+    }
+  }
+
   // === RENDER ===
 
   if (isLoading) {
@@ -561,6 +572,7 @@ export function TasksLayout() {
                   onDelete={handleDeleteDirect}
                   onQuickAdd={(title) => handleDayQuickAdd(day, title)}
                   onQuickAddAtTime={(hour, title) => handleDayHourQuickAdd(day, hour, title)}
+                  onResize={handleResizeTask}
                 />
               )
             })}
@@ -679,7 +691,7 @@ function DayColumn({
   day, dayIndex, isToday, isPast, tasks, projectMap, nowLineTop,
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
-  onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime,
+  onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
 }: {
   day: Date
   dayIndex: number
@@ -699,6 +711,7 @@ function DayColumn({
   onDelete: (taak: Taak) => void
   onQuickAdd: (title: string) => void
   onQuickAddAtTime: (hour: number, title: string) => void
+  onResize: (taakId: string, newDurationHours: number) => void
 }) {
   const [addTitle, setAddTitle] = useState('')
   const [isAdding, setIsAdding] = useState(false)
@@ -706,6 +719,54 @@ function DayColumn({
   const [hourAddTitle, setHourAddTitle] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const hourInputRef = useRef<HTMLInputElement>(null)
+
+  // Resize state
+  const [resizingTaakId, setResizingTaakId] = useState<string | null>(null)
+  const [resizeStartY, setResizeStartY] = useState(0)
+  const [resizeStartHeight, setResizeStartHeight] = useState(0)
+  const [resizeDeltaPx, setResizeDeltaPx] = useState(0)
+
+  const handleResizeStart = useCallback((e: React.MouseEvent, taakId: string, currentHeightPx: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingTaakId(taakId)
+    setResizeStartY(e.clientY)
+    setResizeStartHeight(currentHeightPx)
+    setResizeDeltaPx(0)
+  }, [])
+
+  useEffect(() => {
+    if (!resizingTaakId) return
+
+    function handleMouseMove(e: MouseEvent) {
+      const delta = e.clientY - resizeStartY
+      setResizeDeltaPx(delta)
+    }
+
+    function handleMouseUp(e: MouseEvent) {
+      const delta = e.clientY - resizeStartY
+      const newHeightPx = Math.max(HOUR_HEIGHT * 0.5, resizeStartHeight + delta)
+      // Snap to nearest 15 minutes (quarter hour)
+      const rawHours = newHeightPx / HOUR_HEIGHT
+      const snapped = Math.max(0.25, Math.round(rawHours * 4) / 4)
+      onResize(resizingTaakId!, snapped)
+      setResizingTaakId(null)
+      setResizeDeltaPx(0)
+    }
+
+    // Prevent text selection during resize
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 's-resize'
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [resizingTaakId, resizeStartY, resizeStartHeight, onResize])
 
   // Separate scheduled and unscheduled tasks
   const scheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline) !== null)
@@ -815,22 +876,35 @@ function DayColumn({
       {scheduledTasks.map((taak) => {
         const hour = getHourFromDeadline(taak.deadline)!
         const topPx = (hour - 7) * HOUR_HEIGHT + 4
+        const duration = taak.geschatte_tijd || 0
+        const isResizing = resizingTaakId === taak.id
+        // Height: use geschatte_tijd if > 0, otherwise auto (null)
+        const baseHeightPx = duration > 0 ? duration * HOUR_HEIGHT : null
+        const heightPx = baseHeightPx !== null
+          ? (isResizing ? Math.max(HOUR_HEIGHT * 0.5, baseHeightPx + resizeDeltaPx) : baseHeightPx)
+          : null
         return (
           <div
             key={taak.id}
-            className="absolute left-1 right-1 z-10"
-            style={{ top: topPx }}
+            className={cn('absolute left-1 right-1 z-10', isResizing && 'z-30')}
+            style={{
+              top: topPx,
+              ...(heightPx !== null ? { height: heightPx } : {}),
+            }}
           >
             <TaskCard
               taak={taak}
               projectNaam={projectMap[taak.project_id]}
               isPast={isPast}
               scheduled
+              heightPx={heightPx ?? undefined}
+              isResizing={isResizing}
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}
               onToggle={() => onToggle(taak)}
               onEdit={() => onEdit(taak)}
               onDelete={() => onDelete(taak)}
+              onResizeStart={(e) => handleResizeStart(e, taak.id, heightPx ?? HOUR_HEIGHT)}
             />
           </div>
         )
@@ -890,17 +964,20 @@ function DayColumn({
 // === TASK CARD ===
 
 function TaskCard({
-  taak, projectNaam, isPast, scheduled, onDragStart, onDragEnd, onToggle, onEdit, onDelete,
+  taak, projectNaam, isPast, scheduled, heightPx, isResizing, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
 }: {
   taak: Taak
   projectNaam?: string
   isPast: boolean
   scheduled?: boolean
+  heightPx?: number
+  isResizing?: boolean
   onDragStart: () => void
   onDragEnd: () => void
   onToggle: () => void
   onEdit: () => void
   onDelete: () => void
+  onResizeStart?: (e: React.MouseEvent) => void
 }) {
   const isDone = taak.status === 'klaar'
   const [justCompleted, setJustCompleted] = useState(false)
@@ -921,6 +998,13 @@ function TaskCard({
     onDelete()
   }
 
+  // Duration label for resized tasks
+  const durationLabel = scheduled && taak.geschatte_tijd > 0
+    ? (taak.geschatte_tijd >= 1
+        ? `${taak.geschatte_tijd}u`
+        : `${Math.round(taak.geschatte_tijd * 60)}min`)
+    : null
+
   function handleDragStart(e: React.DragEvent) {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', taak.id)
@@ -929,19 +1013,22 @@ function TaskCard({
 
   return (
     <div
-      draggable
+      draggable={!isResizing}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        'group relative rounded-lg border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200',
+        'group relative rounded-lg border-l-[3px] px-2.5 py-2 transition-all duration-200',
+        !isResizing && 'cursor-grab active:cursor-grabbing',
         'hover:shadow-lg hover:shadow-black/5 hover:z-10 hover:-translate-y-[1px]',
         isDone
           ? 'opacity-40 border-l-slate-300 bg-slate-50 dark:bg-slate-800/20 hover:opacity-60'
           : `${colors.border} ${colors.bg}`,
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-95 opacity-50',
-        scheduled && 'shadow-sm'
+        scheduled && 'shadow-sm',
+        isResizing && 'ring-2 ring-primary/30 shadow-xl'
       )}
+      style={heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : undefined}
       onClick={onEdit}
     >
       <div className="flex items-start gap-2">
@@ -969,6 +1056,11 @@ function TaskCard({
             {scheduled && hour !== null && (
               <span className="text-[10px] text-muted-foreground/40 flex items-center gap-0.5">
                 <Clock className="w-2 h-2" />{String(hour).padStart(2, '0')}:00
+              </span>
+            )}
+            {durationLabel && (
+              <span className="text-[10px] text-muted-foreground/40 font-medium">
+                {durationLabel}
               </span>
             )}
           </div>
@@ -1008,6 +1100,17 @@ function TaskCard({
           </button>
         </div>
       </div>
+
+      {/* Resize handle - bottom edge for scheduled tasks */}
+      {scheduled && onResizeStart && (
+        <div
+          className="absolute bottom-0 left-0 right-0 h-2.5 cursor-s-resize group/resize z-20 flex items-end justify-center"
+          onMouseDown={(e) => { onResizeStart(e) }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-8 h-1 rounded-full bg-muted-foreground/0 group-hover:bg-muted-foreground/30 group-hover/resize:bg-primary/50 transition-colors mb-0.5" />
+        </div>
+      )}
 
       {/* Completion animation overlay */}
       {justCompleted && (
