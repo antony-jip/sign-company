@@ -50,6 +50,10 @@ import {
   ExternalLink,
   Copy,
   Image,
+  PanelRightClose,
+  PanelRightOpen,
+  TrendingDown,
+  DollarSign,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -141,6 +145,9 @@ export function QuoteCreation() {
 
   // ── FIX 7: Client details panel ──
   const [klantPanelOpen, setKlantPanelOpen] = useState(true)
+
+  // ── Financieel sidebar ──
+  const [financieelSidebarOpen, setFinancieelSidebarOpen] = useState(true)
 
   // ── Step 1: Items ──
   const [items, setItems] = useState<QuoteLineItem[]>([])
@@ -988,7 +995,14 @@ export function QuoteCreation() {
     }
     setIsSendingEmail(true)
     try {
-      const quoteId = editOfferteId || autoSaveIdRef.current
+      // Ensure offerte is saved before sending
+      let quoteId = editOfferteId || autoSaveIdRef.current
+      if (!quoteId) {
+        // Force save first
+        await performAutoSave()
+        quoteId = editOfferteId || autoSaveIdRef.current
+      }
+
       await sendEmail(emailTo.trim(), emailSubject.trim(), emailBody, { html: emailBody.replace(/\n/g, '<br>') })
       if (quoteId) {
         await updateOfferte(quoteId, {
@@ -1078,7 +1092,7 @@ export function QuoteCreation() {
 
   // ── Render ──
   return (
-    <div className="pb-36">
+    <div className={cn('pb-12 transition-all duration-300', (currentStep === 1 || currentStep === 2) && financieelSidebarOpen && 'pr-[270px]')}>
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* ──── Page Header met introductie ──── */}
         <div className="rounded-2xl bg-gradient-to-br from-primary/5 via-accent/5 to-transparent dark:from-primary/10 dark:via-accent/10 border border-primary/10 dark:border-primary/20 p-6 md:p-8">
@@ -1124,20 +1138,8 @@ export function QuoteCreation() {
               </div>
             </div>
 
-            {/* Right side: Verstuur offerte + badges */}
+            {/* Right side: badges */}
             <div className="flex flex-col items-end gap-2 flex-shrink-0">
-              {/* Verstuur offerte button - visible on step 1+ when klant is selected */}
-              {currentStep >= 1 && selectedKlant && (
-                <Button
-                  onClick={handleVerstuurOfferte}
-                  className="bg-gradient-to-r from-accent to-primary border-0 gap-2"
-                  size="sm"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  Verstuur offerte
-                </Button>
-              )}
-
             {/* Quick info badges rechts */}
             {selectedKlant && (
               <div className="hidden lg:flex flex-col items-end gap-1.5 flex-shrink-0">
@@ -2174,112 +2176,182 @@ export function QuoteCreation() {
       )}
 
       {/* ================================================================ */}
-      {/* STICKY BOTTOM BAR — Inkoop, Marge, Winst                        */}
-      {/* Altijd zichtbaar in stap 1 en 2                                  */}
+      {/* FINANCIEEL SIDEBAR — Inkoop, Verkoop, Marge, Uren, Totaal       */}
+      {/* Glass effect, rechts van het scherm, dichtklappen mogelijk       */}
       {/* ================================================================ */}
       {(currentStep === 1 || currentStep === 2) && (
-        <div className="sticky bottom-0 z-50 bg-card/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-          <div className="max-w-5xl mx-auto px-6 py-3">
-            <div className="flex items-center justify-between gap-4">
-              {/* Left: Financial metrics + uren */}
-              <div className="flex items-center gap-4 flex-wrap">
-                {/* Materiaal */}
-                {materiaalKosten > 0 && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Materiaal</p>
-                        <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{formatCurrency(materiaalKosten)}</p>
-                      </div>
-                    </div>
-                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden sm:block" />
-                  </>
-                )}
+        <>
+          {/* Toggle knop als sidebar dicht is */}
+          {!financieelSidebarOpen && (
+            <button
+              onClick={() => setFinancieelSidebarOpen(true)}
+              className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-r-0 border-gray-200 dark:border-gray-700 rounded-l-xl px-2 py-4 shadow-lg hover:bg-white dark:hover:bg-gray-900 transition-all group"
+              title="Financieel overzicht openen"
+            >
+              <PanelRightOpen className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              <div className="mt-2 [writing-mode:vertical-rl] text-[10px] font-bold text-primary">
+                {formatCurrency(round2(subtotaal + btwBedrag))}
+              </div>
+            </button>
+          )}
 
-                {/* Montage uren */}
-                {montageUren > 0 && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                        <Wrench className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Montage</p>
-                        <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{montageUren} uur</p>
-                      </div>
-                    </div>
-                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden sm:block" />
-                  </>
-                )}
-
-                {/* Voorbereiding uren */}
-                {voorbereidingUren > 0 && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                        <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Voorbereiding</p>
-                        <p className="text-sm font-bold text-purple-600 dark:text-purple-400">{voorbereidingUren} uur</p>
-                      </div>
-                    </div>
-                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden sm:block" />
-                  </>
-                )}
-
-                {/* Marge % */}
-                <div className="flex items-center gap-2">
-                  <div className={cn(
-                    'h-8 w-8 rounded-lg flex items-center justify-center',
-                    margePercentage >= 30 ? 'bg-green-100 dark:bg-green-900/30' :
-                    margePercentage >= 15 ? 'bg-yellow-100 dark:bg-yellow-900/30' :
-                    'bg-red-100 dark:bg-red-900/30'
-                  )}>
-                    <Percent className={cn(
-                      'h-4 w-4',
-                      margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
-                      margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
-                      'text-red-600 dark:text-red-400'
-                    )} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Marge</p>
-                    <p className={cn(
-                      'text-sm font-bold',
-                      margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
-                      margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
-                      'text-red-600 dark:text-red-400'
-                    )}>
-                      {totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}
-                    </p>
-                  </div>
-                </div>
+          {/* Sidebar */}
+          <div className={cn(
+            'fixed right-0 top-0 h-screen z-40 transition-transform duration-300 ease-in-out',
+            financieelSidebarOpen ? 'translate-x-0' : 'translate-x-full'
+          )}>
+            <div className="h-full w-[260px] bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl border-l border-gray-200/80 dark:border-gray-700/80 shadow-[-8px_0_30px_rgba(0,0,0,0.08)] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/60 dark:border-gray-700/60">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Financieel</h3>
+                <button
+                  onClick={() => setFinancieelSidebarOpen(false)}
+                  className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title="Sluiten"
+                >
+                  <PanelRightClose className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
 
-              {/* Right: Totaal */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="hidden md:block">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Subtotaal</p>
-                  <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(subtotaal)}</p>
-                </div>
-                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden md:block" />
-                <div className="hidden md:block">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">BTW</p>
-                  <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(btwBedrag)}</p>
-                </div>
-                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden md:block" />
-                <div className="bg-gradient-to-r from-accent to-primary rounded-xl px-5 py-2">
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                {/* Totaal card */}
+                <div className="bg-gradient-to-br from-accent to-primary rounded-xl p-4 shadow-sm">
                   <p className="text-[10px] uppercase tracking-wider text-white/70 font-medium">Totaal incl BTW</p>
-                  <p className="text-lg font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                  <p className="text-xl font-bold text-white mt-0.5">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
                 </div>
+
+                {/* Subtotaal + BTW */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Subtotaal</p>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(subtotaal)}</p>
+                  </div>
+                  <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">BTW</p>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(btwBedrag)}</p>
+                  </div>
+                </div>
+
+                <Separator className="opacity-50" />
+
+                {/* Inkoop + Verkoop */}
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Inkoop / Verkoop</p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <TrendingDown className="h-3.5 w-3.5 text-red-400" />
+                        <span className="text-xs text-muted-foreground">Inkoop</span>
+                      </div>
+                      <span className="text-xs font-semibold text-red-600 dark:text-red-400">
+                        {totaalInkoop > 0 ? formatCurrency(totaalInkoop) : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <TrendingUp className="h-3.5 w-3.5 text-green-400" />
+                        <span className="text-xs text-muted-foreground">Verkoop</span>
+                      </div>
+                      <span className="text-xs font-semibold text-foreground">
+                        {formatCurrency(subtotaal)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
+                        <span className="text-xs text-muted-foreground">Winst</span>
+                      </div>
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        {totaalInkoop > 0 ? formatCurrency(winstExBtw) : '—'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Marge */}
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Marge</p>
+                  <div className={cn(
+                    'rounded-lg p-3',
+                    margePercentage >= 30 ? 'bg-green-50 dark:bg-green-900/20' :
+                    margePercentage >= 15 ? 'bg-yellow-50 dark:bg-yellow-900/20' :
+                    'bg-red-50 dark:bg-red-900/20'
+                  )}>
+                    <div className="flex items-center justify-between">
+                      <Percent className={cn(
+                        'h-4 w-4',
+                        margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
+                        margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-red-600 dark:text-red-400'
+                      )} />
+                      <span className={cn(
+                        'text-lg font-bold',
+                        margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
+                        margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-red-600 dark:text-red-400'
+                      )}>
+                        {totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}
+                      </span>
+                    </div>
+                    {totaalInkoop > 0 && (
+                      <div className="mt-2 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700">
+                        <div
+                          className={cn(
+                            'h-full rounded-full transition-all',
+                            margePercentage >= 30 ? 'bg-green-500' :
+                            margePercentage >= 15 ? 'bg-yellow-500' :
+                            'bg-red-500'
+                          )}
+                          style={{ width: `${Math.min(100, Math.max(0, margePercentage))}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Uren + Materiaal */}
+                {(montageUren > 0 || voorbereidingUren > 0 || materiaalKosten > 0) && (
+                  <>
+                    <Separator className="opacity-50" />
+                    <div className="space-y-2">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Uren & Materiaal</p>
+                      <div className="space-y-1.5">
+                        {montageUren > 0 && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <Wrench className="h-3.5 w-3.5 text-amber-500" />
+                              <span className="text-xs text-muted-foreground">Montage</span>
+                            </div>
+                            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">{montageUren} uur</span>
+                          </div>
+                        )}
+                        {voorbereidingUren > 0 && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5 text-purple-500" />
+                              <span className="text-xs text-muted-foreground">Voorbereiding</span>
+                            </div>
+                            <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">{voorbereidingUren} uur</span>
+                          </div>
+                        )}
+                        {materiaalKosten > 0 && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <ShoppingCart className="h-3.5 w-3.5 text-blue-500" />
+                              <span className="text-xs text-muted-foreground">Materiaal</span>
+                            </div>
+                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(materiaalKosten)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )
