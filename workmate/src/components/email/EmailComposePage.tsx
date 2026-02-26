@@ -186,7 +186,7 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
       }
 
       toast.success('Offerte verstuurd naar klant')
-      navigate(offerte?.id ? `/offertes/${offerte.id}/preview` : '/offertes')
+      navigate(offerte?.id ? `/offertes/${offerte.id}/bewerken` : '/offertes')
     } catch (err) {
       logger.error('Failed to send email:', err)
       toast.error('Kon email niet verzenden')
@@ -213,7 +213,7 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate('/email')}
+          onClick={() => navigate(offerte?.id ? `/offertes/${offerte.id}/bewerken` : '/offertes')}
           className="flex-shrink-0"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -228,7 +228,7 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Button variant="outline" onClick={() => navigate('/email')}>
+          <Button variant="outline" onClick={() => navigate(offerte?.id ? `/offertes/${offerte.id}/bewerken` : '/offertes')}>
             Annuleren
           </Button>
           <Button

@@ -751,7 +751,7 @@ export function QuotesPipeline() {
                         <div
                           draggable
                           onDragStart={(e) => handleDragStart(e, offerte.id)}
-                          onClick={() => navigate(`/offertes/${offerte.id}`)}
+                          onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })}
                           className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-200/60 dark:border-gray-700/60 p-3 space-y-2.5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer active:cursor-grabbing"
                         >
                           {/* Top row: nummer + indicators */}
@@ -982,7 +982,7 @@ export function QuotesPipeline() {
                       <tr
                         key={offerte.id}
                         className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/offertes/${offerte.id}`)}
+                        onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })}
                       >
                         <td className="px-4 py-3">
                           <span className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
@@ -1031,7 +1031,7 @@ export function QuotesPipeline() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              navigate(`/offertes/${offerte.id}`)
+                              navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })
                             }}
                             className="text-xs text-primary hover:underline"
                           >

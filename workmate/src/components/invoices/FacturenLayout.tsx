@@ -1698,7 +1698,7 @@ export function FacturenLayout() {
                 <div className="flex items-center gap-3 text-xs">
                   {viewingFactuur.offerte_id && (
                     <a
-                      href={`/offertes/${viewingFactuur.offerte_id}`}
+                      href={`/offertes/${viewingFactuur.offerte_id}/bewerken`}
                       className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       <FileInput className="h-3 w-3" />

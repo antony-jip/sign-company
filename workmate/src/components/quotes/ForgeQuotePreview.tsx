@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject, createProject } from '@/services/supabaseService'
@@ -31,6 +31,8 @@ interface ForgeQuotePreviewProps {
     geldig_tot: string
     notities: string
     voorwaarden: string
+    intro_tekst?: string
+    outro_tekst?: string
     created_at: string
   }
   items?: PreviewItem[]
@@ -44,6 +46,7 @@ function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; kort
 export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: ForgeQuotePreviewProps) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, pipelineStappen, valuta } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
@@ -113,6 +116,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       geldig_tot: fetchedOfferte.geldig_tot,
       notities: fetchedOfferte.notities,
       voorwaarden: fetchedOfferte.voorwaarden,
+      intro_tekst: fetchedOfferte.intro_tekst,
+      outro_tekst: fetchedOfferte.outro_tekst,
       created_at: fetchedOfferte.created_at,
     }
     itemsData = fetchedItems.map((i) => ({
@@ -364,7 +369,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             {/* Action buttons */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
-                onClick={() => navigate(`/offertes/${fetchedOfferte.id}`)}
+                onClick={() => navigate(`/offertes/${fetchedOfferte.id}/bewerken`, { state: { from: location.pathname } })}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -516,6 +521,15 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             {offerteData.titel}
           </h3>
         </div>
+
+        {/* Introductietekst */}
+        {offerteData.intro_tekst && (
+          <div className="mx-10 mb-6">
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+              {offerteData.intro_tekst}
+            </p>
+          </div>
+        )}
 
         {/* Items Table */}
         <div className="mx-10 mb-6">
@@ -678,6 +692,15 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             </div>
           </div>
         </div>
+
+        {/* Afsluittekst */}
+        {offerteData.outro_tekst && (
+          <div className="mx-10 mb-6">
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+              {offerteData.outro_tekst}
+            </p>
+          </div>
+        )}
 
         {/* Notes & Terms */}
         <div className="mx-10 pb-10 space-y-6">

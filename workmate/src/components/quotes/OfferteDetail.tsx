@@ -318,7 +318,7 @@ export function OfferteDetail() {
       }
 
       toast.success('Offerte gedupliceerd')
-      navigate(`/offertes/${newOfferte.id}`)
+      navigate(`/offertes/${newOfferte.id}/bewerken`)
     } catch (err) {
       logger.error('Failed to duplicate offerte:', err)
       toast.error('Kon offerte niet dupliceren')
@@ -531,7 +531,7 @@ export function OfferteDetail() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => navigate(`/offertes/${offerte.id}`)}
+                onClick={() => navigate(`/offertes/${offerte.id}/bewerken`)}
               >
                 <FileText className="h-4 w-4 mr-1" />
                 Calculatie bewerken

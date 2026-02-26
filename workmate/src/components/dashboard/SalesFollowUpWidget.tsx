@@ -98,7 +98,7 @@ function FollowUpItemRow({
 
   return (
     <Link
-      to={`/offertes/${item.offerte.id}`}
+      to={`/offertes/${item.offerte.id}/bewerken`}
       className={cn(
         'block rounded-xl border-l-[3px] p-3 transition-all duration-200',
         'hover:shadow-sm hover:scale-[1.01]',
@@ -151,7 +151,7 @@ function ExpiringQuoteRow({ item }: { key?: string | number; item: ExpiringQuote
 
   return (
     <Link
-      to={`/offertes/${item.offerte.id}`}
+      to={`/offertes/${item.offerte.id}/bewerken`}
       className={cn(
         'flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200',
         'hover:shadow-sm hover:scale-[1.01]',

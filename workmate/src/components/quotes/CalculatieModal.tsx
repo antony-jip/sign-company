@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,7 @@ import {
   FileDown,
   BookTemplate,
   Save,
+  Settings,
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
@@ -103,6 +105,7 @@ export function CalculatieModal({
   itemBeschrijving,
   onConfirm,
 }: CalculatieModalProps) {
+  const navigate = useNavigate()
   const { settings } = useAppSettings()
   const standaardMarge = settings.calculatie_standaard_marge ?? 35
   const standaardBtw = settings.standaard_btw ?? 21
@@ -308,9 +311,36 @@ export function CalculatieModal({
                       )}
                     </button>
                   ))}
+                  <Separator className="my-1" />
+                  <button
+                    onClick={() => {
+                      setShowTemplates(false)
+                      onClose()
+                      navigate('/instellingen', { state: { tab: 'calculatie' } })
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2 text-muted-foreground"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                    Templates beheren
+                  </button>
                 </div>
               )}
             </div>
+          )}
+
+          {templates.length === 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onClose()
+                navigate('/instellingen', { state: { tab: 'calculatie' } })
+              }}
+              className="text-muted-foreground text-xs gap-1"
+            >
+              <Settings className="h-3.5 w-3.5" />
+              Templates beheren
+            </Button>
           )}
 
           {producten.length > 0 && (

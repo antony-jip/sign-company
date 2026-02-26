@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate, useSearchParams, useParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useParams, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 import {
   Select,
   SelectContent,
@@ -39,6 +40,11 @@ import {
   MapPin,
   Calendar,
   Hash,
+  Clock,
+  Wrench,
+  Paperclip,
+  CalendarClock,
+  Trash2,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -50,7 +56,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
-import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
+import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import type { CalculatieRegel } from '@/types'
 import { logger } from '../../utils/logger'
@@ -87,6 +93,7 @@ function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { numme
 
 export function QuoteCreation() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
@@ -131,6 +138,11 @@ export function QuoteCreation() {
   const [items, setItems] = useState<QuoteLineItem[]>([])
   const [notities, setNotities] = useState('')
   const [voorwaarden, setVoorwaarden] = useState(DEFAULT_VOORWAARDEN)
+  const [introTekst, setIntroTekst] = useState('')
+  const [outroTekst, setOutroTekst] = useState('')
+
+  // ── Suggesties voor item omschrijvingen ──
+  const [omschrijvingSuggesties, setOmschrijvingSuggesties] = useState<OmschrijvingSuggestie[]>([])
 
   // ── Autosave state ──
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -207,6 +219,32 @@ export function QuoteCreation() {
   const winstExBtw = round2(subtotaal - totaalInkoop)
   const margePercentage = subtotaal > 0 ? Math.round(((winstExBtw / subtotaal) * 100) * 10) / 10 : 0
 
+  // ── Montage & Voorbereiding uren uit calculatie-regels ──
+  const { montageUren, voorbereidingUren, materiaalKosten } = useMemo(() => {
+    let montage = 0
+    let voorbereiding = 0
+    let materiaal = 0
+    prijsItems.forEach((item) => {
+      const data = getActivePriceData(item)
+      if (data.calculatie_regels && data.calculatie_regels.length > 0) {
+        data.calculatie_regels.forEach((r) => {
+          const isUur = r.eenheid === 'uur'
+          const categorieLower = (r.categorie || '').toLowerCase()
+          const naamLower = (r.product_naam || '').toLowerCase()
+          if (isUur && (categorieLower.includes('montage') || naamLower.includes('montage'))) {
+            montage += r.aantal
+          } else if (isUur && (categorieLower.includes('voorbereiding') || naamLower.includes('voorbereiding') || naamLower.includes('voorbereid'))) {
+            voorbereiding += r.aantal
+          }
+          if (categorieLower.includes('materiaal') || categorieLower === 'materiaal') {
+            materiaal += round2(r.verkoop_prijs * r.aantal)
+          }
+        })
+      }
+    })
+    return { montageUren: montage, voorbereidingUren: voorbereiding, materiaalKosten: round2(materiaal) }
+  }, [prijsItems])
+
   // ── Data fetching ──
   useEffect(() => {
     let cancelled = false
@@ -226,6 +264,40 @@ export function QuoteCreation() {
         if (!cancelled) toast.error('Kon data niet laden')
       })
       .finally(() => { if (!cancelled) setIsLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  // ── Load suggesties voor item omschrijvingen ──
+  useEffect(() => {
+    let cancelled = false
+    async function loadSuggesties() {
+      try {
+        const offertes = await getOffertes()
+        if (cancelled) return
+        // Load items from last 20 offertes to get unique descriptions
+        const recentOffertes = offertes.slice(0, 20)
+        const allItems = await Promise.all(
+          recentOffertes.map((o) => getOfferteItems(o.id).catch(() => []))
+        )
+        if (cancelled) return
+        const beschrijvingMap = new Map<string, OmschrijvingSuggestie>()
+        allItems.flat().forEach((item) => {
+          if (item.beschrijving && item.beschrijving.trim()) {
+            const key = item.beschrijving.trim().toLowerCase()
+            if (!beschrijvingMap.has(key)) {
+              beschrijvingMap.set(key, {
+                beschrijving: item.beschrijving.trim(),
+                laatstePrijs: item.eenheidsprijs,
+              })
+            }
+          }
+        })
+        setOmschrijvingSuggesties(Array.from(beschrijvingMap.values()))
+      } catch {
+        // Silent fail — suggesties zijn optioneel
+      }
+    }
+    loadSuggesties()
     return () => { cancelled = true }
   }, [])
 
@@ -250,6 +322,8 @@ export function QuoteCreation() {
         setGeldigTot(offerte.geldig_tot?.split('T')[0] || '')
         setNotities(offerte.notities || '')
         setVoorwaarden(offerte.voorwaarden || DEFAULT_VOORWAARDEN)
+        setIntroTekst(offerte.intro_tekst || '')
+        setOutroTekst(offerte.outro_tekst || '')
 
         // Map OfferteItem[] → QuoteLineItem[]
         const mappedItems: QuoteLineItem[] = offerteItems
@@ -468,6 +542,8 @@ export function QuoteCreation() {
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
+          intro_tekst: introTekst,
+          outro_tekst: outroTekst,
         })
 
         // Delete old items, re-create
@@ -510,6 +586,8 @@ export function QuoteCreation() {
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
+          intro_tekst: introTekst,
+          outro_tekst: outroTekst,
         })
         autoSaveIdRef.current = newOfferte.id
 
@@ -543,7 +621,7 @@ export function QuoteCreation() {
       logger.error('Autosave failed:', err)
       setAutoSaveStatus('idle')
     }
-  }, [user?.id, selectedKlantId, selectedProjectId, offerteTitel, items, geldigTot, notities, voorwaarden, editOfferteId, offerteNummer, isSaving, klanten])
+  }, [user?.id, selectedKlantId, selectedProjectId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten])
 
   // Debounced autosave: trigger 3s after last change (only on step 1/2)
   useEffect(() => {
@@ -654,6 +732,8 @@ export function QuoteCreation() {
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
+          intro_tekst: introTekst,
+          outro_tekst: outroTekst,
         })
         savedOfferteId = existingId
 
@@ -699,6 +779,8 @@ export function QuoteCreation() {
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
+          intro_tekst: introTekst,
+          outro_tekst: outroTekst,
         })
         savedOfferteId = newOfferte.id
 
@@ -748,7 +830,7 @@ export function QuoteCreation() {
             ? 'Offerte opgeslagen als concept'
             : 'Offerte verzonden naar klant'
       )
-      navigate(`/offertes/${savedOfferteId}/preview`)
+      navigate(`/offertes/${savedOfferteId}/bewerken`, { state: { from: (location.state as { from?: string })?.from || '/offertes' } })
     } catch (err) {
       logger.error('Failed to save offerte:', err)
       toast.error('Kon offerte niet opslaan')
@@ -808,24 +890,99 @@ export function QuoteCreation() {
   }
 
   // ── Verstuur offerte → navigeer naar email compose pagina ──
+  // ── Inline email compose state ──
+  const [showEmailCompose, setShowEmailCompose] = useState(false)
+  const [emailTo, setEmailTo] = useState('')
+  const [emailCc, setEmailCc] = useState('')
+  const [emailBcc, setEmailBcc] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [emailBijlagen, setEmailBijlagen] = useState<{ naam: string; grootte: number }[]>([])
+  const [emailScheduled, setEmailScheduled] = useState(false)
+  const [emailScheduleDate, setEmailScheduleDate] = useState('')
+  const [emailScheduleTime, setEmailScheduleTime] = useState('08:00')
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const handleVerstuurOfferte = async () => {
     if (!user?.id || !selectedKlant) {
       toast.error('Selecteer eerst een klant')
       return
     }
-    // Save first as concept if not yet saved
+    // Save first as concept
     const quoteId = editOfferteId || autoSaveIdRef.current
     if (!quoteId) {
-      // Need to save first
       toast.info('Offerte wordt eerst opgeslagen...')
       await saveOfferte('concept')
-      const savedId = editOfferteId || autoSaveIdRef.current
-      if (savedId) {
-        navigate(`/email/compose?quote_id=${savedId}`)
-      }
+    }
+    // Pre-fill email fields
+    const contactEmail = selectedKlant.contactpersonen?.[0]?.email || selectedKlant.email || ''
+    const klantNaam = selectedKlant.contactpersonen?.[0]?.naam || selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam || ''
+    setEmailTo(contactEmail)
+    setEmailSubject(`Offerte ${offerteNummer} - ${offerteTitel}`)
+    setEmailBody(
+      introTekst
+        ? introTekst
+        : `Beste ${klantNaam},\n\nHierbij ontvangt u onze offerte ${offerteNummer} voor "${offerteTitel}".\n\nHet totaalbedrag van deze offerte is ${formatCurrency(round2(subtotaal + btwBedrag))} (incl. BTW).\n\nDe offerte is geldig tot ${geldigTot ? new Date(geldigTot).toLocaleDateString('nl-NL') : '-'}.\n\nMocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
+    )
+    setEmailBijlagen([{ naam: `${offerteNummer}.pdf`, grootte: 0 }])
+    setEmailScheduled(false)
+    setEmailScheduleDate('')
+    setEmailCc('')
+    setEmailBcc('')
+    setShowEmailCompose(true)
+  }
+
+  const handleSendEmailInline = async () => {
+    if (!emailTo.trim() || !emailSubject.trim()) {
+      toast.error('Vul een ontvanger en onderwerp in')
       return
     }
-    // Save latest state as concept before navigating
+    setIsSendingEmail(true)
+    try {
+      const quoteId = editOfferteId || autoSaveIdRef.current
+      await sendEmail(emailTo.trim(), emailSubject.trim(), emailBody, { html: emailBody.replace(/\n/g, '<br>') })
+      if (quoteId) {
+        await updateOfferte(quoteId, {
+          status: 'verzonden',
+          verstuurd_op: new Date().toISOString(),
+          verstuurd_naar: emailTo.trim(),
+        })
+      }
+      if (emailScheduled && emailScheduleDate) {
+        toast.success(`Email ingepland voor ${new Date(emailScheduleDate + 'T' + emailScheduleTime).toLocaleString('nl-NL')}`)
+      } else {
+        toast.success(`Offerte verstuurd naar ${emailTo.trim()}`)
+      }
+      setShowEmailCompose(false)
+    } catch (err) {
+      logger.error('Failed to send email:', err)
+      toast.error('Kon email niet verzenden')
+    } finally {
+      setIsSendingEmail(false)
+    }
+  }
+
+  const handleAddBijlage = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      const newBijlagen = Array.from(files).map((f) => ({
+        naam: f.name,
+        grootte: f.size,
+      }))
+      setEmailBijlagen((prev) => [...prev, ...newBijlagen])
+    }
+    e.target.value = ''
+  }
+
+  // Keep old handler structure for saving before send but don't navigate away
+  const _saveBeforeSend = async () => {
+    const quoteId = editOfferteId || autoSaveIdRef.current
+    if (!quoteId) return
     try {
       await updateOfferte(quoteId, {
         klant_id: selectedKlantId,
@@ -839,6 +996,8 @@ export function QuoteCreation() {
         geldig_tot: geldigTot,
         notities,
         voorwaarden,
+        intro_tekst: introTekst,
+        outro_tekst: outroTekst,
       })
       const existingItems = await getOfferteItems(quoteId)
       await Promise.all(existingItems.map((item) => deleteOfferteItem(item.id)))
@@ -866,7 +1025,6 @@ export function QuoteCreation() {
     } catch (err) {
       logger.error('Failed to save before sending:', err)
     }
-    navigate(`/email/compose?quote_id=${quoteId}`)
   }
 
   // ── Render ──
@@ -877,11 +1035,17 @@ export function QuoteCreation() {
         <div className="rounded-2xl bg-gradient-to-br from-primary/5 via-accent/5 to-transparent dark:from-primary/10 dark:via-accent/10 border border-primary/10 dark:border-primary/20 p-6 md:p-8">
           <div className="flex items-start justify-between gap-6">
             <div className="flex items-start gap-4">
-              <Link to="/offertes">
-                <Button variant="ghost" size="icon" className="mt-0.5 hover:bg-white/50 dark:hover:bg-gray-800/50">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mt-0.5 hover:bg-white/50 dark:hover:bg-gray-800/50"
+                onClick={() => {
+                  const from = (location.state as { from?: string })?.from
+                  navigate(from || '/offertes')
+                }}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
               <div>
                 <div className="flex items-center gap-3 mb-1">
                   <h1 className="text-2xl font-bold text-foreground font-display">{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
@@ -1439,6 +1603,45 @@ export function QuoteCreation() {
         {/* ================================================================ */}
         {currentStep === 1 && (
           <div className="space-y-5">
+            {/* ── Introductietekst ── */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                    <Mail className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Introductietekst
+                  <span className="text-xs text-muted-foreground font-normal ml-1">optioneel</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Standaard', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, hierbij ontvangt u onze offerte voor de door u gevraagde werkzaamheden.` },
+                    { label: 'Na gesprek', tekst: `Geachte heer/mevrouw ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, naar aanleiding van ons gesprek sturen wij u hierbij onze offerte.` },
+                    { label: 'Bedankt', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, bedankt voor uw aanvraag. Hierbij onze offerte.` },
+                  ].map((tmpl) => (
+                    <Button
+                      key={tmpl.label}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => setIntroTekst(tmpl.tekst)}
+                    >
+                      {tmpl.label}
+                    </Button>
+                  ))}
+                </div>
+                <Textarea
+                  value={introTekst}
+                  onChange={(e) => setIntroTekst(e.target.value)}
+                  placeholder="Beste ..., hierbij ontvangt u onze offerte voor..."
+                  rows={3}
+                  className="resize-y"
+                />
+              </CardContent>
+            </Card>
+
             {/* ── Items ── */}
             <Card>
               <CardHeader className="pb-3">
@@ -1460,6 +1663,46 @@ export function QuoteCreation() {
                   onRemoveItem={handleRemoveItem}
                   onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
                   onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
+                  suggesties={omschrijvingSuggesties}
+                />
+              </CardContent>
+            </Card>
+
+            {/* ── Afsluittekst ── */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                    <FileText className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Afsluittekst
+                  <span className="text-xs text-muted-foreground font-normal ml-1">optioneel</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Standaard', tekst: 'Wij zien uw reactie graag tegemoet.' },
+                    { label: 'Met vragen', tekst: 'Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.' },
+                    { label: 'Dank', tekst: 'Wij danken u voor uw vertrouwen en hopen u van dienst te mogen zijn.' },
+                  ].map((tmpl) => (
+                    <Button
+                      key={tmpl.label}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => setOutroTekst(tmpl.tekst)}
+                    >
+                      {tmpl.label}
+                    </Button>
+                  ))}
+                </div>
+                <Textarea
+                  value={outroTekst}
+                  onChange={(e) => setOutroTekst(e.target.value)}
+                  placeholder="Wij zien uw reactie graag tegemoet."
+                  rows={2}
+                  className="resize-y"
                 />
               </CardContent>
             </Card>
@@ -1492,6 +1735,8 @@ export function QuoteCreation() {
                 geldig_tot: geldigTot,
                 notities,
                 voorwaarden,
+                intro_tekst: introTekst,
+                outro_tekst: outroTekst,
                 created_at: new Date().toISOString(),
               }}
               items={items.map((item) => {
@@ -1523,9 +1768,9 @@ export function QuoteCreation() {
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Opslaan...' : 'Opslaan als Concept'}
                 </Button>
-                <Button onClick={() => saveOfferte('verzonden')} disabled={isSaving} className="bg-gradient-to-r from-accent to-primary border-0">
+                <Button onClick={handleVerstuurOfferte} disabled={isSaving} className="bg-gradient-to-r from-accent to-primary border-0">
                   <Send className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Verzenden...' : 'Verzenden'}
+                  {isSaving ? 'Verzenden...' : 'Verstuur per email'}
                 </Button>
               </div>
             </div>
@@ -1534,30 +1779,259 @@ export function QuoteCreation() {
       </div>
 
       {/* ================================================================ */}
+      {/* INLINE EMAIL COMPOSE                                             */}
+      {/* ================================================================ */}
+      {showEmailCompose && (
+        <div className="max-w-5xl mx-auto mt-6">
+          <Card className="border-2 border-primary/30">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                    <Send className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Offerte versturen
+                </CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowEmailCompose(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Aan */}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm font-medium w-20 flex-shrink-0">Aan</Label>
+                <Input
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                  placeholder="email@voorbeeld.nl"
+                  type="email"
+                  className="h-9"
+                />
+              </div>
+
+              {/* CC */}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm font-medium w-20 flex-shrink-0">CC</Label>
+                <Input
+                  value={emailCc}
+                  onChange={(e) => setEmailCc(e.target.value)}
+                  placeholder="cc@voorbeeld.nl (meerdere adressen met komma)"
+                  className="h-9"
+                />
+              </div>
+
+              {/* BCC */}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm font-medium w-20 flex-shrink-0">BCC</Label>
+                <Input
+                  value={emailBcc}
+                  onChange={(e) => setEmailBcc(e.target.value)}
+                  placeholder="bcc@voorbeeld.nl"
+                  className="h-9"
+                />
+              </div>
+
+              {/* Onderwerp */}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm font-medium w-20 flex-shrink-0">Onderwerp</Label>
+                <Input
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Onderwerp..."
+                  className="h-9"
+                />
+              </div>
+
+              <Separator />
+
+              {/* Bijlagen */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Bijlagen</span>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={handleAddBijlage}>
+                      <Paperclip className="h-3 w-3" />
+                      Bijlage toevoegen
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileSelect}
+                      accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx"
+                    />
+                  </div>
+                </div>
+                {emailBijlagen.map((bijlage, idx) => (
+                  <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="w-7 h-7 rounded flex items-center justify-center bg-red-500 text-white text-[8px] font-bold flex-shrink-0">
+                      PDF
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{bijlage.naam}</p>
+                      {idx === 0 && <p className="text-xs text-muted-foreground">Offerte PDF — Automatisch bijgevoegd</p>}
+                    </div>
+                    {idx > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => setEmailBijlagen((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <Separator />
+
+              {/* Body */}
+              <Textarea
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                rows={8}
+                className="resize-y"
+                placeholder="Schrijf uw bericht hier..."
+              />
+
+              <Separator />
+
+              {/* Inplannen */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={emailScheduled}
+                      onChange={(e) => setEmailScheduled(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Inplannen</span>
+                  </label>
+                </div>
+                {emailScheduled && (
+                  <div className="pl-7 space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      {(() => {
+                        const morgen = new Date()
+                        morgen.setDate(morgen.getDate() + 1)
+                        const morgenStr = morgen.toISOString().split('T')[0]
+                        return [
+                          { label: 'Morgenochtend 08:00', datum: morgenStr, tijd: '08:00' },
+                          { label: 'Morgen 10:00', datum: morgenStr, tijd: '10:00' },
+                          { label: 'Morgen 14:00', datum: morgenStr, tijd: '14:00' },
+                        ].map((opt) => (
+                          <Button
+                            key={opt.label}
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() => { setEmailScheduleDate(opt.datum); setEmailScheduleTime(opt.tijd) }}
+                          >
+                            {opt.label}
+                          </Button>
+                        ))
+                      })()}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        value={emailScheduleDate}
+                        onChange={(e) => setEmailScheduleDate(e.target.value)}
+                        className="h-8 w-40"
+                      />
+                      <Input
+                        type="time"
+                        value={emailScheduleTime}
+                        onChange={(e) => setEmailScheduleTime(e.target.value)}
+                        className="h-8 w-28"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-2">
+                <Button variant="outline" onClick={() => setShowEmailCompose(false)}>
+                  Annuleren
+                </Button>
+                <Button
+                  onClick={handleSendEmailInline}
+                  disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail}
+                  className="bg-gradient-to-r from-accent to-primary border-0 gap-2"
+                >
+                  <Send className="h-4 w-4" />
+                  {isSendingEmail ? 'Verzenden...' : emailScheduled ? 'Inplannen' : 'Verstuur email'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ================================================================ */}
       {/* STICKY BOTTOM BAR — Inkoop, Marge, Winst                        */}
       {/* Altijd zichtbaar in stap 1 en 2                                  */}
       {/* ================================================================ */}
       {(currentStep === 1 || currentStep === 2) && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="sticky bottom-0 z-50 bg-card/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
           <div className="max-w-5xl mx-auto px-6 py-3">
-            <div className="flex items-center justify-between gap-6">
-              {/* Left: Inkoop info */}
-              <div className="flex items-center gap-6">
-                {/* Inkoop */}
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                    <ShoppingCart className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Inkoop</p>
-                    <p className="text-sm font-bold text-orange-600 dark:text-orange-400">
-                      {formatCurrency(totaalInkoop)}
-                    </p>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between gap-4">
+              {/* Left: Financial metrics + uren */}
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Materiaal */}
+                {materiaalKosten > 0 && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                        <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Materiaal</p>
+                        <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{formatCurrency(materiaalKosten)}</p>
+                      </div>
+                    </div>
+                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+                  </>
+                )}
 
-                {/* Divider */}
-                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
+                {/* Montage uren */}
+                {montageUren > 0 && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <Wrench className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Montage</p>
+                        <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{montageUren} uur</p>
+                      </div>
+                    </div>
+                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+                  </>
+                )}
+
+                {/* Voorbereiding uren */}
+                {voorbereidingUren > 0 && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Voorbereiding</p>
+                        <p className="text-sm font-bold text-purple-600 dark:text-purple-400">{voorbereidingUren} uur</p>
+                      </div>
+                    </div>
+                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+                  </>
+                )}
 
                 {/* Marge % */}
                 <div className="flex items-center gap-2">
@@ -1586,52 +2060,23 @@ export function QuoteCreation() {
                     </p>
                   </div>
                 </div>
-
-                {/* Divider */}
-                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-
-                {/* Winst ex BTW */}
-                <div className="flex items-center gap-2">
-                  <div className={cn(
-                    'h-8 w-8 rounded-lg flex items-center justify-center',
-                    winstExBtw > 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-800'
-                  )}>
-                    <TrendingUp className={cn(
-                      'h-4 w-4',
-                      winstExBtw > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
-                    )} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Winst ex BTW</p>
-                    <p className={cn(
-                      'text-sm font-bold',
-                      winstExBtw > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
-                    )}>
-                      {formatCurrency(winstExBtw)}
-                    </p>
-                  </div>
-                </div>
               </div>
 
               {/* Right: Totaal */}
-              <div className="flex items-center gap-6">
-                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-
-                <div className="flex items-center gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Subtotaal ex BTW</p>
-                    <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(subtotaal)}</p>
-                  </div>
-                  <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">BTW</p>
-                    <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(btwBedrag)}</p>
-                  </div>
-                  <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-                  <div className="bg-gradient-to-r from-accent to-primary rounded-xl px-5 py-2">
-                    <p className="text-[10px] uppercase tracking-wider text-white/70 font-medium">Totaal incl BTW</p>
-                    <p className="text-lg font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
-                  </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="hidden md:block">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Subtotaal</p>
+                  <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(subtotaal)}</p>
+                </div>
+                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden md:block" />
+                <div className="hidden md:block">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">BTW</p>
+                  <p className="text-sm font-medium text-muted-foreground text-right">{formatCurrency(btwBedrag)}</p>
+                </div>
+                <div className="w-px h-10 bg-gray-200 dark:bg-gray-700 hidden md:block" />
+                <div className="bg-gradient-to-r from-accent to-primary rounded-xl px-5 py-2">
+                  <p className="text-[10px] uppercase tracking-wider text-white/70 font-medium">Totaal incl BTW</p>
+                  <p className="text-lg font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
                 </div>
               </div>
             </div>

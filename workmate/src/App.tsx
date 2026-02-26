@@ -107,6 +107,7 @@ function AppContent() {
         <Route path="offertes" element={<QuotesPipeline />} />
         <Route path="offertes/nieuw" element={<QuoteCreation />} />
         <Route path="offertes/:id" element={<QuoteCreation />} />
+        <Route path="offertes/:id/bewerken" element={<QuoteCreation />} />
         <Route path="offertes/:id/preview" element={<ForgeQuotePreview />} />
         <Route path="offertes/:id/detail" element={<OfferteDetail />} />
         <Route path="documenten" element={<DocumentsLayout />} />

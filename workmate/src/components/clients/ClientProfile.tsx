@@ -782,7 +782,7 @@ export function ClientProfile() {
                         <tr
                           key={offerte.id}
                           className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
-                          onClick={() => navigate(`/offertes/${offerte.id}`)}
+                          onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
                         >
                           <td className="py-3 px-4">
                             <span className="text-sm font-medium text-blue-600 dark:text-blue-400">

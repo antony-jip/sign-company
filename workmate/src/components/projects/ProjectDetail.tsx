@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
@@ -167,6 +167,7 @@ function getGoedkeuringStatusColor(status: string) {
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
   const { offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1492,7 +1493,7 @@ export function ProjectDetail() {
                           variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-xs"
-                          onClick={() => navigate(`/offertes/${offerte.id}`)}
+                          onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           Bekijk

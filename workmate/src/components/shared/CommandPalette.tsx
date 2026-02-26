@@ -55,7 +55,7 @@ function mapOffertesToItems(offertes: Offerte[]): CommandItem[] {
     label: `${o.nummer} - ${o.titel}`,
     subtitle: o.klant_naam || 'Offerte',
     icon: <FileText className="w-4 h-4" />,
-    path: `/offertes/${o.id}`,
+    path: `/offertes/${o.id}/bewerken`,
     category: 'Offertes',
   }))
 }

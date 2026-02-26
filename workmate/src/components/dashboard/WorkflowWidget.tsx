@@ -99,7 +99,7 @@ export function WorkflowWidget() {
             type: 'verloopt_binnenkort',
             title: `${offerte.nummer} - ${offerte.titel}`,
             subtitle: `${offerte.klant_naam || 'Klant'} \u2022 ${dagenTot === 0 ? 'Verloopt vandaag!' : `Nog ${dagenTot} dag${dagenTot !== 1 ? 'en' : ''}`}`,
-            link: `/offertes/${offerte.id}`,
+            link: `/offertes/${offerte.id}/bewerken`,
             urgency: dagenTot <= 2 ? 'high' : 'medium',
           })
         }

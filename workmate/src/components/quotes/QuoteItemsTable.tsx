@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -70,6 +70,12 @@ export interface QuoteLineItem {
   actieve_variant_id?: string
 }
 
+export interface OmschrijvingSuggestie {
+  beschrijving: string
+  eenheid?: string
+  laatstePrijs?: number
+}
+
 interface QuoteItemsTableProps {
   items: QuoteLineItem[]
   onAddItem: () => void
@@ -92,6 +98,7 @@ interface QuoteItemsTableProps {
       calculatie_regels: CalculatieRegel[]
     }
   ) => void
+  suggesties?: OmschrijvingSuggestie[]
 }
 
 function calculateLineTotaal(item: QuoteLineItem): number {
@@ -114,6 +121,114 @@ function genId(): string {
   return `dr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
+function AutocompleteInput({
+  value,
+  onChange,
+  suggesties,
+  placeholder,
+  className,
+}: {
+  value: string
+  onChange: (val: string) => void
+  suggesties: OmschrijvingSuggestie[]
+  placeholder?: string
+  className?: string
+}) {
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [focusedIndex, setFocusedIndex] = useState(-1)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const filtered = value.trim().length > 0
+    ? suggesties.filter((s) =>
+        s.beschrijving.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 8)
+    : suggesties.slice(0, 8)
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!showSuggestions || filtered.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setFocusedIndex((prev) => (prev + 1) % filtered.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setFocusedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
+    } else if (e.key === 'Enter' && focusedIndex >= 0) {
+      e.preventDefault()
+      onChange(filtered[focusedIndex].beschrijving)
+      setShowSuggestions(false)
+      setFocusedIndex(-1)
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false)
+    }
+  }, [showSuggestions, filtered, focusedIndex, onChange])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  if (suggesties.length === 0) {
+    return (
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={className}
+      />
+    )
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative flex-1">
+      <Input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+          setShowSuggestions(true)
+          setFocusedIndex(-1)
+        }}
+        onFocus={() => setShowSuggestions(true)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        className={className}
+      />
+      {showSuggestions && filtered.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-auto">
+          {filtered.map((s, i) => (
+            <button
+              key={s.beschrijving}
+              type="button"
+              className={cn(
+                'w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between gap-2',
+                i === focusedIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              )}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                onChange(s.beschrijving)
+                setShowSuggestions(false)
+              }}
+            >
+              <span className="truncate">{s.beschrijving}</span>
+              {s.laatstePrijs != null && s.laatstePrijs > 0 && (
+                <span className="text-xs text-muted-foreground flex-shrink-0">
+                  {formatCurrency(s.laatstePrijs)}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function QuoteItemsTable({
   items,
   onAddItem,
@@ -121,6 +236,7 @@ export function QuoteItemsTable({
   onRemoveItem,
   onUpdateItemWithCalculatie,
   onUpdateItemWithVariantCalculatie,
+  suggesties = [],
 }: QuoteItemsTableProps) {
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
@@ -336,9 +452,10 @@ export function QuoteItemsTable({
                 <span className="text-xs font-bold text-white">{index + 1}</span>
               </div>
 
-              <Input
+              <AutocompleteInput
                 value={item.beschrijving}
-                onChange={(e) => onUpdateItem(item.id, 'beschrijving', e.target.value)}
+                onChange={(val) => onUpdateItem(item.id, 'beschrijving', val)}
+                suggesties={suggesties}
                 placeholder="Item naam..."
                 className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 text-sm font-semibold flex-1 placeholder:font-normal"
               />
