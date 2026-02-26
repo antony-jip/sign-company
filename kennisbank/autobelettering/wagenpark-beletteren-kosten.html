@@ -433,7 +433,16 @@ img{max-width:100%;height:auto;display:block;image-rendering:auto;-webkit-user-d
             text-decoration: underline;
         }
 
-        </style>
+        
+.benefit-grid{display:grid;grid-template-columns:1fr;gap:12px;margin:16px 0}
+.benefit-card{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;background:#FFF;border-radius:10px;border:1px solid rgba(236,236,236,0.8);transition:all 0.25s ease}
+.benefit-card:hover{border-color:rgba(229,115,36,0.25);box-shadow:0 2px 8px rgba(229,115,36,0.06)}
+.benefit-icon{width:48px;height:48px;min-width:48px;border-radius:12px;background:linear-gradient(135deg,rgba(229,115,36,0.08),rgba(240,170,4,0.06));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.benefit-icon svg{width:24px;height:24px;stroke:var(--orange)}
+.benefit-content h3{font-family:'Excon',sans-serif!important;font-size:16px!important;font-weight:700!important;color:var(--navy)!important;margin-bottom:6px!important;letter-spacing:-0.3px!important}
+.benefit-content p{font-size:14px;line-height:1.6;color:var(--gray-text);margin:0}
+@media(min-width:600px){.benefit-grid{grid-template-columns:1fr 1fr}}
+</style>
 </head>
 <body>
 
