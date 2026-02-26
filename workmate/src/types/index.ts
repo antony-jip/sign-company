@@ -569,6 +569,31 @@ export interface TekeningGoedkeuring {
   updated_at: string;
 }
 
+// ============ INGEPLANDE EMAILS (Offerte) ============
+
+export interface EmailBijlage {
+  naam: string;
+  grootte: number;
+  type?: string;
+  url?: string;
+}
+
+export interface IngeplandEmail {
+  id: string;
+  user_id: string;
+  offerte_id: string;
+  aan: string;
+  cc?: string;
+  bcc?: string;
+  onderwerp: string;
+  inhoud: string;
+  bijlagen: EmailBijlage[];
+  gepland_op: string;
+  status: 'gepland' | 'verzonden' | 'mislukt';
+  verzonden_op?: string;
+  created_at: string;
+}
+
 export type SortDirection = 'asc' | 'desc';
 
 // ============ FACTUREN SYSTEEM ============

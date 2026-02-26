@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/select'
 import {
   ArrowLeft,
-  ArrowRight,
   Check,
   Save,
   Send,
@@ -50,10 +49,9 @@ import {
   ExternalLink,
   Copy,
   Image,
-  PanelRightClose,
-  PanelRightOpen,
   TrendingDown,
   DollarSign,
+  MoreHorizontal,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -81,11 +79,7 @@ const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven t
 
 const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
-const steps = [
-  { number: 0, label: 'Klant & Details', icon: User },
-  { number: 1, label: 'Items invullen', icon: FileText },
-  { number: 2, label: 'Preview', icon: Eye },
-]
+// Steps removed — now a permanent two-column layout
 
 function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { nummer: string }[] = []): string {
   const year = new Date().getFullYear()
@@ -108,7 +102,7 @@ export function QuoteCreation() {
   const { user } = useAuth()
   const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
   const documentStyle = useDocumentStyle()
-  const [currentStep, setCurrentStep] = useState(0)
+  const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -146,8 +140,8 @@ export function QuoteCreation() {
   // ── FIX 7: Client details panel ──
   const [klantPanelOpen, setKlantPanelOpen] = useState(true)
 
-  // ── Financieel sidebar ──
-  const [financieelSidebarOpen, setFinancieelSidebarOpen] = useState(true)
+  // ── Sidebar collapsed on mobile ──
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // ── FIX 16: Afrondingskorting ──
   const [isEditingTotaal, setIsEditingTotaal] = useState(false)
@@ -406,8 +400,8 @@ export function QuoteCreation() {
           }
         }).catch(() => {/* silent */})
 
-        // Start on step 1 (items) so user can edit right away
-        setCurrentStep(1)
+        // Go straight to editing (skip klant selector)
+        setShowKlantSelector(false)
       } catch (err) {
         logger.error('Failed to load offerte for edit:', err)
         toast.error('Kon offerte niet laden voor bewerking')
@@ -697,9 +691,9 @@ export function QuoteCreation() {
     }
   }, [user?.id, selectedKlantId, selectedProjectId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten])
 
-  // Debounced autosave: trigger 3s after last change (only on step 1/2)
+  // Debounced autosave: trigger 3s after last change (only when editing)
   useEffect(() => {
-    if (currentStep < 1) return
+    if (showKlantSelector) return
     if (!selectedKlantId || !offerteTitel.trim() || items.length === 0) return
 
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
@@ -710,7 +704,7 @@ export function QuoteCreation() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     }
-  }, [items, offerteTitel, notities, voorwaarden, geldigTot, selectedKlantId, selectedProjectId, currentStep])
+  }, [items, offerteTitel, notities, voorwaarden, geldigTot, selectedKlantId, selectedProjectId, showKlantSelector])
 
   // ── Contactpersoon toevoegen ──
   const handleAddContact = async () => {
@@ -930,19 +924,17 @@ export function QuoteCreation() {
     }
   }
 
-  // ── Step navigation ──
-  const canProceedStep0 = selectedKlantId && offerteTitel.trim().length > 0
-  const canProceedStep1 = items.length > 0
+  // ── Start editing: pick klant, then generate items ──
+  const canStartEditing = selectedKlantId && offerteTitel.trim().length > 0
 
-  const handleStep0Next = () => {
-    // Genereer het gekozen aantal lege items als er nog geen items zijn
+  const handleStartEditing = () => {
     if (items.length === 0) {
       const newItems: QuoteLineItem[] = Array.from({ length: itemCount }, (_, i) =>
         createEmptyItem(`Item ${i + 1}`)
       )
       setItems(newItems)
     }
-    setCurrentStep(1)
+    setShowKlantSelector(false)
   }
 
   // ── Save ──
@@ -1174,6 +1166,8 @@ export function QuoteCreation() {
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const emailSectionRef = useRef<HTMLDivElement>(null)
+
   const handleVerstuurOfferte = async () => {
     if (!user?.id || !selectedKlant) {
       toast.error('Selecteer eerst een klant')
@@ -1204,6 +1198,8 @@ export function QuoteCreation() {
     setEmailCc('')
     setEmailBcc('')
     setShowEmailCompose(true)
+    // Scroll to email section
+    setTimeout(() => emailSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 
   const handleSendEmailInline = async () => {
@@ -1259,1292 +1255,644 @@ export function QuoteCreation() {
     e.target.value = ''
   }
 
-  // Keep old handler structure for saving before send but don't navigate away
-  const _saveBeforeSend = async () => {
-    const quoteId = editOfferteId || autoSaveIdRef.current
-    if (!quoteId) return
-    try {
-      await updateOfferte(quoteId, {
-        klant_id: selectedKlantId,
-        klant_naam: selectedKlant?.bedrijfsnaam,
-        ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-        ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
-        titel: offerteTitel,
-        status: 'concept',
-        subtotaal,
-        btw_bedrag: btwBedrag,
-        totaal: round2(subtotaal + btwBedrag),
-        geldig_tot: geldigTot,
-        notities,
-        voorwaarden,
-        intro_tekst: introTekst,
-        outro_tekst: outroTekst,
-      })
-      const existingItems = await getOfferteItems(quoteId)
-      await Promise.all(existingItems.map((item) => deleteOfferteItem(item.id)))
-      await Promise.all(
-        items.map((item, index) =>
-          createOfferteItem({
-            offerte_id: quoteId,
-            beschrijving: item.beschrijving,
-            aantal: item.aantal,
-            eenheidsprijs: item.eenheidsprijs,
-            btw_percentage: item.btw_percentage,
-            korting_percentage: item.korting_percentage,
-            totaal: item.totaal,
-            volgorde: index + 1,
-            soort: item.soort,
-            extra_velden: item.extra_velden,
-            detail_regels: item.detail_regels,
-            calculatie_regels: item.calculatie_regels,
-            heeft_calculatie: item.heeft_calculatie,
-            prijs_varianten: item.prijs_varianten,
-            actieve_variant_id: item.actieve_variant_id,
-          })
-        )
-      )
-    } catch (err) {
-      logger.error('Failed to save before sending:', err)
-    }
+  // ── Actions dropdown state ──
+  const [showActionsMenu, setShowActionsMenu] = useState(false)
+
+  // ── Helper: marge color for sidebar (unified: ≥65% green, 50-64% orange, <50% red) ──
+  const getMargeColorSidebar = (pct: number) => {
+    if (pct >= 65) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', bar: 'bg-green-500' }
+    if (pct >= 50) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', bar: 'bg-amber-500' }
+    return { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', bar: 'bg-red-500' }
   }
 
+  const margeColor = getMargeColorSidebar(margePercentage)
+
+  // ── Per-item marge for sidebar summary ──
+  const itemMarges = useMemo(() => {
+    return verplichtePrijsItems.map((item) => {
+      const data = getActivePriceData(item)
+      const inkoop = (data.calculatie_regels || []).reduce((s, r) => s + round2(r.inkoop_prijs * r.aantal), 0)
+      const bruto = data.aantal * data.eenheidsprijs
+      const verkoop = round2(bruto - bruto * (data.korting_percentage / 100))
+      const marge = round2(verkoop - inkoop)
+      const pct = verkoop > 0 ? Math.round(((marge / verkoop) * 100) * 10) / 10 : 0
+      return { beschrijving: item.beschrijving, inkoop: round2(inkoop), verkoop, marge, pct, hasCalc: (data.calculatie_regels || []).length > 0 }
+    })
+  }, [verplichtePrijsItems])
+
   // ── Render ──
-  return (
-    <div className={cn('pb-12 transition-all duration-300', (currentStep === 1 || currentStep === 2) && financieelSidebarOpen && 'pr-[270px]')}>
-      <div className="space-y-6 max-w-5xl mx-auto">
-        {/* ──── Page Header met introductie ──── */}
-        <div className="rounded-2xl bg-gradient-to-br from-primary/5 via-accent/5 to-transparent dark:from-primary/10 dark:via-accent/10 border border-primary/10 dark:border-primary/20 p-6 md:p-8">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mt-0.5 hover:bg-white/50 dark:hover:bg-gray-800/50"
-                onClick={() => {
-                  const from = (location.state as { from?: string })?.from
-                  navigate(from || '/offertes')
-                }}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl font-bold text-foreground font-display">{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
-                  <Badge variant="outline" className="text-xs font-mono bg-white/50 dark:bg-gray-800/50">
-                    <Hash className="h-3 w-3 mr-1" />
-                    {offerteNummer}
-                  </Badge>
-                  {/* FIX 12: Versie badge */}
-                  {versieNummer > 1 && (
-                    <Badge variant="outline" className="text-[10px] bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800 cursor-pointer" onClick={() => setShowVersieHistorie(!showVersieHistorie)}>
-                      v{versieNummer}
-                    </Badge>
-                  )}
-                  {/* FIX 14: Geldigheid badge */}
-                  {geldigTot && (() => {
-                    const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                    if (days < 0) return (
-                      <Badge className="text-[10px] bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800">
-                        Verlopen
-                      </Badge>
-                    )
-                    if (days < 7) return (
-                      <Badge className="text-[10px] bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 border-orange-200 dark:border-orange-800">
-                        Verloopt over {days} {days === 1 ? 'dag' : 'dagen'}
-                      </Badge>
-                    )
-                    return (
-                      <Badge variant="outline" className="text-[10px] bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        Geldig t/m {new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
-                      </Badge>
-                    )
-                  })()}
-                </div>
-                <div className="flex items-center gap-3 mt-1">
-                  <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-                    Stel een professionele offerte samen voor je klant.
-                  </p>
-                  {/* Autosave indicator */}
-                  {autoSaveStatus === 'saving' && (
-                    <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                      <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                      Opslaan...
-                    </span>
-                  )}
-                  {autoSaveStatus === 'saved' && (
-                    <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                      <Check className="h-3 w-3" />
-                      Opgeslagen
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
-            {/* Right side: badges */}
-            <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            {/* Quick info badges rechts */}
-            {selectedKlant && (
-              <div className="hidden lg:flex flex-col items-end gap-1.5 flex-shrink-0">
-                <Badge className="gap-1.5 bg-white/80 dark:bg-gray-800/80 text-foreground border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <Building2 className="h-3 w-3 text-primary" />
-                  {selectedKlant.bedrijfsnaam}
-                </Badge>
-                {contactpersoon && (
-                  <Badge variant="outline" className="gap-1.5 bg-white/60 dark:bg-gray-800/60">
-                    <User className="h-3 w-3" />
-                    t.a.v. {contactpersoon}
-                  </Badge>
-                )}
-                {selectedProject && (
-                  <Badge variant="outline" className="gap-1.5 bg-white/60 dark:bg-gray-800/60">
-                    <FolderOpen className="h-3 w-3" />
-                    {selectedProject.naam}
-                  </Badge>
-                )}
-              </div>
-            )}
+  // ────────────────────────────────────────────────────────────────────
+  // KLANT SELECTOR (shown when no klant is selected yet, or new offerte)
+  // ────────────────────────────────────────────────────────────────────
+  if (showKlantSelector && !isEditMode) {
+    return (
+      <div className="pb-12">
+        <div className="space-y-5 max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => {
+              const from = (location.state as { from?: string })?.from
+              navigate(from || '/offertes')
+            }}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground font-display">Nieuwe Offerte</h1>
+              <p className="text-sm text-muted-foreground">Selecteer een klant en vul de offerte details in.</p>
             </div>
           </div>
-        </div>
 
-        {/* ──── Step Indicator ──── */}
-        <div className="flex items-center justify-center">
-          <div className="flex items-center gap-0">
-            {steps.map((step, index) => {
-              const isActive = currentStep === step.number
-              const isCompleted = currentStep > step.number
-
-              return (
-                <React.Fragment key={step.number}>
-                  <button
-                    onClick={() => {
-                      if (step.number <= currentStep) setCurrentStep(step.number)
-                    }}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200',
-                      isActive && 'bg-primary/10 dark:bg-primary/20 text-accent dark:text-primary shadow-sm',
-                      isCompleted && 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 cursor-pointer',
-                      !isActive && !isCompleted && 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-default'
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold',
-                        isActive && 'bg-gradient-to-r from-accent to-primary text-white',
-                        isCompleted && 'bg-green-600 text-white',
-                        !isActive && !isCompleted && 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
-                      )}
-                    >
-                      {isCompleted ? <Check className="h-3.5 w-3.5" /> : step.number + 1}
-                    </div>
-                    <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
-                  </button>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={cn(
-                        'w-10 h-0.5 mx-1',
-                        currentStep > step.number ? 'bg-green-400 dark:bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
-                      )}
-                    />
-                  )}
-                </React.Fragment>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* ================================================================ */}
-        {/* STEP 0: KLANT + CONTACTPERSOON + DETAILS                        */}
-        {/* ================================================================ */}
-        {currentStep === 0 && (
-          <div className="space-y-5">
-
-            {/* ── Klant selectie + Contactpersoon (twee kolommen) ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-
-              {/* Linker kolom: Klant zoeken (3/5) */}
-              <Card className="lg:col-span-3">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                      <Building2 className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    Voor wie is deze offerte?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Klant zoeken + selecteren */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Klant</Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        value={klantSearch}
-                        onChange={(e) => setKlantSearch(e.target.value)}
-                        placeholder="Zoek op bedrijfsnaam, contactpersoon of email..."
-                        className="pl-10"
-                      />
-                    </div>
-                    <Select value={selectedKlantId} onValueChange={(val) => {
-                      setSelectedKlantId(val)
-                      setKlantSearch('')
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecteer een klant..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredKlanten.map((klant) => (
-                          <SelectItem key={klant.id} value={klant.id}>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{klant.bedrijfsnaam}</span>
-                              {klant.contactpersoon && (
-                                <>
-                                  <span className="text-gray-400">-</span>
-                                  <span className="text-gray-500">{klant.contactpersoon}</span>
-                                </>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Geselecteerde klant kaart */}
-                  {selectedKlant && (
-                    <div className="bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10 border border-primary/15 dark:border-primary/25 rounded-xl p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0 shadow-sm">
-                          <span className="text-white font-bold text-lg">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-foreground">{selectedKlant.bedrijfsnaam}</h4>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5">
-                            {selectedKlant.email && (
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Mail className="h-3 w-3" />
-                                {selectedKlant.email}
-                              </span>
-                            )}
-                            {selectedKlant.telefoon && (
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Phone className="h-3 w-3" />
-                                {selectedKlant.telefoon}
-                              </span>
-                            )}
-                            {(selectedKlant.adres || selectedKlant.stad) && (
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <MapPin className="h-3 w-3" />
-                                {[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => {
-                          setSelectedKlantId('')
-                          setSelectedProjectId('')
-                          setContactpersoon('')
-                          setSelectedContactId('')
-                        }}>
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Project selectie (alleen als klant geselecteerd is) */}
-                  {selectedKlantId && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium flex items-center gap-1.5">
-                        <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                        Project
-                        <span className="text-xs text-muted-foreground font-normal">(optioneel)</span>
-                      </Label>
-                      {klantProjecten.length > 0 ? (
-                        <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Koppel aan een project..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="geen">
-                              <span className="text-muted-foreground">Geen project</span>
-                            </SelectItem>
-                            {klantProjecten.map((project) => (
-                              <SelectItem key={project.id} value={project.id}>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{project.naam}</span>
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                    {project.status}
-                                  </Badge>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-xs text-muted-foreground py-2">Geen projecten gevonden voor deze klant</p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Rechter kolom: Contactpersoon (2/5) */}
-              <Card className="lg:col-span-2">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                      <Contact className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    Contactpersoon
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {selectedKlant ? (
-                    <>
-                      {/* Contactpersonen lijst */}
-                      {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
-                        <div className="space-y-1.5">
-                          {/* Bestaande contactpersonen uit array */}
-                          {selectedKlant.contactpersonen?.map((cp) => (
-                            <button
-                              key={cp.id}
-                              onClick={() => handleSelectContact(cp.id)}
-                              className={cn(
-                                'w-full text-left rounded-lg border p-2.5 transition-all',
-                                selectedContactId === cp.id
-                                  ? 'border-primary/50 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 ring-1 ring-primary/20'
-                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                <div className={cn(
-                                  'w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold',
-                                  selectedContactId === cp.id
-                                    ? 'bg-primary text-white'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                                )}>
-                                  {cp.naam[0]?.toUpperCase()}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate">{cp.naam}</p>
-                                  {cp.functie && <p className="text-[11px] text-muted-foreground truncate">{cp.functie}</p>}
-                                </div>
-                                {cp.is_primair && (
-                                  <span className="text-[9px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">
-                                    primair
-                                  </span>
-                                )}
-                              </div>
-                            </button>
-                          ))}
-
-                          {/* Fallback: single contactpersoon string (als er geen array is) */}
-                          {(!selectedKlant.contactpersonen || selectedKlant.contactpersonen.length === 0) && selectedKlant.contactpersoon && (
-                            <div className="rounded-lg border border-primary/50 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 ring-1 ring-primary/20 p-2.5">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">
-                                  {selectedKlant.contactpersoon[0]?.toUpperCase()}
-                                </div>
-                                <p className="text-sm font-medium text-foreground">{selectedKlant.contactpersoon}</p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Nieuwe contactpersoon toevoegen */}
-                      {!showNewContact ? (
-                        <button
-                          onClick={() => setShowNewContact(true)}
-                          className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-accent transition-colors py-2 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                        >
-                          <UserPlus className="h-3.5 w-3.5" />
-                          Nieuwe contactpersoon toevoegen
-                        </button>
-                      ) : (
-                        <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10 p-3 space-y-2">
-                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
-                            <UserPlus className="h-3.5 w-3.5" />
-                            Nieuwe contactpersoon
-                          </p>
-                          <Input
-                            value={newContactNaam}
-                            onChange={(e) => setNewContactNaam(e.target.value)}
-                            placeholder="Naam *"
-                            className="h-8 text-sm bg-white dark:bg-gray-900"
-                            autoFocus
-                          />
-                          <Input
-                            value={newContactFunctie}
-                            onChange={(e) => setNewContactFunctie(e.target.value)}
-                            placeholder="Functie (bijv. Directeur)"
-                            className="h-8 text-sm bg-white dark:bg-gray-900"
-                          />
-                          <Input
-                            value={newContactEmail}
-                            onChange={(e) => setNewContactEmail(e.target.value)}
-                            placeholder="E-mailadres"
-                            type="email"
-                            className="h-8 text-sm bg-white dark:bg-gray-900"
-                          />
-                          <Input
-                            value={newContactTelefoon}
-                            onChange={(e) => setNewContactTelefoon(e.target.value)}
-                            placeholder="Telefoonnummer"
-                            className="h-8 text-sm bg-white dark:bg-gray-900"
-                          />
-                          <div className="flex items-center gap-2 pt-1">
-                            <Button
-                              size="sm"
-                              onClick={handleAddContact}
-                              disabled={!newContactNaam.trim()}
-                              className="h-7 text-xs gap-1"
-                            >
-                              <Plus className="h-3 w-3" />
-                              Toevoegen
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setShowNewContact(false)
-                                setNewContactNaam('')
-                                setNewContactFunctie('')
-                                setNewContactEmail('')
-                                setNewContactTelefoon('')
-                              }}
-                              className="h-7 text-xs"
-                            >
-                              Annuleren
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Handmatig contactpersoon invullen als alternatief */}
-                      {!showNewContact && (
-                        <div className="space-y-1.5 pt-1 border-t border-gray-100 dark:border-gray-800">
-                          <Label className="text-[11px] text-muted-foreground">Of typ een naam</Label>
-                          <Input
-                            value={contactpersoon}
-                            onChange={(e) => {
-                              setContactpersoon(e.target.value)
-                              setSelectedContactId('')
-                            }}
-                            placeholder="Contactpersoon naam..."
-                            className="h-8 text-sm"
-                          />
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center py-6">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-2">
-                        <User className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Selecteer eerst een klant
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        De contactpersonen verschijnen hier
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* ── Offerte details ── */}
-            <Card>
+          {/* Klant selectie + Contactpersoon */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+            {/* Linker kolom: Klant zoeken (3/5) */}
+            <Card className="lg:col-span-3">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                    <FileText className="h-3.5 w-3.5 text-white" />
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                    <Building2 className="h-3.5 w-3.5 text-white" />
                   </div>
-                  Offerte details
+                  Voor wie is deze offerte?
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="offerte-titel">Offerte titel</Label>
-                  <Input
-                    id="offerte-titel"
-                    value={offerteTitel}
-                    onChange={(e) => setOfferteTitel(e.target.value)}
-                    placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..."
-                    className="text-base"
-                    autoFocus
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="offerte-nummer" className="flex items-center gap-1.5">
-                      <Hash className="h-3 w-3 text-muted-foreground" />
-                      Nummer
-                    </Label>
-                    <Input
-                      id="offerte-nummer"
-                      value={offerteNummer}
-                      readOnly
-                      className="bg-gray-50 dark:bg-gray-800 text-sm"
-                    />
+                  <Label className="text-sm font-medium">Klant</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input value={klantSearch} onChange={(e) => setKlantSearch(e.target.value)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10" />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="geldig-tot" className="flex items-center gap-1.5">
-                      <Calendar className="h-3 w-3 text-muted-foreground" />
-                      Geldig tot
-                    </Label>
-                    <Input
-                      id="geldig-tot"
-                      type="date"
-                      value={geldigTot}
-                      onChange={(e) => setGeldigTot(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
+                  <Select value={selectedKlantId} onValueChange={(val) => { setSelectedKlantId(val); setKlantSearch('') }}>
+                    <SelectTrigger><SelectValue placeholder="Selecteer een klant..." /></SelectTrigger>
+                    <SelectContent>
+                      {filteredKlanten.map((klant) => (
+                        <SelectItem key={klant.id} value={klant.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{klant.bedrijfsnaam}</span>
+                            {klant.contactpersoon && (<><span className="text-gray-400">-</span><span className="text-gray-500">{klant.contactpersoon}</span></>)}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+                {selectedKlant && (
+                  <div className="bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10 border border-primary/15 dark:border-primary/25 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="text-white font-bold text-lg">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-foreground">{selectedKlant.bedrijfsnaam}</h4>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5">
+                          {selectedKlant.email && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Mail className="h-3 w-3" />{selectedKlant.email}</span>}
+                          {selectedKlant.telefoon && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Phone className="h-3 w-3" />{selectedKlant.telefoon}</span>}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => { setSelectedKlantId(''); setSelectedProjectId(''); setContactpersoon(''); setSelectedContactId('') }}>
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {selectedKlantId && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-1.5"><FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />Project<span className="text-xs text-muted-foreground font-normal">(optioneel)</span></Label>
+                    {klantProjecten.length > 0 ? (
+                      <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                        <SelectTrigger><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="geen"><span className="text-muted-foreground">Geen project</span></SelectItem>
+                          {klantProjecten.map((project) => (
+                            <SelectItem key={project.id} value={project.id}>
+                              <div className="flex items-center gap-2"><span className="font-medium">{project.naam}</span><Badge variant="outline" className="text-[10px] px-1.5 py-0">{project.status}</Badge></div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : <p className="text-xs text-muted-foreground py-2">Geen projecten gevonden voor deze klant</p>}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* ── Hoeveel items? ── */}
-            <Card>
+            {/* Rechter kolom: Contactpersoon (2/5) */}
+            <Card className="lg:col-span-2">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                    <Plus className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Hoeveel items heeft je offerte?
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"><Contact className="h-3.5 w-3.5 text-white" /></div>
+                  Contactpersoon
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Elk item is een complete prijsberekening met omschrijving en details. Je kunt later altijd nog items toevoegen of verwijderen.
-                </p>
-                <div className="flex items-center gap-2">
-                  {ITEM_COUNT_OPTIONS.map((count) => (
-                    <button
-                      key={count}
-                      onClick={() => setItemCount(count)}
-                      className={cn(
-                        'h-12 w-12 rounded-xl text-lg font-bold transition-all border-2',
-                        itemCount === count
-                          ? 'border-primary bg-gradient-to-br from-accent to-primary text-white shadow-md scale-110'
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-foreground hover:border-gray-300 dark:hover:border-gray-600'
-                      )}
-                    >
-                      {count}
-                    </button>
-                  ))}
-                  <span className="text-sm text-muted-foreground ml-2">
-                    {itemCount === 1 ? 'item' : 'items'}
-                  </span>
-                </div>
+              <CardContent className="space-y-3">
+                {selectedKlant ? (
+                  <>
+                    {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
+                      <div className="space-y-1.5">
+                        {selectedKlant.contactpersonen?.map((cp) => (
+                          <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg border p-2.5 transition-all', selectedContactId === cp.id ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50')}>
+                            <div className="flex items-center gap-2">
+                              <div className={cn('w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold', selectedContactId === cp.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500')}>{cp.naam[0]?.toUpperCase()}</div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">{cp.naam}</p>
+                                {cp.functie && <p className="text-[11px] text-muted-foreground truncate">{cp.functie}</p>}
+                              </div>
+                              {cp.is_primair && <span className="text-[9px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">primair</span>}
+                            </div>
+                          </button>
+                        ))}
+                        {(!selectedKlant.contactpersonen || selectedKlant.contactpersonen.length === 0) && selectedKlant.contactpersoon && (
+                          <div className="rounded-lg border border-primary/50 bg-primary/5 ring-1 ring-primary/20 p-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">{selectedKlant.contactpersoon[0]?.toUpperCase()}</div>
+                              <p className="text-sm font-medium text-foreground">{selectedKlant.contactpersoon}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!showNewContact ? (
+                      <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-accent transition-colors py-2 px-2 rounded-lg hover:bg-gray-50">
+                        <UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon toevoegen
+                      </button>
+                    ) : (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 space-y-2">
+                        <p className="text-xs font-medium text-blue-700 flex items-center gap-1.5"><UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon</p>
+                        <Input value={newContactNaam} onChange={(e) => setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-8 text-sm" autoFocus />
+                        <Input value={newContactFunctie} onChange={(e) => setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-8 text-sm" />
+                        <Input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-8 text-sm" />
+                        <Input value={newContactTelefoon} onChange={(e) => setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-8 text-sm" />
+                        <div className="flex items-center gap-2 pt-1">
+                          <Button size="sm" onClick={handleAddContact} disabled={!newContactNaam.trim()} className="h-7 text-xs gap-1"><Plus className="h-3 w-3" />Toevoegen</Button>
+                          <Button variant="ghost" size="sm" onClick={() => { setShowNewContact(false); setNewContactNaam(''); setNewContactFunctie(''); setNewContactEmail(''); setNewContactTelefoon('') }} className="h-7 text-xs">Annuleren</Button>
+                        </div>
+                      </div>
+                    )}
+                    {!showNewContact && (
+                      <div className="space-y-1.5 pt-1 border-t border-gray-100">
+                        <Label className="text-[11px] text-muted-foreground">Of typ een naam</Label>
+                        <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-8 text-sm" />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-6">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2"><User className="h-5 w-5 text-gray-400" /></div>
+                    <p className="text-sm text-muted-foreground">Selecteer eerst een klant</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
+          </div>
 
-            {/* ── Offerte Teksten ── */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                    <FileText className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Offerte Teksten
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Notities</Label>
-                    <Textarea
-                      value={notities}
-                      onChange={(e) => setNotities(e.target.value)}
-                      placeholder="Interne notities of opmerkingen voor de klant..."
-                      rows={4}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Voorwaarden</Label>
-                    <Textarea
-                      value={voorwaarden}
-                      onChange={(e) => setVoorwaarden(e.target.value)}
-                      rows={4}
-                    />
-                  </div>
+          {/* Offerte details */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
+                Offerte details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="offerte-titel">Offerte titel</Label>
+                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-base" autoFocus />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="offerte-nummer" className="flex items-center gap-1.5"><Hash className="h-3 w-3 text-muted-foreground" />Nummer</Label>
+                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="bg-gray-50 dark:bg-gray-800 text-sm" />
                 </div>
-              </CardContent>
-            </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="geldig-tot" className="flex items-center gap-1.5"><Calendar className="h-3 w-3 text-muted-foreground" />Geldig tot</Label>
+                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-sm" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Navigation */}
-            <div className="flex justify-end">
-              <Button
-                onClick={handleStep0Next}
-                disabled={!canProceedStep0}
-                className="bg-gradient-to-r from-accent to-primary border-0 px-8"
-                size="lg"
-              >
-                Items toevoegen
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+          {/* Hoeveel items? */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center"><Plus className="h-3.5 w-3.5 text-white" /></div>
+                Hoeveel items heeft je offerte?
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">Elk item is een complete prijsberekening. Je kunt later altijd items toevoegen of verwijderen.</p>
+              <div className="flex items-center gap-2">
+                {ITEM_COUNT_OPTIONS.map((count) => (
+                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-12 w-12 rounded-xl text-lg font-bold transition-all border-2', itemCount === count ? 'border-primary bg-gradient-to-br from-accent to-primary text-white shadow-md scale-110' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-foreground hover:border-gray-300')}>
+                    {count}
+                  </button>
+                ))}
+                <span className="text-sm text-muted-foreground ml-2">{itemCount === 1 ? 'item' : 'items'}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Start button */}
+          <div className="flex justify-end">
+            <Button onClick={handleStartEditing} disabled={!canStartEditing} className="bg-gradient-to-r from-accent to-primary border-0 px-8" size="lg">
+              Items toevoegen
+              <FileText className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
+  // ────────────────────────────────────────────────────────────────────
+  return (
+    <div className="pb-12">
+      {/* ──── HEADER BAR ──── */}
+      <div className="rounded-2xl bg-gradient-to-br from-primary/5 via-accent/5 to-transparent dark:from-primary/10 dark:via-accent/10 border border-primary/10 dark:border-primary/20 px-6 py-4 mb-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          {/* Left: Back + Title + Badges */}
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="hover:bg-white/50 dark:hover:bg-gray-800/50 flex-shrink-0" onClick={() => {
+              const from = (location.state as { from?: string })?.from
+              navigate(from || '/offertes')
+            }}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold text-foreground font-display truncate">{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
+                <Badge variant="outline" className="text-xs font-mono bg-white/50 dark:bg-gray-800/50 flex-shrink-0"><Hash className="h-3 w-3 mr-1" />{offerteNummer}</Badge>
+                {versieNummer > 1 && (
+                  <Badge variant="outline" className="text-[10px] bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 cursor-pointer flex-shrink-0" onClick={() => setShowVersieHistorie(!showVersieHistorie)}>v{versieNummer}</Badge>
+                )}
+                {geldigTot && (() => {
+                  const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                  if (days < 0) return <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200 flex-shrink-0">Verlopen</Badge>
+                  if (days < 7) return <Badge className="text-[10px] bg-orange-100 text-orange-700 border-orange-200 flex-shrink-0">Verloopt over {days} {days === 1 ? 'dag' : 'dagen'}</Badge>
+                  return <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200 flex-shrink-0"><Calendar className="h-3 w-3 mr-1" />Geldig t/m {new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</Badge>
+                })()}
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                {autoSaveStatus === 'saving' && <span className="flex items-center gap-1.5 text-xs text-amber-600"><div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />Opslaan...</span>}
+                {autoSaveStatus === 'saved' && <span className="flex items-center gap-1.5 text-xs text-emerald-600"><Check className="h-3 w-3" />Opgeslagen</span>}
+              </div>
             </div>
           </div>
-        )}
 
-        {/* ================================================================ */}
-        {/* STEP 1: ITEMS                                                    */}
-        {/* ================================================================ */}
-        {currentStep === 1 && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
-            {/* ── LEFT: Items content ── */}
-            <div className="space-y-5">
-            {/* ── Introductietekst ── */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-                    <Mail className="h-3.5 w-3.5 text-white" />
+          {/* Right: Action buttons */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={handleDownloadPdf} className="gap-1.5">
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">PDF</span>
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => saveOfferte('concept')} disabled={isSaving} className="gap-1.5">
+              <Save className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{isSaving ? 'Opslaan...' : 'Opslaan'}</span>
+            </Button>
+            <Button size="sm" onClick={handleVerstuurOfferte} disabled={isSaving} className="bg-gradient-to-r from-accent to-primary border-0 gap-1.5">
+              <Send className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Verstuur</span>
+            </Button>
+
+            {/* Actions dropdown */}
+            {isEditMode && (
+              <div className="relative">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setShowActionsMenu(!showActionsMenu)}>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+                {showActionsMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowActionsMenu(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg py-1 w-48">
+                      <button onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 disabled:opacity-50">
+                        <Copy className="h-3.5 w-3.5" />{isDuplicating ? 'Dupliceren...' : 'Dupliceer offerte'}
+                      </button>
+                      <button onClick={() => { handleNieuweVersie(); setShowActionsMenu(false) }} disabled={isSavingVersie} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 disabled:opacity-50">
+                        <Clock className="h-3.5 w-3.5" />{isSavingVersie ? 'Opslaan...' : `Nieuwe versie (v${versieNummer})`}
+                      </button>
+                      <button onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5" />Klant wijzigen
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ──── VERSIE HISTORIE ──── */}
+      {showVersieHistorie && versieHistorie.length > 0 && (
+        <div className="mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4 text-purple-500" />Versie historie
+                <Badge variant="outline" className="text-[10px]">{versieHistorie.length} versies</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {versieHistorie.map((v) => (
+                <div key={v.id} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
+                  <div>
+                    <span className="text-sm font-medium">Versie {v.versie_nummer}</span>
+                    <span className="text-xs text-muted-foreground ml-2">{new Date(v.created_at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    {v.notitie && <p className="text-xs text-muted-foreground mt-0.5">{v.notitie}</p>}
                   </div>
-                  Introductietekst
-                  <span className="text-xs text-muted-foreground font-normal ml-1">optioneel</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { label: 'Standaard', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, hierbij ontvangt u onze offerte voor de door u gevraagde werkzaamheden.` },
-                    { label: 'Na gesprek', tekst: `Geachte heer/mevrouw ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, naar aanleiding van ons gesprek sturen wij u hierbij onze offerte.` },
-                    { label: 'Bedankt', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, bedankt voor uw aanvraag. Hierbij onze offerte.` },
-                  ].map((tmpl) => (
-                    <Button
-                      key={tmpl.label}
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={() => setIntroTekst(tmpl.tekst)}
-                    >
-                      {tmpl.label}
-                    </Button>
-                  ))}
+                  <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => handleHerstelVersie(v.id)}>Herstel</Button>
                 </div>
-                <Textarea
-                  value={introTekst}
-                  onChange={(e) => setIntroTekst(e.target.value)}
-                  placeholder="Beste ..., hierbij ontvangt u onze offerte voor..."
-                  rows={3}
-                  className="resize-y"
-                />
-              </CardContent>
-            </Card>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-            {/* ── Items ── */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                    <FileText className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Vul je items in
-                  <span className="text-xs text-muted-foreground font-normal ml-1">
-                    {items.length} {items.length === 1 ? 'item' : 'items'}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <QuoteItemsTable
-                  items={items}
-                  onAddItem={handleAddItem}
-                  onUpdateItem={handleUpdateItem}
-                  onRemoveItem={handleRemoveItem}
-                  onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
-                  onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
-                  suggesties={omschrijvingSuggesties}
-                />
-              </CardContent>
-            </Card>
+      {/* ──── TWO-COLUMN GRID ──── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* LEFT COLUMN: Scrollable content                                */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+        <div className="space-y-5 min-w-0">
+          {/* ── Introductietekst ── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center"><Mail className="h-3.5 w-3.5 text-white" /></div>
+                Introductietekst
+                <span className="text-xs text-muted-foreground font-normal ml-1">optioneel</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: 'Standaard', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, hierbij ontvangt u onze offerte voor de door u gevraagde werkzaamheden.` },
+                  { label: 'Na gesprek', tekst: `Geachte heer/mevrouw ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, naar aanleiding van ons gesprek sturen wij u hierbij onze offerte.` },
+                  { label: 'Bedankt', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, bedankt voor uw aanvraag. Hierbij onze offerte.` },
+                ].map((tmpl) => (
+                  <Button key={tmpl.label} variant="outline" size="sm" className="text-xs h-7" onClick={() => setIntroTekst(tmpl.tekst)}>{tmpl.label}</Button>
+                ))}
+              </div>
+              <Textarea value={introTekst} onChange={(e) => setIntroTekst(e.target.value)} placeholder="Beste ..., hierbij ontvangt u onze offerte voor..." rows={3} className="resize-y" />
+            </CardContent>
+          </Card>
 
-            {/* ── Afsluittekst ── */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
-                    <FileText className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Afsluittekst
-                  <span className="text-xs text-muted-foreground font-normal ml-1">optioneel</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { label: 'Standaard', tekst: 'Wij zien uw reactie graag tegemoet.' },
-                    { label: 'Met vragen', tekst: 'Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.' },
-                    { label: 'Dank', tekst: 'Wij danken u voor uw vertrouwen en hopen u van dienst te mogen zijn.' },
-                  ].map((tmpl) => (
-                    <Button
-                      key={tmpl.label}
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={() => setOutroTekst(tmpl.tekst)}
-                    >
-                      {tmpl.label}
-                    </Button>
-                  ))}
+          {/* ── Items ── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
+                Offerte items
+                <span className="text-xs text-muted-foreground font-normal ml-1">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <QuoteItemsTable
+                items={items}
+                onAddItem={handleAddItem}
+                onUpdateItem={handleUpdateItem}
+                onRemoveItem={handleRemoveItem}
+                onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
+                onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
+                suggesties={omschrijvingSuggesties}
+              />
+            </CardContent>
+          </Card>
+
+          {/* ── Afsluittekst ── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
+                Afsluittekst
+                <span className="text-xs text-muted-foreground font-normal ml-1">optioneel</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: 'Standaard', tekst: 'Wij zien uw reactie graag tegemoet.' },
+                  { label: 'Met vragen', tekst: 'Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.' },
+                  { label: 'Dank', tekst: 'Wij danken u voor uw vertrouwen en hopen u van dienst te mogen zijn.' },
+                ].map((tmpl) => (
+                  <Button key={tmpl.label} variant="outline" size="sm" className="text-xs h-7" onClick={() => setOutroTekst(tmpl.tekst)}>{tmpl.label}</Button>
+                ))}
+              </div>
+              <Textarea value={outroTekst} onChange={(e) => setOutroTekst(e.target.value)} placeholder="Wij zien uw reactie graag tegemoet." rows={2} className="resize-y" />
+            </CardContent>
+          </Card>
+
+          {/* ── Notities & Voorwaarden ── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
+                Notities & Voorwaarden
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Notities</Label>
+                  <Textarea value={notities} onChange={(e) => setNotities(e.target.value)} placeholder="Interne notities of opmerkingen voor de klant..." rows={4} />
                 </div>
-                <Textarea
-                  value={outroTekst}
-                  onChange={(e) => setOutroTekst(e.target.value)}
-                  placeholder="Wij zien uw reactie graag tegemoet."
-                  rows={2}
-                  className="resize-y"
-                />
-              </CardContent>
-            </Card>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Voorwaarden</Label>
+                  <Textarea value={voorwaarden} onChange={(e) => setVoorwaarden(e.target.value)} rows={4} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Navigation */}
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setCurrentStep(0)}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Vorige
-              </Button>
-              <Button onClick={() => setCurrentStep(2)} disabled={!canProceedStep1} className="px-8">
-                Preview bekijken
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-            </div>{/* end LEFT column */}
+          {/* ════════════════════════════════════════════════════════════════ */}
+          {/* INLINE EMAIL COMPOSE — bottom of left column                   */}
+          {/* ════════════════════════════════════════════════════════════════ */}
+          <div ref={emailSectionRef}>
+            {showEmailCompose && (
+              <Card className="border-2 border-primary/30">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center"><Send className="h-3.5 w-3.5 text-white" /></div>
+                      Offerte versturen
+                    </CardTitle>
+                    <Button variant="ghost" size="icon" onClick={() => setShowEmailCompose(false)}><X className="h-4 w-4" /></Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3"><Label className="text-sm font-medium w-20 flex-shrink-0">Aan</Label><Input value={emailTo} onChange={(e) => setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="h-9" /></div>
+                  <div className="flex items-center gap-3"><Label className="text-sm font-medium w-20 flex-shrink-0">CC</Label><Input value={emailCc} onChange={(e) => setEmailCc(e.target.value)} placeholder="cc@voorbeeld.nl (meerdere met komma)" className="h-9" /></div>
+                  <div className="flex items-center gap-3"><Label className="text-sm font-medium w-20 flex-shrink-0">BCC</Label><Input value={emailBcc} onChange={(e) => setEmailBcc(e.target.value)} placeholder="bcc@voorbeeld.nl" className="h-9" /></div>
+                  <div className="flex items-center gap-3"><Label className="text-sm font-medium w-20 flex-shrink-0">Onderwerp</Label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Onderwerp..." className="h-9" /></div>
 
-            {/* ── RIGHT: Client details panel (FIX 7) ── */}
-            <div className="hidden lg:block space-y-4">
-              {/* Klantgegevens panel */}
+                  <Separator />
+
+                  {/* Bijlagen */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Bijlagen</span>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={handleAddBijlage}><Paperclip className="h-3 w-3" />Bijlage toevoegen</Button>
+                        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx" />
+                      </div>
+                    </div>
+                    {emailBijlagen.map((bijlage, idx) => (
+                      <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="w-7 h-7 rounded flex items-center justify-center bg-red-500 text-white text-[8px] font-bold flex-shrink-0">PDF</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{bijlage.naam}</p>
+                          {idx === 0 && <p className="text-xs text-muted-foreground">Offerte PDF — Automatisch bijgevoegd</p>}
+                        </div>
+                        {idx > 0 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEmailBijlagen((prev) => prev.filter((_, i) => i !== idx))}><Trash2 className="h-3 w-3" /></Button>}
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator />
+
+                  <Textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={8} className="resize-y" placeholder="Schrijf uw bericht hier..." />
+
+                  <Separator />
+
+                  {/* Inplannen */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={emailScheduled} onChange={(e) => setEmailScheduled(e.target.checked)} className="rounded border-gray-300" />
+                      <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Inplannen</span>
+                    </label>
+                    {emailScheduled && (
+                      <div className="pl-7 space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {(() => {
+                            const morgen = new Date(); morgen.setDate(morgen.getDate() + 1)
+                            const morgenStr = morgen.toISOString().split('T')[0]
+                            return [
+                              { label: 'Morgenochtend 08:00', datum: morgenStr, tijd: '08:00' },
+                              { label: 'Morgen 10:00', datum: morgenStr, tijd: '10:00' },
+                              { label: 'Morgen 14:00', datum: morgenStr, tijd: '14:00' },
+                            ].map((opt) => (
+                              <Button key={opt.label} variant="outline" size="sm" className="text-xs h-7" onClick={() => { setEmailScheduleDate(opt.datum); setEmailScheduleTime(opt.tijd) }}>{opt.label}</Button>
+                            ))
+                          })()}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input type="date" value={emailScheduleDate} onChange={(e) => setEmailScheduleDate(e.target.value)} className="h-8 w-40" />
+                          <Input type="time" value={emailScheduleTime} onChange={(e) => setEmailScheduleTime(e.target.value)} className="h-8 w-28" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <Button variant="outline" onClick={() => setShowEmailCompose(false)}>Annuleren</Button>
+                    <Button onClick={handleSendEmailInline} disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail} className="bg-gradient-to-r from-accent to-primary border-0 gap-2">
+                      <Send className="h-4 w-4" />{isSendingEmail ? 'Verzenden...' : emailScheduled ? 'Inplannen' : 'Verstuur email'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>{/* end LEFT COLUMN */}
+
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* RIGHT SIDEBAR: Sticky — Klantgegevens + Samenvatting           */}
+        {/* On mobile (<1024px): collapsible card above items, not sticky  */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+        <div className="lg:block">
+          <div className="lg:sticky lg:top-4 space-y-4">
+
+            {/* ── Mobile collapse toggle ── */}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="lg:hidden w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+            >
+              <span className="text-sm font-semibold">Klant & Samenvatting</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-primary">{formatCurrency(round2(subtotaal + btwBedrag))}</span>
+                {sidebarCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              </div>
+            </button>
+
+            <div className={cn('space-y-4', sidebarCollapsed && 'hidden lg:block')}>
+              {/* ── KLANTGEGEVENS CARD ── */}
               {selectedKlant ? (
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm sticky top-4">
-                  {/* Panel header */}
-                  <button
-                    onClick={() => setKlantPanelOpen(!klantPanelOpen)}
-                    className="w-full flex items-center gap-2 px-4 py-3 bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  >
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
+                  <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2 px-4 py-3 bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-sm">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{selectedKlant.bedrijfsnaam}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}
-                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
                     </div>
                     {klantPanelOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                   </button>
 
                   {klantPanelOpen && (
-                    <div className="p-4 space-y-4">
-                      {/* Relatie: telefoon + email van de organisatie */}
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Relatie</label>
-                        <div className="text-xs text-foreground space-y-0.5">
-                          {selectedKlant.telefoon && (
-                            <p className="flex items-center gap-1.5">
-                              <Phone className="h-3 w-3 text-muted-foreground" />
-                              {selectedKlant.telefoon}
-                            </p>
-                          )}
-                          {selectedKlant.email && (
-                            <p className="flex items-center gap-1.5">
-                              <Mail className="h-3 w-3 text-muted-foreground" />
-                              {selectedKlant.email}
-                            </p>
-                          )}
-                        </div>
+                    <div className="p-4 space-y-3">
+                      <div className="text-xs text-foreground space-y-0.5">
+                        {selectedKlant.telefoon && <p className="flex items-center gap-1.5"><Phone className="h-3 w-3 text-muted-foreground" />{selectedKlant.telefoon}</p>}
+                        {selectedKlant.email && <p className="flex items-center gap-1.5"><Mail className="h-3 w-3 text-muted-foreground" />{selectedKlant.email}</p>}
+                        {(selectedKlant.adres || selectedKlant.stad) && (
+                          <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-muted-foreground" />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
+                        )}
                       </div>
 
-                      {/* Contactpersoon dropdown */}
                       {selectedKlant.contactpersonen?.length > 0 && (
                         <div className="space-y-1.5">
-                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Contactpersoon offerte</label>
+                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Contactpersoon</label>
                           <Select value={selectedContactId} onValueChange={(val) => handleSelectContact(val)}>
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="Selecteer..." />
-                            </SelectTrigger>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecteer..." /></SelectTrigger>
                             <SelectContent>
                               {selectedKlant.contactpersonen.map((cp) => (
                                 <SelectItem key={cp.id} value={cp.id}>
-                                  <div className="flex items-center gap-1.5">
-                                    <span>{cp.naam}</span>
-                                    {cp.is_primair && <span className="text-[9px] text-primary">(primair)</span>}
-                                  </div>
+                                  <div className="flex items-center gap-1.5"><span>{cp.naam}</span>{cp.is_primair && <span className="text-[9px] text-primary">(primair)</span>}</div>
                                 </SelectItem>
                               ))}
-                              <SelectItem value="__new__">
-                                <span className="text-blue-600 dark:text-blue-400">+ Nieuwe contactpersoon</span>
-                              </SelectItem>
+                              <SelectItem value="__new__"><span className="text-blue-600">+ Nieuw</span></SelectItem>
                             </SelectContent>
                           </Select>
-                          {/* Selected contact details */}
-                          {(() => {
-                            const cp = selectedKlant.contactpersonen?.find(c => c.id === selectedContactId)
-                            if (!cp) return null
-                            return (
-                              <div className="mt-1 rounded-lg bg-primary/5 dark:bg-primary/10 p-2 text-xs space-y-0.5">
-                                {cp.functie && <p className="text-muted-foreground">{cp.functie}</p>}
-                                {cp.telefoon && (
-                                  <p className="flex items-center gap-1.5">
-                                    <Phone className="h-3 w-3 text-muted-foreground" />
-                                    {cp.telefoon}
-                                  </p>
-                                )}
-                                {cp.email && (
-                                  <p className="flex items-center gap-1.5">
-                                    <Mail className="h-3 w-3 text-muted-foreground" />
-                                    {cp.email}
-                                  </p>
-                                )}
-                              </div>
-                            )
-                          })()}
                         </div>
                       )}
 
-                      {/* Adresgegevens */}
-                      {(selectedKlant.adres || selectedKlant.stad) && (
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Adres</label>
-                          <div className="text-xs text-foreground space-y-0.5">
-                            {selectedKlant.adres && <p>{selectedKlant.adres}</p>}
-                            {(selectedKlant.postcode || selectedKlant.stad) && (
-                              <p>{[selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(' ')}</p>
-                            )}
-                            {selectedKlant.land && selectedKlant.land !== 'Nederland' && <p>{selectedKlant.land}</p>}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* KvK / BTW */}
                       {(selectedKlant.kvk_nummer || selectedKlant.btw_nummer) && (
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Registratie</label>
-                          <div className="text-xs text-foreground space-y-0.5">
-                            {selectedKlant.kvk_nummer && <p>KvK: {selectedKlant.kvk_nummer}</p>}
-                            {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
-                          </div>
+                        <div className="text-xs text-foreground space-y-0.5 pt-2 border-t border-gray-100 dark:border-gray-800">
+                          {selectedKlant.kvk_nummer && <p>KvK: {selectedKlant.kvk_nummer}</p>}
+                          {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
                         </div>
                       )}
 
-                      {/* Quick actions */}
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Acties</label>
-                        <div className="flex flex-wrap gap-1.5">
-                          {selectedKlant.telefoon && (
-                            <a
-                              href={`tel:${selectedKlant.telefoon}`}
-                              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                            >
-                              <Phone className="h-3 w-3" />
-                              Bellen
-                            </a>
-                          )}
-                          {selectedKlant.email && (
-                            <a
-                              href={`mailto:${selectedKlant.email}`}
-                              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                            >
-                              <Mail className="h-3 w-3" />
-                              Email
-                            </a>
-                          )}
-                          <button
-                            onClick={() => {
-                              const adres = [selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')
-                              if (adres) {
-                                navigator.clipboard.writeText(adres)
-                                toast.success('Adres gekopieerd')
-                              }
-                            }}
-                            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                          >
-                            <Copy className="h-3 w-3" />
-                            Kopieer adres
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Link naar klantprofiel */}
-                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-                        <Link
-                          to={`/klanten/${selectedKlant.id}`}
-                          className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Klantprofiel bekijken
-                        </Link>
+                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-800">
+                        {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"><Phone className="h-3 w-3" />Bellen</a>}
+                        {selectedKlant.email && <a href={`mailto:${selectedKlant.email}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"><Mail className="h-3 w-3" />Email</a>}
+                        <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 transition-colors"><ExternalLink className="h-3 w-3" />Profiel</Link>
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-6 text-center">
-                  <Building2 className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                  <Building2 className="h-8 w-8 text-gray-300 mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">Geen klant geselecteerd</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 text-xs h-7"
-                    onClick={() => setCurrentStep(0)}
-                  >
-                    Klant kiezen
-                  </Button>
+                  <Button variant="outline" size="sm" className="mt-2 text-xs h-7" onClick={() => setShowKlantSelector(true)}>Klant kiezen</Button>
                 </div>
               )}
-            </div>{/* end RIGHT column */}
-          </div>
-        )}
 
-        {/* ================================================================ */}
-        {/* STEP 2: PREVIEW                                                  */}
-        {/* ================================================================ */}
-        {currentStep === 2 && (
-          <div className="space-y-5">
-            {/* FIX 12: Versie historie panel */}
-            {showVersieHistorie && versieHistorie.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-purple-500" />
-                    Versie historie
-                    <Badge variant="outline" className="text-[10px]">{versieHistorie.length} versies</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {versieHistorie.map((v) => (
-                    <div key={v.id} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-                      <div>
-                        <span className="text-sm font-medium">Versie {v.versie_nummer}</span>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          {new Date(v.created_at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        {v.notitie && <p className="text-xs text-muted-foreground mt-0.5">{v.notitie}</p>}
-                      </div>
-                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => handleHerstelVersie(v.id)}>
-                        Herstel
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            <ForgeQuotePreview
-              offerte={{
-                nummer: offerteNummer,
-                titel: offerteTitel,
-                status: 'concept',
-                klant_id: selectedKlantId,
-                geldig_tot: geldigTot,
-                notities,
-                voorwaarden,
-                intro_tekst: introTekst,
-                outro_tekst: outroTekst,
-                created_at: new Date().toISOString(),
-              }}
-              items={items.map((item) => {
-                const data = getActivePriceData(item)
-                return {
-                  beschrijving: item.beschrijving,
-                  aantal: data.aantal,
-                  eenheidsprijs: data.eenheidsprijs,
-                  btw_percentage: data.btw_percentage,
-                  korting_percentage: data.korting_percentage,
-                  prijs_varianten: item.prijs_varianten,
-                  actieve_variant_id: item.actieve_variant_id,
-                  breedte_mm: item.breedte_mm,
-                  hoogte_mm: item.hoogte_mm,
-                  oppervlakte_m2: item.oppervlakte_m2,
-                  foto_url: item.foto_url,
-                  foto_op_offerte: item.foto_op_offerte,
-                }
-              })}
-            />
-
-            {/* Actions */}
-            <div className="flex items-center justify-between">
-              <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Vorige
-              </Button>
-              <div className="flex gap-3 flex-wrap">
-                {/* FIX 11: Dupliceer knop */}
-                {isEditMode && (
-                  <Button variant="outline" onClick={handleDupliceerOfferte} disabled={isDuplicating}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    {isDuplicating ? 'Dupliceren...' : 'Dupliceer'}
-                  </Button>
-                )}
-                {/* FIX 12: Nieuwe versie */}
-                {isEditMode && (
-                  <Button variant="outline" onClick={handleNieuweVersie} disabled={isSavingVersie}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {isSavingVersie ? 'Opslaan...' : `Nieuwe versie (v${versieNummer})`}
-                  </Button>
-                )}
-                <Button variant="outline" onClick={handleDownloadPdf}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
-                <Button variant="secondary" onClick={() => saveOfferte('concept')} disabled={isSaving}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Opslaan...' : 'Opslaan als Concept'}
-                </Button>
-                <Button onClick={handleVerstuurOfferte} disabled={isSaving} className="bg-gradient-to-r from-accent to-primary border-0">
-                  <Send className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Verzenden...' : 'Verstuur per email'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ================================================================ */}
-      {/* INLINE EMAIL COMPOSE                                             */}
-      {/* ================================================================ */}
-      {showEmailCompose && (
-        <div className="max-w-5xl mx-auto mt-6">
-          <Card className="border-2 border-primary/30">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
-                    <Send className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Offerte versturen
-                </CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setShowEmailCompose(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Aan */}
-              <div className="flex items-center gap-3">
-                <Label className="text-sm font-medium w-20 flex-shrink-0">Aan</Label>
-                <Input
-                  value={emailTo}
-                  onChange={(e) => setEmailTo(e.target.value)}
-                  placeholder="email@voorbeeld.nl"
-                  type="email"
-                  className="h-9"
-                />
-              </div>
-
-              {/* CC */}
-              <div className="flex items-center gap-3">
-                <Label className="text-sm font-medium w-20 flex-shrink-0">CC</Label>
-                <Input
-                  value={emailCc}
-                  onChange={(e) => setEmailCc(e.target.value)}
-                  placeholder="cc@voorbeeld.nl (meerdere adressen met komma)"
-                  className="h-9"
-                />
-              </div>
-
-              {/* BCC */}
-              <div className="flex items-center gap-3">
-                <Label className="text-sm font-medium w-20 flex-shrink-0">BCC</Label>
-                <Input
-                  value={emailBcc}
-                  onChange={(e) => setEmailBcc(e.target.value)}
-                  placeholder="bcc@voorbeeld.nl"
-                  className="h-9"
-                />
-              </div>
-
-              {/* Onderwerp */}
-              <div className="flex items-center gap-3">
-                <Label className="text-sm font-medium w-20 flex-shrink-0">Onderwerp</Label>
-                <Input
-                  value={emailSubject}
-                  onChange={(e) => setEmailSubject(e.target.value)}
-                  placeholder="Onderwerp..."
-                  className="h-9"
-                />
-              </div>
-
-              <Separator />
-
-              {/* Bijlagen */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Bijlagen</span>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={handleAddBijlage}>
-                      <Paperclip className="h-3 w-3" />
-                      Bijlage toevoegen
-                    </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={handleFileSelect}
-                      accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx"
-                    />
-                  </div>
-                </div>
-                {emailBijlagen.map((bijlage, idx) => (
-                  <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div className="w-7 h-7 rounded flex items-center justify-center bg-red-500 text-white text-[8px] font-bold flex-shrink-0">
-                      PDF
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{bijlage.naam}</p>
-                      {idx === 0 && <p className="text-xs text-muted-foreground">Offerte PDF — Automatisch bijgevoegd</p>}
-                    </div>
-                    {idx > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => setEmailBijlagen((prev) => prev.filter((_, i) => i !== idx))}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <Separator />
-
-              {/* Body */}
-              <Textarea
-                value={emailBody}
-                onChange={(e) => setEmailBody(e.target.value)}
-                rows={8}
-                className="resize-y"
-                placeholder="Schrijf uw bericht hier..."
-              />
-
-              <Separator />
-
-              {/* Inplannen */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={emailScheduled}
-                      onChange={(e) => setEmailScheduled(e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Inplannen</span>
-                  </label>
-                </div>
-                {emailScheduled && (
-                  <div className="pl-7 space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                      {(() => {
-                        const morgen = new Date()
-                        morgen.setDate(morgen.getDate() + 1)
-                        const morgenStr = morgen.toISOString().split('T')[0]
-                        return [
-                          { label: 'Morgenochtend 08:00', datum: morgenStr, tijd: '08:00' },
-                          { label: 'Morgen 10:00', datum: morgenStr, tijd: '10:00' },
-                          { label: 'Morgen 14:00', datum: morgenStr, tijd: '14:00' },
-                        ].map((opt) => (
-                          <Button
-                            key={opt.label}
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-7"
-                            onClick={() => { setEmailScheduleDate(opt.datum); setEmailScheduleTime(opt.tijd) }}
-                          >
-                            {opt.label}
-                          </Button>
-                        ))
-                      })()}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="date"
-                        value={emailScheduleDate}
-                        onChange={(e) => setEmailScheduleDate(e.target.value)}
-                        className="h-8 w-40"
-                      />
-                      <Input
-                        type="time"
-                        value={emailScheduleTime}
-                        onChange={(e) => setEmailScheduleTime(e.target.value)}
-                        className="h-8 w-28"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-between pt-2">
-                <Button variant="outline" onClick={() => setShowEmailCompose(false)}>
-                  Annuleren
-                </Button>
-                <Button
-                  onClick={handleSendEmailInline}
-                  disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail}
-                  className="bg-gradient-to-r from-accent to-primary border-0 gap-2"
-                >
-                  <Send className="h-4 w-4" />
-                  {isSendingEmail ? 'Verzenden...' : emailScheduled ? 'Inplannen' : 'Verstuur email'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* ================================================================ */}
-      {/* FINANCIEEL SIDEBAR — Inkoop, Verkoop, Marge, Uren, Totaal       */}
-      {/* Glass effect, rechts van het scherm, dichtklappen mogelijk       */}
-      {/* ================================================================ */}
-      {(currentStep === 1 || currentStep === 2) && (
-        <>
-          {/* Toggle knop als sidebar dicht is */}
-          {!financieelSidebarOpen && (
-            <button
-              onClick={() => setFinancieelSidebarOpen(true)}
-              className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-r-0 border-gray-200 dark:border-gray-700 rounded-l-xl px-2 py-4 shadow-lg hover:bg-white dark:hover:bg-gray-900 transition-all group"
-              title="Financieel overzicht openen"
-            >
-              <PanelRightOpen className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              <div className="mt-2 [writing-mode:vertical-rl] text-[10px] font-bold text-primary">
-                {formatCurrency(round2(subtotaal + btwBedrag))}
-              </div>
-            </button>
-          )}
-
-          {/* Sidebar */}
-          <div className={cn(
-            'fixed right-0 top-0 h-screen z-40 transition-transform duration-300 ease-in-out',
-            financieelSidebarOpen ? 'translate-x-0' : 'translate-x-full'
-          )}>
-            <div className="h-full w-[260px] bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl border-l border-gray-200/80 dark:border-gray-700/80 shadow-[-8px_0_30px_rgba(0,0,0,0.08)] flex flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/60 dark:border-gray-700/60">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Financieel</h3>
-                <button
-                  onClick={() => setFinancieelSidebarOpen(false)}
-                  className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  title="Sluiten"
-                >
-                  <PanelRightClose className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                {/* FIX 16: Totaal card met aanpassing */}
-                <div className="bg-gradient-to-br from-accent to-primary rounded-xl p-4 shadow-sm">
+              {/* ── SAMENVATTING CARD ── */}
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
+                {/* Totaal header */}
+                <div className="bg-gradient-to-br from-accent to-primary p-4">
                   <p className="text-[10px] uppercase tracking-wider text-white/70 font-medium">Totaal incl BTW</p>
                   {isEditingTotaal ? (
                     <div className="mt-1">
@@ -2558,8 +1906,6 @@ export function QuoteCreation() {
                             if (e.key === 'Enter') {
                               const val = parseFloat(gewenstTotaal)
                               if (!isNaN(val) && val > 0) {
-                                const origTotaal = round2(subtotaal + btwBedrag)
-                                // Bereken korting excl BTW
                                 const gemBtw = subtotaal > 0 ? btwBedrag / subtotaal : 0.21
                                 const kortingExcl = round2((val / (1 + gemBtw)) - subtotaal)
                                 setAfrondingskorting(kortingExcl)
@@ -2570,7 +1916,7 @@ export function QuoteCreation() {
                           }}
                           autoFocus
                           step={0.01}
-                          className="bg-white/20 text-white font-bold text-lg rounded px-2 py-0.5 w-28 border-0 outline-none placeholder:text-white/40"
+                          className="bg-white/20 text-white font-bold text-lg rounded px-2 py-0.5 w-32 border-0 outline-none placeholder:text-white/40"
                           placeholder={round2(subtotaal + btwBedrag).toFixed(2)}
                         />
                       </div>
@@ -2590,167 +1936,143 @@ export function QuoteCreation() {
                   )}
                   {afrondingskorting !== 0 && (
                     <div className="flex items-center justify-between mt-1">
-                      <p className="text-[10px] text-white/60">
-                        Korting: {formatCurrency(afrondingskorting)} excl BTW
-                      </p>
-                      <button
-                        onClick={() => setAfrondingskorting(0)}
-                        className="text-[9px] text-white/50 hover:text-white underline"
-                      >
-                        Herstel
-                      </button>
+                      <p className="text-[10px] text-white/60">Korting: {formatCurrency(afrondingskorting)} excl BTW</p>
+                      <button onClick={() => setAfrondingskorting(0)} className="text-[9px] text-white/50 hover:text-white underline">Herstel</button>
                     </div>
-                  )}
-                  {afrondingskorting !== 0 && margePercentage < 0 && (
-                    <p className="text-[10px] text-red-200 mt-0.5 flex items-center gap-1">
-                      Let op: marge is negatief!
-                    </p>
                   )}
                   {optionelSubtotaal > 0 && (
-                    <p className="text-[10px] text-white/60 mt-1">
-                      + {formatCurrency(round2(optionelSubtotaal + optionelBtw))} aan opties
-                    </p>
+                    <p className="text-[10px] text-white/60 mt-1">+ {formatCurrency(round2(optionelSubtotaal + optionelBtw))} aan opties</p>
                   )}
                 </div>
 
-                {/* Subtotaal + BTW + Korting */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
-                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Subtotaal</p>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(subtotaal)}</p>
+                {/* Samenvatting content */}
+                <div className="p-4 space-y-4">
+                  {/* Subtotaal + BTW */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
+                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Subtotaal</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(subtotaal)}</p>
+                    </div>
+                    <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
+                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">BTW</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(btwBedrag)}</p>
+                    </div>
                   </div>
-                  <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
-                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">BTW</p>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(btwBedrag)}</p>
-                  </div>
-                </div>
-                {afrondingskorting !== 0 && (
-                  <div className="rounded-lg bg-amber-50/80 dark:bg-amber-900/20 p-2.5 border border-amber-200/50 dark:border-amber-800/30">
-                    <p className="text-[9px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-medium">Afrondingskorting</p>
-                    <p className="text-sm font-semibold text-amber-700 dark:text-amber-300 mt-0.5">{formatCurrency(afrondingskorting)}</p>
-                  </div>
-                )}
+                  {afrondingskorting !== 0 && (
+                    <div className="rounded-lg bg-amber-50/80 dark:bg-amber-900/20 p-2.5 border border-amber-200/50 dark:border-amber-800/30">
+                      <p className="text-[9px] uppercase tracking-wider text-amber-600 font-medium">Afrondingskorting</p>
+                      <p className="text-sm font-semibold text-amber-700 mt-0.5">{formatCurrency(afrondingskorting)}</p>
+                    </div>
+                  )}
 
-                <Separator className="opacity-50" />
+                  <Separator className="opacity-50" />
 
-                {/* Inkoop + Verkoop */}
-                <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Inkoop / Verkoop</p>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <TrendingDown className="h-3.5 w-3.5 text-red-400" />
-                        <span className="text-xs text-muted-foreground">Inkoop</span>
+                  {/* Inkoop / Verkoop / Winst */}
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Inkoop / Verkoop</p>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5"><TrendingDown className="h-3.5 w-3.5 text-red-400" /><span className="text-xs text-muted-foreground">Inkoop</span></div>
+                        <span className="text-xs font-semibold text-red-600 dark:text-red-400">{totaalInkoop > 0 ? formatCurrency(totaalInkoop) : '—'}</span>
                       </div>
-                      <span className="text-xs font-semibold text-red-600 dark:text-red-400">
-                        {totaalInkoop > 0 ? formatCurrency(totaalInkoop) : '—'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <TrendingUp className="h-3.5 w-3.5 text-green-400" />
-                        <span className="text-xs text-muted-foreground">Verkoop</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-green-400" /><span className="text-xs text-muted-foreground">Verkoop</span></div>
+                        <span className="text-xs font-semibold text-foreground">{formatCurrency(subtotaal)}</span>
                       </div>
-                      <span className="text-xs font-semibold text-foreground">
-                        {formatCurrency(subtotaal)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
-                        <span className="text-xs text-muted-foreground">Winst</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 text-emerald-500" /><span className="text-xs text-muted-foreground">Winst</span></div>
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{totaalInkoop > 0 ? formatCurrency(winstExBtw) : '—'}</span>
                       </div>
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                        {totaalInkoop > 0 ? formatCurrency(winstExBtw) : '—'}
-                      </span>
                     </div>
                   </div>
-                </div>
 
-                {/* Marge */}
-                <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Marge</p>
-                  <div className={cn(
-                    'rounded-lg p-3',
-                    margePercentage >= 30 ? 'bg-green-50 dark:bg-green-900/20' :
-                    margePercentage >= 15 ? 'bg-yellow-50 dark:bg-yellow-900/20' :
-                    'bg-red-50 dark:bg-red-900/20'
-                  )}>
-                    <div className="flex items-center justify-between">
-                      <Percent className={cn(
-                        'h-4 w-4',
-                        margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
-                        margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
-                        'text-red-600 dark:text-red-400'
-                      )} />
-                      <span className={cn(
-                        'text-lg font-bold',
-                        margePercentage >= 30 ? 'text-green-600 dark:text-green-400' :
-                        margePercentage >= 15 ? 'text-yellow-600 dark:text-yellow-400' :
-                        'text-red-600 dark:text-red-400'
-                      )}>
-                        {totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}
-                      </span>
+                  {/* Marge — unified thresholds */}
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Marge</p>
+                    <div className={cn('rounded-lg p-3', margeColor.bg)}>
+                      <div className="flex items-center justify-between">
+                        <Percent className={cn('h-4 w-4', margeColor.text)} />
+                        <span className={cn('text-lg font-bold', margeColor.text)}>{totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}</span>
+                      </div>
+                      {totaalInkoop > 0 && (
+                        <div className="mt-2 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700">
+                          <div className={cn('h-full rounded-full transition-all', margeColor.bar)} style={{ width: `${Math.min(100, Math.max(0, margePercentage))}%` }} />
+                        </div>
+                      )}
                     </div>
-                    {totaalInkoop > 0 && (
-                      <div className="mt-2 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700">
-                        <div
-                          className={cn(
-                            'h-full rounded-full transition-all',
-                            margePercentage >= 30 ? 'bg-green-500' :
-                            margePercentage >= 15 ? 'bg-yellow-500' :
-                            'bg-red-500'
+                  </div>
+
+                  {/* Per-item marge breakdown */}
+                  {itemMarges.some(m => m.hasCalc) && (
+                    <>
+                      <Separator className="opacity-50" />
+                      <div className="space-y-2">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Per item</p>
+                        <div className="space-y-1.5">
+                          {itemMarges.map((m, idx) => {
+                            if (!m.hasCalc) return null
+                            const c = getMargeColorSidebar(m.pct)
+                            return (
+                              <div key={idx} className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground truncate max-w-[200px]">{m.beschrijving || `Item ${idx + 1}`}</span>
+                                <span className={cn('text-xs font-semibold', c.text)}>{m.pct.toFixed(1)}%</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Uren + Materiaal */}
+                  {(montageUren > 0 || voorbereidingUren > 0 || materiaalKosten > 0) && (
+                    <>
+                      <Separator className="opacity-50" />
+                      <div className="space-y-2">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Uren & Materiaal</p>
+                        <div className="space-y-1.5">
+                          {montageUren > 0 && (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs text-muted-foreground">Montage</span></div>
+                              <span className="text-xs font-semibold text-amber-600">{montageUren} uur</span>
+                            </div>
                           )}
-                          style={{ width: `${Math.min(100, Math.max(0, margePercentage))}%` }}
-                        />
+                          {voorbereidingUren > 0 && (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-purple-500" /><span className="text-xs text-muted-foreground">Voorbereiding</span></div>
+                              <span className="text-xs font-semibold text-purple-600">{voorbereidingUren} uur</span>
+                            </div>
+                          )}
+                          {materiaalKosten > 0 && (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5"><ShoppingCart className="h-3.5 w-3.5 text-blue-500" /><span className="text-xs text-muted-foreground">Materiaal</span></div>
+                              <span className="text-xs font-semibold text-blue-600">{formatCurrency(materiaalKosten)}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </>
+                  )}
+
+                  {/* Quick sidebar actions */}
+                  <Separator className="opacity-50" />
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleVerstuurOfferte}>
+                      <Send className="h-3 w-3" />Verstuur
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleDownloadPdf}>
+                      <Download className="h-3 w-3" />PDF
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={() => saveOfferte('concept')} disabled={isSaving}>
+                      <Save className="h-3 w-3" />{isSaving ? '...' : 'Opslaan'}
+                    </Button>
                   </div>
                 </div>
-
-                {/* Uren + Materiaal */}
-                {(montageUren > 0 || voorbereidingUren > 0 || materiaalKosten > 0) && (
-                  <>
-                    <Separator className="opacity-50" />
-                    <div className="space-y-2">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Uren & Materiaal</p>
-                      <div className="space-y-1.5">
-                        {montageUren > 0 && (
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <Wrench className="h-3.5 w-3.5 text-amber-500" />
-                              <span className="text-xs text-muted-foreground">Montage</span>
-                            </div>
-                            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">{montageUren} uur</span>
-                          </div>
-                        )}
-                        {voorbereidingUren > 0 && (
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="h-3.5 w-3.5 text-purple-500" />
-                              <span className="text-xs text-muted-foreground">Voorbereiding</span>
-                            </div>
-                            <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">{voorbereidingUren} uur</span>
-                          </div>
-                        )}
-                        {materiaalKosten > 0 && (
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <ShoppingCart className="h-3.5 w-3.5 text-blue-500" />
-                              <span className="text-xs text-muted-foreground">Materiaal</span>
-                            </div>
-                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(materiaalKosten)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
           </div>
-        </>
-      )}
+        </div>{/* end RIGHT SIDEBAR */}
+      </div>
     </div>
   )
 }

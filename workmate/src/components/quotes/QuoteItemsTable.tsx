@@ -144,8 +144,8 @@ function calculateItemMargin(regels?: CalculatieRegel[]): { inkoop: number; verk
 }
 
 function getMargeColor(pct: number): { text: string; bg: string; bar: string } {
-  if (pct >= 40) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500' }
-  if (pct >= 20) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', bar: 'bg-amber-500' }
+  if (pct >= 65) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500' }
+  if (pct >= 50) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', bar: 'bg-amber-500' }
   return { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', bar: 'bg-red-500' }
 }
 
