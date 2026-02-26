@@ -3,6 +3,11 @@ import autoTable from 'jspdf-autotable'
 import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 
+// jspdf-autotable adds lastAutoTable to jsPDF instances
+interface JsPDFWithAutoTable extends jsPDF {
+  lastAutoTable?: { finalY: number }
+}
+
 // Extended profile type for PDF with branding
 interface PdfBedrijfsProfiel extends Partial<Profile> {
   primaireKleur?: string
@@ -424,7 +429,7 @@ export function generateOffertePDF(
   })
 
   // Totals
-  const finalY = (doc as any).lastAutoTable?.finalY || y + 20
+  const finalY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || y + 20
   let totalsY = finalY + 10
 
   const totalsX = pageWidth - margins.right - 50
@@ -496,7 +501,7 @@ export function generateOffertePDF(
       margin: { left: margins.left, right: margins.right },
     })
 
-    const optFinalY = (doc as any).lastAutoTable?.finalY || totalsY + 20
+    const optFinalY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || totalsY + 20
     let optTotalsY = optFinalY + 8
 
     const optSubtotaal = optioneleItems.reduce((s, i) => s + i.totaal, 0)
@@ -707,7 +712,7 @@ export function generateFactuurPDF(
   })
 
   // Totals
-  const finalY = (doc as any).lastAutoTable?.finalY || y + 20
+  const finalY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || y + 20
   let totalsY = finalY + 10
 
   const totalsX = pageWidth - margins.right - 50
@@ -922,7 +927,7 @@ export function generateRapportPDF(
         margin: { left: margins.left, right: margins.right },
       })
 
-      y = (doc as any).lastAutoTable?.finalY + 10 || y + 20
+      y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY + 10 || y + 20
     }
 
     y += 5
@@ -1029,7 +1034,7 @@ export function generateBestelbonPDF(
   })
 
   // Total
-  const finalY = (doc as any).lastAutoTable?.finalY || y + 20
+  const finalY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || y + 20
   let totalsY = finalY + 10
 
   doc.setFont(headingFont, 'bold')
@@ -1125,7 +1130,7 @@ export function generateLeveringsbonPDF(
     margin: { left: margins.left, right: margins.right },
   })
 
-  let endY = (doc as any).lastAutoTable?.finalY || y + 20
+  let endY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || y + 20
 
   // Notities
   if (leveringsbonData.notities) {

@@ -49,13 +49,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const data = await signIn(email, password)
-    setUser(data.user as User)
+    const u = data.user
+    if (u) setUser({ id: u.id, email: u.email ?? email, user_metadata: u.user_metadata })
     setSession(data.session)
   }
 
   const register = async (email: string, password: string, metadata?: { voornaam?: string; achternaam?: string }) => {
     const data = await signUp(email, password, metadata)
-    setUser(data.user as User)
+    const u = data.user
+    if (u) setUser({ id: u.id, email: u.email ?? email, user_metadata: u.user_metadata })
     setSession(data.session)
   }
 

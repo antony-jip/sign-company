@@ -44,8 +44,19 @@ export function ClientsLayout() {
   }, [])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    let cancelled = false
+    setLoading(true)
+    Promise.all([getKlanten(), getProjecten()])
+      .then(([k, p]) => {
+        if (!cancelled) {
+          setKlanten(k)
+          setProjecten(p)
+        }
+      })
+      .catch(logger.error)
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
 
   // Count projects per client
   const projectCounts = useMemo(() => {

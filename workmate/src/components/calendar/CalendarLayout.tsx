@@ -259,7 +259,7 @@ export function CalendarLayout() {
   const [activeMedewerker, setActiveMedewerker] = useState<string | null>(null)
 
   // ---- Data loading ----
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (cancelled?: { current: boolean }) => {
     try {
       setIsLoading(true)
       const [aData, pData, mData, kData, tData] = await Promise.all([
@@ -269,6 +269,7 @@ export function CalendarLayout() {
         getKlanten(),
         getTaken(),
       ])
+      if (cancelled?.current) return
       const activeMw = mData.filter((m) => m.status === 'actief')
       setMedewerkers(activeMw)
       setAfspraken(aData)
@@ -276,15 +277,18 @@ export function CalendarLayout() {
       setKlanten(kData)
       setProjectTaken(tData.filter((t) => t.project_id && t.deadline && t.status !== 'klaar'))
     } catch (err) {
+      if (cancelled?.current) return
       logger.error('Fout bij laden data:', err)
       toast.error('Kon planningsdata niet laden')
     } finally {
-      setIsLoading(false)
+      if (!cancelled?.current) setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    loadData()
+    const cancelled = { current: false }
+    loadData(cancelled)
+    return () => { cancelled.current = true }
   }, [loadData])
 
   // ---- Week dates ----

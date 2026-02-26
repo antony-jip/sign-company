@@ -493,7 +493,7 @@ export function QuoteCreation() {
         const updated = { ...item, [field]: value }
         if (updated.soort === 'prijs') {
           const bruto = updated.aantal * updated.eenheidsprijs
-          updated.totaal = bruto - bruto * (updated.korting_percentage / 100)
+          updated.totaal = round2(bruto - bruto * (updated.korting_percentage / 100))
         }
         return updated
       })
@@ -523,7 +523,7 @@ export function QuoteCreation() {
           heeft_calculatie: true,
         }
         const bruto = updated.aantal * updated.eenheidsprijs
-        updated.totaal = bruto - bruto * (updated.korting_percentage / 100)
+        updated.totaal = round2(bruto - bruto * (updated.korting_percentage / 100))
         return updated
       })
     )

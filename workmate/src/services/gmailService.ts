@@ -59,7 +59,9 @@ export async function fetchEmails(
     .limit(maxResults)
 
   if (query) {
-    q = q.or(`onderwerp.ilike.%${query}%,van.ilike.%${query}%,inhoud.ilike.%${query}%`)
+    // Escape special PostgREST filter characters to prevent filter injection
+    const sanitized = query.replace(/[\\%_]/g, c => `\\${c}`)
+    q = q.or(`onderwerp.ilike.%${sanitized}%,van.ilike.%${sanitized}%,inhoud.ilike.%${sanitized}%`)
   }
 
   const { data, error } = await q
@@ -105,8 +107,8 @@ export async function sendEmail(
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error((error as any)?.error || `Email verzenden mislukt: ${response.status}`)
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `Email verzenden mislukt: ${response.status}`)
   }
 
   return response.json()
@@ -189,7 +191,7 @@ export async function saveEmailSettings(settings: {
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error((error as any)?.error || 'Email instellingen opslaan mislukt')
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || 'Email instellingen opslaan mislukt')
   }
 }

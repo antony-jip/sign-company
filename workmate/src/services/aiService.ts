@@ -46,8 +46,8 @@ async function callAI(
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error((error as any)?.error || `AI API fout: ${response.status}`)
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `AI API fout: ${response.status}`)
   }
 
   const data = await response.json()

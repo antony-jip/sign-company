@@ -235,13 +235,42 @@ export function NotificatieCenter() {
   }, []);
 
   useEffect(() => {
-    laadNotificaties();
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const data = await getNotificaties();
+        if (cancelled) return;
+        if (data && data.length > 0) {
+          setNotificaties(data);
+        } else {
+          setLaden(true);
+          const aangemaakteNotificaties: Notificatie[] = [];
+          for (const demo of demoNotificaties) {
+            const nieuw = await createNotificatie(demo);
+            if (cancelled) return;
+            if (nieuw) aangemaakteNotificaties.push(nieuw);
+          }
+          if (!cancelled && aangemaakteNotificaties.length > 0) {
+            setNotificaties(aangemaakteNotificaties);
+          }
+          if (!cancelled) setLaden(false);
+        }
+      } catch {
+        if (!cancelled) setLaden(false);
+      }
+    };
+
+    load();
 
     const interval = setInterval(() => {
-      laadNotificaties();
+      if (!cancelled) laadNotificaties();
     }, POLL_INTERVAL_MS);
 
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [laadNotificaties]);
 
   useEffect(() => {
