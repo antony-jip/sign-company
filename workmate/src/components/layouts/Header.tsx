@@ -11,29 +11,42 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 
-const routeTitles: Record<string, string> = {
-  '/': 'Dashboard',
-  '/projecten': 'Projecten',
-  '/klanten': 'Klanten',
-  '/offertes': 'Offertes',
-  '/facturen': 'Facturen',
-  '/documenten': 'Documenten',
-  '/email': 'Email',
-  '/kalender': 'Kalender',
-  '/montage': 'Montage Planning',
-  '/tijdregistratie': 'Tijdregistratie',
-  '/financieel': 'Financieel',
-  '/rapportages': 'Rapportages',
-  '/nacalculatie': 'Nacalculatie',
-  '/team': 'Team',
-  '/ai': 'AI Assistent',
-  '/instellingen': 'Instellingen',
+const routeMeta: Record<string, { title: string; subtitle?: string }> = {
+  '/': { title: 'Dashboard' },
+  '/projecten': { title: 'Projecten', subtitle: 'Lichtreclames, gevelbelettering & meer' },
+  '/klanten': { title: 'Klanten', subtitle: 'Opdrachtgevers & contactpersonen' },
+  '/offertes': { title: 'Offertes', subtitle: 'Van aanvraag tot akkoord' },
+  '/facturen': { title: 'Facturen', subtitle: 'Facturatie & betalingen' },
+  '/documenten': { title: 'Documenten' },
+  '/email': { title: 'Email', subtitle: 'Klantcommunicatie' },
+  '/kalender': { title: 'Kalender', subtitle: 'Afspraken & deadlines' },
+  '/montage': { title: 'Montage Planning', subtitle: 'Installaties & plaatsingen' },
+  '/tijdregistratie': { title: 'Tijdregistratie', subtitle: 'Uren per project' },
+  '/financieel': { title: 'Financieel', subtitle: 'Omzet & kosten' },
+  '/rapportages': { title: 'Rapportages' },
+  '/nacalculatie': { title: 'Nacalculatie' },
+  '/team': { title: 'Team', subtitle: 'Monteurs & medewerkers' },
+  '/ai': { title: 'AI Assistent' },
+  '/instellingen': { title: 'Instellingen' },
+  '/werkbonnen': { title: 'Werkbonnen', subtitle: 'Productie & uren' },
+  '/taken': { title: 'Taken', subtitle: 'Productie & opvolging' },
+  '/deals': { title: 'Deals', subtitle: 'Verkoopkansen' },
+  '/voorraad': { title: 'Voorraad', subtitle: 'Vinyl, dibond, LED & meer' },
+  '/leads': { title: 'Lead Capture', subtitle: 'Inkomende aanvragen' },
+  '/bestelbonnen': { title: 'Bestelbonnen', subtitle: 'Inkoop bij leveranciers' },
+  '/leveranciers': { title: 'Leveranciers', subtitle: 'Materiaal- & dienstverleners' },
+  '/leveringsbonnen': { title: 'Leveringsbonnen', subtitle: 'Ontvangst & levering' },
+  '/uitgaven': { title: 'Uitgaven', subtitle: 'Kosten & declaraties' },
+  '/forecast': { title: 'Forecast', subtitle: 'Omzetprognose' },
+  '/nieuwsbrieven': { title: 'Nieuwsbrieven', subtitle: 'Klantcommunicatie' },
+  '/importeren': { title: 'Importeren', subtitle: 'Data importeren' },
+  '/booking': { title: 'Booking', subtitle: 'Afspraken & planning' },
 }
 
-function getPageTitle(pathname: string): string {
-  if (routeTitles[pathname]) return routeTitles[pathname]
+function getPageMeta(pathname: string): { title: string; subtitle?: string } {
+  if (routeMeta[pathname]) return routeMeta[pathname]
   const baseRoute = '/' + pathname.split('/')[1]
-  return routeTitles[baseRoute] || 'Workmate'
+  return routeMeta[baseRoute] || { title: 'Sign Company' }
 }
 
 export function Header() {
@@ -47,7 +60,7 @@ export function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = React.useRef<HTMLDivElement>(null)
 
-  const pageTitle = getPageTitle(location.pathname)
+  const pageMeta = getPageMeta(location.pathname)
 
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -86,13 +99,18 @@ export function Header() {
 
   return (
     <header className="h-16 border-b border-border/50 wm-glass flex items-center justify-between px-4 md:px-6 flex-shrink-0 z-10">
-      {/* Left: Page title */}
+      {/* Left: Page title + subtitle */}
       <div className="flex items-center gap-4 min-w-0">
         <div className="w-10 md:hidden" />
-        <div>
-          <h1 className="text-lg font-semibold text-foreground truncate font-display">
-            {pageTitle}
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold text-foreground truncate font-display leading-tight">
+            {pageMeta.title}
           </h1>
+          {pageMeta.subtitle && (
+            <p className="text-[11px] text-muted-foreground/70 truncate hidden sm:block">
+              {pageMeta.subtitle}
+            </p>
+          )}
         </div>
       </div>
 
@@ -146,6 +164,7 @@ export function Header() {
           className="w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
           onClick={toggleLanguage}
           title={language === 'nl' ? 'Switch to English' : 'Wissel naar Nederlands'}
+          aria-label={language === 'nl' ? 'Switch to English' : 'Wissel naar Nederlands'}
         >
           <span className="text-xs font-bold">{language.toUpperCase()}</span>
         </Button>
@@ -157,6 +176,7 @@ export function Header() {
           className="w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
           onClick={toggleTheme}
           title={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
+          aria-label={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
         >
           {theme === 'light' ? (
             <Moon className="w-4 h-4" />
@@ -182,6 +202,9 @@ export function Header() {
               'hover:bg-muted/60',
               userMenuOpen && 'bg-muted/60'
             )}
+            aria-label="Gebruikersmenu"
+            aria-expanded={userMenuOpen}
+            aria-haspopup="true"
           >
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-primary/10">
               <span className="text-white text-xs font-semibold">

@@ -6,7 +6,6 @@ import {
   FolderKanban,
   TrendingUp,
   Clock,
-  DollarSign,
   AlertTriangle,
   CheckCircle2,
   Briefcase,
@@ -22,6 +21,8 @@ import {
   ArrowUp,
   ArrowDown,
   ChevronDown,
+  MoreHorizontal,
+  GanttChart,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -33,11 +34,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Progress } from '@/components/ui/progress'
 import {
   cn,
-  formatCurrency,
   formatDate,
+  formatCurrency,
   getStatusColor,
   getPriorityColor,
 } from '@/lib/utils'
@@ -92,6 +92,17 @@ function getStatusBorderColor(status: string): string {
   }
 }
 
+function getStatusCellBg(status: string): string {
+  switch (status) {
+    case 'actief': return 'bg-green-50 dark:bg-green-950/30'
+    case 'gepland': return 'bg-blue-50 dark:bg-blue-950/30'
+    case 'in-review': return 'bg-amber-50 dark:bg-amber-950/30'
+    case 'afgerond': return 'bg-emerald-50 dark:bg-emerald-950/30'
+    case 'on-hold': return 'bg-red-50 dark:bg-red-950/30'
+    default: return 'bg-gray-50 dark:bg-gray-800/30'
+  }
+}
+
 function getStatusDotColor(status: string): string {
   switch (status) {
     case 'actief': return 'bg-green-500'
@@ -111,8 +122,9 @@ export function ProjectsList() {
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
   const [prioriteitFilter, setPrioriteitFilter] = useState('alle')
-  const [weergave, setWeergave] = useState<'grid' | 'list'>('grid')
-  const [sortField, setSortField] = useState<'naam' | 'voortgang' | 'budget' | 'eind_datum'>('eind_datum')
+  const [klantFilter, setKlantFilter] = useState('alle')
+  const [weergave, setWeergave] = useState<'grid' | 'list' | 'tijdlijn'>('grid')
+  const [sortField, setSortField] = useState<'naam' | 'voortgang' | 'eind_datum'>('eind_datum')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
@@ -143,6 +155,23 @@ export function ProjectsList() {
     return klant ? klant.bedrijfsnaam : 'Onbekend'
   }
 
+  function getKlantContactpersoon(klantId: string): string {
+    const klant = klanten.find((k) => k.id === klantId)
+    return klant?.contactpersoon || ''
+  }
+
+  // Unieke klanten voor filter pills
+  const uniekeKlanten = useMemo(() => {
+    const klantMap = new Map<string, string>()
+    projecten.forEach((p) => {
+      const naam = p.klant_naam || getKlantNaam(p.klant_id)
+      if (naam && naam !== 'Onbekend') {
+        klantMap.set(p.klant_id, naam)
+      }
+    })
+    return Array.from(klantMap.entries()).map(([id, naam]) => ({ id, naam })).sort((a, b) => a.naam.localeCompare(b.naam, 'nl'))
+  }, [projecten, klanten])
+
   const gefilterdeProjecten = useMemo(() => {
     let result = [...projecten]
 
@@ -163,6 +192,10 @@ export function ProjectsList() {
       result = result.filter((p) => p.prioriteit === prioriteitFilter)
     }
 
+    if (klantFilter !== 'alle') {
+      result = result.filter((p) => p.klant_id === klantFilter)
+    }
+
     // Sort
     result.sort((a, b) => {
       let cmp = 0
@@ -173,9 +206,6 @@ export function ProjectsList() {
         case 'voortgang':
           cmp = a.voortgang - b.voortgang
           break
-        case 'budget':
-          cmp = a.budget - b.budget
-          break
         case 'eind_datum':
           cmp = new Date(a.eind_datum).getTime() - new Date(b.eind_datum).getTime()
           break
@@ -184,7 +214,7 @@ export function ProjectsList() {
     })
 
     return result
-  }, [projecten, klanten, zoekterm, statusFilter, prioriteitFilter, sortField, sortDir])
+  }, [projecten, klanten, zoekterm, statusFilter, prioriteitFilter, klantFilter, sortField, sortDir])
 
   function handleSort(field: typeof sortField) {
     if (field === sortField) {
@@ -209,17 +239,16 @@ export function ProjectsList() {
   // Briefing stats
   const briefing = useMemo(() => {
     const actief = projecten.filter((p) => p.status === 'actief').length
+    const inReview = projecten.filter((p) => p.status === 'in-review').length
     const afgerond = projecten.filter((p) => p.status === 'afgerond').length
     const overdue = projecten.filter(
       (p) => new Date(p.eind_datum) < new Date() && p.status !== 'afgerond'
     ).length
-    const totaalBudget = projecten.reduce((sum, p) => sum + p.budget, 0)
-    const totaalBesteed = projecten.reduce((sum, p) => sum + p.besteed, 0)
     const gemiddeldeVoortgang = projecten.length > 0
       ? Math.round(projecten.reduce((sum, p) => sum + p.voortgang, 0) / projecten.length)
       : 0
 
-    return { actief, afgerond, overdue, totaalBudget, totaalBesteed, gemiddeldeVoortgang }
+    return { actief, inReview, afgerond, overdue, gemiddeldeVoortgang }
   }, [projecten])
 
   if (isLoading) {
@@ -270,7 +299,7 @@ export function ProjectsList() {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* Totaal */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
@@ -291,6 +320,16 @@ export function ProjectsList() {
               <p className="text-xs text-wm-pale/60 mt-0.5">lopend</p>
             </div>
 
+            {/* In review */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <BarChart3 className="h-4 w-4 text-amber-400" />
+                <span className="text-xs text-wm-pale/80 uppercase tracking-wider font-medium">In review</span>
+              </div>
+              <p className="text-2xl font-bold text-amber-400">{briefing.inReview}</p>
+              <p className="text-xs text-wm-pale/60 mt-0.5">ter beoordeling</p>
+            </div>
+
             {/* Afgerond */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
@@ -299,30 +338,6 @@ export function ProjectsList() {
               </div>
               <p className="text-2xl font-bold text-emerald-400">{briefing.afgerond}</p>
               <p className="text-xs text-wm-pale/60 mt-0.5">afgerond</p>
-            </div>
-
-            {/* Verlopen */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="h-4 w-4 text-amber-400" />
-                <span className="text-xs text-wm-pale/80 uppercase tracking-wider font-medium">Verlopen</span>
-              </div>
-              <p className={`text-2xl font-bold ${briefing.overdue > 0 ? 'text-amber-400' : 'text-white'}`}>
-                {briefing.overdue}
-              </p>
-              <p className="text-xs text-wm-pale/60 mt-0.5">over deadline</p>
-            </div>
-
-            {/* Budget */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
-              <div className="flex items-center gap-2 mb-1">
-                <DollarSign className="h-4 w-4 text-wm-light" />
-                <span className="text-xs text-wm-pale/80 uppercase tracking-wider font-medium">Budget</span>
-              </div>
-              <p className="text-xl font-bold">{formatCurrency(briefing.totaalBudget)}</p>
-              <p className="text-xs text-wm-pale/60 mt-0.5">
-                {formatCurrency(briefing.totaalBesteed)} besteed
-              </p>
             </div>
 
             {/* Voortgang */}
@@ -351,7 +366,7 @@ export function ProjectsList() {
             placeholder="Zoek op project of klant..."
             value={zoekterm}
             onChange={(e) => setZoekterm(e.target.value)}
-            className="pl-9 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-gray-200/80"
+            className="pl-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-gray-200/80"
           />
         </div>
 
@@ -363,16 +378,14 @@ export function ProjectsList() {
               size="sm"
               className="gap-1.5 rounded-r-none border-r-0"
               onClick={() => {
-                const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Budget', 'Besteed', 'Voortgang', 'Deadline']
+                const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Voortgang', 'Startdatum']
                 const rows = gefilterdeProjecten.map((p) => ({
                   Project: p.naam,
                   Klant: p.klant_naam || getKlantNaam(p.klant_id),
                   Status: statusLabels[p.status] || p.status,
                   Prioriteit: p.prioriteit,
-                  Budget: p.budget,
-                  Besteed: p.besteed,
                   Voortgang: p.voortgang + '%',
-                  Deadline: formatDate(p.eind_datum),
+                  Startdatum: formatDate(p.start_datum),
                 }))
                 exportCSV(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows)
               }}
@@ -385,16 +398,14 @@ export function ProjectsList() {
               size="sm"
               className="gap-1.5 rounded-l-none"
               onClick={() => {
-                const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Budget', 'Besteed', 'Voortgang', 'Deadline']
+                const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Voortgang', 'Startdatum']
                 const rows = gefilterdeProjecten.map((p) => ({
                   Project: p.naam,
                   Klant: p.klant_naam || getKlantNaam(p.klant_id),
                   Status: statusLabels[p.status] || p.status,
                   Prioriteit: p.prioriteit,
-                  Budget: p.budget,
-                  Besteed: p.besteed,
                   Voortgang: p.voortgang,
-                  Deadline: formatDate(p.eind_datum),
+                  Startdatum: formatDate(p.start_datum),
                 }))
                 exportExcel(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Projecten')
               }}
@@ -418,11 +429,20 @@ export function ProjectsList() {
             <Button
               variant={weergave === 'list' ? 'default' : 'ghost'}
               size="icon"
-              className="rounded-l-none h-9 w-9"
+              className="rounded-none h-9 w-9"
               onClick={() => setWeergave('list')}
               title="Tabelweergave"
             >
               <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={weergave === 'tijdlijn' ? 'default' : 'ghost'}
+              size="icon"
+              className="rounded-l-none h-9 w-9"
+              onClick={() => setWeergave('tijdlijn')}
+              title="Tijdlijn / Gantt"
+            >
+              <GanttChart className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -474,6 +494,41 @@ export function ProjectsList() {
           ))}
         </div>
 
+        {uniekeKlanten.length > 0 && (
+          <>
+            <div className="h-4 w-px bg-border hidden sm:block" />
+
+            {/* Klant filter pills */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={() => setKlantFilter('alle')}
+                className={cn(
+                  'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                  klantFilter === 'alle'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                Alle klanten
+              </button>
+              {uniekeKlanten.map((klant) => (
+                <button
+                  key={klant.id}
+                  onClick={() => setKlantFilter(klant.id)}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                    klantFilter === klant.id
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  )}
+                >
+                  {klant.naam}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         <div className="h-4 w-px bg-border hidden sm:block" />
 
         {/* Sort toolbar */}
@@ -483,8 +538,7 @@ export function ProjectsList() {
           {([
             { field: 'naam' as const, label: 'Naam' },
             { field: 'voortgang' as const, label: 'Voortgang' },
-            { field: 'budget' as const, label: 'Budget' },
-            { field: 'eind_datum' as const, label: 'Deadline' },
+            { field: 'eind_datum' as const, label: 'Datum' },
           ]).map(({ field, label }) => (
             <button
               key={field}
@@ -509,12 +563,19 @@ export function ProjectsList() {
       {gefilterdeProjecten.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-16 text-center">
-            <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
-              <FolderKanban className="h-8 w-8 text-muted-foreground opacity-40" />
+            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4">
+              <svg className="h-8 w-8 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="12" rx="2" />
+                <path d="M8 20h8" />
+                <path d="M12 16v4" />
+                <path d="M7 9h2" />
+                <path d="M15 9h2" />
+                <path d="M10 12h4" />
+              </svg>
             </div>
-            <h3 className="text-lg font-medium text-foreground">Geen projecten gevonden</h3>
+            <h3 className="text-lg font-medium text-foreground">Nog geen sign-projecten</h3>
             <p className="text-sm text-muted-foreground mt-1 mb-4">
-              Pas je zoekcriteria aan of maak een nieuw project aan.
+              Start je eerste project — lichtreclame, gevelbelettering of raamsigning.
             </p>
             <Button asChild variant="outline" size="sm">
               <Link to="/projecten/nieuw">
@@ -531,12 +592,15 @@ export function ProjectsList() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <th className="text-left py-3 px-4 w-[120px]">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
+                  </th>
                   <th className="text-left py-3 px-4">
                     <button
                       onClick={() => handleSort('naam')}
                       className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
                     >
-                      Project
+                      Omschrijving
                       {sortField === 'naam' ? (
                         sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                       ) : (
@@ -544,24 +608,11 @@ export function ProjectsList() {
                       )}
                     </button>
                   </th>
+                  <th className="text-left py-3 px-4 hidden lg:table-cell">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Relatie</span>
+                  </th>
                   <th className="text-left py-3 px-4 hidden md:table-cell">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">PM</span>
-                  </th>
-                  <th className="text-left py-3 px-4">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
-                  </th>
-                  <th className="text-right py-3 px-4">
-                    <button
-                      onClick={() => handleSort('budget')}
-                      className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
-                    >
-                      Waarde
-                      {sortField === 'budget' ? (
-                        sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 opacity-40" />
-                      )}
-                    </button>
                   </th>
                   <th className="text-right py-3 px-4 hidden xl:table-cell">
                     <button
@@ -576,79 +627,52 @@ export function ProjectsList() {
                       )}
                     </button>
                   </th>
-                  <th className="text-center py-3 px-4">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Downloads</span>
+                  <th className="text-right py-3 px-4 hidden lg:table-cell">
+                    <button
+                      onClick={() => handleSort('eind_datum')}
+                      className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
+                    >
+                      Startdatum
+                      {sortField === 'eind_datum' ? (
+                        sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 opacity-40" />
+                      )}
+                    </button>
                   </th>
+                  <th className="w-10 py-3 px-2" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {gefilterdeProjecten.map((project) => {
                   const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
-                  const isOverdue = new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
-                  const daysLeft = Math.ceil((new Date(project.eind_datum).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                  const contactpersoon = getKlantContactpersoon(project.klant_id)
 
                   return (
                     <tr
                       key={project.id}
-                      className={cn(
-                        'hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors border-l-4',
-                        getStatusBorderColor(project.status)
-                      )}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
                       onClick={() => window.location.href = `/projecten/${project.id}`}
                     >
-                      {/* Project naam + klant */}
-                      <td className="py-3 px-4">
-                        <div>
-                          <Link
-                            to={`/projecten/${project.id}`}
-                            className="text-sm font-semibold text-foreground hover:text-accent dark:hover:text-primary transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {project.naam}
-                          </Link>
-                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            {klantNaam}
-                          </p>
-                        </div>
-                      </td>
-
-                      {/* PM / Team */}
-                      <td className="py-3 px-4 hidden md:table-cell">
-                        <div className="flex items-center gap-2">
-                          {project.team_leden.length > 0 ? (
-                            <>
-                              <div className="w-7 h-7 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
-                                <span className="text-[10px] font-semibold text-accent dark:text-primary">
-                                  {project.team_leden[0].charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <span className="text-sm text-foreground truncate max-w-[120px]">
-                                {project.team_leden[0]}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">-</span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Status met dropdown */}
-                      <td className="py-3 px-4">
+                      {/* Status - links met kleur-achtergrond */}
+                      <td className="py-0 px-0">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
                               onClick={(e) => e.stopPropagation()}
-                              className="flex items-center gap-1.5 group/status"
+                              className={cn(
+                                'w-full h-full py-3 px-4 flex items-center gap-2 group/status transition-colors border-l-4',
+                                getStatusBorderColor(project.status),
+                                getStatusCellBg(project.status)
+                              )}
                             >
-                              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', getStatusDotColor(project.status))} />
-                              <Badge className={cn('text-xs cursor-pointer', getStatusColor(project.status))}>
+                              <span className="text-sm font-medium text-foreground">
                                 {statusLabels[project.status] || project.status}
-                              </Badge>
-                              <ChevronDown className="w-3 h-3 text-muted-foreground/40 group-hover/status:text-muted-foreground transition-colors" />
+                              </span>
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 group-hover/status:text-muted-foreground transition-colors" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-40">
+                          <DropdownMenuContent align="start" className="w-44">
                             {statusOpties.filter(s => s.value !== 'alle').map((s) => (
                               <DropdownMenuItem
                                 key={s.value}
@@ -672,20 +696,54 @@ export function ProjectsList() {
                         </DropdownMenu>
                       </td>
 
-                      {/* Waarde / Budget */}
-                      <td className="py-3 px-4 text-right">
-                        <span className="text-sm font-semibold text-foreground">
-                          {formatCurrency(project.budget)}
-                        </span>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          {formatCurrency(project.besteed)} besteed
-                        </p>
+                      {/* Omschrijving - naam + datum */}
+                      <td className="py-3 px-4">
+                        <div>
+                          <Link
+                            to={`/projecten/${project.id}`}
+                            className="text-sm font-semibold text-foreground hover:text-accent dark:hover:text-primary transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {project.naam}
+                          </Link>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {formatDate(project.start_datum)}
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* Relatie - bedrijfsnaam + contactpersoon */}
+                      <td className="py-3 px-4 hidden lg:table-cell">
+                        <div>
+                          <span className="text-sm font-medium text-foreground">{klantNaam}</span>
+                          {contactpersoon && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{contactpersoon}</p>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* PM - eerste teamlid */}
+                      <td className="py-3 px-4 hidden md:table-cell">
+                        {project.team_leden.length > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] font-semibold text-accent dark:text-primary">
+                                {project.team_leden[0].charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <span className="text-sm text-foreground truncate max-w-[120px]">
+                              {project.team_leden[0]}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
                       </td>
 
                       {/* Voortgang */}
                       <td className="py-3 px-4 hidden xl:table-cell">
                         <div className="flex items-center gap-2 justify-end">
-                          <div className="w-20 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                             <div
                               className={cn(
                                 'h-full rounded-full transition-all',
@@ -702,37 +760,57 @@ export function ProjectsList() {
                         </div>
                       </td>
 
-                      {/* Downloads */}
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              // Generate project summary CSV
-                              const csv = [
-                                'Project;' + project.naam,
-                                'Klant;' + klantNaam,
-                                'Status;' + (statusLabels[project.status] || project.status),
-                                'Budget;' + formatCurrency(project.budget),
-                                'Besteed;' + formatCurrency(project.besteed),
-                                'Voortgang;' + project.voortgang + '%',
-                                'Start;' + formatDate(project.start_datum),
-                                'Deadline;' + formatDate(project.eind_datum),
-                              ].join('\n')
-                              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                              const url = URL.createObjectURL(blob)
-                              const a = document.createElement('a')
-                              a.href = url
-                              a.download = `${project.naam.replace(/\s+/g, '-').toLowerCase()}.csv`
-                              a.click()
-                              URL.revokeObjectURL(url)
-                            }}
-                            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                            title="Download CSV"
-                          >
-                            <FileText className="w-4 h-4 text-muted-foreground hover:text-blue-600" />
-                          </button>
-                        </div>
+                      {/* Startdatum */}
+                      <td className="py-3 px-4 text-right hidden lg:table-cell">
+                        <span className="text-sm text-muted-foreground">
+                          {formatDate(project.start_datum)}
+                        </span>
+                      </td>
+
+                      {/* Acties menu */}
+                      <td className="py-3 px-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.location.href = `/projecten/${project.id}`
+                              }}
+                            >
+                              Bekijken
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const csv = [
+                                  'Project;' + project.naam,
+                                  'Klant;' + klantNaam,
+                                  'Status;' + (statusLabels[project.status] || project.status),
+                                  'Voortgang;' + project.voortgang + '%',
+                                  'Start;' + formatDate(project.start_datum),
+                                ].join('\n')
+                                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                                const url = URL.createObjectURL(blob)
+                                const a = document.createElement('a')
+                                a.href = url
+                                a.download = `${project.naam.replace(/\s+/g, '-').toLowerCase()}.csv`
+                                a.click()
+                                URL.revokeObjectURL(url)
+                              }}
+                            >
+                              <Download className="w-3.5 h-3.5 mr-2" />
+                              Download CSV
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   )
@@ -741,15 +819,17 @@ export function ProjectsList() {
             </table>
           </div>
         </Card>
+      ) : weergave === 'tijdlijn' ? (
+        /* ==================== TIMELINE / GANTT VIEW ==================== */
+        <ProjectTijdlijn projecten={gefilterdeProjecten} />
       ) : (
         /* ==================== GRID VIEW ==================== */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {gefilterdeProjecten.map((project, index) => {
             const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
             const isOverdue = new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
-            const budgetPercentage = project.budget > 0 ? Math.round((project.besteed / project.budget) * 100) : 0
-            const budgetOverschrijding = project.besteed > project.budget
-            const daysLeft = Math.ceil((new Date(project.eind_datum).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+            const budgetPct = project.budget > 0 ? Math.round((project.besteed / project.budget) * 100) : 0
+            const budgetWaarschuwing = project.budget > 0 && budgetPct >= (project.budget_waarschuwing_pct ?? 80)
 
             return (
               <Link
@@ -769,19 +849,26 @@ export function ProjectsList() {
                   }`} />
 
                   <CardContent className="p-5">
-                    {/* Header: naam + badges */}
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-foreground group-hover:text-accent dark:group-hover:text-primary transition-colors truncate">
-                          {project.naam}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {klantNaam}
-                        </p>
-                      </div>
-                      <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 flex-shrink-0 mt-1" />
+                    {/* Header: naam + arrow */}
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-accent dark:group-hover:text-primary transition-colors truncate">
+                        {project.naam}
+                      </h3>
+                      <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 flex-shrink-0 mt-0.5" />
                     </div>
+
+                    {/* Klant */}
+                    <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {klantNaam}
+                    </p>
+
+                    {/* Beschrijving snippet */}
+                    {project.beschrijving && (
+                      <p className="text-xs text-muted-foreground/80 leading-relaxed mb-3 line-clamp-2">
+                        {project.beschrijving}
+                      </p>
+                    )}
 
                     {/* Status + Prioriteit badges */}
                     <div className="flex items-center gap-2 mb-4">
@@ -821,6 +908,14 @@ export function ProjectsList() {
                       <Badge className={`${getPriorityColor(project.prioriteit)} text-xs`}>
                         {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
                       </Badge>
+                      {budgetWaarschuwing && (
+                        <Badge className={`text-xs ${budgetPct >= 100
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
+                        }`}>
+                          Budget {budgetPct}%
+                        </Badge>
+                      )}
                       {isOverdue && (
                         <Badge className="bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 text-xs">
                           Verlopen
@@ -829,12 +924,12 @@ export function ProjectsList() {
                     </div>
 
                     {/* Voortgang */}
-                    <div className="mb-4">
+                    <div className="mb-0">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-xs text-muted-foreground font-medium">Voortgang</span>
                         <span className="text-xs font-semibold text-foreground">{project.voortgang}%</span>
                       </div>
-                      <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${
                             project.voortgang >= 100
@@ -850,43 +945,30 @@ export function ProjectsList() {
                       </div>
                     </div>
 
-                    {/* Info grid */}
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      {/* Budget */}
-                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2.5">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">Budget</p>
-                        <p className="font-semibold text-foreground text-sm">{formatCurrency(project.budget)}</p>
-                        <p className={`text-[10px] mt-0.5 ${budgetOverschrijding ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}>
-                          {budgetPercentage}% besteed
-                        </p>
-                      </div>
-
-                      {/* Deadline */}
-                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2.5">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">Deadline</p>
-                        <p className={`font-semibold text-sm ${isOverdue ? 'text-red-500' : 'text-foreground'}`}>
-                          {formatDate(project.eind_datum)}
-                        </p>
-                        <p className={`text-[10px] mt-0.5 ${isOverdue ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                          {isOverdue
-                            ? `${Math.abs(daysLeft)} dagen verlopen`
-                            : project.status === 'afgerond'
-                            ? 'Afgerond'
-                            : `${daysLeft} dagen resterend`}
-                        </p>
-                      </div>
-                    </div>
-
                     {/* Footer: team + period */}
                     <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <CalendarDays className="h-3 w-3" />
-                        <span>{formatDate(project.start_datum)} — {formatDate(project.eind_datum)}</span>
+                        <span>{formatDate(project.start_datum)}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Users className="h-3 w-3" />
-                        <span>{project.team_leden.length}</span>
-                      </div>
+                      {project.team_leden.length > 0 && (
+                        <div className="flex items-center -space-x-1.5">
+                          {project.team_leden.slice(0, 3).map((lid, i) => (
+                            <div
+                              key={i}
+                              className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-background text-[9px] font-semibold text-accent dark:text-primary"
+                              title={lid}
+                            >
+                              {lid.charAt(0).toUpperCase()}
+                            </div>
+                          ))}
+                          {project.team_leden.length > 3 && (
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center border-2 border-background text-[9px] font-medium text-muted-foreground">
+                              +{project.team_leden.length - 3}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -896,5 +978,175 @@ export function ProjectsList() {
         </div>
       )}
     </div>
+  )
+}
+
+/* ────────────── Gantt / Tijdlijn Component ────────────── */
+
+function ProjectTijdlijn({ projecten }: { projecten: Project[] }) {
+  const vandaag = new Date()
+
+  // Bereken tijdsbereik: min start_datum tot max eind_datum (of vandaag + 3 maanden)
+  const projectenMetDatums = projecten.filter(p => p.start_datum)
+  if (projectenMetDatums.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <GanttChart className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <p className="text-sm text-muted-foreground">Geen projecten met datums voor de tijdlijn</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const alleDatums = projectenMetDatums.flatMap(p => {
+    const datums = [new Date(p.start_datum)]
+    if (p.eind_datum) datums.push(new Date(p.eind_datum))
+    return datums
+  })
+  alleDatums.push(vandaag)
+
+  const minDatum = new Date(Math.min(...alleDatums.map(d => d.getTime())))
+  const maxDatum = new Date(Math.max(...alleDatums.map(d => d.getTime())))
+
+  // Voeg marge toe: 2 weken links, 4 weken rechts
+  const tijdlijnStart = new Date(minDatum)
+  tijdlijnStart.setDate(tijdlijnStart.getDate() - 14)
+  const tijdlijnEind = new Date(maxDatum)
+  tijdlijnEind.setDate(tijdlijnEind.getDate() + 28)
+
+  const totaalDagen = Math.max(1, Math.ceil((tijdlijnEind.getTime() - tijdlijnStart.getTime()) / (1000 * 60 * 60 * 24)))
+
+  function datumNaarProcent(datum: Date): number {
+    const dagen = (datum.getTime() - tijdlijnStart.getTime()) / (1000 * 60 * 60 * 24)
+    return (dagen / totaalDagen) * 100
+  }
+
+  // Genereer maandlabels
+  const maanden: { label: string; pct: number }[] = []
+  const cursor = new Date(tijdlijnStart.getFullYear(), tijdlijnStart.getMonth(), 1)
+  while (cursor <= tijdlijnEind) {
+    const pct = datumNaarProcent(new Date(cursor))
+    if (pct >= 0 && pct <= 100) {
+      maanden.push({
+        label: cursor.toLocaleDateString('nl-NL', { month: 'short', year: '2-digit' }),
+        pct,
+      })
+    }
+    cursor.setMonth(cursor.getMonth() + 1)
+  }
+
+  const vandaagPct = datumNaarProcent(vandaag)
+
+  const statusKleuren: Record<string, string> = {
+    gepland: 'bg-blue-400 dark:bg-blue-500',
+    actief: 'bg-emerald-500 dark:bg-emerald-400',
+    'in-review': 'bg-amber-400 dark:bg-amber-500',
+    afgerond: 'bg-green-600 dark:bg-green-500',
+    'on-hold': 'bg-orange-400 dark:bg-orange-500',
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="overflow-x-auto">
+          <div className="min-w-[700px]">
+            {/* Maand headers */}
+            <div className="relative h-8 border-b border-gray-200 dark:border-gray-700 mb-2">
+              {maanden.map((m, i) => (
+                <div
+                  key={i}
+                  className="absolute top-0 text-[10px] font-medium text-muted-foreground uppercase tracking-wider"
+                  style={{ left: `${Math.max(m.pct, 0)}%` }}
+                >
+                  {m.label}
+                </div>
+              ))}
+              {/* Vandaag markering */}
+              {vandaagPct >= 0 && vandaagPct <= 100 && (
+                <div
+                  className="absolute top-0 bottom-0 w-px bg-red-400 dark:bg-red-500 z-10"
+                  style={{ left: `${vandaagPct}%` }}
+                >
+                  <div className="absolute -top-0.5 -left-1.5 w-3 h-3 bg-red-400 dark:bg-red-500 rounded-full" />
+                </div>
+              )}
+            </div>
+
+            {/* Projectrijen */}
+            <div className="space-y-1">
+              {projectenMetDatums.map((project) => {
+                const start = new Date(project.start_datum)
+                const eind = project.eind_datum ? new Date(project.eind_datum) : new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000)
+                const startPct = datumNaarProcent(start)
+                const eindPct = datumNaarProcent(eind)
+                const breedte = Math.max(eindPct - startPct, 1)
+
+                return (
+                  <div key={project.id} className="relative flex items-center h-10 group">
+                    {/* Projectnaam (links) */}
+                    <div className="w-[180px] flex-shrink-0 pr-3">
+                      <Link
+                        to={`/projecten/${project.id}`}
+                        className="text-xs font-medium text-foreground truncate block hover:text-accent dark:hover:text-primary transition-colors"
+                        title={project.naam}
+                      >
+                        {project.naam}
+                      </Link>
+                    </div>
+
+                    {/* Bar area */}
+                    <div className="flex-1 relative h-full">
+                      {/* Vandaag lijn (verlengd) */}
+                      {vandaagPct >= 0 && vandaagPct <= 100 && (
+                        <div
+                          className="absolute top-0 bottom-0 w-px bg-red-200 dark:bg-red-900/40 z-0"
+                          style={{ left: `${vandaagPct}%` }}
+                        />
+                      )}
+
+                      {/* Project bar */}
+                      <Link
+                        to={`/projecten/${project.id}`}
+                        className="absolute top-1.5 h-7 rounded-md flex items-center px-2 text-white text-[10px] font-medium overflow-hidden group-hover:ring-2 ring-offset-1 ring-primary/30 transition-all cursor-pointer"
+                        style={{
+                          left: `${Math.max(startPct, 0)}%`,
+                          width: `${breedte}%`,
+                          minWidth: '40px',
+                        }}
+                        title={`${project.naam} (${project.voortgang}%)`}
+                      >
+                        {/* Achtergrond kleur */}
+                        <div className={cn('absolute inset-0 opacity-90', statusKleuren[project.status] || 'bg-gray-400')} />
+                        {/* Voortgang overlay */}
+                        <div
+                          className="absolute inset-y-0 left-0 bg-white/20 rounded-l-md"
+                          style={{ width: `${project.voortgang}%` }}
+                        />
+                        <span className="relative z-10 truncate">{project.voortgang}%</span>
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Legenda */}
+            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+              {Object.entries(statusKleuren).map(([status, kleur]) => (
+                <div key={status} className="flex items-center gap-1.5 text-xs">
+                  <div className={cn('w-3 h-3 rounded', kleur)} />
+                  <span className="text-muted-foreground capitalize">{status}</span>
+                </div>
+              ))}
+              <div className="flex items-center gap-1.5 text-xs ml-auto">
+                <div className="w-3 h-0.5 bg-red-400 dark:bg-red-500" />
+                <span className="text-muted-foreground">Vandaag</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -25,6 +25,7 @@ import { ForgeQuotePreview } from '@/components/quotes/ForgeQuotePreview'
 import { OfferteDetail } from '@/components/quotes/OfferteDetail'
 import { DocumentsLayout } from '@/components/documents/DocumentsLayout'
 import { EmailLayout } from '@/components/email/EmailLayout'
+import { EmailComposePage } from '@/components/email/EmailComposePage'
 import { CalendarLayout } from '@/components/calendar/CalendarLayout'
 import { FinancialLayout } from '@/components/financial/FinancialLayout'
 import { TasksLayout } from '@/components/tasks/TasksLayout'
@@ -40,6 +41,26 @@ import { MontagePlanningLayout } from '@/components/montage/MontagePlanningLayou
 import { TeamLayout } from '@/components/team/TeamLayout'
 import { CommandPalette } from '@/components/shared/CommandPalette'
 import { ClientApprovalPage } from '@/components/approval/ClientApprovalPage'
+import { BookingBeheer } from '@/components/booking/BookingBeheer'
+import { PublicBookingPage } from '@/components/booking/PublicBookingPage'
+import { WerkbonnenLayout } from '@/components/werkbonnen/WerkbonnenLayout'
+import { WerkbonDetail } from '@/components/werkbonnen/WerkbonDetail'
+import { UitgavenLayout } from '@/components/uitgaven/UitgavenLayout'
+import { LeveranciersLayout } from '@/components/uitgaven/LeveranciersLayout'
+import { BetaalPagina } from '@/components/betaling/BetaalPagina'
+import { OffertePubliekPagina } from '@/components/offerte/OffertePubliekPagina'
+import { BestelbonnenLayout } from '@/components/bestelbonnen/BestelbonnenLayout'
+import { BestelbonDetail } from '@/components/bestelbonnen/BestelbonDetail'
+import { LeveringsbonnenLayout } from '@/components/leveringsbonnen/LeveringsbonnenLayout'
+import { LeveringsbonDetail } from '@/components/leveringsbonnen/LeveringsbonDetail'
+import { VoorraadLayout } from '@/components/voorraad/VoorraadLayout'
+import { DealsLayout } from '@/components/deals/DealsLayout'
+import { DealDetail } from '@/components/deals/DealDetail'
+import { LeadCaptureLayout } from '@/components/leads/LeadCaptureLayout'
+import { LeadFormulierEditor } from '@/components/leads/LeadFormulierEditor'
+import { LeadFormulierPubliek } from '@/components/leads/LeadFormulierPubliek'
+import { LeadInzendingenLayout } from '@/components/leads/LeadInzendingenLayout'
+import { ForecastLayout } from '@/components/forecast/ForecastLayout'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -56,11 +77,20 @@ function AppContent() {
   return (
     <>
     <CommandPalette />
+    <ErrorBoundary>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       {/* Publieke route - klant goedkeuring (geen login vereist) */}
       <Route path="/goedkeuring/:token" element={<ClientApprovalPage />} />
+      {/* Publieke route - klant booking (geen login vereist) */}
+      <Route path="/boeken/:userId" element={<PublicBookingPage />} />
+      {/* Publieke route - online factuur betalen (geen login vereist) */}
+      <Route path="/betalen/:token" element={<BetaalPagina />} />
+      {/* Publieke route - offerte bekijken door klant (geen login vereist) */}
+      <Route path="/offerte-bekijken/:token" element={<OffertePubliekPagina />} />
+      {/* Publieke route - lead formulier invullen (geen login vereist) */}
+      <Route path="/formulier/:token" element={<LeadFormulierPubliek />} />
       <Route path="/" element={
         <ProtectedRoute>
           <AppLayout />
@@ -72,12 +102,16 @@ function AppContent() {
         <Route path="projecten/:id" element={<ProjectDetail />} />
         <Route path="klanten" element={<ClientsLayout />} />
         <Route path="klanten/:id" element={<ClientProfile />} />
+        <Route path="deals" element={<DealsLayout />} />
+        <Route path="deals/:id" element={<DealDetail />} />
         <Route path="offertes" element={<QuotesPipeline />} />
         <Route path="offertes/nieuw" element={<QuoteCreation />} />
-        <Route path="offertes/:id" element={<ForgeQuotePreview />} />
+        <Route path="offertes/:id" element={<QuoteCreation />} />
+        <Route path="offertes/:id/preview" element={<ForgeQuotePreview />} />
         <Route path="offertes/:id/detail" element={<OfferteDetail />} />
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
+        <Route path="email/compose" element={<EmailComposePage />} />
         <Route path="kalender" element={<CalendarLayout />} />
         <Route path="financieel" element={<FinancialLayout />} />
         <Route path="taken" element={<TasksLayout />} />
@@ -90,10 +124,26 @@ function AppContent() {
         <Route path="nieuwsbrieven" element={<NewsletterBuilder />} />
         <Route path="importeren" element={<DataImportLayout />} />
         <Route path="ai" element={<WorkmateAIChat />} />
+        <Route path="werkbonnen" element={<WerkbonnenLayout />} />
+        <Route path="werkbonnen/:id" element={<WerkbonDetail />} />
+        <Route path="uitgaven" element={<UitgavenLayout />} />
+        <Route path="leveranciers" element={<LeveranciersLayout />} />
+        <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
+        <Route path="bestelbonnen/:id" element={<BestelbonDetail />} />
+        <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />
+        <Route path="leveringsbonnen/:id" element={<LeveringsbonDetail />} />
+        <Route path="voorraad" element={<VoorraadLayout />} />
+        <Route path="leads" element={<LeadCaptureLayout />} />
+        <Route path="leads/formulieren/nieuw" element={<LeadFormulierEditor />} />
+        <Route path="leads/formulieren/:id" element={<LeadFormulierEditor />} />
+        <Route path="leads/inzendingen" element={<LeadInzendingenLayout />} />
+        <Route path="forecast" element={<ForecastLayout />} />
+        <Route path="booking" element={<BookingBeheer />} />
         <Route path="instellingen" element={<SettingsLayout />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </ErrorBoundary>
     </>
   )
 }

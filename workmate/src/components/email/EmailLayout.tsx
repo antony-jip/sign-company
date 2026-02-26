@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Search,
@@ -32,17 +33,20 @@ import {
   Eye,
   Zap,
   BarChart3,
+  Users,
 } from 'lucide-react'
 import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKlant, createTaak } from '@/services/supabaseService'
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
 import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
+import { useAuth } from '@/contexts/AuthContext'
 import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
 import { ContactSidebar } from './ContactSidebar'
 import { EmailTracking } from './EmailTracking'
 import { EmailSequences } from './EmailSequences'
 import { EmailAnalytics } from './EmailAnalytics'
+import { GedeeldeInboxLayout } from './GedeeldeInboxLayout'
 import type { AddCustomerData } from './ContactSidebar'
 import { extractEmailAddress } from '@/utils/emailUtils'
 import type { EmailContact } from '@/utils/emailUtils'
@@ -54,7 +58,7 @@ import { logger } from '../../utils/logger'
 type EmailFolder = 'inbox' | 'verzonden' | 'concepten' | 'gepland' | 'gesnoozed' | 'prullenbak'
 type FilterType = 'alle' | 'ongelezen' | 'met-ster' | 'vastgepind' | 'bijlagen'
 type FontSize = 'small' | 'medium' | 'large'
-type EmailTab = 'email' | 'tracking' | 'sequences' | 'analytics'
+type EmailTab = 'email' | 'gedeelde-inbox' | 'tracking' | 'sequences' | 'analytics'
 
 interface FolderTab {
   id: EmailFolder
@@ -155,6 +159,8 @@ function formatShortDate(dateStr: string): string {
 type ViewMode = 'idle' | 'reading' | 'composing'
 
 export function EmailLayout() {
+  const { user } = useAuth()
+
   // ── State ──
   const [viewMode, setViewMode] = useState<ViewMode>('idle')
   const [selectedFolder, setSelectedFolder] = useState<EmailFolder>('inbox')
@@ -518,7 +524,7 @@ export function EmailLayout() {
     setEmails((prev) =>
       prev.map((e) => (e.id === email.id ? { ...e, snoozed_until: undefined, map: 'inbox' } : e))
     )
-    updateEmail(email.id, { snoozed_until: null } as any).catch(() => {})
+    updateEmail(email.id, { snoozed_until: null }).catch(() => {})
     toast.success('Snooze verwijderd')
   }, [])
 
@@ -659,9 +665,9 @@ export function EmailLayout() {
       })
 
       const newEmail: Omit<Email, 'id' | 'created_at'> = {
-        user_id: '',
+        user_id: user?.id || '',
         gmail_id: '',
-        van: 'ik@signcompany.nl',
+        van: user?.email || '',
         aan: data.to,
         onderwerp: data.subject,
         inhoud: data.body,
@@ -676,9 +682,9 @@ export function EmailLayout() {
       const saved = await createEmail(newEmail)
       setEmails((prev) => [saved, ...prev])
       toast.success(isScheduled ? 'Email ingepland' : 'Email verzonden')
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Email verzenden mislukt:', err)
-      toast.error(err.message || 'Email kon niet worden verzonden')
+      toast.error(err instanceof Error ? err.message : 'Email kon niet worden verzonden')
     }
 
     setViewMode('idle')
@@ -706,7 +712,7 @@ export function EmailLayout() {
   const handleAddCustomer = useCallback(async (email: string, data?: AddCustomerData) => {
     try {
       const newKlant = await createKlant({
-        user_id: '',
+        user_id: user?.id || '',
         bedrijfsnaam: data?.bedrijfsnaam || '',
         contactpersoon: data?.contactpersoon || extractSenderName(email),
         email: data?.email || email,
@@ -732,7 +738,7 @@ export function EmailLayout() {
       })
       setKlanten((prev) => [...prev, newKlant])
       toast.success(`${data?.contactpersoon || email} toegevoegd aan klanten`)
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Klant aanmaken mislukt:', err)
       toast.error('Kon contact niet opslaan')
     }
@@ -746,7 +752,7 @@ export function EmailLayout() {
   const handleCreateTaskFromEmail = useCallback(async (email: Email, description: string) => {
     try {
       await createTaak({
-        user_id: '',
+        user_id: user?.id || '',
         project_id: '',
         titel: description,
         beschrijving: `Aangemaakt vanuit email: "${email.onderwerp}"\nVan: ${email.van}\nDatum: ${email.datum}`,
@@ -757,7 +763,7 @@ export function EmailLayout() {
         geschatte_tijd: 0,
         bestede_tijd: 0,
       })
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Taak aanmaken mislukt:', err)
       toast.error('Kon taak niet aanmaken')
     }
@@ -778,6 +784,7 @@ export function EmailLayout() {
       <div className="flex items-center gap-1 mb-4">
         {([
           { id: 'email' as EmailTab, label: 'Email', icon: Mail },
+          { id: 'gedeelde-inbox' as EmailTab, label: 'Team Inbox', icon: Users },
           { id: 'tracking' as EmailTab, label: 'Tracking', icon: Eye },
           { id: 'sequences' as EmailTab, label: 'Sequences', icon: Zap },
           { id: 'analytics' as EmailTab, label: 'Analytics', icon: BarChart3 },
@@ -802,7 +809,9 @@ export function EmailLayout() {
       </div>
 
       {/* ── Tab Content ── */}
-      {activeTab === 'tracking' ? (
+      {activeTab === 'gedeelde-inbox' ? (
+        <GedeeldeInboxLayout />
+      ) : activeTab === 'tracking' ? (
         <EmailTracking emails={emails} />
       ) : activeTab === 'sequences' ? (
         <EmailSequences />
@@ -829,7 +838,7 @@ export function EmailLayout() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Zoek emails..."
-                  className="pl-9 h-9"
+                  className="pl-10 h-9"
                 />
               </div>
               <Button onClick={handleCompose} size="sm" className="gap-1.5 h-9 flex-shrink-0">
@@ -1174,6 +1183,17 @@ export function EmailLayout() {
                           <Paperclip className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
                         )}
 
+                        {/* Quick reply active indicator */}
+                        {quickReplyId === email.id && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setQuickReplyId(null); setQuickReplyText('') }}
+                            className="p-1 rounded-md bg-blue-500 hover:bg-blue-600 transition-colors flex-shrink-0"
+                            title="Reply sluiten"
+                          >
+                            <X className="w-3.5 h-3.5 text-white" />
+                          </button>
+                        )}
+
                         {/* Hover actions */}
                         <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
@@ -1245,40 +1265,69 @@ export function EmailLayout() {
                         </div>
                       )}
 
-                      {/* Quick reply inline with email preview */}
+                      {/* Quick reply inline */}
                       {quickReplyId === email.id && (
-                        <div className="px-8 py-2 bg-muted/20 border-b border-border/30 space-y-1.5" onClick={(e) => e.stopPropagation()}>
-                          {/* Email preview */}
-                          <div className="text-[11px] text-muted-foreground bg-background/60 rounded p-2 max-h-24 overflow-y-auto border border-border/20">
-                            <p className="font-medium text-foreground/70 mb-0.5">{email.onderwerp}</p>
-                            <p className="whitespace-pre-line">{truncate(email.inhoud, 300)}</p>
+                        <div className="mx-3 my-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-background shadow-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                          {/* Reply header */}
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50/60 dark:bg-blue-950/30 border-b border-blue-100 dark:border-blue-900/50">
+                            <Reply className="w-3.5 h-3.5 text-blue-500" />
+                            <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">
+                              Beantwoorden aan {extractSenderName(email.van)}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground ml-auto">
+                              Ctrl+Enter om te versturen
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2">
-                          <Input
-                            value={quickReplyText}
-                            onChange={(e) => setQuickReplyText(e.target.value)}
-                            placeholder="Typ een snel antwoord..."
-                            className="h-7 text-xs flex-1"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault()
-                                handleQuickReply(email)
-                              }
-                              if (e.key === 'Escape') {
-                                setQuickReplyId(null)
-                                setQuickReplyText('')
-                              }
-                            }}
-                          />
-                          <Button
-                            size="sm"
-                            className="h-7 gap-1 text-xs"
-                            disabled={!quickReplyText.trim()}
-                            onClick={() => handleQuickReply(email)}
-                          >
-                            <Send className="w-3 h-3" />
-                          </Button>
+
+                          {/* Original message preview */}
+                          <div className="mx-3 mt-2 rounded-md bg-muted/40 border border-border/30">
+                            <div className="px-3 py-1.5 border-b border-border/20">
+                              <p className="text-[11px] font-semibold text-foreground/70 truncate">{email.onderwerp}</p>
+                              <p className="text-[10px] text-muted-foreground">{extractSenderName(email.van)} — {formatShortDate(email.datum)}</p>
+                            </div>
+                            <div className="px-3 py-1.5 max-h-16 overflow-y-auto">
+                              <p className="text-[11px] text-muted-foreground whitespace-pre-line leading-relaxed">{truncate(email.inhoud, 250)}</p>
+                            </div>
+                          </div>
+
+                          {/* Textarea */}
+                          <div className="px-3 pt-2">
+                            <Textarea
+                              value={quickReplyText}
+                              onChange={(e) => setQuickReplyText(e.target.value)}
+                              placeholder="Schrijf je antwoord..."
+                              className="min-h-[80px] max-h-[160px] text-sm resize-none border-border/50 focus-visible:ring-blue-400/40"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                  e.preventDefault()
+                                  handleQuickReply(email)
+                                }
+                                if (e.key === 'Escape') {
+                                  setQuickReplyId(null)
+                                  setQuickReplyText('')
+                                }
+                              }}
+                            />
+                          </div>
+
+                          {/* Action bar */}
+                          <div className="flex items-center justify-between px-3 py-2">
+                            <button
+                              onClick={() => { setQuickReplyId(null); setQuickReplyText('') }}
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              Annuleren
+                            </button>
+                            <Button
+                              size="sm"
+                              className="h-7 gap-1.5 text-xs"
+                              disabled={!quickReplyText.trim()}
+                              onClick={() => handleQuickReply(email)}
+                            >
+                              <Send className="w-3 h-3" />
+                              Verstuur
+                            </Button>
                           </div>
                         </div>
                       )}

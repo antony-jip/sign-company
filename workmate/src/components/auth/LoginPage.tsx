@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import { Mail, Lock, Eye, EyeOff, Globe, Loader2, Sparkles, ArrowRight, Shield, Zap, BarChart3 } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Globe, Loader2, ArrowRight, Wrench, FileText, FolderKanban } from 'lucide-react'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -32,8 +32,8 @@ export function LoginPage() {
       await login(email, password)
       toast.success('Succesvol ingelogd')
       navigate('/')
-    } catch (error: any) {
-      toast.error(error?.message || 'Inloggen mislukt. Controleer je gegevens.')
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Inloggen mislukt. Controleer je gegevens.')
     } finally {
       setIsLoading(false)
     }
@@ -46,41 +46,48 @@ export function LoginPage() {
         {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="4" width="20" height="12" rx="2" />
+              <path d="M8 20h8" />
+              <path d="M12 16v4" />
+              <path d="M7 9h2" />
+              <path d="M15 9h2" />
+              <path d="M10 12h4" />
+            </svg>
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">Workmate</span>
+          <span className="text-xl font-bold text-white tracking-tight">Sign Company</span>
         </div>
 
         {/* Hero text */}
-        <div className="max-w-md space-y-6">
+        <div className="max-w-lg space-y-6">
           <h2 className="text-4xl font-bold text-white leading-tight">
-            Jouw bedrijf,<br />
-            <span className="text-wm-pale">slimmer beheerd.</span>
+            Van offerte tot<br />
+            <span className="text-wm-pale">montage op locatie.</span>
           </h2>
           <p className="text-white/60 text-lg leading-relaxed">
-            Alles wat je nodig hebt voor klantenbeheer, offertes, projecten en meer — in één platform.
+            Beheer je sign-projecten, plan montages, stuur offertes en factureer — alles vanuit één werkplek.
           </p>
 
-          {/* Feature pills */}
+          {/* Feature pills — sign-industry specific */}
           <div className="flex flex-wrap gap-3 pt-2">
             <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 border border-white/10 rounded-full px-4 py-2 backdrop-blur-sm">
-              <Zap className="w-3.5 h-3.5 text-wm-pale" />
-              AI-Assistent
+              <FileText className="w-3.5 h-3.5 text-wm-pale" />
+              Offertes & Facturen
             </div>
             <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 border border-white/10 rounded-full px-4 py-2 backdrop-blur-sm">
-              <BarChart3 className="w-3.5 h-3.5 text-primary" />
-              Live Analytics
+              <FolderKanban className="w-3.5 h-3.5 text-primary" />
+              Projectbeheer
             </div>
             <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 border border-white/10 rounded-full px-4 py-2 backdrop-blur-sm">
-              <Shield className="w-3.5 h-3.5 text-wm-light" />
-              Veilig & Privé
+              <Wrench className="w-3.5 h-3.5 text-wm-light" />
+              Montage Planning
             </div>
           </div>
         </div>
 
         {/* Bottom tagline */}
         <p className="text-white/30 text-sm">
-          Workmate CRM — Gebouwd voor Nederlandse bedrijven
+          Sign Company — De werkplek voor lichtreclame, gevelbelettering & signing
         </p>
       </div>
 
@@ -98,9 +105,16 @@ export function LoginPage() {
               {/* Mobile-only logo */}
               <div className="flex items-center justify-center gap-3 mb-6 lg:hidden">
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center shadow-lg shadow-primary/25">
-                  <Sparkles className="w-6 h-6 text-white" />
+                  <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="4" width="20" height="12" rx="2" />
+                    <path d="M8 20h8" />
+                    <path d="M12 16v4" />
+                    <path d="M7 9h2" />
+                    <path d="M15 9h2" />
+                    <path d="M10 12h4" />
+                  </svg>
                 </div>
-                <span className="text-2xl font-bold text-foreground">Workmate</span>
+                <span className="text-2xl font-bold text-foreground">Sign Company</span>
               </div>
               <CardTitle className="text-2xl font-bold">Welkom terug</CardTitle>
               <CardDescription className="text-base mt-1">Log in op je account</CardDescription>
@@ -173,7 +187,7 @@ export function LoginPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-gradient-to-r from-accent to-primary hover:from-[#2d5243] hover:to-[#4a9d8a] text-white shadow-lg shadow-primary/20 transition-all duration-200 rounded-xl group"
+                  className="w-full h-11 bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white shadow-lg shadow-primary/20 transition-all duration-200 rounded-xl group"
                   disabled={isLoading}
                 >
                   {isLoading ? (

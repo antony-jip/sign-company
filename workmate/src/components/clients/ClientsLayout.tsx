@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import { UserPlus, Search, LayoutGrid, List, Loader2, ArrowUpDown, Download, FileText } from 'lucide-react'
+import { UserPlus, Search, LayoutGrid, List, Loader2, ArrowUpDown, Download, FileText, Users } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
@@ -30,6 +30,7 @@ export function ClientsLayout() {
   const [loading, setLoading] = useState(true)
   const [sortField, setSortField] = useState<SortField>('bedrijfsnaam')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [labelFilter, setLabelFilter] = useState<string>('alle')
 
   const fetchData = useCallback(() => {
     setLoading(true)
@@ -62,6 +63,11 @@ export function ClientsLayout() {
     // Status filter
     if (statusFilter !== 'alle') {
       result = result.filter((k) => k.status === statusFilter)
+    }
+
+    // Label filter
+    if (labelFilter !== 'alle') {
+      result = result.filter((k) => (k.klant_labels || []).includes(labelFilter))
     }
 
     // Search filter
@@ -102,7 +108,7 @@ export function ClientsLayout() {
     })
 
     return result
-  }, [klanten, searchQuery, statusFilter, sortField, sortDir])
+  }, [klanten, searchQuery, statusFilter, labelFilter, sortField, sortDir])
 
   function handleSort(field: SortField) {
     if (field === sortField) {
@@ -279,6 +285,33 @@ export function ClientsLayout() {
 
         <div className="h-4 w-px bg-border hidden sm:block" />
 
+        {/* Label filter */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {[
+            { value: 'alle', label: 'Alle labels' },
+            { value: 'vooruit_betalen', label: 'Vooruit betalen' },
+            { value: 'niet_helpen', label: 'Niet helpen' },
+            { value: 'voorrang', label: 'Voorrang' },
+            { value: 'grote_klant', label: 'Grote klant' },
+            { value: 'wanbetaler', label: 'Wanbetaler' },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setLabelFilter(opt.value)}
+              className={cn(
+                'px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors',
+                labelFilter === opt.value
+                  ? 'bg-primary/10 text-primary border border-primary/30'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent'
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="h-4 w-px bg-border hidden sm:block" />
+
         {/* Sort toolbar */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <ArrowUpDown className="w-3 h-3" />
@@ -311,15 +344,23 @@ export function ClientsLayout() {
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredKlanten.length === 0 ? (
-        <Card>
+        <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <p className="text-gray-500 dark:text-gray-400 text-center">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
+              <Users className="h-7 w-7 text-primary/40" />
+            </div>
+            <p className="text-sm font-medium text-foreground">
               {searchQuery || statusFilter !== 'alle'
-                ? 'Geen klanten gevonden met de huidige filters.'
-                : 'Nog geen klanten toegevoegd.'}
+                ? 'Geen klanten gevonden'
+                : 'Nog geen opdrachtgevers'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 text-center">
+              {searchQuery || statusFilter !== 'alle'
+                ? 'Probeer andere zoektermen of filters.'
+                : 'Voeg je eerste klant toe — winkels, horeca, bedrijven die signing nodig hebben.'}
             </p>
             {(searchQuery || statusFilter !== 'alle') && (
               <Button

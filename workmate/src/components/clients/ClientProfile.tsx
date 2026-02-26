@@ -67,10 +67,14 @@ import {
   getEmails,
   getDocumenten,
   getOffertes,
+  getFacturen,
+  getDealsByKlant,
+  getTijdregistraties,
   updateKlant,
+  getUitgaven,
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
-import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon } from '@/types'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal, Tijdregistratie, Uitgave } from '@/types'
 
 function getStatusBarColor(status: string): string {
   switch (status) {
@@ -111,7 +115,11 @@ export function ClientProfile() {
   const [clientProjecten, setClientProjecten] = useState<Project[]>([])
   const [clientEmails, setClientEmails] = useState<Email[]>([])
   const [clientDocumenten, setClientDocumenten] = useState<DocType[]>([])
+  const [clientFacturen, setClientFacturen] = useState<Factuur[]>([])
+  const [clientDeals, setClientDeals] = useState<Deal[]>([])
+  const [clientTijdregistraties, setClientTijdregistraties] = useState<Tijdregistratie[]>([])
   const [clientOffertes, setClientOffertes] = useState<Offerte[]>([])
+  const [clientUitgaven, setClientUitgaven] = useState<Uitgave[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('projecten')
   const [notitie, setNotitie] = useState('')
@@ -129,7 +137,11 @@ export function ClientProfile() {
       getEmails(),
       getDocumenten(),
       getOffertes(),
-    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes]) => {
+      getFacturen().catch(() => []),
+      getDealsByKlant(id).catch(() => []),
+      getTijdregistraties().catch(() => []),
+      getUitgaven().catch(() => []),
+    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals, allTijd, allUitgaven]) => {
       setKlant(klantData)
       setClientProjecten(projecten)
       setNotitie(klantData?.notities || '')
@@ -147,6 +159,12 @@ export function ClientProfile() {
         )
       }
       setClientDocumenten(allDocs.filter((d) => d.klant_id === id))
+      setClientFacturen(allFacturen.filter((f) => f.klant_id === id))
+      setClientDeals(deals)
+      const projectIds = new Set(projecten.map((p) => p.id))
+      setClientTijdregistraties(allTijd.filter((t) => projectIds.has(t.project_id)))
+      // Uitgaven gekoppeld via projecten van deze klant
+      setClientUitgaven(allUitgaven.filter((u: Uitgave) => u.project_id && projectIds.has(u.project_id)))
       setIsLoading(false)
     })
   }, [id])
@@ -225,6 +243,9 @@ export function ClientProfile() {
 
   async function handleDeleteContact(contactId: string) {
     if (!klant) return
+    const contact = (klant.contactpersonen || []).find((c) => c.id === contactId)
+    const naam = contact?.naam || 'deze contactpersoon'
+    if (!window.confirm(`Weet je zeker dat je ${naam} wilt verwijderen?`)) return
     const updated = (klant.contactpersonen || []).filter((c) => c.id !== contactId)
     try {
       const updatedKlant = await updateKlant(klant.id, { contactpersonen: updated })
@@ -264,7 +285,11 @@ export function ClientProfile() {
   const contactpersonen = klant.contactpersonen || []
   const tabs = [
     { key: 'projecten', label: 'Projecten', count: clientProjecten.length, icon: FolderKanban },
+    { key: 'deals', label: 'Deals', count: clientDeals.length, icon: CreditCard },
     { key: 'offertes', label: 'Offertes', count: clientOffertes.length, icon: FileText },
+    { key: 'facturen', label: 'Facturen', count: clientFacturen.length, icon: Receipt },
+    { key: 'uitgaven', label: 'Uitgaven', count: clientUitgaven.length, icon: CreditCard },
+    { key: 'tijdregistratie', label: 'Uren', count: clientTijdregistraties.length, icon: Clock },
     { key: 'communicatie', label: 'Communicatie', count: clientEmails.length, icon: Mail },
     { key: 'documenten', label: 'Documenten', count: clientDocumenten.length, icon: FileIcon },
   ]
@@ -320,7 +345,7 @@ export function ClientProfile() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="gap-2 cursor-pointer"
-                onClick={() => navigate(`/offertes/nieuw?klant=${id}`)}
+                onClick={() => navigate(`/offertes/nieuw?klant_id=${id}`)}
               >
                 <FileText className="w-4 h-4 text-blue-500" />
                 Offerte
@@ -355,6 +380,63 @@ export function ClientProfile() {
           </Button>
         </div>
       </div>
+
+      {/* ── Klant Labels + Waarschuwingen ── */}
+      {(klant.klant_labels || []).length > 0 && (
+        <div className="space-y-2">
+          {/* Waarschuwing banners */}
+          {(klant.klant_labels || []).includes('niet_helpen') && (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span className="text-sm font-medium">Let op: deze klant heeft het label &quot;Niet helpen&quot;</span>
+            </div>
+          )}
+          {(klant.klant_labels || []).includes('vooruit_betalen') && (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300">
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span className="text-sm font-medium">Let op: deze klant moet vooruit betalen</span>
+            </div>
+          )}
+          {(klant.klant_labels || []).includes('wanbetaler') && (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span className="text-sm font-medium">Let op: deze klant staat geregistreerd als wanbetaler</span>
+            </div>
+          )}
+          {/* Label badges */}
+          <div className="flex flex-wrap gap-1.5">
+            {(klant.klant_labels || []).map((label) => {
+              const colors: Record<string, string> = {
+                vooruit_betalen: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+                niet_helpen: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+                voorrang: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+                grote_klant: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                wanbetaler: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+              }
+              const labels: Record<string, string> = {
+                vooruit_betalen: 'Vooruit betalen',
+                niet_helpen: 'Niet helpen',
+                voorrang: 'Voorrang klant',
+                grote_klant: 'Grote klant',
+                wanbetaler: 'Wanbetaler',
+              }
+              return (
+                <Badge key={label} className={colors[label] || 'bg-gray-100 text-gray-700'}>
+                  {labels[label] || label}
+                </Badge>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Gepinde Notitie ── */}
+      {klant.gepinde_notitie && (
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+          <StickyNote className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800 dark:text-amber-200 whitespace-pre-wrap">{klant.gepinde_notitie}</p>
+        </div>
+      )}
 
       {/* ── Info Cards Row ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -727,6 +809,202 @@ export function ClientProfile() {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ════════ DEALS TAB ════════ */}
+          {activeTab === 'deals' && (
+            <Card>
+              {clientDeals.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Geen deals voor deze klant</p>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fase</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waarde</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Kans</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {clientDeals.map((deal) => (
+                        <tr
+                          key={deal.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                          onClick={() => navigate(`/deals/${deal.id}`)}
+                        >
+                          <td className="py-3 px-4 text-sm font-medium">{deal.titel}</td>
+                          <td className="py-3 px-4 text-sm capitalize text-muted-foreground">{deal.fase}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={cn('text-xs capitalize',
+                              deal.status === 'gewonnen' ? 'bg-emerald-100 text-emerald-700' :
+                              deal.status === 'verloren' ? 'bg-red-100 text-red-700' :
+                              deal.status === 'on-hold' ? 'bg-amber-100 text-amber-700' :
+                              'bg-blue-100 text-blue-700'
+                            )}>
+                              {deal.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(deal.verwachte_waarde)}</td>
+                          <td className="py-3 px-4 text-right text-sm text-muted-foreground hidden md:table-cell">{deal.kans_percentage || 50}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ════════ FACTUREN TAB ════════ */}
+          {activeTab === 'facturen' && (
+            <Card>
+              {clientFacturen.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <Receipt className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Geen facturen voor deze klant</p>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Totaal</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Datum</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {clientFacturen.map((factuur) => (
+                        <tr key={factuur.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
+                          </td>
+                          <td className="py-3 px-4 text-sm">{factuur.titel}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={cn('text-xs capitalize',
+                              factuur.status === 'betaald' ? 'bg-emerald-100 text-emerald-700' :
+                              factuur.status === 'vervallen' ? 'bg-red-100 text-red-700' :
+                              factuur.status === 'verzonden' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-700'
+                            )}>
+                              {factuur.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(factuur.totaal)}</td>
+                          <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground">{formatDate(factuur.factuurdatum)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ════════ UITGAVEN TAB ════════ */}
+          {activeTab === 'uitgaven' && (
+            <Card>
+              {clientUitgaven.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Geen uitgaven gekoppeld aan projecten van deze klant</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => navigate('/uitgaven')}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Naar uitgaven
+                  </Button>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Omschrijving</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bedrag</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Datum</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {clientUitgaven.map((uitgave) => (
+                        <tr key={uitgave.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => navigate('/uitgaven')}>
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{uitgave.uitgave_nummer}</span>
+                          </td>
+                          <td className="py-3 px-4 text-sm">{uitgave.omschrijving}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={cn('text-xs capitalize',
+                              uitgave.status === 'betaald' ? 'bg-emerald-100 text-emerald-700' :
+                              uitgave.status === 'verlopen' ? 'bg-red-100 text-red-700' :
+                              'bg-amber-100 text-amber-700'
+                            )}>
+                              {uitgave.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(uitgave.bedrag_incl_btw)}</td>
+                          <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground">{formatDate(uitgave.datum)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ════════ TIJDREGISTRATIE TAB ════════ */}
+          {activeTab === 'tijdregistratie' && (
+            <Card>
+              {clientTijdregistraties.length === 0 ? (
+                <CardContent className="py-12 text-center">
+                  <Clock className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm text-muted-foreground">Nog geen uren geregistreerd</p>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        {['Datum', 'Project', 'Medewerker', 'Uren', 'Beschrijving'].map((h) => (
+                          <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {clientTijdregistraties
+                        .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+                        .map((t) => (
+                        <tr key={t.id} className="hover:bg-muted/50">
+                          <td className="px-4 py-2.5 text-sm">{t.datum}</td>
+                          <td className="px-4 py-2.5 text-sm">{t.project_naam || '-'}</td>
+                          <td className="px-4 py-2.5 text-sm">{t.medewerker_naam || '-'}</td>
+                          <td className="px-4 py-2.5 text-sm font-medium">{t.uren}u</td>
+                          <td className="px-4 py-2.5 text-sm text-muted-foreground">{t.beschrijving || '-'}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 font-semibold">
+                        <td className="px-4 py-2.5 text-sm" colSpan={3}>Totaal</td>
+                        <td className="px-4 py-2.5 text-sm">{clientTijdregistraties.reduce((s, t) => s + t.uren, 0).toFixed(1)}u</td>
+                        <td />
+                      </tr>
                     </tbody>
                   </table>
                 </div>

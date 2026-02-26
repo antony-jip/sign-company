@@ -2,13 +2,25 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
-import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject } from '@/services/supabaseService'
+import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject, createProject } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
-import { Receipt, ArrowLeft, ExternalLink } from 'lucide-react'
+import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Pencil, Download, ChevronRight } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant } from '@/types'
+import type { PrijsVariant } from './QuoteItemsTable'
 import { logger } from '../../utils/logger'
+
+interface PreviewItem {
+  beschrijving: string
+  aantal: number
+  eenheidsprijs: number
+  btw_percentage: number
+  korting_percentage: number
+  prijs_varianten?: PrijsVariant[]
+  actieve_variant_id?: string
+}
 
 interface ForgeQuotePreviewProps {
   offerte?: {
@@ -21,13 +33,7 @@ interface ForgeQuotePreviewProps {
     voorwaarden: string
     created_at: string
   }
-  items?: {
-    beschrijving: string
-    aantal: number
-    eenheidsprijs: number
-    btw_percentage: number
-    korting_percentage: number
-  }[]
+  items?: PreviewItem[]
 }
 
 function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; korting_percentage: number }) {
@@ -39,6 +45,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, pipelineStappen, valuta } = useAppSettings()
+  const documentStyle = useDocumentStyle()
 
   // Parse address components from combined string
   const adresParts = bedrijfsAdres ? bedrijfsAdres.split(', ') : []
@@ -114,6 +121,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       eenheidsprijs: i.eenheidsprijs,
       btw_percentage: i.btw_percentage,
       korting_percentage: i.korting_percentage,
+      prijs_varianten: i.prijs_varianten,
+      actieve_variant_id: i.actieve_variant_id,
     }))
     klant = fetchedKlant
   }
@@ -131,13 +140,39 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       setFetchedOfferte(updated)
       toast.success(`Status bijgewerkt naar "${newStatus}"`)
 
-      // Auto-activate project when quote is approved
-      if (newStatus === 'goedgekeurd' && fetchedOfferte.project_id) {
+      // Auto-activate or create project when quote is approved
+      if (newStatus === 'goedgekeurd') {
         try {
-          const project = await getProject(fetchedOfferte.project_id)
-          if (project && project.status === 'gepland') {
-            await updateProject(project.id, { status: 'actief' })
-            toast.success(`Project "${project.naam}" is nu actief`)
+          if (fetchedOfferte.project_id) {
+            // Activate existing project
+            const project = await getProject(fetchedOfferte.project_id)
+            if (project && project.status === 'gepland') {
+              await updateProject(project.id, { status: 'actief' })
+              toast.success(`Project "${project.naam}" is nu actief`)
+            }
+          } else {
+            // Auto-create project from approved quote
+            const project = await createProject({
+              user_id: fetchedOfferte.user_id,
+              klant_id: fetchedOfferte.klant_id,
+              naam: fetchedOfferte.titel,
+              beschrijving: `Aangemaakt vanuit offerte ${fetchedOfferte.nummer}`,
+              status: 'actief',
+              prioriteit: 'medium',
+              start_datum: new Date().toISOString().split('T')[0],
+              eind_datum: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+              budget: fetchedOfferte.totaal || 0,
+              besteed: 0,
+              voortgang: 0,
+              team_leden: [],
+              bron_offerte_id: fetchedOfferte.id,
+            })
+            const updatedWithProject = await updateOfferte(fetchedOfferte.id, {
+              project_id: project.id,
+              geconverteerd_naar_project_id: project.id,
+            })
+            setFetchedOfferte(updatedWithProject)
+            toast.success(`Project "${project.naam}" automatisch aangemaakt`)
           }
         } catch {
           // Non-critical: don't block the status update
@@ -146,6 +181,40 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     } catch (err) {
       logger.error('Failed to update offerte status:', err)
       toast.error('Kon status niet bijwerken')
+    }
+  }
+
+  // Maak project van goedgekeurde offerte
+  async function handleMaakProject() {
+    if (!fetchedOfferte) return
+    try {
+      const project = await createProject({
+        user_id: fetchedOfferte.user_id,
+        klant_id: fetchedOfferte.klant_id,
+        naam: fetchedOfferte.titel,
+        beschrijving: `Aangemaakt vanuit offerte ${fetchedOfferte.nummer}`,
+        status: 'actief',
+        prioriteit: 'medium',
+        start_datum: new Date().toISOString().split('T')[0],
+        eind_datum: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+        budget: fetchedOfferte.totaal || 0,
+        besteed: 0,
+        voortgang: 0,
+        team_leden: [],
+        bron_offerte_id: fetchedOfferte.id,
+      })
+
+      // Update offerte met project link
+      const updatedOfferte = await updateOfferte(fetchedOfferte.id, {
+        project_id: project.id,
+        geconverteerd_naar_project_id: project.id,
+      })
+      setFetchedOfferte(updatedOfferte)
+      toast.success(`Project "${project.naam}" aangemaakt`)
+      navigate(`/projecten/${project.id}`)
+    } catch (err) {
+      logger.error('Failed to create project from offerte:', err)
+      toast.error('Kon project niet aanmaken')
     }
   }
 
@@ -163,7 +232,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           kvk_nummer: kvkNummer || '',
           btw_nummer: btwNummer || '',
           primaireKleur: primaireKleur || '#2563eb',
-        }
+        },
+        documentStyle
       )
       doc.save(`${fetchedOfferte.nummer}.pdf`)
       toast.success('PDF gedownload')
@@ -178,7 +248,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="text-gray-500 dark:text-gray-400">Offerte laden...</p>
         </div>
       </div>
@@ -212,83 +282,142 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     <div className="max-w-4xl mx-auto">
       {/* Action bar - only shown when accessed via route (service data available) */}
       {fetchedOfferte && (
-        <div className="flex items-center justify-between mb-4 px-1">
-          <div className="flex items-center gap-3">
-            {/* Back navigation */}
+        <div className="mb-6 space-y-3">
+          {/* Row 1: Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 px-1">
             <button
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              onClick={() => navigate('/offertes')}
+              className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Terug
+              Offertes
             </button>
-
-            {/* Breadcrumb links */}
+            <ChevronRight className="h-3.5 w-3.5" />
             {fetchedKlant && (
-              <button
-                onClick={() => navigate(`/klanten/${fetchedKlant.id}`)}
-                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                {fetchedKlant.bedrijfsnaam}
-                <ExternalLink className="h-3 w-3" />
-              </button>
+              <>
+                <button
+                  onClick={() => navigate(`/klanten/${fetchedKlant.id}`)}
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {fetchedKlant.bedrijfsnaam}
+                </button>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </>
             )}
-            {fetchedOfferte.project_id && (
+            <span className="text-gray-900 dark:text-white font-medium">{offerteData.nummer}</span>
+          </div>
+
+          {/* Row 2: Title + Status + Actions */}
+          <div className="flex items-start justify-between gap-4 px-1">
+            <div className="flex items-center gap-3 min-w-0">
               <button
-                onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
-                className="inline-flex items-center gap-1 text-xs text-accent dark:text-primary hover:underline"
+                onClick={() => navigate(-1)}
+                className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                Bekijk project
-                <ExternalLink className="h-3 w-3" />
+                <ArrowLeft className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               </button>
-            )}
+              <div className="min-w-0">
+                <h1 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                  {offerteData.titel}
+                </h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <select
+                    value={offerteData.status}
+                    onChange={(e) => handleStatusUpdate(e.target.value as Offerte['status'])}
+                    className="text-xs border border-gray-300 dark:border-gray-600 rounded-md px-2 py-0.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                  >
+                    {(pipelineStappen && pipelineStappen.length > 0
+                      ? pipelineStappen.filter(s => s.actief).sort((a, b) => a.volgorde - b.volgorde)
+                      : [
+                          { key: 'concept', label: 'Concept' },
+                          { key: 'verzonden', label: 'Verzonden' },
+                          { key: 'bekeken', label: 'Bekeken' },
+                          { key: 'goedgekeurd', label: 'Goedgekeurd' },
+                          { key: 'afgewezen', label: 'Afgewezen' },
+                        ]
+                    ).map(stap => (
+                      <option key={stap.key} value={stap.key}>{stap.label}</option>
+                    ))}
+                  </select>
+                  {/* Conversieketen */}
+                  {fetchedOfferte.project_id && (
+                    <button
+                      onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
+                      className="inline-flex items-center gap-1 text-xs text-accent dark:text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Project
+                    </button>
+                  )}
+                  {fetchedOfferte.geconverteerd_naar_factuur_id && (
+                    <button
+                      onClick={() => navigate('/facturen')}
+                      className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Factuur
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
 
-            <div className="h-4 w-px bg-gray-300 dark:bg-gray-600" />
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Status:</span>
-              <select
-                value={offerteData.status}
-                onChange={(e) => handleStatusUpdate(e.target.value as Offerte['status'])}
-                className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => navigate(`/offertes/${fetchedOfferte.id}`)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                {(pipelineStappen && pipelineStappen.length > 0
-                  ? pipelineStappen.filter(s => s.actief).sort((a, b) => a.volgorde - b.volgorde)
-                  : [
-                      { key: 'concept', label: 'Concept' },
-                      { key: 'verzonden', label: 'Verzonden' },
-                      { key: 'bekeken', label: 'Bekeken' },
-                      { key: 'goedgekeurd', label: 'Goedgekeurd' },
-                      { key: 'afgewezen', label: 'Afgewezen' },
-                    ]
-                ).map(stap => (
-                  <option key={stap.key} value={stap.key}>{stap.label}</option>
-                ))}
-              </select>
+                <Pencil className="h-3.5 w-3.5" />
+                Bewerk offerte
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download PDF
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Factureer button - only for goedgekeurde offertes */}
-            {fetchedOfferte.status === 'goedgekeurd' && (
-              <button
-                onClick={() => navigate(`/facturen?convert_offerte=${fetchedOfferte.id}`)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-              >
-                <Receipt className="h-4 w-4" />
-                Factureer
-              </button>
-            )}
-            <button
-              onClick={handleDownloadPDF}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Download PDF
-            </button>
-          </div>
+          {/* Row 3: Next step card (only for goedgekeurd) */}
+          {fetchedOfferte.status === 'goedgekeurd' && (
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800 mx-1">
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Volgende stap:</span>
+              <div className="flex items-center gap-2">
+                {fetchedOfferte.project_id ? (
+                  <button
+                    onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors"
+                  >
+                    <FolderPlus className="h-3.5 w-3.5" />
+                    Bekijk Project
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleMaakProject}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors"
+                  >
+                    <FolderPlus className="h-3.5 w-3.5" />
+                    Maak Project
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate('/montage')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-md transition-colors"
+                >
+                  Plan Montage
+                </button>
+                <button
+                  onClick={() => navigate(`/facturen?convert_offerte=${fetchedOfferte.id}`)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-md transition-colors"
+                >
+                  <Receipt className="h-3.5 w-3.5" />
+                  Factureer
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -415,6 +544,70 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             </thead>
             <tbody>
               {items.map((item, index) => {
+                const hasVarianten = item.prijs_varianten && item.prijs_varianten.length > 0
+
+                if (hasVarianten) {
+                  // Render item with multiple price variants
+                  return (
+                    <React.Fragment key={index}>
+                      {/* Item header row spanning full width */}
+                      <tr className={`border-b border-gray-100 dark:border-gray-800 ${index % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-gray-800/20'}`}>
+                        <td className="py-3 px-2 text-gray-500 dark:text-gray-400 align-top">{index + 1}</td>
+                        <td colSpan={5} className="py-3 px-2">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{item.beschrijving}</span>
+                        </td>
+                      </tr>
+                      {/* Variant sub-rows */}
+                      {item.prijs_varianten!.map((variant) => {
+                        const isActive = variant.id === item.actieve_variant_id
+                        const variantBruto = variant.aantal * variant.eenheidsprijs
+                        const variantTotaal = variantBruto - variantBruto * (variant.korting_percentage / 100)
+                        return (
+                          <tr
+                            key={variant.id}
+                            className={`border-b border-gray-50 dark:border-gray-800/50 ${
+                              isActive
+                                ? 'bg-blue-50/50 dark:bg-blue-900/10'
+                                : 'bg-gray-50/30 dark:bg-gray-800/10'
+                            }`}
+                          >
+                            <td className="py-2 px-2" />
+                            <td className="py-2 px-2 text-gray-700 dark:text-gray-300">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className={`inline-block w-2 h-2 rounded-full ${isActive ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                                <span className="text-xs font-medium">{variant.label}</span>
+                                {isActive && (
+                                  <span className="text-[9px] font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-1 py-0.5 rounded">
+                                    geselecteerd
+                                  </span>
+                                )}
+                              </span>
+                              {variant.korting_percentage > 0 && (
+                                <span className="ml-2 text-xs text-green-600 dark:text-green-400">
+                                  (-{variant.korting_percentage}% korting)
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2 px-2 text-right text-gray-600 dark:text-gray-400 text-xs">
+                              {variant.aantal}
+                            </td>
+                            <td className="py-2 px-2 text-right text-gray-600 dark:text-gray-400 text-xs">
+                              {formatCurrency(variant.eenheidsprijs)}
+                            </td>
+                            <td className="py-2 px-2 text-right text-gray-400 dark:text-gray-500 text-xs">
+                              {variant.btw_percentage}%
+                            </td>
+                            <td className="py-2 px-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300">
+                              {formatCurrency(variantTotaal)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </React.Fragment>
+                  )
+                }
+
+                // Regular item without variants
                 const lineTotaal = calculateLineTotaal(item)
                 return (
                   <tr

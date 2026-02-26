@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Email, Klant } from '@/types'
+import type { Email, Klant, Project, Offerte, OfferteItem, MontageAfspraak, Taak } from '@/types'
 
 const storageKeys = [
   'workmate_klanten',
@@ -15,6 +15,9 @@ const storageKeys = [
   'workmate_kortingen',
   'workmate_nieuwsbrieven',
   'workmate_app_settings',
+  'workmate_montage_afspraken',
+  'workmate_werkbonnen',
+  'workmate_facturen',
 ]
 
 // ── Demo seed data (only used when localStorage is empty) ──
@@ -347,28 +350,291 @@ const demoEmails: Email[] = [
   },
 ]
 
+// ── Demo projecten (sign-company specific) ──
+
+const demoProjecten: Project[] = [
+  {
+    id: 'proj-001',
+    user_id: 'demo-user',
+    klant_id: 'klant-001',
+    klant_naam: 'Bakkerij Van Dijk',
+    naam: 'Lichtreclame gevel Bakkerij Van Dijk',
+    beschrijving: 'Doosletters met LED verlichting op de gevel. Aluminium 3mm, wit gepoedercoat, 3500x600mm. Inclusief montage en aansluiting.',
+    status: 'actief',
+    prioriteit: 'hoog',
+    start_datum: daysAgo(14).split('T')[0],
+    eind_datum: new Date(Date.now() + 21 * 86400000).toISOString().split('T')[0],
+    budget: 3850,
+    besteed: 1200,
+    voortgang: 40,
+    team_leden: [],
+    created_at: daysAgo(14),
+    updated_at: daysAgo(1),
+  },
+  {
+    id: 'proj-002',
+    user_id: 'demo-user',
+    klant_id: 'klant-002',
+    klant_naam: 'Garage Jansen',
+    naam: 'Complete signing nieuw pand Garage Jansen',
+    beschrijving: 'Gevelreclame, reclamezuil, interne signing en autobelettering. Nieuw bedrijfspand Industrieweg 44 Zoetermeer.',
+    status: 'gepland',
+    prioriteit: 'medium',
+    start_datum: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+    eind_datum: new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0],
+    budget: 12500,
+    besteed: 0,
+    voortgang: 0,
+    team_leden: [],
+    created_at: daysAgo(7),
+    updated_at: daysAgo(2),
+  },
+  {
+    id: 'proj-003',
+    user_id: 'demo-user',
+    klant_id: 'klant-003',
+    klant_naam: 'Restaurant De Gouden Leeuw',
+    naam: 'Terrassigning De Gouden Leeuw',
+    beschrijving: 'Menuboards buiten (dibond wisselframe), windschermen met logo (mesh), uithandbord dubbelzijdig met LED.',
+    status: 'actief',
+    prioriteit: 'medium',
+    start_datum: daysAgo(5).split('T')[0],
+    eind_datum: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+    budget: 4200,
+    besteed: 800,
+    voortgang: 20,
+    team_leden: [],
+    created_at: daysAgo(5),
+    updated_at: daysAgo(1),
+  },
+]
+
+// ── Demo offertes ──
+
+const demoOffertes: Offerte[] = [
+  {
+    id: 'off-001',
+    user_id: 'demo-user',
+    klant_id: 'klant-001',
+    klant_naam: 'Bakkerij Van Dijk',
+    project_id: 'proj-001',
+    nummer: 'OFR-2026-018',
+    titel: 'Lichtreclame doosletters gevel',
+    status: 'goedgekeurd',
+    notities: 'LED doosletters op aluminium gevel, inclusief montage',
+    totaal: 3850,
+    subtotaal: 3181.82,
+    btw_bedrag: 668.18,
+    geldig_tot: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
+    voorwaarden: '',
+    created_at: daysAgo(14),
+    updated_at: daysAgo(7),
+  },
+  {
+    id: 'off-002',
+    user_id: 'demo-user',
+    klant_id: 'klant-002',
+    klant_naam: 'Garage Jansen',
+    project_id: 'proj-002',
+    nummer: 'OFR-2026-021',
+    titel: 'Gevelreclame + reclamezuil nieuw pand',
+    status: 'verzonden',
+    notities: 'Doosletters gevel, reclamezuil ingang, interne wayfinding',
+    totaal: 12500,
+    subtotaal: 10330.58,
+    btw_bedrag: 2169.42,
+    geldig_tot: new Date(Date.now() + 20 * 86400000).toISOString().split('T')[0],
+    voorwaarden: '',
+    created_at: daysAgo(7),
+    updated_at: daysAgo(2),
+  },
+  {
+    id: 'off-003',
+    user_id: 'demo-user',
+    klant_id: 'klant-003',
+    klant_naam: 'Restaurant De Gouden Leeuw',
+    project_id: 'proj-003',
+    nummer: 'OFR-2026-022',
+    titel: 'Terrassigning compleet',
+    status: 'bekeken',
+    notities: 'Menuboards, windschermen, uithandbord',
+    totaal: 4200,
+    subtotaal: 3471.07,
+    btw_bedrag: 728.93,
+    geldig_tot: new Date(Date.now() + 12 * 86400000).toISOString().split('T')[0],
+    voorwaarden: '',
+    created_at: daysAgo(5),
+    updated_at: daysAgo(1),
+  },
+  {
+    id: 'off-004',
+    user_id: 'demo-user',
+    klant_id: 'klant-004',
+    klant_naam: 'Advocatenkantoor Visser & Partners',
+    nummer: 'OFR-2026-023',
+    titel: 'RVS geveletters Herengracht',
+    status: 'concept',
+    notities: 'Geborsteld RVS letters op monumentale gevel, inclusief vergunningsaanvraag',
+    totaal: 5800,
+    subtotaal: 4793.39,
+    btw_bedrag: 1006.61,
+    geldig_tot: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+    voorwaarden: '',
+    created_at: daysAgo(3),
+    updated_at: daysAgo(1),
+  },
+]
+
+// ── Demo offerte items ──
+
+const demoOfferteItems: OfferteItem[] = [
+  {
+    id: 'oi-001', offerte_id: 'off-001',
+    beschrijving: 'Doosletters "Bakkerij Van Dijk" - LED verlicht',
+    aantal: 1, eenheidsprijs: 2800, btw_percentage: 21, korting_percentage: 0,
+    totaal: 2800, volgorde: 1,
+    created_at: daysAgo(14),
+  },
+  {
+    id: 'oi-002', offerte_id: 'off-001',
+    beschrijving: 'Montage en elektrische aansluiting',
+    aantal: 1, eenheidsprijs: 650, btw_percentage: 21, korting_percentage: 0,
+    totaal: 650, volgorde: 2,
+    created_at: daysAgo(14),
+  },
+  {
+    id: 'oi-003', offerte_id: 'off-001',
+    beschrijving: 'Raambelettering openingstijden (2 ramen)',
+    aantal: 2, eenheidsprijs: 200, btw_percentage: 21, korting_percentage: 0,
+    totaal: 400, volgorde: 3,
+    created_at: daysAgo(14),
+  },
+]
+
+// ── Demo taken ──
+
+const demoTaken: Taak[] = [
+  {
+    id: 'taak-001', user_id: 'demo-user', project_id: 'proj-001',
+    titel: 'Ontwerp doosletters finaliseren',
+    beschrijving: 'Kleur, lettertype en afmetingen definitief maken',
+    status: 'bezig', prioriteit: 'hoog',
+    toegewezen_aan: '', geschatte_tijd: 4, bestede_tijd: 2,
+    deadline: new Date().toISOString().split('T')[0],
+    created_at: daysAgo(7), updated_at: daysAgo(1),
+  },
+  {
+    id: 'taak-002', user_id: 'demo-user', project_id: 'proj-001',
+    titel: 'LED modules bestellen bij leverancier',
+    beschrijving: 'Samsung LED modules 6500K, 12V, IP65 waterdicht',
+    status: 'todo', prioriteit: 'medium',
+    toegewezen_aan: '', geschatte_tijd: 1, bestede_tijd: 0,
+    deadline: new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0],
+    created_at: daysAgo(5), updated_at: daysAgo(2),
+  },
+  {
+    id: 'taak-003', user_id: 'demo-user', project_id: 'proj-001',
+    titel: 'Aluminium platen laten CNC frezen',
+    beschrijving: '3mm aluminium, wit gepoedercoat, letters uitfrezen',
+    status: 'todo', prioriteit: 'medium',
+    toegewezen_aan: '', geschatte_tijd: 2, bestede_tijd: 0,
+    deadline: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
+    created_at: daysAgo(3), updated_at: daysAgo(1),
+  },
+  {
+    id: 'taak-004', user_id: 'demo-user', project_id: 'proj-002',
+    titel: 'Opname nieuw pand Garage Jansen',
+    beschrijving: 'Opmeten gevel, locatie zuil, interne routing',
+    status: 'todo', prioriteit: 'hoog',
+    toegewezen_aan: '', geschatte_tijd: 3, bestede_tijd: 0,
+    deadline: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
+    created_at: daysAgo(2), updated_at: daysAgo(1),
+  },
+  {
+    id: 'taak-005', user_id: 'demo-user', project_id: 'proj-003',
+    titel: 'Windscherm designs naar drukker sturen',
+    beschrijving: 'Full color print op mesh doek, 4 stuks met logo',
+    status: 'todo', prioriteit: 'laag',
+    toegewezen_aan: '', geschatte_tijd: 1, bestede_tijd: 0,
+    deadline: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+    created_at: daysAgo(3), updated_at: daysAgo(1),
+  },
+]
+
+// ── Demo montage afspraken ──
+
+const demoMontageAfspraken: MontageAfspraak[] = [
+  {
+    id: 'mont-001',
+    user_id: 'demo-user',
+    klant_id: 'klant-001',
+    klant_naam: 'Bakkerij Van Dijk',
+    project_id: 'proj-001',
+    titel: 'Montage doosletters Bakkerij Van Dijk',
+    beschrijving: 'Plaatsing LED doosletters op gevel. Hoogwerker nodig.',
+    datum: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+    start_tijd: '08:00',
+    eind_tijd: '12:00',
+    locatie: 'Broodstraat 12, Rotterdam',
+    status: 'gepland',
+    monteurs: ['Jan', 'Kees'],
+    materialen: ['Doosletters set', 'Bevestigingsmateriaal', 'LED driver'],
+    notities: 'Hoogwerker nodig. Parkeervergunning aangevraagd.',
+    created_at: daysAgo(3),
+    updated_at: daysAgo(1),
+  },
+  {
+    id: 'mont-002',
+    user_id: 'demo-user',
+    klant_id: 'klant-001',
+    klant_naam: 'Bakkerij Van Dijk',
+    project_id: 'proj-001',
+    titel: 'Raambelettering Bakkerij Van Dijk',
+    beschrijving: 'Aanbrengen vinyl raambelettering, 2 ramen',
+    datum: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
+    start_tijd: '09:00',
+    eind_tijd: '11:00',
+    locatie: 'Broodstraat 12, Rotterdam',
+    status: 'gepland',
+    monteurs: ['Kees'],
+    materialen: ['Vinyl folie', 'Applicatievloeistof', 'Rakel'],
+    notities: 'Ramen moeten schoon en droog zijn.',
+    created_at: daysAgo(3),
+    updated_at: daysAgo(1),
+  },
+]
+
 // ── Initialization ──
 
 export function useDataInit() {
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    // Ensure all localStorage keys exist as empty arrays if not present
-    for (const key of storageKeys) {
-      if (!localStorage.getItem(key)) {
-        localStorage.setItem(key, '[]')
+    try {
+      // Ensure all localStorage keys exist as empty arrays if not present
+      for (const key of storageKeys) {
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, '[]')
+        }
       }
-    }
 
-    // Seed demo data if empty (first-time users get example content)
-    const existingEmails = JSON.parse(localStorage.getItem('workmate_emails') || '[]')
-    if (existingEmails.length === 0) {
-      localStorage.setItem('workmate_emails', JSON.stringify(demoEmails))
-    }
+      // Seed demo data if empty (first-time users get example content)
+      const seedIfEmpty = (key: string, data: unknown[]) => {
+        const existing = JSON.parse(localStorage.getItem(key) || '[]')
+        if (existing.length === 0) {
+          localStorage.setItem(key, JSON.stringify(data))
+        }
+      }
 
-    const existingKlanten = JSON.parse(localStorage.getItem('workmate_klanten') || '[]')
-    if (existingKlanten.length === 0) {
-      localStorage.setItem('workmate_klanten', JSON.stringify(demoKlanten))
+      seedIfEmpty('workmate_emails', demoEmails)
+      seedIfEmpty('workmate_klanten', demoKlanten)
+      seedIfEmpty('workmate_projecten', demoProjecten)
+      seedIfEmpty('workmate_offertes', demoOffertes)
+      seedIfEmpty('workmate_offerte_items', demoOfferteItems)
+      seedIfEmpty('workmate_taken', demoTaken)
+      seedIfEmpty('workmate_montage_afspraken', demoMontageAfspraken)
+    } catch (e) {
+      console.warn('localStorage init failed:', e)
     }
 
     setIsReady(true)

@@ -343,8 +343,8 @@ export function MontagePlanningLayout() {
     setFormData((prev) => ({
       ...prev,
       project_id: projectId,
-      klant_id: (project as any)?.klant_id || "",
-      klant_naam: (project as any)?.klant_naam || "",
+      klant_id: project?.klant_id || "",
+      klant_naam: project?.klant_naam || "",
     }));
   }
 

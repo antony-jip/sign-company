@@ -39,8 +39,10 @@ import {
   getOfferteItems,
   getTijdregistraties,
   getFacturen,
+  getUitgaven,
 } from '@/services/supabaseService'
-import type { Project, Offerte, OfferteItem, Tijdregistratie, Factuur } from '@/types'
+import { round2 } from '@/utils/budgetUtils'
+import type { Project, Offerte, OfferteItem, Tijdregistratie, Factuur, Uitgave } from '@/types'
 import { cn, formatCurrency } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { toast } from 'sonner'
@@ -56,6 +58,7 @@ interface NacalculatieRegel {
   werkelijkeKosten: number
   tijdKosten: number
   materiaalKosten: number
+  uitgavenKosten: number
   verschil: number
   margePercentage: number
   offerteItems: OfferteItem[]
@@ -69,6 +72,7 @@ export function NacalculatieLayout() {
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [alleOfferteItems, setAlleOfferteItems] = useState<Record<string, OfferteItem[]>>({})
   const [tijdregistraties, setTijdregistraties] = useState<Tijdregistratie[]>([])
+  const [uitgaven, setUitgaven] = useState<Uitgave[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedProjectId, setSelectedProjectId] = useState<string>('alle')
   const [detailProjectId, setDetailProjectId] = useState<string | null>(null)
@@ -76,10 +80,11 @@ export function NacalculatieLayout() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [proj, off, tijd] = await Promise.all([
+        const [proj, off, tijd, uitg] = await Promise.all([
           getProjecten(),
           getOffertes(),
           getTijdregistraties(),
+          getUitgaven(),
         ])
 
         const afgerondeProjecten = proj.filter((p) => p.status === 'afgerond')
@@ -103,6 +108,7 @@ export function NacalculatieLayout() {
         setOffertes(goedgekeurdeOffertes)
         setAlleOfferteItems(itemsMap)
         setTijdregistraties(tijd)
+        setUitgaven(uitg)
       } catch {
         toast.error('Fout bij laden nacalculatie data')
       } finally {
@@ -120,17 +126,20 @@ export function NacalculatieLayout() {
       const items = alleOfferteItems[offerteId] ?? []
 
       const projectTijd = tijdregistraties.filter((t) => t.project_id === project.id)
-      const tijdKosten = projectTijd.reduce(
+      const tijdKosten = round2(projectTijd.reduce(
         (sum, t) => sum + (t.duur_minuten / 60) * t.uurtarief,
         0
-      )
+      ))
 
-      const werkelijkeKosten = Math.max(project.besteed, tijdKosten)
-      const materiaalKosten = Math.max(0, werkelijkeKosten - tijdKosten)
+      const projectUitgaven = uitgaven.filter((u) => u.project_id === project.id)
+      const uitgavenKosten = round2(projectUitgaven.reduce((sum, u) => sum + u.bedrag_incl_btw, 0))
 
-      const verschil = offerteTotaal - werkelijkeKosten
+      const werkelijkeKosten = round2(Math.max(project.besteed, tijdKosten + uitgavenKosten))
+      const materiaalKosten = round2(Math.max(0, werkelijkeKosten - tijdKosten - uitgavenKosten))
+
+      const verschil = round2(offerteTotaal - werkelijkeKosten)
       const margePercentage =
-        offerteTotaal > 0 ? (verschil / offerteTotaal) * 100 : 0
+        offerteTotaal > 0 ? round2((verschil / offerteTotaal) * 100) : 0
 
       return {
         projectId: project.id,
@@ -140,13 +149,14 @@ export function NacalculatieLayout() {
         werkelijkeKosten,
         tijdKosten,
         materiaalKosten,
+        uitgavenKosten,
         verschil,
         margePercentage,
         offerteItems: items,
         tijdregistraties: projectTijd,
       }
     })
-  }, [projecten, offertes, alleOfferteItems, tijdregistraties])
+  }, [projecten, offertes, alleOfferteItems, tijdregistraties, uitgaven])
 
   const gefilterdeData = useMemo(() => {
     if (selectedProjectId === 'alle') return nacalculatieData
@@ -209,16 +219,18 @@ export function NacalculatieLayout() {
       'Marge %',
       'Tijd kosten',
       'Materiaal kosten',
+      'Uitgaven kosten',
     ]
     const rows = gefilterdeData.map((d) => ({
       'Project': d.projectNaam,
       'Klant': d.klantNaam,
-      'Offerte totaal': Math.round(d.offerteTotaal * 100) / 100,
-      'Werkelijke kosten': Math.round(d.werkelijkeKosten * 100) / 100,
-      'Verschil': Math.round(d.verschil * 100) / 100,
-      'Marge %': Math.round(d.margePercentage * 10) / 10,
-      'Tijd kosten': Math.round(d.tijdKosten * 100) / 100,
-      'Materiaal kosten': Math.round(d.materiaalKosten * 100) / 100,
+      'Offerte totaal': round2(d.offerteTotaal),
+      'Werkelijke kosten': round2(d.werkelijkeKosten),
+      'Verschil': round2(d.verschil),
+      'Marge %': round2(d.margePercentage),
+      'Tijd kosten': round2(d.tijdKosten),
+      'Materiaal kosten': round2(d.materiaalKosten),
+      'Uitgaven kosten': round2(d.uitgavenKosten),
     }))
     exportCSV('nacalculatie', headers, rows)
     toast.success('CSV gedownload')
@@ -234,16 +246,18 @@ export function NacalculatieLayout() {
       'Marge %',
       'Tijd kosten',
       'Materiaal kosten',
+      'Uitgaven kosten',
     ]
     const rows = gefilterdeData.map((d) => ({
       'Project': d.projectNaam,
       'Klant': d.klantNaam,
-      'Offerte totaal': Math.round(d.offerteTotaal * 100) / 100,
-      'Werkelijke kosten': Math.round(d.werkelijkeKosten * 100) / 100,
-      'Verschil': Math.round(d.verschil * 100) / 100,
-      'Marge %': Math.round(d.margePercentage * 10) / 10,
-      'Tijd kosten': Math.round(d.tijdKosten * 100) / 100,
-      'Materiaal kosten': Math.round(d.materiaalKosten * 100) / 100,
+      'Offerte totaal': round2(d.offerteTotaal),
+      'Werkelijke kosten': round2(d.werkelijkeKosten),
+      'Verschil': round2(d.verschil),
+      'Marge %': round2(d.margePercentage),
+      'Tijd kosten': round2(d.tijdKosten),
+      'Materiaal kosten': round2(d.materiaalKosten),
+      'Uitgaven kosten': round2(d.uitgavenKosten),
     }))
     exportExcel('nacalculatie', headers, rows, 'Nacalculatie')
     toast.success('Excel bestand gedownload')
@@ -777,6 +791,24 @@ export function NacalculatieLayout() {
                     </div>
                   </div>
 
+                  {/* Uitgaven */}
+                  {detailData.uitgavenKosten > 0 && (
+                    <div>
+                      <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <Euro className="w-3.5 h-3.5" />
+                        Uitgaven (leveranciers)
+                      </h4>
+                      <div className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm">
+                        <span className="font-medium text-gray-800 dark:text-gray-200">
+                          Leveranciers & overige uitgaven
+                        </span>
+                        <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                          {formatCurrency(detailData.uitgavenKosten)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <Separator />
 
                   {/* Totaal werkelijk */}
@@ -850,8 +882,8 @@ export function NacalculatieLayout() {
                     <span>Kostenverdeling</span>
                     <span>
                       {detailData.werkelijkeKosten > 0
-                        ? `${((detailData.tijdKosten / detailData.werkelijkeKosten) * 100).toFixed(0)}% arbeid / ${((detailData.materiaalKosten / detailData.werkelijkeKosten) * 100).toFixed(0)}% materiaal`
-                        : '0% arbeid / 0% materiaal'
+                        ? `${((detailData.tijdKosten / detailData.werkelijkeKosten) * 100).toFixed(0)}% arbeid / ${((detailData.materiaalKosten / detailData.werkelijkeKosten) * 100).toFixed(0)}% materiaal / ${((detailData.uitgavenKosten / detailData.werkelijkeKosten) * 100).toFixed(0)}% uitgaven`
+                        : '0% arbeid / 0% materiaal / 0% uitgaven'
                       }
                     </span>
                   </div>
@@ -872,8 +904,16 @@ export function NacalculatieLayout() {
                           : '0%',
                       }}
                     />
+                    <div
+                      className="bg-red-500 h-full transition-all duration-300"
+                      style={{
+                        width: detailData.werkelijkeKosten > 0
+                          ? `${(detailData.uitgavenKosten / detailData.werkelijkeKosten) * 100}%`
+                          : '0%',
+                      }}
+                    />
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs">
+                  <div className="flex items-center gap-4 mt-2 text-xs flex-wrap">
                     <span className="flex items-center gap-1">
                       <span className="w-2.5 h-2.5 bg-primary rounded-full inline-block" />
                       <span className="text-gray-500 dark:text-gray-400">
@@ -886,6 +926,14 @@ export function NacalculatieLayout() {
                         Materiaal ({formatCurrency(detailData.materiaalKosten)})
                       </span>
                     </span>
+                    {detailData.uitgavenKosten > 0 && (
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 bg-red-500 rounded-full inline-block" />
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Uitgaven ({formatCurrency(detailData.uitgavenKosten)})
+                        </span>
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

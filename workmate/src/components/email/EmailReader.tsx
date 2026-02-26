@@ -448,7 +448,7 @@ export function EmailReader({
 
   const handleClearFollowUp = useCallback(() => {
     if (!email) return
-    updateEmail(email.id, { follow_up_at: null } as any).catch(() => {})
+    updateEmail(email.id, { follow_up_at: null }).catch(() => {})
     onUpdateEmail?.(email, { follow_up_at: undefined })
     setFollowUpDate('')
     toast.success('Follow-up verwijderd')

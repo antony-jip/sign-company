@@ -30,9 +30,35 @@ export interface ColorPalette {
 
 export const PALETTES: ColorPalette[] = [
   {
+    id: 'terracotta',
+    naam: 'Terracotta',
+    beschrijving: 'Warm & modern — de Sign Company stijl',
+    preview: ['#8B4A2F', '#D4714A', '#F5DDD0'],
+    light: {
+      primary: '18 58% 56%',
+      accent: '16 50% 36%',
+      ring: '18 58% 56%',
+      sidebarActive: '18 58% 56%',
+      wmHover: '18 55% 48%',
+      wmLight: '18 56% 68%',
+      wmPale: '20 76% 90%',
+      gradientStart: '#8B4A2F',
+      gradientMid: '#D4714A',
+      gradientEnd: '#F5DDD0',
+      glow: '0 0 40px rgba(212, 113, 74, 0.15)',
+    },
+    dark: {
+      primary: '18 62% 62%',
+      accent: '16 45% 42%',
+      ring: '18 62% 62%',
+      wmHover: '18 55% 55%',
+      wmLight: '18 56% 72%',
+    },
+  },
+  {
     id: 'jade',
     naam: 'Jade',
-    beschrijving: 'Botanisch groen — het origineel',
+    beschrijving: 'Botanisch groen — fris & natuurlijk',
     preview: ['#386150', '#58B09C', '#CAF7E2'],
     light: {
       primary: '163 36% 52%',
@@ -275,7 +301,7 @@ function applyPalette(palette: ColorPalette, isDark: boolean) {
 
 export function PaletteProvider({ children }: { children: ReactNode }) {
   const [paletteId, setPaletteIdState] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEY) || 'jade'
+    return localStorage.getItem(STORAGE_KEY) || 'terracotta'
   })
 
   const palette = PALETTES.find((p) => p.id === paletteId) || PALETTES[0]

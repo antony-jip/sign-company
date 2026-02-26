@@ -46,8 +46,13 @@ import {
   createMedewerker,
   updateMedewerker,
   deleteMedewerker,
+  getVerlof,
+  createVerlof,
+  updateVerlof,
+  deleteVerlof,
 } from '@/services/supabaseService';
-import type { Medewerker } from '@/types';
+import type { Medewerker, Verlof } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn, getInitials } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -128,9 +133,11 @@ function blankMedewerker(): Omit<Medewerker, 'id' | 'user_id' | 'created_at' | '
 // Component
 // ---------------------------------------------------------------------------
 export function TeamLayout() {
+  const { user } = useAuth();
   // ---- state ---------------------------------------------------------------
   const [activeTab, setActiveTab] = useState<TeamTab>('overzicht');
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
+  const [verlofLijst, setVerlofLijst] = useState<Verlof[]>([]);
   const [loading, setLoading] = useState(true);
   const [zoekterm, setZoekterm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle');
@@ -142,10 +149,37 @@ export function TeamLayout() {
   const [skillInput, setSkillInput] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Verlof dialog state
+  const [verlofDialogOpen, setVerlofDialogOpen] = useState(false);
+  const [verlofForm, setVerlofForm] = useState({
+    medewerker_id: '',
+    type: 'vakantie' as Verlof['type'],
+    start_datum: new Date().toISOString().split('T')[0],
+    eind_datum: new Date().toISOString().split('T')[0],
+    status: 'aangevraagd' as Verlof['status'],
+    opmerking: '',
+  });
+
   // ---- data loading --------------------------------------------------------
   useEffect(() => {
-    loadMedewerkers();
+    loadData();
   }, []);
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [mwData, verlofData] = await Promise.all([
+        getMedewerkers(),
+        getVerlof(),
+      ]);
+      setMedewerkers(mwData || []);
+      setVerlofLijst(verlofData || []);
+    } catch {
+      toast.error('Kon teamgegevens niet laden');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function loadMedewerkers() {
     setLoading(true);
@@ -412,7 +446,7 @@ export function TeamLayout() {
       </div>
 
       {/* ──── Beschikbaarheid tab ──── */}
-      {activeTab === 'beschikbaarheid' && (
+      {activeTab === 'beschikbaarheid' && (<>
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -482,7 +516,189 @@ export function TeamLayout() {
             </div>
           </CardContent>
         </Card>
-      )}
+
+        {/* Verlof overzicht */}
+        <Card className="mt-4">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Verlofregistratie
+              </CardTitle>
+              <Button size="sm" onClick={() => setVerlofDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                Verlof aanvragen
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {verlofLijst.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Geen verlofregistraties</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Medewerker</th>
+                      <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Type</th>
+                      <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Van</th>
+                      <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Tot</th>
+                      <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Status</th>
+                      <th className="text-right py-2 font-medium text-muted-foreground">Acties</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {verlofLijst.map((v) => {
+                      const mw = medewerkers.find((m) => m.id === v.medewerker_id);
+                      return (
+                        <tr key={v.id} className="border-b last:border-0">
+                          <td className="py-2 pr-4 font-medium">{mw?.naam || 'Onbekend'}</td>
+                          <td className="py-2 pr-4">
+                            <Badge className={cn('text-xs',
+                              v.type === 'vakantie' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                              v.type === 'ziek' && 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+                              v.type === 'ouderschapsverlof' && 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+                              v.type === 'bijzonder' && 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+                              v.type === 'bedrijfssluiting' && 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                            )}>
+                              {v.type.charAt(0).toUpperCase() + v.type.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="py-2 pr-4 text-muted-foreground">{v.start_datum}</td>
+                          <td className="py-2 pr-4 text-muted-foreground">{v.eind_datum}</td>
+                          <td className="py-2 pr-4">
+                            <Badge className={cn('text-xs',
+                              v.status === 'goedgekeurd' && 'bg-emerald-100 text-emerald-700',
+                              v.status === 'aangevraagd' && 'bg-amber-100 text-amber-700',
+                              v.status === 'afgewezen' && 'bg-red-100 text-red-700',
+                            )}>
+                              {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="py-2 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {v.status === 'aangevraagd' && (
+                                <>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7"
+                                    onClick={async () => {
+                                      await updateVerlof(v.id, { status: 'goedgekeurd' });
+                                      toast.success('Verlof goedgekeurd');
+                                      loadData();
+                                    }}
+                                  >
+                                    <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7"
+                                    onClick={async () => {
+                                      await updateVerlof(v.id, { status: 'afgewezen' });
+                                      toast.success('Verlof afgewezen');
+                                      loadData();
+                                    }}
+                                  >
+                                    <X className="h-3.5 w-3.5 text-red-600" />
+                                  </Button>
+                                </>
+                              )}
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                                onClick={async () => {
+                                  await deleteVerlof(v.id);
+                                  toast.success('Verlof verwijderd');
+                                  loadData();
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Verlof aanvraag dialog */}
+        <Dialog open={verlofDialogOpen} onOpenChange={setVerlofDialogOpen}>
+          <DialogContent className="sm:max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle>Verlof aanvragen</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label>Medewerker</Label>
+                <Select value={verlofForm.medewerker_id} onValueChange={(val) => setVerlofForm((p) => ({ ...p, medewerker_id: val }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecteer medewerker" /></SelectTrigger>
+                  <SelectContent>
+                    {medewerkers.filter((m) => m.status === 'actief').map((m) => (
+                      <SelectItem key={m.id} value={m.id}>{m.naam}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Type</Label>
+                <Select value={verlofForm.type} onValueChange={(val) => setVerlofForm((p) => ({ ...p, type: val as Verlof['type'] }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vakantie">Vakantie</SelectItem>
+                    <SelectItem value="ziek">Ziek</SelectItem>
+                    <SelectItem value="ouderschapsverlof">Ouderschapsverlof</SelectItem>
+                    <SelectItem value="bijzonder">Bijzonder verlof</SelectItem>
+                    <SelectItem value="bedrijfssluiting">Bedrijfssluiting</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-2">
+                  <Label>Van</Label>
+                  <Input type="date" value={verlofForm.start_datum} onChange={(e) => setVerlofForm((p) => ({ ...p, start_datum: e.target.value }))} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Tot</Label>
+                  <Input type="date" value={verlofForm.eind_datum} onChange={(e) => setVerlofForm((p) => ({ ...p, eind_datum: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Opmerking</Label>
+                <Textarea value={verlofForm.opmerking} onChange={(e) => setVerlofForm((p) => ({ ...p, opmerking: e.target.value }))} placeholder="Optioneel..." rows={2} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setVerlofDialogOpen(false)}>Annuleren</Button>
+              <Button onClick={async () => {
+                if (!verlofForm.medewerker_id) { toast.error('Selecteer een medewerker'); return; }
+                if (verlofForm.eind_datum < verlofForm.start_datum) { toast.error('Einddatum moet na startdatum liggen'); return; }
+                // Check overlap
+                const overlap = verlofLijst.some((v) =>
+                  v.medewerker_id === verlofForm.medewerker_id &&
+                  v.status !== 'afgewezen' &&
+                  verlofForm.start_datum <= v.eind_datum &&
+                  verlofForm.eind_datum >= v.start_datum
+                );
+                if (overlap) { toast.error('Verlof overlapt met bestaand verlof'); return; }
+                try {
+                  await createVerlof({
+                    user_id: user?.id || '',
+                    medewerker_id: verlofForm.medewerker_id,
+                    type: verlofForm.type,
+                    start_datum: verlofForm.start_datum,
+                    eind_datum: verlofForm.eind_datum,
+                    status: verlofForm.status,
+                    opmerking: verlofForm.opmerking || undefined,
+                  });
+                  toast.success('Verlof aangevraagd');
+                  setVerlofDialogOpen(false);
+                  setVerlofForm({ medewerker_id: '', type: 'vakantie', start_datum: new Date().toISOString().split('T')[0], eind_datum: new Date().toISOString().split('T')[0], status: 'aangevraagd', opmerking: '' });
+                  loadData();
+                } catch { toast.error('Kon verlof niet aanvragen'); }
+              }}>Aanvragen</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>)}
 
       {/* ──── Vaardigheden tab ──── */}
       {activeTab === 'vaardigheden' && (
@@ -634,7 +850,7 @@ export function TeamLayout() {
             placeholder="Zoek op naam, e-mail of functie..."
             value={zoekterm}
             onChange={(e) => setZoekterm(e.target.value)}
-            className="pl-9"
+            className="pl-10"
           />
         </div>
 

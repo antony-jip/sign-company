@@ -37,6 +37,7 @@ import {
   Save,
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getCalculatieProducten, getCalculatieTemplates } from '@/services/supabaseService'
 import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate } from '@/types'
@@ -83,7 +84,6 @@ function createEmptyRegel(defaults?: { marge: number; btw: number }): Calculatie
   }
 }
 
-const round2 = (n: number) => Math.round(n * 100) / 100
 
 /** Bereken verkoopprijs op basis van inkoop + marge */
 function berekenVerkoopVanInkoop(inkoop: number, margePerc: number): number {

@@ -53,6 +53,8 @@ import {
   Server,
   Info,
   ExternalLink,
+  FileText,
+  Type,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -78,8 +80,9 @@ import {
   deleteOfferteTemplate,
 } from '@/services/supabaseService'
 import { toast } from 'sonner'
-import { formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
+import { HuisstijlTab } from './HuisstijlTab'
 
 // Font systeem constanten
 const BESCHIKBARE_FONTS = [
@@ -140,6 +143,7 @@ function applyFontSize(size: FontSize) {
 const settingsTabs = [
   { id: 'profiel', label: 'Profiel', icon: User, description: 'Uw persoonlijke gegevens' },
   { id: 'bedrijf', label: 'Bedrijf', icon: Building2, description: 'Bedrijfsinformatie en logo' },
+  { id: 'huisstijl', label: 'Huisstijl', icon: FileText, description: 'Document styling en briefpapier' },
   { id: 'calculatie', label: 'Calculatie', icon: Calculator, description: 'Producten, marges en eenheden' },
   { id: 'aanpassingen', label: 'Aanpassingen', icon: Sliders, description: 'Pipeline, statussen en workflows' },
   { id: 'meldingen', label: 'Meldingen', icon: Bell, description: 'E-mail en pushnotificaties' },
@@ -152,6 +156,7 @@ function renderTabContent(tabId: string) {
   switch (tabId) {
     case 'profiel': return <ProfielTab />
     case 'bedrijf': return <BedrijfTab />
+    case 'huisstijl': return <HuisstijlTab />
     case 'calculatie': return <CalculatieTab />
     case 'aanpassingen': return <AanpassingenTab />
     case 'meldingen': return <MeldingenTab />
@@ -2869,10 +2874,10 @@ function EmailSettingsDialog({
       setSuccess('E-mailinstellingen opgeslagen!')
       onSaved()
       setTimeout(() => onOpenChange(false), 800)
-    } catch (err: any) {
+    } catch (err: unknown) {
       // If Supabase save fails, local save already succeeded
       if (isSupabaseConfigured()) {
-        setError(`Server fout: ${err.message}. Instellingen zijn lokaal opgeslagen.`)
+        setError(`Server fout: ${err instanceof Error ? err.message : 'Onbekende fout'}. Instellingen zijn lokaal opgeslagen.`)
       } else {
         setSuccess('E-mailinstellingen lokaal opgeslagen (demo modus)')
         onSaved()
@@ -2919,7 +2924,7 @@ function EmailSettingsDialog({
             E-mail SMTP Instellingen
           </DialogTitle>
           <DialogDescription>
-            Configureer je SMTP server om e-mails te verzenden vanuit Workmate.
+            Configureer je SMTP server om e-mails te verzenden vanuit Sign Company.
           </DialogDescription>
         </DialogHeader>
 
@@ -3160,6 +3165,18 @@ function IntegratiesTab() {
           <span className="text-accent dark:text-wm-light font-bold text-sm">AI</span>
         </div>
       ),
+    },
+    {
+      id: 'kvk',
+      name: 'KvK API',
+      description: 'Kamer van Koophandel opzoeken voor bedrijfsgegevens',
+      connected: false,
+      icon: (
+        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+          <span className="text-blue-700 dark:text-blue-400 font-bold text-sm">KvK</span>
+        </div>
+      ),
+      details: 'Optioneel — zonder API key worden demogegevens gebruikt',
     },
   ]
 
@@ -3474,16 +3491,31 @@ function BeveiligingTab() {
 // Alle mogelijke sidebar items met hun labels en secties
 const ALL_SIDEBAR_ITEMS = [
   { label: 'Dashboard', section: 'Overzicht' },
-  { label: 'Projecten', section: 'Werk' },
-  { label: 'Taken', section: 'Werk' },
-  { label: 'Klanten', section: 'Werk' },
-  { label: 'Offertes', section: 'Werk' },
-  { label: 'Documenten', section: 'Werk' },
-  { label: 'Email', section: 'Communicatie' },
-  { label: 'Nieuwsbrieven', section: 'Communicatie' },
+  { label: 'Klanten', section: 'Verkoop' },
+  { label: 'Deals', section: 'Verkoop' },
+  { label: 'Offertes', section: 'Verkoop' },
+  { label: 'Facturen', section: 'Verkoop' },
+  { label: 'Projecten', section: 'Productie' },
+  { label: 'Taken', section: 'Productie' },
+  { label: 'Montage', section: 'Productie' },
+  { label: 'Werkbonnen', section: 'Productie' },
+  { label: 'Nacalculatie', section: 'Productie' },
   { label: 'Planning', section: 'Planning' },
   { label: 'Tijdregistratie', section: 'Planning' },
-  { label: 'Financieel', section: 'Beheer' },
+  { label: 'Booking', section: 'Planning' },
+  { label: 'Email', section: 'Communicatie' },
+  { label: 'Nieuwsbrieven', section: 'Communicatie' },
+  { label: 'Lead Capture', section: 'Communicatie' },
+  { label: 'Financieel', section: 'Financieel' },
+  { label: 'Uitgaven', section: 'Financieel' },
+  { label: 'Leveranciers', section: 'Financieel' },
+  { label: 'Forecast', section: 'Financieel' },
+  { label: 'Documenten', section: 'Beheer' },
+  { label: 'Voorraad', section: 'Beheer' },
+  { label: 'Bestelbonnen', section: 'Beheer' },
+  { label: 'Leveringsbonnen', section: 'Beheer' },
+  { label: 'Rapportages', section: 'Beheer' },
+  { label: 'Team', section: 'Beheer' },
   { label: 'Importeren', section: 'Beheer' },
   { label: 'AI Assistent', section: 'Beheer' },
 ]
@@ -3661,7 +3693,7 @@ function WeergaveTab() {
         {/* Font Family Selector */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <Settings className="w-5 h-5 text-primary" />
+            <Type className="w-5 h-5 text-primary" />
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 Lettertype
@@ -3671,39 +3703,24 @@ function WeergaveTab() {
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {BESCHIKBARE_FONTS.map((font) => {
-              const isActive = fontFamily === font.value
-              return (
-                <button
-                  key={font.value}
-                  onClick={() => handleSelectFont(font.value)}
-                  className={`relative group rounded-xl border-2 p-3 transition-all duration-200 text-left ${
-                    isActive
-                      ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20'
-                      : 'border-border hover:border-primary/40 hover:shadow-sm'
-                  }`}
-                >
-                  <span
-                    className="block text-lg font-semibold text-foreground mb-0.5"
-                    style={{ fontFamily: `'${font.value}', sans-serif` }}
-                  >
-                    Aa
-                  </span>
-                  <p className={`text-xs font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
-                    {font.label}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-                    {font.beschrijving}
-                  </p>
-                  {isActive && (
-                    <div className="absolute top-2 right-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
-                    </div>
-                  )}
-                </button>
-              )
-            })}
+          <div className="grid grid-cols-2 gap-2">
+            {BESCHIKBARE_FONTS.map((font) => (
+              <button
+                key={font.value}
+                onClick={() => handleSelectFont(font.value)}
+                className={cn(
+                  'p-3 rounded-lg border text-left transition-all',
+                  fontFamily === font.value
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                    : 'border-border hover:border-primary/30 hover:bg-muted/50'
+                )}
+              >
+                <span className="text-sm font-medium" style={{ fontFamily: font.value }}>
+                  {font.label}
+                </span>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{font.beschrijving}</p>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -3712,49 +3729,32 @@ function WeergaveTab() {
         {/* Font Size Selector */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <Settings className="w-5 h-5 text-primary" />
+            <Type className="w-5 h-5 text-primary" />
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 Lettergrootte
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Pas de tekstgrootte aan naar jouw voorkeur
+                Pas de tekstgrootte aan voor betere leesbaarheid
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {BESCHIKBARE_FONT_SIZES.map((size) => {
-              const isActive = fontSize === size.value
-              return (
-                <button
-                  key={size.value}
-                  onClick={() => handleSelectFontSize(size.value)}
-                  className={`relative group rounded-xl border-2 p-3 transition-all duration-200 text-left ${
-                    isActive
-                      ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20'
-                      : 'border-border hover:border-primary/40 hover:shadow-sm'
-                  }`}
-                >
-                  <span
-                    className="block font-semibold text-foreground mb-1"
-                    style={{ fontSize: size.cssValue }}
-                  >
-                    Aa
-                  </span>
-                  <p className={`text-xs font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
-                    {size.label}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-                    {size.beschrijving}
-                  </p>
-                  {isActive && (
-                    <div className="absolute top-2 right-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
-                    </div>
-                  )}
-                </button>
-              )
-            })}
+          <div className="grid grid-cols-4 gap-2">
+            {BESCHIKBARE_FONT_SIZES.map((size) => (
+              <button
+                key={size.value}
+                onClick={() => handleSelectFontSize(size.value)}
+                className={cn(
+                  'p-3 rounded-lg border text-center transition-all',
+                  fontSize === size.value
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                    : 'border-border hover:border-primary/30 hover:bg-muted/50'
+                )}
+              >
+                <span className="text-sm font-medium">{size.label}</span>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{size.beschrijving}</p>
+              </button>
+            ))}
           </div>
         </div>
 

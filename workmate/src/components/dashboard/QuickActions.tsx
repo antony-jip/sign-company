@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { FolderPlus, FilePlus, UserPlus, Receipt, Calendar, Mail, ArrowUpRight } from 'lucide-react'
+import { FolderPlus, FilePlus, UserPlus, Receipt, Wrench, ClipboardCheck, ArrowUpRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface QuickAction {
@@ -14,18 +14,18 @@ interface QuickAction {
 
 const actions: QuickAction[] = [
   {
-    label: 'Nieuw Project',
-    description: 'Start een project',
-    icon: FolderPlus,
-    href: '/projecten/nieuw',
-    gradient: 'from-primary to-wm-light',
-  },
-  {
     label: 'Nieuwe Offerte',
     description: 'Maak een offerte',
     icon: FilePlus,
     href: '/offertes/nieuw',
     gradient: 'from-accent to-primary',
+  },
+  {
+    label: 'Nieuw Project',
+    description: 'Start een project',
+    icon: FolderPlus,
+    href: '/projecten/nieuw',
+    gradient: 'from-primary to-wm-light',
   },
   {
     label: 'Nieuwe Klant',
@@ -35,24 +35,24 @@ const actions: QuickAction[] = [
     gradient: 'from-[#4A442D] to-[#6b6549]',
   },
   {
-    label: 'Nieuwe Factuur',
-    description: 'Maak een factuur',
-    icon: Receipt,
-    href: '/facturen',
+    label: 'Montage',
+    description: 'Plan een montage',
+    icon: Wrench,
+    href: '/montage',
+    gradient: 'from-[#b05e28] to-[#d4884e]',
+  },
+  {
+    label: 'Werkbon',
+    description: 'Maak werkbon',
+    icon: ClipboardCheck,
+    href: '/werkbonnen',
     gradient: 'from-[#8b7355] to-[#b09670]',
   },
   {
-    label: 'Planning',
-    description: 'Bekijk kalender',
-    icon: Calendar,
-    href: '/kalender',
-    gradient: 'from-accent to-primary',
-  },
-  {
-    label: 'Email',
-    description: 'Stuur een email',
-    icon: Mail,
-    href: '/email',
+    label: 'Factuur',
+    description: 'Maak een factuur',
+    icon: Receipt,
+    href: '/facturen',
     gradient: 'from-accent to-primary',
   },
 ]

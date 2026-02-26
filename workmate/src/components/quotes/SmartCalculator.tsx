@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import { Calculator, RotateCcw, PlusCircle } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { round2 } from '@/utils/budgetUtils'
 
 interface SmartCalculatorProps {
   onAddToOfferte?: (data: {
@@ -32,12 +33,12 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
   const [btwPercentage, setBtwPercentage] = useState<number>(21)
 
   const berekening = useMemo(() => {
-    const arbeidskosten = uren * uurtarief
-    const kosten = arbeidskosten + materiaalkosten
-    const margeBedrag = kosten * (margePercentage / 100)
-    const subtotaal = kosten + margeBedrag
-    const btw = subtotaal * (btwPercentage / 100)
-    const totaal = subtotaal + btw
+    const arbeidskosten = round2(uren * uurtarief)
+    const kosten = round2(arbeidskosten + materiaalkosten)
+    const margeBedrag = round2(kosten * (margePercentage / 100))
+    const subtotaal = round2(kosten + margeBedrag)
+    const btw = round2(subtotaal * (btwPercentage / 100))
+    const totaal = round2(subtotaal + btw)
 
     return {
       arbeidskosten,

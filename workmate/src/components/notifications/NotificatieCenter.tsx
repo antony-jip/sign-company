@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   Truck,
   Banknote,
+  Wallet,
+  CalendarCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +71,16 @@ const typeConfig: Record<
     icon: Banknote,
     colorClass: "text-emerald-600",
     bgClass: "bg-emerald-100",
+  },
+  budget_waarschuwing: {
+    icon: Wallet,
+    colorClass: "text-orange-600",
+    bgClass: "bg-orange-100",
+  },
+  booking_nieuw: {
+    icon: CalendarCheck,
+    colorClass: "text-purple-600",
+    bgClass: "bg-purple-100",
   },
   algemeen: {
     icon: Bell,

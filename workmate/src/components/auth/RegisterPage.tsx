@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import { Mail, Lock, Eye, EyeOff, User, Loader2, Sparkles } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Loader2 } from 'lucide-react'
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0
@@ -74,8 +74,8 @@ export function RegisterPage() {
       await register(email, password, { voornaam, achternaam })
       toast.success('Account succesvol aangemaakt')
       navigate('/')
-    } catch (error: any) {
-      toast.error(error?.message || 'Registreren mislukt. Probeer opnieuw.')
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Registreren mislukt. Probeer opnieuw.')
     } finally {
       setIsLoading(false)
     }
@@ -94,12 +94,19 @@ export function RegisterPage() {
       <div className="w-full max-w-md animate-scale-in relative z-10">
         <Card className="shadow-2xl border-0 backdrop-blur-sm bg-card/95">
           <CardHeader className="text-center pb-2">
-            {/* Workmate Logo */}
+            {/* Sign Company Logo */}
             <div className="flex items-center justify-center gap-3 mb-6">
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center shadow-lg shadow-primary/25">
-                <Sparkles className="w-6 h-6 text-white" />
+                <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="4" width="20" height="12" rx="2" />
+                  <path d="M8 20h8" />
+                  <path d="M12 16v4" />
+                  <path d="M7 9h2" />
+                  <path d="M15 9h2" />
+                  <path d="M10 12h4" />
+                </svg>
               </div>
-              <span className="text-2xl font-bold text-foreground">Workmate</span>
+              <span className="text-2xl font-bold text-foreground">Sign Company</span>
             </div>
             <CardTitle className="text-2xl font-bold">Account aanmaken</CardTitle>
             <CardDescription className="text-base">Maak een nieuw account aan om te beginnen</CardDescription>
@@ -266,7 +273,7 @@ export function RegisterPage() {
               {/* Register Button */}
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-accent to-primary hover:from-[#2d5243] hover:to-[#4a9d8a] text-white shadow-lg shadow-primary/25 transition-all duration-200"
+                className="w-full h-11 bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white shadow-lg shadow-primary/25 transition-all duration-200"
                 disabled={isLoading || !agreeTerms}
               >
                 {isLoading ? (

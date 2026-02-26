@@ -1,12 +1,18 @@
-import React, { useEffect, useRef, useMemo } from 'react'
+import React, { useEffect, useRef, useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, FolderKanban, Users, FileText, Files,
-  Mail, Calendar, PiggyBank, Bot, Settings, ChevronLeft,
-  ChevronRight, LogOut, Menu, X, CheckSquare, Newspaper, Upload,
-  Sparkles, Receipt, BarChart3, Clock, Calculator, Wrench, UsersRound,
+  LayoutDashboard, FolderKanban, Users, FileText,
+  Mail, Calendar, PiggyBank, Settings, ChevronLeft,
+  ChevronRight, LogOut, Menu, X, CheckSquare,
+  Receipt, BarChart3, Clock, Wrench, UsersRound,
+  ClipboardCheck, Truck, ShoppingCart, Warehouse,
+  Briefcase, UserPlus, CreditCard, Files, Newspaper,
+  Upload, Bot, Calculator, TrendingUp, PackageCheck,
+  CalendarCheck,
   type LucideIcon
 } from 'lucide-react'
+import { getOffertes, getMontageAfspraken, getProjecten } from '@/services/supabaseService'
+import type { Offerte, MontageAfspraak, Project } from '@/types'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -32,14 +38,22 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    section: 'Werk',
+    section: 'Verkoop',
+    items: [
+      { label: 'Klanten', icon: Users, path: '/klanten' },
+      { label: 'Deals', icon: Briefcase, path: '/deals' },
+      { label: 'Offertes', icon: FileText, path: '/offertes' },
+      { label: 'Facturen', icon: Receipt, path: '/facturen' },
+    ],
+  },
+  {
+    section: 'Productie',
     items: [
       { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
       { label: 'Taken', icon: CheckSquare, path: '/taken' },
-      { label: 'Klanten', icon: Users, path: '/klanten' },
-      { label: 'Offertes', icon: FileText, path: '/offertes' },
-      { label: 'Facturen', icon: Receipt, path: '/facturen' },
-      { label: 'Documenten', icon: Files, path: '/documenten' },
+      { label: 'Montage', icon: Wrench, path: '/montage' },
+      { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
+      { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
     ],
   },
   {
@@ -47,6 +61,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Planning', icon: Calendar, path: '/kalender' },
       { label: 'Tijdregistratie', icon: Clock, path: '/tijdregistratie' },
+      { label: 'Booking', icon: CalendarCheck, path: '/booking' },
     ],
   },
   {
@@ -54,14 +69,26 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
       { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
+      { label: 'Lead Capture', icon: UserPlus, path: '/leads' },
+    ],
+  },
+  {
+    section: 'Financieel',
+    items: [
+      { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
+      { label: 'Uitgaven', icon: CreditCard, path: '/uitgaven' },
+      { label: 'Leveranciers', icon: Truck, path: '/leveranciers' },
+      { label: 'Forecast', icon: TrendingUp, path: '/forecast' },
     ],
   },
   {
     section: 'Beheer',
     items: [
-      { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
+      { label: 'Documenten', icon: Files, path: '/documenten' },
+      { label: 'Voorraad', icon: Warehouse, path: '/voorraad' },
+      { label: 'Bestelbonnen', icon: ShoppingCart, path: '/bestelbonnen' },
+      { label: 'Leveringsbonnen', icon: PackageCheck, path: '/leveringsbonnen' },
       { label: 'Rapportages', icon: BarChart3, path: '/rapportages' },
-      { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
       { label: 'Team', icon: UsersRound, path: '/team' },
       { label: 'Importeren', icon: Upload, path: '/importeren' },
       { label: 'AI Assistent', icon: Bot, path: '/ai' },
@@ -78,12 +105,12 @@ export function Sidebar() {
 
   // Filter navigatie op basis van instellingen — Instellingen is altijd zichtbaar
   const filteredNavSections = useMemo(() => {
-    const sidebarItems = settings.sidebar_items
+    const sidebarItems = settings?.sidebar_items
     // Als sidebar_items niet is ingesteld of leeg is, toon alles
-    if (!sidebarItems || sidebarItems.length === 0) return navSections
-    // Migratie: 'Kalender' → 'Planning', 'Montage' → 'Planning'
+    if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return navSections
+    // Migratie: 'Kalender' → 'Planning'
     const normalized = sidebarItems.map((s: string) =>
-      s === 'Kalender' || s === 'Montage' ? 'Planning' : s
+      s === 'Kalender' ? 'Planning' : s
     )
     return navSections
       .map((section) => ({
@@ -170,15 +197,19 @@ export function Sidebar() {
         )}
       >
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/25">
-          <Sparkles className="w-5 h-5 text-white" />
+          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="4" width="20" height="12" rx="2" />
+            <path d="M8 20h8" />
+            <path d="M12 16v4" />
+            <path d="M7 9h2" />
+            <path d="M15 9h2" />
+            <path d="M10 12h4" />
+          </svg>
         </div>
         {!isCollapsed && (
           <div>
             <span className="text-[15px] font-bold text-white tracking-tight font-display">
-              Workmate
-            </span>
-            <span className="text-[10px] text-primary/60 font-medium ml-1.5">
-              CRM
+              Sign Company
             </span>
           </div>
         )}
@@ -207,6 +238,9 @@ export function Sidebar() {
         ))}
       </nav>
 
+      {/* Mini status bar — sign-industry pulse */}
+      {!isCollapsed && <SidebarPulse />}
+
       {/* User section */}
       <div className="border-t border-white/[0.05] p-3 space-y-2 flex-shrink-0">
         {!isCollapsed && user && (
@@ -230,6 +264,7 @@ export function Sidebar() {
               className="w-7 h-7 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-200 rounded-lg"
               onClick={logout}
               title="Uitloggen"
+              aria-label="Uitloggen"
             >
               <LogOut className="w-3.5 h-3.5" />
             </Button>
@@ -257,6 +292,7 @@ export function Sidebar() {
             isCollapsed && 'px-0 justify-center'
           )}
           onClick={toggleSidebar}
+          aria-label={isCollapsed ? 'Sidebar uitklappen' : 'Sidebar inklappen'}
         >
           {isCollapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -310,5 +346,54 @@ export function Sidebar() {
         {sidebarContent}
       </aside>
     </>
+  )
+}
+
+function SidebarPulse() {
+  const [stats, setStats] = useState({ openOffertes: 0, montagesWeek: 0, actieveProjecten: 0 })
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([getOffertes(), getMontageAfspraken(), getProjecten()])
+      .then(([offertes, montages, projecten]: [Offerte[], MontageAfspraak[], Project[]]) => {
+        if (cancelled) return
+        const now = new Date()
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const weekEnd = new Date(startOfToday)
+        weekEnd.setDate(weekEnd.getDate() + 7)
+
+        setStats({
+          openOffertes: offertes.filter((o) => ['verzonden', 'bekeken'].includes(o.status)).length,
+          montagesWeek: montages.filter((m) => {
+            const d = new Date(m.datum)
+            return m.status !== 'afgerond' && d >= startOfToday && d <= weekEnd
+          }).length,
+          actieveProjecten: projecten.filter((p) => p.status === 'actief').length,
+        })
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const items = [
+    { label: 'Open offertes', value: stats.openOffertes, color: 'text-blue-400' },
+    { label: 'Montages deze week', value: stats.montagesWeek, color: 'text-orange-400' },
+    { label: 'Actieve projecten', value: stats.actieveProjecten, color: 'text-emerald-400' },
+  ]
+
+  return (
+    <div className="mx-3 mb-1 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.04]">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-white/20 mb-2 px-0.5">
+        Status
+      </p>
+      <div className="space-y-1.5">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-center justify-between px-0.5">
+            <span className="text-[11px] text-gray-500">{item.label}</span>
+            <span className={`text-[11px] font-semibold ${item.color}`}>{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }

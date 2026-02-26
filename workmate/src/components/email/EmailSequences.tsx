@@ -115,7 +115,7 @@ export function EmailSequences() {
     ])
   }
 
-  const updateStap = (index: number, field: keyof EmailSequenceStap, value: any) => {
+  const updateStap = (index: number, field: keyof EmailSequenceStap, value: string | number) => {
     setFormStappen((prev) =>
       prev.map((s, i) => (i === index ? { ...s, [field]: value } : s))
     )

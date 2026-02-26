@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Phone, MapPin, Building2, FolderKanban } from 'lucide-react'
+import { Mail, Phone, MapPin, Building2, FolderKanban, Pin } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
 import type { Klant } from '@/types'
 
@@ -35,9 +35,38 @@ export function ClientCard({ klant, projectCount }: ClientCardProps) {
               </p>
             </div>
           </div>
-          <Badge className={cn('flex-shrink-0 capitalize', getStatusColor(klant.status))}>
-            {klant.status}
-          </Badge>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Klant label dots */}
+            {(klant.klant_labels || []).map((label) => {
+              const dotColors: Record<string, string> = {
+                vooruit_betalen: 'bg-orange-500',
+                niet_helpen: 'bg-red-500',
+                voorrang: 'bg-green-500',
+                grote_klant: 'bg-blue-500',
+                wanbetaler: 'bg-red-500',
+              }
+              const labelNames: Record<string, string> = {
+                vooruit_betalen: 'Vooruit betalen',
+                niet_helpen: 'Niet helpen',
+                voorrang: 'Voorrang',
+                grote_klant: 'Grote klant',
+                wanbetaler: 'Wanbetaler',
+              }
+              return (
+                <span
+                  key={label}
+                  className={`w-2.5 h-2.5 rounded-full ${dotColors[label] || 'bg-gray-400'}`}
+                  title={labelNames[label] || label}
+                />
+              )
+            })}
+            {klant.gepinde_notitie && (
+              <Pin className="w-3.5 h-3.5 text-amber-500" title={klant.gepinde_notitie} />
+            )}
+            <Badge className={cn('capitalize', getStatusColor(klant.status))}>
+              {klant.status}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

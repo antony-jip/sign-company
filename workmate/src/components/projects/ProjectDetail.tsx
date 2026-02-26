@@ -39,6 +39,10 @@ import {
   Save,
   ChevronDown,
   ChevronUp,
+  AlertTriangle,
+  Shield,
+  UserPlus,
+  ClipboardCheck,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -65,6 +69,7 @@ import {
 import {
   getProject,
   updateProject,
+  createProject,
   getTakenByProject,
   getDocumenten,
   createTaak,
@@ -76,9 +81,18 @@ import {
   createTekeningGoedkeuring,
   getTekeningGoedkeuringen,
   getKlant,
+  getKlanten,
   createFactuur,
   createFactuurItem,
+  getTijdregistratiesByProject,
+  getMedewerkers,
+  getProjectToewijzingen,
+  createProjectToewijzing,
+  deleteProjectToewijzing,
+  getWerkbonnenByProject,
+  getUitgavenByProject,
 } from '@/services/supabaseService'
+import { round2 } from '@/utils/budgetUtils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { analyzeProject } from '@/services/aiService'
@@ -86,7 +100,8 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
-import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur } from '@/types'
+import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Uitgave } from '@/types'
+import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
 const statusLabels: Record<string, string> = {
@@ -206,6 +221,25 @@ export function ProjectDetail() {
   // Invoice from offerte state
   const [creatingFactuurForOfferte, setCreatingFactuurForOfferte] = useState<string | null>(null)
 
+  // Budget tracking state
+  const [projectTijdregistraties, setProjectTijdregistraties] = useState<Tijdregistratie[]>([])
+
+  // Project rechten state
+  const [alleMedewerkers, setAlleMedewerkers] = useState<Medewerker[]>([])
+  const [projectToewijzingen, setProjectToewijzingen] = useState<ProjectToewijzing[]>([])
+  const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
+  const [projectUitgaven, setProjectUitgaven] = useState<Uitgave[]>([])
+  const [toewijzingMedewerkerId, setToewijzingMedewerkerId] = useState('')
+  const [toewijzingRol, setToewijzingRol] = useState<ProjectToewijzing['rol']>('medewerker')
+
+  // Project kopiëren state
+  const [kopieDialogOpen, setKopieDialogOpen] = useState(false)
+  const [kopieNaam, setKopieNaam] = useState('')
+  const [kopieKlantId, setKopieKlantId] = useState('')
+  const [kopieStartDatum, setKopieStartDatum] = useState(new Date().toISOString().split('T')[0])
+  const [alleKlanten, setAlleKlanten] = useState<Klant[]>([])
+  const [kopieBezig, setKopieBezig] = useState(false)
+
   // Email offerte state (simple offerte mail)
   const [emailOfferteOpen, setEmailOfferteOpen] = useState(false)
   const [emailOnderwerp, setEmailOnderwerp] = useState('')
@@ -264,6 +298,9 @@ export function ProjectDetail() {
         vervaldatum: vervaldatum.toISOString().split('T')[0],
         notities: `Factuur aangemaakt vanuit offerte ${offerte.nummer}`,
         voorwaarden: '',
+        bron_type: 'offerte',
+        bron_offerte_id: offerte.id,
+        bron_project_id: id,
       })
 
       // Create factuur items from offerte items
@@ -282,6 +319,11 @@ export function ProjectDetail() {
         )
       )
 
+      // Update offerte met factuur link (bidirectioneel)
+      await updateOfferte(offerte.id, {
+        geconverteerd_naar_factuur_id: newFactuur.id,
+      })
+
       toast.success(`Factuur ${factuurNummer} aangemaakt vanuit offerte ${offerte.nummer}`)
       navigate(`/facturen`)
     } catch (err) {
@@ -289,6 +331,69 @@ export function ProjectDetail() {
       toast.error('Kon factuur niet aanmaken')
     } finally {
       setCreatingFactuurForOfferte(null)
+    }
+  }
+
+  const openKopieDialog = async () => {
+    if (!project) return
+    setKopieNaam(`${project.naam} (kopie)`)
+    setKopieKlantId(project.klant_id || '')
+    setKopieStartDatum(new Date().toISOString().split('T')[0])
+    try {
+      const klanten = await getKlanten()
+      setAlleKlanten(klanten)
+    } catch {
+      setAlleKlanten([])
+    }
+    setKopieDialogOpen(true)
+  }
+
+  const handleKopieerProject = async () => {
+    if (!project || !user || !kopieNaam.trim()) return
+    setKopieBezig(true)
+    try {
+      const gekozenKlant = alleKlanten.find(k => k.id === kopieKlantId)
+      const newProject = await createProject({
+        user_id: user.id,
+        naam: kopieNaam.trim(),
+        klant_id: kopieKlantId || project.klant_id,
+        beschrijving: project.beschrijving,
+        status: 'gepland',
+        prioriteit: project.prioriteit,
+        start_datum: kopieStartDatum,
+        eind_datum: '',
+        budget: project.budget,
+        besteed: 0,
+        voortgang: 0,
+        team_leden: [...project.team_leden],
+        budget_waarschuwing_pct: project.budget_waarschuwing_pct,
+        bron_project_id: project.id,
+      })
+
+      // Kopieer taken (zonder datums / bestede tijd)
+      for (const taak of projectTaken) {
+        await createTaak({
+          user_id: user.id,
+          project_id: newProject.id,
+          titel: taak.titel,
+          beschrijving: taak.beschrijving,
+          status: 'todo',
+          prioriteit: taak.prioriteit,
+          toegewezen_aan: taak.toegewezen_aan,
+          deadline: '',
+          geschatte_tijd: taak.geschatte_tijd,
+          bestede_tijd: 0,
+        })
+      }
+
+      toast.success(`Project "${kopieNaam}" aangemaakt met ${projectTaken.length} taken`)
+      setKopieDialogOpen(false)
+      navigate(`/projecten/${newProject.id}`)
+    } catch (err) {
+      logger.error('Fout bij kopiëren project:', err)
+      toast.error('Kon project niet kopiëren')
+    } finally {
+      setKopieBezig(false)
     }
   }
 
@@ -365,12 +470,17 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, uitgavenData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
           getOffertesByProject(id),
           getTekeningGoedkeuringen(id),
+          getTijdregistratiesByProject(id),
+          getMedewerkers(),
+          getProjectToewijzingen(id),
+          getWerkbonnenByProject(id),
+          getUitgavenByProject(id),
         ])
         if (!cancelled) {
           setProject(projectData)
@@ -378,6 +488,11 @@ export function ProjectDetail() {
           setProjectDocumenten(allDocumenten.filter((d) => d.project_id === id))
           setProjectOffertes(offertesData)
           setGoedkeuringen(goedkeuringenData)
+          setProjectTijdregistraties(tijdData)
+          setAlleMedewerkers(medewerkersData || [])
+          setProjectToewijzingen(toewijzingenData || [])
+          setProjectWerkbonnen(werkbonnenData || [])
+          setProjectUitgaven(uitgavenData || [])
         }
 
         // Fetch klant data
@@ -642,6 +757,15 @@ export function ProjectDetail() {
                   <Receipt className="h-4 w-4 mr-1.5" />
                   Factuur
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={openKopieDialog}
+                  className="h-8 px-3 text-wm-pale hover:text-white hover:bg-white/10 border border-white/10"
+                >
+                  <Copy className="h-4 w-4 mr-1.5" />
+                  Kopiëren
+                </Button>
               </div>
             </div>
 
@@ -707,6 +831,43 @@ export function ProjectDetail() {
                 <p className="text-[10px] mt-0.5 text-wm-pale/60">afgerond</p>
               </div>
             </div>
+
+            {/* Budget waarschuwing */}
+            {(() => {
+              const bs = berekenBudgetStatus(project, projectTijdregistraties)
+              if (bs.budget <= 0 || bs.niveau === 'normaal') return null
+              return (
+                <div className={`mt-4 flex items-center gap-3 rounded-lg px-4 py-2 ${
+                  bs.niveau === 'overschreden'
+                    ? 'bg-red-500/20 border border-red-400/30'
+                    : 'bg-amber-500/20 border border-amber-400/30'
+                }`}>
+                  <AlertTriangle className={`h-5 w-5 flex-shrink-0 ${
+                    bs.niveau === 'overschreden' ? 'text-red-300' : 'text-amber-300'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white">
+                      {bs.niveau === 'overschreden'
+                        ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
+                        : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
+                    </p>
+                    <p className="text-xs text-wm-pale/70">
+                      {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)} gebruikt
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          bs.niveau === 'overschreden' ? 'bg-red-400' : 'bg-amber-400'
+                        }`}
+                        style={{ width: `${Math.min(bs.percentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         </div>
       </div>
@@ -1078,6 +1239,198 @@ export function ProjectDetail() {
                     </div>
                   ))}
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Projectrechten ── */}
+          <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                  <Shield className="h-3.5 w-3.5 text-white" />
+                </div>
+                Rechten
+                <span className="text-xs text-muted-foreground font-normal ml-auto">{projectToewijzingen.length}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Bestaande toewijzingen */}
+              {projectToewijzingen.length > 0 && (
+                <div className="space-y-1.5">
+                  {projectToewijzingen.map((tw) => {
+                    const mw = alleMedewerkers.find(m => m.id === tw.medewerker_id)
+                    return (
+                      <div key={tw.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                        <div className="h-6 w-6 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
+                          {getInitials(mw?.naam || '?')}
+                        </div>
+                        <span className="text-sm font-medium text-foreground truncate flex-1">{mw?.naam || 'Onbekend'}</span>
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+                          tw.rol === 'eigenaar' ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                          tw.rol === 'viewer' ? 'border-gray-300 bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400' :
+                          'border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                        }`}>
+                          {tw.rol}
+                        </Badge>
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-red-400 hover:text-red-600"
+                          onClick={async () => {
+                            try {
+                              await deleteProjectToewijzing(tw.id)
+                              setProjectToewijzingen(prev => prev.filter(t => t.id !== tw.id))
+                              toast.success('Toewijzing verwijderd')
+                            } catch { toast.error('Kon toewijzing niet verwijderen') }
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Toevoegen */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={toewijzingMedewerkerId}
+                  onChange={(e) => setToewijzingMedewerkerId(e.target.value)}
+                  className="flex-1 text-xs border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="">Medewerker...</option>
+                  {alleMedewerkers
+                    .filter(m => m.status === 'actief' && !projectToewijzingen.some(t => t.medewerker_id === m.id))
+                    .map(m => <option key={m.id} value={m.id}>{m.naam}</option>)
+                  }
+                </select>
+                <select
+                  value={toewijzingRol}
+                  onChange={(e) => setToewijzingRol(e.target.value as ProjectToewijzing['rol'])}
+                  className="w-24 text-xs border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="medewerker">Medewerker</option>
+                  <option value="eigenaar">Eigenaar</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
+                  disabled={!toewijzingMedewerkerId}
+                  onClick={async () => {
+                    if (!toewijzingMedewerkerId || !user) return
+                    try {
+                      const created = await createProjectToewijzing({
+                        user_id: user.id,
+                        project_id: id!,
+                        medewerker_id: toewijzingMedewerkerId,
+                        rol: toewijzingRol,
+                      })
+                      setProjectToewijzingen(prev => [...prev, created])
+                      setToewijzingMedewerkerId('')
+                      toast.success('Medewerker toegewezen')
+                    } catch { toast.error('Kon niet toewijzen') }
+                  }}
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Werkbonnen ── */}
+          <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="p-1 rounded-md bg-amber-500/10">
+                    <ClipboardCheck className="h-3.5 w-3.5 text-amber-600" />
+                  </div>
+                  Werkbonnen
+                  <span className="text-xs text-muted-foreground font-normal">{projectWerkbonnen.length}</span>
+                </CardTitle>
+                <Button
+                  variant="ghost" size="icon" className="h-7 w-7"
+                  onClick={() => navigate(`/werkbonnen/nieuw`)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {projectWerkbonnen.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">Geen werkbonnen</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {projectWerkbonnen.map((wb) => (
+                    <div
+                      key={wb.id}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/werkbonnen/${wb.id}`)}
+                    >
+                      <div>
+                        <p className="text-sm font-medium font-mono">{wb.werkbon_nummer}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        wb.status === 'concept' ? 'bg-gray-100 text-gray-700' :
+                        wb.status === 'ingediend' ? 'bg-blue-100 text-blue-700' :
+                        wb.status === 'goedgekeurd' ? 'bg-green-100 text-green-700' :
+                        'bg-purple-100 text-purple-700'
+                      }`}>
+                        {wb.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Uitgaven ── */}
+          <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="p-1 rounded-md bg-red-500/10">
+                    <CreditCard className="h-3.5 w-3.5 text-red-600" />
+                  </div>
+                  Uitgaven
+                  <span className="text-xs text-muted-foreground font-normal">{projectUitgaven.length}</span>
+                </CardTitle>
+                <Button
+                  variant="ghost" size="icon" className="h-7 w-7"
+                  onClick={() => navigate('/uitgaven')}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {projectUitgaven.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">Geen uitgaven</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    {projectUitgaven.slice(0, 5).map((uit) => (
+                      <div
+                        key={uit.id}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{uit.omschrijving}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(uit.datum).toLocaleDateString('nl-NL')}</p>
+                        </div>
+                        <span className="text-sm font-medium">{formatCurrency(uit.bedrag_incl_btw)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 pt-3 border-t flex justify-between text-sm">
+                    <span className="text-muted-foreground">Totaal</span>
+                    <span className="font-semibold">{formatCurrency(round2(projectUitgaven.reduce((s, u) => s + u.bedrag_incl_btw, 0)))}</span>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -1592,6 +1945,74 @@ export function ProjectDetail() {
             >
               <Send className="mr-1.5 h-4 w-4" />
               {isVersturen ? 'Versturen...' : `Verstuur (${selectedDocIds.length} bestanden)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Kopieer project dialog ── */}
+      <Dialog open={kopieDialogOpen} onOpenChange={(open) => {
+        setKopieDialogOpen(open)
+        if (!open) { setKopieNaam(''); setKopieKlantId(''); }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5 text-accent" />
+              Project kopiëren
+            </DialogTitle>
+            <DialogDescription>
+              Taken en teamleden worden gekopieerd. Tijdregistraties, facturen en documenten niet.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Projectnaam</Label>
+              <Input
+                value={kopieNaam}
+                onChange={(e) => setKopieNaam(e.target.value)}
+                placeholder="Naam van het nieuwe project"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Klant</Label>
+              <select
+                value={kopieKlantId}
+                onChange={(e) => setKopieKlantId(e.target.value)}
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">Zelfde klant behouden</option>
+                {alleKlanten.map((k) => (
+                  <option key={k.id} value={k.id}>{k.bedrijfsnaam}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Startdatum</Label>
+              <Input
+                type="date"
+                value={kopieStartDatum}
+                onChange={(e) => setKopieStartDatum(e.target.value)}
+              />
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
+              <p>Wordt gekopieerd:</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                <li>{projectTaken.length} taken (status wordt reset naar 'todo')</li>
+                <li>{project.team_leden.length} teamleden</li>
+                <li>Budget: {formatCurrency(project.budget)}</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setKopieDialogOpen(false)}>Annuleren</Button>
+            <Button
+              disabled={kopieBezig || !kopieNaam.trim()}
+              className="bg-gradient-to-r from-accent to-primary border-0"
+              onClick={handleKopieerProject}
+            >
+              {kopieBezig ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Copy className="h-4 w-4 mr-1.5" />}
+              {kopieBezig ? 'Kopiëren...' : 'Project kopiëren'}
             </Button>
           </DialogFooter>
         </DialogContent>

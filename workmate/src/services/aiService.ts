@@ -71,7 +71,7 @@ export async function chatCompletion(
   } else {
     allMessages.push({
       role: 'system',
-      content: 'Je bent Workmate AI, een behulpzame zakelijke assistent voor een Nederlands bedrijf. Je communiceert in het Nederlands en helpt met projectbeheer, offertes, klantcommunicatie en algemene zakelijke taken. Wees professioneel maar vriendelijk.',
+      content: 'Je bent Sign Company AI, een behulpzame zakelijke assistent voor een Nederlands bedrijf. Je communiceert in het Nederlands en helpt met projectbeheer, offertes, klantcommunicatie en algemene zakelijke taken. Wees professioneel maar vriendelijk.',
     })
   }
 
@@ -103,7 +103,7 @@ export async function streamChatCompletion(
   } else {
     allMessages.push({
       role: 'system',
-      content: 'Je bent Workmate AI, een behulpzame zakelijke assistent voor een Nederlands bedrijf. Je communiceert in het Nederlands en helpt met projectbeheer, offertes, klantcommunicatie en algemene zakelijke taken. Wees professioneel maar vriendelijk.',
+      content: 'Je bent Sign Company AI, een behulpzame zakelijke assistent voor een Nederlands bedrijf. Je communiceert in het Nederlands en helpt met projectbeheer, offertes, klantcommunicatie en algemene zakelijke taken. Wees professioneel maar vriendelijk.',
     })
   }
 

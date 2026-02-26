@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import type { Offerte, OfferteItem, Klant, Profile } from '@/types'
+import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle } from '@/types'
+import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 
 // Extended profile type for PDF with branding
 interface PdfBedrijfsProfiel extends Partial<Profile> {
@@ -17,9 +18,47 @@ function hexToRgb(hex: string): [number, number, number] {
   return [isNaN(r) ? 41 : r, isNaN(g) ? 65 : g, isNaN(b) ? 122 : b]
 }
 
-function getBrandColor(profiel: PdfBedrijfsProfiel): [number, number, number] {
+function getBrandColor(profiel: PdfBedrijfsProfiel, docStyle?: DocumentStyle | null): [number, number, number] {
+  if (docStyle?.primaire_kleur) return hexToRgb(docStyle.primaire_kleur)
   if (profiel.primaireKleur) return hexToRgb(profiel.primaireKleur)
   return [41, 65, 122] // default dark blue
+}
+
+function getTextColor(docStyle?: DocumentStyle | null): [number, number, number] {
+  if (docStyle?.tekst_kleur) return hexToRgb(docStyle.tekst_kleur)
+  return [60, 60, 60]
+}
+
+function getTableHeaderColor(docStyle?: DocumentStyle | null, brand?: [number, number, number]): [number, number, number] {
+  if (docStyle?.tabel_header_kleur) return hexToRgb(docStyle.tabel_header_kleur)
+  return brand || [41, 65, 122]
+}
+
+function getTableTheme(docStyle?: DocumentStyle | null): 'striped' | 'grid' | 'plain' {
+  return docStyle?.tabel_stijl || 'striped'
+}
+
+function getHeadingFont(docStyle?: DocumentStyle | null): string {
+  if (docStyle?.heading_font) return getJsPdfFontFamily(docStyle.heading_font)
+  return 'helvetica'
+}
+
+function getBodyFont(docStyle?: DocumentStyle | null): string {
+  if (docStyle?.body_font) return getJsPdfFontFamily(docStyle.body_font)
+  return 'helvetica'
+}
+
+function getBaseFontSize(docStyle?: DocumentStyle | null): number {
+  return docStyle?.font_grootte_basis || 10
+}
+
+function getMargins(docStyle?: DocumentStyle | null): { top: number; bottom: number; left: number; right: number } {
+  return {
+    top: docStyle?.marge_boven ?? 15,
+    bottom: docStyle?.marge_onder ?? 20,
+    left: docStyle?.marge_links ?? 20,
+    right: docStyle?.marge_rechts ?? 20,
+  }
 }
 
 function formatCurrency(amount: number): string {
@@ -39,147 +78,255 @@ function formatDate(dateString: string): string {
   })
 }
 
+// ============ BRIEFPAPIER BACKGROUND ============
+
+function addBriefpapierBackground(doc: jsPDF, docStyle: DocumentStyle | null | undefined, pageNum: number): void {
+  if (!docStyle?.briefpapier_url || docStyle.briefpapier_modus === 'geen') return
+  if (docStyle.briefpapier_modus === 'alleen_eerste_pagina' && pageNum > 1) return
+
+  try {
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    doc.addImage(docStyle.briefpapier_url, 'PNG', 0, 0, pageWidth, pageHeight)
+  } catch {
+    // Briefpapier loading failed silently
+  }
+}
+
+// ============ STYLED HEADER ============
+
 function addHeader(
   doc: jsPDF,
   bedrijfsProfiel: PdfBedrijfsProfiel,
   title: string,
-  nummer: string
+  nummer: string,
+  docStyle?: DocumentStyle | null
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth()
-  const brand = getBrandColor(bedrijfsProfiel)
+  const brand = getBrandColor(bedrijfsProfiel, docStyle)
+  const margins = getMargins(docStyle)
+  const headingFont = getHeadingFont(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+
+  // Briefpapier background for page 1
+  addBriefpapierBackground(doc, docStyle, 1)
+
+  // Check if header should be shown
+  if (docStyle && !docStyle.toon_header) {
+    return margins.top + 10
+  }
+
+  const logoPositie = docStyle?.logo_positie || 'links'
+  const logoGrootte = docStyle?.logo_grootte ?? 100
+  const logoScale = logoGrootte / 100
 
   // Company logo + name area
-  let nameX = 20
+  let nameX = margins.left
+  const logoW = 25 * logoScale
+  const logoH = 20 * logoScale
+
   if (bedrijfsProfiel.logo_url) {
     try {
-      doc.addImage(bedrijfsProfiel.logo_url, 'PNG', 20, 15, 25, 20)
-      nameX = 50 // shift name to the right of logo
+      if (logoPositie === 'rechts') {
+        doc.addImage(bedrijfsProfiel.logo_url, 'PNG', pageWidth - margins.right - logoW, margins.top, logoW, logoH)
+      } else if (logoPositie === 'midden') {
+        doc.addImage(bedrijfsProfiel.logo_url, 'PNG', (pageWidth - logoW) / 2, margins.top, logoW, logoH)
+      } else {
+        doc.addImage(bedrijfsProfiel.logo_url, 'PNG', margins.left, margins.top, logoW, logoH)
+        nameX = margins.left + logoW + 5
+      }
     } catch {
       // Logo loading failed, just show text
     }
   }
-  doc.setFontSize(22)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...brand)
-  doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', nameX, 30)
 
-  // Company details (right side)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'normal')
+  // Company name
+  const nameY = margins.top + 15
+  doc.setFontSize(baseFontSize * 2.2)
+  doc.setFont(headingFont, 'bold')
+  doc.setTextColor(...brand)
+
+  if (logoPositie === 'midden') {
+    doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', pageWidth / 2, nameY + logoH + 5, { align: 'center' })
+  } else if (logoPositie === 'rechts') {
+    doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', margins.left, nameY)
+  } else {
+    doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', nameX, nameY)
+  }
+
+  // Company details (opposite side of logo)
+  doc.setFontSize(baseFontSize - 1)
+  doc.setFont(bodyFont, 'normal')
   doc.setTextColor(100, 100, 100)
 
-  const rightX = pageWidth - 20
-  let rightY = 20
+  const detailsAlign = logoPositie === 'rechts' ? 'left' : 'right'
+  const detailsX = logoPositie === 'rechts' ? margins.left : pageWidth - margins.right
+  let rightY = margins.top + 5
 
-  if (bedrijfsProfiel.bedrijfs_adres) {
-    doc.text(bedrijfsProfiel.bedrijfs_adres, rightX, rightY, { align: 'right' })
-    rightY += 5
-  }
-  if (bedrijfsProfiel.email) {
-    doc.text(bedrijfsProfiel.email, rightX, rightY, { align: 'right' })
-    rightY += 5
-  }
-  if (bedrijfsProfiel.telefoon) {
-    doc.text(`Tel: ${bedrijfsProfiel.telefoon}`, rightX, rightY, { align: 'right' })
-    rightY += 5
-  }
-  if (bedrijfsProfiel.kvk_nummer) {
-    doc.text(`KvK: ${bedrijfsProfiel.kvk_nummer}`, rightX, rightY, { align: 'right' })
-    rightY += 5
-  }
-  if (bedrijfsProfiel.btw_nummer) {
-    doc.text(`BTW: ${bedrijfsProfiel.btw_nummer}`, rightX, rightY, { align: 'right' })
-    rightY += 5
+  if (logoPositie !== 'midden') {
+    if (bedrijfsProfiel.bedrijfs_adres) {
+      doc.text(bedrijfsProfiel.bedrijfs_adres, detailsX, rightY, { align: detailsAlign })
+      rightY += 5
+    }
+    if (bedrijfsProfiel.email) {
+      doc.text(bedrijfsProfiel.email, detailsX, rightY, { align: detailsAlign })
+      rightY += 5
+    }
+    if (bedrijfsProfiel.telefoon) {
+      doc.text(`Tel: ${bedrijfsProfiel.telefoon}`, detailsX, rightY, { align: detailsAlign })
+      rightY += 5
+    }
+    if (bedrijfsProfiel.kvk_nummer) {
+      doc.text(`KvK: ${bedrijfsProfiel.kvk_nummer}`, detailsX, rightY, { align: detailsAlign })
+      rightY += 5
+    }
+    if (bedrijfsProfiel.btw_nummer) {
+      doc.text(`BTW: ${bedrijfsProfiel.btw_nummer}`, detailsX, rightY, { align: detailsAlign })
+      rightY += 5
+    }
   }
 
   // Divider line
-  const lineY = 42
+  const lineY = margins.top + 27
   doc.setDrawColor(...brand)
   doc.setLineWidth(0.5)
-  doc.line(20, lineY, pageWidth - 20, lineY)
+  doc.line(margins.left, lineY, pageWidth - margins.right, lineY)
 
   // Document title and number
-  doc.setFontSize(16)
-  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(baseFontSize * 1.6)
+  doc.setFont(headingFont, 'bold')
   doc.setTextColor(...brand)
-  doc.text(title, 20, lineY + 12)
+  doc.text(title, margins.left, lineY + 12)
 
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(baseFontSize)
+  doc.setFont(bodyFont, 'normal')
   doc.setTextColor(80, 80, 80)
-  doc.text(`Nummer: ${nummer}`, 20, lineY + 19)
-  doc.text(`Datum: ${formatDate(new Date().toISOString())}`, 20, lineY + 25)
+  doc.text(`Nummer: ${nummer}`, margins.left, lineY + 19)
+  doc.text(`Datum: ${formatDate(new Date().toISOString())}`, margins.left, lineY + 25)
 
   return lineY + 32
 }
 
+// ============ STYLED CLIENT INFO ============
+
 function addClientInfo(
   doc: jsPDF,
   klant: Partial<Klant>,
-  startY: number
+  startY: number,
+  docStyle?: DocumentStyle | null
 ): number {
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(60, 60, 60)
-  doc.text('Aan:', 20, startY)
+  const margins = getMargins(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+  const textColor = getTextColor(docStyle)
 
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(60, 60, 60)
+  doc.setFontSize(baseFontSize)
+  doc.setFont(bodyFont, 'bold')
+  doc.setTextColor(...textColor)
+  doc.text('Aan:', margins.left, startY)
+
+  doc.setFont(bodyFont, 'normal')
+  doc.setTextColor(...textColor)
 
   let y = startY + 6
   if (klant.bedrijfsnaam) {
-    doc.setFont('helvetica', 'bold')
-    doc.text(klant.bedrijfsnaam, 20, y)
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(bodyFont, 'bold')
+    doc.text(klant.bedrijfsnaam, margins.left, y)
+    doc.setFont(bodyFont, 'normal')
     y += 5
   }
   if (klant.contactpersoon) {
-    doc.text(`t.a.v. ${klant.contactpersoon}`, 20, y)
+    doc.text(`t.a.v. ${klant.contactpersoon}`, margins.left, y)
     y += 5
   }
   if (klant.adres) {
-    doc.text(klant.adres, 20, y)
+    doc.text(klant.adres, margins.left, y)
     y += 5
   }
   if (klant.postcode || klant.stad) {
-    doc.text(`${klant.postcode || ''} ${klant.stad || ''}`.trim(), 20, y)
+    doc.text(`${klant.postcode || ''} ${klant.stad || ''}`.trim(), margins.left, y)
     y += 5
   }
   if (klant.land && klant.land !== 'Nederland') {
-    doc.text(klant.land, 20, y)
+    doc.text(klant.land, margins.left, y)
     y += 5
   }
 
   return y + 5
 }
 
-function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>): void {
+// ============ STYLED FOOTER ============
+
+function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: DocumentStyle | null): void {
+  if (docStyle && !docStyle.toon_footer) return
+
   const pageHeight = doc.internal.pageSize.getHeight()
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageCount = doc.getNumberOfPages()
+  const margins = getMargins(docStyle)
+  const bodyFont = getBodyFont(docStyle)
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
 
+    // Add briefpapier background on subsequent pages
+    if (i > 1) addBriefpapierBackground(doc, docStyle, i)
+
     // Footer line
     doc.setDrawColor(200, 200, 200)
     doc.setLineWidth(0.3)
-    doc.line(20, pageHeight - 20, pageWidth - 20, pageHeight - 20)
+    doc.line(margins.left, pageHeight - margins.bottom, pageWidth - margins.right, pageHeight - margins.bottom)
 
     // Footer text
     doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(bodyFont, 'normal')
     doc.setTextColor(150, 150, 150)
 
-    const footerParts: string[] = []
-    if (bedrijfsProfiel.bedrijfsnaam) footerParts.push(bedrijfsProfiel.bedrijfsnaam)
-    if (bedrijfsProfiel.kvk_nummer) footerParts.push(`KvK: ${bedrijfsProfiel.kvk_nummer}`)
-    if (bedrijfsProfiel.btw_nummer) footerParts.push(`BTW: ${bedrijfsProfiel.btw_nummer}`)
+    let footerText = ''
+    if (docStyle?.footer_tekst) {
+      footerText = docStyle.footer_tekst
+    } else {
+      const footerParts: string[] = []
+      if (bedrijfsProfiel.bedrijfsnaam) footerParts.push(bedrijfsProfiel.bedrijfsnaam)
+      if (bedrijfsProfiel.kvk_nummer) footerParts.push(`KvK: ${bedrijfsProfiel.kvk_nummer}`)
+      if (bedrijfsProfiel.btw_nummer) footerParts.push(`BTW: ${bedrijfsProfiel.btw_nummer}`)
+      footerText = footerParts.join(' | ')
+    }
 
-    doc.text(footerParts.join(' | '), 20, pageHeight - 14)
-    doc.text(`Pagina ${i} van ${pageCount}`, pageWidth - 20, pageHeight - 14, {
+    doc.text(footerText, margins.left, pageHeight - margins.bottom + 6)
+    doc.text(`Pagina ${i} van ${pageCount}`, pageWidth - margins.right, pageHeight - margins.bottom + 6, {
       align: 'right',
     })
+  }
+}
+
+// ============ TABLE STYLE HELPERS ============
+
+function getAutoTableStyles(brand: [number, number, number], docStyle?: DocumentStyle | null) {
+  const tableHeaderColor = getTableHeaderColor(docStyle, brand)
+  const textColor = getTextColor(docStyle)
+  const tableTheme = getTableTheme(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+
+  return {
+    theme: tableTheme,
+    headStyles: {
+      fillColor: tableHeaderColor,
+      textColor: [255, 255, 255] as [number, number, number],
+      fontStyle: 'bold' as const,
+      fontSize: baseFontSize - 1,
+      font: bodyFont,
+    },
+    bodyStyles: {
+      fontSize: baseFontSize - 1,
+      textColor: textColor,
+      font: bodyFont,
+    },
+    alternateRowStyles: {
+      fillColor: tableTheme === 'striped' ? [245, 247, 250] as [number, number, number] : undefined,
+    },
   }
 }
 
@@ -189,31 +336,37 @@ export function generateOffertePDF(
   offerte: Offerte,
   items: OfferteItem[],
   klant: Partial<Klant>,
-  bedrijfsProfiel: PdfBedrijfsProfiel
+  bedrijfsProfiel: PdfBedrijfsProfiel,
+  docStyle?: DocumentStyle | null
 ): jsPDF {
-  const brand = getBrandColor(bedrijfsProfiel)
+  const brand = getBrandColor(bedrijfsProfiel, docStyle)
+  const margins = getMargins(docStyle)
+  const headingFont = getHeadingFont(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+  const textColor = getTextColor(docStyle)
   const doc = new jsPDF()
 
   // Header
-  let y = addHeader(doc, bedrijfsProfiel, 'Offerte', offerte.nummer)
+  let y = addHeader(doc, bedrijfsProfiel, 'Offerte', offerte.nummer, docStyle)
 
   // Client info
-  y = addClientInfo(doc, klant, y)
+  y = addClientInfo(doc, klant, y, docStyle)
 
   // Offerte details
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(60, 60, 60)
+  doc.setFontSize(baseFontSize)
+  doc.setFont(bodyFont, 'normal')
+  doc.setTextColor(...textColor)
 
   if (offerte.titel) {
-    doc.setFont('helvetica', 'bold')
-    doc.text(`Betreft: ${offerte.titel}`, 20, y)
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(bodyFont, 'bold')
+    doc.text(`Betreft: ${offerte.titel}`, margins.left, y)
+    doc.setFont(bodyFont, 'normal')
     y += 8
   }
 
   if (offerte.geldig_tot) {
-    doc.text(`Geldig tot: ${formatDate(offerte.geldig_tot)}`, 20, y)
+    doc.text(`Geldig tot: ${formatDate(offerte.geldig_tot)}`, margins.left, y)
     y += 8
   }
 
@@ -228,24 +381,17 @@ export function generateOffertePDF(
     formatCurrency(item.totaal),
   ])
 
+  const tableStyles = getAutoTableStyles(brand, docStyle)
+  const pageWidth = doc.internal.pageSize.getWidth()
+
   autoTable(doc, {
     startY: y,
     head: [['#', 'Omschrijving', 'Aantal', 'Eenheidsprijs', 'BTW', 'Korting', 'Totaal']],
     body: tableBody,
-    theme: 'striped',
-    headStyles: {
-      fillColor: brand,
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 9,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [60, 60, 60],
-    },
-    alternateRowStyles: {
-      fillColor: [245, 247, 250],
-    },
+    theme: tableStyles.theme,
+    headStyles: tableStyles.headStyles,
+    bodyStyles: tableStyles.bodyStyles,
+    alternateRowStyles: tableStyles.alternateRowStyles,
     columnStyles: {
       0: { cellWidth: 12, halign: 'center' },
       1: { cellWidth: 'auto' },
@@ -255,73 +401,72 @@ export function generateOffertePDF(
       5: { cellWidth: 20, halign: 'center' },
       6: { cellWidth: 30, halign: 'right' },
     },
-    margin: { left: 20, right: 20 },
+    margin: { left: margins.left, right: margins.right },
   })
 
   // Totals
   const finalY = (doc as any).lastAutoTable?.finalY || y + 20
   let totalsY = finalY + 10
 
-  const pageWidth = doc.internal.pageSize.getWidth()
-  const totalsX = pageWidth - 70
+  const totalsX = pageWidth - margins.right - 50
 
-  doc.setFontSize(10)
-  doc.setTextColor(60, 60, 60)
+  doc.setFontSize(baseFontSize)
+  doc.setTextColor(...textColor)
 
-  doc.setFont('helvetica', 'normal')
+  doc.setFont(bodyFont, 'normal')
   doc.text('Subtotaal:', totalsX, totalsY)
-  doc.text(formatCurrency(offerte.subtotaal), pageWidth - 20, totalsY, { align: 'right' })
+  doc.text(formatCurrency(offerte.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
   doc.text('BTW:', totalsX, totalsY)
-  doc.text(formatCurrency(offerte.btw_bedrag), pageWidth - 20, totalsY, { align: 'right' })
+  doc.text(formatCurrency(offerte.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
   // Total line
   doc.setDrawColor(...brand)
   doc.setLineWidth(0.5)
-  doc.line(totalsX, totalsY - 2, pageWidth - 20, totalsY - 2)
+  doc.line(totalsX, totalsY - 2, pageWidth - margins.right, totalsY - 2)
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
+  doc.setFont(headingFont, 'bold')
+  doc.setFontSize(baseFontSize + 2)
   doc.setTextColor(...brand)
   doc.text('Totaal:', totalsX, totalsY + 5)
-  doc.text(formatCurrency(offerte.totaal), pageWidth - 20, totalsY + 5, { align: 'right' })
+  doc.text(formatCurrency(offerte.totaal), pageWidth - margins.right, totalsY + 5, { align: 'right' })
 
   // Notes
   totalsY += 20
   if (offerte.notities) {
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(baseFontSize)
+    doc.setFont(headingFont, 'bold')
     doc.setTextColor(...brand)
-    doc.text('Opmerkingen:', 20, totalsY)
+    doc.text('Opmerkingen:', margins.left, totalsY)
     totalsY += 6
 
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(60, 60, 60)
-    doc.setFontSize(9)
-    const splitNotes = doc.splitTextToSize(offerte.notities, pageWidth - 40)
-    doc.text(splitNotes, 20, totalsY)
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
+    doc.setFontSize(baseFontSize - 1)
+    const splitNotes = doc.splitTextToSize(offerte.notities, pageWidth - margins.left - margins.right)
+    doc.text(splitNotes, margins.left, totalsY)
     totalsY += splitNotes.length * 5 + 5
   }
 
   // Terms and conditions
   if (offerte.voorwaarden) {
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(baseFontSize)
+    doc.setFont(headingFont, 'bold')
     doc.setTextColor(...brand)
-    doc.text('Voorwaarden:', 20, totalsY)
+    doc.text('Voorwaarden:', margins.left, totalsY)
     totalsY += 6
 
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(bodyFont, 'normal')
     doc.setTextColor(80, 80, 80)
-    doc.setFontSize(8)
-    const splitTerms = doc.splitTextToSize(offerte.voorwaarden, pageWidth - 40)
-    doc.text(splitTerms, 20, totalsY)
+    doc.setFontSize(baseFontSize - 2)
+    const splitTerms = doc.splitTextToSize(offerte.voorwaarden, pageWidth - margins.left - margins.right)
+    doc.text(splitTerms, margins.left, totalsY)
   }
 
   // Footer
-  addFooter(doc, bedrijfsProfiel)
+  addFooter(doc, bedrijfsProfiel, docStyle)
 
   return doc
 }
@@ -339,35 +484,50 @@ export function generateFactuurPDF(
     totaal: number
     notities?: string
     betaalvoorwaarden?: string
+    factuur_type?: string
+    betaal_link?: string
   },
   items: OfferteItem[],
   klant: Partial<Klant>,
-  bedrijfsProfiel: PdfBedrijfsProfiel
+  bedrijfsProfiel: PdfBedrijfsProfiel,
+  docStyle?: DocumentStyle | null
 ): jsPDF {
   const doc = new jsPDF()
-  const brand = getBrandColor(bedrijfsProfiel)
+  const brand = getBrandColor(bedrijfsProfiel, docStyle)
+  const margins = getMargins(docStyle)
+  const headingFont = getHeadingFont(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+  const textColor = getTextColor(docStyle)
 
-  // Header
-  let y = addHeader(doc, bedrijfsProfiel, 'Factuur', factuurData.nummer)
+  // Header — adjust label for creditnota/voorschot/eindafrekening
+  const typeLabels: Record<string, string> = {
+    standaard: 'Factuur',
+    voorschot: 'Voorschotfactuur',
+    creditnota: 'Creditnota',
+    eindafrekening: 'Eindafrekening',
+  }
+  const headerLabel = typeLabels[factuurData.factuur_type || 'standaard'] || 'Factuur'
+  let y = addHeader(doc, bedrijfsProfiel, headerLabel, factuurData.nummer, docStyle)
 
   // Client info
-  y = addClientInfo(doc, klant, y)
+  y = addClientInfo(doc, klant, y, docStyle)
 
   // Invoice details
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(60, 60, 60)
+  doc.setFontSize(baseFontSize)
+  doc.setFont(bodyFont, 'normal')
+  doc.setTextColor(...textColor)
 
   if (factuurData.titel) {
-    doc.setFont('helvetica', 'bold')
-    doc.text(`Betreft: ${factuurData.titel}`, 20, y)
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(bodyFont, 'bold')
+    doc.text(`Betreft: ${factuurData.titel}`, margins.left, y)
+    doc.setFont(bodyFont, 'normal')
     y += 6
   }
 
-  doc.text(`Factuurdatum: ${formatDate(factuurData.datum)}`, 20, y)
+  doc.text(`Factuurdatum: ${formatDate(factuurData.datum)}`, margins.left, y)
   y += 5
-  doc.text(`Vervaldatum: ${formatDate(factuurData.vervaldatum)}`, 20, y)
+  doc.text(`Vervaldatum: ${formatDate(factuurData.vervaldatum)}`, margins.left, y)
   y += 8
 
   // Items table
@@ -380,24 +540,17 @@ export function generateFactuurPDF(
     formatCurrency(item.totaal),
   ])
 
+  const tableStyles = getAutoTableStyles(brand, docStyle)
+  const pageWidth = doc.internal.pageSize.getWidth()
+
   autoTable(doc, {
     startY: y,
     head: [['#', 'Omschrijving', 'Aantal', 'Eenheidsprijs', 'BTW', 'Totaal']],
     body: tableBody,
-    theme: 'striped',
-    headStyles: {
-      fillColor: brand,
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 9,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [60, 60, 60],
-    },
-    alternateRowStyles: {
-      fillColor: [245, 247, 250],
-    },
+    theme: tableStyles.theme,
+    headStyles: tableStyles.headStyles,
+    bodyStyles: tableStyles.bodyStyles,
+    alternateRowStyles: tableStyles.alternateRowStyles,
     columnStyles: {
       0: { cellWidth: 12, halign: 'center' },
       1: { cellWidth: 'auto' },
@@ -406,75 +559,100 @@ export function generateFactuurPDF(
       4: { cellWidth: 18, halign: 'center' },
       5: { cellWidth: 30, halign: 'right' },
     },
-    margin: { left: 20, right: 20 },
+    margin: { left: margins.left, right: margins.right },
   })
 
   // Totals
   const finalY = (doc as any).lastAutoTable?.finalY || y + 20
   let totalsY = finalY + 10
 
-  const pageWidth = doc.internal.pageSize.getWidth()
-  const totalsX = pageWidth - 70
+  const totalsX = pageWidth - margins.right - 50
 
-  doc.setFontSize(10)
-  doc.setTextColor(60, 60, 60)
+  doc.setFontSize(baseFontSize)
+  doc.setTextColor(...textColor)
 
-  doc.setFont('helvetica', 'normal')
+  doc.setFont(bodyFont, 'normal')
   doc.text('Subtotaal:', totalsX, totalsY)
-  doc.text(formatCurrency(factuurData.subtotaal), pageWidth - 20, totalsY, { align: 'right' })
+  doc.text(formatCurrency(factuurData.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
   doc.text('BTW:', totalsX, totalsY)
-  doc.text(formatCurrency(factuurData.btw_bedrag), pageWidth - 20, totalsY, { align: 'right' })
+  doc.text(formatCurrency(factuurData.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
   doc.setDrawColor(...brand)
   doc.setLineWidth(0.5)
-  doc.line(totalsX, totalsY - 2, pageWidth - 20, totalsY - 2)
+  doc.line(totalsX, totalsY - 2, pageWidth - margins.right, totalsY - 2)
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
+  doc.setFont(headingFont, 'bold')
+  doc.setFontSize(baseFontSize + 2)
   doc.setTextColor(...brand)
   doc.text('Totaal:', totalsX, totalsY + 5)
-  doc.text(formatCurrency(factuurData.totaal), pageWidth - 20, totalsY + 5, { align: 'right' })
+  doc.text(formatCurrency(factuurData.totaal), pageWidth - margins.right, totalsY + 5, { align: 'right' })
 
   // Payment info
   totalsY += 20
 
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(baseFontSize)
+  doc.setFont(headingFont, 'bold')
   doc.setTextColor(...brand)
-  doc.text('Betaalinformatie:', 20, totalsY)
+  doc.text('Betaalinformatie:', margins.left, totalsY)
   totalsY += 6
 
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(60, 60, 60)
-  doc.setFontSize(9)
+  doc.setFont(bodyFont, 'normal')
+  doc.setTextColor(...textColor)
+  doc.setFontSize(baseFontSize - 1)
 
   const betaalInfo = factuurData.betaalvoorwaarden ||
     `Wij verzoeken u vriendelijk het totaalbedrag van ${formatCurrency(factuurData.totaal)} over te maken voor ${formatDate(factuurData.vervaldatum)} onder vermelding van factuurnummer ${factuurData.nummer}.`
 
-  const splitPayment = doc.splitTextToSize(betaalInfo, pageWidth - 40)
-  doc.text(splitPayment, 20, totalsY)
+  const splitPayment = doc.splitTextToSize(betaalInfo, pageWidth - margins.left - margins.right)
+  doc.text(splitPayment, margins.left, totalsY)
 
   // Notes
   if (factuurData.notities) {
     totalsY += splitPayment.length * 5 + 8
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(baseFontSize)
+    doc.setFont(headingFont, 'bold')
     doc.setTextColor(...brand)
-    doc.text('Opmerkingen:', 20, totalsY)
+    doc.text('Opmerkingen:', margins.left, totalsY)
     totalsY += 6
 
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(bodyFont, 'normal')
     doc.setTextColor(80, 80, 80)
-    doc.setFontSize(9)
-    const splitNotes = doc.splitTextToSize(factuurData.notities, pageWidth - 40)
-    doc.text(splitNotes, 20, totalsY)
+    doc.setFontSize(baseFontSize - 1)
+    const splitNotes = doc.splitTextToSize(factuurData.notities, pageWidth - margins.left - margins.right)
+    doc.text(splitNotes, margins.left, totalsY)
+  }
+
+  // Online betaallink
+  if (factuurData.betaal_link) {
+    totalsY += 15
+    if (totalsY > doc.internal.pageSize.getHeight() - 40) {
+      doc.addPage()
+      totalsY = margins.top
+    }
+
+    doc.setFontSize(baseFontSize)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+    doc.text('Online betalen:', margins.left, totalsY)
+    totalsY += 6
+
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
+    doc.setFontSize(baseFontSize - 1)
+    doc.text('Betaal direct via de onderstaande link:', margins.left, totalsY)
+    totalsY += 5
+
+    doc.setTextColor(41, 98, 218)
+    doc.textWithLink(factuurData.betaal_link, margins.left, totalsY, {
+      url: factuurData.betaal_link,
+    })
   }
 
   // Footer
-  addFooter(doc, bedrijfsProfiel)
+  addFooter(doc, bedrijfsProfiel, docStyle)
 
   return doc
 }
@@ -496,18 +674,26 @@ export function generateRapportPDF(
     samenvatting?: string
   },
   type: 'project' | 'financieel' | 'klant' | 'algemeen' = 'algemeen',
-  bedrijfsProfiel?: PdfBedrijfsProfiel
+  bedrijfsProfiel?: PdfBedrijfsProfiel,
+  docStyle?: DocumentStyle | null
 ): jsPDF {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
   const profile = bedrijfsProfiel || {}
-  const brand = getBrandColor(profile)
+  const brand = getBrandColor(profile, docStyle)
+  const margins = getMargins(docStyle)
+  const headingFont = getHeadingFont(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+
+  // Briefpapier
+  addBriefpapierBackground(doc, docStyle, 1)
 
   // Header
-  doc.setFontSize(22)
-  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(baseFontSize * 2.2)
+  doc.setFont(headingFont, 'bold')
   doc.setTextColor(...brand)
-  doc.text(profile.bedrijfsnaam || 'Rapport', 20, 30)
+  doc.text(profile.bedrijfsnaam || 'Rapport', margins.left, 30)
 
   // Type label
   const typeLabels: Record<string, string> = {
@@ -517,90 +703,79 @@ export function generateRapportPDF(
     algemeen: 'Rapport',
   }
 
-  doc.setFontSize(14)
-  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(baseFontSize + 4)
+  doc.setFont(bodyFont, 'normal')
   doc.setTextColor(100, 100, 100)
-  doc.text(typeLabels[type], 20, 38)
+  doc.text(typeLabels[type], margins.left, 38)
 
   // Divider
   doc.setDrawColor(...brand)
   doc.setLineWidth(0.5)
-  doc.line(20, 42, pageWidth - 20, 42)
+  doc.line(margins.left, 42, pageWidth - margins.right, 42)
 
   // Title
-  doc.setFontSize(16)
-  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(baseFontSize + 6)
+  doc.setFont(headingFont, 'bold')
   doc.setTextColor(...brand)
-  doc.text(data.titel, 20, 54)
+  doc.text(data.titel, margins.left, 54)
 
   // Date
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(baseFontSize)
+  doc.setFont(bodyFont, 'normal')
   doc.setTextColor(100, 100, 100)
-  doc.text(`Datum: ${formatDate(data.datum || new Date().toISOString())}`, 20, 61)
+  doc.text(`Datum: ${formatDate(data.datum || new Date().toISOString())}`, margins.left, 61)
 
   let y = 72
 
   // Summary
   if (data.samenvatting) {
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(baseFontSize + 1)
+    doc.setFont(headingFont, 'bold')
     doc.setTextColor(...brand)
-    doc.text('Samenvatting', 20, y)
+    doc.text('Samenvatting', margins.left, y)
     y += 7
 
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(baseFontSize - 1)
+    doc.setFont(bodyFont, 'normal')
     doc.setTextColor(60, 60, 60)
-    const splitSummary = doc.splitTextToSize(data.samenvatting, pageWidth - 40)
-    doc.text(splitSummary, 20, y)
+    const splitSummary = doc.splitTextToSize(data.samenvatting, pageWidth - margins.left - margins.right)
+    doc.text(splitSummary, margins.left, y)
     y += splitSummary.length * 5 + 8
   }
 
   // Sections
+  const tableStyles = getAutoTableStyles(brand, docStyle)
+
   for (const sectie of data.secties) {
-    // Check if we need a new page
     if (y > 250) {
       doc.addPage()
-      y = 20
+      addBriefpapierBackground(doc, docStyle, doc.getNumberOfPages())
+      y = margins.top
     }
 
-    // Section heading
-    doc.setFontSize(12)
-    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(baseFontSize + 2)
+    doc.setFont(headingFont, 'bold')
     doc.setTextColor(...brand)
-    doc.text(sectie.kop, 20, y)
+    doc.text(sectie.kop, margins.left, y)
     y += 7
 
-    // Section content
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(baseFontSize - 1)
+    doc.setFont(bodyFont, 'normal')
     doc.setTextColor(60, 60, 60)
-    const splitContent = doc.splitTextToSize(sectie.inhoud, pageWidth - 40)
-    doc.text(splitContent, 20, y)
+    const splitContent = doc.splitTextToSize(sectie.inhoud, pageWidth - margins.left - margins.right)
+    doc.text(splitContent, margins.left, y)
     y += splitContent.length * 5 + 5
 
-    // Section table
     if (sectie.tabel) {
       autoTable(doc, {
         startY: y,
         head: [sectie.tabel.headers],
         body: sectie.tabel.rijen,
-        theme: 'striped',
-        headStyles: {
-          fillColor: brand,
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          fontSize: 8,
-        },
-        bodyStyles: {
-          fontSize: 8,
-          textColor: [60, 60, 60],
-        },
-        alternateRowStyles: {
-          fillColor: [245, 247, 250],
-        },
-        margin: { left: 20, right: 20 },
+        theme: tableStyles.theme,
+        headStyles: { ...tableStyles.headStyles, fontSize: baseFontSize - 2 },
+        bodyStyles: { ...tableStyles.bodyStyles, fontSize: baseFontSize - 2 },
+        alternateRowStyles: tableStyles.alternateRowStyles,
+        margin: { left: margins.left, right: margins.right },
       })
 
       y = (doc as any).lastAutoTable?.finalY + 10 || y + 20
@@ -610,7 +785,252 @@ export function generateRapportPDF(
   }
 
   // Footer
-  addFooter(doc, profile)
+  addFooter(doc, profile, docStyle)
 
+  return doc
+}
+
+// ============ BESTELBON PDF ============
+
+export function generateBestelbonPDF(
+  bestelbonData: {
+    nummer: string
+    onderwerp: string
+    besteldatum: string
+    verwachte_leverdatum?: string
+    notities?: string
+    totaal_bedrag: number
+  },
+  regels: { beschrijving: string; aantal: number; eenheidsprijs: number; eenheid?: string }[],
+  leverancier: Partial<{ naam: string; adres?: string; postcode?: string; stad?: string }>,
+  bedrijfsProfiel: PdfBedrijfsProfiel,
+  docStyle?: DocumentStyle | null
+): jsPDF {
+  const doc = new jsPDF()
+  const brand = getBrandColor(bedrijfsProfiel, docStyle)
+  const margins = getMargins(docStyle)
+  const headingFont = getHeadingFont(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+  const textColor = getTextColor(docStyle)
+
+  let y = addHeader(doc, bedrijfsProfiel, 'Bestelbon', bestelbonData.nummer, docStyle)
+
+  // Leverancier info
+  if (leverancier.naam) {
+    doc.setFontSize(baseFontSize)
+    doc.setFont(bodyFont, 'bold')
+    doc.setTextColor(...textColor)
+    doc.text('Aan:', margins.left, y)
+    doc.setFont(bodyFont, 'normal')
+    y += 6
+    doc.text(leverancier.naam, margins.left, y)
+    y += 5
+    if (leverancier.adres) { doc.text(leverancier.adres, margins.left, y); y += 5 }
+    if (leverancier.postcode || leverancier.stad) {
+      doc.text(`${leverancier.postcode || ''} ${leverancier.stad || ''}`.trim(), margins.left, y)
+      y += 5
+    }
+    y += 5
+  }
+
+  // Details
+  doc.setFontSize(baseFontSize)
+  doc.setFont(bodyFont, 'normal')
+  doc.setTextColor(...textColor)
+  if (bestelbonData.onderwerp) {
+    doc.setFont(bodyFont, 'bold')
+    doc.text(`Betreft: ${bestelbonData.onderwerp}`, margins.left, y)
+    doc.setFont(bodyFont, 'normal')
+    y += 6
+  }
+  doc.text(`Besteldatum: ${formatDate(bestelbonData.besteldatum)}`, margins.left, y)
+  y += 5
+  if (bestelbonData.verwachte_leverdatum) {
+    doc.text(`Verwachte levering: ${formatDate(bestelbonData.verwachte_leverdatum)}`, margins.left, y)
+    y += 5
+  }
+  y += 5
+
+  // Items table
+  const tableBody = regels.map((r, i) => [
+    (i + 1).toString(),
+    r.beschrijving,
+    r.aantal.toString(),
+    r.eenheid || 'stuk',
+    formatCurrency(r.eenheidsprijs),
+    formatCurrency(Math.round(r.aantal * r.eenheidsprijs * 100) / 100),
+  ])
+
+  const tableStyles = getAutoTableStyles(brand, docStyle)
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  autoTable(doc, {
+    startY: y,
+    head: [['#', 'Omschrijving', 'Aantal', 'Eenheid', 'Prijs', 'Totaal']],
+    body: tableBody,
+    theme: tableStyles.theme,
+    headStyles: tableStyles.headStyles,
+    bodyStyles: tableStyles.bodyStyles,
+    alternateRowStyles: tableStyles.alternateRowStyles,
+    columnStyles: {
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 'auto' },
+      2: { cellWidth: 20, halign: 'center' },
+      3: { cellWidth: 22, halign: 'center' },
+      4: { cellWidth: 28, halign: 'right' },
+      5: { cellWidth: 30, halign: 'right' },
+    },
+    margin: { left: margins.left, right: margins.right },
+  })
+
+  // Total
+  const finalY = (doc as any).lastAutoTable?.finalY || y + 20
+  let totalsY = finalY + 10
+
+  doc.setFont(headingFont, 'bold')
+  doc.setFontSize(baseFontSize + 2)
+  doc.setTextColor(...brand)
+  doc.text('Totaal:', pageWidth - margins.right - 50, totalsY + 5)
+  doc.text(formatCurrency(bestelbonData.totaal_bedrag), pageWidth - margins.right, totalsY + 5, { align: 'right' })
+
+  // Notes
+  if (bestelbonData.notities) {
+    totalsY += 20
+    doc.setFontSize(baseFontSize)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+    doc.text('Opmerkingen:', margins.left, totalsY)
+    totalsY += 6
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(80, 80, 80)
+    doc.setFontSize(baseFontSize - 1)
+    const splitNotes = doc.splitTextToSize(bestelbonData.notities, pageWidth - margins.left - margins.right)
+    doc.text(splitNotes, margins.left, totalsY)
+  }
+
+  addFooter(doc, bedrijfsProfiel, docStyle)
+  return doc
+}
+
+// ============ LEVERINGSBON PDF ============
+
+export function generateLeveringsbonPDF(
+  leveringsbonData: {
+    nummer: string
+    onderwerp: string
+    leverdatum: string
+    notities?: string
+    handtekening_data?: string
+  },
+  regels: { beschrijving: string; aantal: number; eenheid?: string }[],
+  klant: Partial<Klant>,
+  bedrijfsProfiel: PdfBedrijfsProfiel,
+  docStyle?: DocumentStyle | null
+): jsPDF {
+  const doc = new jsPDF()
+  const brand = getBrandColor(bedrijfsProfiel, docStyle)
+  const margins = getMargins(docStyle)
+  const headingFont = getHeadingFont(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+  const textColor = getTextColor(docStyle)
+
+  let y = addHeader(doc, bedrijfsProfiel, 'Leveringsbon', leveringsbonData.nummer, docStyle)
+
+  // Klant info
+  y = addClientInfo(doc, klant, y, docStyle)
+
+  // Details
+  doc.setFontSize(baseFontSize)
+  doc.setFont(bodyFont, 'normal')
+  doc.setTextColor(...textColor)
+  if (leveringsbonData.onderwerp) {
+    doc.setFont(bodyFont, 'bold')
+    doc.text(`Betreft: ${leveringsbonData.onderwerp}`, margins.left, y)
+    doc.setFont(bodyFont, 'normal')
+    y += 6
+  }
+  doc.text(`Leverdatum: ${formatDate(leveringsbonData.leverdatum)}`, margins.left, y)
+  y += 8
+
+  // Items table — NO prices (pure delivery proof)
+  const tableBody = regels.map((r, i) => [
+    (i + 1).toString(),
+    r.beschrijving,
+    r.aantal.toString(),
+    r.eenheid || 'stuk',
+  ])
+
+  const tableStyles = getAutoTableStyles(brand, docStyle)
+
+  autoTable(doc, {
+    startY: y,
+    head: [['#', 'Omschrijving', 'Aantal', 'Eenheid']],
+    body: tableBody,
+    theme: tableStyles.theme,
+    headStyles: tableStyles.headStyles,
+    bodyStyles: tableStyles.bodyStyles,
+    alternateRowStyles: tableStyles.alternateRowStyles,
+    columnStyles: {
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 'auto' },
+      2: { cellWidth: 25, halign: 'center' },
+      3: { cellWidth: 30, halign: 'center' },
+    },
+    margin: { left: margins.left, right: margins.right },
+  })
+
+  let endY = (doc as any).lastAutoTable?.finalY || y + 20
+
+  // Notities
+  if (leveringsbonData.notities) {
+    endY += 10
+    doc.setFontSize(baseFontSize)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+    doc.text('Opmerkingen:', margins.left, endY)
+    endY += 6
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(80, 80, 80)
+    doc.setFontSize(baseFontSize - 1)
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const splitNotes = doc.splitTextToSize(leveringsbonData.notities, pageWidth - margins.left - margins.right)
+    doc.text(splitNotes, margins.left, endY)
+    endY += splitNotes.length * 5
+  }
+
+  // Handtekening
+  endY += 15
+  if (endY > doc.internal.pageSize.getHeight() - 60) {
+    doc.addPage()
+    addBriefpapierBackground(doc, docStyle, doc.getNumberOfPages())
+    endY = margins.top
+  }
+
+  doc.setFontSize(baseFontSize)
+  doc.setFont(headingFont, 'bold')
+  doc.setTextColor(...brand)
+  doc.text('Handtekening voor ontvangst:', margins.left, endY)
+  endY += 8
+
+  if (leveringsbonData.handtekening_data) {
+    try {
+      doc.addImage(leveringsbonData.handtekening_data, 'PNG', margins.left, endY, 60, 30)
+    } catch {
+      doc.setDrawColor(200, 200, 200)
+      doc.rect(margins.left, endY, 80, 30)
+    }
+  } else {
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.3)
+    doc.rect(margins.left, endY, 80, 30)
+    doc.setFontSize(8)
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(180, 180, 180)
+    doc.text('Handtekening', margins.left + 40, endY + 18, { align: 'center' })
+  }
+
+  addFooter(doc, bedrijfsProfiel, docStyle)
   return doc
 }

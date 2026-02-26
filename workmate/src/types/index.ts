@@ -10,6 +10,7 @@ export interface Profile {
   bedrijfs_adres: string;
   kvk_nummer: string;
   btw_nummer: string;
+  iban?: string;
   taal: 'nl' | 'en';
   theme: 'light' | 'dark';
   created_at: string;
@@ -43,6 +44,9 @@ export interface Klant {
   tags: string[];
   notities: string;
   contactpersonen: Contactpersoon[];
+  // Klant labels + gepinde notitie
+  klant_labels?: string[];
+  gepinde_notitie?: string;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +66,13 @@ export interface Project {
   besteed: number;
   voortgang: number;
   team_leden: string[];
+  // Feature 1: Budget meldingen
+  budget_waarschuwing_pct?: number;
+  // Feature 2: Offerte → Project keten
+  bron_offerte_id?: string;
+  // Feature 8: Project kopiëren / template
+  is_template?: boolean;
+  bron_project_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -69,7 +80,8 @@ export interface Project {
 export interface Taak {
   id: string;
   user_id: string;
-  project_id: string;
+  project_id?: string;
+  klant_id?: string;
   titel: string;
   beschrijving: string;
   status: 'todo' | 'bezig' | 'review' | 'klaar';
@@ -78,6 +90,7 @@ export interface Taak {
   deadline: string;
   geschatte_tijd: number;
   bestede_tijd: number;
+  locatie?: string;
   created_at: string;
   updated_at: string;
 }
@@ -104,19 +117,24 @@ export interface Offerte {
   contact_pogingen?: number;
   prioriteit?: 'laag' | 'medium' | 'hoog' | 'urgent';
   deal_id?: string;
+  // Feature 2: Offerte → Project → Factuur keten
   geconverteerd_naar_project_id?: string;
   geconverteerd_naar_factuur_id?: string;
+  // Tier 2 Feature 2: Offerte Bekijk-Notificatie
   bekeken_door_klant?: boolean;
   eerste_bekeken_op?: string;
   laatst_bekeken_op?: string;
   aantal_keer_bekeken?: number;
   publiek_token?: string;
+  // Sales tracking
   verloopdatum?: string;
   verstuurd_op?: string;
   verstuurd_naar?: string;
   akkoord_op?: string;
+  // Teksten
   intro_tekst?: string;
   outro_tekst?: string;
+  // Activiteit log
   activiteiten?: OfferteActiviteit[];
   created_at: string;
   updated_at: string;
@@ -139,7 +157,31 @@ export interface OfferteItem {
   korting_percentage: number;
   totaal: number;
   volgorde: number;
+  soort?: 'prijs' | 'tekst';
+  extra_velden?: Record<string, string>;
+  detail_regels?: OfferteItemDetailRegel[];
+  calculatie_regels?: CalculatieRegel[];
+  heeft_calculatie?: boolean;
+  prijs_varianten?: OfferteItemPrijsVariant[];
+  actieve_variant_id?: string;
   created_at: string;
+}
+
+export interface OfferteItemDetailRegel {
+  id: string;
+  label: string;
+  waarde: string;
+}
+
+export interface OfferteItemPrijsVariant {
+  id: string;
+  label: string;
+  aantal: number;
+  eenheidsprijs: number;
+  btw_percentage: number;
+  korting_percentage: number;
+  calculatie_regels?: CalculatieRegel[];
+  heeft_calculatie?: boolean;
 }
 
 export interface Document {
@@ -171,15 +213,22 @@ export interface Email {
   gelezen: boolean;
   starred: boolean;
   pinned?: boolean;
-  snoozed_until?: string;
+  snoozed_until?: string | null;
   labels: string[];
   bijlagen: number;
   map: string;
   scheduled_at?: string;
   thread_id?: string;
   internal_notes?: string;
-  follow_up_at?: string;
+  follow_up_at?: string | null;
   tracking?: EmailTracking;
+  // Tier 3 Feature 3: Gedeelde Inbox
+  inbox_type?: 'persoonlijk' | 'gedeeld';
+  toegewezen_aan?: string;
+  ticket_status?: 'open' | 'in_behandeling' | 'wacht_op_klant' | 'afgerond';
+  interne_notities?: InternEmailNotitie[];
+  prioriteit_inbox?: 'laag' | 'normaal' | 'hoog' | 'urgent';
+  categorie_inbox?: 'offerte_aanvraag' | 'klacht' | 'informatie' | 'support' | 'overig';
   created_at: string;
 }
 
@@ -333,6 +382,9 @@ export interface AppSettings {
   // Offerte regel velden - welke tekstvelden wil je per offerte-item?
   // Bijv. ["Materiaal", "Lay-out", "Montage", "Opmerking"]
   offerte_regel_velden: string[];
+  // KvK integratie
+  kvk_api_key?: string;
+  kvk_api_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -477,6 +529,10 @@ export interface TekeningGoedkeuring {
   // Revisie historie
   revisie_nummer: number;
   vorige_goedkeuring_id?: string;
+  // Tier 2 Feature 2: Offerte Bekijk-Notificatie
+  eerste_bekeken_op?: string;
+  laatst_bekeken_op?: string;
+  aantal_keer_bekeken?: number;
   created_at: string;
   updated_at: string;
 }
@@ -505,6 +561,31 @@ export interface Factuur {
   betalingsherinnering_verzonden?: boolean;
   notities: string;
   voorwaarden: string;
+  // Feature 2: Bron tracking
+  bron_type?: 'offerte' | 'project' | 'handmatig';
+  bron_offerte_id?: string;
+  bron_project_id?: string;
+  // Tier 1 Feature 2: Betalingsherinneringen
+  betaaltermijn_dagen?: number;
+  herinnering_1_verstuurd?: string;
+  herinnering_2_verstuurd?: string;
+  herinnering_3_verstuurd?: string;
+  aanmaning_verstuurd?: string;
+  // Tier 1 Feature 4: Creditnota's + Voorschotfacturen
+  factuur_type?: 'standaard' | 'voorschot' | 'creditnota' | 'eindafrekening';
+  gerelateerde_factuur_id?: string;
+  credit_reden?: string;
+  voorschot_percentage?: number;
+  is_voorschot_verrekend?: boolean;
+  verrekende_voorschot_ids?: string[];
+  // Tier 1 Feature 1: Werkbon koppeling
+  werkbon_id?: string;
+  // Tier 2 Feature 1: Online Betaling
+  betaal_token?: string;
+  betaal_link?: string;
+  betaal_methode?: 'handmatig' | 'link' | 'qr';
+  online_bekeken?: boolean;
+  online_bekeken_op?: string;
   created_at: string;
   updated_at: string;
 }
@@ -540,6 +621,8 @@ export interface Tijdregistratie {
   uurtarief: number;
   facturabel: boolean;
   gefactureerd: boolean;
+  // Feature 7: Link naar factuur na facturatie
+  factuur_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -558,6 +641,8 @@ export interface Medewerker {
   uurtarief: number;
   status: 'actief' | 'inactief';
   rol: 'admin' | 'medewerker' | 'monteur' | 'verkoop' | 'productie';
+  // Feature 4: App-brede rol voor rechten
+  app_rol?: 'admin' | 'medewerker' | 'viewer';
   vaardigheden: string[];
   start_datum: string;
   notities: string;
@@ -570,7 +655,7 @@ export interface Medewerker {
 export interface Notificatie {
   id: string;
   user_id: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'algemeen';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen';
   titel: string;
   bericht: string;
   link?: string;
@@ -597,6 +682,478 @@ export interface MontageAfspraak {
   status: 'gepland' | 'onderweg' | 'bezig' | 'afgerond' | 'uitgesteld';
   materialen: string[];
   notities: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============ VERLOF & BESCHIKBAARHEID (Feature 3) ============
+
+export interface Verlof {
+  id: string;
+  user_id: string;
+  medewerker_id: string;
+  type: 'vakantie' | 'ziek' | 'ouderschapsverlof' | 'bijzonder' | 'bedrijfssluiting';
+  start_datum: string;
+  eind_datum: string;
+  status: 'aangevraagd' | 'goedgekeurd' | 'afgewezen';
+  opmerking?: string;
+  created_at: string;
+}
+
+export interface Bedrijfssluitingsdag {
+  id: string;
+  user_id: string;
+  datum: string;
+  omschrijving: string;
+  jaarlijks_herhalend: boolean;
+  created_at: string;
+}
+
+// ============ GEBRUIKERSRECHTEN (Feature 4) ============
+
+export interface ProjectToewijzing {
+  id: string;
+  user_id: string;
+  project_id: string;
+  medewerker_id: string;
+  rol: 'eigenaar' | 'medewerker' | 'viewer';
+  created_at: string;
+}
+
+// ============ BOOKING SYSTEEM (Feature 6) ============
+
+export interface BookingSlot {
+  id: string;
+  user_id: string;
+  dag_van_week: number;
+  start_tijd: string;
+  eind_tijd: string;
+  slot_duur_minuten: number;
+  actief: boolean;
+  created_at: string;
+}
+
+export interface BookingAfspraak {
+  id: string;
+  user_id: string;
+  klant_naam: string;
+  klant_email: string;
+  klant_telefoon?: string;
+  datum: string;
+  start_tijd: string;
+  eind_tijd: string;
+  onderwerp?: string;
+  status: 'gepland' | 'bevestigd' | 'geannuleerd';
+  token: string;
+  created_at: string;
+}
+
+// ============ WERKBONNEN (Tier 1 Feature 1) ============
+
+export interface Werkbon {
+  id: string;
+  user_id: string;
+  werkbon_nummer: string;
+  project_id: string;
+  klant_id: string;
+  montage_afspraak_id?: string;
+  locatie_adres: string;
+  locatie_stad?: string;
+  locatie_postcode?: string;
+  datum: string;
+  start_tijd?: string;
+  eind_tijd?: string;
+  pauze_minuten?: number;
+  status: 'concept' | 'ingediend' | 'goedgekeurd' | 'gefactureerd';
+  klant_handtekening?: string;
+  klant_naam_getekend?: string;
+  getekend_op?: string;
+  omschrijving?: string;
+  interne_notitie?: string;
+  factuur_id?: string;
+  kilometers?: number;
+  km_tarief?: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface WerkbonRegel {
+  id: string;
+  user_id: string;
+  werkbon_id: string;
+  type: 'arbeid' | 'materiaal' | 'overig';
+  medewerker_id?: string;
+  uren?: number;
+  uurtarief?: number;
+  omschrijving: string;
+  aantal?: number;
+  eenheid?: string;
+  prijs_per_eenheid?: number;
+  totaal: number;
+  factureerbaar: boolean;
+  created_at: string;
+}
+
+export interface WerkbonFoto {
+  id: string;
+  user_id: string;
+  werkbon_id: string;
+  type: 'voor' | 'na' | 'overig';
+  url: string;
+  omschrijving?: string;
+  created_at: string;
+}
+
+// ============ BETALINGSHERINNERINGEN (Tier 1 Feature 2) ============
+
+export interface HerinneringTemplate {
+  id: string;
+  user_id: string;
+  type: 'herinnering_1' | 'herinnering_2' | 'herinnering_3' | 'aanmaning';
+  onderwerp: string;
+  inhoud: string;
+  dagen_na_vervaldatum: number;
+  actief: boolean;
+  created_at: string;
+}
+
+// ============ UITGAVENBEHEER (Tier 1 Feature 3) ============
+
+export interface Leverancier {
+  id: string;
+  user_id: string;
+  bedrijfsnaam: string;
+  contactpersoon?: string;
+  email?: string;
+  telefoon?: string;
+  adres?: string;
+  postcode?: string;
+  stad?: string;
+  website?: string;
+  kvk_nummer?: string;
+  btw_nummer?: string;
+  iban?: string;
+  categorie?: string;
+  notitie?: string;
+  actief: boolean;
+  created_at: string;
+}
+
+export interface Uitgave {
+  id: string;
+  user_id: string;
+  uitgave_nummer: string;
+  leverancier_id?: string;
+  project_id?: string;
+  type: 'inkoopfactuur' | 'bon' | 'abonnement' | 'kilometervergoeding' | 'overig';
+  referentie_nummer?: string;
+  bedrag_excl_btw: number;
+  btw_bedrag: number;
+  btw_percentage: number;
+  bedrag_incl_btw: number;
+  datum: string;
+  vervaldatum?: string;
+  status: 'open' | 'betaald' | 'verlopen';
+  betaald_op?: string;
+  categorie: 'materiaal' | 'arbeid_extern' | 'transport' | 'gereedschap' | 'kantoor' | 'software' | 'verzekering' | 'overig';
+  grootboek_id?: string;
+  bijlage_url?: string;
+  omschrijving: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+// ============ BESTELBONNEN (Tier 2 Feature 3) ============
+
+export interface Bestelbon {
+  id: string;
+  user_id: string;
+  bestelbon_nummer: string;
+  leverancier_id: string;
+  offerte_id?: string;
+  project_id?: string;
+  status: 'concept' | 'besteld' | 'deels_ontvangen' | 'ontvangen' | 'geannuleerd';
+  besteld_op?: string;
+  verwachte_levering?: string;
+  ontvangen_op?: string;
+  subtotaal: number;
+  btw_bedrag: number;
+  totaal: number;
+  opmerkingen?: string;
+  interne_notitie?: string;
+  referentie?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface BestelbonRegel {
+  id: string;
+  user_id: string;
+  bestelbon_id: string;
+  omschrijving: string;
+  aantal: number;
+  eenheid?: string;
+  prijs_per_eenheid: number;
+  btw_percentage: number;
+  totaal: number;
+  aantal_ontvangen?: number;
+  volledig_ontvangen?: boolean;
+  offerte_item_id?: string;
+  created_at: string;
+}
+
+// ============ LEVERINGSBONNEN (Tier 2 Feature 4) ============
+
+export interface Leveringsbon {
+  id: string;
+  user_id: string;
+  leveringsbon_nummer: string;
+  klant_id: string;
+  project_id?: string;
+  werkbon_id?: string;
+  bestelbon_id?: string;
+  datum: string;
+  locatie_adres: string;
+  locatie_stad?: string;
+  locatie_postcode?: string;
+  status: 'concept' | 'geleverd' | 'getekend';
+  klant_handtekening?: string;
+  klant_naam_getekend?: string;
+  getekend_op?: string;
+  omschrijving?: string;
+  opmerkingen_klant?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface LeveringsbonRegel {
+  id: string;
+  user_id: string;
+  leveringsbon_id: string;
+  omschrijving: string;
+  aantal: number;
+  eenheid?: string;
+  opmerking?: string;
+  created_at: string;
+}
+
+// ============ VOORRAADBEHEER (Tier 2 Feature 5) ============
+
+export interface VoorraadArtikel {
+  id: string;
+  user_id: string;
+  naam: string;
+  sku?: string;
+  categorie: string;
+  eenheid: string;
+  huidige_voorraad: number;
+  minimum_voorraad: number;
+  maximum_voorraad?: number;
+  inkoop_prijs: number;
+  verkoop_prijs?: number;
+  leverancier_id?: string;
+  leverancier_artikelnummer?: string;
+  levertijd_dagen?: number;
+  opslaglocatie?: string;
+  actief: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface VoorraadMutatie {
+  id: string;
+  user_id: string;
+  artikel_id: string;
+  type: 'inkoop' | 'verbruik' | 'correctie' | 'retour';
+  aantal: number;
+  reden?: string;
+  project_id?: string;
+  bestelbon_id?: string;
+  werkbon_id?: string;
+  saldo_na_mutatie: number;
+  datum: string;
+  created_at: string;
+}
+
+// ============ DEALS / SALES PIPELINE (Tier 3 Feature 1) ============
+
+export interface Deal {
+  id: string;
+  user_id: string;
+
+  // Koppeling
+  klant_id: string;
+  contactpersoon_id?: string;
+
+  // Deal info
+  titel: string;
+  beschrijving?: string;
+  verwachte_waarde: number;
+  werkelijke_waarde?: number;
+
+  // Pipeline
+  fase: string;
+  fase_sinds: string;
+
+  // Status
+  status: 'open' | 'gewonnen' | 'verloren' | 'on-hold';
+  verloren_reden?: string;
+  gewonnen_op?: string;
+  verloren_op?: string;
+
+  // Verwachting
+  verwachte_sluitdatum?: string;
+  kans_percentage?: number;
+
+  // Bron
+  bron?: 'website' | 'telefoon' | 'email' | 'referentie' | 'social_media' | 'beurs' | 'overig';
+
+  // Koppelingen
+  offerte_ids?: string[];
+  project_id?: string;
+
+  // Eigenaar
+  medewerker_id?: string;
+
+  // Activiteiten
+  laatste_activiteit?: string;
+  volgende_actie?: string;
+  volgende_actie_datum?: string;
+
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface DealActiviteit {
+  id: string;
+  user_id: string;
+  deal_id: string;
+
+  type: 'notitie' | 'email' | 'telefoon' | 'vergadering' | 'offerte_verstuurd' | 'status_wijziging';
+  beschrijving: string;
+  datum: string;
+
+  email_id?: string;
+  offerte_id?: string;
+
+  created_at: string;
+}
+
+// ============ LEAD CAPTURE (Tier 3 Feature 2) ============
+
+export interface LeadFormulier {
+  id: string;
+  user_id: string;
+
+  naam: string;
+  beschrijving?: string;
+
+  velden: LeadFormulierVeld[];
+
+  bedank_tekst: string;
+  redirect_url?: string;
+  email_notificatie: boolean;
+  auto_deal_aanmaken: boolean;
+  deal_fase?: string;
+  standaard_bron: string;
+
+  knop_tekst: string;
+  kleur?: string;
+
+  publiek_token: string;
+
+  actief: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface LeadFormulierVeld {
+  id: string;
+  label: string;
+  type: 'tekst' | 'email' | 'telefoon' | 'textarea' | 'select' | 'checkbox';
+  verplicht: boolean;
+  placeholder?: string;
+  opties?: string[];
+  volgorde: number;
+}
+
+export interface LeadInzending {
+  id: string;
+  user_id: string;
+  formulier_id: string;
+
+  data: Record<string, string>;
+
+  ip_adres?: string;
+  browser?: string;
+  pagina_url?: string;
+
+  status: 'nieuw' | 'bekeken' | 'verwerkt';
+  deal_id?: string;
+  klant_id?: string;
+
+  created_at: string;
+}
+
+// ============ GEDEELDE INBOX UITBREIDING (Tier 3 Feature 3) ============
+
+export interface InternEmailNotitie {
+  id: string;
+  medewerker_id: string;
+  medewerker_naam: string;
+  tekst: string;
+  datum: string;
+}
+
+// ============ KVK LOOKUP (Tier 3 Feature 4) ============
+
+export interface KvkResultaat {
+  kvk_nummer: string;
+  bedrijfsnaam: string;
+  adres?: string;
+  postcode?: string;
+  stad?: string;
+  btw_nummer?: string;
+}
+
+// ============ DOCUMENT STYLING / HUISSTIJL ============
+
+export type DocumentTemplateId = 'klassiek' | 'modern' | 'minimaal' | 'industrieel';
+export type LogoPositie = 'links' | 'rechts' | 'midden';
+export type BriefpapierModus = 'geen' | 'achtergrond' | 'alleen_eerste_pagina';
+
+export interface DocumentStyle {
+  id: string;
+  user_id: string;
+  // Template basis
+  template: DocumentTemplateId;
+  // Lettertypen
+  heading_font: string;
+  body_font: string;
+  font_grootte_basis: number;
+  // Kleuren
+  primaire_kleur: string;
+  secundaire_kleur: string;
+  accent_kleur: string;
+  tekst_kleur: string;
+  // Marges (in mm)
+  marge_boven: number;
+  marge_onder: number;
+  marge_links: number;
+  marge_rechts: number;
+  // Logo
+  logo_positie: LogoPositie;
+  logo_grootte: number;
+  // Briefpapier
+  briefpapier_url: string;
+  briefpapier_modus: BriefpapierModus;
+  // Header / Footer
+  toon_header: boolean;
+  toon_footer: boolean;
+  footer_tekst: string;
+  // Tabel styling
+  tabel_stijl: 'striped' | 'grid' | 'plain';
+  tabel_header_kleur: string;
   created_at: string;
   updated_at: string;
 }

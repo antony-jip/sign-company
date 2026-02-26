@@ -9,6 +9,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Loader2,
+  Clock,
 } from 'lucide-react'
 import { getOffertes, getFacturen, getProjecten } from '@/services/supabaseService'
 import { formatCurrency } from '@/lib/utils'
@@ -16,7 +17,7 @@ import type { Offerte, Factuur, Project } from '@/types'
 import { logger } from '../../utils/logger'
 
 interface WorkflowItem {
-  type: 'factureer' | 'vervallen' | 'geen_offerte'
+  type: 'factureer' | 'vervallen' | 'geen_offerte' | 'verloopt_binnenkort'
   title: string
   subtitle: string
   link: string
@@ -83,7 +84,27 @@ export function WorkflowWidget() {
           })
         }
 
-        // 3. Actieve projecten zonder offerte
+        // 3. Offertes die binnenkort verlopen (binnen 7 dagen)
+        const binnenkortVerlopend = offertes.filter((o: Offerte) => {
+          if (!['verzonden', 'bekeken'].includes(o.status) || !o.geldig_tot) return false
+          const geldigTot = new Date(o.geldig_tot)
+          const dagenTot = Math.floor((geldigTot.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          return dagenTot >= 0 && dagenTot <= 7
+        })
+        for (const offerte of binnenkortVerlopend) {
+          const dagenTot = Math.floor(
+            (new Date(offerte.geldig_tot).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          )
+          workflowItems.push({
+            type: 'verloopt_binnenkort',
+            title: `${offerte.nummer} - ${offerte.titel}`,
+            subtitle: `${offerte.klant_naam || 'Klant'} \u2022 ${dagenTot === 0 ? 'Verloopt vandaag!' : `Nog ${dagenTot} dag${dagenTot !== 1 ? 'en' : ''}`}`,
+            link: `/offertes/${offerte.id}`,
+            urgency: dagenTot <= 2 ? 'high' : 'medium',
+          })
+        }
+
+        // 4. Actieve projecten zonder offerte
         const projectIdsMetOfferte = new Set(
           offertes.filter((o: Offerte) => o.project_id).map((o: Offerte) => o.project_id)
         )
@@ -142,18 +163,21 @@ export function WorkflowWidget() {
   const iconMap = {
     factureer: <Receipt className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />,
     vervallen: <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />,
+    verloopt_binnenkort: <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />,
     geen_offerte: <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />,
   }
 
   const labelMap = {
     factureer: 'Te factureren',
     vervallen: 'Vervallen',
+    verloopt_binnenkort: 'Verloopt',
     geen_offerte: 'Geen offerte',
   }
 
   const badgeColorMap = {
     factureer: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
     vervallen: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+    verloopt_binnenkort: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
     geen_offerte: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
   }
 

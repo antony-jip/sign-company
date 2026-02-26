@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { signIn, signUp, signOut, getSession, onAuthStateChange } from '@/services/authService'
+import { signIn, signUp, signOut, getSession, onAuthStateChange, type AuthSession } from '@/services/authService'
 
 interface User {
   id: string
@@ -12,7 +12,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null
-  session: any | null
+  session: AuthSession | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<any | null>(null)
+  const [session, setSession] = useState<AuthSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
