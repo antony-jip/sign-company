@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, Image, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, Image, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import type { CalculatieRegel } from '@/types'
@@ -80,6 +80,10 @@ export interface QuoteLineItem {
   is_optioneel?: boolean
   // Interne notitie (FIX 15)
   interne_notitie?: string
+  // Bijlage tekening/foto per item
+  bijlage_url?: string
+  bijlage_type?: 'image/jpeg' | 'image/png' | 'application/pdf'
+  bijlage_naam?: string
 }
 
 export interface OmschrijvingSuggestie {
@@ -710,6 +714,77 @@ export function QuoteItemsTable({
                           try {
                             const compressed = await compressImage(file)
                             onUpdateItem(item.id, 'foto_url', compressed)
+                          } catch {
+                            // Silent fail
+                          }
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* ── Bijlage tekening/foto per item ── */}
+                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tekening / Bijlage</span>
+                    {item.bijlage_naam && (
+                      <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[150px]">{item.bijlage_naam}</span>
+                    )}
+                  </div>
+
+                  {item.bijlage_url ? (
+                    <div className="mt-2 relative inline-block group">
+                      {item.bijlage_type === 'application/pdf' ? (
+                        <div className="h-20 w-28 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex flex-col items-center justify-center text-muted-foreground">
+                          <Paperclip className="h-6 w-6 mb-1" />
+                          <span className="text-[10px] truncate max-w-[90px]">{item.bijlage_naam || 'PDF'}</span>
+                        </div>
+                      ) : (
+                        <img
+                          src={item.bijlage_url}
+                          alt={item.beschrijving || 'Item bijlage'}
+                          className="h-20 w-auto rounded-lg border border-gray-200 dark:border-gray-700 object-cover"
+                        />
+                      )}
+                      <button
+                        onClick={() => {
+                          onUpdateItem(item.id, 'bijlage_url', '')
+                          onUpdateItem(item.id, 'bijlage_type', '')
+                          onUpdateItem(item.id, 'bijlage_naam', '')
+                        }}
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                        title="Bijlage verwijderen"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors cursor-pointer">
+                      <Plus className="h-3 w-3" />
+                      Tekening/foto toevoegen
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,application/pdf"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          if (file.size > 5 * 1024 * 1024) {
+                            alert('Bestand is te groot (max 5MB)')
+                            e.target.value = ''
+                            return
+                          }
+                          try {
+                            const reader = new FileReader()
+                            reader.onload = (ev) => {
+                              const base64 = ev.target?.result as string
+                              onUpdateItem(item.id, 'bijlage_url', base64)
+                              onUpdateItem(item.id, 'bijlage_type', file.type as 'image/jpeg' | 'image/png' | 'application/pdf')
+                              onUpdateItem(item.id, 'bijlage_naam', file.name)
+                            }
+                            reader.readAsDataURL(file)
                           } catch {
                             // Silent fail
                           }

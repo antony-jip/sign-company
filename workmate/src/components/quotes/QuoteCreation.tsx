@@ -382,6 +382,9 @@ export function QuoteCreation() {
             foto_op_offerte: item.foto_op_offerte,
             is_optioneel: item.is_optioneel,
             interne_notitie: item.interne_notitie,
+            bijlage_url: item.bijlage_url,
+            bijlage_type: item.bijlage_type,
+            bijlage_naam: item.bijlage_naam,
           }))
 
         if (mappedItems.length > 0) {
@@ -626,6 +629,9 @@ export function QuoteCreation() {
               foto_op_offerte: item.foto_op_offerte,
               is_optioneel: item.is_optioneel,
               interne_notitie: item.interne_notitie,
+              bijlage_url: item.bijlage_url,
+              bijlage_type: item.bijlage_type,
+              bijlage_naam: item.bijlage_naam,
             })
           )
         )
@@ -677,6 +683,9 @@ export function QuoteCreation() {
               foto_op_offerte: item.foto_op_offerte,
               is_optioneel: item.is_optioneel,
               interne_notitie: item.interne_notitie,
+              bijlage_url: item.bijlage_url,
+              bijlage_type: item.bijlage_type,
+              bijlage_naam: item.bijlage_naam,
             })
           )
         )
@@ -833,6 +842,9 @@ export function QuoteCreation() {
             foto_op_offerte: item.foto_op_offerte,
             is_optioneel: item.is_optioneel,
             interne_notitie: item.interne_notitie,
+            bijlage_url: item.bijlage_url,
+            bijlage_type: item.bijlage_type,
+            bijlage_naam: item.bijlage_naam,
           })
         )
       )
@@ -1003,6 +1015,9 @@ export function QuoteCreation() {
               foto_op_offerte: item.foto_op_offerte,
               is_optioneel: item.is_optioneel,
               interne_notitie: item.interne_notitie,
+              bijlage_url: item.bijlage_url,
+              bijlage_type: item.bijlage_type,
+              bijlage_naam: item.bijlage_naam,
             })
           )
         )
@@ -1059,6 +1074,9 @@ export function QuoteCreation() {
               foto_op_offerte: item.foto_op_offerte,
               is_optioneel: item.is_optioneel,
               interne_notitie: item.interne_notitie,
+              bijlage_url: item.bijlage_url,
+              bijlage_type: item.bijlage_type,
+              bijlage_naam: item.bijlage_naam,
             })
           )
         )

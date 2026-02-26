@@ -614,6 +614,104 @@ export function generateOffertePDF(
     }
   }
 
+  // Bijlage-pagina's: per item met bijlage_url een liggend A4 pagina
+  const bijlageItems = items.filter(i => i.bijlage_url && i.bijlage_type !== 'application/pdf')
+  for (const bijlageItem of bijlageItems) {
+    doc.addPage('a4', 'landscape')
+    const pgW = doc.internal.pageSize.getWidth()   // 297mm
+    const pgH = doc.internal.pageSize.getHeight()   // 210mm
+    addBriefpapierBackground(doc, docStyle, doc.getNumberOfPages())
+
+    const bMargin = 10
+
+    // Compact specs bovenaan — 2 kolommen, 8pt font
+    doc.setFontSize(8)
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
+
+    let specY = bMargin + 4
+    const leftCol = bMargin
+    const rightCol = pgW / 2 + 5
+
+    // Gather filled fields — check both extra_velden and detail_regels
+    const extraVelden = bijlageItem.extra_velden || {}
+    const detailRegels = bijlageItem.detail_regels || []
+    const getField = (label: string): string => {
+      if (extraVelden[label]) return extraVelden[label]
+      const regel = detailRegels.find(r => r.label === label)
+      return regel?.waarde || ''
+    }
+    const leftFields: [string, string][] = []
+    const rightFields: [string, string][] = []
+
+    // Left column fields
+    if (bijlageItem.beschrijving) leftFields.push(['Omschrijving', bijlageItem.beschrijving])
+    if (bijlageItem.aantal) leftFields.push(['Aantal', String(bijlageItem.aantal)])
+    const afmetingVeld = getField('Afmeting') || (bijlageItem.breedte_mm && bijlageItem.hoogte_mm ? `${bijlageItem.breedte_mm} × ${bijlageItem.hoogte_mm} mm` : '')
+    if (afmetingVeld) leftFields.push(['Afmeting', afmetingVeld])
+
+    // Right column fields
+    const materiaal = getField('Materiaal'); if (materiaal) rightFields.push(['Materiaal', materiaal])
+    const layout = getField('Lay-out'); if (layout) rightFields.push(['Lay-out', layout])
+    const montage = getField('Montage'); if (montage) rightFields.push(['Montage', montage])
+    const opmerking = getField('Opmerking'); if (opmerking) rightFields.push(['Opmerking', opmerking])
+
+    // Price line on right side if space remains
+    if (bijlageItem.totaal) rightFields.push(['Totaal', formatCurrency(bijlageItem.totaal)])
+
+    const maxRows = Math.max(leftFields.length, rightFields.length)
+    for (let r = 0; r < maxRows; r++) {
+      const rowY = specY + r * 4.5
+      if (r < leftFields.length) {
+        doc.setFont(bodyFont, 'bold')
+        doc.text(`${leftFields[r][0]}: `, leftCol, rowY)
+        doc.setFont(bodyFont, 'normal')
+        doc.text(leftFields[r][1], leftCol + doc.getTextWidth(`${leftFields[r][0]}: `), rowY)
+      }
+      if (r < rightFields.length) {
+        doc.setFont(bodyFont, 'bold')
+        doc.text(`${rightFields[r][0]}: `, rightCol, rowY)
+        doc.setFont(bodyFont, 'normal')
+        doc.text(rightFields[r][1], rightCol + doc.getTextWidth(`${rightFields[r][0]}: `), rowY)
+      }
+    }
+
+    // Separator line
+    const sepY = specY + maxRows * 4.5 + 2
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.3)
+    doc.line(bMargin, sepY, pgW - bMargin, sepY)
+
+    // Image — full width, proportional scaling, maximum available height
+    const imgY = sepY + 3
+    const imgMaxW = pgW - 2 * bMargin
+    const availableH = pgH - imgY - bMargin
+
+    try {
+      // Determine image dimensions for proportional scaling
+      const imgProps = doc.getImageProperties(bijlageItem.bijlage_url!)
+      const aspectRatio = imgProps.height / imgProps.width
+      let imgW = imgMaxW
+      let imgH = imgW * aspectRatio
+      if (imgH > availableH) {
+        imgH = availableH
+        imgW = imgH / aspectRatio
+      }
+      // Center horizontally if image is narrower than available width
+      const imgX = bMargin + (imgMaxW - imgW) / 2
+      const format = bijlageItem.bijlage_type === 'image/png' ? 'PNG' : 'JPEG'
+      doc.addImage(bijlageItem.bijlage_url!, format, imgX, imgY, imgW, imgH, undefined, 'MEDIUM')
+    } catch {
+      doc.setDrawColor(200, 200, 200)
+      doc.setLineWidth(0.3)
+      doc.rect(bMargin, imgY, imgMaxW, availableH)
+      doc.setFontSize(10)
+      doc.setFont(bodyFont, 'normal')
+      doc.setTextColor(180, 180, 180)
+      doc.text('Bijlage niet beschikbaar', bMargin + imgMaxW / 2, imgY + availableH / 2, { align: 'center' })
+    }
+  }
+
   // Footer
   addFooter(doc, bedrijfsProfiel, docStyle)
 

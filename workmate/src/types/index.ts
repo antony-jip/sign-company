@@ -186,6 +186,10 @@ export interface OfferteItem {
   is_optioneel?: boolean;
   // Interne notitie (FIX 15)
   interne_notitie?: string;
+  // Bijlage tekening/foto per item
+  bijlage_url?: string;
+  bijlage_type?: 'image/jpeg' | 'image/png' | 'application/pdf';
+  bijlage_naam?: string;
   created_at: string;
 }
 
