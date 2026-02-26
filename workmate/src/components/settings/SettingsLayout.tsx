@@ -81,6 +81,62 @@ import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
+// Font systeem constanten
+const BESCHIKBARE_FONTS = [
+  { value: 'DM Sans', label: 'DM Sans', beschrijving: 'Clean & compact' },
+  { value: 'Manrope', label: 'Manrope', beschrijving: 'Modern & geometrisch' },
+  { value: 'Inter', label: 'Inter', beschrijving: 'Neutraal & veelzijdig' },
+  { value: 'Plus Jakarta Sans', label: 'Plus Jakarta Sans', beschrijving: 'Vriendelijk & modern' },
+  { value: 'Nunito Sans', label: 'Nunito Sans', beschrijving: 'Afgerond & leesbaar' },
+  { value: 'Outfit', label: 'Outfit', beschrijving: 'Strak & minimalistisch' },
+  { value: 'Poppins', label: 'Poppins', beschrijving: 'Rond & populair' },
+  { value: 'Raleway', label: 'Raleway', beschrijving: 'Elegant & dun' },
+  { value: 'Source Sans 3', label: 'Source Sans 3', beschrijving: 'Adobe classic' },
+  { value: 'Work Sans', label: 'Work Sans', beschrijving: 'Optimaal voor UI' },
+] as const
+
+type FontSize = 'klein' | 'normaal' | 'groot' | 'extra-groot'
+
+const BESCHIKBARE_FONT_SIZES: { value: FontSize; label: string; beschrijving: string; cssValue: string }[] = [
+  { value: 'klein', label: 'Klein', beschrijving: 'Compact weergave', cssValue: '14px' },
+  { value: 'normaal', label: 'Normaal', beschrijving: 'Standaard grootte', cssValue: '16px' },
+  { value: 'groot', label: 'Groot', beschrijving: 'Beter leesbaar', cssValue: '18px' },
+  { value: 'extra-groot', label: 'Extra groot', beschrijving: 'Maximale leesbaarheid', cssValue: '20px' },
+]
+
+const FONT_STORAGE_KEY = 'workmate_weergave_instellingen'
+
+function getFontSettings(): { font_family: string; font_size: FontSize } {
+  try {
+    const stored = localStorage.getItem(FONT_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return {
+        font_family: parsed.font_family || 'DM Sans',
+        font_size: parsed.font_size || 'normaal',
+      }
+    }
+  } catch { /* ignore */ }
+  return { font_family: 'DM Sans', font_size: 'normaal' }
+}
+
+function saveFontSettings(data: { font_family?: string; font_size?: FontSize }) {
+  try {
+    const current = getFontSettings()
+    const updated = { ...current, ...data, updated_at: new Date().toISOString() }
+    localStorage.setItem(FONT_STORAGE_KEY, JSON.stringify(updated))
+  } catch { /* ignore */ }
+}
+
+function applyFontFamily(font: string) {
+  document.documentElement.style.setProperty('--font-family', `'${font}'`)
+}
+
+function applyFontSize(size: FontSize) {
+  const config = BESCHIKBARE_FONT_SIZES.find((s) => s.value === size)
+  document.documentElement.style.setProperty('--font-size', config?.cssValue ?? '16px')
+}
+
 const settingsTabs = [
   { id: 'profiel', label: 'Profiel', icon: User, description: 'Uw persoonlijke gegevens' },
   { id: 'bedrijf', label: 'Bedrijf', icon: Building2, description: 'Bedrijfsinformatie en logo' },
@@ -3469,6 +3525,25 @@ function WeergaveTab() {
     setSidebarItems(ALL_SIDEBAR_ITEMS.map((i) => i.label))
   }
 
+  // Font & font size state
+  const [fontFamily, setFontFamily] = useState(() => getFontSettings().font_family)
+  const [fontSize, setFontSize] = useState<FontSize>(() => getFontSettings().font_size)
+
+  const handleSelectFont = (font: string) => {
+    setFontFamily(font)
+    applyFontFamily(font)
+    saveFontSettings({ font_family: font })
+    toast.success(`Lettertype "${font}" ingesteld`)
+  }
+
+  const handleSelectFontSize = (size: FontSize) => {
+    setFontSize(size)
+    applyFontSize(size)
+    saveFontSettings({ font_size: size })
+    const sizeLabel = BESCHIKBARE_FONT_SIZES.find((s) => s.value === size)?.label ?? size
+    toast.success(`Lettergrootte "${sizeLabel}" ingesteld`)
+  }
+
   const [autoCollapse, setAutoCollapse] = useState(() => {
     const stored = localStorage.getItem('workmate_autoCollapse')
     return stored !== null ? JSON.parse(stored) : true
@@ -3570,6 +3645,108 @@ function WeergaveTab() {
                     {p.beschrijving}
                   </p>
                   {/* Active indicator */}
+                  {isActive && (
+                    <div className="absolute top-2 right-2">
+                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Font Family Selector */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <Settings className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                Lettertype
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Kies een lettertype voor de hele applicatie
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {BESCHIKBARE_FONTS.map((font) => {
+              const isActive = fontFamily === font.value
+              return (
+                <button
+                  key={font.value}
+                  onClick={() => handleSelectFont(font.value)}
+                  className={`relative group rounded-xl border-2 p-3 transition-all duration-200 text-left ${
+                    isActive
+                      ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20'
+                      : 'border-border hover:border-primary/40 hover:shadow-sm'
+                  }`}
+                >
+                  <span
+                    className="block text-lg font-semibold text-foreground mb-0.5"
+                    style={{ fontFamily: `'${font.value}', sans-serif` }}
+                  >
+                    Aa
+                  </span>
+                  <p className={`text-xs font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                    {font.label}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                    {font.beschrijving}
+                  </p>
+                  {isActive && (
+                    <div className="absolute top-2 right-2">
+                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Font Size Selector */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <Settings className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                Lettergrootte
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Pas de tekstgrootte aan naar jouw voorkeur
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {BESCHIKBARE_FONT_SIZES.map((size) => {
+              const isActive = fontSize === size.value
+              return (
+                <button
+                  key={size.value}
+                  onClick={() => handleSelectFontSize(size.value)}
+                  className={`relative group rounded-xl border-2 p-3 transition-all duration-200 text-left ${
+                    isActive
+                      ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20'
+                      : 'border-border hover:border-primary/40 hover:shadow-sm'
+                  }`}
+                >
+                  <span
+                    className="block font-semibold text-foreground mb-1"
+                    style={{ fontSize: size.cssValue }}
+                  >
+                    Aa
+                  </span>
+                  <p className={`text-xs font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                    {size.label}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                    {size.beschrijving}
+                  </p>
                   {isActive && (
                     <div className="absolute top-2 right-2">
                       <CheckCircle2 className="w-4 h-4 text-primary" />
