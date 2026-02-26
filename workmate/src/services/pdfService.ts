@@ -266,8 +266,6 @@ function addClientInfo(
 function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: DocumentStyle | null): void {
   if (docStyle && !docStyle.toon_footer) return
 
-  const pageHeight = doc.internal.pageSize.getHeight()
-  const pageWidth = doc.internal.pageSize.getWidth()
   const pageCount = doc.getNumberOfPages()
   const margins = getMargins(docStyle)
   const bodyFont = getBodyFont(docStyle)
@@ -275,34 +273,48 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
 
+    // Get per-page dimensions (portrait vs landscape pages differ)
+    const pw = doc.internal.pageSize.getWidth()
+    const ph = doc.internal.pageSize.getHeight()
+
     // Add briefpapier background on subsequent pages
     if (i > 1) addBriefpapierBackground(doc, docStyle, i)
 
-    // Footer line
-    doc.setDrawColor(200, 200, 200)
-    doc.setLineWidth(0.3)
-    doc.line(margins.left, pageHeight - margins.bottom, pageWidth - margins.right, pageHeight - margins.bottom)
+    // Detect landscape pages (bijlage pages): only show page number, no line or company text
+    const isLandscape = pw > ph
 
-    // Footer text
     doc.setFontSize(8)
     doc.setFont(bodyFont, 'normal')
     doc.setTextColor(150, 150, 150)
 
-    let footerText = ''
-    if (docStyle?.footer_tekst) {
-      footerText = docStyle.footer_tekst
-    } else {
-      const footerParts: string[] = []
-      if (bedrijfsProfiel.bedrijfsnaam) footerParts.push(bedrijfsProfiel.bedrijfsnaam)
-      if (bedrijfsProfiel.kvk_nummer) footerParts.push(`KvK: ${bedrijfsProfiel.kvk_nummer}`)
-      if (bedrijfsProfiel.btw_nummer) footerParts.push(`BTW: ${bedrijfsProfiel.btw_nummer}`)
-      footerText = footerParts.join(' | ')
-    }
+    if (!isLandscape) {
+      // Footer line
+      doc.setDrawColor(200, 200, 200)
+      doc.setLineWidth(0.3)
+      doc.line(margins.left, ph - margins.bottom, pw - margins.right, ph - margins.bottom)
 
-    doc.text(footerText, margins.left, pageHeight - margins.bottom + 6)
-    doc.text(`Pagina ${i} van ${pageCount}`, pageWidth - margins.right, pageHeight - margins.bottom + 6, {
-      align: 'right',
-    })
+      // Footer text (company info)
+      let footerText = ''
+      if (docStyle?.footer_tekst) {
+        footerText = docStyle.footer_tekst
+      } else {
+        const footerParts: string[] = []
+        if (bedrijfsProfiel.bedrijfsnaam) footerParts.push(bedrijfsProfiel.bedrijfsnaam)
+        if (bedrijfsProfiel.kvk_nummer) footerParts.push(`KvK: ${bedrijfsProfiel.kvk_nummer}`)
+        if (bedrijfsProfiel.btw_nummer) footerParts.push(`BTW: ${bedrijfsProfiel.btw_nummer}`)
+        footerText = footerParts.join(' | ')
+      }
+
+      doc.text(footerText, margins.left, ph - margins.bottom + 6)
+      doc.text(`Pagina ${i} van ${pageCount}`, pw - margins.right, ph - margins.bottom + 6, {
+        align: 'right',
+      })
+    } else {
+      // Landscape: only page number, bottom-right
+      doc.text(`Pagina ${i} van ${pageCount}`, pw - 10, ph - 5, {
+        align: 'right',
+      })
+    }
   }
 }
 
@@ -601,12 +613,22 @@ export function generateOffertePDF(
       { label: 'Opmerking', value: getField('Opmerking') },
     ].filter(s => s.value)
 
+    // 2-column layout: split specs into left and right columns
+    const leftCol: { label: string; value: string }[] = []
+    const rightCol: { label: string; value: string }[] = []
+    specItems.forEach((spec, i) => {
+      if (i % 2 === 0) leftCol.push(spec)
+      else rightCol.push(spec)
+    })
+
     const lineHeight = 5
     const boxPadding = 4
     const boxX = logoEndX
     const boxY = bMargin
     const boxWidth = pgW - boxX - bMargin
-    const boxHeight = (specItems.length * lineHeight) + (boxPadding * 2)
+    const maxRows = Math.max(leftCol.length, rightCol.length)
+    const boxHeight = (maxRows * lineHeight) + (boxPadding * 2)
+    const colWidth = boxWidth / 2
 
     // Specs box background
     doc.setFillColor(248, 248, 250)
@@ -614,20 +636,22 @@ export function generateOffertePDF(
     doc.setLineWidth(0.5)
     doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 2, 2, 'FD')
 
-    // Draw spec items
-    specItems.forEach((spec, i) => {
-      const y = boxY + boxPadding + 3 + (i * lineHeight)
-      // Label
-      doc.setFont(bodyFont, 'bold')
-      doc.setFontSize(8)
-      doc.setTextColor(130, 130, 130)
-      doc.text(spec.label, boxX + 4, y)
-      // Value
-      doc.setFont(bodyFont, 'normal')
-      doc.setFontSize(9)
-      doc.setTextColor(40, 40, 40)
-      doc.text(spec.value, boxX + 40, y)
-    })
+    // Draw spec items in 2 columns
+    const drawSpecCol = (col: { label: string; value: string }[], startX: number) => {
+      col.forEach((spec, i) => {
+        const y = boxY + boxPadding + 3 + (i * lineHeight)
+        doc.setFont(bodyFont, 'bold')
+        doc.setFontSize(8)
+        doc.setTextColor(130, 130, 130)
+        doc.text(spec.label, startX + 4, y)
+        doc.setFont(bodyFont, 'normal')
+        doc.setFontSize(9)
+        doc.setTextColor(40, 40, 40)
+        doc.text(spec.value, startX + 32, y)
+      })
+    }
+    drawSpecCol(leftCol, boxX)
+    drawSpecCol(rightCol, boxX + colWidth)
 
     // --- Separator ---
     const sepY = boxY + boxHeight + 3
