@@ -162,6 +162,8 @@ export function QuoteCreation() {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const autoSaveIdRef = useRef<string | null>(null) // tracks created offerte id for new quotes
+  const hasUnsavedChangesRef = useRef(false)
+  const performAutoSaveRef = useRef<() => Promise<void>>(async () => {})
 
   // ── Computed ──
   const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
@@ -691,6 +693,7 @@ export function QuoteCreation() {
         )
       }
 
+      hasUnsavedChangesRef.current = false
       setAutoSaveStatus('saved')
       // Reset indicator after 3 seconds
       setTimeout(() => setAutoSaveStatus('idle'), 3000)
@@ -700,20 +703,47 @@ export function QuoteCreation() {
     }
   }, [user?.id, selectedKlantId, selectedProjectId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten])
 
-  // Debounced autosave: trigger 3s after last change (only when editing)
+  // Keep ref in sync so unmount handler can call latest version
+  useEffect(() => {
+    performAutoSaveRef.current = performAutoSave
+  }, [performAutoSave])
+
+  // Debounced autosave: trigger 1.5s after last change (only when editing)
   useEffect(() => {
     if (showKlantSelector) return
     if (!selectedKlantId || !offerteTitel.trim() || items.length === 0) return
 
+    hasUnsavedChangesRef.current = true
+
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     autoSaveTimerRef.current = setTimeout(() => {
       performAutoSave()
-    }, 3000)
+    }, 1500)
 
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     }
   }, [items, offerteTitel, notities, voorwaarden, geldigTot, selectedKlantId, selectedProjectId, showKlantSelector])
+
+  // Save on unmount (navigating away) — fire-and-forget
+  useEffect(() => {
+    return () => {
+      if (hasUnsavedChangesRef.current) {
+        performAutoSaveRef.current()
+      }
+    }
+  }, [])
+
+  // Warn user about unsaved changes when closing tab/browser
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChangesRef.current) {
+        e.preventDefault()
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [])
 
   // ── Contactpersoon toevoegen ──
   const handleAddContact = async () => {
@@ -1098,6 +1128,7 @@ export function QuoteCreation() {
         }
       }
 
+      hasUnsavedChangesRef.current = false
       toast.success(
         isEditMode
           ? 'Offerte bijgewerkt'
