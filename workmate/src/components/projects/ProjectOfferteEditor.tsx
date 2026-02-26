@@ -264,7 +264,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                 <Label>Status</Label>
                 <select
                   value={status}
-                  onChange={e => setStatus(e.target.value)}
+                  onChange={e => setStatus(e.target.value as Offerte['status'])}
                   className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white h-9"
                 >
                   <option value="concept">Concept</option>

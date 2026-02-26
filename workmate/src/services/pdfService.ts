@@ -927,7 +927,7 @@ export function generateRapportPDF(
         margin: { left: margins.left, right: margins.right },
       })
 
-      y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY + 10 || y + 20
+      y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ? (doc as JsPDFWithAutoTable).lastAutoTable!.finalY + 10 : y + 20
     }
 
     y += 5
