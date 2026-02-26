@@ -49,6 +49,7 @@ import type {
   LeadInzending,
   InternEmailNotitie,
   DocumentStyle,
+  OfferteVersie,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -555,6 +556,39 @@ export async function deleteOfferteItem(id: string): Promise<void> {
   }
   const items = getLocalData<OfferteItem>('offerte_items')
   setLocalData('offerte_items', items.filter((i) => i.id !== id))
+}
+
+// ============ OFFERTE VERSIES (FIX 12) ============
+
+export async function getOfferteVersies(offerteId: string): Promise<OfferteVersie[]> {
+  assertId(offerteId)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_versies')
+      .select('*')
+      .eq('offerte_id', offerteId)
+      .order('versie_nummer', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<OfferteVersie>('offerte_versies').filter(v => v.offerte_id === offerteId).sort((a, b) => b.versie_nummer - a.versie_nummer)
+}
+
+export async function createOfferteVersie(versie: Omit<OfferteVersie, 'id' | 'created_at'>): Promise<OfferteVersie> {
+  const record: OfferteVersie = {
+    ...versie,
+    id: generateId(),
+    created_at: now(),
+  }
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('offerte_versies').insert(record).select().single()
+    if (error) throw error
+    return data
+  }
+  const versies = getLocalData<OfferteVersie>('offerte_versies')
+  versies.push(record)
+  setLocalData('offerte_versies', versies)
+  return record
 }
 
 // ============ DOCUMENTEN ============

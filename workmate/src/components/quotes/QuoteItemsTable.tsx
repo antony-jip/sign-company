@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, Image, X, Ruler, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, Image, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import type { CalculatieRegel } from '@/types'
@@ -76,6 +76,10 @@ export interface QuoteLineItem {
   // Foto (FIX 10)
   foto_url?: string
   foto_op_offerte?: boolean
+  // Optioneel item (FIX 13)
+  is_optioneel?: boolean
+  // Interne notitie (FIX 15)
+  interne_notitie?: string
 }
 
 export interface OmschrijvingSuggestie {
@@ -499,10 +503,20 @@ export function QuoteItemsTable({
             key={item.id}
             className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm"
           >
-            {/* ──── HEADER: nummer + item naam + totaal + acties ──── */}
-            <div className="flex items-center gap-3 px-4 py-3 bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-bold text-white">{index + 1}</span>
+            {/* ──── HEADER: nummer + item naam + optioneel badge + totaal + acties ──── */}
+            <div className={cn(
+              "flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700",
+              item.is_optioneel
+                ? "bg-amber-50/60 dark:bg-amber-900/10 border-dashed"
+                : "bg-gray-50/80 dark:bg-gray-800/50"
+            )}>
+              <div className={cn(
+                "h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0",
+                item.is_optioneel
+                  ? "bg-amber-200 dark:bg-amber-800/50"
+                  : "bg-gradient-to-br from-accent to-primary"
+              )}>
+                <span className={cn("text-xs font-bold", item.is_optioneel ? "text-amber-700 dark:text-amber-300" : "text-white")}>{index + 1}</span>
               </div>
 
               <AutocompleteInput
@@ -513,9 +527,40 @@ export function QuoteItemsTable({
                 className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-9 text-sm font-semibold flex-1 placeholder:font-normal"
               />
 
-              <span className="text-base font-bold text-foreground flex-shrink-0 min-w-[90px] text-right tabular-nums">
+              {/* FIX 13: Optioneel badge */}
+              {item.is_optioneel && (
+                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded flex-shrink-0">
+                  Optioneel
+                </span>
+              )}
+
+              {/* FIX 15: Interne notitie indicator */}
+              {item.interne_notitie && (
+                <div className="h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0" title="Heeft interne notitie">
+                  <Lock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                </div>
+              )}
+
+              <span className={cn(
+                "text-base font-bold flex-shrink-0 min-w-[90px] text-right tabular-nums",
+                item.is_optioneel ? "text-muted-foreground" : "text-foreground"
+              )}>
                 {formatCurrency(lineTotaal)}
               </span>
+
+              {/* Optioneel toggle */}
+              <button
+                onClick={() => onUpdateItem(item.id, 'is_optioneel', !item.is_optioneel)}
+                className={cn(
+                  "flex-shrink-0 p-1 rounded transition-colors",
+                  item.is_optioneel
+                    ? "text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                    : "text-gray-300 hover:text-amber-500 dark:text-gray-600 dark:hover:text-amber-400"
+                )}
+                title={item.is_optioneel ? 'Maak verplicht' : 'Maak optioneel'}
+              >
+                {item.is_optioneel ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+              </button>
 
               <button
                 onClick={() => toggleCollapse(item.id)}
@@ -672,6 +717,43 @@ export function QuoteItemsTable({
                         }}
                       />
                     </label>
+                  )}
+                </div>
+
+                {/* ── FIX 15: Interne notitie ── */}
+                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                  <button
+                    onClick={() => {
+                      // Toggle: if empty, open with empty string; if has content, collapse
+                      if (!item.interne_notitie && item.interne_notitie !== '') {
+                        onUpdateItem(item.id, 'interne_notitie', ' ')
+                        // Will be cleared to empty string by user
+                      }
+                    }}
+                    className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                  >
+                    <Lock className="h-3 w-3" />
+                    Interne notitie
+                    {item.interne_notitie && item.interne_notitie.trim() && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                    )}
+                  </button>
+                  {(item.interne_notitie !== undefined && item.interne_notitie !== null) && (
+                    <div className="mt-1.5">
+                      <textarea
+                        value={item.interne_notitie || ''}
+                        onChange={(e) => onUpdateItem(item.id, 'interne_notitie', e.target.value)}
+                        placeholder="Interne notitie — niet zichtbaar voor klant"
+                        rows={2}
+                        className="w-full text-xs px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/80 dark:bg-amber-900/20 text-foreground placeholder:text-amber-400 dark:placeholder:text-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-300 dark:focus:ring-amber-700 resize-y"
+                      />
+                      <button
+                        onClick={() => onUpdateItem(item.id, 'interne_notitie', undefined as unknown as string)}
+                        className="text-[10px] text-muted-foreground hover:text-red-500 mt-0.5"
+                      >
+                        Notitie verwijderen
+                      </button>
+                    </div>
                   )}
                 </div>
 

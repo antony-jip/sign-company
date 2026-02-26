@@ -360,7 +360,8 @@ export function generateOffertePDF(
 
   if (offerte.titel) {
     doc.setFont(bodyFont, 'bold')
-    doc.text(`Betreft: ${offerte.titel}`, margins.left, y)
+    const versieText = offerte.versie && offerte.versie > 1 ? ` (v${offerte.versie})` : ''
+    doc.text(`Betreft: ${offerte.titel}${versieText}`, margins.left, y)
     doc.setFont(bodyFont, 'normal')
     y += 8
   }
@@ -373,8 +374,12 @@ export function generateOffertePDF(
   // Check if any items have photos enabled for the offerte
   const hasPhotos = items.some(i => i.foto_op_offerte && i.foto_url)
 
-  // Items table — add dimension info to description
-  const tableBody = items.map((item, index) => {
+  // FIX 13: Split verplichte en optionele items
+  const verplichteItems = items.filter(i => !i.is_optioneel)
+  const optioneleItems = items.filter(i => i.is_optioneel)
+
+  // Build table body helper
+  const buildItemRow = (item: OfferteItem, index: number) => {
     let beschrijving = item.beschrijving
     // FIX 9: Append dimension info
     if (item.breedte_mm && item.hoogte_mm) {
@@ -390,7 +395,10 @@ export function generateOffertePDF(
       item.korting_percentage > 0 ? `${item.korting_percentage}%` : '-',
       formatCurrency(item.totaal),
     ]
-  })
+  }
+
+  // Items table — verplichte items
+  const tableBody = verplichteItems.map((item, index) => buildItemRow(item, index))
 
   const tableStyles = getAutoTableStyles(brand, docStyle)
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -433,6 +441,13 @@ export function generateOffertePDF(
   doc.text(formatCurrency(offerte.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
+  // FIX 16: Afrondingskorting
+  if (offerte.afrondingskorting_excl_btw && offerte.afrondingskorting_excl_btw !== 0) {
+    doc.text('Afrondingskorting:', totalsX - 15, totalsY)
+    doc.text(formatCurrency(offerte.afrondingskorting_excl_btw), pageWidth - margins.right, totalsY, { align: 'right' })
+    totalsY += 7
+  }
+
   // Total line
   doc.setDrawColor(...brand)
   doc.setLineWidth(0.5)
@@ -443,6 +458,63 @@ export function generateOffertePDF(
   doc.setTextColor(...brand)
   doc.text('Totaal:', totalsX, totalsY + 5)
   doc.text(formatCurrency(offerte.totaal), pageWidth - margins.right, totalsY + 5, { align: 'right' })
+
+  // FIX 13: Optionele items sectie
+  if (optioneleItems.length > 0) {
+    totalsY += 20
+    // Check page space
+    if (totalsY > doc.internal.pageSize.getHeight() - 60) {
+      doc.addPage()
+      totalsY = margins.top || 20
+    }
+
+    doc.setFont(headingFont, 'bold')
+    doc.setFontSize(baseFontSize)
+    doc.setTextColor(...brand)
+    doc.text('Optioneel:', margins.left, totalsY)
+    totalsY += 5
+
+    const optioneleTableBody = optioneleItems.map((item, index) => buildItemRow(item, index))
+
+    autoTable(doc, {
+      startY: totalsY,
+      head: [['#', 'Omschrijving', 'Aantal', 'Eenheidsprijs', 'BTW', 'Korting', 'Totaal']],
+      body: optioneleTableBody,
+      theme: tableStyles.theme,
+      headStyles: { ...tableStyles.headStyles, fillColor: [180, 160, 80] },
+      bodyStyles: { ...tableStyles.bodyStyles, fontStyle: 'italic' },
+      alternateRowStyles: tableStyles.alternateRowStyles,
+      columnStyles: {
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 30, halign: 'right' },
+        4: { cellWidth: 18, halign: 'center' },
+        5: { cellWidth: 20, halign: 'center' },
+        6: { cellWidth: 30, halign: 'right' },
+      },
+      margin: { left: margins.left, right: margins.right },
+    })
+
+    const optFinalY = (doc as any).lastAutoTable?.finalY || totalsY + 20
+    let optTotalsY = optFinalY + 8
+
+    const optSubtotaal = optioneleItems.reduce((s, i) => s + i.totaal, 0)
+    const optBtw = optioneleItems.reduce((s, i) => s + i.totaal * (i.btw_percentage / 100), 0)
+
+    doc.setFontSize(baseFontSize - 1)
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
+    doc.text('Subtotaal optioneel:', totalsX - 15, optTotalsY)
+    doc.text(formatCurrency(Math.round(optSubtotaal * 100) / 100), pageWidth - margins.right, optTotalsY, { align: 'right' })
+    optTotalsY += 6
+
+    doc.text('Totaal incl opties:', totalsX - 15, optTotalsY)
+    doc.setFont(bodyFont, 'bold')
+    doc.text(formatCurrency(Math.round((offerte.totaal + optSubtotaal + optBtw) * 100) / 100), pageWidth - margins.right, optTotalsY, { align: 'right' })
+
+    totalsY = optTotalsY + 5
+  }
 
   // Notes
   totalsY += 20

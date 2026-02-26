@@ -138,6 +138,14 @@ export interface Offerte {
   contactpersoon_id?: string;
   // Activiteit log
   activiteiten?: OfferteActiviteit[];
+  // Versie tracking (FIX 12)
+  versie?: number;
+  originele_offerte_id?: string;
+  // Geldigheid (FIX 14)
+  geldigheid_dagen?: number;
+  // Afrondingskorting (FIX 16)
+  afrondingskorting_excl_btw?: number;
+  aangepast_totaal?: number;
   created_at: string;
   updated_at: string;
 }
@@ -174,6 +182,20 @@ export interface OfferteItem {
   // Foto (FIX 10)
   foto_url?: string;
   foto_op_offerte?: boolean;
+  // Optioneel item (FIX 13)
+  is_optioneel?: boolean;
+  // Interne notitie (FIX 15)
+  interne_notitie?: string;
+  created_at: string;
+}
+
+export interface OfferteVersie {
+  id: string;
+  user_id: string;
+  offerte_id: string;
+  versie_nummer: number;
+  snapshot: string;
+  notitie?: string;
   created_at: string;
 }
 
