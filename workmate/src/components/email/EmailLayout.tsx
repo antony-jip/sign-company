@@ -1074,7 +1074,7 @@ export function EmailLayout() {
               ) : (
                 <div>
                   {filteredEmails.map((email, idx) => {
-                    const isActive = selectedEmail?.id === email.id && viewMode === 'reading'
+                    const isActive = selectedEmail?.id === email.id && (viewMode as string) === 'reading'
                     const isChecked = checkedEmails.has(email.id)
                     const isUnread = !email.gelezen
                     const displayName = email.map === 'verzonden' || email.map === 'concepten'
