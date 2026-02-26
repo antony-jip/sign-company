@@ -1147,11 +1147,18 @@ export function QuoteCreation() {
         korting_percentage: item.korting_percentage,
         totaal: item.totaal,
         volgorde: index + 1,
+        soort: item.soort,
+        extra_velden: item.extra_velden,
+        detail_regels: item.detail_regels,
         breedte_mm: item.breedte_mm,
         hoogte_mm: item.hoogte_mm,
         oppervlakte_m2: item.oppervlakte_m2,
         foto_url: item.foto_url,
         foto_op_offerte: item.foto_op_offerte,
+        is_optioneel: item.is_optioneel,
+        bijlage_url: item.bijlage_url,
+        bijlage_type: item.bijlage_type,
+        bijlage_naam: item.bijlage_naam,
         created_at: new Date().toISOString(),
       }))
       const doc = generateOffertePDF(offerteData, offerteItems, selectedKlant, {
