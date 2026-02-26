@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-family: 'Manrope';
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -9,6 +13,7 @@
 
   body {
     @apply text-gray-900 antialiased;
+    font-family: var(--font-family), 'Manrope', system-ui, sans-serif;
   }
 }
 
@@ -46,4 +51,13 @@
 /* Skip link for accessibility */
 .skip-link {
   @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-primary-600 focus:text-white focus:px-4 focus:py-2 focus:rounded;
+}
+
+/* Toast animation */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
 }

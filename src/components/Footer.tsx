@@ -24,6 +24,7 @@ const footerNavigation = {
     { name: 'Projecten', href: '/projecten' },
     { name: 'Contact', href: '/contact' },
     { name: 'Vacatures', href: '/vacatures' },
+    { name: 'Instellingen', href: '/instellingen' },
   ],
   legal: [
     { name: 'Privacybeleid', href: '/privacy' },
