@@ -996,13 +996,13 @@ export function ClientProfile() {
                           <td className="px-4 py-2.5 text-sm">{t.datum}</td>
                           <td className="px-4 py-2.5 text-sm">{t.project_naam || '-'}</td>
                           <td className="px-4 py-2.5 text-sm">{t.medewerker_naam || '-'}</td>
-                          <td className="px-4 py-2.5 text-sm font-medium">{t.uren}u</td>
-                          <td className="px-4 py-2.5 text-sm text-muted-foreground">{t.beschrijving || '-'}</td>
+                          <td className="px-4 py-2.5 text-sm font-medium">{(t.duur_minuten / 60).toFixed(1)}u</td>
+                          <td className="px-4 py-2.5 text-sm text-muted-foreground">{t.omschrijving || '-'}</td>
                         </tr>
                       ))}
                       <tr className="border-t-2 font-semibold">
                         <td className="px-4 py-2.5 text-sm" colSpan={3}>Totaal</td>
-                        <td className="px-4 py-2.5 text-sm">{clientTijdregistraties.reduce((s, t) => s + t.uren, 0).toFixed(1)}u</td>
+                        <td className="px-4 py-2.5 text-sm">{(clientTijdregistraties.reduce((s, t) => s + t.duur_minuten, 0) / 60).toFixed(1)}u</td>
                         <td />
                       </tr>
                     </tbody>

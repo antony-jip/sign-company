@@ -59,7 +59,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
 
   // Editable offerte fields
   const [titel, setTitel] = useState('')
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState<Offerte['status']>('concept')
   const [notities, setNotities] = useState('')
   const [voorwaarden, setVoorwaarden] = useState('')
   const [geldigTot, setGeldigTot] = useState('')

@@ -61,7 +61,7 @@ export function ClientCard({ klant, projectCount }: ClientCardProps) {
               )
             })}
             {klant.gepinde_notitie && (
-              <Pin className="w-3.5 h-3.5 text-amber-500" title={klant.gepinde_notitie} />
+              <span title={klant.gepinde_notitie}><Pin className="w-3.5 h-3.5 text-amber-500" /></span>
             )}
             <Badge className={cn('capitalize', getStatusColor(klant.status))}>
               {klant.status}

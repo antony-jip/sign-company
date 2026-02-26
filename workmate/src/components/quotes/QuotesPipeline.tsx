@@ -775,7 +775,7 @@ export function QuotesPipeline() {
                                 <Bell className="h-3.5 w-3.5 text-blue-400" />
                               )}
                               {offerte.bekeken_door_klant && (
-                                <Eye className="h-3.5 w-3.5 text-emerald-500" title={`Bekeken door klant${offerte.aantal_keer_bekeken ? ` (${offerte.aantal_keer_bekeken}x)` : ''}`} />
+                                <span title={`Bekeken door klant${offerte.aantal_keer_bekeken ? ` (${offerte.aantal_keer_bekeken}x)` : ''}`}><Eye className="h-3.5 w-3.5 text-emerald-500" /></span>
                               )}
                             </div>
                           </div>

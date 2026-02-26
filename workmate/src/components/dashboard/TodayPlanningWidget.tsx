@@ -97,7 +97,7 @@ export function TodayPlanningWidget() {
       .forEach((task) => {
         if (!task.deadline) return
         const deadline = new Date(task.deadline)
-        const projectNaam = projectMap.get(task.project_id) || ''
+        const projectNaam = (task.project_id && projectMap.get(task.project_id)) || ''
 
         const item: TimelineItem = {
           id: `task-${task.id}`,

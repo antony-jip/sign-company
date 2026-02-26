@@ -92,7 +92,7 @@ export function BestelbonnenLayout() {
 
   const getLeverancierNaam = useCallback((id?: string) => {
     if (!id) return '-'
-    return leveranciers.find((l) => l.id === id)?.naam || '-'
+    return leveranciers.find((l) => l.id === id)?.bedrijfsnaam || '-'
   }, [leveranciers])
 
   const getProjectNaam = useCallback((id?: string) => {

@@ -302,7 +302,7 @@ export function BestelbonDetail() {
           eenheidsprijs: r.prijs_per_eenheid,
           eenheid: r.eenheid,
         })),
-        leverancier ? { naam: leverancier.naam, adres: leverancier.adres, postcode: leverancier.postcode, stad: leverancier.stad } : {},
+        leverancier ? { naam: leverancier.bedrijfsnaam, adres: leverancier.adres, postcode: leverancier.postcode, stad: leverancier.stad } : {},
         { ...profile, primaireKleur },
         documentStyle
       )
@@ -375,7 +375,7 @@ export function BestelbonDetail() {
                 <SelectTrigger><SelectValue placeholder="Selecteer leverancier" /></SelectTrigger>
                 <SelectContent>
                   {leveranciers.filter((l) => l.actief).map((l) => (
-                    <SelectItem key={l.id} value={l.id}>{l.naam}</SelectItem>
+                    <SelectItem key={l.id} value={l.id}>{l.bedrijfsnaam}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

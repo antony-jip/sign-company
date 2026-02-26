@@ -98,8 +98,7 @@ export function OffertePubliekPagina() {
 
     setIsSubmitting(true)
     try {
-      const reactieText = type === 'vraag' ? vraagTekst.trim() : type
-      await respondOpOfferte(token, reactieText)
+      await respondOpOfferte(token, { type, bericht: type === 'vraag' ? vraagTekst.trim() : undefined })
       setSubmitted(true)
       setReactie(type)
       toast.success(

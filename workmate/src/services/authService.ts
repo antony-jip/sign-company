@@ -12,7 +12,8 @@ export async function signIn(email: string, password: string) {
   }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw error
-  return data
+  const user = data.user ? { id: data.user.id, email: data.user.email ?? '', user_metadata: (data.user.user_metadata ?? {}) as Record<string, string> } : null
+  return { user, session: data.session ? { access_token: data.session.access_token, user: user ?? undefined } : null }
 }
 
 export async function signUp(email: string, password: string, metadata?: { voornaam?: string; achternaam?: string }) {
@@ -27,7 +28,8 @@ export async function signUp(email: string, password: string, metadata?: { voorn
     options: { data: metadata }
   })
   if (error) throw error
-  return data
+  const user = data.user ? { id: data.user.id, email: data.user.email ?? '', user_metadata: (data.user.user_metadata ?? {}) as Record<string, string> } : null
+  return { user, session: data.session ? { access_token: data.session.access_token, user: user ?? undefined } : null }
 }
 
 export async function signOut() {
@@ -48,7 +50,8 @@ export async function getSession() {
     return { session: null, user: null }
   }
   const { data } = await supabase.auth.getSession()
-  return { session: data.session, user: data.session?.user || null }
+  const user = data.session?.user ? { id: data.session.user.id, email: data.session.user.email ?? '', user_metadata: (data.session.user.user_metadata ?? {}) as Record<string, string> } : null
+  return { session: data.session ? { access_token: data.session.access_token, user: user ?? undefined } : null, user }
 }
 
 export async function resetPassword(email: string) {
@@ -77,5 +80,11 @@ export function onAuthStateChange(callback: (event: string, session: AuthSession
     }
     return { data: { subscription: { unsubscribe: () => {} } } }
   }
-  return supabase.auth.onAuthStateChange(callback)
+  return supabase.auth.onAuthStateChange((event, session) => {
+    const mapped: AuthSession | null = session ? {
+      access_token: session.access_token,
+      user: session.user ? { id: session.user.id, email: session.user.email ?? '', user_metadata: (session.user.user_metadata ?? {}) as Record<string, string> } : undefined
+    } : null
+    callback(event, mapped)
+  })
 }

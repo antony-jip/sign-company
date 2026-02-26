@@ -277,7 +277,8 @@ export function TeamLayout() {
           toast.success('Medewerker bijgewerkt (lokaal).');
         }
       } else {
-        const created = await createMedewerker(form);
+        if (!user?.id) { toast.error('Niet ingelogd'); return; }
+        const created = await createMedewerker({ ...form, user_id: user.id });
         if (created) {
           setMedewerkers((prev) => [...prev, created]);
           toast.success('Medewerker toegevoegd.');
@@ -285,7 +286,7 @@ export function TeamLayout() {
           const nieuw: Medewerker = {
             ...form,
             id: `local-${Date.now()}`,
-            user_id: '',
+            user_id: user.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
