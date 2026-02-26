@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, Image, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import type { CalculatieRegel } from '@/types'
@@ -151,35 +151,6 @@ function getMargeColor(pct: number): { text: string; bg: string; bar: string } {
   if (pct >= 65) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500' }
   if (pct >= 50) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', bar: 'bg-amber-500' }
   return { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', bar: 'bg-red-500' }
-}
-
-// ── Image compression utility (FIX 10) ──
-function compressImage(file: File, maxWidth: number = 1200, quality: number = 0.7): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const img = new window.Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        let w = img.width
-        let h = img.height
-        if (w > maxWidth) {
-          h = Math.round((h * maxWidth) / w)
-          w = maxWidth
-        }
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext('2d')
-        if (!ctx) { reject(new Error('Canvas not supported')); return }
-        ctx.drawImage(img, 0, 0, w, h)
-        resolve(canvas.toDataURL('image/jpeg', quality))
-      }
-      img.onerror = reject
-      img.src = e.target?.result as string
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
 }
 
 function AutocompleteInput({
@@ -664,67 +635,7 @@ export function QuoteItemsTable({
                   )}
                 </div>
 
-                {/* ── FIX 10: Foto per item ── */}
-                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-2">
-                    <Image className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Foto</span>
-                    {item.foto_url && (
-                      <label className="ml-auto flex items-center gap-1 text-[10px] cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={item.foto_op_offerte || false}
-                          onChange={(e) => onUpdateItem(item.id, 'foto_op_offerte', e.target.checked)}
-                          className="rounded border-gray-300 h-3 w-3"
-                        />
-                        <span className="text-muted-foreground">Op offerte PDF</span>
-                      </label>
-                    )}
-                  </div>
-
-                  {item.foto_url ? (
-                    <div className="mt-2 relative inline-block group">
-                      <img
-                        src={item.foto_url}
-                        alt={item.beschrijving || 'Item foto'}
-                        className="h-20 w-auto rounded-lg border border-gray-200 dark:border-gray-700 object-cover"
-                      />
-                      <button
-                        onClick={() => {
-                          onUpdateItem(item.id, 'foto_url', '')
-                          onUpdateItem(item.id, 'foto_op_offerte', false)
-                        }}
-                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                        title="Foto verwijderen"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors cursor-pointer">
-                      <Plus className="h-3 w-3" />
-                      Foto toevoegen
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0]
-                          if (!file) return
-                          try {
-                            const compressed = await compressImage(file)
-                            onUpdateItem(item.id, 'foto_url', compressed)
-                          } catch {
-                            // Silent fail
-                          }
-                          e.target.value = ''
-                        }}
-                      />
-                    </label>
-                  )}
-                </div>
-
-                {/* ── Bijlage tekening/foto per item ── */}
+                {/* ── TEKENING / BIJLAGE per item ── */}
                 <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-2">
                     <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />

@@ -32,7 +32,7 @@ export function EmailComposePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const quoteId = searchParams.get('quote_id') || ''
-  const { emailHandtekening, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur } = useAppSettings()
+  const { emailHandtekening, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   const [isLoading, setIsLoading] = useState(true)
@@ -94,6 +94,7 @@ export function EmailComposePage() {
               bedrijfs_adres: bedrijfsAdres || '',
               kvk_nummer: kvkNummer || '',
               btw_nummer: btwNummer || '',
+              logo_url: logoUrl || '',
               primaireKleur: primaireKleur || '#2563eb',
             },
             documentStyle

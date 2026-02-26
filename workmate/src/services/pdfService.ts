@@ -376,9 +376,6 @@ export function generateOffertePDF(
     y += 8
   }
 
-  // Check if any items have photos enabled for the offerte
-  const hasPhotos = items.some(i => i.foto_op_offerte && i.foto_url)
-
   // FIX 13: Split verplichte en optionele items
   const verplichteItems = items.filter(i => !i.is_optioneel)
   const optioneleItems = items.filter(i => i.is_optioneel)
@@ -553,68 +550,8 @@ export function generateOffertePDF(
     doc.text(splitTerms, margins.left, totalsY)
   }
 
-  // FIX 10: Add photo pages (landscape) if any items have foto_op_offerte
-  if (hasPhotos) {
-    const photoItems = items.filter(i => i.foto_op_offerte && i.foto_url)
-    for (const photoItem of photoItems) {
-      // Add new landscape page
-      doc.addPage('a4', 'landscape')
-      const pgW = doc.internal.pageSize.getWidth()
-      const pgH = doc.internal.pageSize.getHeight()
-      addBriefpapierBackground(doc, docStyle, doc.getNumberOfPages())
-
-      // Left half: photo
-      const photoMargin = 15
-      const photoMaxW = pgW / 2 - photoMargin * 1.5
-      const photoMaxH = pgH - photoMargin * 2 - 20
-
-      try {
-        doc.addImage(photoItem.foto_url!, 'JPEG', photoMargin, photoMargin + 15, photoMaxW, photoMaxH, undefined, 'MEDIUM')
-      } catch {
-        // Photo failed to load, draw placeholder
-        doc.setDrawColor(200, 200, 200)
-        doc.setLineWidth(0.3)
-        doc.rect(photoMargin, photoMargin + 15, photoMaxW, photoMaxH)
-        doc.setFontSize(10)
-        doc.setFont(bodyFont, 'normal')
-        doc.setTextColor(180, 180, 180)
-        doc.text('Foto niet beschikbaar', photoMargin + photoMaxW / 2, photoMargin + 15 + photoMaxH / 2, { align: 'center' })
-      }
-
-      // Right half: item details
-      const rightX = pgW / 2 + photoMargin / 2
-      let rY = photoMargin + 15
-
-      doc.setFontSize(baseFontSize + 2)
-      doc.setFont(headingFont, 'bold')
-      doc.setTextColor(...brand)
-      doc.text(photoItem.beschrijving || `Item`, rightX, rY)
-      rY += 10
-
-      doc.setFontSize(baseFontSize)
-      doc.setFont(bodyFont, 'normal')
-      doc.setTextColor(...textColor)
-
-      if (photoItem.breedte_mm && photoItem.hoogte_mm) {
-        const m2 = photoItem.oppervlakte_m2 || ((photoItem.breedte_mm / 1000) * (photoItem.hoogte_mm / 1000))
-        doc.text(`Afmeting: ${photoItem.breedte_mm} × ${photoItem.hoogte_mm} mm`, rightX, rY)
-        rY += 6
-        doc.text(`Oppervlakte: ${m2.toFixed(2)} m²`, rightX, rY)
-        rY += 6
-      }
-
-      doc.text(`Aantal: ${photoItem.aantal}`, rightX, rY)
-      rY += 6
-      doc.text(`Prijs: ${formatCurrency(photoItem.eenheidsprijs)} per stuk`, rightX, rY)
-      rY += 6
-
-      doc.setFont(headingFont, 'bold')
-      doc.setTextColor(...brand)
-      doc.text(`Totaal: ${formatCurrency(photoItem.totaal)}`, rightX, rY)
-    }
-  }
-
-  // Bijlage-pagina's: per item met bijlage_url een liggend A4 pagina
+  // ============ BIJLAGE / TEKENING PAGINA'S (Landscape A4) ============
+  // Per item met bijlage_url: professioneel gestylede pagina met logo, specs box en tekening
   const bijlageItems = items.filter(i => i.bijlage_url && i.bijlage_type !== 'application/pdf')
   for (const bijlageItem of bijlageItems) {
     doc.addPage('a4', 'landscape')
@@ -624,16 +561,28 @@ export function generateOffertePDF(
 
     const bMargin = 10
 
-    // Compact specs bovenaan — 2 kolommen, 8pt font
-    doc.setFontSize(8)
-    doc.setFont(bodyFont, 'normal')
-    doc.setTextColor(...textColor)
+    // --- Logo (linksboven) ---
+    let logoEndX = bMargin
+    if (bedrijfsProfiel.logo_url) {
+      try {
+        const logoMaxW = 30
+        const logoMaxH = 20
+        const logoProps = doc.getImageProperties(bedrijfsProfiel.logo_url)
+        const logoAspect = logoProps.width / logoProps.height
+        let logoW = logoMaxW
+        let logoH = logoW / logoAspect
+        if (logoH > logoMaxH) {
+          logoH = logoMaxH
+          logoW = logoH * logoAspect
+        }
+        doc.addImage(bedrijfsProfiel.logo_url, 'PNG', bMargin, bMargin, logoW, logoH)
+        logoEndX = bMargin + logoW + 5
+      } catch {
+        // Logo loading failed, skip
+      }
+    }
 
-    let specY = bMargin + 4
-    const leftCol = bMargin
-    const rightCol = pgW / 2 + 5
-
-    // Gather filled fields — check both extra_velden and detail_regels
+    // --- Specs box (rechts van logo, of volle breedte als geen logo) ---
     const extraVelden = bijlageItem.extra_velden || {}
     const detailRegels = bijlageItem.detail_regels || []
     const getField = (label: string): string => {
@@ -641,63 +590,64 @@ export function generateOffertePDF(
       const regel = detailRegels.find(r => r.label === label)
       return regel?.waarde || ''
     }
-    const leftFields: [string, string][] = []
-    const rightFields: [string, string][] = []
 
-    // Left column fields
-    if (bijlageItem.beschrijving) leftFields.push(['Omschrijving', bijlageItem.beschrijving])
-    if (bijlageItem.aantal) leftFields.push(['Aantal', String(bijlageItem.aantal)])
-    const afmetingVeld = getField('Afmeting') || (bijlageItem.breedte_mm && bijlageItem.hoogte_mm ? `${bijlageItem.breedte_mm} × ${bijlageItem.hoogte_mm} mm` : '')
-    if (afmetingVeld) leftFields.push(['Afmeting', afmetingVeld])
+    const specItems: { label: string; value: string }[] = [
+      { label: 'Omschrijving', value: bijlageItem.beschrijving || '' },
+      { label: 'Afmeting', value: getField('Afmeting') || (bijlageItem.breedte_mm && bijlageItem.hoogte_mm ? `${bijlageItem.breedte_mm} × ${bijlageItem.hoogte_mm} mm` : '') },
+      { label: 'Materiaal', value: getField('Materiaal') },
+      { label: 'Aantal', value: bijlageItem.aantal ? `${bijlageItem.aantal} stuk` : '' },
+      { label: 'Lay-out', value: getField('Lay-out') },
+      { label: 'Montage', value: getField('Montage') },
+      { label: 'Opmerking', value: getField('Opmerking') },
+    ].filter(s => s.value)
 
-    // Right column fields
-    const materiaal = getField('Materiaal'); if (materiaal) rightFields.push(['Materiaal', materiaal])
-    const layout = getField('Lay-out'); if (layout) rightFields.push(['Lay-out', layout])
-    const montage = getField('Montage'); if (montage) rightFields.push(['Montage', montage])
-    const opmerking = getField('Opmerking'); if (opmerking) rightFields.push(['Opmerking', opmerking])
+    const lineHeight = 5
+    const boxPadding = 4
+    const boxX = logoEndX
+    const boxY = bMargin
+    const boxWidth = pgW - boxX - bMargin
+    const boxHeight = (specItems.length * lineHeight) + (boxPadding * 2)
 
-    // Price line on right side if space remains
-    if (bijlageItem.totaal) rightFields.push(['Totaal', formatCurrency(bijlageItem.totaal)])
+    // Specs box background
+    doc.setFillColor(248, 248, 250)
+    doc.setDrawColor(230, 230, 235)
+    doc.setLineWidth(0.5)
+    doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 2, 2, 'FD')
 
-    const maxRows = Math.max(leftFields.length, rightFields.length)
-    for (let r = 0; r < maxRows; r++) {
-      const rowY = specY + r * 4.5
-      if (r < leftFields.length) {
-        doc.setFont(bodyFont, 'bold')
-        doc.text(`${leftFields[r][0]}: `, leftCol, rowY)
-        doc.setFont(bodyFont, 'normal')
-        doc.text(leftFields[r][1], leftCol + doc.getTextWidth(`${leftFields[r][0]}: `), rowY)
-      }
-      if (r < rightFields.length) {
-        doc.setFont(bodyFont, 'bold')
-        doc.text(`${rightFields[r][0]}: `, rightCol, rowY)
-        doc.setFont(bodyFont, 'normal')
-        doc.text(rightFields[r][1], rightCol + doc.getTextWidth(`${rightFields[r][0]}: `), rowY)
-      }
-    }
+    // Draw spec items
+    specItems.forEach((spec, i) => {
+      const y = boxY + boxPadding + 3 + (i * lineHeight)
+      // Label
+      doc.setFont(bodyFont, 'bold')
+      doc.setFontSize(8)
+      doc.setTextColor(130, 130, 130)
+      doc.text(spec.label, boxX + 4, y)
+      // Value
+      doc.setFont(bodyFont, 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(40, 40, 40)
+      doc.text(spec.value, boxX + 40, y)
+    })
 
-    // Separator line
-    const sepY = specY + maxRows * 4.5 + 2
-    doc.setDrawColor(200, 200, 200)
+    // --- Separator ---
+    const sepY = boxY + boxHeight + 3
+    doc.setDrawColor(220, 220, 225)
     doc.setLineWidth(0.3)
     doc.line(bMargin, sepY, pgW - bMargin, sepY)
 
-    // Image — full width, proportional scaling, maximum available height
+    // --- Tekening / Foto ---
     const imgY = sepY + 3
     const imgMaxW = pgW - 2 * bMargin
     const availableH = pgH - imgY - bMargin
 
     try {
-      // Determine image dimensions for proportional scaling
       const imgProps = doc.getImageProperties(bijlageItem.bijlage_url!)
-      const aspectRatio = imgProps.height / imgProps.width
-      let imgW = imgMaxW
-      let imgH = imgW * aspectRatio
-      if (imgH > availableH) {
-        imgH = availableH
-        imgW = imgH / aspectRatio
-      }
-      // Center horizontally if image is narrower than available width
+      const widthRatio = imgMaxW / imgProps.width
+      const heightRatio = availableH / imgProps.height
+      const ratio = Math.min(widthRatio, heightRatio)
+      const imgW = imgProps.width * ratio
+      const imgH = imgProps.height * ratio
+      // Center horizontally
       const imgX = bMargin + (imgMaxW - imgW) / 2
       const format = bijlageItem.bijlage_type === 'image/png' ? 'PNG' : 'JPEG'
       doc.addImage(bijlageItem.bijlage_url!, format, imgX, imgY, imgW, imgH, undefined, 'MEDIUM')

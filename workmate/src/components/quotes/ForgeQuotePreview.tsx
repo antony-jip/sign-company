@@ -47,7 +47,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
-  const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, pipelineStappen, valuta } = useAppSettings()
+  const { bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, pipelineStappen, valuta, logoUrl } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   // Parse address components from combined string
@@ -236,6 +236,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           bedrijfs_adres: bedrijfsAdres || '',
           kvk_nummer: kvkNummer || '',
           btw_nummer: btwNummer || '',
+          logo_url: logoUrl || '',
           primaireKleur: primaireKleur || '#2563eb',
         },
         documentStyle
