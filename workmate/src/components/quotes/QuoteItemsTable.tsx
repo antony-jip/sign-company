@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import type { CalculatieRegel } from '@/types'
@@ -115,6 +115,10 @@ interface QuoteItemsTableProps {
     }
   ) => void
   suggesties?: OmschrijvingSuggestie[]
+  onCopyItem?: (item: QuoteLineItem) => void
+  clipboardCount?: number
+  onPasteItems?: () => void
+  onClearClipboard?: () => void
 }
 
 function calculateLineTotaal(item: QuoteLineItem): number {
@@ -298,6 +302,10 @@ export function QuoteItemsTable({
   onUpdateItemWithCalculatie,
   onUpdateItemWithVariantCalculatie,
   suggesties = [],
+  onCopyItem,
+  clipboardCount = 0,
+  onPasteItems,
+  onClearClipboard,
 }: QuoteItemsTableProps) {
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
@@ -572,6 +580,16 @@ export function QuoteItemsTable({
               >
                 {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </button>
+
+              {onCopyItem && (
+                <button
+                  onClick={() => onCopyItem(item)}
+                  className="text-gray-400 hover:text-blue-500 flex-shrink-0 p-1"
+                  title="Kopieer naar klembord"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              )}
 
               <button
                 onClick={() => onRemoveItem(item.id)}
@@ -1190,26 +1208,60 @@ export function QuoteItemsTable({
           <p className="text-xs text-muted-foreground mt-1">
             Voeg een item toe om je offerte op te bouwen
           </p>
-          <Button
-            variant="outline"
-            onClick={() => onAddItem()}
-            className="mt-4 gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Eerste item toevoegen
-          </Button>
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => onAddItem()}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Eerste item toevoegen
+            </Button>
+            {clipboardCount > 0 && onPasteItems && (
+              <Button
+                variant="outline"
+                onClick={onPasteItems}
+                className="gap-2 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              >
+                <Clipboard className="h-4 w-4" />
+                Plak items ({clipboardCount})
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* ========= TOEVOEGEN KNOP ========= */}
+      {/* ========= TOEVOEGEN + PLAKKEN KNOPPEN ========= */}
       {items.length > 0 && (
-        <button
-          onClick={() => onAddItem()}
-          className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm font-medium text-muted-foreground hover:text-accent hover:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Item toevoegen
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onAddItem()}
+            className="flex-1 py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm font-medium text-muted-foreground hover:text-accent hover:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Item toevoegen
+          </button>
+
+          {clipboardCount > 0 && onPasteItems && (
+            <button
+              onClick={onPasteItems}
+              className="py-3 px-4 rounded-xl border-2 border-dashed border-blue-300 dark:border-blue-600 text-sm font-medium text-blue-600 dark:text-blue-400 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2"
+            >
+              <Clipboard className="h-4 w-4" />
+              Plak items ({clipboardCount})
+            </button>
+          )}
+
+          {clipboardCount > 0 && onClearClipboard && (
+            <button
+              onClick={onClearClipboard}
+              className="py-3 px-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm text-muted-foreground hover:text-red-500 hover:border-red-300 dark:hover:border-red-600 transition-colors flex items-center gap-2"
+              title="Klembord legen"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       )}
 
       {/* ========= CALCULATIE MODAL ========= */}

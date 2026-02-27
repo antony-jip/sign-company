@@ -516,6 +516,53 @@ export function QuoteCreation() {
     setItems(prev => prev.filter((item) => item.id !== id))
   }
 
+  // ── Clipboard helpers ──
+  const CLIPBOARD_KEY = 'workmate_clipboard_items'
+
+  const [clipboardCount, setClipboardCount] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(CLIPBOARD_KEY) || '[]').length
+    } catch { return 0 }
+  })
+
+  const handleCopyItem = useCallback((item: QuoteLineItem) => {
+    try {
+      const existing = JSON.parse(localStorage.getItem(CLIPBOARD_KEY) || '[]')
+      const { id, ...template } = item
+      existing.push(template)
+      localStorage.setItem(CLIPBOARD_KEY, JSON.stringify(existing))
+      setClipboardCount(existing.length)
+      toast.success('Item gekopieerd naar klembord')
+    } catch {
+      toast.error('Kon item niet kopiëren')
+    }
+  }, [])
+
+  const handlePasteItems = useCallback(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(CLIPBOARD_KEY) || '[]')
+      if (stored.length === 0) return
+
+      const pastedItems: QuoteLineItem[] = stored.map((template: Omit<QuoteLineItem, 'id'>) => ({
+        ...template,
+        id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      }))
+
+      setItems(prev => [...prev, ...pastedItems])
+      localStorage.removeItem(CLIPBOARD_KEY)
+      setClipboardCount(0)
+      toast.success(`${pastedItems.length} item${pastedItems.length === 1 ? '' : 's'} geplakt`)
+    } catch {
+      toast.error('Kon items niet plakken')
+    }
+  }, [])
+
+  const handleClearClipboard = useCallback(() => {
+    localStorage.removeItem(CLIPBOARD_KEY)
+    setClipboardCount(0)
+    toast.success('Klembord geleegd')
+  }, [])
+
   const handleUpdateItemWithCalculatie = (
     id: string,
     data: {
@@ -1741,6 +1788,10 @@ export function QuoteCreation() {
                 onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
                 onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
                 suggesties={omschrijvingSuggesties}
+                onCopyItem={handleCopyItem}
+                clipboardCount={clipboardCount}
+                onPasteItems={handlePasteItems}
+                onClearClipboard={handleClearClipboard}
               />
             </CardContent>
           </Card>

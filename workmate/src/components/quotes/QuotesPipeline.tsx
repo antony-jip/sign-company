@@ -280,6 +280,34 @@ export function QuotesPipeline() {
     return { pipelineValue, verstuurdValue, akkoordValue }
   }, [offertes])
 
+  // Financial overview per status
+  const financialSummary = useMemo(() => {
+    const statusTotals: Record<string, { count: number; totaal: number }> = {}
+    const allStatuses = ['concept', 'verzonden', 'bekeken', 'goedgekeurd', 'verlopen', 'afgewezen', 'gefactureerd']
+    for (const s of allStatuses) {
+      statusTotals[s] = { count: 0, totaal: 0 }
+    }
+    for (const o of offertes) {
+      if (!statusTotals[o.status]) {
+        statusTotals[o.status] = { count: 0, totaal: 0 }
+      }
+      statusTotals[o.status].count += 1
+      statusTotals[o.status].totaal = round2(statusTotals[o.status].totaal + o.totaal)
+    }
+
+    // Totale pipeline = alles behalve afgewezen en gefactureerd
+    const pipelineTotaal = round2(
+      offertes
+        .filter((o) => o.status !== 'afgewezen' && o.status !== 'gefactureerd')
+        .reduce((sum, o) => sum + o.totaal, 0)
+    )
+
+    // Verwachte omzet = goedgekeurde offertes
+    const verwachteOmzet = round2(statusTotals['goedgekeurd']?.totaal || 0)
+
+    return { statusTotals, pipelineTotaal, verwachteOmzet }
+  }, [offertes])
+
   const kpis = useMemo(() => {
     const openStatuses = ['verzonden', 'bekeken']
     const openOffertes = offertes.filter((o) => openStatuses.includes(o.status))
@@ -460,6 +488,46 @@ export function QuotesPipeline() {
 
   return (
     <div className="space-y-6">
+      {/* Financial Overview per Status */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {([
+          { key: 'concept' as const, label: 'Concept', borderColor: 'border-slate-200/60 dark:border-slate-700/60', bgColor: 'from-slate-50/80 to-white/80 dark:from-slate-900/40 dark:to-gray-900/80', dotColor: 'bg-slate-400', textColor: 'text-slate-600 dark:text-slate-400' },
+          { key: 'verzonden' as const, label: 'Verstuurd', borderColor: 'border-blue-200/60 dark:border-blue-800/60', bgColor: 'from-blue-50/80 to-white/80 dark:from-blue-950/40 dark:to-gray-900/80', dotColor: 'bg-blue-400', textColor: 'text-blue-600 dark:text-blue-400' },
+          { key: 'bekeken' as const, label: 'Bekeken', borderColor: 'border-amber-200/60 dark:border-amber-800/60', bgColor: 'from-amber-50/80 to-white/80 dark:from-amber-950/40 dark:to-gray-900/80', dotColor: 'bg-amber-400', textColor: 'text-amber-600 dark:text-amber-400' },
+          { key: 'goedgekeurd' as const, label: 'Akkoord', borderColor: 'border-emerald-200/60 dark:border-emerald-800/60', bgColor: 'from-emerald-50/80 to-white/80 dark:from-emerald-950/40 dark:to-gray-900/80', dotColor: 'bg-emerald-400', textColor: 'text-emerald-600 dark:text-emerald-400' },
+          { key: 'verlopen' as const, label: 'Verlopen', borderColor: 'border-orange-200/60 dark:border-orange-800/60', bgColor: 'from-orange-50/80 to-white/80 dark:from-orange-950/40 dark:to-gray-900/80', dotColor: 'bg-orange-400', textColor: 'text-orange-600 dark:text-orange-400' },
+          { key: 'afgewezen' as const, label: 'Afgewezen', borderColor: 'border-red-200/60 dark:border-red-800/60', bgColor: 'from-red-50/80 to-white/80 dark:from-red-950/40 dark:to-gray-900/80', dotColor: 'bg-red-400', textColor: 'text-red-600 dark:text-red-400' },
+        ]).map((col) => {
+          const data = financialSummary.statusTotals[col.key] || { count: 0, totaal: 0 }
+          const isActive = statusFilter === col.key
+          return (
+            <button
+              key={col.key}
+              onClick={() => setStatusFilter(statusFilter === col.key ? 'alle' : col.key)}
+              className={`relative overflow-hidden rounded-2xl border ${col.borderColor} bg-gradient-to-br ${col.bgColor} backdrop-blur-sm p-4 text-left transition-all hover:shadow-md ${
+                isActive ? 'ring-2 ring-primary shadow-md' : ''
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
+                <span className={`text-xs font-medium ${col.textColor} uppercase tracking-wide`}>{col.label}</span>
+              </div>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(data.totaal)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {data.count} {data.count === 1 ? 'offerte' : 'offertes'}
+              </p>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Pipeline Totalen */}
+      <div className="flex items-center gap-6 px-5 py-2 text-sm text-muted-foreground">
+        <span>Totale pipeline: <strong className="text-foreground">{formatCurrency(financialSummary.pipelineTotaal)}</strong></span>
+        <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+        <span>Verwachte omzet: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(financialSummary.verwachteOmzet)}</strong></span>
+      </div>
+
       {/* Sales Summary Bar */}
       <div className="flex items-center gap-6 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
         <div className="flex items-center gap-2">
