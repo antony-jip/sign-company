@@ -11,6 +11,8 @@ import {
 import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
+import { AutofillInput } from './AutofillInput'
+import { labelToAutofillField } from '@/utils/autofillUtils'
 import type { CalculatieRegel } from '@/types'
 
 // ============================================================
@@ -831,13 +833,23 @@ export function QuoteItemsTable({
 
                       <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">:</span>
 
-                      {/* Waarde */}
-                      <Input
-                        value={regel.waarde}
-                        onChange={(e) => updateDetailRegelField(item.id, regel.id, 'waarde', e.target.value)}
-                        placeholder="Vul in..."
-                        className="flex-1 h-8 text-sm"
-                      />
+                      {/* Waarde — with autofill for omschrijving/materiaal/lay-out/montage */}
+                      {labelToAutofillField(regel.label) ? (
+                        <AutofillInput
+                          field={labelToAutofillField(regel.label)!}
+                          value={regel.waarde}
+                          onChange={(val) => updateDetailRegelField(item.id, regel.id, 'waarde', val)}
+                          placeholder="Vul in..."
+                          className="flex-1 h-8 text-sm"
+                        />
+                      ) : (
+                        <Input
+                          value={regel.waarde}
+                          onChange={(e) => updateDetailRegelField(item.id, regel.id, 'waarde', e.target.value)}
+                          placeholder="Vul in..."
+                          className="flex-1 h-8 text-sm"
+                        />
+                      )}
                     </div>
                   ))}
 

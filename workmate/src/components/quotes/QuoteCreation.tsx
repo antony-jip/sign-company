@@ -63,6 +63,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
+import { initAutofillDefaults, saveAutofillValue, labelToAutofillField } from '@/utils/autofillUtils'
 import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import type { CalculatieRegel } from '@/types'
@@ -283,6 +284,11 @@ export function QuoteCreation() {
     })
     return { montageUren: montage, voorbereidingUren: voorbereiding, materiaalKosten: round2(materiaal) }
   }, [verplichtePrijsItems])
+
+  // ── Initialize autofill defaults (seeds localStorage on first use) ──
+  useEffect(() => {
+    initAutofillDefaults()
+  }, [])
 
   // ── Data fetching ──
   useEffect(() => {
@@ -1173,6 +1179,18 @@ export function QuoteCreation() {
           )
         )
       }
+
+      // Save autofill values from all items' detail regels
+      items.forEach((item) => {
+        if (item.detail_regels) {
+          item.detail_regels.forEach((regel) => {
+            const field = labelToAutofillField(regel.label)
+            if (field && regel.waarde) {
+              saveAutofillValue(field, regel.waarde)
+            }
+          })
+        }
+      })
 
       if (status === 'verzonden' && selectedKlant?.email) {
         try {
