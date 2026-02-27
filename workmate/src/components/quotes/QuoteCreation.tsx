@@ -158,6 +158,12 @@ export function QuoteCreation() {
   // ── Suggesties voor item omschrijvingen ──
   const [omschrijvingSuggesties, setOmschrijvingSuggesties] = useState<OmschrijvingSuggestie[]>([])
 
+  // ── FIX 12: Versie tracking state (must be before performAutoSave) ──
+  const [versieNummer, setVersieNummer] = useState(1)
+  const [isSavingVersie, setIsSavingVersie] = useState(false)
+  const [versieHistorie, setVersieHistorie] = useState<Array<{ id: string; versie_nummer: number; notitie?: string; created_at: string }>>([])
+  const [showVersieHistorie, setShowVersieHistorie] = useState(false)
+
   // ── Autosave state ──
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -897,12 +903,6 @@ export function QuoteCreation() {
       setIsDuplicating(false)
     }
   }
-
-  // ── FIX 12: Versie tracking state ──
-  const [versieNummer, setVersieNummer] = useState(1)
-  const [isSavingVersie, setIsSavingVersie] = useState(false)
-  const [versieHistorie, setVersieHistorie] = useState<Array<{ id: string; versie_nummer: number; notitie?: string; created_at: string }>>([])
-  const [showVersieHistorie, setShowVersieHistorie] = useState(false)
 
   const handleNieuweVersie = async () => {
     if (!user?.id) return
