@@ -1,5 +1,5 @@
 import type { AppWeergaveInstellingen } from '@/types/weergave';
-import { DEFAULT_FONT } from '@/types/weergave';
+import { DEFAULT_FONT, DEFAULT_FONT_SIZE } from '@/types/weergave';
 
 const STORAGE_KEY = 'workmate_weergave_instellingen';
 
@@ -8,6 +8,7 @@ function createDefaultInstellingen(): AppWeergaveInstellingen {
     id: crypto.randomUUID(),
     user_id: 'local',
     font_family: DEFAULT_FONT,
+    font_size: DEFAULT_FONT_SIZE,
     updated_at: new Date().toISOString(),
   };
 }
@@ -22,7 +23,11 @@ export function getWeergaveInstellingen(): AppWeergaveInstellingen {
     if (stored) {
       const parsed: AppWeergaveInstellingen = JSON.parse(stored);
       if (parsed.font_family) {
-        return parsed;
+        return {
+          ...createDefaultInstellingen(),
+          ...parsed,
+          font_size: parsed.font_size ?? DEFAULT_FONT_SIZE,
+        };
       }
     }
   } catch {
@@ -33,12 +38,12 @@ export function getWeergaveInstellingen(): AppWeergaveInstellingen {
 }
 
 export function updateWeergaveInstellingen(
-  data: Pick<AppWeergaveInstellingen, 'font_family'>
+  data: Partial<Pick<AppWeergaveInstellingen, 'font_family' | 'font_size'>>
 ): AppWeergaveInstellingen {
   const current = getWeergaveInstellingen();
   const updated: AppWeergaveInstellingen = {
     ...current,
-    font_family: data.font_family,
+    ...data,
     updated_at: new Date().toISOString(),
   };
 
