@@ -147,6 +147,35 @@ function calculateItemMargin(regels?: CalculatieRegel[]): { inkoop: number; verk
   return { inkoop: Math.round(inkoop * 100) / 100, verkoop: Math.round(verkoop * 100) / 100, marge: Math.round(marge * 100) / 100, percentage: Math.round(percentage * 10) / 10 }
 }
 
+// ── Image compression utility ──
+function compressImage(file: File, maxWidth: number = 1200, quality: number = 0.7): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new window.Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let w = img.width
+        let h = img.height
+        if (w > maxWidth) {
+          h = Math.round((h * maxWidth) / w)
+          w = maxWidth
+        }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Canvas not supported')); return }
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = reject
+      img.src = e.target?.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 function getMargeColor(pct: number): { text: string; bg: string; bar: string } {
   if (pct >= 65) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500' }
   if (pct >= 50) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', bar: 'bg-amber-500' }
@@ -662,7 +691,7 @@ export function QuoteItemsTable({
                       <button
                         onClick={() => {
                           onUpdateItem(item.id, 'bijlage_url', '')
-                          onUpdateItem(item.id, 'bijlage_type', '')
+                          onUpdateItem(item.id, 'bijlage_type', '' as 'image/jpeg')
                           onUpdateItem(item.id, 'bijlage_naam', '')
                         }}
                         className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
@@ -688,14 +717,23 @@ export function QuoteItemsTable({
                             return
                           }
                           try {
-                            const reader = new FileReader()
-                            reader.onload = (ev) => {
-                              const base64 = ev.target?.result as string
-                              onUpdateItem(item.id, 'bijlage_url', base64)
-                              onUpdateItem(item.id, 'bijlage_type', file.type as 'image/jpeg' | 'image/png' | 'application/pdf')
+                            if (file.type === 'application/pdf') {
+                              // PDF: read as-is (no compression)
+                              const reader = new FileReader()
+                              reader.onload = (ev) => {
+                                const base64 = ev.target?.result as string
+                                onUpdateItem(item.id, 'bijlage_url', base64)
+                                onUpdateItem(item.id, 'bijlage_type', file.type as 'image/jpeg' | 'image/png' | 'application/pdf')
+                                onUpdateItem(item.id, 'bijlage_naam', file.name)
+                              }
+                              reader.readAsDataURL(file)
+                            } else {
+                              // Image: compress to prevent oversized base64
+                              const compressed = await compressImage(file)
+                              onUpdateItem(item.id, 'bijlage_url', compressed)
+                              onUpdateItem(item.id, 'bijlage_type', 'image/jpeg' as const)
                               onUpdateItem(item.id, 'bijlage_naam', file.name)
                             }
-                            reader.readAsDataURL(file)
                           } catch {
                             // Silent fail
                           }

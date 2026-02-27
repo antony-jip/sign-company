@@ -164,6 +164,7 @@ export function QuoteCreation() {
   const autoSaveIdRef = useRef<string | null>(null) // tracks created offerte id for new quotes
   const hasUnsavedChangesRef = useRef(false)
   const performAutoSaveRef = useRef<() => Promise<void>>(async () => {})
+  const saveLockRef = useRef(false) // prevents race between autosave and manual save
 
   // ── Computed ──
   const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
@@ -560,26 +561,28 @@ export function QuoteCreation() {
     )
   }
 
-  // ── Autosave logic (debounced 3 sec) ──
+  // ── Autosave logic (debounced) ──
   const performAutoSave = useCallback(async () => {
     if (!user?.id || !selectedKlantId || !offerteTitel.trim() || items.length === 0) return
-    if (isSaving) return
+    if (isSaving || saveLockRef.current) return
 
+    saveLockRef.current = true
     setAutoSaveStatus('saving')
     try {
       const klant = klanten.find((k) => k.id === selectedKlantId)
-      const prijsItems = items.filter((i) => i.soort === 'prijs')
-      const sub = round2(prijsItems.reduce((sum, item) => {
+      const verplichtePrijsItemsLocal = items.filter((i) => i.soort === 'prijs' && !i.is_optioneel)
+      const rawSub = round2(verplichtePrijsItemsLocal.reduce((sum, item) => {
         const data = getActivePriceData(item)
         const bruto = data.aantal * data.eenheidsprijs
         return sum + round2(bruto - bruto * (data.korting_percentage / 100))
       }, 0))
-      const btw = round2(prijsItems.reduce((sum, item) => {
+      const effectiefSub = round2(rawSub + afrondingskorting)
+      const effectiefBtw = round2(effectiefSub * (rawSub > 0 ? round2(verplichtePrijsItemsLocal.reduce((sum, item) => {
         const data = getActivePriceData(item)
         const bruto = data.aantal * data.eenheidsprijs
         const netto = round2(bruto - bruto * (data.korting_percentage / 100))
         return sum + round2(netto * (data.btw_percentage / 100))
-      }, 0))
+      }, 0)) / rawSub : 0.21))
 
       const currentId = editOfferteId || autoSaveIdRef.current
 
@@ -592,14 +595,16 @@ export function QuoteCreation() {
           ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
           titel: offerteTitel,
           status: 'concept',
-          subtotaal: sub,
-          btw_bedrag: btw,
-          totaal: round2(sub + btw),
+          subtotaal: effectiefSub,
+          btw_bedrag: effectiefBtw,
+          totaal: round2(effectiefSub + effectiefBtw),
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
+          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
+          versie: versieNummer,
         })
 
         // Delete old items, re-create
@@ -648,14 +653,16 @@ export function QuoteCreation() {
           nummer: offerteNummer,
           titel: offerteTitel,
           status: 'concept',
-          subtotaal: sub,
-          btw_bedrag: btw,
-          totaal: round2(sub + btw),
+          subtotaal: effectiefSub,
+          btw_bedrag: effectiefBtw,
+          totaal: round2(effectiefSub + effectiefBtw),
           geldig_tot: geldigTot,
           notities,
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
+          ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
+          versie: versieNummer,
         })
         autoSaveIdRef.current = newOfferte.id
 
@@ -700,15 +707,17 @@ export function QuoteCreation() {
     } catch (err) {
       logger.error('Autosave failed:', err)
       setAutoSaveStatus('idle')
+    } finally {
+      saveLockRef.current = false
     }
-  }, [user?.id, selectedKlantId, selectedProjectId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten])
+  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, versieNummer])
 
   // Keep ref in sync so unmount handler can call latest version
   useEffect(() => {
     performAutoSaveRef.current = performAutoSave
   }, [performAutoSave])
 
-  // Debounced autosave: trigger 1.5s after last change (only when editing)
+  // Debounced autosave: trigger 2s after last change (only when editing)
   useEffect(() => {
     if (showKlantSelector) return
     if (!selectedKlantId || !offerteTitel.trim() || items.length === 0) return
@@ -717,13 +726,13 @@ export function QuoteCreation() {
 
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     autoSaveTimerRef.current = setTimeout(() => {
-      performAutoSave()
-    }, 1500)
+      performAutoSaveRef.current()
+    }, 2000)
 
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     }
-  }, [items, offerteTitel, notities, voorwaarden, geldigTot, selectedKlantId, selectedProjectId, showKlantSelector])
+  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, geldigTot, selectedKlantId, selectedProjectId, showKlantSelector])
 
   // Save on unmount (navigating away) — fire-and-forget
   useEffect(() => {
@@ -981,11 +990,17 @@ export function QuoteCreation() {
 
   // ── Save ──
   const saveOfferte = async (status: 'concept' | 'verzonden') => {
-    if (isSaving) return
+    if (isSaving || saveLockRef.current) return
     if (!user?.id) {
       toast.error('Je moet ingelogd zijn om een offerte op te slaan')
       return
     }
+    // Cancel any pending autosave timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+      autoSaveTimerRef.current = null
+    }
+    saveLockRef.current = true
     setIsSaving(true)
     try {
       let savedOfferteId: string
@@ -1142,6 +1157,7 @@ export function QuoteCreation() {
       toast.error('Kon offerte niet opslaan')
     } finally {
       setIsSaving(false)
+      saveLockRef.current = false
     }
   }
 
@@ -1152,6 +1168,8 @@ export function QuoteCreation() {
     }
     try {
       toast.info('PDF wordt gegenereerd...')
+      const pdfSubtotaal = round2(subtotaal + afrondingskorting)
+      const pdfBtw = round2(pdfSubtotaal * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
       const offerteData = {
         id: '',
         user_id: user?.id || '',
@@ -1159,12 +1177,14 @@ export function QuoteCreation() {
         nummer: offerteNummer,
         titel: offerteTitel,
         status: 'concept' as const,
-        subtotaal,
-        btw_bedrag: btwBedrag,
-        totaal: round2(subtotaal + btwBedrag),
+        subtotaal: pdfSubtotaal,
+        btw_bedrag: pdfBtw,
+        totaal: round2(pdfSubtotaal + pdfBtw),
         geldig_tot: geldigTot,
         notities,
         voorwaarden,
+        versie: versieNummer,
+        ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
