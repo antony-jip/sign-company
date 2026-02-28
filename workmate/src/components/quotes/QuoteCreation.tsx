@@ -52,6 +52,7 @@ import {
   TrendingDown,
   DollarSign,
   MoreHorizontal,
+  Receipt,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -137,6 +138,10 @@ export function QuoteCreation() {
     return d.toISOString().split('T')[0]
   })
   const [offerteNummer, setOfferteNummer] = useState('')
+
+  // ── Offerte status (for factureren button) ──
+  const [offerteStatus, setOfferteStatus] = useState<string>('concept')
+  const [geconverteerdNaarFactuurId, setGeconverteerdNaarFactuurId] = useState<string | null>(null)
 
   // ── FIX 7: Client details panel ──
   const [klantPanelOpen, setKlantPanelOpen] = useState(true)
@@ -411,6 +416,9 @@ export function QuoteCreation() {
         if (offerte.versie) setVersieNummer(offerte.versie)
         // FIX 16: Load afrondingskorting
         if (offerte.afrondingskorting_excl_btw) setAfrondingskorting(offerte.afrondingskorting_excl_btw)
+        // Track status for factureren button
+        setOfferteStatus(offerte.status)
+        if (offerte.geconverteerd_naar_factuur_id) setGeconverteerdNaarFactuurId(offerte.geconverteerd_naar_factuur_id)
         // Load versie historie
         getOfferteVersies(editOfferteId).then(versies => {
           if (!cancelled) {
@@ -1692,6 +1700,36 @@ export function QuoteCreation() {
 
           {/* Right: Action buttons */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Factureren button - shown for goedgekeurde offertes */}
+            {isEditMode && offerteStatus === 'goedgekeurd' && !geconverteerdNaarFactuurId && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  const quoteId = editOfferteId || autoSaveIdRef.current
+                  if (!quoteId) return
+                  const params = new URLSearchParams({ offerte_id: quoteId, klant_id: selectedKlantId })
+                  if (offerteTitel) params.set('titel', offerteTitel)
+                  if (selectedProjectId) params.set('project_id', selectedProjectId)
+                  navigate(`/facturen/nieuw?${params.toString()}`)
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+              >
+                <Receipt className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Factureren</span>
+              </Button>
+            )}
+            {/* Already invoiced - link to factuur */}
+            {isEditMode && geconverteerdNaarFactuurId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/facturen/${geconverteerdNaarFactuurId}`)}
+                className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/30 gap-1.5"
+              >
+                <Receipt className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Bekijk factuur</span>
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleDownloadPdf} className="gap-1.5">
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">PDF</span>
@@ -1724,6 +1762,22 @@ export function QuoteCreation() {
                       <button onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2">
                         <Building2 className="h-3.5 w-3.5" />Klant wijzigen
                       </button>
+                      {!geconverteerdNaarFactuurId && offerteStatus !== 'goedgekeurd' && (
+                        <button
+                          onClick={() => {
+                            setShowActionsMenu(false)
+                            const quoteId = editOfferteId || autoSaveIdRef.current
+                            if (!quoteId) return
+                            const params = new URLSearchParams({ offerte_id: quoteId, klant_id: selectedKlantId })
+                            if (offerteTitel) params.set('titel', offerteTitel)
+                            if (selectedProjectId) params.set('project_id', selectedProjectId)
+                            navigate(`/facturen/nieuw?${params.toString()}`)
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 text-emerald-700 dark:text-emerald-400"
+                        >
+                          <Receipt className="h-3.5 w-3.5" />Factureren
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
