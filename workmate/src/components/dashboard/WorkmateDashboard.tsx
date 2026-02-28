@@ -12,6 +12,7 @@ import { SalesFollowUpWidget } from './SalesFollowUpWidget'
 import { WorkflowWidget } from './WorkflowWidget'
 import { TeFacturerenWidget } from './TeFacturerenWidget'
 import { SalesForecastWidget } from './SalesForecastWidget'
+import { MontagePlanningWidget } from './MontagePlanningWidget'
 import { Wrench, FileText, FolderKanban, Receipt } from 'lucide-react'
 import { getMontageAfspraken, getOffertes, getProjecten } from '@/services/supabaseService'
 import type { MontageAfspraak, Offerte, Project } from '@/types'
@@ -117,6 +118,7 @@ export function WorkmateDashboard() {
         {/* Left column — planning & tasks */}
         <div className="lg:col-span-2 space-y-5">
           <TodayPlanningWidget />
+          <MontagePlanningWidget />
           <PriorityTasks />
           <QuickActions />
         </div>
