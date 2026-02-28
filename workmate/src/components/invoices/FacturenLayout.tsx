@@ -77,7 +77,7 @@ import { factuurHerinneringTemplate, factuurVerzendTemplate } from '@/services/e
 import { generateFactuurPDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { logger } from '../../utils/logger'
 
 // ============ TYPES ============
@@ -241,6 +241,7 @@ function isThisMonth(dateStr: string): boolean {
 // ============ COMPONENT ============
 
 export function FacturenLayout() {
+  const navigate = useNavigate()
   // App settings (bedrijfsprofiel for PDF generation)
   const { profile, primaireKleur, emailHandtekening, bedrijfsnaam } = useAppSettings()
   const documentStyle = useDocumentStyle()
@@ -718,20 +719,14 @@ export function FacturenLayout() {
     if (convertOfferteId && offertes.length > 0) {
       const offerte = offertes.find((o) => o.id === convertOfferteId)
       if (offerte) {
-        handleConvertOfferte(offerte)
-        // Clear the param so it doesn't re-trigger
-        setSearchParams({}, { replace: true })
+        // Navigate to full-page editor with offerte prefill
+        navigate(`/facturen/nieuw?offerte_id=${offerte.id}&klant_id=${offerte.klant_id}`, { replace: true })
       }
     } else if (klantId && klanten.length > 0) {
-      // Pre-fill klant and open create dialog
-      const klant = klanten.find((k) => k.id === klantId)
-      if (klant) {
-        setFormData((prev) => ({ ...prev, klant_id: klantId }))
-        setCreateDialogOpen(true)
-        setSearchParams({}, { replace: true })
-      }
+      // Navigate to editor with klant prefilled
+      navigate(`/facturen/nieuw?klant_id=${klantId}`, { replace: true })
     }
-  }, [isLoading, searchParams, offertes, klanten, handleConvertOfferte, setSearchParams])
+  }, [isLoading, searchParams, offertes, klanten, navigate])
 
   const handleAddLineItem = useCallback(() => {
     setFormData((prev) => ({
@@ -1235,7 +1230,7 @@ export function FacturenLayout() {
             Vanuit offerte
           </Button>
           <Button
-            onClick={handleOpenCreate}
+            onClick={() => navigate('/facturen/nieuw')}
             className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25 border-0"
             size="sm"
           >
@@ -1571,7 +1566,7 @@ export function FacturenLayout() {
                             <Eye className="h-4 w-4 mr-2" />
                             Bekijken
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleOpenEdit(factuur)}>
+                          <DropdownMenuItem onClick={() => navigate(`/facturen/${factuur.id}/bewerken`)}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Bewerken
                           </DropdownMenuItem>
@@ -1829,8 +1824,7 @@ export function FacturenLayout() {
               variant="outline"
               size="sm"
               onClick={() => {
-                if (viewingFactuur) handleOpenEdit(viewingFactuur)
-                setViewingFactuur(null)
+                if (viewingFactuur) navigate(`/facturen/${viewingFactuur.id}/bewerken`)
               }}
               className="gap-1"
             >
@@ -2152,7 +2146,10 @@ export function FacturenLayout() {
                       </div>
                     </div>
                     <div className="flex gap-2 mt-3">
-                      <Button size="sm" variant="outline" className="text-xs h-7 flex-1" onClick={() => handleConvertOfferte(offerte)}>
+                      <Button size="sm" variant="outline" className="text-xs h-7 flex-1" onClick={() => {
+                        setOfferteDialogOpen(false)
+                        navigate(`/facturen/nieuw?offerte_id=${offerte.id}&klant_id=${offerte.klant_id}`)
+                      }}>
                         Volledige factuur
                       </Button>
                       <Button size="sm" variant="outline" className="text-xs h-7 flex-1 text-purple-700 border-purple-200 hover:bg-purple-50 dark:text-purple-300 dark:border-purple-800 dark:hover:bg-purple-900/30" onClick={() => handleOpenVoorschot(offerte)}>

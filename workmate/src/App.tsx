@@ -34,6 +34,7 @@ import { SettingsLayout } from '@/components/settings/SettingsLayout'
 import { DataImportLayout } from '@/components/import/DataImportLayout'
 import { NewsletterBuilder } from '@/components/newsletter/NewsletterBuilder'
 import { FacturenLayout } from '@/components/invoices/FacturenLayout'
+import { FactuurEditor } from '@/components/invoices/FactuurEditor'
 import { RapportagesLayout } from '@/components/reports/RapportagesLayout'
 import { TijdregistratieLayout } from '@/components/timetracking/TijdregistratieLayout'
 import { NacalculatieLayout } from '@/components/nacalculatie/NacalculatieLayout'
@@ -117,6 +118,9 @@ function AppContent() {
         <Route path="financieel" element={<FinancialLayout />} />
         <Route path="taken" element={<TasksLayout />} />
         <Route path="facturen" element={<FacturenLayout />} />
+        <Route path="facturen/nieuw" element={<FactuurEditor />} />
+        <Route path="facturen/:id" element={<FactuurEditor />} />
+        <Route path="facturen/:id/bewerken" element={<FactuurEditor />} />
         <Route path="rapportages" element={<RapportagesLayout />} />
         <Route path="tijdregistratie" element={<TijdregistratieLayout />} />
         <Route path="nacalculatie" element={<NacalculatieLayout />} />

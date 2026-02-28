@@ -419,7 +419,7 @@ export function OfferteDetail() {
       setOfferte(updated)
 
       toast.success('Factuur aangemaakt', { description: factuurNummer })
-      navigate(`/facturen`)
+      navigate(`/facturen/${newFactuur.id}`)
     } catch (err) {
       logger.error('Failed to create factuur:', err)
       toast.error('Kon factuur niet aanmaken')
