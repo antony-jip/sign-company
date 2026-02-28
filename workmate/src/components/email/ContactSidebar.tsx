@@ -36,6 +36,12 @@ import {
   FileText,
   Loader2,
   Sparkles,
+  FolderPlus,
+  ListPlus,
+  FileSignature,
+  TrendingUp,
+  ArrowRight,
+  Zap,
 } from 'lucide-react'
 import { getInitials, cn } from '@/lib/utils'
 import type { EmailContact } from '@/utils/emailUtils'
@@ -64,14 +70,39 @@ export interface AddCustomerData {
   nieuwsbrief: boolean
 }
 
+export interface QuickProjectData {
+  naam: string
+  beschrijving: string
+  klant_id?: string
+}
+
+export interface QuickDealData {
+  titel: string
+  beschrijving: string
+  verwachte_waarde: number
+  klant_id: string
+}
+
+export interface QuickTaskData {
+  titel: string
+  beschrijving: string
+}
+
 interface ContactSidebarProps {
   contact: EmailContact | null
   senderName: string
   senderEmail: string
   senderCompany?: string
+  emailSubject?: string
   participants?: ConversationParticipant[]
   onAddCustomer: (email: string, data?: AddCustomerData) => void
   onSubscribeNewsletter: (email: string) => void
+  onCreateProject?: (data: QuickProjectData) => void
+  onCreateTask?: (data: QuickTaskData) => void
+  onCreateDeal?: (data: QuickDealData) => void
+  onNavigateToOfferte?: (klantId?: string) => void
+  /** ID of the klant that was just created from this email (for chaining actions) */
+  recentlyCreatedKlantId?: string | null
   width?: number
 }
 
@@ -496,6 +527,275 @@ function AddContactForm({
   )
 }
 
+// ─── Quick Project Form ─────────────────────────────────────────────
+function QuickProjectForm({
+  emailSubject,
+  onSave,
+  onCancel,
+}: {
+  emailSubject?: string
+  onSave: (data: QuickProjectData) => void
+  onCancel: () => void
+}) {
+  const [isSaving, setIsSaving] = useState(false)
+  const [naam, setNaam] = useState(emailSubject ? `Project: ${emailSubject}` : '')
+  const [beschrijving, setBeschrijving] = useState('')
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      onSave({ naam, beschrijving })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b bg-gradient-to-r from-blue-500/5 to-transparent">
+        <button onClick={onCancel} className="p-1 rounded-md hover:bg-muted transition-colors">
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+            <FolderPlus className="w-3.5 h-3.5 text-blue-500" />
+          </div>
+          <h3 className="text-sm font-semibold text-foreground truncate">Project aanmaken</h3>
+        </div>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="p-3 space-y-3">
+          <FormField icon={FolderPlus} label="Projectnaam">
+            <Input
+              value={naam}
+              onChange={e => setNaam(e.target.value)}
+              placeholder="Bijv. Gevelreclame Bakkerij Jansen"
+              className="h-8 text-sm"
+              autoFocus
+            />
+          </FormField>
+          <FormField icon={FileText} label="Omschrijving">
+            <Textarea
+              value={beschrijving}
+              onChange={e => setBeschrijving(e.target.value)}
+              placeholder="Korte beschrijving van het project..."
+              className="text-sm min-h-[80px] resize-none"
+              rows={3}
+            />
+          </FormField>
+          <div className="bg-muted/50 rounded-lg p-2.5 text-[11px] text-muted-foreground">
+            <Zap className="w-3 h-3 inline mr-1 text-amber-500" />
+            Het project wordt automatisch gekoppeld aan de klant uit deze email.
+          </div>
+        </div>
+      </ScrollArea>
+      <div className="p-3 border-t bg-muted/10 space-y-2">
+        <Button
+          onClick={handleSave}
+          disabled={!naam.trim() || isSaving}
+          className="w-full gap-2"
+          size="sm"
+        >
+          {isSaving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Aanmaken...</>
+          ) : (
+            <><FolderPlus className="w-4 h-4" />Project aanmaken</>
+          )}
+        </Button>
+        <Button variant="ghost" onClick={onCancel} className="w-full text-muted-foreground" size="sm">
+          Annuleren
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Quick Task Form ────────────────────────────────────────────────
+function QuickTaskForm({
+  emailSubject,
+  senderName,
+  onSave,
+  onCancel,
+}: {
+  emailSubject?: string
+  senderName: string
+  onSave: (data: QuickTaskData) => void
+  onCancel: () => void
+}) {
+  const [isSaving, setIsSaving] = useState(false)
+  const [titel, setTitel] = useState(emailSubject ? `Opvolgen: ${emailSubject}` : '')
+  const [beschrijving, setBeschrijving] = useState(
+    `Opvolgen email van ${senderName}`
+  )
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      onSave({ titel, beschrijving })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b bg-gradient-to-r from-amber-500/5 to-transparent">
+        <button onClick={onCancel} className="p-1 rounded-md hover:bg-muted transition-colors">
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+            <ListPlus className="w-3.5 h-3.5 text-amber-600" />
+          </div>
+          <h3 className="text-sm font-semibold text-foreground truncate">Taak toevoegen</h3>
+        </div>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="p-3 space-y-3">
+          <FormField icon={ListPlus} label="Taak">
+            <Input
+              value={titel}
+              onChange={e => setTitel(e.target.value)}
+              placeholder="Bijv. Offerte uitbrengen voor..."
+              className="h-8 text-sm"
+              autoFocus
+            />
+          </FormField>
+          <FormField icon={FileText} label="Toelichting">
+            <Textarea
+              value={beschrijving}
+              onChange={e => setBeschrijving(e.target.value)}
+              placeholder="Extra context..."
+              className="text-sm min-h-[60px] resize-none"
+              rows={2}
+            />
+          </FormField>
+        </div>
+      </ScrollArea>
+      <div className="p-3 border-t bg-muted/10 space-y-2">
+        <Button
+          onClick={handleSave}
+          disabled={!titel.trim() || isSaving}
+          className="w-full gap-2"
+          size="sm"
+        >
+          {isSaving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Opslaan...</>
+          ) : (
+            <><ListPlus className="w-4 h-4" />Taak aanmaken</>
+          )}
+        </Button>
+        <Button variant="ghost" onClick={onCancel} className="w-full text-muted-foreground" size="sm">
+          Annuleren
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Quick Deal Form ────────────────────────────────────────────────
+function QuickDealForm({
+  emailSubject,
+  senderName,
+  senderCompany,
+  onSave,
+  onCancel,
+}: {
+  emailSubject?: string
+  senderName: string
+  senderCompany?: string
+  onSave: (data: Omit<QuickDealData, 'klant_id'>) => void
+  onCancel: () => void
+}) {
+  const [isSaving, setIsSaving] = useState(false)
+  const [titel, setTitel] = useState(
+    emailSubject || (senderCompany ? `Deal ${senderCompany}` : `Deal ${senderName}`)
+  )
+  const [beschrijving, setBeschrijving] = useState('')
+  const [waarde, setWaarde] = useState('')
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      onSave({
+        titel,
+        beschrijving,
+        verwachte_waarde: parseFloat(waarde) || 0,
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b bg-gradient-to-r from-emerald-500/5 to-transparent">
+        <button onClick={onCancel} className="p-1 rounded-md hover:bg-muted transition-colors">
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+          </div>
+          <h3 className="text-sm font-semibold text-foreground truncate">Deal aanmaken</h3>
+        </div>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="p-3 space-y-3">
+          <FormField icon={TrendingUp} label="Dealnaam">
+            <Input
+              value={titel}
+              onChange={e => setTitel(e.target.value)}
+              placeholder="Bijv. Lichtreclame Restaurant De Smit"
+              className="h-8 text-sm"
+              autoFocus
+            />
+          </FormField>
+          <FormField icon={Banknote} label="Verwachte waarde">
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">&euro;</span>
+              <Input
+                value={waarde}
+                onChange={e => setWaarde(e.target.value.replace(/[^0-9.,]/g, ''))}
+                placeholder="0,00"
+                className="h-8 text-sm pl-7"
+                type="text"
+                inputMode="decimal"
+              />
+            </div>
+          </FormField>
+          <FormField icon={FileText} label="Omschrijving">
+            <Textarea
+              value={beschrijving}
+              onChange={e => setBeschrijving(e.target.value)}
+              placeholder="Korte omschrijving van de deal..."
+              className="text-sm min-h-[60px] resize-none"
+              rows={2}
+            />
+          </FormField>
+        </div>
+      </ScrollArea>
+      <div className="p-3 border-t bg-muted/10 space-y-2">
+        <Button
+          onClick={handleSave}
+          disabled={!titel.trim() || isSaving}
+          className="w-full gap-2"
+          size="sm"
+        >
+          {isSaving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Aanmaken...</>
+          ) : (
+            <><TrendingUp className="w-4 h-4" />Deal aanmaken</>
+          )}
+        </Button>
+        <Button variant="ghost" onClick={onCancel} className="w-full text-muted-foreground" size="sm">
+          Annuleren
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 // ═════════════════════════════════════════════════════════════════════
 // ─── Main ContactSidebar ─────────────────────────────────────────────
 // ═════════════════════════════════════════════════════════════════════
@@ -505,12 +805,19 @@ export function ContactSidebar({
   senderName,
   senderEmail,
   senderCompany,
+  emailSubject,
   participants = [],
   onAddCustomer,
   onSubscribeNewsletter,
+  onCreateProject,
+  onCreateTask,
+  onCreateDeal,
+  onNavigateToOfferte,
+  recentlyCreatedKlantId,
   width,
 }: ContactSidebarProps) {
-  const [showAddForm, setShowAddForm] = useState(false)
+  type SidebarView = 'main' | 'addContact' | 'addProject' | 'addTask' | 'addDeal'
+  const [view, setView] = useState<SidebarView>('main')
 
   const uniqueParticipants = participants.length > 0
     ? participants
@@ -523,21 +830,79 @@ export function ContactSidebar({
     if (data.nieuwsbrief) {
       onSubscribeNewsletter(data.email)
     }
-    setShowAddForm(false)
+    setView('main')
   }, [onAddCustomer, onSubscribeNewsletter])
 
-  // ── Show Add Contact Form ──
-  if (showAddForm) {
+  const handleSaveProject = useCallback((data: QuickProjectData) => {
+    onCreateProject?.({ ...data, klant_id: recentlyCreatedKlantId || undefined })
+    setView('main')
+  }, [onCreateProject, recentlyCreatedKlantId])
+
+  const handleSaveTask = useCallback((data: QuickTaskData) => {
+    onCreateTask?.(data)
+    setView('main')
+  }, [onCreateTask])
+
+  const handleSaveDeal = useCallback((data: Omit<QuickDealData, 'klant_id'>) => {
+    if (recentlyCreatedKlantId) {
+      onCreateDeal?.({ ...data, klant_id: recentlyCreatedKlantId })
+    }
+    setView('main')
+  }, [onCreateDeal, recentlyCreatedKlantId])
+
+  const containerProps = {
+    className: "flex-shrink-0 flex flex-col bg-muted/30",
+    style: { width: width ?? 290 },
+  }
+
+  // ── Sub-views ──
+  if (view === 'addContact') {
     return (
-      <div
-        className="flex-shrink-0 flex flex-col bg-muted/30"
-        style={{ width: width ?? 290 }}
-      >
+      <div {...containerProps}>
         <AddContactForm
           senderName={senderName}
           senderEmail={senderEmail}
           onSave={handleSaveContact}
-          onCancel={() => setShowAddForm(false)}
+          onCancel={() => setView('main')}
+        />
+      </div>
+    )
+  }
+
+  if (view === 'addProject') {
+    return (
+      <div {...containerProps}>
+        <QuickProjectForm
+          emailSubject={emailSubject}
+          onSave={handleSaveProject}
+          onCancel={() => setView('main')}
+        />
+      </div>
+    )
+  }
+
+  if (view === 'addTask') {
+    return (
+      <div {...containerProps}>
+        <QuickTaskForm
+          emailSubject={emailSubject}
+          senderName={senderName}
+          onSave={handleSaveTask}
+          onCancel={() => setView('main')}
+        />
+      </div>
+    )
+  }
+
+  if (view === 'addDeal') {
+    return (
+      <div {...containerProps}>
+        <QuickDealForm
+          emailSubject={emailSubject}
+          senderName={senderName}
+          senderCompany={senderCompany}
+          onSave={handleSaveDeal}
+          onCancel={() => setView('main')}
         />
       </div>
     )
@@ -654,12 +1019,12 @@ export function ContactSidebar({
           <div className="space-y-2 mb-4">
             {(!contact || !contact.isCustomer) ? (
               <Button
-                onClick={() => setShowAddForm(true)}
+                onClick={() => setView('addContact')}
                 className="w-full gap-2 bg-primary hover:bg-wm-hover text-white"
                 size="sm"
               >
                 <UserPlus className="w-4 h-4" />
-                Toevoegen aan klanten
+                Contactpersoon toevoegen
               </Button>
             ) : (
               <div className="flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-md px-3 py-2 text-sm font-medium">
@@ -668,20 +1033,60 @@ export function ContactSidebar({
               </div>
             )}
 
+            {/* ── Snelle acties: Project / Taak / Offerte / Deal ── */}
+            <div className="grid grid-cols-2 gap-1.5">
+              <Button
+                onClick={() => setView('addProject')}
+                variant="outline"
+                className="gap-1.5 text-[12px] h-8 px-2"
+                size="sm"
+              >
+                <FolderPlus className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                Project
+              </Button>
+              <Button
+                onClick={() => setView('addTask')}
+                variant="outline"
+                className="gap-1.5 text-[12px] h-8 px-2"
+                size="sm"
+              >
+                <ListPlus className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                Taak
+              </Button>
+              <Button
+                onClick={() => onNavigateToOfferte?.(recentlyCreatedKlantId || undefined)}
+                variant="outline"
+                className="gap-1.5 text-[12px] h-8 px-2"
+                size="sm"
+              >
+                <FileSignature className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                Offerte
+              </Button>
+              <Button
+                onClick={() => setView('addDeal')}
+                variant="outline"
+                className="gap-1.5 text-[12px] h-8 px-2"
+                size="sm"
+              >
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                Deal
+              </Button>
+            </div>
+
             {(!contact || !contact.subscribedNewsletter) ? (
               <Button
                 onClick={() => onSubscribeNewsletter(senderEmail)}
-                variant="outline"
-                className="w-full gap-2"
+                variant="ghost"
+                className="w-full gap-2 text-muted-foreground text-xs h-7"
                 size="sm"
               >
-                <Newspaper className="w-4 h-4" />
+                <Newspaper className="w-3.5 h-3.5" />
                 Abonneren nieuwsbrief
               </Button>
             ) : (
-              <div className="flex items-center justify-center gap-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-md px-3 py-2 text-sm">
-                <Check className="w-4 h-4" />
-                Geabonneerd op nieuwsbrief
+              <div className="flex items-center justify-center gap-1.5 text-blue-600 dark:text-blue-300 rounded-md px-3 py-1 text-[11px]">
+                <Check className="w-3 h-3" />
+                Geabonneerd
               </div>
             )}
           </div>
@@ -779,15 +1184,62 @@ export function ContactSidebar({
               )}
             </>
           ) : (
-            <div className="text-center py-3">
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
-                <AlertCircle className="w-5 h-5 text-amber-500 mx-auto mb-1.5" />
-                <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">Nieuw contact</p>
-                <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
-                  Dit emailadres is nog niet bekend in uw klantenbestand.
-                </p>
+            <>
+              <div className="text-center py-2">
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
+                  <AlertCircle className="w-5 h-5 text-amber-500 mx-auto mb-1.5" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">Nieuw contact</p>
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+                    Dit emailadres is nog niet bekend in uw klantenbestand.
+                  </p>
+                </div>
               </div>
-            </div>
+
+              {/* ── Suggested flow for new email inquiry ── */}
+              <div className="mb-4">
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-3 h-3 text-primary" />
+                  </span>
+                  Aanvraag verwerken
+                </h4>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => setView('addContact')}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-lg border border-dashed border-primary/30 bg-primary/[0.03] hover:bg-primary/[0.06] transition-colors text-left group"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-primary">1</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground">Klant toevoegen</p>
+                      <p className="text-[10px] text-muted-foreground">Sla contactgegevens op</p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </button>
+                  <button
+                    onClick={() => setView('addProject')}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-lg border border-dashed border-border/60 hover:border-blue-300 hover:bg-blue-500/[0.03] transition-colors text-left group"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-blue-500">2</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground">Project aanmaken</p>
+                      <p className="text-[10px] text-muted-foreground">Start een nieuw project</p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-blue-500 transition-colors" />
+                  </button>
+                  <button
+                    onClick={() => onNavigateToOfferte?.()}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-lg border border-dashed border-border/60 hover:border-primary/30 hover:bg-primary/[0.03] transition-colors text-left group"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-primary">3</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground">Offerte maken</p>
+                      <p className="text-[10px] text-muted-foreground">Stuur een prijsopgave</p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </ScrollArea>

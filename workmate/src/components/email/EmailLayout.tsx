@@ -35,7 +35,7 @@ import {
   BarChart3,
   Users,
 } from 'lucide-react'
-import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKlant, createTaak } from '@/services/supabaseService'
+import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKlant, createTaak, createProject, createDeal } from '@/services/supabaseService'
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
 import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -47,7 +47,7 @@ import { EmailTracking } from './EmailTracking'
 import { EmailSequences } from './EmailSequences'
 import { EmailAnalytics } from './EmailAnalytics'
 import { GedeeldeInboxLayout } from './GedeeldeInboxLayout'
-import type { AddCustomerData } from './ContactSidebar'
+import type { AddCustomerData, QuickProjectData, QuickTaskData, QuickDealData } from './ContactSidebar'
 import { extractEmailAddress } from '@/utils/emailUtils'
 import type { EmailContact } from '@/utils/emailUtils'
 import type { Email, Klant } from '@/types'
@@ -737,6 +737,7 @@ export function EmailLayout() {
         }],
       })
       setKlanten((prev) => [...prev, newKlant])
+      setRecentlyCreatedKlantId(newKlant.id)
       toast.success(`${data?.contactpersoon || email} toegevoegd aan klanten`)
     } catch (err: unknown) {
       logger.error('Klant aanmaken mislukt:', err)
@@ -767,6 +768,88 @@ export function EmailLayout() {
       logger.error('Taak aanmaken mislukt:', err)
       toast.error('Kon taak niet aanmaken')
     }
+  }, [])
+
+  // ── Recently created klant (for chaining: email → klant → project/deal) ──
+  const [recentlyCreatedKlantId, setRecentlyCreatedKlantId] = useState<string | null>(null)
+
+  // Clear recently created klant when switching emails
+  useEffect(() => {
+    setRecentlyCreatedKlantId(null)
+  }, [selectedEmail?.id])
+
+  // ── Create project from email sidebar ──
+  const handleCreateProjectFromEmail = useCallback(async (data: QuickProjectData) => {
+    try {
+      await createProject({
+        user_id: user?.id || '',
+        klant_id: data.klant_id || recentlyCreatedKlantId || '',
+        naam: data.naam,
+        beschrijving: data.beschrijving,
+        status: 'gepland',
+        prioriteit: 'medium',
+        start_datum: new Date().toISOString().split('T')[0],
+        eind_datum: '',
+        budget: 0,
+        besteed: 0,
+        voortgang: 0,
+        team_leden: [],
+      })
+      toast.success('Project aangemaakt')
+    } catch (err: unknown) {
+      logger.error('Project aanmaken mislukt:', err)
+      toast.error('Kon project niet aanmaken')
+    }
+  }, [user?.id, recentlyCreatedKlantId])
+
+  // ── Create deal from email sidebar ──
+  const handleCreateDealFromEmail = useCallback(async (data: QuickDealData) => {
+    try {
+      await createDeal({
+        user_id: user?.id || '',
+        klant_id: data.klant_id || recentlyCreatedKlantId || '',
+        titel: data.titel,
+        beschrijving: data.beschrijving,
+        verwachte_waarde: data.verwachte_waarde,
+        fase: 'nieuw',
+        fase_sinds: new Date().toISOString(),
+        status: 'open',
+        bron: 'email',
+      })
+      toast.success('Deal aangemaakt')
+    } catch (err: unknown) {
+      logger.error('Deal aanmaken mislukt:', err)
+      toast.error('Kon deal niet aanmaken')
+    }
+  }, [user?.id, recentlyCreatedKlantId])
+
+  // ── Quick task from email sidebar ──
+  const handleQuickTaskFromEmail = useCallback(async (data: { titel: string; beschrijving: string }) => {
+    try {
+      await createTaak({
+        user_id: user?.id || '',
+        project_id: '',
+        titel: data.titel,
+        beschrijving: data.beschrijving + (selectedEmail ? `\n\nVanuit email: "${selectedEmail.onderwerp}"` : ''),
+        status: 'todo',
+        prioriteit: 'medium',
+        toegewezen_aan: '',
+        deadline: '',
+        geschatte_tijd: 0,
+        bestede_tijd: 0,
+      })
+      toast.success('Taak aangemaakt')
+    } catch (err: unknown) {
+      logger.error('Taak aanmaken mislukt:', err)
+      toast.error('Kon taak niet aanmaken')
+    }
+  }, [user?.id, selectedEmail])
+
+  // ── Navigate to offerte creation ──
+  const handleNavigateToOfferte = useCallback((_klantId?: string) => {
+    // Navigate to offerte page — in a real app this would use the router
+    window.location.hash = '#/offertes/nieuw'
+    toast.info('Ga naar Offertes om een nieuwe offerte te maken')
   }, [])
 
   // ── Show CRM sidebar? ──
@@ -1376,8 +1459,14 @@ export function EmailLayout() {
                 senderName={currentSenderName}
                 senderEmail={currentSenderEmail}
                 senderCompany={currentContact?.company}
+                emailSubject={selectedEmail?.onderwerp}
                 onAddCustomer={handleAddCustomer}
                 onSubscribeNewsletter={handleSubscribeNewsletter}
+                onCreateProject={handleCreateProjectFromEmail}
+                onCreateTask={handleQuickTaskFromEmail}
+                onCreateDeal={handleCreateDealFromEmail}
+                onNavigateToOfferte={handleNavigateToOfferte}
+                recentlyCreatedKlantId={recentlyCreatedKlantId}
                 width={280}
               />
             </div>
