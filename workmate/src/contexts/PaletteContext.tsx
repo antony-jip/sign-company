@@ -28,6 +28,148 @@ export interface ColorPalette {
   }
 }
 
+// ================================================================
+// APP THEMES — Full visual presets that change *everything*
+// These override background, card, border, sidebar, shadows etc.
+// Palettes still work on top of themes (for accent colors).
+// ================================================================
+
+export interface AppTheme {
+  id: string
+  naam: string
+  beschrijving: string
+  isDark: boolean
+  preview: { bg: string; sidebar: string; card: string; accent: string }
+  vars: Record<string, string>
+}
+
+export const APP_THEMES: AppTheme[] = [
+  {
+    id: 'standaard',
+    naam: 'Standaard',
+    beschrijving: 'Licht & warm — de basis',
+    isDark: false,
+    preview: { bg: '#f5f7f5', sidebar: '#f5f7f5', card: '#fcfdfc', accent: '#58B09C' },
+    vars: {}, // No overrides — uses CSS defaults
+  },
+  {
+    id: 'midnight',
+    naam: 'Midnight',
+    beschrijving: 'Diep donker — rijk & gefocust',
+    isDark: true,
+    preview: { bg: '#0f1117', sidebar: '#0b0d12', card: '#161922', accent: '#6C8EEF' },
+    vars: {
+      '--background': '228 18% 7%',
+      '--foreground': '220 15% 90%',
+      '--card': '228 16% 11%',
+      '--card-foreground': '220 15% 90%',
+      '--popover': '228 16% 11%',
+      '--popover-foreground': '220 15% 90%',
+      '--primary-foreground': '0 0% 100%',
+      '--secondary': '228 14% 14%',
+      '--secondary-foreground': '220 15% 90%',
+      '--muted': '228 12% 14%',
+      '--muted-foreground': '220 10% 50%',
+      '--accent-foreground': '0 0% 100%',
+      '--destructive': '4 62% 50%',
+      '--destructive-foreground': '0 0% 100%',
+      '--border': '228 12% 16%',
+      '--input': '228 12% 16%',
+      '--wm-sidebar-bg': '228 20% 5%',
+      '--wm-sidebar-hover': '228 16% 10%',
+      '--wm-shadow-color': '228 30% 8%',
+      '--wm-glass': 'rgba(15, 17, 23, 0.88)',
+      '--wm-glass-border': 'rgba(255, 255, 255, 0.06)',
+    },
+  },
+  {
+    id: 'snow',
+    naam: 'Snow',
+    beschrijving: 'Puur wit — minimaal & helder',
+    isDark: false,
+    preview: { bg: '#ffffff', sidebar: '#fafafa', card: '#ffffff', accent: '#58B09C' },
+    vars: {
+      '--background': '0 0% 100%',
+      '--foreground': '220 14% 12%',
+      '--card': '0 0% 100%',
+      '--card-foreground': '220 14% 12%',
+      '--popover': '0 0% 100%',
+      '--popover-foreground': '220 14% 12%',
+      '--primary-foreground': '0 0% 100%',
+      '--secondary': '220 10% 96%',
+      '--secondary-foreground': '220 14% 12%',
+      '--muted': '220 8% 96%',
+      '--muted-foreground': '220 8% 44%',
+      '--accent-foreground': '0 0% 100%',
+      '--border': '220 8% 91%',
+      '--input': '220 8% 91%',
+      '--wm-sidebar-bg': '220 8% 98%',
+      '--wm-sidebar-hover': '220 8% 95%',
+      '--wm-shadow-color': '220 15% 60%',
+      '--wm-glass': 'rgba(255, 255, 255, 0.80)',
+      '--wm-glass-border': 'rgba(0, 0, 0, 0.04)',
+    },
+  },
+  {
+    id: 'sand',
+    naam: 'Warm Sand',
+    beschrijving: 'Warm linnen — als premium papier',
+    isDark: false,
+    preview: { bg: '#f8f4ee', sidebar: '#f5f0e8', card: '#fdfaf6', accent: '#B89858' },
+    vars: {
+      '--background': '38 32% 95%',
+      '--foreground': '30 28% 14%',
+      '--card': '38 30% 98%',
+      '--card-foreground': '30 28% 14%',
+      '--popover': '38 30% 98%',
+      '--popover-foreground': '30 28% 14%',
+      '--primary-foreground': '0 0% 100%',
+      '--secondary': '35 22% 91%',
+      '--secondary-foreground': '30 28% 14%',
+      '--muted': '35 18% 91%',
+      '--muted-foreground': '30 12% 44%',
+      '--accent-foreground': '0 0% 100%',
+      '--border': '35 16% 85%',
+      '--input': '35 16% 85%',
+      '--wm-sidebar-bg': '36 24% 94%',
+      '--wm-sidebar-hover': '36 20% 90%',
+      '--wm-shadow-color': '30 20% 40%',
+      '--wm-glass': 'rgba(253, 250, 246, 0.80)',
+      '--wm-glass-border': 'rgba(180, 160, 120, 0.10)',
+    },
+  },
+  {
+    id: 'dusk',
+    naam: 'Dusk',
+    beschrijving: 'Warm donker — knus & moody',
+    isDark: true,
+    preview: { bg: '#1a1714', sidebar: '#141210', card: '#211e1a', accent: '#D4714A' },
+    vars: {
+      '--background': '28 14% 9%',
+      '--foreground': '35 18% 88%',
+      '--card': '28 12% 12%',
+      '--card-foreground': '35 18% 88%',
+      '--popover': '28 12% 12%',
+      '--popover-foreground': '35 18% 88%',
+      '--primary-foreground': '0 0% 100%',
+      '--secondary': '28 10% 15%',
+      '--secondary-foreground': '35 18% 88%',
+      '--muted': '28 8% 15%',
+      '--muted-foreground': '30 10% 50%',
+      '--accent-foreground': '0 0% 100%',
+      '--destructive': '4 62% 45%',
+      '--destructive-foreground': '0 0% 100%',
+      '--border': '28 8% 17%',
+      '--input': '28 8% 17%',
+      '--wm-sidebar-bg': '28 16% 7%',
+      '--wm-sidebar-hover': '28 12% 11%',
+      '--wm-shadow-color': '28 20% 6%',
+      '--wm-glass': 'rgba(26, 23, 20, 0.88)',
+      '--wm-glass-border': 'rgba(255, 255, 255, 0.05)',
+    },
+  },
+]
+
 export const PALETTES: ColorPalette[] = [
   {
     id: 'terracotta',
@@ -266,21 +408,56 @@ export const PALETTES: ColorPalette[] = [
 ]
 
 const STORAGE_KEY = 'workmate_palette'
+const THEME_STORAGE_KEY = 'workmate_app_theme'
 
 interface PaletteContextType {
   paletteId: string
   palette: ColorPalette
   setPaletteId: (id: string) => void
+  appThemeId: string
+  appTheme: AppTheme
+  setAppThemeId: (id: string) => void
 }
 
 const PaletteContext = createContext<PaletteContextType | undefined>(undefined)
+
+function applyAppTheme(theme: AppTheme) {
+  const root = document.documentElement
+
+  // Set dark class based on theme
+  if (theme.isDark) {
+    root.classList.add('dark')
+    root.classList.remove('light')
+  } else {
+    root.classList.remove('dark')
+    root.classList.add('light')
+  }
+
+  // Clear any previous theme overrides first
+  const themeVarKeys = [
+    '--background', '--foreground', '--card', '--card-foreground',
+    '--popover', '--popover-foreground', '--primary-foreground',
+    '--secondary', '--secondary-foreground', '--muted', '--muted-foreground',
+    '--accent-foreground', '--destructive', '--destructive-foreground',
+    '--border', '--input', '--wm-sidebar-bg', '--wm-sidebar-hover',
+    '--wm-shadow-color', '--wm-glass', '--wm-glass-border',
+  ]
+  for (const key of themeVarKeys) {
+    root.style.removeProperty(key)
+  }
+
+  // Apply theme-specific overrides (if any)
+  for (const [key, value] of Object.entries(theme.vars)) {
+    root.style.setProperty(key, value)
+  }
+}
 
 function applyPalette(palette: ColorPalette, isDark: boolean) {
   const root = document.documentElement
   const colors = palette.light
   const darkColors = palette.dark
 
-  // Light mode HSL vars (always set, used as base)
+  // Accent/primary HSL vars
   root.style.setProperty('--primary', isDark ? darkColors.primary : colors.primary)
   root.style.setProperty('--accent', isDark ? darkColors.accent : colors.accent)
   root.style.setProperty('--ring', isDark ? darkColors.ring : colors.ring)
@@ -303,31 +480,58 @@ export function PaletteProvider({ children }: { children: ReactNode }) {
   const [paletteId, setPaletteIdState] = useState<string>(() => {
     return localStorage.getItem(STORAGE_KEY) || 'terracotta'
   })
+  const [appThemeId, setAppThemeIdState] = useState<string>(() => {
+    return localStorage.getItem(THEME_STORAGE_KEY) || 'standaard'
+  })
 
   const palette = PALETTES.find((p) => p.id === paletteId) || PALETTES[0]
+  const appTheme = APP_THEMES.find((t) => t.id === appThemeId) || APP_THEMES[0]
 
   const setPaletteId = useCallback((id: string) => {
     localStorage.setItem(STORAGE_KEY, id)
     setPaletteIdState(id)
   }, [])
 
-  // Apply palette whenever it changes or theme changes
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark')
-    applyPalette(palette, isDark)
+  const setAppThemeId = useCallback((id: string) => {
+    localStorage.setItem(THEME_STORAGE_KEY, id)
+    // Also update ThemeContext's localStorage so they stay in sync
+    const theme = APP_THEMES.find((t) => t.id === id)
+    if (theme) {
+      localStorage.setItem('workmate_theme', theme.isDark ? 'dark' : 'light')
+    }
+    setAppThemeIdState(id)
+  }, [])
 
-    // Watch for theme class changes
+  // Apply app theme first, then palette on top
+  useEffect(() => {
+    applyAppTheme(appTheme)
+    applyPalette(palette, appTheme.isDark)
+  }, [appTheme, palette])
+
+  // Watch for external dark class changes (e.g. header toggle)
+  // If the dark state no longer matches the selected theme, reset to standaard
+  useEffect(() => {
     const observer = new MutationObserver(() => {
       const nowDark = document.documentElement.classList.contains('dark')
-      applyPalette(palette, nowDark)
+      const currentTheme = APP_THEMES.find((t) => t.id === appThemeId) || APP_THEMES[0]
+
+      if (currentTheme.id !== 'standaard' && currentTheme.isDark !== nowDark) {
+        // Header toggle was used while on a custom theme — reset to standaard
+        // so the CSS defaults take over (either :root or .dark block from index.css)
+        localStorage.setItem(THEME_STORAGE_KEY, 'standaard')
+        setAppThemeIdState('standaard')
+        applyAppTheme(APP_THEMES[0]) // clear custom vars
+        applyPalette(palette, nowDark)
+      } else {
+        applyPalette(palette, nowDark)
+      }
     })
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-
     return () => observer.disconnect()
-  }, [palette])
+  }, [palette, appThemeId])
 
   return (
-    <PaletteContext.Provider value={{ paletteId, palette, setPaletteId }}>
+    <PaletteContext.Provider value={{ paletteId, palette, setPaletteId, appThemeId, appTheme, setAppThemeId }}>
       {children}
     </PaletteContext.Provider>
   )

@@ -63,7 +63,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { usePalette, PALETTES } from '@/contexts/PaletteContext'
+import { usePalette, PALETTES, APP_THEMES } from '@/contexts/PaletteContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
@@ -2300,7 +2300,7 @@ function WeergaveTab() {
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage } = useLanguage()
   const { settings, updateSettings } = useAppSettings()
-  const { paletteId, setPaletteId } = usePalette()
+  const { paletteId, setPaletteId, appThemeId, setAppThemeId } = usePalette()
   const [sidebarItems, setSidebarItems] = useState<string[]>(
     settings.sidebar_items || ALL_SIDEBAR_ITEMS.map((i) => i.label)
   )
@@ -2374,31 +2374,90 @@ function WeergaveTab() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Theme Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {theme === 'light' ? (
-              <Sun className="w-5 h-5 text-amber-500" />
-            ) : (
-              <Moon className="w-5 h-5 text-blue-400" />
-            )}
+        {/* App Theme Picker */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <Sun className="w-5 h-5 text-primary" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                Thema
+              <p className="text-sm font-medium text-foreground">
+                App Thema
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {theme === 'light' ? 'Licht thema actief' : 'Donker thema actief'}
+              <p className="text-xs text-muted-foreground">
+                Kies een volledig thema — verandert achtergrond, kaarten, sidebar en sfeer
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {theme === 'light' ? 'Licht' : 'Donker'}
-            </span>
-            <Switch
-              checked={theme === 'dark'}
-              onCheckedChange={toggleTheme}
-            />
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {APP_THEMES.map((t) => {
+              const isActive = appThemeId === t.id
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setAppThemeId(t.id)
+                    toast.success(`Thema "${t.naam}" geactiveerd`)
+                  }}
+                  className={cn(
+                    'relative group rounded-xl border-2 p-3 transition-all duration-200 text-left',
+                    isActive
+                      ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20'
+                      : 'border-border hover:border-primary/40 hover:shadow-sm'
+                  )}
+                >
+                  {/* Mini UI mockup */}
+                  <div
+                    className="rounded-lg overflow-hidden mb-2.5 border border-border/30"
+                    style={{ background: t.preview.bg }}
+                  >
+                    <div className="flex h-16">
+                      {/* Mini sidebar */}
+                      <div
+                        className="w-5 flex-shrink-0 border-r"
+                        style={{
+                          background: t.preview.sidebar,
+                          borderColor: t.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                        }}
+                      >
+                        <div className="mt-2 mx-1 space-y-1">
+                          <div className="h-1 rounded-full" style={{ background: t.preview.accent, opacity: 0.7 }} />
+                          <div className="h-1 rounded-full" style={{ background: t.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' }} />
+                          <div className="h-1 rounded-full" style={{ background: t.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' }} />
+                        </div>
+                      </div>
+                      {/* Mini content */}
+                      <div className="flex-1 p-1.5 space-y-1.5">
+                        <div className="h-1.5 w-10 rounded-full" style={{ background: t.isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' }} />
+                        <div
+                          className="rounded-md p-1"
+                          style={{
+                            background: t.preview.card,
+                            border: `1px solid ${t.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+                          }}
+                        >
+                          <div className="h-1 w-8 rounded-full" style={{ background: t.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }} />
+                          <div className="h-1 w-12 rounded-full mt-0.5" style={{ background: t.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }} />
+                        </div>
+                        <div className="flex gap-1">
+                          <div className="h-2 w-6 rounded" style={{ background: t.preview.accent, opacity: 0.8 }} />
+                          <div className="h-2 w-6 rounded" style={{ background: t.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className={cn('text-sm font-semibold', isActive ? 'text-primary' : 'text-foreground')}>
+                    {t.naam}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                    {t.beschrijving}
+                  </p>
+                  {isActive && (
+                    <div className="absolute top-2 right-2">
+                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    </div>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -2409,11 +2468,11 @@ function WeergaveTab() {
           <div className="flex items-center gap-3 mb-4">
             <Palette className="w-5 h-5 text-primary" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-foreground">
                 Kleurenpalet
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Kies je favoriete accentkleur voor de hele app
+              <p className="text-xs text-muted-foreground">
+                Kies je favoriete accentkleur — werkt met elk thema
               </p>
             </div>
           </div>
@@ -2471,10 +2530,10 @@ function WeergaveTab() {
           <div className="flex items-center gap-3 mb-4">
             <Type className="w-5 h-5 text-primary" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-foreground">
                 Lettertype
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Kies een lettertype voor de hele applicatie
               </p>
             </div>
@@ -2507,10 +2566,10 @@ function WeergaveTab() {
           <div className="flex items-center gap-3 mb-4">
             <Type className="w-5 h-5 text-primary" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-foreground">
                 Lettergrootte
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Pas de tekstgrootte aan voor betere leesbaarheid
               </p>
             </div>
@@ -2539,20 +2598,20 @@ function WeergaveTab() {
         {/* Language Toggle */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-5 h-5 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-400">
+            <div className="w-5 h-5 flex items-center justify-center text-sm font-bold text-muted-foreground">
               {language === 'nl' ? 'NL' : 'EN'}
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-foreground">
                 Taal
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 {language === 'nl' ? 'Nederlands' : 'English'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-muted-foreground">
               {language === 'nl' ? 'NL' : 'EN'}
             </span>
             <Switch
@@ -2567,10 +2626,10 @@ function WeergaveTab() {
         {/* Auto-collapse Sidebar */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
+            <p className="text-sm font-medium text-foreground">
               Sidebar automatisch inklappen
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Klap de sidebar automatisch in op mobiele apparaten
             </p>
           </div>
@@ -2593,10 +2652,10 @@ function WeergaveTab() {
         {/* Compact Mode */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
+            <p className="text-sm font-medium text-foreground">
               Compacte modus
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Verminder witruimte en gebruik kleinere elementen
             </p>
           </div>
