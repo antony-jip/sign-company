@@ -70,6 +70,8 @@ export interface Project {
   budget_waarschuwing_pct?: number;
   // Feature 2: Offerte → Project keten
   bron_offerte_id?: string;
+  // Contactpersoon koppeling
+  contactpersoon_id?: string;
   // Feature 8: Project kopiëren / template
   is_template?: boolean;
   bron_project_id?: string;
