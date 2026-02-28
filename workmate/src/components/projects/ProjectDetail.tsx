@@ -110,6 +110,7 @@ const statusLabels: Record<string, string> = {
   'in-review': 'In review',
   afgerond: 'Afgerond',
   'on-hold': 'On-hold',
+  'te-factureren': 'Te factureren',
 }
 
 const goedkeuringStatusLabels: Record<string, string> = {
@@ -320,9 +321,10 @@ export function ProjectDetail() {
         )
       )
 
-      // Update offerte met factuur link (bidirectioneel)
+      // Update offerte met factuur link (bidirectioneel) en zet status op gefactureerd
       await updateOfferte(offerte.id, {
         geconverteerd_naar_factuur_id: newFactuur.id,
+        status: 'gefactureerd',
       })
 
       toast.success(`Factuur ${factuurNummer} aangemaakt vanuit offerte ${offerte.nummer}`)
@@ -872,6 +874,74 @@ export function ProjectDetail() {
           </div>
         </div>
       </div>
+
+      {/* ── Te factureren banner ── */}
+      {project.status === 'te-factureren' && (
+        <Card className="border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                <Receipt className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-indigo-900 dark:text-indigo-200">Project gereed voor facturatie</h3>
+                <p className="text-sm text-indigo-700 dark:text-indigo-400 mt-0.5">
+                  Maak een factuur aan vanuit een offerte of ga direct naar facturen.
+                </p>
+                {projectOffertes.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {projectOffertes.filter(o => o.status !== 'gefactureerd').map((offerte) => (
+                      <div key={offerte.id} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg px-3 py-2 border border-indigo-200 dark:border-indigo-800">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm font-medium truncate">{offerte.titel}</span>
+                          <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
+                          <Badge className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0`}>
+                            {offerte.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-sm font-bold">{formatCurrency(offerte.totaal)}</span>
+                          <Button
+                            size="sm"
+                            className="h-7 px-3 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                            disabled={creatingFactuurForOfferte === offerte.id}
+                            onClick={() => handleCreateFactuurFromOfferte(offerte)}
+                          >
+                            {creatingFactuurForOfferte === offerte.id ? (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <CreditCard className="h-3 w-3 mr-1" />
+                            )}
+                            Factuur aanmaken
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {projectOffertes.every(o => o.status === 'gefactureerd') && (
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Alle offertes zijn gefactureerd
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-indigo-300 dark:border-indigo-700"
+                      onClick={() => navigate(`/facturen?klant=${project.klant_id}`)}
+                    >
+                      <Receipt className="h-3.5 w-3.5 mr-1.5" />
+                      Ga naar facturen
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Briefing Sectie ── */}
       <Card className="border-gray-200/80 dark:border-gray-700/80">
@@ -1523,7 +1593,7 @@ export function ProjectDetail() {
                           <Mail className="h-3 w-3 mr-1" />
                           Mail
                         </Button>
-                        {offerte.status === 'goedgekeurd' && (
+                        {(offerte.status === 'goedgekeurd' || (project.status === 'te-factureren' && offerte.status !== 'gefactureerd')) && (
                           <Button
                             variant="ghost"
                             size="sm"

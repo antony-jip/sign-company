@@ -48,6 +48,7 @@ export function getStatusColor(status: string): string {
     'in-review': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
     afgerond: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
     'on-hold': 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+    'te-factureren': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
     concept: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400',
     verzonden: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
     bekeken: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',

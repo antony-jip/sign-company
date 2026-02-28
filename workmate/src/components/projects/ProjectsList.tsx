@@ -23,6 +23,7 @@ import {
   ChevronDown,
   MoreHorizontal,
   GanttChart,
+  Receipt,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -55,6 +56,7 @@ const statusOpties = [
   { value: 'in-review', label: 'In review' },
   { value: 'afgerond', label: 'Afgerond' },
   { value: 'on-hold', label: 'On-hold' },
+  { value: 'te-factureren', label: 'Te factureren' },
 ]
 
 const prioriteitOpties = [
@@ -71,6 +73,7 @@ const statusLabels: Record<string, string> = {
   'in-review': 'In review',
   afgerond: 'Afgerond',
   'on-hold': 'On-hold',
+  'te-factureren': 'Te factureren',
 }
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -79,6 +82,7 @@ const statusIcons: Record<string, React.ReactNode> = {
   'in-review': <BarChart3 className="h-3 w-3" />,
   afgerond: <CheckCircle2 className="h-3 w-3" />,
   'on-hold': <AlertTriangle className="h-3 w-3" />,
+  'te-factureren': <Receipt className="h-3 w-3" />,
 }
 
 function getStatusBorderColor(status: string): string {
@@ -88,6 +92,7 @@ function getStatusBorderColor(status: string): string {
     case 'in-review': return 'border-l-amber-500'
     case 'afgerond': return 'border-l-emerald-500'
     case 'on-hold': return 'border-l-red-500'
+    case 'te-factureren': return 'border-l-indigo-500'
     default: return 'border-l-gray-400'
   }
 }
@@ -99,6 +104,7 @@ function getStatusCellBg(status: string): string {
     case 'in-review': return 'bg-amber-50 dark:bg-amber-950/30'
     case 'afgerond': return 'bg-emerald-50 dark:bg-emerald-950/30'
     case 'on-hold': return 'bg-red-50 dark:bg-red-950/30'
+    case 'te-factureren': return 'bg-indigo-50 dark:bg-indigo-950/30'
     default: return 'bg-gray-50 dark:bg-gray-800/30'
   }
 }
@@ -110,6 +116,7 @@ function getStatusDotColor(status: string): string {
     case 'in-review': return 'bg-amber-500'
     case 'afgerond': return 'bg-emerald-500'
     case 'on-hold': return 'bg-red-500'
+    case 'te-factureren': return 'bg-indigo-500'
     default: return 'bg-gray-400'
   }
 }
@@ -845,6 +852,7 @@ export function ProjectsList() {
                     project.status === 'afgerond' ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
                     project.status === 'in-review' ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
                     project.status === 'on-hold' ? 'bg-gradient-to-r from-orange-400 to-red-500' :
+                    project.status === 'te-factureren' ? 'bg-gradient-to-r from-indigo-400 to-purple-500' :
                     'bg-gradient-to-r from-primary to-wm-pale'
                   }`} />
 
@@ -1044,6 +1052,7 @@ function ProjectTijdlijn({ projecten }: { projecten: Project[] }) {
     'in-review': 'bg-amber-400 dark:bg-amber-500',
     afgerond: 'bg-green-600 dark:bg-green-500',
     'on-hold': 'bg-orange-400 dark:bg-orange-500',
+    'te-factureren': 'bg-indigo-500 dark:bg-indigo-400',
   }
 
   return (

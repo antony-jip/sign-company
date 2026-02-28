@@ -29,7 +29,7 @@ export function ProjectCreate() {
   const [naam, setNaam] = useState('');
   const [beschrijving, setBeschrijving] = useState('');
   const [klantId, setKlantId] = useState('');
-  const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold'>('gepland');
+  const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren'>('gepland');
   const [prioriteit, setPrioriteit] = useState<'laag' | 'medium' | 'hoog' | 'kritiek'>('medium');
   const [startDatum, setStartDatum] = useState(() => new Date().toISOString().split('T')[0]);
   const [eindDatum, setEindDatum] = useState('');
@@ -172,6 +172,7 @@ export function ProjectCreate() {
                     <SelectItem value="in-review">In Review</SelectItem>
                     <SelectItem value="afgerond">Afgerond</SelectItem>
                     <SelectItem value="on-hold">On Hold</SelectItem>
+                    <SelectItem value="te-factureren">Te factureren</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

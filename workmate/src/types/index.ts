@@ -58,7 +58,7 @@ export interface Project {
   klant_naam?: string;
   naam: string;
   beschrijving: string;
-  status: 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold';
+  status: 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren';
   prioriteit: 'laag' | 'medium' | 'hoog' | 'kritiek';
   start_datum: string;
   eind_datum: string;

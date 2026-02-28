@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS projecten (
   klant_id UUID REFERENCES klanten ON DELETE SET NULL,
   naam TEXT NOT NULL,
   beschrijving TEXT,
-  status TEXT DEFAULT 'gepland' CHECK (status IN ('gepland', 'actief', 'in-review', 'afgerond', 'on-hold')),
+  status TEXT DEFAULT 'gepland' CHECK (status IN ('gepland', 'actief', 'in-review', 'afgerond', 'on-hold', 'te-factureren')),
   prioriteit TEXT DEFAULT 'medium' CHECK (prioriteit IN ('laag', 'medium', 'hoog', 'kritiek')),
   start_datum DATE,
   eind_datum DATE,
