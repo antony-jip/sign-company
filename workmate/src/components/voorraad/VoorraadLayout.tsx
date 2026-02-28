@@ -31,9 +31,9 @@ import { round2 } from '@/utils/budgetUtils'
 type ViewMode = 'artikelen' | 'detail'
 
 const MUTATIE_TYPE_CONFIG: Record<VoorraadMutatie['type'], { label: string; icon: typeof TrendingUp; color: string }> = {
-  inkoop: { label: 'Inkoop', icon: TrendingUp, color: 'text-emerald-600' },
+  inkoop: { label: 'Inkoop', icon: TrendingUp, color: 'text-accent dark:text-wm-light' },
   verbruik: { label: 'Verbruik', icon: TrendingDown, color: 'text-red-600' },
-  correctie: { label: 'Correctie', icon: RotateCcw, color: 'text-blue-600' },
+  correctie: { label: 'Correctie', icon: RotateCcw, color: 'text-primary' },
   retour: { label: 'Retour', icon: Undo2, color: 'text-amber-600' },
 }
 
@@ -320,7 +320,7 @@ export function VoorraadLayout() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Voorraad laden...</p>
+          <p className="text-sm text-muted-foreground">Voorraad laden...</p>
         </div>
       </div>
     )
@@ -338,7 +338,7 @@ export function VoorraadLayout() {
             <Button variant="ghost" size="icon" onClick={() => { setViewMode('artikelen'); setSelectedArtikel(null) }}>
               <Undo2 className="h-5 w-5" />
             </Button>
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20">
               <Warehouse className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -350,7 +350,7 @@ export function VoorraadLayout() {
             <Button variant="outline" size="sm" onClick={() => openEditArtikel(selectedArtikel)} className="gap-1">
               <Edit2 className="h-3.5 w-3.5" /> Bewerken
             </Button>
-            <Button size="sm" onClick={openMutatieDialog} className="gap-1 bg-gradient-to-r from-indigo-500 to-purple-600">
+            <Button size="sm" onClick={openMutatieDialog} className="gap-1 bg-gradient-to-r from-accent to-primary">
               <ArrowDownUp className="h-3.5 w-3.5" /> Nieuwe mutatie
             </Button>
           </div>
@@ -370,36 +370,36 @@ export function VoorraadLayout() {
         {/* Info cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className="p-4">
-            <p className="text-xs text-gray-500 mb-1">Huidige voorraad</p>
-            <p className={cn('text-2xl font-bold', isLaag ? 'text-red-600' : 'text-gray-900 dark:text-white')}>{selectedArtikel.huidige_voorraad} <span className="text-sm font-normal text-gray-400">{selectedArtikel.eenheid}</span></p>
+            <p className="text-xs text-muted-foreground mb-1">Huidige voorraad</p>
+            <p className={cn('text-2xl font-bold', isLaag ? 'text-red-600' : 'text-foreground')}>{selectedArtikel.huidige_voorraad} <span className="text-sm font-normal text-muted-foreground/60">{selectedArtikel.eenheid}</span></p>
           </Card>
           <Card className="p-4">
-            <p className="text-xs text-gray-500 mb-1">Min / Max</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{selectedArtikel.minimum_voorraad} <span className="text-sm font-normal text-gray-400">/ {selectedArtikel.maximum_voorraad || '∞'}</span></p>
+            <p className="text-xs text-muted-foreground mb-1">Min / Max</p>
+            <p className="text-2xl font-bold text-foreground">{selectedArtikel.minimum_voorraad} <span className="text-sm font-normal text-muted-foreground/60">/ {selectedArtikel.maximum_voorraad || '∞'}</span></p>
           </Card>
           <Card className="p-4">
-            <p className="text-xs text-gray-500 mb-1">Inkoopprijs</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(selectedArtikel.inkoop_prijs)}</p>
+            <p className="text-xs text-muted-foreground mb-1">Inkoopprijs</p>
+            <p className="text-2xl font-bold text-foreground">{formatCurrency(selectedArtikel.inkoop_prijs)}</p>
           </Card>
           <Card className="p-4">
-            <p className="text-xs text-gray-500 mb-1">Voorraadwaarde</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(round2(selectedArtikel.huidige_voorraad * selectedArtikel.inkoop_prijs))}</p>
+            <p className="text-xs text-muted-foreground mb-1">Voorraadwaarde</p>
+            <p className="text-2xl font-bold text-foreground">{formatCurrency(round2(selectedArtikel.huidige_voorraad * selectedArtikel.inkoop_prijs))}</p>
           </Card>
         </div>
 
         {/* Details */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Details</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Details</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><span className="text-gray-500">Categorie:</span> <span className="font-medium">{selectedArtikel.categorie}</span></div>
-              <div><span className="text-gray-500">SKU:</span> <span className="font-medium">{selectedArtikel.sku || '-'}</span></div>
-              <div><span className="text-gray-500">Leverancier:</span> <span className="font-medium">{getLeverancierNaam(selectedArtikel.leverancier_id)}</span></div>
-              <div><span className="text-gray-500">Opslaglocatie:</span> <span className="font-medium">{selectedArtikel.opslaglocatie || '-'}</span></div>
+              <div><span className="text-muted-foreground">Categorie:</span> <span className="font-medium">{selectedArtikel.categorie}</span></div>
+              <div><span className="text-muted-foreground">SKU:</span> <span className="font-medium">{selectedArtikel.sku || '-'}</span></div>
+              <div><span className="text-muted-foreground">Leverancier:</span> <span className="font-medium">{getLeverancierNaam(selectedArtikel.leverancier_id)}</span></div>
+              <div><span className="text-muted-foreground">Opslaglocatie:</span> <span className="font-medium">{selectedArtikel.opslaglocatie || '-'}</span></div>
               {selectedArtikel.verkoop_prijs && (
-                <div><span className="text-gray-500">Verkoopprijs:</span> <span className="font-medium">{formatCurrency(selectedArtikel.verkoop_prijs)}</span></div>
+                <div><span className="text-muted-foreground">Verkoopprijs:</span> <span className="font-medium">{formatCurrency(selectedArtikel.verkoop_prijs)}</span></div>
               )}
             </div>
           </CardContent>
@@ -409,7 +409,7 @@ export function VoorraadLayout() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Mutaties</CardTitle>
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Mutaties</CardTitle>
               <Button variant="outline" size="sm" onClick={openMutatieDialog} className="gap-1">
                 <Plus className="h-3.5 w-3.5" /> Mutatie
               </Button>
@@ -427,20 +427,20 @@ export function VoorraadLayout() {
                   const cfg = MUTATIE_TYPE_CONFIG[m.type]
                   const Icon = cfg.icon
                   return (
-                    <div key={m.id} className="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                    <div key={m.id} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
                       <Icon className={cn('h-4 w-4', cfg.color)} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-[10px]">{cfg.label}</Badge>
-                          <span className={cn('text-sm font-semibold', m.aantal >= 0 ? 'text-emerald-600' : 'text-red-600')}>
+                          <span className={cn('text-sm font-semibold', m.aantal >= 0 ? 'text-accent dark:text-wm-light' : 'text-red-600')}>
                             {m.aantal >= 0 ? '+' : ''}{m.aantal} {selectedArtikel.eenheid}
                           </span>
                         </div>
-                        {m.reden && <p className="text-xs text-gray-500 truncate">{m.reden}</p>}
+                        {m.reden && <p className="text-xs text-muted-foreground truncate">{m.reden}</p>}
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-gray-500">{m.datum ? formatDate(m.datum) : '-'}</p>
-                        <p className="text-xs text-gray-400">Saldo: {m.saldo_na_mutatie}</p>
+                        <p className="text-xs text-muted-foreground">{m.datum ? formatDate(m.datum) : '-'}</p>
+                        <p className="text-xs text-muted-foreground/60">Saldo: {m.saldo_na_mutatie}</p>
                       </div>
                     </div>
                   )
@@ -460,7 +460,7 @@ export function VoorraadLayout() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20">
             <Warehouse className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -470,7 +470,7 @@ export function VoorraadLayout() {
         </div>
         <Button
           onClick={openNewArtikel}
-          className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 border-0"
+          className="gap-2 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 shadow-lg shadow-primary/25 border-0"
           size="sm"
         >
           <Plus className="h-4 w-4" /> Nieuw artikel
@@ -493,7 +493,7 @@ export function VoorraadLayout() {
       {/* Search + filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
           <Input placeholder="Zoek op naam, SKU, categorie, locatie..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
         <Select value={filterCategorie} onValueChange={setFilterCategorie}>
@@ -532,26 +532,26 @@ export function VoorraadLayout() {
                 {gefilterd.map((art) => {
                   const isLaag = art.actief && art.huidige_voorraad < art.minimum_voorraad
                   return (
-                    <tr key={art.id} className="group hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors cursor-pointer" onClick={() => openDetailView(art)}>
+                    <tr key={art.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => openDetailView(art)}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{art.naam}</span>
+                          <span className="text-sm font-semibold text-foreground">{art.naam}</span>
                           {!art.actief && <Badge variant="secondary" className="text-[10px]">Inactief</Badge>}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{art.sku || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground font-mono">{art.sku || '-'}</td>
                       <td className="px-4 py-3">
                         <Badge variant="outline" className="text-[11px]">{art.categorie}</Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={cn('text-sm font-semibold', isLaag ? 'text-red-600' : 'text-gray-900 dark:text-white')}>
+                        <span className={cn('text-sm font-semibold', isLaag ? 'text-red-600' : 'text-foreground')}>
                           {art.huidige_voorraad} {art.eenheid}
                         </span>
                         {isLaag && <AlertTriangle className="h-3.5 w-3.5 text-red-500 inline-block ml-1" />}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{art.minimum_voorraad}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{formatCurrency(art.inkoop_prijs)}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(round2(art.huidige_voorraad * art.inkoop_prijs))}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{art.minimum_voorraad}</td>
+                      <td className="px-4 py-3 text-sm text-foreground/80">{formatCurrency(art.inkoop_prijs)}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(round2(art.huidige_voorraad * art.inkoop_prijs))}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); openEditArtikel(art) }}>

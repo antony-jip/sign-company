@@ -154,7 +154,7 @@ export function ClientsLayout() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+          <h1 className="text-2xl font-bold text-foreground font-display">
             Klanten
           </h1>
           <Badge variant="secondary" className="text-sm font-medium">
@@ -170,7 +170,7 @@ export function ClientsLayout() {
       {/* Search + Export + View toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Zoek op naam, email, stad, tag..."
             value={searchQuery}
@@ -279,10 +279,10 @@ export function ClientsLayout() {
                 key={f}
                 onClick={() => setStatusFilter(f)}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200',
                   statusFilter === f
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    ? 'bg-primary/12 text-accent dark:bg-primary/20 dark:text-wm-light ring-1 ring-primary/25 shadow-sm'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
                 {labels[f]}
@@ -339,7 +339,7 @@ export function ClientsLayout() {
               className={cn(
                 'px-1.5 py-0.5 rounded transition-colors',
                 sortField === field
-                  ? 'text-blue-700 dark:text-blue-300 font-medium'
+                  ? 'text-accent dark:text-wm-light font-medium'
                   : 'hover:text-foreground'
               )}
             >
@@ -437,33 +437,33 @@ export function ClientsLayout() {
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-semibold text-accent dark:text-wm-light">
                             {klant.bedrijfsnaam.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <span className="text-sm font-medium text-foreground truncate">
                           {klant.bedrijfsnaam}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-sm text-muted-foreground">
                         {klant.contactpersoon}
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-sm text-muted-foreground">
                         {klant.email}
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden xl:table-cell">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-sm text-muted-foreground">
                         {klant.telefoon}
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-sm text-muted-foreground">
                         {klant.stad}
                       </span>
                     </td>

@@ -64,37 +64,37 @@ const statusLabels: Record<string, string> = {
 
 function getStatusDotColor(status: string): string {
   switch (status) {
-    case 'actief': return 'bg-green-500'
-    case 'gepland': return 'bg-blue-500'
+    case 'actief': return 'bg-primary'
+    case 'gepland': return 'bg-sky-500'
     case 'in-review': return 'bg-amber-500'
-    case 'afgerond': return 'bg-emerald-500'
-    case 'on-hold': return 'bg-red-500'
-    case 'te-factureren': return 'bg-indigo-500'
-    default: return 'bg-gray-400'
+    case 'afgerond': return 'bg-accent'
+    case 'on-hold': return 'bg-orange-500'
+    case 'te-factureren': return 'bg-violet-500'
+    default: return 'bg-stone-400'
   }
 }
 
 function getStatusBorderColor(status: string): string {
   switch (status) {
-    case 'actief': return 'border-l-green-500'
-    case 'gepland': return 'border-l-blue-500'
+    case 'actief': return 'border-l-primary'
+    case 'gepland': return 'border-l-sky-500'
     case 'in-review': return 'border-l-amber-500'
-    case 'afgerond': return 'border-l-emerald-500'
-    case 'on-hold': return 'border-l-red-500'
-    case 'te-factureren': return 'border-l-indigo-500'
-    default: return 'border-l-gray-400'
+    case 'afgerond': return 'border-l-accent'
+    case 'on-hold': return 'border-l-orange-500'
+    case 'te-factureren': return 'border-l-violet-500'
+    default: return 'border-l-stone-400'
   }
 }
 
 function getStatusCellBg(status: string): string {
   switch (status) {
-    case 'actief': return 'bg-green-50/50 dark:bg-green-950/20'
-    case 'gepland': return 'bg-blue-50/50 dark:bg-blue-950/20'
+    case 'actief': return 'bg-wm-pale/15 dark:bg-primary/10'
+    case 'gepland': return 'bg-sky-50/50 dark:bg-sky-950/20'
     case 'in-review': return 'bg-amber-50/50 dark:bg-amber-950/20'
-    case 'afgerond': return 'bg-emerald-50/50 dark:bg-emerald-950/20'
-    case 'on-hold': return 'bg-red-50/50 dark:bg-red-950/20'
-    case 'te-factureren': return 'bg-indigo-50/50 dark:bg-indigo-950/20'
-    default: return 'bg-gray-50/50 dark:bg-gray-800/20'
+    case 'afgerond': return 'bg-wm-pale/10 dark:bg-accent/10'
+    case 'on-hold': return 'bg-orange-50/50 dark:bg-orange-950/20'
+    case 'te-factureren': return 'bg-violet-50/50 dark:bg-violet-950/20'
+    default: return 'bg-muted/30 dark:bg-muted/20'
   }
 }
 
@@ -241,25 +241,25 @@ export function ProjectsList() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-3 flex-wrap">
         {stats.actief > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-primary/15 border border-primary/20 px-2.5 py-1 rounded-full">
             <TrendingUp className="w-3 h-3" />
             {stats.actief} actief
           </div>
         )}
         {stats.teFactureren > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/30 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700 dark:text-violet-400 bg-violet-50/80 dark:bg-violet-900/20 border border-violet-200/50 dark:border-violet-800/30 px-2.5 py-1 rounded-full">
             <Receipt className="w-3 h-3" />
             {stats.teFactureren} te factureren
           </div>
         )}
         {stats.overdue > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30 px-2.5 py-1 rounded-full">
             <AlertTriangle className="w-3 h-3" />
             {stats.overdue} verlopen
           </div>
         )}
         {stats.afgerond > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-accent dark:text-wm-light bg-wm-pale/15 dark:bg-accent/15 border border-primary/15 px-2.5 py-1 rounded-full">
             <CheckCircle2 className="w-3 h-3" />
             {stats.afgerond} afgerond
           </div>
@@ -520,14 +520,14 @@ export function ProjectsList() {
                           {project.team_leden.slice(0, 3).map((lid, i) => (
                             <div
                               key={i}
-                              className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-white dark:border-gray-900 text-[9px] font-semibold text-accent dark:text-primary"
+                              className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-white dark:border-card text-[9px] font-semibold text-accent dark:text-primary"
                               title={lid}
                             >
                               {lid.charAt(0).toUpperCase()}
                             </div>
                           ))}
                           {project.team_leden.length > 3 && (
-                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center border-2 border-white dark:border-gray-900 text-[9px] font-medium text-muted-foreground">
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center border-2 border-white dark:border-card text-[9px] font-medium text-muted-foreground">
                               +{project.team_leden.length - 3}
                             </div>
                           )}
@@ -540,13 +540,13 @@ export function ProjectsList() {
                     {/* Voortgang */}
                     <td className="py-3 px-4 hidden xl:table-cell">
                       <div className="flex items-center gap-2 justify-end">
-                        <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
                             className={cn(
                               'h-full rounded-full transition-all',
-                              project.voortgang >= 100 ? 'bg-emerald-500' :
+                              project.voortgang >= 100 ? 'bg-accent' :
                               project.voortgang >= 60 ? 'bg-primary' :
-                              project.voortgang >= 30 ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                              project.voortgang >= 30 ? 'bg-wm-light' : 'bg-muted-foreground/30'
                             )}
                             style={{ width: `${Math.min(project.voortgang, 100)}%` }}
                           />
@@ -596,7 +596,7 @@ export function ProjectsList() {
                         <DropdownMenuTrigger asChild>
                           <button
                             onClick={(e) => e.stopPropagation()}
-                            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors opacity-0 group-hover:opacity-100"
+                            className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
                           >
                             <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                           </button>

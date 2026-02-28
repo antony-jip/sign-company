@@ -23,10 +23,10 @@ import { round2 } from '@/utils/budgetUtils'
 type FilterStatus = 'alle' | 'concept' | 'ingediend' | 'goedgekeurd' | 'gefactureerd'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  concept: { label: 'Concept', color: 'text-gray-700', bg: 'bg-gray-100' },
-  ingediend: { label: 'Ingediend', color: 'text-blue-700', bg: 'bg-blue-100' },
-  goedgekeurd: { label: 'Goedgekeurd', color: 'text-green-700', bg: 'bg-green-100' },
-  gefactureerd: { label: 'Gefactureerd', color: 'text-purple-700', bg: 'bg-purple-100' },
+  concept: { label: 'Concept', color: 'text-stone-600 dark:text-stone-400', bg: 'bg-stone-100/80 dark:bg-stone-800/50' },
+  ingediend: { label: 'Ingediend', color: 'text-sky-700 dark:text-sky-400', bg: 'bg-sky-50/80 dark:bg-sky-900/30' },
+  goedgekeurd: { label: 'Goedgekeurd', color: 'text-accent dark:text-wm-light', bg: 'bg-wm-pale/25 dark:bg-accent/20' },
+  gefactureerd: { label: 'Gefactureerd', color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50/80 dark:bg-violet-900/25' },
 }
 
 export function WerkbonnenLayout() {
@@ -230,7 +230,7 @@ export function WerkbonnenLayout() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-2xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm overflow-hidden">
+        <div className="rounded-2xl border border-border/60 bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

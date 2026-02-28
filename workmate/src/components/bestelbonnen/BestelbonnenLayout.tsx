@@ -25,11 +25,11 @@ import { round2 } from '@/utils/budgetUtils'
 type FilterStatus = 'alle' | Bestelbon['status']
 
 const STATUS_CONFIG: Record<Bestelbon['status'], { label: string; color: string; dot: string }> = {
-  concept: { label: 'Concept', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' },
-  besteld: { label: 'Besteld', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300', dot: 'bg-blue-500' },
-  deels_ontvangen: { label: 'Deels ontvangen', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300', dot: 'bg-amber-500' },
-  ontvangen: { label: 'Ontvangen', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', dot: 'bg-emerald-500' },
-  geannuleerd: { label: 'Geannuleerd', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300', dot: 'bg-red-500' },
+  concept: { label: 'Concept', color: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400', dot: 'bg-stone-400' },
+  besteld: { label: 'Besteld', color: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400', dot: 'bg-sky-500' },
+  deels_ontvangen: { label: 'Deels ontvangen', color: 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400', dot: 'bg-amber-500' },
+  ontvangen: { label: 'Ontvangen', color: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light', dot: 'bg-primary' },
+  geannuleerd: { label: 'Geannuleerd', color: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400', dot: 'bg-red-500' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
@@ -153,8 +153,8 @@ export function BestelbonnenLayout() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Bestelbonnen laden...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Bestelbonnen laden...</p>
         </div>
       </div>
     )
@@ -193,12 +193,12 @@ export function BestelbonnenLayout() {
           const cfg = STATUS_CONFIG[opt.value as Bestelbon['status']]
           return (
             <button key={opt.value} onClick={() => setFilterStatus(opt.value)}
-              className={cn('text-left rounded-xl border p-3 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-gray-200 dark:border-gray-700')}>
+              className={cn('text-left rounded-xl border p-3 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-border')}>
               <div className="flex items-center gap-2 mb-1">
                 <span className={cn('w-2 h-2 rounded-full', cfg.dot)} />
-                <span className="text-xs font-medium text-gray-500">{opt.label}</span>
+                <span className="text-xs font-medium text-muted-foreground">{opt.label}</span>
               </div>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">{statusCounts[opt.value] || 0}</p>
+              <p className="text-lg font-bold text-foreground">{statusCounts[opt.value] || 0}</p>
             </button>
           )
         })}
@@ -207,7 +207,7 @@ export function BestelbonnenLayout() {
       {/* Search + filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Zoek op nummer, leverancier, project..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
         <div className="flex gap-1 flex-wrap">
@@ -247,15 +247,15 @@ export function BestelbonnenLayout() {
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-orange-600 dark:text-orange-400">{bst.bestelbon_nummer}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{getLeverancierNaam(bst.leverancier_id)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{getProjectNaam(bst.project_id)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{bst.besteld_op ? formatDate(bst.besteld_op) : '-'}</td>
+                      <td className="px-4 py-3 text-sm text-foreground/80">{getLeverancierNaam(bst.leverancier_id)}</td>
+                      <td className="px-4 py-3 text-sm text-foreground/80">{getProjectNaam(bst.project_id)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-muted-foreground">{bst.besteld_op ? formatDate(bst.besteld_op) : '-'}</td>
                       <td className="px-4 py-3">
                         <Badge variant="secondary" className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
                           <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(bedragen[bst.id] || 0)}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(bedragen[bst.id] || 0)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigate(`/bestelbonnen/${bst.id}`) }}>

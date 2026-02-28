@@ -270,7 +270,7 @@ export function DealsLayout() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-gray-500">Deals laden...</p>
+          <p className="text-sm text-muted-foreground">Deals laden...</p>
         </div>
       </div>
     )
@@ -281,7 +281,7 @@ export function DealsLayout() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20">
             <Briefcase className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -290,7 +290,7 @@ export function DealsLayout() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+          <div className="flex bg-muted rounded-lg p-0.5">
             <Button variant={viewMode === 'kanban' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('kanban')} className="gap-1 h-7 text-xs">
               <LayoutGrid className="h-3.5 w-3.5" /> Kanban
             </Button>
@@ -298,7 +298,7 @@ export function DealsLayout() {
               <List className="h-3.5 w-3.5" /> Tabel
             </Button>
           </div>
-          <Button onClick={() => setNewDealOpen(true)} className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/25 border-0" size="sm">
+          <Button onClick={() => setNewDealOpen(true)} className="gap-2 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 shadow-lg shadow-primary/25 border-0" size="sm">
             <Plus className="h-4 w-4" /> Nieuwe deal
           </Button>
         </div>
@@ -307,17 +307,17 @@ export function DealsLayout() {
       {/* KPI Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3">
-          <p className="text-[10px] font-semibold uppercase text-gray-500 tracking-wide">Pipeline waarde</p>
-          <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(kpis.openWaarde)}</p>
-          <p className="text-[10px] text-gray-400">Gewogen: {formatCurrency(kpis.gewogenWaarde)}</p>
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide">Pipeline waarde</p>
+          <p className="text-lg font-bold text-foreground mt-1">{formatCurrency(kpis.openWaarde)}</p>
+          <p className="text-[10px] text-muted-foreground/60">Gewogen: {formatCurrency(kpis.gewogenWaarde)}</p>
         </Card>
         <Card className="p-3">
-          <p className="text-[10px] font-semibold uppercase text-gray-500 tracking-wide">Gem. deal grootte</p>
-          <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(kpis.gemDealGrootte)}</p>
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide">Gem. deal grootte</p>
+          <p className="text-lg font-bold text-foreground mt-1">{formatCurrency(kpis.gemDealGrootte)}</p>
         </Card>
         <Card className="p-3">
-          <p className="text-[10px] font-semibold uppercase text-emerald-600 tracking-wide">Gewonnen (maand)</p>
-          <p className="text-lg font-bold text-emerald-600 mt-1">{formatCurrency(kpis.gewonnenMaand)}</p>
+          <p className="text-[10px] font-semibold uppercase text-accent dark:text-wm-light tracking-wide">Gewonnen (maand)</p>
+          <p className="text-lg font-bold text-accent dark:text-wm-light mt-1">{formatCurrency(kpis.gewonnenMaand)}</p>
         </Card>
         <Card className="p-3">
           <p className="text-[10px] font-semibold uppercase text-red-500 tracking-wide">Verloren (maand)</p>
@@ -328,7 +328,7 @@ export function DealsLayout() {
       {/* Search + Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
           <Input placeholder="Zoek op titel of klant..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
         <Select value={filterBron} onValueChange={setFilterBron}>
@@ -368,16 +368,16 @@ export function DealsLayout() {
                 <div className={cn('px-4 py-3 border-b rounded-t-2xl', col.headerBg)}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className={cn('w-2 h-2 rounded-full', col.accent)} />
-                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white">{col.label}</h3>
+                    <h3 className="font-semibold text-sm text-foreground">{col.label}</h3>
                     <Badge variant="secondary" className="ml-auto text-[10px]">{colDeals.length}</Badge>
                   </div>
-                  <p className="text-xs text-gray-500 pl-4">{formatCurrency(colTotal)}</p>
+                  <p className="text-xs text-muted-foreground pl-4">{formatCurrency(colTotal)}</p>
                 </div>
 
                 {/* Cards */}
                 <div className="flex-1 p-3 space-y-3 overflow-y-auto max-h-[600px]">
                   {colDeals.length === 0 ? (
-                    <p className="text-center text-xs text-gray-400 py-6">Geen deals</p>
+                    <p className="text-center text-xs text-muted-foreground/60 py-6">Geen deals</p>
                   ) : (
                     colDeals.map((deal) => (
                       <div
@@ -385,30 +385,30 @@ export function DealsLayout() {
                         draggable
                         onDragStart={(e) => handleDragStart(e, deal.id)}
                         onClick={() => navigate(`/deals/${deal.id}`)}
-                        className="bg-white/80 dark:bg-gray-800/80 rounded-xl border p-3 space-y-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                        className="bg-card/80 rounded-xl border p-3 space-y-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">{getKlantNaam(deal.klant_id)}</span>
+                          <span className="text-xs text-muted-foreground">{getKlantNaam(deal.klant_id)}</span>
                           {deal.kans_percentage !== undefined && (
                             <span className={cn(
                               'text-[10px] font-bold px-1.5 py-0.5 rounded',
-                              (deal.kans_percentage || 0) >= 70 ? 'bg-emerald-100 text-emerald-700' :
-                              (deal.kans_percentage || 0) >= 30 ? 'bg-amber-100 text-amber-700' :
-                              'bg-red-100 text-red-700'
+                              (deal.kans_percentage || 0) >= 70 ? 'bg-wm-pale/25 text-accent' :
+                              (deal.kans_percentage || 0) >= 30 ? 'bg-amber-50/80 text-amber-700' :
+                              'bg-red-50/80 text-red-700'
                             )}>{deal.kans_percentage}%</span>
                           )}
                         </div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white leading-snug line-clamp-2">{deal.titel}</p>
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
-                          <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(deal.verwachte_waarde)}</span>
+                        <p className="text-sm font-medium text-foreground leading-snug line-clamp-2">{deal.titel}</p>
+                        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                          <span className="text-sm font-bold text-foreground">{formatCurrency(deal.verwachte_waarde)}</span>
                           {deal.medewerker_id && (
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center" title={getMedewerkerNaam(deal.medewerker_id)}>
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center" title={getMedewerkerNaam(deal.medewerker_id)}>
                               <span className="text-[9px] font-bold text-white">{getInitials(getMedewerkerNaam(deal.medewerker_id))}</span>
                             </div>
                           )}
                         </div>
                         {deal.volgende_actie && (
-                          <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <ArrowRight className="h-3 w-3" />
                             <span className="truncate">{deal.volgende_actie}</span>
                           </div>
@@ -446,20 +446,20 @@ export function DealsLayout() {
                     <tr key={deal.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate(`/deals/${deal.id}`)}>
                       <td className="px-4 py-3 text-sm font-semibold text-foreground">{deal.titel}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getKlantNaam(deal.klant_id)}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(deal.verwachte_waarde)}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(deal.verwachte_waarde)}</td>
                       <td className="px-4 py-3">
                         <Badge variant="outline" className="text-[11px]">{columns.find((c) => c.key === deal.fase)?.label || deal.fase}</Badge>
                       </td>
                       <td className="px-4 py-3">
                         <span className={cn(
                           'text-xs font-bold px-1.5 py-0.5 rounded',
-                          (deal.kans_percentage || 0) >= 70 ? 'bg-emerald-100 text-emerald-700' :
-                          (deal.kans_percentage || 0) >= 30 ? 'bg-amber-100 text-amber-700' :
-                          'bg-red-100 text-red-700'
+                          (deal.kans_percentage || 0) >= 70 ? 'bg-wm-pale/25 text-accent' :
+                          (deal.kans_percentage || 0) >= 30 ? 'bg-amber-50/80 text-amber-700' :
+                          'bg-red-50/80 text-red-700'
                         )}>{deal.kans_percentage || 0}%</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{getMedewerkerNaam(deal.medewerker_id)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500 max-w-[200px] truncate">{deal.volgende_actie || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{getMedewerkerNaam(deal.medewerker_id)}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground max-w-[200px] truncate">{deal.volgende_actie || '-'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigate(`/deals/${deal.id}`) }}>

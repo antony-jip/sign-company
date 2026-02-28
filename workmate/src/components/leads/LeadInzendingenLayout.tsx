@@ -19,9 +19,9 @@ import {
 type FilterStatus = 'alle' | LeadInzending['status']
 
 const STATUS_CONFIG: Record<LeadInzending['status'], { label: string; color: string }> = {
-  nieuw: { label: 'Nieuw', color: 'bg-red-100 text-red-700' },
-  bekeken: { label: 'Bekeken', color: 'bg-amber-100 text-amber-700' },
-  verwerkt: { label: 'Verwerkt', color: 'bg-emerald-100 text-emerald-700' },
+  nieuw: { label: 'Nieuw', color: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400' },
+  bekeken: { label: 'Bekeken', color: 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400' },
+  verwerkt: { label: 'Verwerkt', color: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light' },
 }
 
 export function LeadInzendingenLayout() {
@@ -107,7 +107,7 @@ export function LeadInzendingenLayout() {
   }, [getFormulierVelden])
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-violet-500" /></div>
+    return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
   }
 
   return (
@@ -116,7 +116,7 @@ export function LeadInzendingenLayout() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/leads')}><ArrowLeft className="h-5 w-5" /></Button>
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20">
             <Inbox className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -158,11 +158,11 @@ export function LeadInzendingenLayout() {
                   const info = getLeadInfo(inz)
                   const cfg = STATUS_CONFIG[inz.status]
                   return (
-                    <tr key={inz.id} className="group hover:bg-gray-50/80 dark:hover:bg-gray-700/30 cursor-pointer" onClick={() => handleViewDetail(inz)}>
-                      <td className="px-4 py-3 text-sm text-gray-600">{formatDateTime(inz.created_at)}</td>
+                    <tr key={inz.id} className="group hover:bg-muted/30 cursor-pointer" onClick={() => handleViewDetail(inz)}>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{formatDateTime(inz.created_at)}</td>
                       <td className="px-4 py-3 text-sm">{getFormulierNaam(inz.formulier_id)}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{info.naam}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{info.email}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">{info.naam}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{info.email}</td>
                       <td className="px-4 py-3">
                         <Badge variant="secondary" className={cn('text-[11px]', cfg.color)}>{cfg.label}</Badge>
                       </td>
@@ -172,7 +172,7 @@ export function LeadInzendingenLayout() {
                             <Eye className="h-4 w-4" />
                           </Button>
                           {inz.status !== 'verwerkt' && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-500" onClick={(e) => { e.stopPropagation(); handleMarkVerwerkt(inz) }}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-accent dark:text-wm-light" onClick={(e) => { e.stopPropagation(); handleMarkVerwerkt(inz) }}>
                               <CheckCircle className="h-4 w-4" />
                             </Button>
                           )}
@@ -195,15 +195,15 @@ export function LeadInzendingenLayout() {
           </DialogHeader>
           {selectedInzending && (
             <div className="space-y-3">
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-muted-foreground/60">
                 {formatDateTime(selectedInzending.created_at)} — {getFormulierNaam(selectedInzending.formulier_id)}
               </div>
               {getFormulierVelden(selectedInzending.formulier_id)
                 .sort((a, b) => a.volgorde - b.volgorde)
                 .map((veld) => (
                   <div key={veld.id}>
-                    <p className="text-xs font-semibold text-gray-500 uppercase">{veld.label}</p>
-                    <p className="text-sm text-gray-900 dark:text-white">{selectedInzending.data[veld.id] || '-'}</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase">{veld.label}</p>
+                    <p className="text-sm text-foreground">{selectedInzending.data[veld.id] || '-'}</p>
                   </div>
                 ))}
               {selectedInzending.deal_id && (
@@ -217,7 +217,7 @@ export function LeadInzendingenLayout() {
           )}
           <DialogFooter>
             {selectedInzending && selectedInzending.status !== 'verwerkt' && (
-              <Button onClick={() => handleMarkVerwerkt(selectedInzending)} className="gap-1 bg-emerald-500 hover:bg-emerald-600">
+              <Button onClick={() => handleMarkVerwerkt(selectedInzending)} className="gap-1 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90">
                 <CheckCircle className="h-4 w-4" /> Markeer verwerkt
               </Button>
             )}

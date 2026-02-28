@@ -23,9 +23,9 @@ import {
 type FilterStatus = 'alle' | Leveringsbon['status']
 
 const STATUS_CONFIG: Record<Leveringsbon['status'], { label: string; color: string; dot: string }> = {
-  concept: { label: 'Concept', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' },
-  geleverd: { label: 'Geleverd', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300', dot: 'bg-blue-500' },
-  getekend: { label: 'Getekend', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', dot: 'bg-emerald-500' },
+  concept: { label: 'Concept', color: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400', dot: 'bg-stone-400' },
+  geleverd: { label: 'Geleverd', color: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400', dot: 'bg-sky-500' },
+  getekend: { label: 'Getekend', color: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light', dot: 'bg-primary' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
@@ -135,7 +135,7 @@ export function LeveringsbonnenLayout() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Leveringsbonnen laden...</p>
+          <p className="text-sm text-muted-foreground">Leveringsbonnen laden...</p>
         </div>
       </div>
     )
@@ -174,12 +174,12 @@ export function LeveringsbonnenLayout() {
           const cfg = STATUS_CONFIG[opt.value as Leveringsbon['status']]
           return (
             <button key={opt.value} onClick={() => setFilterStatus(opt.value)}
-              className={cn('text-left rounded-xl border p-3 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-gray-200 dark:border-gray-700')}>
+              className={cn('text-left rounded-xl border p-3 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-border')}>
               <div className="flex items-center gap-2 mb-1">
                 <span className={cn('w-2 h-2 rounded-full', cfg.dot)} />
-                <span className="text-xs font-medium text-gray-500">{opt.label}</span>
+                <span className="text-xs font-medium text-muted-foreground">{opt.label}</span>
               </div>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">{statusCounts[opt.value] || 0}</p>
+              <p className="text-lg font-bold text-foreground">{statusCounts[opt.value] || 0}</p>
             </button>
           )
         })}
@@ -188,7 +188,7 @@ export function LeveringsbonnenLayout() {
       {/* Search + filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Zoek op nummer, klant, project, locatie..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
         <div className="flex gap-1 flex-wrap">
@@ -228,10 +228,10 @@ export function LeveringsbonnenLayout() {
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-teal-600 dark:text-teal-400">{lb.leveringsbon_nummer}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{getKlantNaam(lb.klant_id)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{getProjectNaam(lb.project_id)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{lb.datum ? formatDate(lb.datum) : '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-[200px] truncate">{lb.locatie_adres || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-foreground/80">{getKlantNaam(lb.klant_id)}</td>
+                      <td className="px-4 py-3 text-sm text-foreground/80">{getProjectNaam(lb.project_id)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-muted-foreground">{lb.datum ? formatDate(lb.datum) : '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-muted-foreground max-w-[200px] truncate">{lb.locatie_adres || '-'}</td>
                       <td className="px-4 py-3">
                         <Badge variant="secondary" className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
                           <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}

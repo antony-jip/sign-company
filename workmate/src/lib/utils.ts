@@ -41,35 +41,50 @@ export function truncate(str: string, length: number): string {
 
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {
-    actief: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-    inactief: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400',
-    prospect: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
-    gepland: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-    'in-review': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-    afgerond: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-    'on-hold': 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-    'te-factureren': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
-    concept: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400',
-    verzonden: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
-    bekeken: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-    goedgekeurd: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-    afgewezen: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-    todo: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400',
-    bezig: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
-    review: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-    klaar: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-    definitief: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-    gearchiveerd: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400',
+    // Positief — botanical teal/emerald
+    actief: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light border border-primary/15',
+    betaald: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light border border-primary/15',
+    goedgekeurd: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light border border-primary/15',
+    afgerond: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light border border-primary/15',
+    klaar: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light border border-primary/15',
+    definitief: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light border border-primary/15',
+
+    // Neutraal — warm stone
+    concept: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400 border border-stone-200/60 dark:border-stone-700/40',
+    inactief: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400 border border-stone-200/60 dark:border-stone-700/40',
+    prospect: 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/30',
+    todo: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400 border border-stone-200/60 dark:border-stone-700/40',
+    gearchiveerd: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400 border border-stone-200/60 dark:border-stone-700/40',
+
+    // In progress — warm amber/teal
+    verzonden: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/25 dark:text-sky-400 border border-sky-200/50 dark:border-sky-800/30',
+    bekeken: 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/30',
+    gepland: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/25 dark:text-sky-400 border border-sky-200/50 dark:border-sky-800/30',
+    'in-review': 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/30',
+    bezig: 'bg-primary/10 text-accent dark:bg-primary/15 dark:text-wm-light border border-primary/20',
+    'te-factureren': 'bg-violet-50/80 text-violet-700 dark:bg-violet-900/25 dark:text-violet-400 border border-violet-200/50 dark:border-violet-800/30',
+    ingediend: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/25 dark:text-sky-400 border border-sky-200/50 dark:border-sky-800/30',
+
+    // Negatief — warm terracotta/red
+    afgewezen: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400 border border-red-200/50 dark:border-red-800/30',
+    'on-hold': 'bg-orange-50/80 text-orange-700 dark:bg-orange-900/25 dark:text-orange-400 border border-orange-200/50 dark:border-orange-800/30',
+    vervallen: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400 border border-red-200/50 dark:border-red-800/30',
+    verlopen: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400 border border-red-200/50 dark:border-red-800/30',
+
+    // Speciaal — botanical accent
+    gecrediteerd: 'bg-wm-pale/20 text-accent dark:bg-accent/15 dark:text-wm-pale border border-primary/15',
+    gefactureerd: 'bg-violet-50/80 text-violet-700 dark:bg-violet-900/25 dark:text-violet-400 border border-violet-200/50 dark:border-violet-800/30',
+    review: 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/30',
   }
-  return colors[status] || 'bg-stone-100 text-stone-700'
+  return colors[status] || 'bg-stone-100/80 text-stone-600 border border-stone-200/60'
 }
 
 export function getPriorityColor(priority: string): string {
   const colors: Record<string, string> = {
-    laag: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-    medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-    hoog: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-    kritiek: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+    laag: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light border border-primary/15',
+    medium: 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/30',
+    hoog: 'bg-orange-50/80 text-orange-700 dark:bg-orange-900/25 dark:text-orange-400 border border-orange-200/50 dark:border-orange-800/30',
+    kritiek: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400 border border-red-200/50 dark:border-red-800/30',
   }
-  return colors[priority] || 'bg-stone-100 text-stone-700'
+  return colors[priority] || 'bg-stone-100/80 text-stone-600 border border-stone-200/60'
 }

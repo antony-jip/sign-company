@@ -114,41 +114,41 @@ interface FactuurFormData {
 const STATUS_CONFIG: Record<FactuurStatus, { label: string; color: string; border: string; dot: string }> = {
   concept: {
     label: 'Concept',
-    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-    border: 'border-l-gray-400',
-    dot: 'bg-gray-400',
+    color: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400',
+    border: 'border-l-stone-400',
+    dot: 'bg-stone-400',
   },
   verzonden: {
     label: 'Verzonden',
-    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-    border: 'border-l-blue-500',
-    dot: 'bg-blue-500',
+    color: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
+    border: 'border-l-sky-500',
+    dot: 'bg-sky-500',
   },
   betaald: {
     label: 'Betaald',
-    color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-    border: 'border-l-emerald-500',
-    dot: 'bg-emerald-500',
+    color: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light',
+    border: 'border-l-primary',
+    dot: 'bg-primary',
   },
   vervallen: {
     label: 'Vervallen',
-    color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+    color: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400',
     border: 'border-l-red-500',
     dot: 'bg-red-500',
   },
   gecrediteerd: {
     label: 'Gecrediteerd',
-    color: 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-pale',
-    border: 'border-l-primary',
-    dot: 'bg-primary',
+    color: 'bg-wm-pale/20 text-accent dark:bg-accent/15 dark:text-wm-pale',
+    border: 'border-l-accent',
+    dot: 'bg-accent',
   },
 }
 
 const TYPE_CONFIG: Record<FactuurType, { label: string; prefix: string; color: string }> = {
   standaard: { label: 'Factuur', prefix: 'FAC', color: '' },
-  voorschot: { label: 'Voorschot', prefix: 'VS', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
-  creditnota: { label: 'Creditnota', prefix: 'CN', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
-  eindafrekening: { label: 'Eindafrekening', prefix: 'EA', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300' },
+  voorschot: { label: 'Voorschot', prefix: 'VS', color: 'bg-violet-50/80 text-violet-700 dark:bg-violet-900/25 dark:text-violet-400' },
+  creditnota: { label: 'Creditnota', prefix: 'CN', color: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400' },
+  eindafrekening: { label: 'Eindafrekening', prefix: 'EA', color: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
@@ -1183,8 +1183,8 @@ export function FacturenLayout() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Facturen laden...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Facturen laden...</p>
         </div>
       </div>
     )
@@ -1195,7 +1195,7 @@ export function FacturenLayout() {
       {/* ── Header ────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20">
             <FileText className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -1233,7 +1233,7 @@ export function FacturenLayout() {
           </Button>
           <Button
             onClick={() => navigate('/facturen/nieuw')}
-            className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25 border-0"
+            className="gap-2 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 shadow-lg shadow-primary/25 border-0"
             size="sm"
           >
             <Plus className="h-4 w-4" />
@@ -1244,58 +1244,58 @@ export function FacturenLayout() {
 
       {/* ── Statistics ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="relative overflow-hidden rounded-2xl border border-blue-200/50 dark:border-blue-800/40 bg-gradient-to-br from-blue-50/80 to-white/80 dark:from-blue-950/40 dark:to-gray-900/80 backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
+        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-primary/15 dark:border-primary/10 bg-gradient-to-br from-wm-pale/15 to-card dark:from-accent/10 dark:to-card p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50">
-              <Euro className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <div className="wm-stat-icon p-1.5 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
+              <Euro className="h-4 w-4" />
             </div>
-            <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-wide">
               Totaal openstaand
             </span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-foreground">
             {formatCurrency(statistics.totaalOpenstaand)}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             nog te ontvangen
           </p>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-200/50 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-50/80 to-white/80 dark:from-emerald-950/40 dark:to-gray-900/80 backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
+        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-primary/15 dark:border-primary/10 bg-gradient-to-br from-wm-pale/10 to-card dark:from-primary/8 dark:to-card p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/50">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="wm-stat-icon p-1.5 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
-            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-wide">
               Betaald deze maand
             </span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-foreground">
             {formatCurrency(statistics.betaaldDezeMaand)}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             ontvangen
           </p>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-red-200/50 dark:border-red-800/40 bg-gradient-to-br from-red-50/80 to-white/80 dark:from-red-950/40 dark:to-gray-900/80 backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
+        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-red-200/40 dark:border-red-800/30 bg-gradient-to-br from-red-50/60 to-card dark:from-red-950/20 dark:to-card p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/50">
-              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <div className="wm-stat-icon p-1.5 rounded-lg bg-red-100/80 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+              <AlertTriangle className="h-4 w-4" />
             </div>
             <span className="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide">
               Vervallen facturen
             </span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-foreground">
             {verlopenCount}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             {verlopenTotaal > 0 ? formatCurrency(verlopenTotaal) : 'actie vereist'}
           </p>
           {verlopenCount > 0 && (
             <button
-              className="text-xs text-red-600 hover:underline mt-1"
+              className="text-xs text-red-600 dark:text-red-400 hover:underline mt-1"
               onClick={() => setFilterStatus('verlopen')}
             >
               Toon verlopen →
@@ -1303,19 +1303,19 @@ export function FacturenLayout() {
           )}
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-amber-200/50 dark:border-amber-800/40 bg-gradient-to-br from-amber-50/80 to-white/80 dark:from-amber-950/40 dark:to-gray-900/80 backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
+        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-amber-200/40 dark:border-amber-800/30 bg-gradient-to-br from-amber-50/60 to-card dark:from-amber-950/20 dark:to-card p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/50">
-              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <div className="wm-stat-icon p-1.5 rounded-lg bg-amber-100/80 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+              <Clock className="h-4 w-4" />
             </div>
             <span className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">
               Gem. betaaltermijn
             </span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-foreground">
             {statistics.gemiddeldeBetaaltermijn} dagen
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             gemiddeld
           </p>
         </div>
@@ -1324,17 +1324,17 @@ export function FacturenLayout() {
       {/* ── Search + Filters ──────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Zoek op nummer, titel of klant..."
-            className="pl-10 rounded-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-gray-200 dark:border-gray-700"
+            className="pl-10 rounded-xl bg-card/70 backdrop-blur-sm"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -1351,10 +1351,10 @@ export function FacturenLayout() {
               key={option.value}
               onClick={() => setFilterStatus(option.value)}
               className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
+                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1.5',
                 filterStatus === option.value
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-primary/12 text-accent dark:bg-primary/20 dark:text-wm-light ring-1 ring-primary/25 shadow-sm'
+                  : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               {option.value !== 'alle' && (
@@ -1383,7 +1383,7 @@ export function FacturenLayout() {
             className={cn(
               'px-2 py-1 rounded-lg transition-colors',
               sortField === option.value
-                ? 'text-blue-700 dark:text-blue-300 font-semibold bg-blue-50 dark:bg-blue-900/30'
+                ? 'text-accent dark:text-wm-light font-semibold bg-primary/8 dark:bg-primary/15'
                 : 'hover:text-foreground hover:bg-muted/50'
             )}
           >
@@ -1402,7 +1402,7 @@ export function FacturenLayout() {
       </div>
 
       {/* ── Table ─────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-gray-200/60 dark:border-gray-700/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm overflow-hidden">
+      <div className="rounded-2xl border border-border/60 bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -1467,7 +1467,7 @@ export function FacturenLayout() {
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setViewingFactuur(factuur)}
-                          className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                          className="text-sm font-mono font-semibold text-accent dark:text-wm-light hover:text-primary hover:underline transition-colors"
                         >
                           {factuur.nummer}
                         </button>
@@ -1481,19 +1481,19 @@ export function FacturenLayout() {
                     <td className="px-4 py-3">
                       <a
                         href={`/klanten/${factuur.klant_id}`}
-                        className="text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                        className="text-sm text-foreground/80 hover:text-primary dark:hover:text-wm-light hover:underline transition-colors"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {factuur.klant_naam || 'Onbekende klant'}
                       </a>
                     </td>
                     <td className="px-4 py-3 max-w-[220px] hidden md:table-cell">
-                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">
+                      <span className="text-sm text-foreground/80 truncate block">
                         {factuur.titel}
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-sm text-muted-foreground">
                         {formatDate(factuur.factuurdatum)}
                       </span>
                     </td>
@@ -1504,7 +1504,7 @@ export function FacturenLayout() {
                             'text-sm',
                             isOverdue
                               ? 'text-red-600 dark:text-red-400 font-medium'
-                              : 'text-gray-600 dark:text-gray-400'
+                              : 'text-muted-foreground'
                           )}
                         >
                           {formatDate(factuur.vervaldatum)}
@@ -1515,7 +1515,7 @@ export function FacturenLayout() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <span className="text-sm font-semibold text-foreground">
                         {formatCurrency(factuur.totaal)}
                       </span>
                     </td>
@@ -1545,11 +1545,11 @@ export function FacturenLayout() {
                     <td className="px-4 py-3 hidden lg:table-cell">
                       {factuur.online_bekeken ? (
                         <div className="flex items-center gap-1.5" title={factuur.online_bekeken_op ? `Bekeken op ${new Date(factuur.online_bekeken_op).toLocaleString('nl-NL')}` : 'Online bekeken'}>
-                          <Globe className="h-3.5 w-3.5 text-blue-500" />
-                          <span className="text-xs text-blue-600 font-medium">Bekeken</span>
+                          <Globe className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-xs text-accent font-medium">Bekeken</span>
                         </div>
                       ) : factuur.betaal_link ? (
-                        <span className="text-xs text-gray-400">—</span>
+                        <span className="text-xs text-muted-foreground/60">—</span>
                       ) : null}
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
@@ -1653,7 +1653,7 @@ export function FacturenLayout() {
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Klant</p>
                   <a
                     href={`/klanten/${viewingFactuur.klant_id}`}
-                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-sm font-medium text-accent dark:text-wm-light hover:underline"
                   >
                     {viewingFactuur.klant_naam || 'Onbekende klant'}
                   </a>
@@ -1696,7 +1696,7 @@ export function FacturenLayout() {
                   {viewingFactuur.offerte_id && (
                     <a
                       href={`/offertes/${viewingFactuur.offerte_id}/bewerken`}
-                      className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+                      className="inline-flex items-center gap-1 text-accent dark:text-wm-light hover:underline"
                     >
                       <FileInput className="h-3 w-3" />
                       Bekijk offerte
@@ -1743,7 +1743,7 @@ export function FacturenLayout() {
                   <Separator />
                   <div>
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Notities</p>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{viewingFactuur.notities}</p>
+                    <p className="text-sm text-foreground/80">{viewingFactuur.notities}</p>
                   </div>
                 </>
               )}
@@ -1751,7 +1751,7 @@ export function FacturenLayout() {
               {viewingFactuur.voorwaarden && (
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Betalingsvoorwaarden</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{viewingFactuur.voorwaarden}</p>
+                  <p className="text-sm text-foreground/80">{viewingFactuur.voorwaarden}</p>
                 </div>
               )}
 
@@ -1779,7 +1779,7 @@ export function FacturenLayout() {
                 <div className="space-y-2">
                   <Separator />
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Link className="h-3.5 w-3.5" />
                       <span>Betaallink</span>
                     </div>
@@ -1798,7 +1798,7 @@ export function FacturenLayout() {
                     </Button>
                   </div>
                   {viewingFactuur.online_bekeken && (
-                    <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                    <div className="flex items-center gap-2 text-xs text-accent bg-primary/8 dark:bg-primary/15 px-3 py-2 rounded-lg">
                       <Globe className="h-3.5 w-3.5" />
                       Online bekeken{viewingFactuur.online_bekeken_op ? ` op ${new Date(viewingFactuur.online_bekeken_op).toLocaleString('nl-NL')}` : ''}
                     </div>
@@ -1956,7 +1956,7 @@ export function FacturenLayout() {
                   </Button>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="rounded-xl border border-border overflow-hidden">
                   <table className="w-full">
                     <thead>
                       <tr className="bg-muted/50 border-b border-border">
@@ -2023,7 +2023,7 @@ export function FacturenLayout() {
                             />
                           </td>
                           <td className="px-3 py-2 text-right">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            <span className="text-sm font-medium text-foreground">
                               {formatCurrency(calcLineTotal(item))}
                             </span>
                           </td>
@@ -2031,7 +2031,7 @@ export function FacturenLayout() {
                             {formData.items.length > 1 && (
                               <button
                                 onClick={() => handleRemoveLineItem(item.id)}
-                                className="text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                className="text-muted-foreground/60 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                               >
                                 <X className="h-4 w-4" />
                               </button>
@@ -2093,7 +2093,7 @@ export function FacturenLayout() {
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileInput className="h-5 w-5 text-blue-500" />
+              <FileInput className="h-5 w-5 text-primary" />
               Factuur vanuit offerte
             </DialogTitle>
             <DialogDescription>
@@ -2116,12 +2116,12 @@ export function FacturenLayout() {
                 {goedgekeurdeOffertes.map((offerte) => (
                   <div
                     key={offerte.id}
-                    className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all"
+                    className="p-4 rounded-xl border border-border hover:border-primary/40 transition-all"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                          <span className="text-sm font-mono font-semibold text-accent dark:text-wm-light">
                             {offerte.nummer}
                           </span>
                           <Badge
@@ -2131,7 +2131,7 @@ export function FacturenLayout() {
                             Goedgekeurd
                           </Badge>
                         </div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {offerte.titel}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
@@ -2139,7 +2139,7 @@ export function FacturenLayout() {
                         </p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                        <p className="text-sm font-bold text-foreground">
                           {formatCurrency(offerte.totaal)}
                         </p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -2181,7 +2181,7 @@ export function FacturenLayout() {
           </DialogHeader>
           {creditnotaFactuur && (
             <div className="space-y-4">
-              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 space-y-2">
+              <div className="p-3 rounded-lg bg-muted/50 dark:bg-muted/30 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Originele factuur</span>
                   <span className="font-mono font-semibold">{creditnotaFactuur.nummer}</span>
@@ -2229,7 +2229,7 @@ export function FacturenLayout() {
           </DialogHeader>
           {voorschotOfferte && (
             <div className="space-y-4">
-              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 space-y-2">
+              <div className="p-3 rounded-lg bg-muted/50 dark:bg-muted/30 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Offerte</span>
                   <span className="font-mono font-semibold">{voorschotOfferte.nummer}</span>
@@ -2298,7 +2298,7 @@ export function FacturenLayout() {
           </DialogHeader>
           {eindafrekeningFactuur && (
             <div className="space-y-4">
-              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 space-y-2">
+              <div className="p-3 rounded-lg bg-muted/50 dark:bg-muted/30 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Originele factuur</span>
                   <span className="font-mono font-semibold">{eindafrekeningFactuur.nummer}</span>
@@ -2393,7 +2393,7 @@ export function FacturenLayout() {
             </div>
             <div>
               <Label className="text-sm font-medium">Preview</Label>
-              <div className="mt-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm whitespace-pre-wrap max-h-60 overflow-y-auto">
+              <div className="mt-1 p-3 rounded-lg bg-muted/50 dark:bg-muted/30 text-sm whitespace-pre-wrap max-h-60 overflow-y-auto">
                 {herinneringPreview || 'Geen template beschikbaar'}
               </div>
             </div>
