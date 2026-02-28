@@ -46,6 +46,10 @@ import {
   ClipboardList,
   UserCheck,
   X,
+  AlertTriangle,
+  Printer,
+  Filter,
+  User,
 } from "lucide-react";
 import {
   getMontageAfspraken,
@@ -215,6 +219,10 @@ export function MontagePlanningLayout() {
     useState<MontageAfspraak | null>(null);
   const [formData, setFormData] = useState<MontageFormData>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
+  const [selectedMonteur, setSelectedMonteur] = useState<string>("alle");
+  const [statusFilter, setStatusFilter] = useState<Set<MontageAfspraak["status"]>>(
+    new Set(["gepland", "onderweg", "bezig", "uitgesteld"])
+  );
 
   const weekDates = useMemo(() => getWeekDates(currentMonday), [currentMonday]);
   const weekNumber = useMemo(
@@ -248,11 +256,21 @@ export function MontagePlanningLayout() {
     loadData();
   }, [loadData]);
 
-  const weekAfspraken = useMemo(() => {
+  // All afspraken for this week (unfiltered, needed for conflict detection)
+  const weekAfsprakenAll = useMemo(() => {
     const startStr = formatDate(weekDates[0]);
     const endStr = formatDate(weekDates[6]);
     return afspraken.filter((a) => a.datum >= startStr && a.datum <= endStr);
   }, [afspraken, weekDates]);
+
+  // Filtered by monteur + status
+  const weekAfspraken = useMemo(() => {
+    return weekAfsprakenAll.filter((a) => {
+      if (selectedMonteur !== "alle" && !a.monteurs.includes(selectedMonteur)) return false;
+      if (!statusFilter.has(a.status)) return false;
+      return true;
+    });
+  }, [weekAfsprakenAll, selectedMonteur, statusFilter]);
 
   const afsprakenPerDag = useMemo(() => {
     const map: Record<string, MontageAfspraak[]> = {};
@@ -269,6 +287,62 @@ export function MontagePlanningLayout() {
     );
     return map;
   }, [weekAfspraken, weekDates]);
+
+  // Conflict detection: find overlapping montages for the same monteur
+  const conflicts = useMemo(() => {
+    const found: { monteurId: string; monteurNaam: string; afspraak1: MontageAfspraak; afspraak2: MontageAfspraak }[] = [];
+    const activeAfspraken = weekAfsprakenAll.filter((a) => a.status !== "afgerond" && a.status !== "uitgesteld");
+
+    // Group by day
+    const perDay: Record<string, MontageAfspraak[]> = {};
+    activeAfspraken.forEach((a) => {
+      if (!perDay[a.datum]) perDay[a.datum] = [];
+      perDay[a.datum].push(a);
+    });
+
+    // For each day, check each pair for shared monteurs with overlapping times
+    Object.values(perDay).forEach((dayItems) => {
+      for (let i = 0; i < dayItems.length; i++) {
+        for (let j = i + 1; j < dayItems.length; j++) {
+          const a = dayItems[i];
+          const b = dayItems[j];
+          // Check time overlap: a.start < b.end AND b.start < a.end
+          if (a.start_tijd < b.eind_tijd && b.start_tijd < a.eind_tijd) {
+            // Find shared monteurs
+            const shared = a.monteurs.filter((m) => b.monteurs.includes(m));
+            shared.forEach((mId) => {
+              // Avoid duplicates
+              const exists = found.some(
+                (c) => c.monteurId === mId &&
+                  ((c.afspraak1.id === a.id && c.afspraak2.id === b.id) ||
+                   (c.afspraak1.id === b.id && c.afspraak2.id === a.id))
+              );
+              if (!exists) {
+                found.push({
+                  monteurId: mId,
+                  monteurNaam: monteurMap[mId]?.naam || "Onbekend",
+                  afspraak1: a,
+                  afspraak2: b,
+                });
+              }
+            });
+          }
+        }
+      }
+    });
+
+    return found;
+  }, [weekAfsprakenAll, monteurMap]);
+
+  // Set of afspraak IDs that have conflicts
+  const conflictAfspraakIds = useMemo(() => {
+    const ids = new Set<string>();
+    conflicts.forEach((c) => {
+      ids.add(c.afspraak1.id);
+      ids.add(c.afspraak2.id);
+    });
+    return ids;
+  }, [conflicts]);
 
   const monteurMap = useMemo(() => {
     const map: Record<string, Medewerker> = {};
@@ -295,11 +369,11 @@ export function MontagePlanningLayout() {
     ).length;
 
     return {
-      totaalWeek: weekAfspraken.length,
+      totaalWeek: weekAfsprakenAll.length,
       geplandVandaag: vandaagAfspraken.length,
       monteursBeschikbaar: beschikbaar,
     };
-  }, [weekAfspraken, afspraken, todayStr, monteurs]);
+  }, [weekAfsprakenAll, afspraken, todayStr, monteurs]);
 
   function navigateWeek(direction: -1 | 1) {
     setCurrentMonday((prev) => {
@@ -311,6 +385,79 @@ export function MontagePlanningLayout() {
 
   function goToCurrentWeek() {
     setCurrentMonday(getMondayOfWeek(new Date()));
+  }
+
+  function toggleStatusFilter(status: MontageAfspraak["status"]) {
+    setStatusFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(status)) {
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      return next;
+    });
+  }
+
+  function printDagplanning() {
+    const datum = todayStr;
+    const dagLabel = new Date().toLocaleDateString("nl-NL", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    // Get all afspraken for today (or filtered monteur)
+    let dagAfspraken = afspraken
+      .filter((a) => a.datum === datum && a.status !== "afgerond")
+      .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+
+    if (selectedMonteur !== "alle") {
+      dagAfspraken = dagAfspraken.filter((a) => a.monteurs.includes(selectedMonteur));
+    }
+
+    const monteurNaam = selectedMonteur !== "alle"
+      ? monteurMap[selectedMonteur]?.naam || ""
+      : "Alle monteurs";
+
+    const rows = dagAfspraken
+      .map(
+        (a) =>
+          `<tr>
+            <td style="padding:8px;border:1px solid #ddd;">${a.start_tijd} - ${a.eind_tijd}</td>
+            <td style="padding:8px;border:1px solid #ddd;font-weight:600;">${a.titel}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${a.klant_naam || ""}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${a.locatie}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${a.monteurs.map((id) => monteurMap[id]?.naam || "?").join(", ")}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${a.materialen.join(", ")}</td>
+            <td style="padding:8px;border:1px solid #ddd;font-size:12px;">${a.notities || ""}</td>
+          </tr>`
+      )
+      .join("");
+
+    const html = `<!DOCTYPE html><html><head><title>Dagplanning ${dagLabel}</title>
+      <style>body{font-family:Arial,sans-serif;padding:20px}table{border-collapse:collapse;width:100%}
+      th{background:#f3f4f6;padding:10px 8px;border:1px solid #ddd;text-align:left;font-size:13px}
+      td{font-size:13px}h1{font-size:20px;margin-bottom:4px}
+      @media print{body{padding:10px}}</style></head>
+      <body>
+      <h1>Dagplanning — ${dagLabel}</h1>
+      <p style="color:#666;margin-bottom:16px;">${monteurNaam} &middot; ${dagAfspraken.length} montage${dagAfspraken.length !== 1 ? "s" : ""}</p>
+      ${dagAfspraken.length === 0
+        ? '<p style="color:#999;font-style:italic;">Geen montages gepland voor vandaag.</p>'
+        : `<table><thead><tr>
+          <th>Tijd</th><th>Titel</th><th>Klant</th><th>Locatie</th><th>Monteurs</th><th>Materialen</th><th>Notities</th>
+        </tr></thead><tbody>${rows}</tbody></table>`
+      }
+      </body></html>`;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => printWindow.print();
+    }
   }
 
   function openNewDialog() {
@@ -569,17 +716,24 @@ export function MontagePlanningLayout() {
   function renderWeekCard(afspraak: MontageAfspraak) {
     const config = STATUS_CONFIG[afspraak.status];
     const nextActions = getNextStatusActions(afspraak.status);
+    const hasConflict = conflictAfspraakIds.has(afspraak.id);
 
     return (
       <div
         key={afspraak.id}
         className={cn(
           "rounded-lg border p-3 mb-2 cursor-pointer transition-shadow hover:shadow-md",
-          config.bgColor,
-          config.borderColor
+          hasConflict ? "bg-red-50 border-red-300 ring-1 ring-red-200" : config.bgColor,
+          !hasConflict && config.borderColor
         )}
         onClick={() => openEditDialog(afspraak)}
       >
+        {hasConflict && (
+          <div className="flex items-center gap-1 text-[10px] font-medium text-red-600 mb-1">
+            <AlertTriangle className="h-3 w-3" />
+            Overlap
+          </div>
+        )}
         <div className="flex items-start justify-between gap-1 mb-1.5">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
@@ -739,13 +893,23 @@ export function MontagePlanningLayout() {
                 const dayIdx =
                   (dateObj.getDay() + 6) % 7;
                 const nextActions = getNextStatusActions(afspraak.status);
+                const rowConflict = conflictAfspraakIds.has(afspraak.id);
 
                 return (
                   <tr
                     key={afspraak.id}
-                    className="border-b hover:bg-gray-50 transition-colors"
+                    className={cn(
+                      "border-b hover:bg-gray-50 transition-colors",
+                      rowConflict && "bg-red-50/60"
+                    )}
                   >
                     <td className="py-3 px-4">
+                      {rowConflict && (
+                        <div className="flex items-center gap-1 text-[10px] font-medium text-red-600 mb-0.5">
+                          <AlertTriangle className="h-3 w-3" />
+                          Overlap
+                        </div>
+                      )}
                       <div className="font-medium">
                         {DAG_NAMEN_LANG[dayIdx]}
                       </div>
@@ -1021,6 +1185,37 @@ export function MontagePlanningLayout() {
                   </label>
                 ))}
               </div>
+
+              {/* Live conflict warning in form */}
+              {formData.datum && formData.start_tijd && formData.eind_tijd && formData.monteurs.length > 0 && (() => {
+                const formConflicts = afspraken.filter((a) => {
+                  if (editingAfspraak && a.id === editingAfspraak.id) return false;
+                  if (a.datum !== formData.datum) return false;
+                  if (a.status === "afgerond" || a.status === "uitgesteld") return false;
+                  if (a.start_tijd >= formData.eind_tijd || a.eind_tijd <= formData.start_tijd) return false;
+                  return a.monteurs.some((m) => formData.monteurs.includes(m));
+                });
+                if (formConflicts.length === 0) return null;
+                return (
+                  <div className="mt-2 rounded-md border border-red-200 bg-red-50 p-3">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-red-700 mb-1">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Overlap gedetecteerd
+                    </div>
+                    {formConflicts.map((a) => {
+                      const overlappingMonteurs = a.monteurs
+                        .filter((m) => formData.monteurs.includes(m))
+                        .map((m) => monteurMap[m]?.naam || "?")
+                        .join(", ");
+                      return (
+                        <p key={a.id} className="text-xs text-red-600">
+                          {overlappingMonteurs} heeft al &quot;{a.titel}&quot; ({a.start_tijd}–{a.eind_tijd})
+                        </p>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
 
             <Separator />
@@ -1122,7 +1317,7 @@ export function MontagePlanningLayout() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -1172,6 +1367,100 @@ export function MontagePlanningLayout() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className={conflicts.length > 0 ? "border-red-200 bg-red-50/50" : ""}>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className={cn("p-3 rounded-xl", conflicts.length > 0 ? "bg-red-100" : "bg-gray-100")}>
+                <AlertTriangle className={cn("h-6 w-6", conflicts.length > 0 ? "text-red-600" : "text-gray-400")} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Conflicten
+                </p>
+                <p className={cn("text-2xl font-bold", conflicts.length > 0 && "text-red-600")}>
+                  {conflicts.length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Conflict warnings */}
+      {conflicts.length > 0 && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <span className="text-sm font-semibold text-red-700">
+              {conflicts.length} dubbele boeking{conflicts.length !== 1 ? "en" : ""} gedetecteerd
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {conflicts.map((c, idx) => {
+              const dag = new Date(c.afspraak1.datum + "T00:00:00").toLocaleDateString("nl-NL", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              });
+              return (
+                <div key={idx} className="flex items-center gap-2 text-sm text-red-700">
+                  <span className="font-medium">{c.monteurNaam}</span>
+                  <span className="text-red-400">—</span>
+                  <span>{dag}: {c.afspraak1.titel} ({c.afspraak1.start_tijd}–{c.afspraak1.eind_tijd})</span>
+                  <span className="text-red-400">&amp;</span>
+                  <span>{c.afspraak2.titel} ({c.afspraak2.start_tijd}–{c.afspraak2.eind_tijd})</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Filter bar */}
+      <div className="flex items-center gap-4 flex-wrap">
+        {/* Monteur filter */}
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <Select value={selectedMonteur} onValueChange={setSelectedMonteur}>
+            <SelectTrigger className="w-[200px] h-9">
+              <SelectValue placeholder="Alle monteurs" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle monteurs</SelectItem>
+              {monteurs.map((m) => (
+                <SelectItem key={m.id} value={m.id}>{m.naam}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Status filters */}
+        <div className="flex items-center gap-1.5">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          {(Object.keys(STATUS_CONFIG) as MontageAfspraak["status"][]).map((status) => (
+            <Button
+              key={status}
+              variant={statusFilter.has(status) ? "default" : "outline"}
+              size="sm"
+              className={cn(
+                "h-7 px-2.5 text-xs",
+                statusFilter.has(status) && BADGE_VARIANT_CLASSES[status]
+              )}
+              onClick={() => toggleStatusFilter(status)}
+            >
+              {STATUS_CONFIG[status].label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Print button */}
+        <Button variant="outline" size="sm" onClick={printDagplanning} className="h-9">
+          <Printer className="h-4 w-4 mr-1.5" />
+          Print dagplanning
+        </Button>
       </div>
 
       <Card>
@@ -1269,7 +1558,11 @@ export function MontagePlanningLayout() {
               return (
                 <div
                   key={monteur.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border"
+                  onClick={() => setSelectedMonteur(selectedMonteur === monteur.id ? "alle" : monteur.id)}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm",
+                    selectedMonteur === monteur.id && "ring-2 ring-primary border-primary bg-primary/5"
+                  )}
                 >
                   <div
                     className={cn(

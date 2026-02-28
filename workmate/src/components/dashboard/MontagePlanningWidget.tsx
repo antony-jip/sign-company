@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarDays,
+  User,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getMontageAfspraken, getMedewerkers } from '@/services/supabaseService'
@@ -84,6 +85,7 @@ export function MontagePlanningWidget() {
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [loading, setLoading] = useState(true)
   const [weekOffset, setWeekOffset] = useState(0)
+  const [selectedMonteur, setSelectedMonteur] = useState<string>('alle')
 
   useEffect(() => {
     let cancelled = false
@@ -112,10 +114,20 @@ export function MontagePlanningWidget() {
     [medewerkers]
   )
 
+  const monteurs = useMemo(
+    () => medewerkers.filter((m) => m.rol === 'monteur' && m.status === 'actief'),
+    [medewerkers]
+  )
+
+  const filteredMontages = useMemo(() => {
+    if (selectedMonteur === 'alle') return montages
+    return montages.filter((m) => m.monteurs.includes(selectedMonteur))
+  }, [montages, selectedMonteur])
+
   const afsprakenPerDag = useMemo(() => {
     const map = new Map<string, MontageAfspraak[]>()
     weekDates.forEach((d) => map.set(fmtDate(d), []))
-    montages.forEach((m) => {
+    filteredMontages.forEach((m) => {
       const key = m.datum
       if (map.has(key)) {
         map.get(key)!.push(m)
@@ -124,7 +136,7 @@ export function MontagePlanningWidget() {
     // Sort by start_tijd within each day
     map.forEach((arr) => arr.sort((a, b) => (a.start_tijd || '').localeCompare(b.start_tijd || '')))
     return map
-  }, [montages, weekDates])
+  }, [filteredMontages, weekDates])
 
   const weekTotal = useMemo(
     () => Array.from(afsprakenPerDag.values()).reduce((sum, arr) => sum + arr.length, 0),
@@ -162,6 +174,43 @@ export function MontagePlanningWidget() {
             </span>
           </div>
         </div>
+
+        {/* Monteur filter pills */}
+        {!loading && monteurs.length > 0 && (
+          <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+            <button
+              onClick={() => setSelectedMonteur('alle')}
+              className={cn(
+                'text-[11px] font-medium px-2 py-1 rounded-full border transition-colors',
+                selectedMonteur === 'alle'
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+              )}
+            >
+              Iedereen
+            </button>
+            {monteurs.map((m, idx) => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedMonteur(selectedMonteur === m.id ? 'alle' : m.id)}
+                className={cn(
+                  'flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full border transition-colors',
+                  selectedMonteur === m.id
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+                )}
+              >
+                <div className={cn(
+                  'w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold text-white',
+                  AVATAR_COLORS[idx % AVATAR_COLORS.length]
+                )}>
+                  {getInitials(m.naam)}
+                </div>
+                {m.naam.split(' ')[0]}
+              </button>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
