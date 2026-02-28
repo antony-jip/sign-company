@@ -53,11 +53,13 @@ import {
   DollarSign,
   MoreHorizontal,
   Receipt,
+  ArrowRight,
+  CheckCircle2,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Project, Contactpersoon } from '@/types'
+import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -139,9 +141,10 @@ export function QuoteCreation() {
   })
   const [offerteNummer, setOfferteNummer] = useState('')
 
-  // ── Offerte status (for factureren button) ──
+  // ── Offerte status & linked factuur (for factureren workflow) ──
   const [offerteStatus, setOfferteStatus] = useState<string>('concept')
   const [geconverteerdNaarFactuurId, setGeconverteerdNaarFactuurId] = useState<string | null>(null)
+  const [linkedFactuur, setLinkedFactuur] = useState<Factuur | null>(null)
 
   // ── FIX 7: Client details panel ──
   const [klantPanelOpen, setKlantPanelOpen] = useState(true)
@@ -416,9 +419,15 @@ export function QuoteCreation() {
         if (offerte.versie) setVersieNummer(offerte.versie)
         // FIX 16: Load afrondingskorting
         if (offerte.afrondingskorting_excl_btw) setAfrondingskorting(offerte.afrondingskorting_excl_btw)
-        // Track status for factureren button
+        // Track status for factureren workflow
         setOfferteStatus(offerte.status)
-        if (offerte.geconverteerd_naar_factuur_id) setGeconverteerdNaarFactuurId(offerte.geconverteerd_naar_factuur_id)
+        if (offerte.geconverteerd_naar_factuur_id) {
+          setGeconverteerdNaarFactuurId(offerte.geconverteerd_naar_factuur_id)
+          // Load linked factuur data for the workflow card
+          getFactuur(offerte.geconverteerd_naar_factuur_id).then(factuur => {
+            if (!cancelled && factuur) setLinkedFactuur(factuur)
+          }).catch(() => {/* silent */})
+        }
         // Load versie historie
         getOfferteVersies(editOfferteId).then(versies => {
           if (!cancelled) {
@@ -1700,36 +1709,6 @@ export function QuoteCreation() {
 
           {/* Right: Action buttons */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Factureren button - shown for goedgekeurde offertes */}
-            {isEditMode && offerteStatus === 'goedgekeurd' && !geconverteerdNaarFactuurId && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  const quoteId = editOfferteId || autoSaveIdRef.current
-                  if (!quoteId) return
-                  const params = new URLSearchParams({ offerte_id: quoteId, klant_id: selectedKlantId })
-                  if (offerteTitel) params.set('titel', offerteTitel)
-                  if (selectedProjectId) params.set('project_id', selectedProjectId)
-                  navigate(`/facturen/nieuw?${params.toString()}`)
-                }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
-              >
-                <Receipt className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Factureren</span>
-              </Button>
-            )}
-            {/* Already invoiced - link to factuur */}
-            {isEditMode && geconverteerdNaarFactuurId && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/facturen/${geconverteerdNaarFactuurId}`)}
-                className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/30 gap-1.5"
-              >
-                <Receipt className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Bekijk factuur</span>
-              </Button>
-            )}
             <Button variant="outline" size="sm" onClick={handleDownloadPdf} className="gap-1.5">
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">PDF</span>
@@ -1762,22 +1741,6 @@ export function QuoteCreation() {
                       <button onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2">
                         <Building2 className="h-3.5 w-3.5" />Klant wijzigen
                       </button>
-                      {!geconverteerdNaarFactuurId && offerteStatus !== 'goedgekeurd' && (
-                        <button
-                          onClick={() => {
-                            setShowActionsMenu(false)
-                            const quoteId = editOfferteId || autoSaveIdRef.current
-                            if (!quoteId) return
-                            const params = new URLSearchParams({ offerte_id: quoteId, klant_id: selectedKlantId })
-                            if (offerteTitel) params.set('titel', offerteTitel)
-                            if (selectedProjectId) params.set('project_id', selectedProjectId)
-                            navigate(`/facturen/nieuw?${params.toString()}`)
-                          }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 text-emerald-700 dark:text-emerald-400"
-                        >
-                          <Receipt className="h-3.5 w-3.5" />Factureren
-                        </button>
-                      )}
                     </div>
                   </>
                 )}
@@ -2086,6 +2049,100 @@ export function QuoteCreation() {
                   <Building2 className="h-8 w-8 text-gray-300 mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">Geen klant geselecteerd</p>
                   <Button variant="outline" size="sm" className="mt-2 text-xs h-7" onClick={() => setShowKlantSelector(true)}>Klant kiezen</Button>
+                </div>
+              )}
+
+              {/* ── FACTUREREN WORKFLOW CARD ── */}
+              {isEditMode && (offerteStatus === 'goedgekeurd' || offerteStatus === 'gefactureerd' || geconverteerdNaarFactuurId) && (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
+                  {geconverteerdNaarFactuurId ? (
+                    <>
+                      {/* Already invoiced */}
+                      <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle2 className="h-4 w-4 text-white" />
+                          <p className="text-[10px] uppercase tracking-wider text-white/80 font-medium">Gefactureerd</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <p className="text-[10px] text-white/60">Offerte bedrag</p>
+                            <p className="text-sm font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-white/50 flex-shrink-0" />
+                          <div className="flex-1 text-right">
+                            <p className="text-[10px] text-white/60">Factuur</p>
+                            <p className="text-sm font-bold text-white">{linkedFactuur ? formatCurrency(linkedFactuur.totaal) : '...'}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 space-y-2">
+                        {linkedFactuur && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs font-medium">{linkedFactuur.nummer}</span>
+                            </div>
+                            <Badge className={cn('text-[10px]',
+                              linkedFactuur.status === 'betaald' && 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                              linkedFactuur.status === 'verzonden' && 'bg-blue-100 text-blue-700 border-blue-200',
+                              linkedFactuur.status === 'concept' && 'bg-gray-100 text-gray-700 border-gray-200',
+                              linkedFactuur.status === 'vervallen' && 'bg-red-100 text-red-700 border-red-200',
+                              linkedFactuur.status === 'gecrediteerd' && 'bg-orange-100 text-orange-700 border-orange-200',
+                            )}>
+                              {linkedFactuur.status.charAt(0).toUpperCase() + linkedFactuur.status.slice(1)}
+                            </Badge>
+                          </div>
+                        )}
+                        {linkedFactuur && linkedFactuur.status !== 'betaald' && linkedFactuur.betaald_bedrag > 0 && (
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>Betaald</span>
+                            <span className="font-medium text-emerald-600">{formatCurrency(linkedFactuur.betaald_bedrag)}</span>
+                          </div>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs h-8 gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/30"
+                          onClick={() => navigate(`/facturen/${geconverteerdNaarFactuurId}/bewerken`)}
+                        >
+                          <Receipt className="h-3.5 w-3.5" />Bekijk factuur
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Not yet invoiced - goedgekeurd */}
+                      <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Receipt className="h-4 w-4 text-white" />
+                          <p className="text-[10px] uppercase tracking-wider text-white/80 font-medium">Klaar om te factureren</p>
+                        </div>
+                        <p className="text-[10px] text-white/60">Offerte bedrag incl BTW</p>
+                        <p className="text-xl font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <p className="text-[10px] text-white/60">{formatCurrency(subtotaal)} excl BTW</p>
+                          <p className="text-[10px] text-white/60">+{formatCurrency(btwBedrag)} BTW</p>
+                        </div>
+                      </div>
+                      <div className="p-3">
+                        <Button
+                          size="sm"
+                          className="w-full h-9 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-medium"
+                          onClick={() => {
+                            const quoteId = editOfferteId || autoSaveIdRef.current
+                            if (!quoteId) return
+                            const params = new URLSearchParams({ offerte_id: quoteId, klant_id: selectedKlantId })
+                            if (offerteTitel) params.set('titel', offerteTitel)
+                            if (selectedProjectId) params.set('project_id', selectedProjectId)
+                            navigate(`/facturen/nieuw?${params.toString()}`)
+                          }}
+                        >
+                          <Receipt className="h-4 w-4" />Factuur aanmaken
+                          <ArrowRight className="h-3.5 w-3.5 ml-auto" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
