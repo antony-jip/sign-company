@@ -46,8 +46,6 @@ import { BookingBeheer } from '@/components/booking/BookingBeheer'
 import { PublicBookingPage } from '@/components/booking/PublicBookingPage'
 import { WerkbonnenLayout } from '@/components/werkbonnen/WerkbonnenLayout'
 import { WerkbonDetail } from '@/components/werkbonnen/WerkbonDetail'
-import { UitgavenLayout } from '@/components/uitgaven/UitgavenLayout'
-import { LeveranciersLayout } from '@/components/uitgaven/LeveranciersLayout'
 import { BetaalPagina } from '@/components/betaling/BetaalPagina'
 import { OffertePubliekPagina } from '@/components/offerte/OffertePubliekPagina'
 import { BestelbonnenLayout } from '@/components/bestelbonnen/BestelbonnenLayout'
@@ -131,8 +129,6 @@ function AppContent() {
         <Route path="ai" element={<WorkmateAIChat />} />
         <Route path="werkbonnen" element={<WerkbonnenLayout />} />
         <Route path="werkbonnen/:id" element={<WerkbonDetail />} />
-        <Route path="uitgaven" element={<UitgavenLayout />} />
-        <Route path="leveranciers" element={<LeveranciersLayout />} />
         <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
         <Route path="bestelbonnen/:id" element={<BestelbonDetail />} />
         <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />

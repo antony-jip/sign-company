@@ -29,6 +29,38 @@ import {
   createFactuur, createFactuurItem,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
+import { generateWerkbonPDF } from '@/services/pdfService'
+
+// Resize image voor localStorage limiet (max breedte, JPEG 80% kwaliteit)
+function resizeImage(file: File, maxWidth: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const canvas = document.createElement('canvas')
+      let { width, height } = img
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width
+        width = maxWidth
+      }
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { reject(new Error('Canvas context failed')); return }
+      ctx.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (blob) => { if (blob) resolve(blob); else reject(new Error('Blob creation failed')) },
+        'image/jpeg',
+        0.8
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image loading failed')) }
+    img.src = url
+  })
+}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   concept: { label: 'Concept', color: 'text-gray-700', bg: 'bg-gray-100' },
@@ -41,6 +73,8 @@ export function WerkbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { profile, primaireKleur } = useAppSettings()
+  const documentStyle = useDocumentStyle()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
 
@@ -77,6 +111,9 @@ export function WerkbonDetail() {
   const [handtekeningData, setHandtekeningData] = useState<string | undefined>()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
+
+  // Handtekening editing mode (false = show saved image, true = show canvas)
+  const [isEditingSignature, setIsEditingSignature] = useState(false)
 
   // Factuur dialog
   const [factureerDialogOpen, setFactureerDialogOpen] = useState(false)
@@ -122,6 +159,7 @@ export function WerkbonDetail() {
           setStatus(wb.status)
           setKlantNaamGetekend(wb.klant_naam_getekend || '')
           setHandtekeningData(wb.klant_handtekening)
+          setIsEditingSignature(!wb.klant_handtekening)
           setFilteredProjecten(pr.filter((p) => p.klant_id === wb.klant_id))
 
           const [wbRegels, wbFotos] = await Promise.all([
@@ -321,28 +359,56 @@ export function WerkbonDetail() {
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
     }
     setHandtekeningData(undefined)
+    setIsEditingSignature(true)
   }, [])
 
-  // Foto toevoegen (base64)
+  // Foto toevoegen (base64 met resize)
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
     if (!werkbonId) { toast.error('Sla de werkbon eerst op'); return }
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = async (ev) => {
-      const url = ev.target?.result as string
-      const foto = await createWerkbonFoto({
-        user_id: userId,
-        werkbon_id: werkbonId,
-        type,
-        url,
-        omschrijving: file.name,
-      })
-      setFotos((prev) => [...prev, foto])
-      toast.success('Foto toegevoegd')
+
+    // Validatie
+    if (!file.type.startsWith('image/')) {
+      toast.error('Alleen afbeeldingen toegestaan')
+      return
     }
-    reader.readAsDataURL(file)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Bestand te groot (max 10MB)')
+      return
+    }
+
+    try {
+      // Resize voor opslag (max 1200px breed)
+      const resized = await resizeImage(file, 1200)
+      const reader = new FileReader()
+      reader.onload = async (ev) => {
+        const url = ev.target?.result as string
+        const foto = await createWerkbonFoto({
+          user_id: userId,
+          werkbon_id: werkbonId,
+          type,
+          url,
+          omschrijving: file.name,
+        })
+        setFotos((prev) => [...prev, foto])
+        toast.success('Foto toegevoegd')
+      }
+      reader.onerror = () => toast.error('Fout bij lezen foto')
+      reader.readAsDataURL(resized)
+    } catch {
+      toast.error('Fout bij verwerken foto')
+    }
+    // Reset input zodat dezelfde foto opnieuw gekozen kan worden
+    e.target.value = ''
   }, [werkbonId, userId])
+
+  // Foto type wijzigen
+  const handleFotoTypeChange = useCallback(async (fotoId: string, newType: WerkbonFoto['type']) => {
+    setFotos((prev) => prev.map((f) => f.id === fotoId ? { ...f, type: newType } : f))
+    // Foto type opslaan door foto te verwijderen + opnieuw aan te maken (geen update endpoint beschikbaar)
+    // We updaten alleen lokaal - bij volgende save wordt het meegenomen
+  }, [])
 
   // Foto verwijderen
   const handleFotoVerwijderen = useCallback(async (fotoId: string) => {
@@ -440,6 +506,46 @@ export function WerkbonDetail() {
     }
   }, [regels, klantId, projectId, klanten, projecten, medewerkers, kilometers, kmTarief, userId, werkbonNummer, werkbonId, navigate])
 
+  // PDF download
+  const handleDownloadPDF = useCallback(() => {
+    const klant = klanten.find((k) => k.id === klantId)
+    const project = projecten.find((p) => p.id === projectId)
+    const bedrijfsProfiel = { ...profile, primaireKleur }
+
+    const doc = generateWerkbonPDF(
+      {
+        werkbon_nummer: werkbonNummer,
+        datum,
+        start_tijd: startTijd,
+        eind_tijd: eindTijd,
+        pauze_minuten: pauzeMinuten,
+        locatie_adres: locatieAdres,
+        locatie_stad: locatieStad,
+        locatie_postcode: locatiePostcode,
+        kilometers,
+        km_tarief: kmTarief,
+        omschrijving,
+        klant_handtekening: handtekeningData,
+        klant_naam_getekend: klantNaamGetekend,
+        getekend_op: handtekeningData ? new Date().toISOString() : undefined,
+      },
+      regels,
+      fotos,
+      klant || {},
+      project?.naam || '',
+      bedrijfsProfiel,
+      documentStyle
+    )
+
+    doc.save(`werkbon-${werkbonNummer || 'nieuw'}.pdf`)
+    toast.success('PDF gedownload')
+  }, [
+    klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
+    werkbonNummer, datum, startTijd, eindTijd, pauzeMinuten,
+    locatieAdres, locatieStad, locatiePostcode, kilometers, kmTarief,
+    omschrijving, handtekeningData, klantNaamGetekend, regels, fotos,
+  ])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -468,6 +574,11 @@ export function WerkbonDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {!isNew && (
+            <Button variant="outline" onClick={handleDownloadPDF}>
+              <FileText className="h-4 w-4 mr-1" /> PDF
+            </Button>
+          )}
           {status === 'concept' && (
             <Button variant="outline" onClick={handleIndienen} disabled={isNew}>
               <Send className="h-4 w-4 mr-1" /> Indienen
@@ -746,13 +857,13 @@ export function WerkbonDetail() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-4 flex-wrap">
                 {(['voor', 'na', 'overig'] as const).map((type) => (
                   <label key={type} className="cursor-pointer">
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" asChild className="min-h-[44px]">
                       <span><Plus className="h-3 w-3 mr-1" /> {type === 'voor' ? 'Voor' : type === 'na' ? 'Na' : 'Overig'}</span>
                     </Button>
-                    <input type="file" accept="image/*" className="hidden"
+                    <input type="file" accept="image/*" capture="environment" className="hidden"
                       onChange={(e) => handleFotoToevoegen(e, type)} disabled={isNew} />
                   </label>
                 ))}
@@ -765,9 +876,15 @@ export function WerkbonDetail() {
                     <div key={foto.id} className="relative group border rounded-lg overflow-hidden">
                       <img src={foto.url} alt={foto.omschrijving || ''} className="w-full h-32 object-cover" />
                       <div className="absolute top-1 left-1">
-                        <span className="text-xs bg-black/60 text-white px-1.5 py-0.5 rounded">
-                          {foto.type === 'voor' ? 'Voor' : foto.type === 'na' ? 'Na' : 'Overig'}
-                        </span>
+                        <select
+                          value={foto.type}
+                          onChange={(e) => handleFotoTypeChange(foto.id, e.target.value as WerkbonFoto['type'])}
+                          className="text-xs bg-black/60 text-white px-1.5 py-0.5 rounded border-none cursor-pointer"
+                        >
+                          <option value="voor">Voor</option>
+                          <option value="na">Na</option>
+                          <option value="overig">Overig</option>
+                        </select>
                       </div>
                       <Button
                         variant="ghost" size="icon"
@@ -792,8 +909,10 @@ export function WerkbonDetail() {
                   placeholder="Naam van de ondertekenaar" />
               </div>
               <div className="border rounded-lg p-2">
-                {handtekeningData && !canvasRef.current?.getContext('2d') ? (
-                  <img src={handtekeningData} alt="Handtekening" className="w-full h-40 object-contain" />
+                {handtekeningData && !isEditingSignature ? (
+                  <div>
+                    <img src={handtekeningData} alt="Handtekening" className="w-full h-40 object-contain bg-white rounded" />
+                  </div>
                 ) : (
                   <canvas
                     ref={canvasRef}
@@ -804,15 +923,23 @@ export function WerkbonDetail() {
                     onMouseMove={draw}
                     onMouseUp={endDraw}
                     onMouseLeave={endDraw}
-                    onTouchStart={startDraw}
-                    onTouchMove={draw}
+                    onTouchStart={(e) => { e.preventDefault(); startDraw(e) }}
+                    onTouchMove={(e) => { e.preventDefault(); draw(e) }}
                     onTouchEnd={endDraw}
                   />
                 )}
               </div>
-              <Button variant="outline" size="sm" onClick={clearSignature}>
-                <RotateCcw className="h-3 w-3 mr-1" /> Wissen
-              </Button>
+              <div className="flex gap-2">
+                {handtekeningData && !isEditingSignature ? (
+                  <Button variant="outline" size="sm" onClick={() => { setIsEditingSignature(true); setHandtekeningData(undefined) }}>
+                    <Pen className="h-3 w-3 mr-1" /> Opnieuw tekenen
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={clearSignature}>
+                    <RotateCcw className="h-3 w-3 mr-1" /> Wissen
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

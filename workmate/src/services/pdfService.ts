@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle } from '@/types'
+import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 
 // jspdf-autotable adds lastAutoTable to jsPDF instances
@@ -1253,5 +1253,276 @@ export function generateLeveringsbonPDF(
   }
 
   addFooter(doc, bedrijfsProfiel, docStyle)
+  return doc
+}
+
+// ============ WERKBON PDF ============
+
+export function generateWerkbonPDF(
+  werkbonData: {
+    werkbon_nummer: string
+    datum: string
+    start_tijd?: string
+    eind_tijd?: string
+    pauze_minuten?: number
+    locatie_adres: string
+    locatie_stad?: string
+    locatie_postcode?: string
+    kilometers?: number
+    km_tarief?: number
+    omschrijving?: string
+    klant_handtekening?: string
+    klant_naam_getekend?: string
+    getekend_op?: string
+  },
+  regels: WerkbonRegel[],
+  fotos: WerkbonFoto[],
+  klant: Partial<Klant>,
+  projectNaam: string,
+  bedrijfsProfiel: PdfBedrijfsProfiel,
+  docStyle?: DocumentStyle | null
+): jsPDF {
+  const doc = new jsPDF()
+  const brand = getBrandColor(bedrijfsProfiel, docStyle)
+  const margins = getMargins(docStyle)
+  const headingFont = getHeadingFont(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+  const textColor = getTextColor(docStyle)
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  // Header
+  let y = addHeader(doc, bedrijfsProfiel, 'Werkbon', werkbonData.werkbon_nummer, docStyle)
+
+  // Client info
+  y = addClientInfo(doc, klant, y, docStyle)
+
+  // Werkbon details
+  doc.setFontSize(baseFontSize)
+  doc.setFont(bodyFont, 'normal')
+  doc.setTextColor(...textColor)
+
+  if (projectNaam) {
+    doc.setFont(bodyFont, 'bold')
+    doc.text(`Project: ${projectNaam}`, margins.left, y)
+    doc.setFont(bodyFont, 'normal')
+    y += 6
+  }
+
+  doc.text(`Datum: ${formatDate(werkbonData.datum)}`, margins.left, y)
+  y += 5
+
+  if (werkbonData.start_tijd || werkbonData.eind_tijd) {
+    const tijdParts: string[] = []
+    if (werkbonData.start_tijd) tijdParts.push(`Start: ${werkbonData.start_tijd}`)
+    if (werkbonData.eind_tijd) tijdParts.push(`Eind: ${werkbonData.eind_tijd}`)
+    if (werkbonData.pauze_minuten) tijdParts.push(`Pauze: ${werkbonData.pauze_minuten} min`)
+    doc.text(tijdParts.join('  |  '), margins.left, y)
+    y += 5
+  }
+
+  // Locatie
+  const locatieParts = [werkbonData.locatie_adres, werkbonData.locatie_postcode, werkbonData.locatie_stad].filter(Boolean)
+  if (locatieParts.length > 0) {
+    doc.text(`Locatie: ${locatieParts.join(', ')}`, margins.left, y)
+    y += 5
+  }
+
+  if (werkbonData.kilometers && werkbonData.kilometers > 0) {
+    doc.text(`Kilometers: ${werkbonData.kilometers} km \u00d7 \u20ac${(werkbonData.km_tarief || 0).toFixed(2)} = ${formatCurrency(werkbonData.kilometers * (werkbonData.km_tarief || 0))}`, margins.left, y)
+    y += 5
+  }
+
+  y += 5
+
+  // Omschrijving
+  if (werkbonData.omschrijving) {
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+    doc.text('Werkzaamheden:', margins.left, y)
+    y += 6
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
+    doc.setFontSize(baseFontSize - 1)
+    const splitOmschr = doc.splitTextToSize(werkbonData.omschrijving, pageWidth - margins.left - margins.right)
+    doc.text(splitOmschr, margins.left, y)
+    y += splitOmschr.length * 5 + 5
+    doc.setFontSize(baseFontSize)
+  }
+
+  // Regels tabel
+  if (regels.length > 0) {
+    const tableBody = regels.map((regel, index) => {
+      if (regel.type === 'arbeid') {
+        return [
+          (index + 1).toString(),
+          regel.omschrijving,
+          'Arbeid',
+          `${regel.uren || 0} uur`,
+          formatCurrency(regel.uurtarief || 0),
+          formatCurrency(regel.totaal),
+        ]
+      }
+      return [
+        (index + 1).toString(),
+        regel.omschrijving,
+        regel.type === 'materiaal' ? 'Materiaal' : 'Overig',
+        `${regel.aantal || 0} ${regel.eenheid || 'stuks'}`,
+        formatCurrency(regel.prijs_per_eenheid || 0),
+        formatCurrency(regel.totaal),
+      ]
+    })
+
+    const tableStyles = getAutoTableStyles(brand, docStyle)
+
+    autoTable(doc, {
+      startY: y,
+      head: [['#', 'Omschrijving', 'Type', 'Hoeveelheid', 'Prijs', 'Totaal']],
+      body: tableBody,
+      theme: tableStyles.theme,
+      headStyles: tableStyles.headStyles,
+      bodyStyles: tableStyles.bodyStyles,
+      alternateRowStyles: tableStyles.alternateRowStyles,
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 22, halign: 'center' },
+        3: { cellWidth: 28, halign: 'center' },
+        4: { cellWidth: 25, halign: 'right' },
+        5: { cellWidth: 28, halign: 'right' },
+      },
+      margin: { left: margins.left, right: margins.right },
+    })
+
+    y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || y + 20
+    y += 8
+
+    // Totalen
+    const subtotaal = regels.filter((r) => r.factureerbaar).reduce((sum, r) => sum + r.totaal, 0)
+    const kmKosten = (werkbonData.kilometers || 0) * (werkbonData.km_tarief || 0)
+    const totaalExcl = Math.round((subtotaal + kmKosten) * 100) / 100
+    const btw = Math.round(totaalExcl * 0.21 * 100) / 100
+    const totaalIncl = Math.round((totaalExcl + btw) * 100) / 100
+
+    const totalsX = pageWidth - margins.right - 50
+
+    doc.setFontSize(baseFontSize)
+    doc.setTextColor(...textColor)
+    doc.setFont(bodyFont, 'normal')
+    doc.text('Subtotaal:', totalsX, y)
+    doc.text(formatCurrency(subtotaal), pageWidth - margins.right, y, { align: 'right' })
+    y += 6
+
+    if (kmKosten > 0) {
+      doc.text('Kilometers:', totalsX, y)
+      doc.text(formatCurrency(kmKosten), pageWidth - margins.right, y, { align: 'right' })
+      y += 6
+    }
+
+    doc.text('BTW (21%):', totalsX, y)
+    doc.text(formatCurrency(btw), pageWidth - margins.right, y, { align: 'right' })
+    y += 6
+
+    doc.setDrawColor(...brand)
+    doc.setLineWidth(0.5)
+    doc.line(totalsX, y - 2, pageWidth - margins.right, y - 2)
+
+    doc.setFont(headingFont, 'bold')
+    doc.setFontSize(baseFontSize + 2)
+    doc.setTextColor(...brand)
+    doc.text('Totaal:', totalsX, y + 4)
+    doc.text(formatCurrency(totaalIncl), pageWidth - margins.right, y + 4, { align: 'right' })
+    y += 15
+  }
+
+  // Foto's
+  const validFotos = fotos.filter((f) => f.url && f.url.startsWith('data:'))
+  if (validFotos.length > 0) {
+    if (y > doc.internal.pageSize.getHeight() - 80) {
+      doc.addPage()
+      addBriefpapierBackground(doc, docStyle, doc.getNumberOfPages())
+      y = margins.top
+    }
+
+    doc.setFontSize(baseFontSize)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+    doc.text("Foto's:", margins.left, y)
+    y += 8
+
+    const photoW = 50
+    const photoH = 38
+    const photosPerRow = Math.floor((pageWidth - margins.left - margins.right + 5) / (photoW + 5))
+    let col = 0
+
+    for (const foto of validFotos) {
+      if (y + photoH + 10 > doc.internal.pageSize.getHeight() - margins.bottom) {
+        doc.addPage()
+        addBriefpapierBackground(doc, docStyle, doc.getNumberOfPages())
+        y = margins.top
+        col = 0
+      }
+
+      const x = margins.left + col * (photoW + 5)
+      try {
+        doc.addImage(foto.url, 'JPEG', x, y, photoW, photoH, undefined, 'MEDIUM')
+        doc.setFontSize(7)
+        doc.setFont(bodyFont, 'normal')
+        doc.setTextColor(100, 100, 100)
+        const typeLabel = foto.type === 'voor' ? 'Voor' : foto.type === 'na' ? 'Na' : 'Overig'
+        doc.text(typeLabel, x + photoW / 2, y + photoH + 4, { align: 'center' })
+      } catch {
+        // Photo failed to load
+      }
+
+      col++
+      if (col >= photosPerRow) {
+        col = 0
+        y += photoH + 8
+      }
+    }
+    if (col > 0) y += photoH + 8
+    y += 5
+  }
+
+  // Handtekening
+  if (werkbonData.klant_handtekening || werkbonData.klant_naam_getekend) {
+    if (y > doc.internal.pageSize.getHeight() - 60) {
+      doc.addPage()
+      addBriefpapierBackground(doc, docStyle, doc.getNumberOfPages())
+      y = margins.top
+    }
+
+    doc.setFontSize(baseFontSize)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+    doc.text('Handtekening klant:', margins.left, y)
+    y += 8
+
+    if (werkbonData.klant_handtekening) {
+      try {
+        doc.addImage(werkbonData.klant_handtekening, 'PNG', margins.left, y, 60, 30)
+        y += 33
+      } catch {
+        doc.setDrawColor(200, 200, 200)
+        doc.rect(margins.left, y, 80, 30)
+        y += 33
+      }
+    }
+
+    doc.setFontSize(baseFontSize - 1)
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
+    if (werkbonData.klant_naam_getekend) {
+      doc.text(`Naam: ${werkbonData.klant_naam_getekend}`, margins.left, y)
+      y += 5
+    }
+    if (werkbonData.getekend_op) {
+      doc.text(`Datum: ${formatDate(werkbonData.getekend_op)}`, margins.left, y)
+    }
+  }
+
+  addFooter(doc, bedrijfsProfiel, docStyle)
+
   return doc
 }

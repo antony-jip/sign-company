@@ -5,8 +5,8 @@ import {
   Mail, Calendar, PiggyBank, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare,
   Receipt, BarChart3, Clock, Wrench, UsersRound,
-  ClipboardCheck, Truck, ShoppingCart, Warehouse,
-  Briefcase, UserPlus, CreditCard, Files, Newspaper,
+  ClipboardCheck, ShoppingCart, Warehouse,
+  Briefcase, UserPlus, Files, Newspaper,
   Upload, Bot, Calculator, TrendingUp, PackageCheck,
   CalendarCheck,
   type LucideIcon
@@ -76,8 +76,6 @@ const navSections: NavSection[] = [
     section: 'Financieel',
     items: [
       { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
-      { label: 'Uitgaven', icon: CreditCard, path: '/uitgaven' },
-      { label: 'Leveranciers', icon: Truck, path: '/leveranciers' },
       { label: 'Forecast', icon: TrendingUp, path: '/forecast' },
     ],
   },
