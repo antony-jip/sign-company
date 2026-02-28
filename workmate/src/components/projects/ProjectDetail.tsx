@@ -88,6 +88,7 @@ import {
   deleteProjectToewijzing,
   getWerkbonnenByProject,
   getUitgavenByProject,
+  getFactuur,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -97,7 +98,7 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Uitgave } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Uitgave, Factuur } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
@@ -181,6 +182,7 @@ export function ProjectDetail() {
   const [projectTaken, setProjectTaken] = useState<Taak[]>([])
   const [projectDocumenten, setProjectDocumenten] = useState<Document[]>([])
   const [projectOffertes, setProjectOffertes] = useState<Offerte[]>([])
+  const [offerteFactuurMap, setOfferteFactuurMap] = useState<Record<string, Factuur>>({})
   const [goedkeuringen, setGoedkeuringen] = useState<TekeningGoedkeuring[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
@@ -263,6 +265,22 @@ export function ProjectDetail() {
       toast.error('Kon briefing niet opslaan')
     } finally {
       setBriefingSaving(false)
+    }
+  }
+
+  const handleOfferteStatusChange = async (offerteId: string, newStatus: Offerte['status']) => {
+    try {
+      await updateOfferte(offerteId, { status: newStatus })
+      setProjectOffertes((prev) =>
+        prev.map((o) => (o.id === offerteId ? { ...o, status: newStatus } : o))
+      )
+      const statusLabels: Record<string, string> = {
+        concept: 'Concept', verzonden: 'Verzonden', bekeken: 'Bekeken',
+        goedgekeurd: 'Goedgekeurd', afgewezen: 'Afgewezen', verlopen: 'Verlopen', gefactureerd: 'Gefactureerd',
+      }
+      toast.success(`Status gewijzigd naar ${statusLabels[newStatus] || newStatus}`)
+    } catch {
+      toast.error('Kon status niet wijzigen')
     }
   }
 
@@ -445,6 +463,23 @@ export function ProjectDetail() {
           setProjectToewijzingen(toewijzingenData || [])
           setProjectWerkbonnen(werkbonnenData || [])
           setProjectUitgaven(uitgavenData || [])
+        }
+
+        // Fetch linked facturen for gefactureerde offertes
+        const gefactuurdeOffertes = offertesData.filter((o: Offerte) => o.geconverteerd_naar_factuur_id)
+        if (gefactuurdeOffertes.length > 0 && !cancelled) {
+          Promise.all(
+            gefactuurdeOffertes.map((o: Offerte) =>
+              getFactuur(o.geconverteerd_naar_factuur_id!).then((f) => [o.id, f] as const).catch(() => null)
+            )
+          ).then((results) => {
+            if (cancelled) return
+            const map: Record<string, Factuur> = {}
+            for (const r of results) {
+              if (r && r[1]) map[r[0]] = r[1]
+            }
+            setOfferteFactuurMap(map)
+          })
         }
 
         // Fetch klant data
@@ -1493,91 +1528,131 @@ export function ProjectDetail() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {projectOffertes.map((offerte) => (
-                    <div
-                      key={offerte.id}
-                      className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-foreground truncate">{offerte.titel}</p>
-                        <Badge className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0 flex-shrink-0`}>
-                          {offerte.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
-                        <span className="text-sm font-bold text-foreground">{formatCurrency(offerte.totaal)}</span>
-                      </div>
-                      <div className="flex items-center gap-1 pt-0.5 flex-wrap">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs"
-                          onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          Bekijk
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs"
-                          onClick={() => setEditOfferteId(offerte.id)}
-                        >
-                          <Pencil className="h-3 w-3 mr-1" />
-                          Bewerk
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs"
-                          onClick={() => {
-                            setEmailOfferteId(offerte.id)
-                            setEmailOnderwerp(`Offerte ${offerte.nummer} - ${offerte.titel}`)
-                            setEmailBericht(
-                              `Beste ${project.klant_naam || 'klant'},\n\nHierbij ontvangt u onze offerte "${offerte.titel}" (${offerte.nummer}) ter waarde van ${formatCurrency(offerte.totaal)}.\n\nDeze offerte is geldig tot ${formatDate(offerte.geldig_tot)}.\n\nMocht u vragen hebben, neem dan gerust contact met ons op.\n\nMet vriendelijke groet`
-                            )
-                            setEmailOfferteOpen(true)
-                          }}
-                        >
-                          <Mail className="h-3 w-3 mr-1" />
-                          Mail
-                        </Button>
-                      </div>
-                      {/* Factureren row */}
-                      {offerte.status === 'goedgekeurd' && !offerte.geconverteerd_naar_factuur_id && (
-                        <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20 rounded-md px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800 mt-1">
-                          <div className="flex items-center gap-1.5">
-                            <CreditCard className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                            <span className="text-xs text-emerald-700 dark:text-emerald-300">Klaar om te factureren</span>
-                          </div>
+                  {projectOffertes.map((offerte) => {
+                    const linkedFactuur = offerteFactuurMap[offerte.id]
+                    return (
+                      <div
+                        key={offerte.id}
+                        className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium text-foreground truncate">{offerte.titel}</p>
+                          {/* Quick status change */}
+                          {offerte.status !== 'gefactureerd' ? (
+                            <select
+                              value={offerte.status}
+                              onChange={(e) => handleOfferteStatusChange(offerte.id, e.target.value as Offerte['status'])}
+                              className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0.5 rounded-full border-0 cursor-pointer appearance-none font-medium focus:ring-1 focus:ring-primary/30 focus:outline-none`}
+                            >
+                              <option value="concept">Concept</option>
+                              <option value="verzonden">Verzonden</option>
+                              <option value="bekeken">Bekeken</option>
+                              <option value="goedgekeurd">Goedgekeurd</option>
+                              <option value="afgewezen">Afgewezen</option>
+                              <option value="verlopen">Verlopen</option>
+                            </select>
+                          ) : (
+                            <Badge className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0 flex-shrink-0`}>
+                              {offerte.status}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
+                          <span className="text-sm font-bold text-foreground">{formatCurrency(offerte.totaal)}</span>
+                        </div>
+                        <div className="flex items-center gap-1 pt-0.5 flex-wrap">
                           <Button
+                            variant="ghost"
                             size="sm"
-                            className="h-6 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-                            onClick={() => handleCreateFactuurFromOfferte(offerte)}
+                            className="h-6 px-2 text-xs"
+                            onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
                           >
-                            Factureren &rarr;
+                            <Eye className="h-3 w-3 mr-1" />
+                            Bekijk
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => setEditOfferteId(offerte.id)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Bewerk
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                              setEmailOfferteId(offerte.id)
+                              setEmailOnderwerp(`Offerte ${offerte.nummer} - ${offerte.titel}`)
+                              setEmailBericht(
+                                `Beste ${project.klant_naam || 'klant'},\n\nHierbij ontvangt u onze offerte "${offerte.titel}" (${offerte.nummer}) ter waarde van ${formatCurrency(offerte.totaal)}.\n\nDeze offerte is geldig tot ${formatDate(offerte.geldig_tot)}.\n\nMocht u vragen hebben, neem dan gerust contact met ons op.\n\nMet vriendelijke groet`
+                              )
+                              setEmailOfferteOpen(true)
+                            }}
+                          >
+                            <Mail className="h-3 w-3 mr-1" />
+                            Mail
                           </Button>
                         </div>
-                      )}
-                      {offerte.geconverteerd_naar_factuur_id && (
-                        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-md px-2.5 py-1.5 border border-blue-200 dark:border-blue-800 mt-1">
-                          <div className="flex items-center gap-1.5">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                            <span className="text-xs text-blue-700 dark:text-blue-300">Gefactureerd</span>
+                        {/* Factureren row */}
+                        {offerte.status === 'goedgekeurd' && !offerte.geconverteerd_naar_factuur_id && (
+                          <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20 rounded-md px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800 mt-1">
+                            <div className="flex items-center gap-1.5">
+                              <CreditCard className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                              <span className="text-xs text-emerald-700 dark:text-emerald-300">Klaar om te factureren</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="h-6 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                              onClick={() => handleCreateFactuurFromOfferte(offerte)}
+                            >
+                              Factureren &rarr;
+                            </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 px-2.5 text-xs text-blue-700 border-blue-200 hover:bg-blue-100 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/30"
-                            onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}/bewerken`)}
-                          >
-                            Bekijk factuur
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        )}
+                        {offerte.geconverteerd_naar_factuur_id && (
+                          <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-md px-2.5 py-1.5 border border-blue-200 dark:border-blue-800 mt-1">
+                            <div className="flex items-center gap-1.5">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                              <span className="text-xs text-blue-700 dark:text-blue-300">
+                                {linkedFactuur ? (
+                                  <>
+                                    {linkedFactuur.nummer}
+                                    <span className="mx-1">&middot;</span>
+                                    <span className={
+                                      linkedFactuur.status === 'betaald' ? 'text-emerald-600 dark:text-emerald-400 font-medium' :
+                                      linkedFactuur.status === 'vervallen' ? 'text-red-600 dark:text-red-400 font-medium' :
+                                      ''
+                                    }>
+                                      {linkedFactuur.status === 'betaald' ? 'Betaald' :
+                                       linkedFactuur.status === 'verzonden' ? 'Verzonden' :
+                                       linkedFactuur.status === 'concept' ? 'Concept' :
+                                       linkedFactuur.status === 'vervallen' ? 'Vervallen' :
+                                       linkedFactuur.status === 'gecrediteerd' ? 'Gecrediteerd' :
+                                       linkedFactuur.status}
+                                    </span>
+                                    <span className="mx-1">&middot;</span>
+                                    {formatCurrency(linkedFactuur.totaal)}
+                                  </>
+                                ) : 'Gefactureerd'}
+                              </span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 px-2.5 text-xs text-blue-700 border-blue-200 hover:bg-blue-100 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/30"
+                              onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}/bewerken`)}
+                            >
+                              Bekijk factuur
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </CardContent>

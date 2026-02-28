@@ -55,11 +55,17 @@ export function WorkflowWidget() {
           (o: Offerte) => !gefactuurdeOfferteIds.has(o.id)
         )
         for (const offerte of teFactureren) {
+          const factuurParams = new URLSearchParams({
+            offerte_id: offerte.id,
+            klant_id: offerte.klant_id,
+          })
+          if (offerte.titel) factuurParams.set('titel', offerte.titel)
+          if (offerte.project_id) factuurParams.set('project_id', offerte.project_id)
           workflowItems.push({
             type: 'factureer',
             title: `${offerte.nummer} - ${offerte.titel}`,
             subtitle: `${offerte.klant_naam || 'Klant'} \u2022 ${formatCurrency(offerte.totaal)}`,
-            link: `/facturen?convert_offerte=${offerte.id}`,
+            link: `/facturen/nieuw?${factuurParams.toString()}`,
             urgency: 'medium',
           })
         }

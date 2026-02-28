@@ -71,6 +71,8 @@ import {
   getOffertes,
   getOfferteItems,
   updateOfferte,
+  updateProject,
+  getOffertesByProject,
   generateBetaalToken,
   getHerinneringTemplates,
 } from '@/services/supabaseService'
@@ -544,9 +546,45 @@ export function FactuurEditor() {
           } catch (err) {
             logger.error('Kon offerte status niet bijwerken:', err)
           }
+
+          // Update project status als alle offertes nu gefactureerd zijn
+          if (projectId) {
+            try {
+              const projectOffertes = await getOffertesByProject(projectId)
+              const alleGefactureerd = projectOffertes.length > 0 && projectOffertes.every(
+                (o) => o.id === offerteId ? true : o.status === 'gefactureerd'
+              )
+              if (alleGefactureerd) {
+                await updateProject(projectId, { status: 'afgerond' })
+                toast.info('Project status bijgewerkt naar afgerond')
+              }
+            } catch (err) {
+              logger.error('Kon project status niet bijwerken:', err)
+            }
+          }
         }
 
-        toast.success(`Factuur ${nummer} aangemaakt`)
+        // Check of er nog meer offertes te factureren zijn
+        const nextOfferte = teFacturerenOffertes.find((o) => o.id !== offerteId)
+        if (nextOfferte) {
+          toast.success(`Factuur ${nummer} aangemaakt`, {
+            action: {
+              label: `Volgende: ${nextOfferte.nummer}`,
+              onClick: () => {
+                const params = new URLSearchParams({
+                  offerte_id: nextOfferte.id,
+                  klant_id: nextOfferte.klant_id,
+                })
+                if (nextOfferte.titel) params.set('titel', nextOfferte.titel)
+                if (nextOfferte.project_id) params.set('project_id', nextOfferte.project_id)
+                navigate(`/facturen/nieuw?${params.toString()}`)
+              },
+            },
+            duration: 8000,
+          })
+        } else {
+          toast.success(`Factuur ${nummer} aangemaakt`)
+        }
         navigate(`/facturen/${newFactuur.id}`)
         return
       }

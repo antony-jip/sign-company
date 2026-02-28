@@ -10,8 +10,9 @@ import { PriorityTasks } from './PriorityTasks'
 import { CalendarMiniWidget } from './CalendarMiniWidget'
 import { SalesFollowUpWidget } from './SalesFollowUpWidget'
 import { WorkflowWidget } from './WorkflowWidget'
+import { TeFacturerenWidget } from './TeFacturerenWidget'
 import { SalesForecastWidget } from './SalesForecastWidget'
-import { Wrench, FileText, FolderKanban } from 'lucide-react'
+import { Wrench, FileText, FolderKanban, Receipt } from 'lucide-react'
 import { getMontageAfspraken, getOffertes, getProjecten } from '@/services/supabaseService'
 import type { MontageAfspraak, Offerte, Project } from '@/types'
 import { isToday } from 'date-fns'
@@ -21,7 +22,7 @@ export function WorkmateDashboard() {
   const { profile, toonFollowUpIndicatoren } = useAppSettings()
   const userName = profile?.voornaam || user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
 
-  const [heroCounts, setHeroCounts] = React.useState({ montagesVandaag: 0, openOffertes: 0, actieveProjecten: 0 })
+  const [heroCounts, setHeroCounts] = React.useState({ montagesVandaag: 0, openOffertes: 0, actieveProjecten: 0, teFactureren: 0 })
 
   React.useEffect(() => {
     let cancelled = false
@@ -35,7 +36,8 @@ export function WorkmateDashboard() {
           ['verzonden', 'bekeken'].includes(o.status)
         ).length
         const actieveProjecten = projecten.filter((p) => p.status === 'actief').length
-        setHeroCounts({ montagesVandaag, openOffertes, actieveProjecten })
+        const teFactureren = offertes.filter((o) => o.status === 'goedgekeurd').length
+        setHeroCounts({ montagesVandaag, openOffertes, actieveProjecten, teFactureren })
       })
       .catch(() => {})
     return () => { cancelled = true }
@@ -95,6 +97,12 @@ export function WorkmateDashboard() {
                   {heroCounts.actieveProjecten} actie{heroCounts.actieveProjecten !== 1 ? 've' : 'f'} project{heroCounts.actieveProjecten !== 1 ? 'en' : ''}
                 </div>
               )}
+              {heroCounts.teFactureren > 0 && (
+                <div className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 px-2.5 py-1.5 rounded-full">
+                  <Receipt className="w-3 h-3" />
+                  {heroCounts.teFactureren} te factureren
+                </div>
+              )}
             </div>
           </div>
           <WeatherWidget />
@@ -115,6 +123,7 @@ export function WorkmateDashboard() {
 
         {/* Right column — sales & actions */}
         <div className="space-y-5">
+          <TeFacturerenWidget />
           <WorkflowWidget />
           {toonFollowUpIndicatoren && <SalesFollowUpWidget />}
           <SalesForecastWidget />
