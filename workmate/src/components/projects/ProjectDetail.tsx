@@ -1543,18 +1543,39 @@ export function ProjectDetail() {
                           <Mail className="h-3 w-3 mr-1" />
                           Mail
                         </Button>
-                        {(offerte.status === 'goedgekeurd' || (project.status === 'te-factureren' && offerte.status !== 'gefactureerd')) && (
+                      </div>
+                      {/* Factureren row */}
+                      {offerte.status === 'goedgekeurd' && !offerte.geconverteerd_naar_factuur_id && (
+                        <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20 rounded-md px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800 mt-1">
+                          <div className="flex items-center gap-1.5">
+                            <CreditCard className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-xs text-emerald-700 dark:text-emerald-300">Klaar om te factureren</span>
+                          </div>
                           <Button
-                            variant="ghost"
                             size="sm"
-                            className="h-6 px-2 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
+                            className="h-6 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
                             onClick={() => handleCreateFactuurFromOfferte(offerte)}
                           >
-                            <CreditCard className="h-3 w-3 mr-1" />
-                            Factuur
+                            Factureren &rarr;
                           </Button>
-                        )}
-                      </div>
+                        </div>
+                      )}
+                      {offerte.geconverteerd_naar_factuur_id && (
+                        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-md px-2.5 py-1.5 border border-blue-200 dark:border-blue-800 mt-1">
+                          <div className="flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                            <span className="text-xs text-blue-700 dark:text-blue-300">Gefactureerd</span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2.5 text-xs text-blue-700 border-blue-200 hover:bg-blue-100 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/30"
+                            onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}/bewerken`)}
+                          >
+                            Bekijk factuur
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
