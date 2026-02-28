@@ -2,12 +2,16 @@ export interface Profile {
   id: string;
   voornaam: string;
   achternaam: string;
+  functie?: string;
   email: string;
   telefoon: string;
   avatar_url: string;
   logo_url: string;
   bedrijfsnaam: string;
   bedrijfs_adres: string;
+  bedrijfs_telefoon?: string;
+  bedrijfs_email?: string;
+  bedrijfs_website?: string;
   kvk_nummer: string;
   btw_nummer: string;
   iban?: string;

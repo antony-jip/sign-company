@@ -55,6 +55,13 @@ import {
   ExternalLink,
   FileText,
   Type,
+  Users,
+  Receipt,
+  Globe,
+  Phone,
+  CreditCard,
+  Briefcase,
+  ArrowRight,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -64,6 +71,7 @@ import { usePalette, PALETTES } from '@/contexts/PaletteContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
+import { useNavigate } from 'react-router-dom'
 import type { AppSettings, PipelineStap, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel } from '@/types'
 import {
   getCalculatieProducten,
@@ -143,6 +151,7 @@ function applyFontSize(size: FontSize) {
 const settingsTabs = [
   { id: 'profiel', label: 'Profiel', icon: User, description: 'Uw persoonlijke gegevens' },
   { id: 'bedrijf', label: 'Bedrijf', icon: Building2, description: 'Bedrijfsinformatie en logo' },
+  { id: 'facturatie', label: 'Facturatie', icon: Receipt, description: 'Factuur prefix, betaaltermijn en teksten' },
   { id: 'huisstijl', label: 'Huisstijl', icon: FileText, description: 'Document styling en briefpapier' },
   { id: 'calculatie', label: 'Calculatie', icon: Calculator, description: 'Producten, marges en eenheden' },
   { id: 'aanpassingen', label: 'Aanpassingen', icon: Sliders, description: 'Pipeline, statussen en workflows' },
@@ -156,6 +165,7 @@ function renderTabContent(tabId: string) {
   switch (tabId) {
     case 'profiel': return <ProfielTab />
     case 'bedrijf': return <BedrijfTab />
+    case 'facturatie': return <FacturatieTab />
     case 'huisstijl': return <HuisstijlTab />
     case 'calculatie': return <CalculatieTab />
     case 'aanpassingen': return <AanpassingenTab />
@@ -169,6 +179,7 @@ function renderTabContent(tabId: string) {
 
 export function SettingsLayout() {
   const [activeTab, setActiveTab] = useState('profiel')
+  const navigate = useNavigate()
 
   return (
     <div className="space-y-6">
@@ -218,6 +229,20 @@ export function SettingsLayout() {
                   </button>
                 )
               })}
+
+              {/* Separator + Team link */}
+              <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+              <button
+                onClick={() => navigate('/team')}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+              >
+                <Users className="w-4 h-4 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm block truncate font-medium">Teamleden</span>
+                  <span className="text-[11px] block truncate text-gray-400 dark:text-gray-500">Medewerkers, rollen en verlof</span>
+                </div>
+                <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
+              </button>
             </div>
           </Card>
         </nav>
@@ -1732,6 +1757,7 @@ function ProfielTab() {
   const { refreshProfile } = useAppSettings()
   const [voornaam, setVoornaam] = useState('')
   const [achternaam, setAchternaam] = useState('')
+  const [functie, setFunctie] = useState('')
   const [email, setEmail] = useState('')
   const [telefoon, setTelefoon] = useState('')
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -1747,6 +1773,7 @@ function ProfielTab() {
       if (profile) {
         setVoornaam(profile.voornaam || '')
         setAchternaam(profile.achternaam || '')
+        setFunctie(profile.functie || '')
         setTelefoon(profile.telefoon || '')
         setEmail(profile.email || user.email || '')
         if (profile.avatar_url) {
@@ -1795,6 +1822,7 @@ function ProfielTab() {
       await updateProfile(user.id, {
         voornaam,
         achternaam,
+        functie,
         telefoon,
       })
       await refreshProfile()
@@ -1871,6 +1899,15 @@ function ProfielTab() {
             />
           </div>
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="functie">Functie</Label>
+          <Input
+            id="functie"
+            value={functie}
+            onChange={(e) => setFunctie(e.target.value)}
+            placeholder="Bijv. Eigenaar, Projectleider, Verkoper"
+          />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -1906,8 +1943,12 @@ function BedrijfTab() {
   const [adres, setAdres] = useState('')
   const [postcode, setPostcode] = useState('')
   const [stad, setStad] = useState('')
+  const [bedrijfsTelefoon, setBedrijfsTelefoon] = useState('')
+  const [bedrijfsEmail, setBedrijfsEmail] = useState('')
+  const [bedrijfsWebsite, setBedrijfsWebsite] = useState('')
   const [kvkNummer, setKvkNummer] = useState('')
   const [btwNummer, setBtwNummer] = useState('')
+  const [iban, setIban] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -1920,8 +1961,12 @@ function BedrijfTab() {
       const profile = await getProfile(user.id)
       if (profile) {
         setBedrijfsnaam(profile.bedrijfsnaam || '')
+        setBedrijfsTelefoon(profile.bedrijfs_telefoon || '')
+        setBedrijfsEmail(profile.bedrijfs_email || '')
+        setBedrijfsWebsite(profile.bedrijfs_website || '')
         setKvkNummer(profile.kvk_nummer || '')
         setBtwNummer(profile.btw_nummer || '')
+        setIban(profile.iban || '')
         if (profile.logo_url) setLogoPreview(profile.logo_url)
         // Parse bedrijfs_adres back into components if stored as combined string
         if (profile.bedrijfs_adres) {
@@ -1974,8 +2019,12 @@ function BedrijfTab() {
       await updateProfile(user.id, {
         bedrijfsnaam,
         bedrijfs_adres: bedrijfsAdres,
+        bedrijfs_telefoon: bedrijfsTelefoon,
+        bedrijfs_email: bedrijfsEmail,
+        bedrijfs_website: bedrijfsWebsite,
         kvk_nummer: kvkNummer,
         btw_nummer: btwNummer,
+        iban,
         ...(logoPreview ? { logo_url: logoPreview } : {}),
       })
       await refreshProfile()
@@ -2069,22 +2118,86 @@ function BedrijfTab() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="kvk">KvK Nummer</Label>
-            <Input
-              id="kvk"
-              value={kvkNummer}
-              onChange={(e) => setKvkNummer(e.target.value)}
-            />
+        <Separator />
+
+        {/* Contactgegevens */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <Phone className="w-4 h-4" />
+            Contactgegevens
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="bedrijfs-telefoon">Telefoon</Label>
+              <Input
+                id="bedrijfs-telefoon"
+                type="tel"
+                value={bedrijfsTelefoon}
+                onChange={(e) => setBedrijfsTelefoon(e.target.value)}
+                placeholder="+31 (0)20 1234567"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bedrijfs-email">E-mail</Label>
+              <Input
+                id="bedrijfs-email"
+                type="email"
+                value={bedrijfsEmail}
+                onChange={(e) => setBedrijfsEmail(e.target.value)}
+                placeholder="info@bedrijf.nl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bedrijfs-website">Website</Label>
+              <Input
+                id="bedrijfs-website"
+                value={bedrijfsWebsite}
+                onChange={(e) => setBedrijfsWebsite(e.target.value)}
+                placeholder="www.bedrijf.nl"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="btw">BTW Nummer</Label>
-            <Input
-              id="btw"
-              value={btwNummer}
-              onChange={(e) => setBtwNummer(e.target.value)}
-            />
+        </div>
+
+        <Separator />
+
+        {/* Juridisch & Financieel */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <CreditCard className="w-4 h-4" />
+            Juridisch &amp; Financieel
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            Deze gegevens worden weergegeven op facturen en offertes
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="kvk">KvK Nummer</Label>
+              <Input
+                id="kvk"
+                value={kvkNummer}
+                onChange={(e) => setKvkNummer(e.target.value)}
+                placeholder="12345678"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="btw">BTW Nummer</Label>
+              <Input
+                id="btw"
+                value={btwNummer}
+                onChange={(e) => setBtwNummer(e.target.value)}
+                placeholder="NL123456789B01"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="iban">IBAN</Label>
+              <Input
+                id="iban"
+                value={iban}
+                onChange={(e) => setIban(e.target.value)}
+                placeholder="NL00 BANK 0123 4567 89"
+              />
+            </div>
           </div>
         </div>
 
@@ -2095,6 +2208,180 @@ function BedrijfTab() {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+// ============ FACTURATIE TAB ============
+
+function FacturatieTab() {
+  const { user } = useAuth()
+  const { refreshSettings } = useAppSettings()
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const [factuurPrefix, setFactuurPrefix] = useState('FAC')
+  const [betaaltermijn, setBetaaltermijn] = useState('30')
+  const [voorwaarden, setVoorwaarden] = useState('')
+  const [introTekst, setIntroTekst] = useState('')
+  const [outroTekst, setOutroTekst] = useState('')
+
+  const loadSettings = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      setIsLoading(true)
+      const data = await getAppSettings(user.id)
+      setFactuurPrefix(data.factuur_prefix || 'FAC')
+      setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
+      setVoorwaarden(data.factuur_voorwaarden || '')
+      setIntroTekst(data.factuur_intro_tekst || '')
+      setOutroTekst(data.factuur_outro_tekst || '')
+    } catch (err) {
+      logger.error('Fout bij laden factuurinstellingen:', err)
+      toast.error('Kon factuurinstellingen niet laden')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  const handleSave = async () => {
+    if (!user?.id) return
+    try {
+      setIsSaving(true)
+      await updateAppSettings(user.id, {
+        factuur_prefix: factuurPrefix,
+        factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
+        factuur_voorwaarden: voorwaarden,
+        factuur_intro_tekst: introTekst,
+        factuur_outro_tekst: outroTekst,
+      })
+      await refreshSettings()
+      toast.success('Factuurinstellingen opgeslagen')
+    } catch (err) {
+      logger.error('Fout bij opslaan factuurinstellingen:', err)
+      toast.error('Kon factuurinstellingen niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center text-gray-500 dark:text-gray-400">
+          Factuurinstellingen laden...
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="w-5 h-5" />
+            Factuurnummering
+          </CardTitle>
+          <CardDescription>
+            Stel het prefix en de nummering van facturen in
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="factuur-prefix">Factuur prefix</Label>
+              <Input
+                id="factuur-prefix"
+                value={factuurPrefix}
+                onChange={(e) => setFactuurPrefix(e.target.value)}
+                placeholder="FAC"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Voorbeeld: {factuurPrefix}-2026-0001
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="betaaltermijn">Betaaltermijn (dagen)</Label>
+              <Input
+                id="betaaltermijn"
+                type="number"
+                value={betaaltermijn}
+                onChange={(e) => setBetaaltermijn(e.target.value)}
+                min="1"
+                max="365"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Standaard aantal dagen dat de klant heeft om te betalen
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Standaard Teksten
+          </CardTitle>
+          <CardDescription>
+            Teksten die automatisch op elke factuur verschijnen
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="intro-tekst">Introductietekst</Label>
+            <Textarea
+              id="intro-tekst"
+              value={introTekst}
+              onChange={(e) => setIntroTekst(e.target.value)}
+              placeholder="Bijv. Hierbij ontvangt u de factuur voor de geleverde werkzaamheden."
+              rows={2}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Wordt bovenaan de factuur weergegeven, onder de klantgegevens
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="outro-tekst">Afsluittekst</Label>
+            <Textarea
+              id="outro-tekst"
+              value={outroTekst}
+              onChange={(e) => setOutroTekst(e.target.value)}
+              placeholder="Bijv. Wij verzoeken u vriendelijk het bedrag binnen de gestelde termijn over te maken."
+              rows={2}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Wordt onderaan de factuurregels weergegeven
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="voorwaarden">Betalingsvoorwaarden</Label>
+            <Textarea
+              id="voorwaarden"
+              value={voorwaarden}
+              onChange={(e) => setVoorwaarden(e.target.value)}
+              placeholder="Bijv. Op al onze overeenkomsten zijn onze algemene voorwaarden van toepassing, gedeponeerd bij de KvK."
+              rows={3}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Kleine print onderaan de factuur met juridische voorwaarden
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={isSaving}>
+          <Save className="w-4 h-4 mr-2" />
+          {isSaving ? 'Opslaan...' : 'Instellingen opslaan'}
+        </Button>
+      </div>
+    </div>
   )
 }
 
