@@ -16,6 +16,21 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   ArrowLeft,
   Save,
   Download,
@@ -25,18 +40,22 @@ import {
   Building2,
   Plus,
   Trash2,
-  Calendar,
-  Hash,
   Euro,
   Loader2,
   User,
   Mail,
   Phone,
   MapPin,
-  Eye,
   Receipt,
   X,
   Copy,
+  MoreHorizontal,
+  CreditCard,
+  Bell,
+  CheckCircle2,
+  AlertTriangle,
+  MinusCircle,
+  FileDown,
 } from 'lucide-react'
 import {
   getKlanten,
@@ -46,18 +65,20 @@ import {
   createFactuur,
   createFactuurItem,
   updateFactuur,
+  deleteFactuur,
   getOffertes,
   getOfferteItems,
   generateBetaalToken,
+  getHerinneringTemplates,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem } from '@/types'
+import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
-import { factuurVerzendTemplate } from '@/services/emailTemplateService'
+import { factuurVerzendTemplate, factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
@@ -128,6 +149,26 @@ function generateFactuurNummer(prefix: string, existing: { nummer: string }[]): 
   return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
+function generateTypedNummer(existing: { nummer: string }[], prefix: string): string {
+  const year = new Date().getFullYear()
+  const fullPrefix = `${prefix}-${year}-`
+  const maxNum = existing
+    .filter((f) => f.nummer.startsWith(fullPrefix))
+    .reduce((max, f) => {
+      const num = parseInt(f.nummer.replace(fullPrefix, ''), 10)
+      return isNaN(num) ? max : Math.max(max, num)
+    }, 0)
+  return `${fullPrefix}${String(maxNum + 1).padStart(3, '0')}`
+}
+
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  concept: { label: 'Concept', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
+  verzonden: { label: 'Verzonden', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+  betaald: { label: 'Betaald', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+  vervallen: { label: 'Vervallen', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+  gecrediteerd: { label: 'Gecrediteerd', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
+}
+
 // ============ MAIN COMPONENT ============
 
 export function FactuurEditor() {
@@ -153,6 +194,7 @@ export function FactuurEditor() {
   // ============ STATE ============
 
   const [klanten, setKlanten] = useState<Klant[]>([])
+  const [allFacturen, setAllFacturen] = useState<Factuur[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -183,6 +225,17 @@ export function FactuurEditor() {
   const [outroTekst, setOutroTekst] = useState(factuurOutroTekst)
   const [items, setItems] = useState<LineItem[]>([createEmptyLineItem(standaardBtw)])
 
+  // Dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [sendDialogOpen, setSendDialogOpen] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const [creditnotaDialogOpen, setCreditnotaDialogOpen] = useState(false)
+  const [creditReden, setCreditReden] = useState('')
+  const [herinneringDialogOpen, setHerinneringDialogOpen] = useState(false)
+  const [herinneringTemplates, setHerinneringTemplates] = useState<HerinneringTemplate[]>([])
+  const [herinneringType, setHerinneringType] = useState<HerinneringTemplate['type']>('herinnering_1')
+  const [herinneringPreview, setHerinneringPreview] = useState('')
+
   // ============ DATA LOADING ============
 
   useEffect(() => {
@@ -190,8 +243,16 @@ export function FactuurEditor() {
     async function loadData() {
       try {
         setIsLoading(true)
-        const klantenData = await getKlanten().catch(() => [])
-        if (!cancelled) setKlanten(klantenData)
+        const [klantenData, facturenData, herinneringData] = await Promise.all([
+          getKlanten().catch(() => []),
+          getFacturen().catch(() => []),
+          getHerinneringTemplates().catch(() => []),
+        ])
+        if (!cancelled) {
+          setKlanten(klantenData)
+          setAllFacturen(facturenData)
+          setHerinneringTemplates(herinneringData)
+        }
 
         // Edit mode: load existing factuur
         if (editFactuurId) {
@@ -237,9 +298,8 @@ export function FactuurEditor() {
           }
         } else {
           // New factuur: generate nummer
-          const bestaande = await getFacturen().catch(() => [])
           if (!cancelled) {
-            setNummer(generateFactuurNummer(factuurPrefix, bestaande))
+            setNummer(generateFactuurNummer(factuurPrefix, facturenData))
           }
 
           // Pre-fill from query params
@@ -279,7 +339,6 @@ export function FactuurEditor() {
                       }))
                   )
                 } else {
-                  // Fallback: single line from offerte totals
                   setItems([
                     {
                       id: crypto.randomUUID(),
@@ -328,7 +387,17 @@ export function FactuurEditor() {
   const btwBedrag = useMemo(() => calcBtwBedrag(validItems), [validItems])
   const totaal = useMemo(() => round2(subtotaal + btwBedrag), [subtotaal, btwBedrag])
 
-  // ============ HANDLERS ============
+  const currentStatus = existingFactuur?.status || 'concept'
+  const isVervallen = existingFactuur ? existingFactuur.vervaldatum < getTodayString() && currentStatus !== 'betaald' && currentStatus !== 'gecrediteerd' : false
+
+  const dagenVervallen = useMemo(() => {
+    if (!existingFactuur) return 0
+    const vervaldatum = new Date(existingFactuur.vervaldatum)
+    const vandaag = new Date()
+    return Math.max(0, Math.floor((vandaag.getTime() - vervaldatum.getTime()) / (1000 * 60 * 60 * 24)))
+  }, [existingFactuur])
+
+  // ============ ITEM HANDLERS ============
 
   const handleSelectKlant = useCallback((kId: string) => {
     setKlantId(kId)
@@ -366,6 +435,8 @@ export function FactuurEditor() {
     })
   }, [])
 
+  // ============ SAVE ============
+
   const handleSave = useCallback(async () => {
     if (!klantId) {
       toast.error('Selecteer een klant')
@@ -384,7 +455,6 @@ export function FactuurEditor() {
       setIsSaving(true)
 
       if (isEditMode && existingFactuur) {
-        // Update existing factuur
         const updates: Partial<Factuur> = {
           klant_id: klantId,
           klant_naam: selectedKlant?.bedrijfsnaam || '',
@@ -399,11 +469,10 @@ export function FactuurEditor() {
           btw_bedrag: btwBedrag,
           totaal,
         }
-        await updateFactuur(existingFactuur.id, updates)
+        const updated = await updateFactuur(existingFactuur.id, updates)
+        setExistingFactuur({ ...existingFactuur, ...updated })
         toast.success('Factuur bijgewerkt')
-        navigate('/facturen')
       } else {
-        // Create new factuur
         const betaalToken = generateBetaalToken()
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
 
@@ -433,7 +502,6 @@ export function FactuurEditor() {
           betaal_link: betaalLink,
         })
 
-        // Create line items
         for (let i = 0; i < validItems.length; i++) {
           const item = validItems[i]
           await createFactuurItem({
@@ -449,7 +517,8 @@ export function FactuurEditor() {
         }
 
         toast.success(`Factuur ${nummer} aangemaakt`)
-        navigate('/facturen')
+        navigate(`/facturen/${newFactuur.id}`)
+        return
       }
     } catch (err) {
       logger.error('Fout bij opslaan factuur:', err)
@@ -462,6 +531,8 @@ export function FactuurEditor() {
     factuurdatum, vervaldatum, voorwaarden, notities, introTekst, outroTekst,
     subtotaal, btwBedrag, totaal, nummer, offerteId, projectId, user, navigate,
   ])
+
+  // ============ PDF ============
 
   const handleDownloadPdf = useCallback(() => {
     if (!selectedKlant) {
@@ -480,7 +551,8 @@ export function FactuurEditor() {
       totaal,
       notities: notities || undefined,
       betaalvoorwaarden: voorwaarden || undefined,
-      factuur_type: 'standaard' as const,
+      factuur_type: (existingFactuur?.factuur_type || 'standaard') as 'standaard' | 'voorschot' | 'creditnota' | 'eindafrekening',
+      betaal_link: existingFactuur?.betaal_link || undefined,
     }
 
     const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
@@ -504,7 +576,204 @@ export function FactuurEditor() {
       logger.error('Fout bij genereren PDF:', err)
       toast.error('Kon PDF niet genereren')
     }
-  }, [selectedKlant, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, documentStyle])
+  }, [selectedKlant, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, documentStyle, existingFactuur])
+
+  // ============ SEND EMAIL ============
+
+  const handleSendFactuur = useCallback(async () => {
+    if (!existingFactuur || !selectedKlant?.email) {
+      toast.error('Geen emailadres gevonden voor deze klant')
+      return
+    }
+
+    try {
+      setIsSending(true)
+
+      const { subject, html } = factuurVerzendTemplate({
+        klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
+        factuurNummer: nummer,
+        factuurTitel: titel,
+        totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(totaal),
+        vervaldatum: formatDate(vervaldatum),
+        bedrijfsnaam,
+        primaireKleur,
+        handtekening: emailHandtekening || undefined,
+        betaalUrl: existingFactuur.betaal_link || undefined,
+      })
+
+      await sendEmail(selectedKlant.email, subject, '', { html })
+
+      const updated = await updateFactuur(existingFactuur.id, { status: 'verzonden' })
+      setExistingFactuur({ ...existingFactuur, ...updated, status: 'verzonden' })
+
+      setSendDialogOpen(false)
+      toast.success(`Factuur ${nummer} verzonden naar ${selectedKlant.email}`)
+    } catch (err) {
+      logger.error('Fout bij verzenden factuur:', err)
+      toast.error('Kon factuur niet verzenden')
+    } finally {
+      setIsSending(false)
+    }
+  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening])
+
+  // ============ MARK AS PAID ============
+
+  const handleMarkAsBetaald = useCallback(async () => {
+    if (!existingFactuur) return
+
+    try {
+      const updates: Partial<Factuur> = {
+        status: 'betaald',
+        betaald_bedrag: existingFactuur.totaal,
+        betaaldatum: getTodayString(),
+      }
+      const updated = await updateFactuur(existingFactuur.id, updates)
+      setExistingFactuur({ ...existingFactuur, ...updated, ...updates })
+      toast.success(`${nummer} gemarkeerd als betaald`)
+    } catch {
+      toast.error('Kon status niet bijwerken')
+    }
+  }, [existingFactuur, nummer])
+
+  // ============ DELETE ============
+
+  const handleDeleteFactuur = useCallback(async () => {
+    if (!existingFactuur) return
+
+    try {
+      await deleteFactuur(existingFactuur.id)
+      toast.success(`${nummer} verwijderd`)
+      navigate('/facturen')
+    } catch {
+      toast.error('Kon factuur niet verwijderen')
+    }
+  }, [existingFactuur, nummer, navigate])
+
+  // ============ CREDITNOTA ============
+
+  const handleCreateCreditnota = useCallback(async () => {
+    if (!existingFactuur) return
+    if (!creditReden.trim()) {
+      toast.error('Vul een reden in voor de creditnota')
+      return
+    }
+
+    try {
+      setIsSaving(true)
+      const cnNummer = generateTypedNummer(allFacturen, 'CN')
+
+      const cnToken = generateBetaalToken()
+      const creditnota: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
+        user_id: user?.id || '',
+        klant_id: existingFactuur.klant_id,
+        klant_naam: selectedKlant?.bedrijfsnaam || existingFactuur.klant_naam || '',
+        offerte_id: existingFactuur.offerte_id,
+        project_id: existingFactuur.project_id,
+        nummer: cnNummer,
+        titel: `Creditnota voor ${existingFactuur.nummer}`,
+        status: 'concept',
+        subtotaal: round2(-existingFactuur.subtotaal),
+        btw_bedrag: round2(-existingFactuur.btw_bedrag),
+        totaal: round2(-existingFactuur.totaal),
+        betaald_bedrag: 0,
+        factuurdatum: getTodayString(),
+        vervaldatum: getDefaultVervaldatum(getTodayString()),
+        notities: `Creditnota: ${creditReden}`,
+        voorwaarden: existingFactuur.voorwaarden,
+        factuur_type: 'creditnota',
+        betaal_token: cnToken,
+        betaal_link: `${window.location.origin}/betalen/${cnToken}`,
+        gerelateerde_factuur_id: existingFactuur.id,
+        credit_reden: creditReden,
+      }
+
+      const saved = await createFactuur(creditnota)
+
+      // Mark original as gecrediteerd
+      await updateFactuur(existingFactuur.id, { status: 'gecrediteerd' })
+      setExistingFactuur({ ...existingFactuur, status: 'gecrediteerd' })
+
+      setCreditnotaDialogOpen(false)
+      toast.success(`Creditnota ${cnNummer} aangemaakt`)
+      navigate(`/facturen/${saved.id}`)
+    } catch {
+      toast.error('Fout bij aanmaken creditnota')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [existingFactuur, creditReden, allFacturen, selectedKlant, user, navigate])
+
+  // ============ HERINNERING ============
+
+  const getVolgendeHerinnering = useCallback((): HerinneringTemplate['type'] | null => {
+    if (!existingFactuur || dagenVervallen <= 0) return null
+    if (!existingFactuur.herinnering_1_verstuurd && dagenVervallen >= 7) return 'herinnering_1'
+    if (!existingFactuur.herinnering_2_verstuurd && dagenVervallen >= 14) return 'herinnering_2'
+    if (!existingFactuur.herinnering_3_verstuurd && dagenVervallen >= 21) return 'herinnering_3'
+    if (!existingFactuur.aanmaning_verstuurd && dagenVervallen >= 30) return 'aanmaning'
+    return null
+  }, [existingFactuur, dagenVervallen])
+
+  const openHerinneringDialog = useCallback(() => {
+    if (!existingFactuur || !selectedKlant) return
+    const type = getVolgendeHerinnering() || 'herinnering_1'
+    const template = herinneringTemplates.find((t) => t.type === type)
+    if (template) {
+      const preview = template.inhoud
+        .replace(/{klant_naam}/g, selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam)
+        .replace(/{factuur_nummer}/g, existingFactuur.nummer)
+        .replace(/{factuur_bedrag}/g, formatCurrency(existingFactuur.totaal))
+        .replace(/{vervaldatum}/g, formatDate(existingFactuur.vervaldatum))
+        .replace(/{dagen_verlopen}/g, String(dagenVervallen))
+        .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
+      setHerinneringPreview(preview)
+    }
+    setHerinneringType(type)
+    setHerinneringDialogOpen(true)
+  }, [existingFactuur, selectedKlant, getVolgendeHerinnering, herinneringTemplates, dagenVervallen, bedrijfsnaam])
+
+  const handleVerstuurHerinnering = useCallback(async () => {
+    if (!existingFactuur || !selectedKlant?.email) {
+      toast.error('Geen emailadres gevonden voor deze klant')
+      return
+    }
+
+    const template = herinneringTemplates.find((t) => t.type === herinneringType)
+    if (!template) {
+      toast.error('Geen herinnering template gevonden')
+      return
+    }
+
+    try {
+      setIsSending(true)
+      const onderwerp = template.onderwerp.replace(/{factuur_nummer}/g, existingFactuur.nummer)
+
+      try {
+        await sendEmail(selectedKlant.email, onderwerp, herinneringPreview, {})
+      } catch {
+        toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Herinnering is wel gemarkeerd.')
+      }
+
+      const fieldMap: Record<string, string> = {
+        herinnering_1: 'herinnering_1_verstuurd',
+        herinnering_2: 'herinnering_2_verstuurd',
+        herinnering_3: 'herinnering_3_verstuurd',
+        aanmaning: 'aanmaning_verstuurd',
+      }
+      const updateField = fieldMap[herinneringType]
+      const updates: Partial<Factuur> = { [updateField]: new Date().toISOString() }
+
+      await updateFactuur(existingFactuur.id, updates)
+      setExistingFactuur({ ...existingFactuur, ...updates })
+
+      toast.success(`${template.type === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} gemarkeerd voor ${existingFactuur.nummer}`)
+      setHerinneringDialogOpen(false)
+    } catch {
+      toast.error('Fout bij versturen herinnering')
+    } finally {
+      setIsSending(false)
+    }
+  }, [existingFactuur, selectedKlant, herinneringTemplates, herinneringType, herinneringPreview])
 
   // ============ LOADING ============
 
@@ -530,14 +799,113 @@ export function FactuurEditor() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-lg font-semibold">
-                {isEditMode ? `Factuur ${nummer} bewerken` : 'Nieuwe factuur'}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-semibold">
+                  {isEditMode ? `Factuur ${nummer}` : 'Nieuwe factuur'}
+                </h1>
+                {isEditMode && existingFactuur && (
+                  <Badge className={cn('text-[10px] px-1.5 h-5', STATUS_CONFIG[currentStatus]?.color)}>
+                    {isVervallen ? 'Vervallen' : STATUS_CONFIG[currentStatus]?.label || currentStatus}
+                  </Badge>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">{nummer}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Edit mode actions */}
+            {isEditMode && existingFactuur && (
+              <>
+                {/* Send button */}
+                {(currentStatus === 'concept') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSendDialogOpen(true)}
+                    disabled={!selectedKlant?.email}
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    Versturen
+                  </Button>
+                )}
+
+                {/* Mark as paid */}
+                {(currentStatus === 'verzonden' || currentStatus === 'vervallen' || isVervallen) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMarkAsBetaald}
+                    className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/30"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Betaald
+                  </Button>
+                )}
+
+                {/* Reminder button */}
+                {isVervallen && getVolgendeHerinnering() && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={openHerinneringDialog}
+                    className="text-amber-600 border-amber-200 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-800 dark:hover:bg-amber-900/30"
+                  >
+                    <Bell className="h-4 w-4 mr-1" />
+                    Herinnering
+                  </Button>
+                )}
+
+                {/* More actions dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleDownloadPdf}>
+                      <FileDown className="h-4 w-4 mr-2" />
+                      Download PDF
+                    </DropdownMenuItem>
+                    {currentStatus === 'concept' && selectedKlant?.email && (
+                      <DropdownMenuItem onClick={() => setSendDialogOpen(true)}>
+                        <Send className="h-4 w-4 mr-2" />
+                        Factuur versturen
+                      </DropdownMenuItem>
+                    )}
+                    {(currentStatus === 'verzonden' || isVervallen) && (
+                      <DropdownMenuItem onClick={handleMarkAsBetaald}>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Markeer als betaald
+                      </DropdownMenuItem>
+                    )}
+                    {isVervallen && getVolgendeHerinnering() && (
+                      <DropdownMenuItem onClick={openHerinneringDialog}>
+                        <Bell className="h-4 w-4 mr-2" />
+                        Herinnering versturen
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    {currentStatus !== 'gecrediteerd' && currentStatus !== 'concept' && (
+                      <DropdownMenuItem onClick={() => { setCreditReden(''); setCreditnotaDialogOpen(true) }}>
+                        <MinusCircle className="h-4 w-4 mr-2" />
+                        Creditnota aanmaken
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setDeleteDialogOpen(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Verwijderen
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+
             <Button
               variant="outline"
               size="sm"
@@ -562,6 +930,38 @@ export function FactuurEditor() {
           </div>
         </div>
       </div>
+
+      {/* Status bar for existing invoices */}
+      {isEditMode && existingFactuur && (
+        <div className="max-w-7xl mx-auto px-6 pt-4">
+          <div className={cn(
+            'flex items-center gap-3 rounded-lg border px-4 py-2.5 text-sm',
+            currentStatus === 'betaald' && 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300',
+            currentStatus === 'verzonden' && !isVervallen && 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300',
+            currentStatus === 'concept' && 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300',
+            currentStatus === 'gecrediteerd' && 'bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300',
+            isVervallen && 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
+          )}>
+            {currentStatus === 'betaald' && <CheckCircle2 className="h-4 w-4" />}
+            {currentStatus === 'verzonden' && !isVervallen && <Send className="h-4 w-4" />}
+            {currentStatus === 'concept' && <FileText className="h-4 w-4" />}
+            {currentStatus === 'gecrediteerd' && <MinusCircle className="h-4 w-4" />}
+            {isVervallen && <AlertTriangle className="h-4 w-4" />}
+            <span>
+              {currentStatus === 'betaald' && `Betaald op ${formatDate(existingFactuur.betaaldatum || '')}`}
+              {currentStatus === 'verzonden' && !isVervallen && 'Verstuurd — wachtend op betaling'}
+              {currentStatus === 'concept' && 'Concept — nog niet verstuurd'}
+              {currentStatus === 'gecrediteerd' && 'Gecrediteerd'}
+              {isVervallen && `${dagenVervallen} dag${dagenVervallen !== 1 ? 'en' : ''} vervallen`}
+            </span>
+            {existingFactuur.betaal_link && currentStatus !== 'betaald' && (
+              <span className="ml-auto text-xs opacity-70">
+                Betaallink: {existingFactuur.betaal_link}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Content: Two-column layout */}
       <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
@@ -729,8 +1129,49 @@ export function FactuurEditor() {
                 <span>Totaal incl. BTW</span>
                 <span className="text-lg">{formatCurrency(totaal)}</span>
               </div>
+              {existingFactuur && existingFactuur.betaald_bedrag > 0 && (
+                <>
+                  <Separator />
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span>Betaald</span>
+                    <span>{formatCurrency(existingFactuur.betaald_bedrag)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-semibold">
+                    <span>Openstaand</span>
+                    <span>{formatCurrency(round2(totaal - existingFactuur.betaald_bedrag))}</span>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
+
+          {/* Herinnering status (edit mode only) */}
+          {isEditMode && existingFactuur && (currentStatus === 'verzonden' || isVervallen) && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  Herinneringen
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {['herinnering_1_verstuurd', 'herinnering_2_verstuurd', 'herinnering_3_verstuurd', 'aanmaning_verstuurd'].map((field, idx) => {
+                  const labels = ['1e herinnering', '2e herinnering', '3e herinnering', 'Aanmaning']
+                  const value = (existingFactuur as Record<string, unknown>)[field] as string | undefined
+                  return (
+                    <div key={field} className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{labels[idx]}</span>
+                      {value ? (
+                        <span className="text-emerald-600">{formatDate(value)}</span>
+                      ) : (
+                        <span className="text-muted-foreground/50">—</span>
+                      )}
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* RIGHT PANEL: Items & Teksten */}
@@ -911,6 +1352,162 @@ export function FactuurEditor() {
           </div>
         </div>
       </div>
+
+      {/* ============ DIALOGS ============ */}
+
+      {/* Send factuur dialog */}
+      <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-blue-500" />
+              Factuur versturen
+            </DialogTitle>
+            <DialogDescription>
+              Verstuur factuur {nummer} naar {selectedKlant?.email || 'klant'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Aan:</span>{' '}
+              <span className="font-medium">{selectedKlant?.email}</span>
+            </div>
+            <div className="text-sm">
+              <span className="text-muted-foreground">Bedrag:</span>{' '}
+              <span className="font-semibold">{formatCurrency(totaal)}</span>
+            </div>
+            <div className="text-sm">
+              <span className="text-muted-foreground">Vervaldatum:</span>{' '}
+              <span>{formatDate(vervaldatum)}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSendDialogOpen(false)}>Annuleren</Button>
+            <Button onClick={handleSendFactuur} disabled={isSending}>
+              {isSending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+              Versturen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Factuur verwijderen
+            </DialogTitle>
+            <DialogDescription>
+              Weet je zeker dat je factuur {nummer} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Annuleren</Button>
+            <Button variant="destructive" onClick={handleDeleteFactuur}>
+              <Trash2 className="h-4 w-4 mr-1" />
+              Verwijderen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Creditnota dialog */}
+      <Dialog open={creditnotaDialogOpen} onOpenChange={setCreditnotaDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MinusCircle className="h-5 w-5 text-red-500" />
+              Creditnota aanmaken
+            </DialogTitle>
+            <DialogDescription>
+              Maak een creditnota aan voor factuur {nummer}.
+              De originele factuur wordt gemarkeerd als gecrediteerd.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Credit bedrag:</span>{' '}
+              <span className="font-semibold text-red-600">{formatCurrency(-(existingFactuur?.totaal || 0))}</span>
+            </div>
+            <div>
+              <Label className="text-sm">Reden voor creditnota</Label>
+              <Textarea
+                value={creditReden}
+                onChange={(e) => setCreditReden(e.target.value)}
+                placeholder="Bijv. Foutieve facturatie, retour, annulering..."
+                rows={3}
+                className="text-sm mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreditnotaDialogOpen(false)}>Annuleren</Button>
+            <Button
+              variant="destructive"
+              onClick={handleCreateCreditnota}
+              disabled={isSaving || !creditReden.trim()}
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <MinusCircle className="h-4 w-4 mr-1" />}
+              Creditnota aanmaken
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Herinnering dialog */}
+      <Dialog open={herinneringDialogOpen} onOpenChange={setHerinneringDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-amber-500" />
+              Betalingsherinnering
+            </DialogTitle>
+            <DialogDescription>
+              Verstuur een herinnering voor factuur {nummer} ({dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-sm">Type</Label>
+              <Select
+                value={herinneringType}
+                onValueChange={(v) => setHerinneringType(v as HerinneringTemplate['type'])}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="herinnering_1">1e Herinnering</SelectItem>
+                  <SelectItem value="herinnering_2">2e Herinnering</SelectItem>
+                  <SelectItem value="herinnering_3">3e Herinnering</SelectItem>
+                  <SelectItem value="aanmaning">Aanmaning</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {herinneringPreview && (
+              <div>
+                <Label className="text-sm">Voorbeeld</Label>
+                <div className="mt-1 p-3 rounded-md bg-muted/50 text-xs whitespace-pre-wrap max-h-40 overflow-y-auto">
+                  {herinneringPreview}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHerinneringDialogOpen(false)}>Annuleren</Button>
+            <Button
+              onClick={handleVerstuurHerinnering}
+              disabled={isSending}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {isSending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Bell className="h-4 w-4 mr-1" />}
+              Versturen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
