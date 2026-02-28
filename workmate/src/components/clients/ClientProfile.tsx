@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +50,7 @@ import {
   ChevronDown,
   CalendarPlus,
   Receipt,
+  Upload,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -127,6 +128,7 @@ export function ClientProfile() {
   // Contact person form
   const [editingContact, setEditingContact] = useState<Contactpersoon | null>(null)
   const [contactForm, setContactForm] = useState({ naam: '', functie: '', email: '', telefoon: '' })
+  const csvFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!id) return
@@ -254,6 +256,95 @@ export function ClientProfile() {
     } catch {
       toast.error('Fout bij verwijderen')
     }
+  }
+
+  function downloadContactpersonenTemplate() {
+    const header = 'naam;functie;email;telefoon;is_primair'
+    const voorbeeldRijen = [
+      'Jan de Vries;Directeur;jan@bedrijf.nl;+31 6 12345678;ja',
+      'Petra Jansen;Inkoper;petra@bedrijf.nl;+31 6 87654321;nee',
+    ]
+    const csv = [header, ...voorbeeldRijen].join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'contactpersonen-template.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function handleCsvImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !klant) return
+
+    const text = await file.text()
+    const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0)
+
+    if (lines.length < 2) {
+      toast.error('CSV bestand is leeg of heeft geen data rijen')
+      if (csvFileRef.current) csvFileRef.current.value = ''
+      return
+    }
+
+    // Detect separator: if header contains tabs, use tab; if semicolons, use semicolon; else comma
+    const headerLine = lines[0]
+    const separator = headerLine.includes('\t') ? '\t' : headerLine.includes(';') ? ';' : ','
+
+    const headers = headerLine.split(separator).map((h) => h.trim().toLowerCase().replace(/^["']|["']$/g, ''))
+
+    // Map headers to fields
+    const naamIdx = headers.findIndex((h) => h === 'naam' || h === 'name' || h === 'volledige naam')
+    const functieIdx = headers.findIndex((h) => h === 'functie' || h === 'function' || h === 'rol' || h === 'title' || h === 'job title')
+    const emailIdx = headers.findIndex((h) => h === 'email' || h === 'e-mail' || h === 'emailadres')
+    const telefoonIdx = headers.findIndex((h) => h === 'telefoon' || h === 'phone' || h === 'telefoonnummer' || h === 'tel')
+    const primairIdx = headers.findIndex((h) => h === 'is_primair' || h === 'primair' || h === 'primary')
+
+    if (naamIdx === -1) {
+      toast.error('CSV moet minimaal een kolom "naam" bevatten')
+      if (csvFileRef.current) csvFileRef.current.value = ''
+      return
+    }
+
+    const currentContacts = klant.contactpersonen || []
+    const nieuwContacten: Contactpersoon[] = []
+    let skipped = 0
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(separator).map((v) => v.trim().replace(/^["']|["']$/g, ''))
+      const naam = values[naamIdx]?.trim()
+      if (!naam) { skipped++; continue }
+
+      const primairValue = primairIdx >= 0 ? values[primairIdx]?.toLowerCase() : ''
+      const isPrimair = ['ja', 'yes', 'true', '1', 'x'].includes(primairValue)
+
+      nieuwContacten.push({
+        id: crypto.randomUUID(),
+        naam,
+        functie: functieIdx >= 0 ? values[functieIdx]?.trim() || '' : '',
+        email: emailIdx >= 0 ? values[emailIdx]?.trim() || '' : '',
+        telefoon: telefoonIdx >= 0 ? values[telefoonIdx]?.trim() || '' : '',
+        is_primair: currentContacts.length === 0 && nieuwContacten.length === 0 ? true : isPrimair,
+      })
+    }
+
+    if (nieuwContacten.length === 0) {
+      toast.error('Geen geldige contactpersonen gevonden in het bestand')
+      if (csvFileRef.current) csvFileRef.current.value = ''
+      return
+    }
+
+    try {
+      const updatedKlant = await updateKlant(klant.id, {
+        contactpersonen: [...currentContacts, ...nieuwContacten],
+      })
+      setKlant(updatedKlant)
+      toast.success(`${nieuwContacten.length} contactperso${nieuwContacten.length === 1 ? 'on' : 'nen'} geïmporteerd${skipped > 0 ? ` (${skipped} overgeslagen)` : ''}`)
+    } catch {
+      toast.error('Fout bij importeren contactpersonen')
+    }
+
+    if (csvFileRef.current) csvFileRef.current.value = ''
   }
 
   if (isLoading) {
@@ -1129,20 +1220,43 @@ export function ClientProfile() {
                   <Users className="w-4 h-4" />
                   Alle Contactpersonen ({contactpersonen.length})
                 </CardTitle>
-                <Button size="sm" onClick={openAddContact}>
-                  <Plus className="w-4 h-4 mr-1" />
-                  Toevoegen
-                </Button>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={csvFileRef}
+                    type="file"
+                    accept=".csv,.tsv,.txt"
+                    className="hidden"
+                    onChange={handleCsvImport}
+                  />
+                  <Button size="sm" variant="outline" onClick={downloadContactpersonenTemplate}>
+                    <Download className="w-3.5 h-3.5 mr-1" />
+                    Template
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => csvFileRef.current?.click()}>
+                    <Upload className="w-3.5 h-3.5 mr-1" />
+                    Importeer CSV
+                  </Button>
+                  <Button size="sm" onClick={openAddContact}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Toevoegen
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {contactpersonen.length === 0 ? (
                   <div className="text-center py-8">
                     <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                     <p className="text-muted-foreground text-sm">Nog geen contactpersonen toegevoegd</p>
-                    <Button size="sm" variant="outline" className="mt-3" onClick={openAddContact}>
-                      <Plus className="w-4 h-4 mr-1" />
-                      Eerste contactpersoon toevoegen
-                    </Button>
+                    <div className="flex items-center justify-center gap-2 mt-3">
+                      <Button size="sm" variant="outline" onClick={openAddContact}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Toevoegen
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => csvFileRef.current?.click()}>
+                        <Upload className="w-3.5 h-3.5 mr-1" />
+                        Importeer CSV
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-100 dark:divide-gray-800">
