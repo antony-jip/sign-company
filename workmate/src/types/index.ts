@@ -421,6 +421,13 @@ export interface AppSettings {
   // KvK integratie
   kvk_api_key?: string;
   kvk_api_enabled?: boolean;
+  // Factuur instellingen
+  factuur_prefix: string;
+  factuur_volgnummer: number;
+  factuur_betaaltermijn_dagen: number;
+  factuur_voorwaarden: string;
+  factuur_intro_tekst: string;
+  factuur_outro_tekst: string;
   created_at: string;
   updated_at: string;
 }
@@ -647,6 +654,11 @@ export interface Factuur {
   betaal_methode?: 'handmatig' | 'link' | 'qr';
   online_bekeken?: boolean;
   online_bekeken_op?: string;
+  // Teksten
+  intro_tekst?: string;
+  outro_tekst?: string;
+  // Contactpersoon
+  contactpersoon_id?: string;
   created_at: string;
   updated_at: string;
 }

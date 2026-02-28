@@ -34,6 +34,12 @@ interface AppSettingsContextType {
   btwNummer: string
   logoUrl: string
   openaiApiKey: string
+  // Factuur instellingen
+  factuurPrefix: string
+  factuurBetaaltermijnDagen: number
+  factuurVoorwaarden: string
+  factuurIntroTekst: string
+  factuurOutroTekst: string
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined)
@@ -137,6 +143,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     btwNummer: profile?.btw_nummer || '',
     logoUrl: profile?.logo_url || '',
     openaiApiKey,
+    // Factuur instellingen
+    factuurPrefix: settings.factuur_prefix || 'FAC',
+    factuurBetaaltermijnDagen: settings.factuur_betaaltermijn_dagen ?? 30,
+    factuurVoorwaarden: settings.factuur_voorwaarden || 'Betaling binnen 30 dagen na factuurdatum.',
+    factuurIntroTekst: settings.factuur_intro_tekst || '',
+    factuurOutroTekst: settings.factuur_outro_tekst || '',
   }
 
   return (

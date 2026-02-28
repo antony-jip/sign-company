@@ -1605,6 +1605,12 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     calculatie_standaard_marge: 35,
     calculatie_toon_inkoop_in_offerte: false,
     offerte_regel_velden: ['Materiaal', 'Lay-out', 'Montage', 'Opmerking'],
+    factuur_prefix: 'FAC',
+    factuur_volgnummer: 1,
+    factuur_betaaltermijn_dagen: 30,
+    factuur_voorwaarden: 'Betaling binnen 30 dagen na factuurdatum.',
+    factuur_intro_tekst: '',
+    factuur_outro_tekst: '',
     created_at: now(),
     updated_at: now(),
   }
