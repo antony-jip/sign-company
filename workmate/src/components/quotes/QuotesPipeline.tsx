@@ -35,6 +35,7 @@ import type { Offerte } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
+import { SkeletonTable } from '@/components/ui/skeleton'
 
 type ViewMode = 'pipeline' | 'lijst'
 type SortOption = 'newest' | 'oldest' | 'highest' | 'expiring'
@@ -464,11 +465,18 @@ export function QuotesPipeline() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Offertes laden...</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-muted animate-shimmer" />
+            <div className="space-y-2">
+              <div className="h-6 w-32 rounded-lg animate-shimmer" />
+              <div className="h-3 w-48 rounded-lg animate-shimmer" />
+            </div>
+          </div>
+          <div className="h-9 w-36 rounded-lg animate-shimmer" />
         </div>
+        <SkeletonTable rows={6} cols={5} />
       </div>
     )
   }

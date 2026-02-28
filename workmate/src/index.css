@@ -44,8 +44,8 @@
     --wm-gradient-start: #386150;
     --wm-gradient-mid: #58B09C;
     --wm-gradient-end: #CAF7E2;
-    --wm-sidebar-bg: 42 28% 17%;
-    --wm-sidebar-hover: 48 24% 22%;
+    --wm-sidebar-bg: 150 14% 97%;
+    --wm-sidebar-hover: 150 12% 94%;
     --wm-sidebar-active: 163 36% 52%;
     --wm-hover: 163 33% 45%;
     --wm-light: 163 46% 66%;
@@ -78,8 +78,8 @@
     --input: 42 16% 14%;
     --ring: 163 40% 58%;
 
-    --wm-sidebar-bg: 42 30% 8%;
-    --wm-sidebar-hover: 48 24% 13%;
+    --wm-sidebar-bg: 42 24% 9%;
+    --wm-sidebar-hover: 42 20% 12%;
     --wm-hover: 163 36% 50%;
     --wm-light: 163 46% 70%;
     --wm-pale: 146 76% 88%;
@@ -253,6 +253,14 @@ tbody tr:hover {
   animation: pulseGlow 2.5s ease-in-out infinite;
 }
 
+/* Success check animation — draw circle then check mark */
+@keyframes draw-circle {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes draw-check {
+  to { stroke-dashoffset: 0; }
+}
+
 @keyframes subtlePulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
@@ -310,20 +318,8 @@ tbody tr:hover {
    ================================================================ */
 .wm-sidebar {
   background: hsl(var(--wm-sidebar-bg));
+  border-right: 1px solid hsl(var(--border) / 0.7);
   position: relative;
-}
-
-/* Subtle noise texture on sidebar */
-.wm-sidebar::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: var(--wm-noise);
-  background-repeat: repeat;
-  background-size: 200px 200px;
-  opacity: 0.4;
-  pointer-events: none;
-  mix-blend-mode: overlay;
 }
 
 .wm-sidebar > * {
@@ -354,7 +350,7 @@ tbody tr:hover {
 }
 
 .wm-sidebar-item.active {
-  background: hsl(var(--wm-sidebar-hover));
+  background: hsl(var(--primary) / 0.08);
 }
 
 /* Section label in sidebar */
@@ -363,7 +359,7 @@ tbody tr:hover {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.25);
+  color: hsl(var(--muted-foreground) / 0.5);
   padding: 16px 16px 6px;
 }
 

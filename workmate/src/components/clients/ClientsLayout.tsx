@@ -13,6 +13,7 @@ import type { Klant, Project } from '@/types'
 import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
+import { SkeletonTable } from '@/components/ui/skeleton'
 
 type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
@@ -354,9 +355,7 @@ export function ClientsLayout() {
 
       {/* Content */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <SkeletonTable rows={6} cols={4} />
       ) : filteredKlanten.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">

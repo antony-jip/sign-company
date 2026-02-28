@@ -157,14 +157,14 @@ export function Sidebar() {
         className={cn(
           'wm-sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 relative group',
           isActive
-            ? 'active text-white bg-white/[0.08]'
-            : 'text-white/40 hover:text-white/80 hover:bg-white/[0.04]',
+            ? 'active text-foreground'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
           isCollapsed && 'justify-center px-2'
         )}
       >
         <Icon className={cn(
           'w-[17px] h-[17px] flex-shrink-0 transition-colors duration-200',
-          isActive ? 'text-primary' : 'text-white/30 group-hover:text-white/50'
+          isActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-muted-foreground'
         )} />
         {!isCollapsed && <span className="truncate">{item.label}</span>}
       </NavLink>
@@ -174,9 +174,8 @@ export function Sidebar() {
       return (
         <div key={item.path} className="relative group">
           {link}
-          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 wm-tooltip opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none">
+          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-foreground text-background text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none">
             {item.label}
-            <div className="absolute right-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-[hsl(42,28%,14%)]" />
           </div>
         </div>
       )
@@ -190,11 +189,11 @@ export function Sidebar() {
       {/* Logo */}
       <div
         className={cn(
-          'flex items-center h-16 px-4 border-b border-white/[0.05] flex-shrink-0',
+          'flex items-center h-16 px-4 border-b border-border/50 flex-shrink-0',
           isCollapsed ? 'justify-center' : 'gap-3'
         )}
       >
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/25">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center flex-shrink-0 shadow-md shadow-primary/20">
           <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="4" width="20" height="12" rx="2" />
             <path d="M8 20h8" />
@@ -206,7 +205,7 @@ export function Sidebar() {
         </div>
         {!isCollapsed && (
           <div>
-            <span className="text-[15px] font-bold text-white tracking-tight font-display">
+            <span className="text-[15px] font-bold text-foreground tracking-tight font-display">
               Sign Company
             </span>
           </div>
@@ -225,7 +224,7 @@ export function Sidebar() {
             )}
             {/* Divider for collapsed mode */}
             {isCollapsed && sectionIndex > 0 && (
-              <div className="mx-2 my-2 border-t border-white/[0.04]" />
+              <div className="mx-2 my-2 border-t border-border/40" />
             )}
             <div className="space-y-0.5">
               {section.items.map((item, i) =>
@@ -240,26 +239,26 @@ export function Sidebar() {
       {!isCollapsed && <SidebarPulse />}
 
       {/* User section */}
-      <div className="border-t border-white/[0.05] p-3 space-y-2 flex-shrink-0">
+      <div className="border-t border-border/50 p-3 space-y-2 flex-shrink-0">
         {!isCollapsed && user && (
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0 ring-2 ring-white/[0.08]">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors duration-200">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0 ring-2 ring-primary/10">
               <span className="text-white text-xs font-semibold">
                 {(user.user_metadata?.voornaam?.[0] || user.email?.[0] || 'U').toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-sm font-medium text-foreground truncate">
                 {user.user_metadata?.voornaam
                   ? `${user.user_metadata.voornaam}${user.user_metadata.achternaam ? ' ' + user.user_metadata.achternaam : ''}`
                   : user.email?.split('@')[0] || 'Gebruiker'}
               </p>
-              <p className="text-[11px] text-white/30 truncate">{user.email}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="w-7 h-7 text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-200 rounded-lg"
+              className="w-7 h-7 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors duration-200 rounded-lg"
               onClick={logout}
               title="Uitloggen"
               aria-label="Uitloggen"
@@ -271,7 +270,7 @@ export function Sidebar() {
 
         {isCollapsed && user && (
           <div className="relative group flex justify-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center cursor-pointer ring-2 ring-white/[0.08]">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center cursor-pointer ring-2 ring-primary/10">
               <span className="text-white text-xs font-semibold">
                 {(user.user_metadata?.voornaam?.[0] || user.email?.[0] || 'U').toUpperCase()}
               </span>
@@ -286,7 +285,7 @@ export function Sidebar() {
           variant="ghost"
           size="sm"
           className={cn(
-            'w-full text-white/30 hover:text-white hover:bg-white/[0.04] transition-colors duration-200 h-8 text-xs',
+            'w-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-200 h-8 text-xs',
             isCollapsed && 'px-0 justify-center'
           )}
           onClick={toggleSidebar}
@@ -320,7 +319,7 @@ export function Sidebar() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden" aria-hidden="true" />
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden" aria-hidden="true" />
       )}
 
       {/* Mobile sidebar */}
@@ -374,20 +373,20 @@ function SidebarPulse() {
   }, [])
 
   const items = [
-    { label: 'Open offertes', value: stats.openOffertes, color: 'text-wm-light' },
-    { label: 'Montages deze week', value: stats.montagesWeek, color: 'text-amber-400' },
+    { label: 'Open offertes', value: stats.openOffertes, color: 'text-accent' },
+    { label: 'Montages deze week', value: stats.montagesWeek, color: 'text-amber-600 dark:text-amber-400' },
     { label: 'Actieve projecten', value: stats.actieveProjecten, color: 'text-primary' },
   ]
 
   return (
-    <div className="mx-3 mb-1 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.04]">
-      <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-white/20 mb-2 px-0.5">
+    <div className="mx-3 mb-1 p-2.5 rounded-lg bg-muted/40 border border-border/40">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/40 mb-2 px-0.5">
         Status
       </p>
       <div className="space-y-1.5">
         {items.map((item) => (
           <div key={item.label} className="flex items-center justify-between px-0.5">
-            <span className="text-[11px] text-white/30">{item.label}</span>
+            <span className="text-[11px] text-muted-foreground">{item.label}</span>
             <span className={`text-[11px] font-semibold ${item.color}`}>{item.value}</span>
           </div>
         ))}

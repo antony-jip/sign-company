@@ -79,6 +79,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { logger } from '../../utils/logger'
+import { SkeletonTable } from '@/components/ui/skeleton'
 
 // ============ TYPES ============
 
@@ -1181,11 +1182,18 @@ export function FacturenLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Facturen laden...</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-muted animate-shimmer" />
+            <div className="space-y-2">
+              <div className="h-6 w-28 rounded-lg animate-shimmer" />
+              <div className="h-3 w-44 rounded-lg animate-shimmer" />
+            </div>
+          </div>
+          <div className="h-9 w-36 rounded-lg animate-shimmer" />
         </div>
+        <SkeletonTable rows={6} cols={5} />
       </div>
     )
   }
