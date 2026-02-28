@@ -234,7 +234,7 @@ export function WerkbonnenLayout() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-gray-50 dark:bg-gray-800/50">
+                <tr className="border-b border-border bg-muted/50">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Nummer</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Klant</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Project</th>
@@ -248,7 +248,7 @@ export function WerkbonnenLayout() {
                 {gefilterd.map((wb) => {
                   const cfg = STATUS_CONFIG[wb.status] || STATUS_CONFIG.concept
                   return (
-                    <tr key={wb.id} className="group hover:bg-gray-50/80 dark:hover:bg-gray-800/50 cursor-pointer"
+                    <tr key={wb.id} className="group hover:bg-muted/30 transition-colors cursor-pointer"
                       onClick={() => navigate(`/werkbonnen/${wb.id}`)}>
                       <td className="px-4 py-3 font-mono text-sm font-medium">{wb.werkbon_nummer}</td>
                       <td className="px-4 py-3 text-sm">{getKlantNaam(wb.klant_id)}</td>

@@ -366,10 +366,10 @@ export function ProjectsList() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+              <tr className="border-b border-border bg-muted/50">
                 <th className="text-left py-2.5 px-4 w-[110px]">
                   <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
                 </th>
@@ -430,7 +430,7 @@ export function ProjectsList() {
                 return (
                   <tr
                     key={project.id}
-                    className="border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/70 dark:hover:bg-gray-800/30 cursor-pointer transition-colors group"
+                    className="border-b border-border/50 last:border-0 hover:bg-muted/30 cursor-pointer transition-colors group"
                     onClick={() => window.location.href = `/projecten/${project.id}`}
                   >
                     {/* Status */}

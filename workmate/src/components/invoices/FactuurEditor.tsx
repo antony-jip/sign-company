@@ -171,7 +171,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   verzonden: { label: 'Verzonden', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
   betaald: { label: 'Betaald', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
   vervallen: { label: 'Vervallen', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
-  gecrediteerd: { label: 'Gecrediteerd', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
+  gecrediteerd: { label: 'Gecrediteerd', color: 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-pale' },
 }
 
 // ============ MAIN COMPONENT ============

@@ -1004,7 +1004,7 @@ export function QuotesPipeline() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/80">
+                  <tr className="border-b border-border bg-muted/50">
                     {[
                       { key: 'nummer', label: 'Nummer' },
                       { key: 'klant_naam', label: 'Klant' },
@@ -1017,7 +1017,7 @@ export function QuotesPipeline() {
                       <th
                         key={col.key}
                         onClick={() => handleListSort(col.key)}
-                        className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors select-none"
+                        className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors select-none"
                       >
                         <div className="flex items-center gap-1">
                           {col.label}
@@ -1025,12 +1025,12 @@ export function QuotesPipeline() {
                         </div>
                       </th>
                     ))}
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Acties
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                <tbody className="divide-y divide-border/50">
                   {sortedListOffertes.length === 0 && (
                     <tr>
                       <td colSpan={8} className="px-4 py-16 text-center">
@@ -1049,7 +1049,7 @@ export function QuotesPipeline() {
                     return (
                       <tr
                         key={offerte.id}
-                        className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors cursor-pointer"
+                        className="group hover:bg-muted/30 transition-colors cursor-pointer"
                         onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })}
                       >
                         <td className="px-4 py-3">

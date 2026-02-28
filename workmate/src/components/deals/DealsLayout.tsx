@@ -435,17 +435,17 @@ export function DealsLayout() {
             ) : (
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/80">
+                  <tr className="border-b border-border bg-muted/50">
                     {['Titel', 'Klant', 'Waarde', 'Fase', 'Kans', 'Eigenaar', 'Volgende actie', ''].map((col) => (
-                      <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{col}</th>
+                      <th key={col} className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{col}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                <tbody className="divide-y divide-border/50">
                   {gefilterd.map((deal) => (
-                    <tr key={deal.id} className="group hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors cursor-pointer" onClick={() => navigate(`/deals/${deal.id}`)}>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{deal.titel}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{getKlantNaam(deal.klant_id)}</td>
+                    <tr key={deal.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate(`/deals/${deal.id}`)}>
+                      <td className="px-4 py-3 text-sm font-semibold text-foreground">{deal.titel}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{getKlantNaam(deal.klant_id)}</td>
                       <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(deal.verwachte_waarde)}</td>
                       <td className="px-4 py-3">
                         <Badge variant="outline" className="text-[11px]">{columns.find((c) => c.key === deal.fase)?.label || deal.fase}</Badge>

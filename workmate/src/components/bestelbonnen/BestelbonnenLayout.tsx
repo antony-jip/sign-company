@@ -233,17 +233,17 @@ export function BestelbonnenLayout() {
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/80">
+                <tr className="border-b border-border bg-muted/50">
                   {['Nummer', 'Leverancier', 'Project', 'Datum', 'Status', 'Bedrag', ''].map((col) => (
-                    <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{col}</th>
+                    <th key={col} className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{col}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+              <tbody className="divide-y divide-border/50">
                 {gefilterd.map((bst) => {
                   const cfg = STATUS_CONFIG[bst.status]
                   return (
-                    <tr key={bst.id} className="group hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors cursor-pointer" onClick={() => navigate(`/bestelbonnen/${bst.id}`)}>
+                    <tr key={bst.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate(`/bestelbonnen/${bst.id}`)}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-orange-600 dark:text-orange-400">{bst.bestelbon_nummer}</span>
                       </td>

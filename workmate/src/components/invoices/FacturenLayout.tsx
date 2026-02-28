@@ -1406,7 +1406,7 @@ export function FacturenLayout() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/80">
+              <tr className="border-b border-border bg-muted/50">
                 <th className="w-1" />
                 {[
                   { key: 'nummer', label: 'Nummer', hide: '' },
@@ -1422,14 +1422,14 @@ export function FacturenLayout() {
                 ].map((col) => (
                   <th
                     key={col.key}
-                    className={`px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider ${col.hide}`}
+                    className={`px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${col.hide}`}
                   >
                     {col.label}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+            <tbody className="divide-y divide-border/50">
               {filteredFacturen.length === 0 && (
                 <tr>
                   <td colSpan={11} className="px-4 py-16 text-center">
@@ -1457,7 +1457,7 @@ export function FacturenLayout() {
                   <tr
                     key={factuur.id}
                     className={cn(
-                      'group hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors',
+                      'group hover:bg-muted/30 transition-colors',
                       'border-l-4',
                       isOverdue ? 'border-l-red-500' : config.border
                     )}
@@ -1959,7 +1959,7 @@ export function FacturenLayout() {
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                      <tr className="bg-muted/50 border-b border-border">
                         <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">Beschrijving</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground w-20">Aantal</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground w-28">Prijs</th>
