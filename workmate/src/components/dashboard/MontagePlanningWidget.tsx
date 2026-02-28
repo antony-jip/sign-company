@@ -289,10 +289,16 @@ export function MontagePlanningWidget() {
                         </div>
                         <div className="flex items-center gap-3 mt-0.5">
                           {montage.locatie && (
-                            <span className="text-[11px] text-muted-foreground truncate flex items-center gap-0.5">
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(montage.locatie)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[11px] text-primary truncate flex items-center gap-0.5 hover:underline"
+                            >
                               <MapPin className="h-2.5 w-2.5" />
                               {montage.locatie}
-                            </span>
+                            </a>
                           )}
                           {montage.klant_naam && !montage.locatie && (
                             <span className="text-[11px] text-muted-foreground truncate">

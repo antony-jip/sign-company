@@ -257,7 +257,7 @@ function TimelineRow({
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 px-2.5 py-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group ${
+      className={`flex items-center gap-3 px-2.5 py-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group min-h-[48px] ${
         item.isOverdue ? 'bg-red-50/50 dark:bg-red-900/10' : ''
       }`}
     >
@@ -288,8 +288,20 @@ function TimelineRow({
         </p>
         {item.subtitle && (
           <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
-            {(item.type === 'event' || item.type === 'montage') && item.subtitle && <MapPin className="h-2.5 w-2.5" />}
-            {item.subtitle}
+            {(item.type === 'event' || item.type === 'montage') && item.subtitle ? (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.subtitle)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                <MapPin className="h-2.5 w-2.5" />
+                {item.subtitle}
+              </a>
+            ) : (
+              item.subtitle
+            )}
           </p>
         )}
       </div>

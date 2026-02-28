@@ -754,10 +754,18 @@ export function MontagePlanningLayout() {
           </p>
         )}
 
-        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-          <MapPin className="h-3 w-3 shrink-0" />
-          <span className="truncate">{afspraak.locatie}</span>
-        </div>
+        {afspraak.locatie && (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 text-xs text-primary hover:underline mb-2"
+          >
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">{afspraak.locatie}</span>
+          </a>
+        )}
 
         <div className="flex items-center justify-between">
           {renderMonteurAvatars(afspraak.monteurs)}
@@ -928,12 +936,22 @@ export function MontagePlanningLayout() {
                     </td>
                     <td className="py-3 px-4">{afspraak.klant_naam}</td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                        <span className="truncate max-w-[180px]">
-                          {afspraak.locatie}
-                        </span>
-                      </div>
+                      {afspraak.locatie ? (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1 text-primary hover:underline"
+                        >
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate max-w-[180px]">
+                            {afspraak.locatie}
+                          </span>
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">

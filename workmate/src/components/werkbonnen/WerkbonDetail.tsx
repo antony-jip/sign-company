@@ -520,7 +520,22 @@ export function WerkbonDetail() {
 
           {/* Locatie */}
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><MapPin className="h-4 w-4" /> Locatie</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2"><MapPin className="h-4 w-4" /> Locatie</CardTitle>
+                {(locatieAdres || locatieStad) && (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([locatieAdres, locatiePostcode, locatieStad].filter(Boolean).join(' '))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                  >
+                    <MapPin className="h-3 w-3" />
+                    Navigeer
+                  </a>
+                )}
+              </div>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label>Adres</Label>
@@ -623,18 +638,18 @@ export function WerkbonDetail() {
                           {regel.type === 'arbeid' ? 'Arbeid' : regel.type === 'materiaal' ? 'Materiaal' : 'Overig'}
                         </span>
                         <div className="flex items-center gap-2">
-                          <label className="flex items-center gap-1 text-xs">
+                          <label className="flex items-center gap-1.5 text-xs cursor-pointer py-1 px-1">
                             <input
                               type="checkbox"
                               checked={regel.factureerbaar}
                               onChange={(e) => handleRegelUpdate(regel.id, 'factureerbaar', e.target.checked)}
-                              className="rounded"
+                              className="rounded h-4 w-4"
                             />
                             Factureerbaar
                           </label>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
                             onClick={() => handleRegelVerwijderen(regel.id)}>
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </div>
@@ -756,9 +771,9 @@ export function WerkbonDetail() {
                       </div>
                       <Button
                         variant="ghost" size="icon"
-                        className="absolute top-1 right-1 h-6 w-6 bg-black/40 text-white opacity-0 group-hover:opacity-100"
+                        className="absolute top-1 right-1 h-8 w-8 bg-black/40 text-white sm:opacity-0 sm:group-hover:opacity-100"
                         onClick={() => handleFotoVerwijderen(foto.id)}>
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   ))}
