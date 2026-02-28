@@ -74,7 +74,6 @@ import {
   getDocumenten,
   createTaak,
   getOffertesByProject,
-  getOfferteItems,
   updateOfferte,
   createDocument,
   deleteDocument,
@@ -82,8 +81,6 @@ import {
   getTekeningGoedkeuringen,
   getKlant,
   getKlanten,
-  createFactuur,
-  createFactuurItem,
   getTijdregistratiesByProject,
   getMedewerkers,
   getProjectToewijzingen,
@@ -100,7 +97,7 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectOfferteEditor } from './ProjectOfferteEditor'
-import type { Taak, Project, Document, Offerte, OfferteItem, TekeningGoedkeuring, Klant, Factuur, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Uitgave } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Uitgave } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
@@ -220,9 +217,6 @@ export function ProjectDetail() {
   const [briefingText, setBriefingText] = useState('')
   const [briefingSaving, setBriefingSaving] = useState(false)
 
-  // Invoice from offerte state
-  const [creatingFactuurForOfferte, setCreatingFactuurForOfferte] = useState<string | null>(null)
-
   // Budget tracking state
   const [projectTijdregistraties, setProjectTijdregistraties] = useState<Tijdregistratie[]>([])
 
@@ -272,69 +266,24 @@ export function ProjectDetail() {
     }
   }
 
-  const handleCreateFactuurFromOfferte = async (offerte: Offerte) => {
-    if (!project || !user) return
-    setCreatingFactuurForOfferte(offerte.id)
-    try {
-      // Get offerte items
-      const offerteItems = await getOfferteItems(offerte.id)
+  const handleCreateFactuurFromOfferte = (offerte: Offerte) => {
+    if (!project) return
 
-      // Create factuur
-      const factuurNummer = `FAC-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`
-      const vervaldatum = new Date()
-      vervaldatum.setDate(vervaldatum.getDate() + 30)
-
-      const newFactuur = await createFactuur({
-        user_id: user.id,
-        klant_id: offerte.klant_id,
-        offerte_id: offerte.id,
-        project_id: id,
-        nummer: factuurNummer,
-        titel: offerte.titel,
-        status: 'concept',
-        subtotaal: offerte.subtotaal,
-        btw_bedrag: offerte.btw_bedrag,
-        totaal: offerte.totaal,
-        betaald_bedrag: 0,
-        factuurdatum: new Date().toISOString().split('T')[0],
-        vervaldatum: vervaldatum.toISOString().split('T')[0],
-        notities: `Factuur aangemaakt vanuit offerte ${offerte.nummer}`,
-        voorwaarden: '',
-        bron_type: 'offerte',
-        bron_offerte_id: offerte.id,
-        bron_project_id: id,
-      })
-
-      // Create factuur items from offerte items
-      await Promise.all(
-        offerteItems.map((item: OfferteItem, index: number) =>
-          createFactuurItem({
-            factuur_id: newFactuur.id,
-            beschrijving: item.beschrijving,
-            aantal: item.aantal,
-            eenheidsprijs: item.eenheidsprijs,
-            btw_percentage: item.btw_percentage,
-            korting_percentage: item.korting_percentage,
-            totaal: item.totaal,
-            volgorde: index + 1,
-          })
-        )
-      )
-
-      // Update offerte met factuur link (bidirectioneel) en zet status op gefactureerd
-      await updateOfferte(offerte.id, {
-        geconverteerd_naar_factuur_id: newFactuur.id,
-        status: 'gefactureerd',
-      })
-
-      toast.success(`Factuur ${factuurNummer} aangemaakt vanuit offerte ${offerte.nummer}`)
-      navigate(`/facturen`)
-    } catch (err) {
-      logger.error('Fout bij aanmaken factuur:', err)
-      toast.error('Kon factuur niet aanmaken')
-    } finally {
-      setCreatingFactuurForOfferte(null)
+    // Duplicate check: als offerte al een factuur heeft, navigeer daarheen
+    if (offerte.geconverteerd_naar_factuur_id) {
+      toast.info(`Offerte ${offerte.nummer} is al gefactureerd`)
+      navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}/bewerken`)
+      return
     }
+
+    // Navigeer naar FactuurEditor met pre-fill params
+    const params = new URLSearchParams({
+      offerte_id: offerte.id,
+      klant_id: offerte.klant_id,
+      project_id: id || '',
+      titel: offerte.titel,
+    })
+    navigate(`/facturen/nieuw?${params.toString()}`)
   }
 
   const openKopieDialog = async () => {
@@ -904,14 +853,9 @@ export function ProjectDetail() {
                           <Button
                             size="sm"
                             className="h-7 px-3 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
-                            disabled={creatingFactuurForOfferte === offerte.id}
                             onClick={() => handleCreateFactuurFromOfferte(offerte)}
                           >
-                            {creatingFactuurForOfferte === offerte.id ? (
-                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                            ) : (
-                              <CreditCard className="h-3 w-3 mr-1" />
-                            )}
+                            <CreditCard className="h-3 w-3 mr-1" />
                             Factuur aanmaken
                           </Button>
                         </div>
@@ -927,13 +871,19 @@ export function ProjectDetail() {
                 ) : (
                   <div className="mt-3">
                     <Button
-                      variant="outline"
                       size="sm"
-                      className="border-indigo-300 dark:border-indigo-700"
-                      onClick={() => navigate(`/facturen?klant=${project.klant_id}`)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      onClick={() => {
+                        const params = new URLSearchParams({
+                          klant_id: project.klant_id || '',
+                          project_id: id || '',
+                          titel: project.naam || '',
+                        })
+                        navigate(`/facturen/nieuw?${params.toString()}`)
+                      }}
                     >
-                      <Receipt className="h-3.5 w-3.5 mr-1.5" />
-                      Ga naar facturen
+                      <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                      Nieuwe factuur aanmaken
                     </Button>
                   </div>
                 )}
@@ -1598,14 +1548,9 @@ export function ProjectDetail() {
                             variant="ghost"
                             size="sm"
                             className="h-6 px-2 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
-                            disabled={creatingFactuurForOfferte === offerte.id}
                             onClick={() => handleCreateFactuurFromOfferte(offerte)}
                           >
-                            {creatingFactuurForOfferte === offerte.id ? (
-                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                            ) : (
-                              <CreditCard className="h-3 w-3 mr-1" />
-                            )}
+                            <CreditCard className="h-3 w-3 mr-1" />
                             Factuur
                           </Button>
                         )}

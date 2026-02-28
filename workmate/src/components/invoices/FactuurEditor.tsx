@@ -68,6 +68,7 @@ import {
   deleteFactuur,
   getOffertes,
   getOfferteItems,
+  updateOfferte,
   generateBetaalToken,
   getHerinneringTemplates,
 } from '@/services/supabaseService'
@@ -514,6 +515,18 @@ export function FactuurEditor() {
             totaal: calcLineTotal(item),
             volgorde: i + 1,
           })
+        }
+
+        // Update offerte met factuur link (bidirectioneel) en zet status op gefactureerd
+        if (offerteId) {
+          try {
+            await updateOfferte(offerteId, {
+              geconverteerd_naar_factuur_id: newFactuur.id,
+              status: 'gefactureerd',
+            })
+          } catch (err) {
+            logger.error('Kon offerte status niet bijwerken:', err)
+          }
         }
 
         toast.success(`Factuur ${nummer} aangemaakt`)
