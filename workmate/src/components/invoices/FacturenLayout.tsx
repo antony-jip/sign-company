@@ -852,6 +852,8 @@ export function FacturenLayout() {
           bedrijfsnaam,
           primaireKleur,
           handtekening: emailHandtekening || undefined,
+          logoUrl: profile?.logo_url || undefined,
+          betaalUrl: factuur.betaal_link || undefined,
         })
 
         await sendEmail(klant.email, subject, '', { html })

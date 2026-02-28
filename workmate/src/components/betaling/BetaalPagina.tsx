@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Copy,
-  Euro,
   Calendar,
   Building2,
 } from 'lucide-react'
@@ -227,9 +226,20 @@ export function BetaalPagina() {
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
-            <FileText className="h-7 w-7 text-white" />
-          </div>
+          {companyProfile?.logo_url ? (
+            <img
+              src={companyProfile.logo_url}
+              alt={companyProfile.bedrijfsnaam || 'Bedrijfslogo'}
+              className="h-14 mx-auto object-contain"
+            />
+          ) : (
+            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+              <FileText className="h-7 w-7 text-white" />
+            </div>
+          )}
+          {companyProfile?.bedrijfsnaam && (
+            <p className="text-sm font-medium text-gray-600">{companyProfile.bedrijfsnaam}</p>
+          )}
           <h1 className="text-2xl font-bold text-gray-900">Factuur betalen</h1>
           <p className="text-sm text-gray-500">
             {factuur.nummer}
@@ -324,7 +334,6 @@ export function BetaalPagina() {
                   {isBetaald ? 'Totaal betaald' : 'Te betalen'}
                 </span>
                 <span className="text-2xl font-bold text-blue-600">
-                  <Euro className="h-5 w-5 inline mr-1" />
                   {isBetaald
                     ? formatCurrency(factuur.totaal)
                     : formatCurrency(Math.max(0, factuur.totaal - factuur.betaald_bedrag))}
@@ -423,7 +432,7 @@ export function BetaalPagina() {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-400 pb-8">
-          Factuur {factuur.nummer} &middot; Gegenereerd door Sign Company
+          Factuur {factuur.nummer}{companyProfile?.bedrijfsnaam ? ` \u00b7 ${companyProfile.bedrijfsnaam}` : ''}
         </p>
       </div>
     </div>

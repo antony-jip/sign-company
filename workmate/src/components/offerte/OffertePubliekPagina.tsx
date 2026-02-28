@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Label } from '@/components/ui/label'
@@ -12,7 +11,6 @@ import {
   CheckCircle2,
   Calendar,
   Building2,
-  Euro,
   ThumbsUp,
   ThumbsDown,
   MessageSquare,
@@ -22,8 +20,9 @@ import {
   updateOfferteTracking,
   respondOpOfferte,
   getOfferteItems,
+  getProfile,
 } from '@/services/supabaseService'
-import type { Offerte, OfferteItem } from '@/types'
+import type { Offerte, OfferteItem, Profile } from '@/types'
 import { toast, Toaster } from 'sonner'
 
 // ============ HELPERS ============
@@ -41,14 +40,13 @@ function formatDate(dateString: string): string {
   })
 }
 
-import { round2 } from '@/utils/budgetUtils'
-
 // ============ COMPONENT ============
 
 export function OffertePubliekPagina() {
   const { token } = useParams<{ token: string }>()
   const [offerte, setOfferte] = useState<Offerte | null>(null)
   const [items, setItems] = useState<OfferteItem[]>([])
+  const [companyProfile, setCompanyProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [reactie, setReactie] = useState<'goedgekeurd' | 'afgewezen' | 'vraag' | null>(null)
@@ -72,8 +70,13 @@ export function OffertePubliekPagina() {
         if (!cancelled) {
           if (data) {
             setOfferte(data)
-            // Fetch items
-            const offerteItems = await getOfferteItems(data.id).catch(() => [])
+            // Fetch items + company profile in parallel
+            const [offerteItems] = await Promise.all([
+              getOfferteItems(data.id).catch(() => [] as OfferteItem[]),
+              getProfile(data.user_id).then((p) => {
+                if (!cancelled && p) setCompanyProfile(p)
+              }).catch(() => {}),
+            ])
             if (!cancelled) setItems(offerteItems)
           } else {
             setNotFound(true)
@@ -155,9 +158,20 @@ export function OffertePubliekPagina() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-blue-600 shadow-lg">
-            <FileText className="h-7 w-7 text-white" />
-          </div>
+          {companyProfile?.logo_url ? (
+            <img
+              src={companyProfile.logo_url}
+              alt={companyProfile.bedrijfsnaam || 'Bedrijfslogo'}
+              className="h-14 mx-auto object-contain"
+            />
+          ) : (
+            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-blue-600 shadow-lg">
+              <FileText className="h-7 w-7 text-white" />
+            </div>
+          )}
+          {companyProfile?.bedrijfsnaam && (
+            <p className="text-sm font-medium text-gray-600">{companyProfile.bedrijfsnaam}</p>
+          )}
           <h1 className="text-2xl font-bold text-gray-900">Offerte bekijken</h1>
           <p className="text-sm text-gray-500">{offerte.nummer}</p>
         </div>
@@ -270,7 +284,6 @@ export function OffertePubliekPagina() {
                 <div className="flex justify-between items-center">
                   <span className="text-base font-bold text-gray-900">Totaal</span>
                   <span className="text-2xl font-bold text-blue-600">
-                    <Euro className="h-5 w-5 inline mr-1" />
                     {formatCurrency(offerte.totaal)}
                   </span>
                 </div>
@@ -384,7 +397,7 @@ export function OffertePubliekPagina() {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-400 pb-8">
-          Offerte {offerte.nummer} &middot; Gegenereerd door Sign Company
+          Offerte {offerte.nummer}{companyProfile?.bedrijfsnaam ? ` \u00b7 ${companyProfile.bedrijfsnaam}` : ''}
         </p>
       </div>
     </div>

@@ -1217,6 +1217,9 @@ export function QuoteCreation() {
             offerteTitel,
             totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(subtotaal + btwBedrag)),
             geldigTot,
+            bedrijfsnaam,
+            primaireKleur,
+            logoUrl: profile?.logo_url || undefined,
           })
           await sendEmail(selectedKlant.email, subject, '', { html })
         } catch (emailErr) {

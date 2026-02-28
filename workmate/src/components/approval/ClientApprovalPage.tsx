@@ -28,8 +28,9 @@ import {
   getOfferteItems,
   getKlant,
   getProject,
+  getProfile,
 } from '@/services/supabaseService'
-import type { TekeningGoedkeuring, Document, Offerte, OfferteItem, Klant, Project } from '@/types'
+import type { TekeningGoedkeuring, Document, Offerte, OfferteItem, Klant, Project, Profile } from '@/types'
 import { logger } from '../../utils/logger'
 
 function getFileIcon(type: string) {
@@ -87,6 +88,7 @@ export function ClientApprovalPage() {
   const [offerteItems, setOfferteItems] = useState<OfferteItem[]>([])
   const [klant, setKlant] = useState<Klant | null>(null)
   const [project, setProject] = useState<Project | null>(null)
+  const [companyProfile, setCompanyProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showRevisieForm, setShowRevisieForm] = useState(false)
@@ -129,6 +131,9 @@ export function ClientApprovalPage() {
         const [klantData, projectData] = await Promise.all([
           getKlant(gk.klant_id),
           getProject(gk.project_id),
+          getProfile(gk.user_id).then((p) => {
+            if (p) setCompanyProfile(p)
+          }).catch(() => {}),
         ])
         setKlant(klantData)
         setProject(projectData)
@@ -308,9 +313,17 @@ export function ClientApprovalPage() {
         <div className="max-w-4xl mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-[#3D3522] flex items-center justify-center flex-shrink-0">
-                <Building2 className="h-5 w-5 text-white" />
-              </div>
+              {companyProfile?.logo_url ? (
+                <img
+                  src={companyProfile.logo_url}
+                  alt={companyProfile.bedrijfsnaam || 'Bedrijfslogo'}
+                  className="h-10 object-contain flex-shrink-0"
+                />
+              ) : (
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-[#3D3522] flex items-center justify-center flex-shrink-0">
+                  <Building2 className="h-5 w-5 text-white" />
+                </div>
+              )}
               <div>
                 <h1 className="text-lg font-bold text-gray-900">Tekening Goedkeuring</h1>
                 {project && (
@@ -698,9 +711,9 @@ export function ClientApprovalPage() {
           <p className="text-xs text-gray-400">
             Verstuurd op {formatDate(goedkeuring.created_at)}
           </p>
-          {klant && (
+          {companyProfile?.bedrijfsnaam && (
             <p className="text-xs text-gray-300">
-              {klant.bedrijfsnaam || klant.contactpersoon}
+              {companyProfile.bedrijfsnaam}
             </p>
           )}
         </div>

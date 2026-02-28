@@ -666,6 +666,7 @@ export function FactuurEditor() {
         bedrijfsnaam,
         primaireKleur,
         handtekening: emailHandtekening || undefined,
+        logoUrl: profile?.logo_url || undefined,
         betaalUrl: existingFactuur.betaal_link || undefined,
       })
 

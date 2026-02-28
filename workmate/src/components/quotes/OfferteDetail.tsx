@@ -89,7 +89,7 @@ export function OfferteDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { pipelineStappen, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
+  const { pipelineStappen, bedrijfsnaam, primaireKleur, emailHandtekening, profile } = useAppSettings()
 
   const [offerte, setOfferte] = useState<Offerte | null>(null)
   const [items, setItems] = useState<OfferteItem[]>([])
@@ -256,6 +256,7 @@ export function OfferteDetail() {
         bedrijfsnaam: bedrijfsnaam || 'Uw bedrijf',
         primaireKleur,
         handtekening: emailHandtekening || undefined,
+        logoUrl: profile?.logo_url || undefined,
         bekijkUrl: offerte.publiek_token ? `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}` : undefined,
       })
 
