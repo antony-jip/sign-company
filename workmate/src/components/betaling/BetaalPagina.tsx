@@ -14,8 +14,8 @@ import {
   Calendar,
   Building2,
 } from 'lucide-react'
-import { getFactuurByBetaalToken, markFactuurBekeken } from '@/services/supabaseService'
-import type { Factuur } from '@/types'
+import { getFactuurByBetaalToken, markFactuurBekeken, getProfile } from '@/services/supabaseService'
+import type { Factuur, Profile } from '@/types'
 
 // ============ EPC QR CODE GENERATOR (inline, no external lib) ============
 
@@ -130,6 +130,7 @@ function formatDate(dateString: string): string {
 export function BetaalPagina() {
   const { token } = useParams<{ token: string }>()
   const [factuur, setFactuur] = useState<Factuur | null>(null)
+  const [companyProfile, setCompanyProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -149,6 +150,10 @@ export function BetaalPagina() {
             setFactuur(data)
             // Mark as bekeken
             markFactuurBekeken(token).catch(() => {})
+            // Load company profile for IBAN and bedrijfsnaam
+            getProfile(data.user_id).then((p) => {
+              if (!cancelled && p) setCompanyProfile(p)
+            }).catch(() => {})
           } else {
             setNotFound(true)
           }
@@ -203,17 +208,14 @@ export function BetaalPagina() {
   const isBetaald = factuur.status === 'betaald'
   const isVervallen = !isBetaald && factuur.vervaldatum < new Date().toISOString().split('T')[0]
 
-  // Try to extract IBAN from voorwaarden or notities (simple heuristic)
-  // In a real app, this would come from the bedrijfsprofiel
-  const ibanMatch = (factuur.voorwaarden + ' ' + (factuur.notities || '')).match(
-    /[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7,25}/
-  )
-  const companyIban = ibanMatch ? ibanMatch[0] : null
+  // Use IBAN from company profile (loaded after factuur)
+  const companyIban = companyProfile?.iban || null
+  const companyNaam = companyProfile?.bedrijfsnaam || factuur.klant_naam || 'Betaling'
 
   // EPC QR data (only if we have IBAN)
   const epcData = companyIban
     ? generateEpcPayload(
-        factuur.klant_naam || 'Betaling',
+        companyNaam,
         companyIban,
         Math.max(0, factuur.totaal - factuur.betaald_bedrag),
         factuur.nummer
@@ -373,6 +375,11 @@ export function BetaalPagina() {
                           )}
                         </Button>
                       </div>
+                      {companyProfile?.bedrijfsnaam && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          t.n.v. {companyProfile.bedrijfsnaam}
+                        </p>
+                      )}
                     </div>
                   )}
 

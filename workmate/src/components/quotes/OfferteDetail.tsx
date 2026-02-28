@@ -15,6 +15,8 @@ import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/li
 import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { sendEmail } from '@/services/gmailService'
+import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -87,7 +89,7 @@ export function OfferteDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { pipelineStappen, bedrijfsnaam } = useAppSettings()
+  const { pipelineStappen, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
 
   const [offerte, setOfferte] = useState<Offerte | null>(null)
   const [items, setItems] = useState<OfferteItem[]>([])
@@ -244,6 +246,26 @@ export function OfferteDetail() {
     if (!offerte) return
     setIsSending(true)
     try {
+      // Actually send the email
+      const { subject, html } = offerteVerzendTemplate({
+        klantNaam: klant?.contactpersoon || klant?.bedrijfsnaam || '',
+        offerteNummer: offerte.nummer,
+        offerteTitel: offerte.titel,
+        totaalBedrag: formatCurrency(offerte.totaal),
+        geldigTot: formatDate(offerte.geldig_tot),
+        bedrijfsnaam: bedrijfsnaam || 'Uw bedrijf',
+        primaireKleur,
+        handtekening: emailHandtekening || undefined,
+        bekijkUrl: offerte.publiek_token ? `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}` : undefined,
+      })
+
+      try {
+        await sendEmail(sendTo, sendSubject || subject, '', { html })
+      } catch {
+        // Email sending failed (SMTP not configured), continue with status update
+        toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Status is wel bijgewerkt.')
+      }
+
       const now = new Date().toISOString()
       const newActivity: OfferteActiviteit = {
         datum: now,
@@ -266,7 +288,7 @@ export function OfferteDetail() {
     } finally {
       setIsSending(false)
     }
-  }, [offerte, sendTo, user])
+  }, [offerte, klant, sendTo, sendSubject, user, bedrijfsnaam, primaireKleur, emailHandtekening])
 
   // Duplicate offerte
   const handleDuplicate = useCallback(async () => {

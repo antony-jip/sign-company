@@ -174,12 +174,14 @@ function addHeader(
       doc.text(bedrijfsProfiel.bedrijfs_adres, detailsX, rightY, { align: detailsAlign })
       rightY += 5
     }
-    if (bedrijfsProfiel.email) {
-      doc.text(bedrijfsProfiel.email, detailsX, rightY, { align: detailsAlign })
+    const displayTel = bedrijfsProfiel.bedrijfs_telefoon || bedrijfsProfiel.telefoon
+    if (displayTel) {
+      doc.text(`Tel: ${displayTel}`, detailsX, rightY, { align: detailsAlign })
       rightY += 5
     }
-    if (bedrijfsProfiel.telefoon) {
-      doc.text(`Tel: ${bedrijfsProfiel.telefoon}`, detailsX, rightY, { align: detailsAlign })
+    const displayEmail = bedrijfsProfiel.bedrijfs_email || bedrijfsProfiel.email
+    if (displayEmail) {
+      doc.text(displayEmail, detailsX, rightY, { align: detailsAlign })
       rightY += 5
     }
     if (bedrijfsProfiel.kvk_nummer) {
@@ -302,6 +304,7 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
         if (bedrijfsProfiel.bedrijfsnaam) footerParts.push(bedrijfsProfiel.bedrijfsnaam)
         if (bedrijfsProfiel.kvk_nummer) footerParts.push(`KvK: ${bedrijfsProfiel.kvk_nummer}`)
         if (bedrijfsProfiel.btw_nummer) footerParts.push(`BTW: ${bedrijfsProfiel.btw_nummer}`)
+        if (bedrijfsProfiel.iban) footerParts.push(`IBAN: ${bedrijfsProfiel.iban}`)
         footerText = footerParts.join(' | ')
       }
 
@@ -823,6 +826,16 @@ export function generateFactuurPDF(
   doc.setFont(bodyFont, 'normal')
   doc.setTextColor(...textColor)
   doc.setFontSize(baseFontSize - 1)
+
+  // Show IBAN prominently if available
+  if (bedrijfsProfiel.iban) {
+    doc.text(`IBAN: ${bedrijfsProfiel.iban}`, margins.left, totalsY)
+    totalsY += 5
+    if (bedrijfsProfiel.bedrijfsnaam) {
+      doc.text(`t.n.v. ${bedrijfsProfiel.bedrijfsnaam}`, margins.left, totalsY)
+      totalsY += 6
+    }
+  }
 
   const betaalInfo = factuurData.betaalvoorwaarden ||
     `Wij verzoeken u vriendelijk het totaalbedrag van ${formatCurrency(factuurData.totaal)} over te maken voor ${formatDate(factuurData.vervaldatum)} onder vermelding van factuurnummer ${factuurData.nummer}.`

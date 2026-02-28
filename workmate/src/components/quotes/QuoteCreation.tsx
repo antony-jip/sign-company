@@ -104,7 +104,7 @@ export function QuoteCreation() {
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
-  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl } = useAppSettings()
+  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -1295,11 +1295,7 @@ export function QuoteCreation() {
         created_at: new Date().toISOString(),
       }))
       const doc = generateOffertePDF(offerteData, offerteItems, selectedKlant, {
-        bedrijfsnaam: bedrijfsnaam || 'Uw Bedrijf',
-        bedrijfs_adres: bedrijfsAdres || '',
-        kvk_nummer: kvkNummer || '',
-        btw_nummer: btwNummer || '',
-        logo_url: logoUrl || '',
+        ...profile,
         primaireKleur: primaireKleur || '#2563eb',
       }, documentStyle)
       doc.save(`${offerteNummer}.pdf`)
