@@ -56,6 +56,8 @@ import {
   AlertTriangle,
   MinusCircle,
   FileDown,
+  ChevronRight,
+  ClipboardList,
 } from 'lucide-react'
 import {
   getKlanten,
@@ -196,6 +198,7 @@ export function FactuurEditor() {
 
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [allFacturen, setAllFacturen] = useState<Factuur[]>([])
+  const [allOffertes, setAllOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -244,15 +247,17 @@ export function FactuurEditor() {
     async function loadData() {
       try {
         setIsLoading(true)
-        const [klantenData, facturenData, herinneringData] = await Promise.all([
+        const [klantenData, facturenData, herinneringData, offertesData] = await Promise.all([
           getKlanten().catch(() => []),
           getFacturen().catch(() => []),
           getHerinneringTemplates().catch(() => []),
+          getOffertes().catch(() => []),
         ])
         if (!cancelled) {
           setKlanten(klantenData)
           setAllFacturen(facturenData)
           setHerinneringTemplates(herinneringData)
+          setAllOffertes(offertesData)
         }
 
         // Edit mode: load existing factuur
@@ -397,6 +402,18 @@ export function FactuurEditor() {
     const vandaag = new Date()
     return Math.max(0, Math.floor((vandaag.getTime() - vervaldatum.getTime()) / (1000 * 60 * 60 * 24)))
   }, [existingFactuur])
+
+  // Te factureren offertes: goedgekeurd maar nog geen factuur
+  const teFacturerenOffertes = useMemo(() => {
+    const gefactuurdeOfferteIds = new Set(
+      allFacturen
+        .filter((f) => f.offerte_id)
+        .map((f) => f.offerte_id)
+    )
+    return allOffertes
+      .filter((o) => o.status === 'goedgekeurd' && !gefactuurdeOfferteIds.has(o.id))
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [allOffertes, allFacturen])
 
   // ============ ITEM HANDLERS ============
 
@@ -1180,6 +1197,60 @@ export function FactuurEditor() {
                         <span className="text-muted-foreground/50">—</span>
                       )}
                     </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Te factureren offertes */}
+          {teFacturerenOffertes.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Te factureren ({teFacturerenOffertes.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                {teFacturerenOffertes.map((offerte) => {
+                  const isHuidige = offerte.id === offerteId
+                  return (
+                    <button
+                      key={offerte.id}
+                      onClick={() => {
+                        if (!isHuidige) {
+                          navigate(`/facturen/nieuw?offerte_id=${offerte.id}&klant_id=${offerte.klant_id}`)
+                        }
+                      }}
+                      disabled={isHuidige}
+                      className={cn(
+                        'w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 group',
+                        isHuidige
+                          ? 'bg-primary/10 border border-primary/30 cursor-default'
+                          : 'hover:bg-accent cursor-pointer'
+                      )}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {isHuidige && (
+                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-primary/40 text-primary">
+                              Huidig
+                            </Badge>
+                          )}
+                          <span className="font-medium truncate">{offerte.nummer}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {offerte.klant_naam || 'Klant'} — {offerte.titel}
+                        </div>
+                        <div className="text-xs font-medium text-muted-foreground">
+                          {formatCurrency(offerte.totaal)}
+                        </div>
+                      </div>
+                      {!isHuidige && (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                      )}
+                    </button>
                   )
                 })}
               </CardContent>
