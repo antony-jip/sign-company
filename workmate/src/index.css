@@ -740,6 +740,155 @@ textarea:focus {
 }
 
 /* ================================================================
+   SNOW THEME — Apple-style frosted glass & vibrancy
+   Requires data-theme="snow" on <html>
+   ================================================================ */
+
+/* Background: subtle cool gradient with larger, softer orbs */
+[data-theme="snow"] .wm-mesh-gradient {
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(120, 120, 200, 0.06) 0, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(100, 160, 220, 0.05) 0, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(180, 180, 240, 0.03) 0, transparent 60%),
+    hsl(var(--background));
+}
+
+/* Noise: softer for Snow */
+[data-theme="snow"] .wm-mesh-gradient::before {
+  opacity: 0.12;
+}
+
+/* Sidebar: frosted translucent panel */
+[data-theme="snow"] .wm-sidebar {
+  background: rgba(232, 232, 238, 0.55);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-right: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+/* Header: frosted glass bar */
+[data-theme="snow"] .wm-glass {
+  background: rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+/* Cards: frosted glass panels with translucent white */
+[data-theme="snow"] [class*="rounded-xl"][class*="border"][class*="bg-card"] {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.60);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.50);
+}
+[data-theme="snow"] [class*="rounded-xl"][class*="border"][class*="bg-card"]:hover {
+  background: rgba(255, 255, 255, 0.70) !important;
+  border-color: rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.60);
+}
+
+/* Stat cards + regular wm-card: glass treatment */
+[data-theme="snow"] .wm-card,
+[data-theme="snow"] .wm-stat-card {
+  background: rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.50);
+}
+[data-theme="snow"] .wm-card:hover,
+[data-theme="snow"] .wm-stat-card:hover {
+  background: rgba(255, 255, 255, 0.70);
+  border-color: rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.60);
+}
+
+/* Dialogs: frosted glass modal */
+[data-theme="snow"] [role="dialog"] > div,
+[data-theme="snow"] [data-radix-popper-content-wrapper] [role="dialog"] {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-color: rgba(255, 255, 255, 0.60);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.10),
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.60);
+}
+
+/* Popovers & dropdown menus: glass panels */
+[data-theme="snow"] [data-radix-popper-content-wrapper] > div {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.50);
+}
+
+/* Input fields: subtle translucent */
+[data-theme="snow"] input,
+[data-theme="snow"] textarea,
+[data-theme="snow"] [role="combobox"] {
+  background: rgba(255, 255, 255, 0.40);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+[data-theme="snow"] input:focus,
+[data-theme="snow"] textarea:focus {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: hsl(var(--primary) / 0.30);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
+}
+
+/* Sidebar active item: glass highlight */
+[data-theme="snow"] .wm-sidebar-item.active {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.50);
+}
+
+/* Table header: glass instead of gradient */
+[data-theme="snow"] .wm-table thead {
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Table rows: translucent hover */
+[data-theme="snow"] tbody tr:hover {
+  background: rgba(255, 255, 255, 0.40);
+}
+
+/* Scrollbar: cooler tint for Snow */
+[data-theme="snow"] ::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 160, 0.15);
+}
+[data-theme="snow"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 160, 0.30);
+}
+
+/* Welcome banner: frosted glass */
+[data-theme="snow"] .wm-welcome-banner {
+  background: rgba(255, 255, 255, 0.40);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* ================================================================
    PRINT — Hide chrome, show content
    ================================================================ */
 @media print {

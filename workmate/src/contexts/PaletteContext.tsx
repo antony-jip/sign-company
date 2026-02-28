@@ -85,29 +85,29 @@ export const APP_THEMES: AppTheme[] = [
   {
     id: 'snow',
     naam: 'Snow',
-    beschrijving: 'Puur wit — minimaal & helder',
+    beschrijving: 'Apple-stijl — frosted glass & clean',
     isDark: false,
-    preview: { bg: '#ffffff', sidebar: '#fafafa', card: '#ffffff', accent: '#58B09C' },
+    preview: { bg: '#ededf2', sidebar: '#e4e4ec', card: '#ffffffcc', accent: '#58B09C' },
     vars: {
-      '--background': '0 0% 100%',
-      '--foreground': '220 14% 12%',
-      '--card': '0 0% 100%',
-      '--card-foreground': '220 14% 12%',
-      '--popover': '0 0% 100%',
-      '--popover-foreground': '220 14% 12%',
+      '--background': '230 12% 93%',
+      '--foreground': '220 14% 10%',
+      '--card': '230 10% 98%',
+      '--card-foreground': '220 14% 10%',
+      '--popover': '230 10% 98%',
+      '--popover-foreground': '220 14% 10%',
       '--primary-foreground': '0 0% 100%',
-      '--secondary': '220 10% 96%',
-      '--secondary-foreground': '220 14% 12%',
-      '--muted': '220 8% 96%',
-      '--muted-foreground': '220 8% 44%',
+      '--secondary': '230 10% 90%',
+      '--secondary-foreground': '220 14% 10%',
+      '--muted': '230 8% 90%',
+      '--muted-foreground': '220 8% 40%',
       '--accent-foreground': '0 0% 100%',
-      '--border': '220 8% 91%',
-      '--input': '220 8% 91%',
-      '--wm-sidebar-bg': '220 8% 98%',
-      '--wm-sidebar-hover': '220 8% 95%',
-      '--wm-shadow-color': '220 15% 60%',
-      '--wm-glass': 'rgba(255, 255, 255, 0.80)',
-      '--wm-glass-border': 'rgba(0, 0, 0, 0.04)',
+      '--border': '230 6% 86%',
+      '--input': '230 6% 86%',
+      '--wm-sidebar-bg': '230 10% 90%',
+      '--wm-sidebar-hover': '230 8% 86%',
+      '--wm-shadow-color': '230 15% 50%',
+      '--wm-glass': 'rgba(255, 255, 255, 0.50)',
+      '--wm-glass-border': 'rgba(255, 255, 255, 0.55)',
     },
   },
   {
@@ -423,6 +423,13 @@ const PaletteContext = createContext<PaletteContextType | undefined>(undefined)
 
 function applyAppTheme(theme: AppTheme) {
   const root = document.documentElement
+
+  // Set data-theme attribute so CSS can target specific themes (e.g. Snow glassmorphism)
+  if (theme.id === 'standaard') {
+    root.removeAttribute('data-theme')
+  } else {
+    root.setAttribute('data-theme', theme.id)
+  }
 
   // Set dark class based on theme
   if (theme.isDark) {
