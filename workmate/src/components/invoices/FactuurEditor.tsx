@@ -78,7 +78,7 @@ import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
-import { factuurVerzendTemplate, factuurHerinneringTemplate } from '@/services/emailTemplateService'
+import { factuurVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
