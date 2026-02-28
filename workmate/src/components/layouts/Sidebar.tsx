@@ -158,13 +158,13 @@ export function Sidebar() {
           'wm-sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 relative group',
           isActive
             ? 'active text-white bg-white/[0.08]'
-            : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]',
+            : 'text-white/40 hover:text-white/80 hover:bg-white/[0.04]',
           isCollapsed && 'justify-center px-2'
         )}
       >
         <Icon className={cn(
           'w-[17px] h-[17px] flex-shrink-0 transition-colors duration-200',
-          isActive ? 'text-primary' : 'text-gray-500 group-hover:text-gray-400'
+          isActive ? 'text-primary' : 'text-white/30 group-hover:text-white/50'
         )} />
         {!isCollapsed && <span className="truncate">{item.label}</span>}
       </NavLink>
@@ -254,12 +254,12 @@ export function Sidebar() {
                   ? `${user.user_metadata.voornaam}${user.user_metadata.achternaam ? ' ' + user.user_metadata.achternaam : ''}`
                   : user.email?.split('@')[0] || 'Gebruiker'}
               </p>
-              <p className="text-[11px] text-gray-500 truncate">{user.email}</p>
+              <p className="text-[11px] text-white/30 truncate">{user.email}</p>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="w-7 h-7 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-200 rounded-lg"
+              className="w-7 h-7 text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-200 rounded-lg"
               onClick={logout}
               title="Uitloggen"
               aria-label="Uitloggen"
@@ -286,7 +286,7 @@ export function Sidebar() {
           variant="ghost"
           size="sm"
           className={cn(
-            'w-full text-gray-500 hover:text-white hover:bg-white/[0.04] transition-colors duration-200 h-8 text-xs',
+            'w-full text-white/30 hover:text-white hover:bg-white/[0.04] transition-colors duration-200 h-8 text-xs',
             isCollapsed && 'px-0 justify-center'
           )}
           onClick={toggleSidebar}
@@ -374,9 +374,9 @@ function SidebarPulse() {
   }, [])
 
   const items = [
-    { label: 'Open offertes', value: stats.openOffertes, color: 'text-blue-400' },
-    { label: 'Montages deze week', value: stats.montagesWeek, color: 'text-orange-400' },
-    { label: 'Actieve projecten', value: stats.actieveProjecten, color: 'text-emerald-400' },
+    { label: 'Open offertes', value: stats.openOffertes, color: 'text-wm-light' },
+    { label: 'Montages deze week', value: stats.montagesWeek, color: 'text-amber-400' },
+    { label: 'Actieve projecten', value: stats.actieveProjecten, color: 'text-primary' },
   ]
 
   return (
@@ -387,7 +387,7 @@ function SidebarPulse() {
       <div className="space-y-1.5">
         {items.map((item) => (
           <div key={item.label} className="flex items-center justify-between px-0.5">
-            <span className="text-[11px] text-gray-500">{item.label}</span>
+            <span className="text-[11px] text-white/30">{item.label}</span>
             <span className={`text-[11px] font-semibold ${item.color}`}>{item.value}</span>
           </div>
         ))}

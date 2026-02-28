@@ -87,13 +87,13 @@ export function WorkmateDashboard() {
                 </div>
               )}
               {heroCounts.openOffertes > 0 && (
-                <div className="flex items-center gap-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 px-2.5 py-1.5 rounded-full">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-accent/15 border border-primary/20 dark:border-primary/15 px-2.5 py-1.5 rounded-full">
                   <FileText className="w-3 h-3" />
                   {heroCounts.openOffertes} open offerte{heroCounts.openOffertes !== 1 ? 's' : ''}
                 </div>
               )}
               {heroCounts.actieveProjecten > 0 && (
-                <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 px-2.5 py-1.5 rounded-full">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-primary dark:text-primary bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary/15 px-2.5 py-1.5 rounded-full">
                   <FolderKanban className="w-3 h-3" />
                   {heroCounts.actieveProjecten} actie{heroCounts.actieveProjecten !== 1 ? 've' : 'f'} project{heroCounts.actieveProjecten !== 1 ? 'en' : ''}
                 </div>

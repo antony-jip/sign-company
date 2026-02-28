@@ -126,11 +126,11 @@
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.15);
+  background: hsl(var(--primary) / 0.15);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: hsl(var(--primary) / 0.3);
 }
 
 /* ================================================================
@@ -157,15 +157,32 @@ thead th {
   letter-spacing: 0.05em;
 }
 
-/* Table rows: smooth hover transition */
+/* Table rows: smooth hover transition with botanical left accent */
 tbody tr {
-  transition: background-color 150ms ease;
+  transition: background-color 150ms ease, box-shadow 200ms ease;
+}
+tbody tr:hover {
+  box-shadow: inset 3px 0 0 hsl(var(--primary) / 0.5);
 }
 
 /* Hoverable card style */
 @layer components {
   .card-hoverable {
-    @apply shadow-sm transition-shadow duration-200 hover:shadow-md;
+    @apply shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  }
+}
+
+/* Data table — distinctive header and zebra warmth */
+@layer components {
+  .wm-table thead {
+    background: linear-gradient(
+      to right,
+      hsl(var(--muted) / 0.5),
+      hsl(var(--muted) / 0.3)
+    );
+  }
+  .wm-table tbody tr:nth-child(even) {
+    background: hsl(var(--muted) / 0.15);
   }
 }
 
@@ -402,17 +419,18 @@ tbody tr {
    ================================================================ */
 .wm-mesh-gradient {
   background:
-    radial-gradient(at 15% 85%, rgba(56, 97, 80, 0.07) 0, transparent 50%),
-    radial-gradient(at 85% 15%, rgba(88, 176, 156, 0.05) 0, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(202, 247, 226, 0.04) 0, transparent 50%),
+    radial-gradient(ellipse at 10% 90%, rgba(56, 97, 80, 0.10) 0, transparent 45%),
+    radial-gradient(ellipse at 90% 10%, rgba(88, 176, 156, 0.08) 0, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, rgba(202, 247, 226, 0.06) 0, transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(74, 68, 45, 0.04) 0, transparent 40%),
     hsl(var(--background));
 }
 
 .dark .wm-mesh-gradient {
   background:
-    radial-gradient(at 15% 85%, rgba(56, 97, 80, 0.06) 0, transparent 50%),
-    radial-gradient(at 85% 15%, rgba(88, 176, 156, 0.04) 0, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(202, 247, 226, 0.02) 0, transparent 50%),
+    radial-gradient(ellipse at 10% 90%, rgba(56, 97, 80, 0.08) 0, transparent 45%),
+    radial-gradient(ellipse at 90% 10%, rgba(88, 176, 156, 0.06) 0, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, rgba(202, 247, 226, 0.03) 0, transparent 55%),
     hsl(var(--background));
 }
 
@@ -672,7 +690,57 @@ tbody tr {
    ================================================================ */
 input::placeholder,
 textarea::placeholder {
-  color: hsl(var(--muted-foreground) / 0.5);
+  color: hsl(var(--muted-foreground) / 0.45);
+}
+
+/* Active input has a warm underline glow */
+input:focus,
+textarea:focus {
+  border-color: hsl(var(--primary) / 0.35);
+}
+
+/* ================================================================
+   INTERACTIVE MICRO-DETAILS — What makes it feel "crafted"
+   ================================================================ */
+
+/* Links get a botanical underline on hover */
+@layer components {
+  .wm-link {
+    @apply text-accent dark:text-wm-light relative;
+    text-decoration: none;
+  }
+  .wm-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 0;
+    height: 1.5px;
+    background: linear-gradient(90deg, hsl(var(--accent)), hsl(var(--primary)));
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 1px;
+  }
+  .wm-link:hover::after {
+    width: 100%;
+  }
+}
+
+/* Divider with botanical accent dot */
+@layer components {
+  .wm-divider {
+    @apply relative border-t border-border/60;
+  }
+  .wm-divider::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: hsl(var(--primary) / 0.3);
+  }
 }
 
 /* ================================================================

@@ -34,7 +34,7 @@ export function HeaderNav() {
   )
 
   return (
-    <nav className="hidden md:flex items-center h-10 px-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-border/40 flex-shrink-0 z-10">
+    <nav className="hidden md:flex items-center h-10 px-4 bg-card/80 dark:bg-card/80 backdrop-blur-sm border-b border-border/40 flex-shrink-0 z-10">
       <span className="text-sm font-bold text-primary mr-6 tracking-tight">Workmate</span>
       <div className="flex items-center gap-1">
         {visibleItems.map((item) => (
