@@ -19,6 +19,7 @@ import {
   Receipt,
   Users,
   CalendarDays,
+  Camera,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -37,7 +38,8 @@ import {
   getPriorityColor,
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
-import { getProjecten, getKlanten, updateProject } from '@/services/supabaseService'
+import { getProjecten, getKlanten, updateProject, createDocument } from '@/services/supabaseService'
+import { uploadFile } from '@/services/storageService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant } from '@/types'
 import { toast } from 'sonner'
@@ -107,6 +109,45 @@ export function ProjectsList() {
   const [statusFilter, setStatusFilter] = useState('alle')
   const [sortField, setSortField] = useState<'naam' | 'voortgang' | 'start_datum'>('start_datum')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const photoInputRef = React.useRef<HTMLInputElement>(null)
+  const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
+  const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
+
+  const handleQuickPhotoUpload = async (files: FileList) => {
+    if (!photoUploadProjectId || !user) return
+    const images = Array.from(files).filter(f => f.type.startsWith('image/'))
+    if (images.length === 0) return
+
+    let uploaded = 0
+    for (const file of images) {
+      try {
+        const storagePath = `projects/${photoUploadProjectId}/fotos/${Date.now()}_${file.name}`
+        await uploadFile(file, storagePath)
+        await createDocument({
+          user_id: user.id,
+          project_id: photoUploadProjectId,
+          klant_id: photoUploadKlantId,
+          naam: file.name,
+          type: file.type,
+          grootte: file.size,
+          map: "Situatiefoto's",
+          storage_path: storagePath,
+          status: 'definitief',
+          tags: ['foto', 'situatie'],
+          gedeeld_met: [],
+          beschrijving: '',
+        })
+        uploaded++
+      } catch (err) {
+        logger.error(`Fout bij uploaden ${file.name}:`, err)
+      }
+    }
+    if (uploaded > 0) {
+      toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`)
+    }
+    setPhotoUploadProjectId(null)
+    setPhotoUploadKlantId(null)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -217,6 +258,21 @@ export function ProjectsList() {
 
   return (
     <div className="space-y-5 animate-fade-in-up">
+      {/* Hidden photo input for quick upload */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            handleQuickPhotoUpload(e.target.files)
+          }
+          e.target.value = ''
+        }}
+      />
+
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -590,50 +646,77 @@ export function ProjectsList() {
                       )}
                     </td>
 
-                    {/* Menu */}
+                    {/* Quick photo + Menu */}
                     <td className="py-3 px-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            onClick={(e) => e.stopPropagation()}
-                            className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              window.location.href = `/projecten/${project.id}`
-                            }}
-                          >
-                            Bekijken
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const csv = [
-                                'Project;' + project.naam,
-                                'Klant;' + klantNaam,
-                                'Status;' + (statusLabels[project.status] || project.status),
-                                'Voortgang;' + project.voortgang + '%',
-                                'Start;' + formatDate(project.start_datum),
-                              ].join('\n')
-                              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                              const url = URL.createObjectURL(blob)
-                              const a = document.createElement('a')
-                              a.href = url
-                              a.download = `${project.naam.replace(/\s+/g, '-').toLowerCase()}.csv`
-                              a.click()
-                              URL.revokeObjectURL(url)
-                            }}
-                          >
-                            <Download className="w-3.5 h-3.5 mr-2" />
-                            Export
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center gap-0.5 justify-end">
+                        {/* Quick photo upload button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPhotoUploadProjectId(project.id)
+                            setPhotoUploadKlantId(project.klant_id)
+                            photoInputRef.current?.click()
+                          }}
+                          className="p-1 rounded-md hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Foto's toevoegen"
+                        >
+                          <Camera className="w-4 h-4 text-muted-foreground hover:text-violet-600 dark:hover:text-violet-400 transition-colors" />
+                        </button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.location.href = `/projecten/${project.id}`
+                              }}
+                            >
+                              Bekijken
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setPhotoUploadProjectId(project.id)
+                                setPhotoUploadKlantId(project.klant_id)
+                                photoInputRef.current?.click()
+                              }}
+                            >
+                              <Camera className="w-3.5 h-3.5 mr-2" />
+                              Foto's toevoegen
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const csv = [
+                                  'Project;' + project.naam,
+                                  'Klant;' + klantNaam,
+                                  'Status;' + (statusLabels[project.status] || project.status),
+                                  'Voortgang;' + project.voortgang + '%',
+                                  'Start;' + formatDate(project.start_datum),
+                                ].join('\n')
+                                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                                const url = URL.createObjectURL(blob)
+                                const a = document.createElement('a')
+                                a.href = url
+                                a.download = `${project.naam.replace(/\s+/g, '-').toLowerCase()}.csv`
+                                a.click()
+                                URL.revokeObjectURL(url)
+                              }}
+                            >
+                              <Download className="w-3.5 h-3.5 mr-2" />
+                              Export
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </td>
                   </tr>
                 )
