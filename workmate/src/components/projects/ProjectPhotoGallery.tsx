@@ -5,12 +5,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  ImagePlus,
+  Upload,
   Trash2,
   MessageSquare,
   Check,
   Pencil,
-  Images,
+  Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -213,7 +213,7 @@ export function ProjectPhotoGallery({
                     className="h-7 px-2 text-xs text-muted-foreground"
                     onClick={() => setLightboxIndex(0)}
                   >
-                    <Images className="h-3.5 w-3.5 mr-1" />
+                    <Eye className="h-3.5 w-3.5 mr-1" />
                     Bekijk alles
                   </Button>
                   <Button
@@ -279,7 +279,7 @@ export function ProjectPhotoGallery({
                   : 'border-border/60 text-muted-foreground hover:border-primary/30 hover:text-primary hover:bg-primary/5 cursor-pointer'
               )}
             >
-              <ImagePlus className="h-4 w-4" />
+              <Upload className="h-4 w-4" />
               {isUploading ? 'Uploaden...' : "Foto's toevoegen"}
             </button>
 
