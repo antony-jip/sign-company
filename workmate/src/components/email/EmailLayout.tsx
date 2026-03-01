@@ -901,10 +901,36 @@ export function EmailLayout() {
       ) : activeTab === 'analytics' ? (
         <EmailAnalytics emails={emails} />
       ) : isLoading ? (
-        <Card className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3 text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin" />
-            <p className="text-sm font-medium">Emails laden...</p>
+        <Card className="flex-1 flex overflow-hidden">
+          {/* Skeleton email list */}
+          <div className="flex-1 flex flex-col">
+            <div className="p-3 flex items-center gap-2">
+              <div className="flex-1 h-9 rounded-lg animate-shimmer" />
+              <div className="h-9 w-20 rounded-lg animate-shimmer" />
+            </div>
+            <div className="px-3 pb-2 flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-7 w-20 rounded-md animate-shimmer" />
+              ))}
+            </div>
+            <div className="px-3 pb-2 flex items-center gap-1 border-b">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-6 w-16 rounded-full animate-shimmer" />
+              ))}
+            </div>
+            <div className="flex-1">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 border-b border-border/30">
+                  <div className="w-2 h-2 rounded-full animate-shimmer" />
+                  <div className="w-32 h-4 rounded animate-shimmer" />
+                  <div className="flex-1 flex items-center gap-2">
+                    <div className="h-4 rounded animate-shimmer" style={{ width: `${30 + Math.random() * 30}%` }} />
+                    <div className="h-3 rounded animate-shimmer flex-1" />
+                  </div>
+                  <div className="w-12 h-3 rounded animate-shimmer" />
+                </div>
+              ))}
+            </div>
           </div>
         </Card>
       ) : (
@@ -1167,6 +1193,10 @@ export function EmailLayout() {
                       (l) => l !== 'verzonden' && l !== 'prullenbak' && l !== 'gepland'
                     )
                     const isFocused = focusedIndex === idx
+                    const senderAddr = email.map === 'verzonden' || email.map === 'concepten'
+                      ? extractSenderEmail(email.aan)
+                      : extractSenderEmail(email.van)
+                    const isUnknownContact = !findContactByEmail(senderAddr)
 
                     return (
                       <div key={email.id} className="flex flex-col">
@@ -1219,11 +1249,17 @@ export function EmailLayout() {
 
                         {/* Sender name */}
                         <span className={cn(
-                          'w-36 truncate flex-shrink-0',
+                          'w-36 truncate flex-shrink-0 flex items-center gap-1.5',
                           fs.name,
                           isUnread ? 'font-bold text-foreground' : 'font-medium text-foreground/70'
                         )}>
-                          {displayName}
+                          {isUnknownContact && email.map === 'inbox' && (
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"
+                              title="Nieuw contact"
+                            />
+                          )}
+                          <span className="truncate">{displayName}</span>
                         </span>
 
                         {/* Subject + preview on one line */}

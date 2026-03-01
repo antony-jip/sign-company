@@ -47,6 +47,12 @@ import {
   Image,
   File,
   AlertCircle,
+  FileSignature,
+  MessageSquare,
+  HelpCircle,
+  Wrench,
+  ShieldAlert,
+  Sparkles,
 } from 'lucide-react'
 import { formatDateTime, getInitials, cn } from '@/lib/utils'
 import type { Email } from '@/types'
@@ -116,6 +122,135 @@ function getFileTypeColor(name: string): string {
 
 function getFileExt(name: string): string {
   return (name.split('.').pop() || 'FILE').toUpperCase().substring(0, 4)
+}
+
+// ─── Email Intent Detection ───────────────────────────────────────────
+type EmailIntent = {
+  type: 'offerte_aanvraag' | 'klacht' | 'informatie' | 'planning' | 'akkoord' | 'support' | null
+  confidence: 'hoog' | 'medium'
+  label: string
+  icon: React.ElementType
+  color: string
+  bgColor: string
+  suggestion: string
+}
+
+function detectEmailIntent(subject: string, body: string): EmailIntent | null {
+  const text = `${subject} ${body}`.toLowerCase()
+
+  // Offerte aanvraag — highest priority for sign company
+  const offerteKeywords = [
+    'offerte', 'prijsopgave', 'prijsindicatie', 'kosten', 'wat kost',
+    'prijs', 'aanvraag', 'borden', 'reclame', 'signing', 'belettering',
+    'gevelreclame', 'lichtreclame', 'wrapping', 'stickers', 'spandoek',
+    'banner', 'raambelettering', 'autobelettering', 'vlaggen', 'print',
+    'bestellen', 'laten maken', 'graag een', 'interesse in', 'informatie over',
+  ]
+  const offerteCount = offerteKeywords.filter(k => text.includes(k)).length
+  if (offerteCount >= 2) {
+    return {
+      type: 'offerte_aanvraag',
+      confidence: offerteCount >= 3 ? 'hoog' : 'medium',
+      label: 'Offerte aanvraag',
+      icon: FileSignature,
+      color: 'text-blue-700 dark:text-blue-300',
+      bgColor: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800',
+      suggestion: 'Voeg de klant toe en maak een offerte aan',
+    }
+  }
+
+  // Klacht
+  const klachtKeywords = [
+    'klacht', 'ontevreden', 'fout', 'beschadigd', 'kapot', 'verkeerd',
+    'teleurgesteld', 'niet goed', 'problemen', 'defect', 'mis gegaan',
+    'retour', 'terugsturen', 'slecht', 'niet tevreden', 'rekening klopt niet',
+  ]
+  const klachtCount = klachtKeywords.filter(k => text.includes(k)).length
+  if (klachtCount >= 2) {
+    return {
+      type: 'klacht',
+      confidence: klachtCount >= 3 ? 'hoog' : 'medium',
+      label: 'Klacht',
+      icon: ShieldAlert,
+      color: 'text-red-700 dark:text-red-300',
+      bgColor: 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800',
+      suggestion: 'Maak een taak aan en neem snel contact op',
+    }
+  }
+
+  // Planning / afspraak
+  const planningKeywords = [
+    'afspraak', 'planning', 'wanneer', 'montage', 'plaatsen', 'installatie',
+    'langskomen', 'opmeten', 'datum', 'beschikbaar', 'inplannen', 'bezoek',
+  ]
+  const planningCount = planningKeywords.filter(k => text.includes(k)).length
+  if (planningCount >= 2) {
+    return {
+      type: 'planning',
+      confidence: planningCount >= 3 ? 'hoog' : 'medium',
+      label: 'Planningsverzoek',
+      icon: CalendarClock,
+      color: 'text-purple-700 dark:text-purple-300',
+      bgColor: 'bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800',
+      suggestion: 'Plan een afspraak in de agenda',
+    }
+  }
+
+  // Akkoord / goedkeuring
+  const akkoordKeywords = [
+    'akkoord', 'goedkeuring', 'goedgekeurd', 'ga akkoord', 'hierbij bevestig',
+    'opdracht', 'graag doorgaan', 'bestel', 'bestelling', 'doorgaan met',
+  ]
+  const akkoordCount = akkoordKeywords.filter(k => text.includes(k)).length
+  if (akkoordCount >= 1) {
+    return {
+      type: 'akkoord',
+      confidence: akkoordCount >= 2 ? 'hoog' : 'medium',
+      label: 'Akkoord / Goedkeuring',
+      icon: CheckSquare,
+      color: 'text-emerald-700 dark:text-emerald-300',
+      bgColor: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800',
+      suggestion: 'Start het project en plan de productie',
+    }
+  }
+
+  // Support / technische vraag
+  const supportKeywords = [
+    'help', 'werkt niet', 'storing', 'reparatie', 'onderhoud', 'lamp kapot',
+    'verlichting', 'repareren', 'vervangen', 'aanpassen', 'wijzigen',
+  ]
+  const supportCount = supportKeywords.filter(k => text.includes(k)).length
+  if (supportCount >= 2) {
+    return {
+      type: 'support',
+      confidence: supportCount >= 3 ? 'hoog' : 'medium',
+      label: 'Serviceverzoek',
+      icon: Wrench,
+      color: 'text-amber-700 dark:text-amber-300',
+      bgColor: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800',
+      suggestion: 'Maak een servicetaak aan',
+    }
+  }
+
+  // General info request
+  const infoKeywords = [
+    'informatie', 'vraag', 'benieuwd', 'weten', 'mogelijkheden', 'opties',
+    'kunt u', 'kunnen jullie', 'is het mogelijk',
+  ]
+  const infoCount = infoKeywords.filter(k => text.includes(k)).length
+  if (infoCount >= 2) {
+    return {
+      type: 'informatie',
+      confidence: 'medium',
+      label: 'Informatievraag',
+      icon: HelpCircle,
+      color: 'text-sky-700 dark:text-sky-300',
+      bgColor: 'bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-800',
+      suggestion: 'Beantwoord de vraag en bied een offerte aan',
+    }
+  }
+
+  return null
 }
 
 const replyTemplates = [
@@ -696,6 +831,35 @@ export function EmailReader({
           </div>
         )}
       </div>
+
+      {/* ── Smart Intent Detection Banner ── */}
+      {(() => {
+        const intent = detectEmailIntent(email.onderwerp, email.inhoud)
+        if (!intent) return null
+        const IntentIcon = intent.icon
+        return (
+          <div className={cn(
+            'mx-6 mt-4 mb-0 rounded-lg border px-4 py-3 flex items-center gap-3 flex-shrink-0 animate-fade-in',
+            intent.bgColor
+          )}>
+            <div className={cn('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', intent.bgColor)}>
+              <IntentIcon className={cn('w-4 h-4', intent.color)} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={cn('text-sm font-semibold', intent.color)}>{intent.label}</span>
+                {intent.confidence === 'hoog' && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-current/10 font-medium opacity-70">
+                    <Sparkles className="w-3 h-3 inline mr-0.5" />
+                    hoge zekerheid
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">{intent.suggestion}</p>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Thread / Conversation View ── */}
       <ScrollArea className="flex-1">
