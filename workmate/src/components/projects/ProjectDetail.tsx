@@ -45,6 +45,7 @@ import {
   ClipboardCheck,
   Check,
   GripVertical,
+  Camera,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -106,6 +107,7 @@ import { analyzeProject } from '@/services/aiService'
 import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
+import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
@@ -661,10 +663,11 @@ export function ProjectDetail() {
   const daysLeft = isValidDate ? Math.ceil((eindDatum.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0
   const takenKlaar = projectTaken.filter(t => t.status === 'klaar').length
   const takenTotaal = projectTaken.length
+  const projectFotos = projectDocumenten.filter(d => d.map === "Situatiefoto's" || (d.type.startsWith('image/') && d.tags?.includes('foto')))
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* ── Hidden file input ── */}
+      {/* ── Hidden file inputs ── */}
       <input
         ref={fileInputRef}
         type="file"
@@ -677,6 +680,52 @@ export function ProjectDetail() {
           }
         }}
       />
+
+      {/* Mobile floating camera button */}
+      <div className="fixed bottom-6 right-6 z-40 md:hidden">
+        <label
+          className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-purple-500/25 active:scale-95 transition-transform cursor-pointer"
+        >
+          <Camera className="h-6 w-6" />
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={async (e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                const file = e.target.files[0]
+                if (!file.type.startsWith('image/')) return
+                try {
+                  const storagePath = `projects/${id}/fotos/${Date.now()}_${file.name}`
+                  const { uploadFile } = await import('@/services/storageService')
+                  await uploadFile(file, storagePath)
+                  await createDocument({
+                    user_id: user?.id || '',
+                    project_id: id || null,
+                    klant_id: project?.klant_id || null,
+                    naam: file.name,
+                    type: file.type,
+                    grootte: file.size,
+                    map: "Situatiefoto's",
+                    storage_path: storagePath,
+                    status: 'definitief',
+                    tags: ['foto', 'situatie'],
+                    gedeeld_met: [],
+                    beschrijving: '',
+                  })
+                  toast.success('Foto geüpload')
+                  await fetchDocumenten()
+                } catch (err) {
+                  logger.error('Fout bij uploaden foto:', err)
+                  toast.error('Kon foto niet uploaden')
+                }
+              }
+              e.target.value = ''
+            }}
+          />
+        </label>
+      </div>
 
       {/* ── Back + Header ── */}
       <div>
@@ -1742,6 +1791,15 @@ export function ProjectDetail() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* ── Situatiefoto's ── */}
+          <ProjectPhotoGallery
+            projectId={id!}
+            klantId={project.klant_id}
+            userId={user?.id || ''}
+            photos={projectFotos}
+            onPhotosChanged={fetchDocumenten}
+          />
 
           {/* ── Bestanden (drag & drop + upload button) ── */}
           <Card className="border-gray-200/80 dark:border-gray-700/80">

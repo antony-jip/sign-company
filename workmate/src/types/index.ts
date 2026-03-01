@@ -239,6 +239,7 @@ export interface Document {
   status: 'concept' | 'review' | 'definitief' | 'gearchiveerd';
   tags: string[];
   gedeeld_met: string[];
+  beschrijving?: string;
   created_at: string;
   updated_at: string;
 }
