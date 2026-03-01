@@ -1703,7 +1703,7 @@ export function FacturenLayout() {
                 <div className="flex items-center gap-3 text-xs">
                   {viewingFactuur.offerte_id && (
                     <a
-                      href={`/offertes/${viewingFactuur.offerte_id}/bewerken`}
+                      href={`/offertes/${viewingFactuur.offerte_id}/preview`}
                       className="inline-flex items-center gap-1 text-accent dark:text-wm-light hover:underline"
                     >
                       <FileInput className="h-3 w-3" />

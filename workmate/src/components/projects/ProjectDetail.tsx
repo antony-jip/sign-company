@@ -95,7 +95,6 @@ import { analyzeProject } from '@/services/aiService'
 import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
-import { ProjectOfferteEditor } from './ProjectOfferteEditor'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
@@ -190,8 +189,6 @@ export function ProjectDetail() {
   const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false)
   const [aiAnalysisResult, setAiAnalysisResult] = useState<string | null>(null)
 
-  // Offerte editor state
-  const [editOfferteId, setEditOfferteId] = useState<string | null>(null)
 
   // Offerte aanmaken - navigeert naar de volledige offerte-pagina
   const openNieuweOfferte = () => {
@@ -1513,7 +1510,7 @@ export function ProjectDetail() {
                             variant="ghost"
                             size="sm"
                             className="h-6 px-2 text-xs"
-                            onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
+                            onClick={() => navigate(`/offertes/${offerte.id}/preview`, { state: { from: location.pathname } })}
                           >
                             <Eye className="h-3 w-3 mr-1" />
                             Bekijk
@@ -1522,7 +1519,7 @@ export function ProjectDetail() {
                             variant="ghost"
                             size="sm"
                             className="h-6 px-2 text-xs"
-                            onClick={() => setEditOfferteId(offerte.id)}
+                            onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
                           >
                             <Pencil className="h-3 w-3 mr-1" />
                             Bewerk
@@ -1591,7 +1588,7 @@ export function ProjectDetail() {
                               variant="outline"
                               size="sm"
                               className="h-6 px-2.5 text-xs text-blue-700 border-blue-200 hover:bg-blue-100 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/30"
-                              onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}/bewerken`)}
+                              onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}`)}
                             >
                               Bekijk factuur
                             </Button>
@@ -1605,15 +1602,6 @@ export function ProjectDetail() {
             </CardContent>
           </Card>
 
-          {/* Offerte Editor Dialog */}
-          {editOfferteId && (
-            <ProjectOfferteEditor
-              offerteId={editOfferteId}
-              open={!!editOfferteId}
-              onClose={() => setEditOfferteId(null)}
-              onSaved={fetchOffertes}
-            />
-          )}
 
           {/* Email offerte dialog */}
           <Dialog open={emailOfferteOpen} onOpenChange={(open) => {

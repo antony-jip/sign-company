@@ -2102,7 +2102,7 @@ export function QuoteCreation() {
                           variant="outline"
                           size="sm"
                           className="w-full text-xs h-8 gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/30"
-                          onClick={() => navigate(`/facturen/${geconverteerdNaarFactuurId}/bewerken`)}
+                          onClick={() => navigate(`/facturen/${geconverteerdNaarFactuurId}`)}
                         >
                           <Receipt className="h-3.5 w-3.5" />Bekijk factuur
                         </Button>
