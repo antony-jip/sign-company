@@ -110,9 +110,15 @@ export function ProjectPhotoGallery({
     setIsUploading(false)
   }, [projectId, klantId, userId, onPhotosChanged])
 
-  const handleDelete = async (photo: Document) => {
+  const handleDelete = async (photo: Document, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     try {
-      await deleteFile(photo.storage_path)
+      // Delete from storage first, but don't let it block document deletion
+      try {
+        await deleteFile(photo.storage_path)
+      } catch {
+        // Storage delete may fail if file doesn't exist - continue anyway
+      }
       await deleteDocRecord(photo.id)
       toast.success('Foto verwijderd')
       if (lightboxIndex !== null) {
@@ -253,6 +259,15 @@ export function ProjectPhotoGallery({
                   )}
                   {/* Overlay on hover */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-150" />
+                  {/* Delete button on hover */}
+                  <div
+                    role="button"
+                    tabIndex={-1}
+                    onClick={(e) => handleDelete(photo, e)}
+                    className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/60 hover:bg-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
+                  >
+                    <X className="h-3 w-3 text-white" />
+                  </div>
                   {/* Note indicator */}
                   {photo.beschrijving && (
                     <div className="absolute bottom-1 left-1">
