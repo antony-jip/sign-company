@@ -64,6 +64,7 @@ const navSections: NavSection[] = [
     section: 'Communicatie',
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
+      { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
     ],
   },
   {
