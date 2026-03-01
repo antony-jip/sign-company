@@ -58,36 +58,26 @@ const navSections: NavSection[] = [
     section: 'Planning',
     items: [
       { label: 'Planning', icon: Calendar, path: '/kalender' },
-      { label: 'Tijdregistratie', icon: Clock, path: '/tijdregistratie' },
-      { label: 'Booking', icon: CalendarCheck, path: '/booking' },
     ],
   },
   {
     section: 'Communicatie',
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
-      { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
-      { label: 'Lead Capture', icon: UserPlus, path: '/leads' },
     ],
   },
   {
     section: 'Financieel',
     items: [
       { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
-      { label: 'Forecast', icon: TrendingUp, path: '/forecast' },
     ],
   },
   {
     section: 'Beheer',
     items: [
       { label: 'Documenten', icon: Files, path: '/documenten' },
-      { label: 'Voorraad', icon: Warehouse, path: '/voorraad' },
-      { label: 'Bestelbonnen', icon: ShoppingCart, path: '/bestelbonnen' },
-      { label: 'Leveringsbonnen', icon: PackageCheck, path: '/leveringsbonnen' },
       { label: 'Rapportages', icon: BarChart3, path: '/rapportages' },
       { label: 'Team', icon: UsersRound, path: '/team' },
-      { label: 'Importeren', icon: Upload, path: '/importeren' },
-      { label: 'AI Assistent', icon: Bot, path: '/ai' },
       { label: 'Instellingen', icon: Settings, path: '/instellingen' },
     ],
   },
