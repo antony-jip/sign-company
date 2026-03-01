@@ -171,16 +171,16 @@ export function DocumentUpload({ open, onOpenChange }: DocumentUploadProps) {
             className={cn(
               'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
               isDragging
-                ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/20'
-                : 'border-gray-300 hover:border-gray-400 dark:border-gray-700 dark:hover:border-gray-600'
+                ? 'border-primary/50 bg-primary/5'
+                : 'border-border hover:border-border/80'
             )}
           >
             <Upload className={cn(
               'w-8 h-8 mx-auto mb-3',
-              isDragging ? 'text-blue-500' : 'text-gray-400'
+              isDragging ? 'text-primary' : 'text-muted-foreground/50'
             )} />
             <p className="text-sm text-muted-foreground">
-              Sleep bestanden hierheen of <span className="text-blue-600 font-medium">klik om te selecteren</span>
+              Sleep bestanden hierheen of <span className="text-primary font-medium">klik om te selecteren</span>
             </p>
             <input
               ref={fileInputRef}

@@ -1,9 +1,19 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 
+const DEFAULT_WIDTH = 220
+const MIN_WIDTH = 180
+const MAX_WIDTH = 360
+const COLLAPSED_WIDTH = 64
+
 interface SidebarContextType {
   isCollapsed: boolean
   toggleSidebar: () => void
   setCollapsed: (collapsed: boolean) => void
+  sidebarWidth: number
+  setSidebarWidth: (width: number) => void
+  minWidth: number
+  maxWidth: number
+  collapsedWidth: number
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
@@ -12,6 +22,12 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const stored = localStorage.getItem('workmate_sidebar_collapsed')
     return stored === 'true'
+  })
+
+  const [sidebarWidth, setSidebarWidthState] = useState(() => {
+    const stored = localStorage.getItem('workmate_sidebar_width')
+    const parsed = stored ? parseInt(stored, 10) : NaN
+    return !isNaN(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH ? parsed : DEFAULT_WIDTH
   })
 
   const toggleSidebar = () => {
@@ -26,8 +42,23 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('workmate_sidebar_collapsed', String(collapsed))
   }
 
+  const setSidebarWidth = (width: number) => {
+    const clamped = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, width))
+    setSidebarWidthState(clamped)
+    localStorage.setItem('workmate_sidebar_width', String(clamped))
+  }
+
   return (
-    <SidebarContext.Provider value={{ isCollapsed, toggleSidebar, setCollapsed }}>
+    <SidebarContext.Provider value={{
+      isCollapsed,
+      toggleSidebar,
+      setCollapsed,
+      sidebarWidth,
+      setSidebarWidth,
+      minWidth: MIN_WIDTH,
+      maxWidth: MAX_WIDTH,
+      collapsedWidth: COLLAPSED_WIDTH,
+    }}>
       {children}
     </SidebarContext.Provider>
   )

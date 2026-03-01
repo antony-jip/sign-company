@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo, useState } from 'react'
+import React, { useEffect, useRef, useMemo, useCallback } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText,
@@ -11,8 +11,6 @@ import {
   CalendarCheck,
   type LucideIcon
 } from 'lucide-react'
-import { getOffertes, getMontageAfspraken, getProjecten } from '@/services/supabaseService'
-import type { Offerte, MontageAfspraak, Project } from '@/types'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -96,7 +94,7 @@ const navSections: NavSection[] = [
 ]
 
 export function Sidebar() {
-  const { isCollapsed, toggleSidebar } = useSidebar()
+  const { isCollapsed, toggleSidebar, sidebarWidth, setSidebarWidth, collapsedWidth } = useSidebar()
   const { user, logout } = useAuth()
   const { settings } = useAppSettings()
   const location = useLocation()
@@ -121,6 +119,31 @@ export function Sidebar() {
   }, [settings.sidebar_items])
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const isResizing = useRef(false)
+
+  // Drag-to-resize handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isResizing.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return
+      setSidebarWidth(e.clientX)
+    }
+
+    const handleMouseUp = () => {
+      isResizing.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [setSidebarWidth])
 
   useEffect(() => {
     setMobileOpen(false)
@@ -235,9 +258,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Mini status bar — sign-industry pulse */}
-      {!isCollapsed && <SidebarPulse />}
-
       {/* User section */}
       <div className="border-t border-border/50 p-3 space-y-2 flex-shrink-0">
         {!isCollapsed && user && (
@@ -334,63 +354,24 @@ export function Sidebar() {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside
-        className={cn(
-          'hidden md:flex flex-col h-screen wm-sidebar transition-all duration-300 ease-in-out flex-shrink-0',
-          isCollapsed ? 'w-16' : 'w-60'
+      <div className="hidden md:flex flex-shrink-0 relative" style={{ width: isCollapsed ? collapsedWidth : sidebarWidth }}>
+        <aside
+          className="flex flex-col h-screen wm-sidebar w-full transition-[width] duration-200 ease-in-out"
+        >
+          {sidebarContent}
+        </aside>
+
+        {/* Drag handle */}
+        {!isCollapsed && (
+          <div
+            onMouseDown={handleMouseDown}
+            className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize z-30 group"
+          >
+            <div className="w-px h-full mx-auto bg-transparent group-hover:bg-primary/30 transition-colors duration-150" />
+          </div>
         )}
-      >
-        {sidebarContent}
-      </aside>
+      </div>
     </>
   )
 }
 
-function SidebarPulse() {
-  const [stats, setStats] = useState({ openOffertes: 0, montagesWeek: 0, actieveProjecten: 0 })
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([getOffertes(), getMontageAfspraken(), getProjecten()])
-      .then(([offertes, montages, projecten]: [Offerte[], MontageAfspraak[], Project[]]) => {
-        if (cancelled) return
-        const now = new Date()
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        const weekEnd = new Date(startOfToday)
-        weekEnd.setDate(weekEnd.getDate() + 7)
-
-        setStats({
-          openOffertes: offertes.filter((o) => ['verzonden', 'bekeken'].includes(o.status)).length,
-          montagesWeek: montages.filter((m) => {
-            const d = new Date(m.datum)
-            return m.status !== 'afgerond' && d >= startOfToday && d <= weekEnd
-          }).length,
-          actieveProjecten: projecten.filter((p) => p.status === 'actief').length,
-        })
-      })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [])
-
-  const items = [
-    { label: 'Open offertes', value: stats.openOffertes, color: 'text-accent' },
-    { label: 'Montages deze week', value: stats.montagesWeek, color: 'text-amber-600 dark:text-amber-400' },
-    { label: 'Actieve projecten', value: stats.actieveProjecten, color: 'text-primary' },
-  ]
-
-  return (
-    <div className="mx-3 mb-1 p-2.5 rounded-lg bg-muted/40 border border-border/40">
-      <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/40 mb-2 px-0.5">
-        Status
-      </p>
-      <div className="space-y-1.5">
-        {items.map((item) => (
-          <div key={item.label} className="flex items-center justify-between px-0.5">
-            <span className="text-[11px] text-muted-foreground">{item.label}</span>
-            <span className={`text-[11px] font-semibold ${item.color}`}>{item.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}

@@ -1130,14 +1130,20 @@ export function EmailLayout() {
                 </Button>
               </div>
             ) : (
-              /* Select all bar (subtle) */
+              /* Select all bar */
               <div className="flex items-center gap-2 px-4 py-1.5 border-b bg-muted/10">
                 <Checkbox
                   checked={false}
                   onCheckedChange={toggleCheckAll}
-                  className="opacity-40 hover:opacity-100 transition-opacity"
+                  className="transition-opacity"
                 />
-                <span className="text-[11px] text-muted-foreground">
+                <button
+                  onClick={toggleCheckAll}
+                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  Alles selecteren
+                </button>
+                <span className="text-[11px] text-muted-foreground/50 ml-auto">
                   {filteredEmails.length} email{filteredEmails.length !== 1 ? 's' : ''}
                 </span>
               </div>

@@ -815,25 +815,55 @@ textarea:focus {
     inset 0 1px 0 rgba(255, 255, 255, 0.60);
 }
 
-/* Dialogs: frosted glass modal */
-[data-theme="snow"] [role="dialog"] > div,
-[data-theme="snow"] [data-radix-popper-content-wrapper] [role="dialog"] {
-  background: rgba(255, 255, 255, 0.72) !important;
+/* Dialogs: frosted glass modal — target the [role="dialog"] element directly */
+[data-theme="snow"] [role="dialog"] {
+  background: rgba(255, 255, 255, 0.88) !important;
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border-color: rgba(255, 255, 255, 0.60);
+  border-color: rgba(255, 255, 255, 0.65) !important;
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.10),
+    0 24px 80px rgba(0, 0, 0, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.60);
 }
 
+/* Dialog inner sections: keep backgrounds clean */
+[data-theme="snow"] [role="dialog"] .bg-muted,
+[data-theme="snow"] [role="dialog"] .bg-muted\/50,
+[data-theme="snow"] [role="dialog"] [class*="bg-muted"] {
+  background: rgba(235, 235, 240, 0.50) !important;
+}
+
+/* Dialog footer area: subtle separator without harsh bg */
+[data-theme="snow"] [role="dialog"] > div:last-child {
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Dialog overlay: lighter for Snow */
+[data-theme="snow"] [data-state][class*="fixed"][class*="inset-0"] {
+  background: rgba(200, 200, 210, 0.35) !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
 /* Popovers & dropdown menus: glass panels */
 [data-theme="snow"] [data-radix-popper-content-wrapper] > div {
-  background: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
-  border-color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.60);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.50);
+}
+
+/* Select dropdowns: portal-rendered, needs its own selector */
+[data-theme="snow"] [data-radix-select-content] {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.60);
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.08),
     0 4px 12px rgba(0, 0, 0, 0.04),
@@ -886,6 +916,23 @@ textarea:focus {
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* Hardcoded Tailwind gray/blue adaption for Snow glass */
+[data-theme="snow"] .border-dashed {
+  border-color: rgba(0, 0, 0, 0.10);
+}
+[data-theme="snow"] .border-gray-300,
+[data-theme="snow"] .border-gray-200 {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="snow"] .bg-gray-50,
+[data-theme="snow"] .bg-gray-100 {
+  background: rgba(235, 235, 240, 0.50);
+}
+[data-theme="snow"] .text-gray-400,
+[data-theme="snow"] .text-gray-500 {
+  color: hsl(var(--muted-foreground));
 }
 
 /* ================================================================
