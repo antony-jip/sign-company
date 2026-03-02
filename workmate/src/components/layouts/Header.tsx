@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  Search, Sun, Moon, User, Settings, LogOut,
-  ChevronDown, X, Command
+  Sun, Moon, User, Settings, LogOut,
+  ChevronDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
+import { GlobalSearch } from '@/components/shared/GlobalSearch'
 
 const routeMeta: Record<string, { title: string; subtitle?: string }> = {
   '/': { title: 'Dashboard' },
@@ -53,8 +54,6 @@ export function Header() {
   const { language, setLanguage } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchFocused, setSearchFocused] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = React.useRef<HTMLDivElement>(null)
 
@@ -78,10 +77,6 @@ export function Header() {
       document.removeEventListener('keydown', handleEscape)
     }
   }, [])
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-  }
 
   const toggleLanguage = () => {
     setLanguage(language === 'nl' ? 'en' : 'nl')
@@ -113,45 +108,7 @@ export function Header() {
       </div>
 
       {/* Center: Search bar */}
-      <form
-        onSubmit={handleSearch}
-        className="hidden md:flex items-center flex-1 max-w-md mx-8 relative"
-      >
-        <div
-          className={cn(
-            'flex items-center w-full rounded-xl border transition-all duration-300',
-            searchFocused
-              ? 'border-primary/40 bg-background shadow-lg shadow-primary/5 ring-2 ring-primary/10'
-              : 'border-border/60 bg-muted/40 hover:bg-muted/60'
-          )}
-        >
-          <Search className="w-4 h-4 text-muted-foreground ml-3 flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="Zoeken..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder-muted-foreground px-3 py-2.5"
-          />
-          {searchQuery ? (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="mr-2.5 p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Zoekopdracht wissen"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          ) : (
-            <div className="mr-2.5 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/60 border border-border/40">
-              <Command className="w-3 h-3 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground font-medium">K</span>
-            </div>
-          )}
-        </div>
-      </form>
+      <GlobalSearch className="hidden md:flex flex-1 max-w-md mx-8" />
 
       {/* Right: Actions */}
       <div className="flex items-center gap-1">

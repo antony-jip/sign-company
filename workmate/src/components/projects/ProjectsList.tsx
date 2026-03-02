@@ -474,7 +474,7 @@ export function ProjectsList() {
                     onClick={() => handleSort('start_datum')}
                     className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
                   >
-                    Deadline
+                    Datum
                     {sortField === 'start_datum' ? (
                       sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                     ) : (
@@ -623,35 +623,9 @@ export function ProjectsList() {
 
                     {/* Datum */}
                     <td className="py-3 px-4 text-right hidden lg:table-cell">
-                      {project.eind_datum && project.status !== 'afgerond' ? (() => {
-                        const daysLeft = Math.ceil((new Date(project.eind_datum).getTime() - Date.now()) / 86400000)
-                        return (
-                          <div>
-                            <span className={cn(
-                              'text-xs tabular-nums',
-                              isOverdue ? 'text-red-600 dark:text-red-400 font-medium' :
-                              daysLeft <= 7 ? 'text-amber-600 dark:text-amber-400 font-medium' :
-                              'text-muted-foreground'
-                            )}>
-                              {formatDate(project.eind_datum)}
-                            </span>
-                            <p className={cn(
-                              'text-[10px] mt-0.5',
-                              isOverdue ? 'text-red-500' :
-                              daysLeft <= 7 ? 'text-amber-500' :
-                              'text-muted-foreground/60'
-                            )}>
-                              {isOverdue
-                                ? `${Math.abs(daysLeft)}d verlopen`
-                                : `${daysLeft}d resterend`}
-                            </p>
-                          </div>
-                        )
-                      })() : (
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {formatDate(project.eind_datum || project.start_datum)}
-                        </span>
-                      )}
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {formatDate(project.created_at)}
+                      </span>
                     </td>
 
                     {/* Quick actions + Menu */}
