@@ -7,14 +7,26 @@ import {
   Layers,
   BarChart3,
   TrendingUp,
+  FileText,
+  CheckCircle2,
 } from 'lucide-react'
 import { getKlantHistorie } from '@/services/importService'
-import type { KlantHistorie } from '@/types'
+import { getProjectenByKlant, getOffertesByKlant } from '@/services/supabaseService'
+import type { KlantHistorie, Project, Offerte } from '@/types'
 import { logger } from '../../utils/logger'
 
 interface KlantHistorieTabProps {
   klantId: string
   klantNaam: string
+}
+
+// Unified tijdlijn-item dat zowel geimporteerde als live data bevat
+interface HistorieRegel {
+  datum: string
+  naam: string
+  waarde: number
+  bron: 'import' | 'project' | 'offerte'
+  status?: string
 }
 
 function formatCurrency(value: number): string {
@@ -25,14 +37,106 @@ function formatCurrency(value: number): string {
   }).format(value)
 }
 
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '—'
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('nl-NL', { year: 'numeric', month: '2-digit', day: '2-digit' })
+  } catch {
+    return dateStr
+  }
+}
+
+function getBronBadge(bron: HistorieRegel['bron'], status?: string) {
+  if (bron === 'project') {
+    return (
+      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+        Project
+      </Badge>
+    )
+  }
+  if (bron === 'offerte') {
+    const label = status === 'gefactureerd' ? 'Gefactureerd' : status === 'goedgekeurd' ? 'Goedgekeurd' : status || 'Offerte'
+    const color = status === 'gefactureerd'
+      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+      : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+    return (
+      <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${color}`}>
+        {label}
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+      Import
+    </Badge>
+  )
+}
+
 export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) {
-  const [historie, setHistorie] = useState<KlantHistorie | null>(null)
+  const [regels, setRegels] = useState<HistorieRegel[]>([])
+  const [specialisaties, setSpecialisaties] = useState<string[]>([])
+  const [conversiePercentage, setConversiePercentage] = useState<number | undefined>()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setLoading(true)
-    getKlantHistorie(klantId)
-      .then(setHistorie)
+
+    Promise.all([
+      getKlantHistorie(klantId).catch(() => null),
+      getProjectenByKlant(klantId).catch(() => [] as Project[]),
+      getOffertesByKlant(klantId).catch(() => [] as Offerte[]),
+    ])
+      .then(([historie, projecten, offertes]) => {
+        const items: HistorieRegel[] = []
+
+        // 1. Geimporteerde projecten (James PRO)
+        if (historie) {
+          setSpecialisaties(historie.specialisaties)
+          setConversiePercentage(historie.conversie_percentage)
+          for (const p of historie.projecten) {
+            items.push({
+              datum: p.datum,
+              naam: p.naam,
+              waarde: p.waarde || 0,
+              bron: 'import',
+            })
+          }
+        }
+
+        // 2. Live FORGEdesk projecten
+        for (const p of projecten) {
+          items.push({
+            datum: p.created_at,
+            naam: p.naam,
+            waarde: p.budget || 0,
+            bron: 'project',
+            status: p.status,
+          })
+        }
+
+        // 3. Live FORGEdesk offertes (alleen goedgekeurd of gefactureerd)
+        for (const o of offertes) {
+          if (o.status === 'goedgekeurd' || o.status === 'gefactureerd') {
+            items.push({
+              datum: o.akkoord_op || o.created_at,
+              naam: o.titel || `Offerte #${o.nummer}`,
+              waarde: o.totaal || 0,
+              bron: 'offerte',
+              status: o.status,
+            })
+          }
+        }
+
+        // Sorteer op datum (nieuwste eerst)
+        items.sort((a, b) => {
+          const da = a.datum || ''
+          const db = b.datum || ''
+          return db.localeCompare(da)
+        })
+
+        setRegels(items)
+      })
       .catch(logger.error)
       .finally(() => setLoading(false))
   }, [klantId])
@@ -50,21 +154,23 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
     )
   }
 
-  if (!historie) {
+  if (regels.length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="py-12 text-center">
           <BarChart3 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-sm font-medium text-foreground">Geen historie beschikbaar</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Importeer eerst de historie via Klanten &gt; Import &gt; Historie CSV
+            Historie wordt automatisch bijgehouden wanneer offertes goedgekeurd of gefactureerd worden.
           </p>
         </CardContent>
       </Card>
     )
   }
 
-  const totaalProjectWaarde = historie.projecten.reduce((sum, p) => sum + (p.waarde || 0), 0)
+  const totaalWaarde = regels.reduce((sum, r) => sum + r.waarde, 0)
+  const aantalProjecten = regels.filter((r) => r.bron === 'project' || r.bron === 'import').length
+  const aantalGoedgekeurd = regels.filter((r) => r.bron === 'offerte').length
 
   return (
     <div className="space-y-4">
@@ -76,7 +182,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
               <FolderKanban className="w-4 h-4 text-blue-500" />
               <span className="text-xs text-muted-foreground">Projecten</span>
             </div>
-            <p className="text-2xl font-bold text-foreground">{historie.projecten.length}</p>
+            <p className="text-2xl font-bold text-foreground">{aantalProjecten}</p>
           </CardContent>
         </Card>
         <Card className="border-gray-200 dark:border-gray-800">
@@ -86,29 +192,40 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
               <span className="text-xs text-muted-foreground">Totale waarde</span>
             </div>
             <p className="text-lg font-bold text-foreground">
-              {totaalProjectWaarde > 0 ? formatCurrency(totaalProjectWaarde) : '—'}
+              {totaalWaarde > 0 ? formatCurrency(totaalWaarde) : '—'}
             </p>
           </CardContent>
         </Card>
-        {historie.conversie_percentage != null && (
+        {aantalGoedgekeurd > 0 && (
+          <Card className="border-gray-200 dark:border-gray-800">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <span className="text-xs text-muted-foreground">Goedgekeurd / Betaald</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{aantalGoedgekeurd}</p>
+            </CardContent>
+          </Card>
+        )}
+        {conversiePercentage != null && (
           <Card className="border-gray-200 dark:border-gray-800">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <BarChart3 className="w-4 h-4 text-blue-500" />
                 <span className="text-xs text-muted-foreground">Conversie</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">{historie.conversie_percentage}%</p>
+              <p className="text-2xl font-bold text-foreground">{conversiePercentage}%</p>
             </CardContent>
           </Card>
         )}
       </div>
 
       {/* Specialisaties */}
-      {historie.specialisaties.length > 0 && (
+      {specialisaties.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
           <Layers className="w-4 h-4 text-muted-foreground" />
           <span className="text-xs text-muted-foreground mr-1">Specialisaties:</span>
-          {historie.specialisaties.map((s) => (
+          {specialisaties.map((s) => (
             <Badge key={s} variant="secondary" className="text-xs capitalize">
               {s}
             </Badge>
@@ -116,51 +233,49 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
         </div>
       )}
 
-      {/* Projecten lijst */}
+      {/* Volledige historie */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <FolderKanban className="w-4 h-4 text-blue-500" />
-            Projecthistorie ({historie.projecten.length})
-            {totaalProjectWaarde > 0 && (
+            Volledige historie ({regels.length})
+            {totaalWaarde > 0 && (
               <span className="text-xs font-normal text-muted-foreground ml-auto">
-                Totaal: {formatCurrency(totaalProjectWaarde)}
+                Totaal: {formatCurrency(totaalWaarde)}
               </span>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          {historie.projecten.length > 0 ? (
-            <div className="overflow-auto max-h-[500px]">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Datum</th>
-                    <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Project</th>
-                    <th className="text-right py-2 text-xs font-medium text-muted-foreground">Waarde</th>
+          <div className="overflow-auto max-h-[500px]">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Datum</th>
+                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Omschrijving</th>
+                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Type</th>
+                  <th className="text-right py-2 text-xs font-medium text-muted-foreground">Waarde</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {regels.map((r, i) => (
+                  <tr key={i} className="hover:bg-muted/20">
+                    <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(r.datum)}
+                      </div>
+                    </td>
+                    <td className="py-2 pr-3 font-medium">{r.naam}</td>
+                    <td className="py-2 pr-3">{getBronBadge(r.bron, r.status)}</td>
+                    <td className="py-2 text-right font-medium tabular-nums whitespace-nowrap">
+                      {r.waarde > 0 ? formatCurrency(r.waarde) : '—'}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {historie.projecten.map((p, i) => (
-                    <tr key={i} className="hover:bg-muted/20">
-                      <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3 h-3" />
-                          {p.datum}
-                        </div>
-                      </td>
-                      <td className="py-2 pr-3 font-medium">{p.naam}</td>
-                      <td className="py-2 text-right font-medium tabular-nums whitespace-nowrap">
-                        {p.waarde ? formatCurrency(p.waarde) : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Geen projecten in historie</p>
-          )}
+                ))}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
     </div>
