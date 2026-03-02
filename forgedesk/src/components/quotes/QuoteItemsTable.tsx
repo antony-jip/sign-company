@@ -14,6 +14,7 @@ import { CalculatieModal } from './CalculatieModal'
 import { AutofillInput } from './AutofillInput'
 import { labelToAutofillField } from '@/utils/autofillUtils'
 import type { CalculatieRegel } from '@/types'
+import { round2 } from '@/utils/budgetUtils'
 
 // ============================================================
 // OFFERTE ITEMS
@@ -127,16 +128,16 @@ function calculateLineTotaal(item: QuoteLineItem): number {
   // If item has variants, use the active variant for the total
   if (item.prijs_varianten && item.prijs_varianten.length > 0) {
     const active = item.prijs_varianten.find(v => v.id === item.actieve_variant_id) || item.prijs_varianten[0]
-    const bruto = active.aantal * active.eenheidsprijs
-    return bruto - bruto * (active.korting_percentage / 100)
+    const bruto = round2(active.aantal * active.eenheidsprijs)
+    return round2(bruto - bruto * (active.korting_percentage / 100))
   }
-  const bruto = item.aantal * item.eenheidsprijs
-  return bruto - bruto * (item.korting_percentage / 100)
+  const bruto = round2(item.aantal * item.eenheidsprijs)
+  return round2(bruto - bruto * (item.korting_percentage / 100))
 }
 
 function calculateVariantTotaal(variant: PrijsVariant): number {
-  const bruto = variant.aantal * variant.eenheidsprijs
-  return bruto - bruto * (variant.korting_percentage / 100)
+  const bruto = round2(variant.aantal * variant.eenheidsprijs)
+  return round2(bruto - bruto * (variant.korting_percentage / 100))
 }
 
 function genId(): string {
@@ -146,11 +147,11 @@ function genId(): string {
 // ── Margin calculation per item (FIX 8) ──
 function calculateItemMargin(regels?: CalculatieRegel[]): { inkoop: number; verkoop: number; marge: number; percentage: number } | null {
   if (!regels || regels.length === 0) return null
-  const inkoop = regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0)
-  const verkoop = regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0)
-  const marge = verkoop - inkoop
-  const percentage = verkoop > 0 ? (marge / verkoop) * 100 : 0
-  return { inkoop: Math.round(inkoop * 100) / 100, verkoop: Math.round(verkoop * 100) / 100, marge: Math.round(marge * 100) / 100, percentage: Math.round(percentage * 10) / 10 }
+  const inkoop = round2(regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0))
+  const verkoop = round2(regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0))
+  const marge = round2(verkoop - inkoop)
+  const percentage = verkoop > 0 ? Math.round((marge / verkoop) * 1000) / 10 : 0
+  return { inkoop, verkoop, marge, percentage }
 }
 
 // ── Image compression utility ──
@@ -967,8 +968,8 @@ export function QuoteItemsTable({
                           >
                             <Calculator className="h-3 w-3" />
                             Calculatie: {item.calculatie_regels.length} regels —
-                            Inkoop {formatCurrency(item.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0))} |
-                            Verkoop {formatCurrency(item.calculatie_regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0))}
+                            Inkoop {formatCurrency(round2(item.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0)))} |
+                            Verkoop {formatCurrency(round2(item.calculatie_regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0)))}
                           </button>
 
                           {/* FIX 8: Marge indicator per item */}
@@ -1163,8 +1164,8 @@ export function QuoteItemsTable({
                                 >
                                   <Calculator className="h-2.5 w-2.5" />
                                   Calculatie: {variant.calculatie_regels.length} regels —
-                                  Inkoop {formatCurrency(variant.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0))} |
-                                  Verkoop {formatCurrency(variant.calculatie_regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0))}
+                                  Inkoop {formatCurrency(round2(variant.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0)))} |
+                                  Verkoop {formatCurrency(round2(variant.calculatie_regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0)))}
                                 </button>
 
                                 {/* FIX 8: Marge indicator per variant */}

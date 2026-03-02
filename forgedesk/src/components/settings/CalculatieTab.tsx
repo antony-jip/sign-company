@@ -54,6 +54,7 @@ import {
 } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { cn, formatCurrency } from '@/lib/utils'
+import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
 // ============ STARTER TEMPLATES ============
@@ -803,7 +804,7 @@ function ProductenSection({
                     onChange={(e) => {
                       const val = parseFloat(e.target.value) || 0
                       setProductInkoop(val)
-                      setProductVerkoop(val * (1 + productMarge / 100))
+                      setProductVerkoop(round2(val * (1 + productMarge / 100)))
                     }}
                     min={0}
                     step={0.01}
@@ -822,7 +823,7 @@ function ProductenSection({
                     onChange={(e) => {
                       const val = parseFloat(e.target.value) || 0
                       setProductMarge(val)
-                      setProductVerkoop(productInkoop * (1 + val / 100))
+                      setProductVerkoop(round2(productInkoop * (1 + val / 100)))
                     }}
                     step={1}
                     placeholder="35"
@@ -1055,10 +1056,10 @@ function TemplatesSection({
       if (r.id !== id) return r
       const updated = { ...r, ...updates }
       if ('inkoop_prijs' in updates && !('verkoop_prijs' in updates)) {
-        updated.verkoop_prijs = updated.inkoop_prijs * (1 + updated.marge_percentage / 100)
+        updated.verkoop_prijs = round2(updated.inkoop_prijs * (1 + updated.marge_percentage / 100))
       }
       if ('marge_percentage' in updates && !('verkoop_prijs' in updates)) {
-        updated.verkoop_prijs = updated.inkoop_prijs * (1 + updated.marge_percentage / 100)
+        updated.verkoop_prijs = round2(updated.inkoop_prijs * (1 + updated.marge_percentage / 100))
       }
       if ('verkoop_prijs' in updates && !('marge_percentage' in updates) && !('inkoop_prijs' in updates)) {
         updated.marge_percentage = updated.inkoop_prijs > 0
@@ -1153,11 +1154,11 @@ function TemplatesSection({
     let inkoop = 0
     let verkoop = 0
     regels.forEach((r) => {
-      inkoop += r.aantal * r.inkoop_prijs
-      const rv = r.aantal * r.verkoop_prijs
-      verkoop += rv - rv * (r.korting_percentage / 100)
+      inkoop += round2(r.aantal * r.inkoop_prijs)
+      const rv = round2(r.aantal * r.verkoop_prijs)
+      verkoop += round2(rv - rv * (r.korting_percentage / 100))
     })
-    return { inkoop, verkoop, marge: verkoop - inkoop }
+    return { inkoop: round2(inkoop), verkoop: round2(verkoop), marge: round2(verkoop - inkoop) }
   }
 
   const handleInstall = async (starter: StarterTemplate) => {

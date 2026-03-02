@@ -2,6 +2,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
+import { round2 } from '@/utils/budgetUtils'
 
 // jspdf-autotable adds lastAutoTable to jsPDF instances
 interface JsPDFWithAutoTable extends jsPDF {
@@ -516,19 +517,19 @@ export function generateOffertePDF(
     const optFinalY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || totalsY + 20
     let optTotalsY = optFinalY + 8
 
-    const optSubtotaal = optioneleItems.reduce((s, i) => s + i.totaal, 0)
-    const optBtw = optioneleItems.reduce((s, i) => s + i.totaal * (i.btw_percentage / 100), 0)
+    const optSubtotaal = round2(optioneleItems.reduce((s, i) => s + i.totaal, 0))
+    const optBtw = round2(optioneleItems.reduce((s, i) => s + i.totaal * (i.btw_percentage / 100), 0))
 
     doc.setFontSize(baseFontSize - 1)
     doc.setFont(bodyFont, 'normal')
     doc.setTextColor(...textColor)
     doc.text('Subtotaal optioneel:', totalsX - 15, optTotalsY)
-    doc.text(formatCurrency(Math.round(optSubtotaal * 100) / 100), pageWidth - margins.right, optTotalsY, { align: 'right' })
+    doc.text(formatCurrency(optSubtotaal), pageWidth - margins.right, optTotalsY, { align: 'right' })
     optTotalsY += 6
 
     doc.text('Totaal incl opties:', totalsX - 15, optTotalsY)
     doc.setFont(bodyFont, 'bold')
-    doc.text(formatCurrency(Math.round((offerte.totaal + optSubtotaal + optBtw) * 100) / 100), pageWidth - margins.right, optTotalsY, { align: 'right' })
+    doc.text(formatCurrency(round2(offerte.totaal + optSubtotaal + optBtw)), pageWidth - margins.right, optTotalsY, { align: 'right' })
 
     totalsY = optTotalsY + 5
   }
@@ -1411,11 +1412,11 @@ export function generateWerkbonPDF(
     y += 8
 
     // Totalen
-    const subtotaal = regels.filter((r) => r.factureerbaar).reduce((sum, r) => sum + r.totaal, 0)
-    const kmKosten = (werkbonData.kilometers || 0) * (werkbonData.km_tarief || 0)
-    const totaalExcl = Math.round((subtotaal + kmKosten) * 100) / 100
-    const btw = Math.round(totaalExcl * 0.21 * 100) / 100
-    const totaalIncl = Math.round((totaalExcl + btw) * 100) / 100
+    const subtotaal = round2(regels.filter((r) => r.factureerbaar).reduce((sum, r) => sum + r.totaal, 0))
+    const kmKosten = round2((werkbonData.kilometers || 0) * (werkbonData.km_tarief || 0))
+    const totaalExcl = round2(subtotaal + kmKosten)
+    const btw = round2(totaalExcl * 0.21)
+    const totaalIncl = round2(totaalExcl + btw)
 
     const totalsX = pageWidth - margins.right - 50
 

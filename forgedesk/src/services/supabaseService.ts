@@ -3656,3 +3656,344 @@ export async function uploadBriefpapier(userId: string, file: File): Promise<str
     reader.readAsDataURL(file)
   })
 }
+
+// ============ MISSENDE RELATIONELE QUERIES ============
+
+export async function getFacturenByKlant(klantId: string): Promise<Factuur[]> {
+  assertId(klantId, 'klant_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('facturen').select('*').eq('klant_id', klantId).order('factuurdatum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Factuur>('facturen').filter((f) => f.klant_id === klantId)
+}
+
+export async function getFacturenByProject(projectId: string): Promise<Factuur[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('facturen').select('*').eq('project_id', projectId).order('factuurdatum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Factuur>('facturen').filter((f) => f.project_id === projectId)
+}
+
+export async function getDocumentenByProject(projectId: string): Promise<Document[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('documenten').select('*').eq('project_id', projectId).order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Document>('documenten').filter((d) => d.project_id === projectId)
+}
+
+export async function getDocumentenByKlant(klantId: string): Promise<Document[]> {
+  assertId(klantId, 'klant_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('documenten').select('*').eq('klant_id', klantId).order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Document>('documenten').filter((d) => d.klant_id === klantId)
+}
+
+export async function getTijdregistratiesByMedewerker(medewerkerId: string): Promise<Tijdregistratie[]> {
+  assertId(medewerkerId, 'medewerker_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('tijdregistraties').select('*').eq('medewerker_id', medewerkerId).order('datum', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Tijdregistratie>('tijdregistraties').filter((t) => t.medewerker_id === medewerkerId)
+}
+
+export async function getMontageAfsprakenByProject(projectId: string): Promise<MontageAfspraak[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('montage_afspraken').select('*').eq('project_id', projectId).order('datum', { ascending: true })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<MontageAfspraak>('montage_afspraken').filter((a) => a.project_id === projectId)
+}
+
+export async function getMontageAfsprakenByKlant(klantId: string): Promise<MontageAfspraak[]> {
+  assertId(klantId, 'klant_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('montage_afspraken').select('*').eq('klant_id', klantId).order('datum', { ascending: true })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<MontageAfspraak>('montage_afspraken').filter((a) => a.klant_id === klantId)
+}
+
+// ============ NUMMER GENERATOREN (GECENTRALISEERD) ============
+
+export async function generateOfferteNummer(prefix: string = 'OFF'): Promise<string> {
+  const jaar = new Date().getFullYear()
+  const offertes = await getOffertes()
+  const jaarPrefix = `${prefix}-${jaar}-`
+  const maxNr = offertes
+    .filter((o) => o.nummer.startsWith(jaarPrefix))
+    .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+}
+
+export async function generateFactuurNummer(prefix: string = 'FAC'): Promise<string> {
+  const jaar = new Date().getFullYear()
+  const facturen = await getFacturen()
+  const jaarPrefix = `${prefix}-${jaar}-`
+  const maxNr = facturen
+    .filter((f) => f.nummer.startsWith(jaarPrefix))
+    .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+}
+
+export async function generateCreditnotaNummer(): Promise<string> {
+  const jaar = new Date().getFullYear()
+  const facturen = await getFacturen()
+  const prefix = `CN-${jaar}-`
+  const maxNr = facturen
+    .filter((f) => f.nummer.startsWith(prefix))
+    .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(prefix, ''), 10) || 0), 0)
+  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
+}
+
+export async function generateProjectNummer(): Promise<string> {
+  const jaar = new Date().getFullYear()
+  const projecten = await getProjecten()
+  const prefix = `PRJ-${jaar}-`
+  const maxNr = projecten
+    .filter((p) => (p.naam || '').startsWith(prefix))
+    .reduce((max, p) => Math.max(max, parseInt((p.naam || '').replace(prefix, ''), 10) || 0), 0)
+  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
+}
+
+export async function generateLeveringsbonNummer(): Promise<string> {
+  const jaar = new Date().getFullYear()
+  const items = await getLeveringsbonnen()
+  const prefix = `LB-${jaar}-`
+  const maxNr = items
+    .filter((l) => l.leveringsbon_nummer.startsWith(prefix))
+    .reduce((max, l) => {
+      const parts = l.leveringsbon_nummer.split('-')
+      const nr = parseInt(parts[parts.length - 1], 10)
+      return nr > max ? nr : max
+    }, 0)
+  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
+}
+
+// ============ CONVERSIE FUNCTIES ============
+
+export async function convertOfferteToFactuur(
+  offerteId: string,
+  userId: string,
+  factuurPrefix: string = 'FAC'
+): Promise<Factuur> {
+  assertId(offerteId, 'offerte_id')
+  const offerte = await getOfferte(offerteId)
+  if (!offerte) throw new Error('Offerte niet gevonden')
+  const nummer = await generateFactuurNummer(factuurPrefix)
+  const items = await getOfferteItems(offerteId)
+  const factuur = await createFactuur({
+    user_id: userId,
+    klant_id: offerte.klant_id,
+    klant_naam: offerte.klant_naam,
+    offerte_id: offerteId,
+    project_id: offerte.project_id || '',
+    nummer,
+    titel: offerte.titel,
+    status: 'concept',
+    subtotaal: round2(offerte.subtotaal),
+    btw_bedrag: round2(offerte.btw_bedrag),
+    totaal: round2(offerte.totaal),
+    betaald_bedrag: 0,
+    factuurdatum: new Date().toISOString().split('T')[0],
+    vervaldatum: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+    notities: offerte.notities || '',
+    voorwaarden: offerte.voorwaarden || '',
+    bron_type: 'offerte',
+    bron_offerte_id: offerteId,
+    factuur_type: 'standaard',
+    contactpersoon_id: offerte.contactpersoon_id,
+    intro_tekst: offerte.intro_tekst,
+    outro_tekst: offerte.outro_tekst,
+  } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
+  // Kopieer offerte items naar factuur items
+  for (const item of items) {
+    await createFactuurItem({
+      user_id: userId,
+      factuur_id: factuur.id,
+      beschrijving: item.beschrijving,
+      aantal: item.aantal,
+      eenheidsprijs: round2(item.eenheidsprijs),
+      btw_percentage: item.btw_percentage,
+      korting_percentage: item.korting_percentage,
+      totaal: round2(item.totaal),
+      volgorde: item.volgorde,
+    } as Omit<FactuurItem, 'id' | 'created_at'>)
+  }
+  // Update offerte status
+  await updateOfferte(offerteId, { status: 'gefactureerd', geconverteerd_naar_factuur_id: factuur.id })
+  return factuur
+}
+
+export async function convertWerkbonToFactuur(
+  werkbonId: string,
+  userId: string,
+  factuurPrefix: string = 'FAC'
+): Promise<Factuur> {
+  assertId(werkbonId, 'werkbon_id')
+  const werkbon = await getWerkbon(werkbonId)
+  if (!werkbon) throw new Error('Werkbon niet gevonden')
+  const regels = await getWerkbonRegels(werkbonId)
+  const nummer = await generateFactuurNummer(factuurPrefix)
+  const factureerbaar = regels.filter((r) => r.factureerbaar)
+  const subtotaal = round2(factureerbaar.reduce((sum, r) => sum + r.totaal, 0))
+  const btw_bedrag = round2(subtotaal * 0.21)
+  const totaal = round2(subtotaal + btw_bedrag)
+  // Kilometervergoeding
+  const kmTotaal = round2((werkbon.kilometers || 0) * (werkbon.km_tarief || 0))
+  const factuur = await createFactuur({
+    user_id: userId,
+    klant_id: werkbon.klant_id,
+    project_id: werkbon.project_id,
+    nummer,
+    titel: `Factuur werkbon ${werkbon.werkbon_nummer}`,
+    status: 'concept',
+    subtotaal: round2(subtotaal + kmTotaal),
+    btw_bedrag: round2((subtotaal + kmTotaal) * 0.21),
+    totaal: round2((subtotaal + kmTotaal) * 1.21),
+    betaald_bedrag: 0,
+    factuurdatum: new Date().toISOString().split('T')[0],
+    vervaldatum: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+    notities: werkbon.omschrijving || '',
+    voorwaarden: '',
+    bron_type: 'project',
+    bron_project_id: werkbon.project_id,
+    werkbon_id: werkbonId,
+    factuur_type: 'standaard',
+    contactpersoon_id: werkbon.contactpersoon_id,
+  } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
+  // Kopieer werkbon regels naar factuur items
+  let volgorde = 0
+  for (const regel of factureerbaar) {
+    await createFactuurItem({
+      user_id: userId,
+      factuur_id: factuur.id,
+      beschrijving: regel.omschrijving,
+      aantal: regel.aantal || 1,
+      eenheidsprijs: round2(regel.type === 'arbeid' ? (regel.uurtarief || 0) : (regel.prijs_per_eenheid || 0)),
+      btw_percentage: 21,
+      korting_percentage: 0,
+      totaal: round2(regel.totaal),
+      volgorde: volgorde++,
+    } as Omit<FactuurItem, 'id' | 'created_at'>)
+  }
+  // Voeg kilometervergoeding toe als factuur item
+  if (kmTotaal > 0) {
+    await createFactuurItem({
+      user_id: userId,
+      factuur_id: factuur.id,
+      beschrijving: `Kilometervergoeding (${werkbon.kilometers} km x €${werkbon.km_tarief})`,
+      aantal: werkbon.kilometers || 0,
+      eenheidsprijs: werkbon.km_tarief || 0,
+      btw_percentage: 21,
+      korting_percentage: 0,
+      totaal: round2(kmTotaal),
+      volgorde: volgorde++,
+    } as Omit<FactuurItem, 'id' | 'created_at'>)
+  }
+  // Update werkbon status
+  await updateWerkbon(werkbonId, { status: 'gefactureerd', factuur_id: factuur.id })
+  return factuur
+}
+
+export async function createCreditnota(
+  factuurId: string,
+  userId: string,
+  reden: string
+): Promise<Factuur> {
+  assertId(factuurId, 'factuur_id')
+  const origineel = await getFactuur(factuurId)
+  if (!origineel) throw new Error('Factuur niet gevonden')
+  const nummer = await generateCreditnotaNummer()
+  const creditnota = await createFactuur({
+    user_id: userId,
+    klant_id: origineel.klant_id,
+    klant_naam: origineel.klant_naam,
+    project_id: origineel.project_id,
+    nummer,
+    titel: `Creditnota voor ${origineel.nummer}`,
+    status: 'concept',
+    subtotaal: round2(-origineel.subtotaal),
+    btw_bedrag: round2(-origineel.btw_bedrag),
+    totaal: round2(-origineel.totaal),
+    betaald_bedrag: 0,
+    factuurdatum: new Date().toISOString().split('T')[0],
+    vervaldatum: new Date().toISOString().split('T')[0],
+    notities: reden,
+    voorwaarden: origineel.voorwaarden || '',
+    factuur_type: 'creditnota',
+    gerelateerde_factuur_id: factuurId,
+    credit_reden: reden,
+    contactpersoon_id: origineel.contactpersoon_id,
+  } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
+  // Kopieer items als negatieve bedragen
+  const items = await getFactuurItems(factuurId)
+  for (const item of items) {
+    await createFactuurItem({
+      user_id: userId,
+      factuur_id: creditnota.id,
+      beschrijving: item.beschrijving,
+      aantal: -item.aantal,
+      eenheidsprijs: round2(item.eenheidsprijs),
+      btw_percentage: item.btw_percentage,
+      korting_percentage: item.korting_percentage,
+      totaal: round2(-item.totaal),
+      volgorde: item.volgorde,
+    } as Omit<FactuurItem, 'id' | 'created_at'>)
+  }
+  // Update originele factuur
+  await updateFactuur(factuurId, { status: 'gecrediteerd' })
+  return creditnota
+}
+
+export async function createVoorschotfactuur(
+  factuurId: string,
+  userId: string,
+  percentage: number,
+  factuurPrefix: string = 'FAC'
+): Promise<Factuur> {
+  assertId(factuurId, 'factuur_id')
+  const origineel = await getFactuur(factuurId)
+  if (!origineel) throw new Error('Factuur niet gevonden')
+  const nummer = await generateFactuurNummer(factuurPrefix)
+  const voorschotSubtotaal = round2(origineel.subtotaal * (percentage / 100))
+  const voorschotBtw = round2(origineel.btw_bedrag * (percentage / 100))
+  const voorschotTotaal = round2(voorschotSubtotaal + voorschotBtw)
+  const voorschot = await createFactuur({
+    user_id: userId,
+    klant_id: origineel.klant_id,
+    klant_naam: origineel.klant_naam,
+    project_id: origineel.project_id,
+    nummer,
+    titel: `Voorschotfactuur ${percentage}% - ${origineel.titel}`,
+    status: 'concept',
+    subtotaal: voorschotSubtotaal,
+    btw_bedrag: voorschotBtw,
+    totaal: voorschotTotaal,
+    betaald_bedrag: 0,
+    factuurdatum: new Date().toISOString().split('T')[0],
+    vervaldatum: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+    notities: `Voorschot van ${percentage}% op ${origineel.nummer}`,
+    voorwaarden: origineel.voorwaarden || '',
+    factuur_type: 'voorschot',
+    gerelateerde_factuur_id: factuurId,
+    voorschot_percentage: percentage,
+    contactpersoon_id: origineel.contactpersoon_id,
+  } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
+  return voorschot
+}

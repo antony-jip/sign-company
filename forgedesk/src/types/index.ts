@@ -89,6 +89,7 @@ export interface KlantActiviteit {
   status?: string;           // "Akkoord" | "In afwachting" | "Niet akkoord"
   import_bron?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface CSVKlantRij {
@@ -242,6 +243,7 @@ export interface OfferteActiviteit {
 
 export interface OfferteItem {
   id: string;
+  user_id: string;
   offerte_id: string;
   beschrijving: string;
   aantal: number;
@@ -274,6 +276,7 @@ export interface OfferteItem {
   bijlage_type?: 'image/jpeg' | 'image/png' | 'application/pdf';
   bijlage_naam?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface OfferteVersie {
@@ -349,7 +352,9 @@ export interface Email {
   interne_notities?: InternEmailNotitie[];
   prioriteit_inbox?: 'laag' | 'normaal' | 'hoog' | 'urgent';
   categorie_inbox?: 'offerte_aanvraag' | 'klacht' | 'informatie' | 'support' | 'overig';
+  contactpersoon_id?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface EmailTracking {
@@ -407,6 +412,7 @@ export interface Grootboek {
   categorie: 'activa' | 'passiva' | 'omzet' | 'kosten';
   saldo: number;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface BtwCode {
@@ -417,6 +423,7 @@ export interface BtwCode {
   percentage: number;
   actief: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Korting {
@@ -428,6 +435,7 @@ export interface Korting {
   voorwaarden: string;
   actief: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface AIChat {
@@ -436,6 +444,7 @@ export interface AIChat {
   rol: 'user' | 'assistant';
   bericht: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface NavItem {
@@ -687,6 +696,7 @@ export interface IngeplandEmail {
   status: 'gepland' | 'verzonden' | 'mislukt';
   verzonden_op?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export type SortDirection = 'asc' | 'desc';
@@ -749,6 +759,7 @@ export interface Factuur {
 
 export interface FactuurItem {
   id: string;
+  user_id: string;
   factuur_id: string;
   beschrijving: string;
   aantal: number;
@@ -758,6 +769,7 @@ export interface FactuurItem {
   totaal: number;
   volgorde: number;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ TIJDREGISTRATIE ============
@@ -818,6 +830,7 @@ export interface Notificatie {
   link?: string;
   gelezen: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ MONTAGE PLANNING ============
@@ -829,6 +842,7 @@ export interface MontageAfspraak {
   project_naam?: string;
   klant_id: string;
   klant_naam?: string;
+  contactpersoon_id?: string;
   titel: string;
   beschrijving: string;
   datum: string;
@@ -855,6 +869,7 @@ export interface Verlof {
   status: 'aangevraagd' | 'goedgekeurd' | 'afgewezen';
   opmerking?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Bedrijfssluitingsdag {
@@ -864,6 +879,7 @@ export interface Bedrijfssluitingsdag {
   omschrijving: string;
   jaarlijks_herhalend: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ GEBRUIKERSRECHTEN (Feature 4) ============
@@ -875,6 +891,7 @@ export interface ProjectToewijzing {
   medewerker_id: string;
   rol: 'eigenaar' | 'medewerker' | 'viewer';
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ BOOKING SYSTEEM (Feature 6) ============
@@ -888,6 +905,7 @@ export interface BookingSlot {
   slot_duur_minuten: number;
   actief: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface BookingAfspraak {
@@ -903,6 +921,7 @@ export interface BookingAfspraak {
   status: 'gepland' | 'bevestigd' | 'geannuleerd';
   token: string;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ WERKBONNEN (Tier 1 Feature 1) ============
@@ -914,6 +933,7 @@ export interface Werkbon {
   project_id: string;
   klant_id: string;
   montage_afspraak_id?: string;
+  contactpersoon_id?: string;
   locatie_adres: string;
   locatie_stad?: string;
   locatie_postcode?: string;
@@ -949,6 +969,7 @@ export interface WerkbonRegel {
   totaal: number;
   factureerbaar: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface WerkbonFoto {
@@ -959,6 +980,7 @@ export interface WerkbonFoto {
   url: string;
   omschrijving?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ BETALINGSHERINNERINGEN (Tier 1 Feature 2) ============
@@ -972,6 +994,7 @@ export interface HerinneringTemplate {
   dagen_na_vervaldatum: number;
   actief: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ UITGAVENBEHEER (Tier 1 Feature 3) ============
@@ -994,6 +1017,7 @@ export interface Leverancier {
   notitie?: string;
   actief: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Uitgave {
@@ -1057,6 +1081,7 @@ export interface BestelbonRegel {
   volledig_ontvangen?: boolean;
   offerte_item_id?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ LEVERINGSBONNEN (Tier 2 Feature 4) ============
@@ -1092,6 +1117,7 @@ export interface LeveringsbonRegel {
   eenheid?: string;
   opmerking?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ VOORRAADBEHEER (Tier 2 Feature 5) ============
@@ -1130,6 +1156,7 @@ export interface VoorraadMutatie {
   saldo_na_mutatie: number;
   datum: string;
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ DEALS / SALES PIPELINE (Tier 3 Feature 1) ============
@@ -1194,6 +1221,7 @@ export interface DealActiviteit {
   offerte_id?: string;
 
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ LEAD CAPTURE (Tier 3 Feature 2) ============
@@ -1250,6 +1278,7 @@ export interface LeadInzending {
   klant_id?: string;
 
   created_at: string;
+  updated_at?: string;
 }
 
 // ============ GEDEELDE INBOX UITBREIDING (Tier 3 Feature 3) ============

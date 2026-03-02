@@ -51,6 +51,7 @@ import type {
   VoorraadArtikel,
 } from '@/types';
 import { cn, formatCurrency } from '@/lib/utils';
+import { round2 } from '@/utils/budgetUtils';
 import { toast } from 'sonner';
 import { exportCSV, exportExcel } from '@/lib/export';
 import { generateRapportPDF } from '@/services/pdfService';
@@ -183,8 +184,8 @@ export function RapportagesLayout() {
   );
 
   const totaleWinst = useMemo(() => {
-    const kosten = gefilterdeFacturen.reduce((sum, f) => sum + f.totaal * 0.35, 0);
-    return totaleOmzet - kosten;
+    const kosten = round2(gefilterdeFacturen.reduce((sum, f) => sum + f.totaal * 0.35, 0));
+    return round2(totaleOmzet - kosten);
   }, [gefilterdeFacturen, totaleOmzet]);
 
   const conversieRatio = useMemo(() => {
@@ -339,14 +340,14 @@ export function RapportagesLayout() {
     const onderMinimum = voorraadArtikelen.filter(
       (a) => a.huidige_voorraad <= (a.minimum_voorraad || 0)
     ).length;
-    const totaleVoorraadWaarde = voorraadArtikelen.reduce(
+    const totaleVoorraadWaarde = round2(voorraadArtikelen.reduce(
       (s, a) => s + (a.huidige_voorraad * (a.inkoop_prijs || 0)),
       0
-    );
+    ));
     return {
       totaalArtikelen,
       onderMinimum,
-      totaleVoorraadWaarde: Math.round(totaleVoorraadWaarde * 100) / 100,
+      totaleVoorraadWaarde,
       artikelen: [...voorraadArtikelen].sort((a, b) =>
         (a.huidige_voorraad <= (a.minimum_voorraad || 0) ? 0 : 1) -
         (b.huidige_voorraad <= (b.minimum_voorraad || 0) ? 0 : 1)
@@ -451,7 +452,7 @@ export function RapportagesLayout() {
       Huidig: a.huidige_voorraad,
       Minimum: a.minimum_voorraad || 0,
       Inkoopprijs: a.inkoop_prijs || 0,
-      Waarde: Math.round(a.huidige_voorraad * (a.inkoop_prijs || 0) * 100) / 100,
+      Waarde: round2(a.huidige_voorraad * (a.inkoop_prijs || 0)),
     }));
     if (type === 'csv') {
       exportCSV('voorraad-rapport', headers, data);
@@ -1342,7 +1343,7 @@ export function RapportagesLayout() {
                         <td className="py-3 text-right text-muted-foreground">{a.minimum_voorraad || '-'}</td>
                         <td className="py-3 text-right">{formatCurrency(a.inkoop_prijs || 0)}</td>
                         <td className="py-3 text-right font-medium">
-                          {formatCurrency(a.huidige_voorraad * (a.inkoop_prijs || 0))}
+                          {formatCurrency(round2(a.huidige_voorraad * (a.inkoop_prijs || 0)))}
                         </td>
                       </tr>
                     );
