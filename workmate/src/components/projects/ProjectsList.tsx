@@ -35,6 +35,7 @@ import { Input } from '@/components/ui/input'
 import {
   cn,
   formatDate,
+  formatCurrency,
   getStatusColor,
   getPriorityColor,
 } from '@/lib/utils'
@@ -109,7 +110,7 @@ export function ProjectsList() {
   const [isLoading, setIsLoading] = useState(true)
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
-  const [sortField, setSortField] = useState<'naam' | 'voortgang' | 'start_datum'>('start_datum')
+  const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'start_datum'>('start_datum')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const photoInputRef = React.useRef<HTMLInputElement>(null)
   const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
@@ -190,6 +191,11 @@ export function ProjectsList() {
     return offertes.filter((o) => o.project_id === projectId)
   }
 
+  function getProjectBedrag(projectId: string): number {
+    const projOffertes = getProjectOffertes(projectId)
+    return projOffertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
+  }
+
   const gefilterdeProjecten = useMemo(() => {
     let result = [...projecten]
 
@@ -212,8 +218,8 @@ export function ProjectsList() {
         case 'naam':
           cmp = a.naam.localeCompare(b.naam, 'nl')
           break
-        case 'voortgang':
-          cmp = a.voortgang - b.voortgang
+        case 'bedrag':
+          cmp = getProjectBedrag(a.id) - getProjectBedrag(b.id)
           break
         case 'start_datum':
           cmp = new Date(a.start_datum || a.created_at).getTime() - new Date(b.start_datum || b.created_at).getTime()
@@ -223,7 +229,7 @@ export function ProjectsList() {
     })
 
     return result
-  }, [projecten, klanten, zoekterm, statusFilter, sortField, sortDir])
+  }, [projecten, klanten, offertes, zoekterm, statusFilter, sortField, sortDir])
 
   function handleSort(field: typeof sortField) {
     if (field === sortField) {
@@ -372,13 +378,13 @@ export function ProjectsList() {
             size="sm"
             className="h-8 px-2 text-xs text-muted-foreground"
             onClick={() => {
-              const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Voortgang', 'Startdatum']
+              const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Bedrag', 'Startdatum']
               const rows = gefilterdeProjecten.map((p) => ({
                 Project: p.naam,
                 Klant: p.klant_naam || getKlantNaam(p.klant_id),
                 Status: statusLabels[p.status] || p.status,
                 Prioriteit: p.prioriteit,
-                Voortgang: p.voortgang + '%',
+                Bedrag: formatCurrency(getProjectBedrag(p.id)),
                 Startdatum: formatDate(p.start_datum),
               }))
               exportCSV(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows)
@@ -392,13 +398,13 @@ export function ProjectsList() {
             size="sm"
             className="h-8 px-2 text-xs text-muted-foreground"
             onClick={() => {
-              const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Voortgang', 'Startdatum']
+              const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Bedrag', 'Startdatum']
               const rows = gefilterdeProjecten.map((p) => ({
                 Project: p.naam,
                 Klant: p.klant_naam || getKlantNaam(p.klant_id),
                 Status: statusLabels[p.status] || p.status,
                 Prioriteit: p.prioriteit,
-                Voortgang: p.voortgang,
+                Bedrag: getProjectBedrag(p.id),
                 Startdatum: formatDate(p.start_datum),
               }))
               exportExcel(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Projecten')
@@ -458,11 +464,11 @@ export function ProjectsList() {
                 </th>
                 <th className="text-right py-2.5 px-4 hidden xl:table-cell">
                   <button
-                    onClick={() => handleSort('voortgang')}
+                    onClick={() => handleSort('bedrag')}
                     className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
                   >
-                    Voortgang
-                    {sortField === 'voortgang' ? (
+                    Bedrag
+                    {sortField === 'bedrag' ? (
                       sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                     ) : (
                       <ArrowUpDown className="w-3 h-3 opacity-30" />
@@ -601,24 +607,18 @@ export function ProjectsList() {
                       )}
                     </td>
 
-                    {/* Voortgang */}
+                    {/* Bedrag */}
                     <td className="py-3 px-4 hidden xl:table-cell">
-                      <div className="flex items-center gap-2 justify-end">
-                        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={cn(
-                              'h-full rounded-full transition-all',
-                              project.voortgang >= 100 ? 'bg-accent' :
-                              project.voortgang >= 60 ? 'bg-primary' :
-                              project.voortgang >= 30 ? 'bg-wm-light' : 'bg-muted-foreground/30'
-                            )}
-                            style={{ width: `${Math.min(project.voortgang, 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-muted-foreground w-8 text-right tabular-nums">
-                          {project.voortgang}%
-                        </span>
-                      </div>
+                      {(() => {
+                        const bedrag = getProjectBedrag(project.id)
+                        return bedrag > 0 ? (
+                          <span className="text-xs font-medium text-foreground tabular-nums">
+                            {formatCurrency(bedrag)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/50">—</span>
+                        )
+                      })()}
                     </td>
 
                     {/* Datum */}
@@ -709,7 +709,7 @@ export function ProjectsList() {
                                   'Project;' + project.naam,
                                   'Klant;' + klantNaam,
                                   'Status;' + (statusLabels[project.status] || project.status),
-                                  'Voortgang;' + project.voortgang + '%',
+                                  'Bedrag;' + formatCurrency(getProjectBedrag(project.id)),
                                   'Start;' + formatDate(project.start_datum),
                                 ].join('\n')
                                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
