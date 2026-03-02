@@ -227,7 +227,12 @@ function createActiviteit(data: Omit<KlantActiviteit, 'id' | 'created_at'>): Kla
     created_at: now(),
   }
   all.push(newRecord)
-  setLocalData(key, all)
+  try {
+    setLocalData(key, all)
+  } catch {
+    // Quota exceeded — sla deze activiteit over
+    throw new Error('localStorage quota exceeded')
+  }
   return newRecord
 }
 
@@ -347,6 +352,9 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
 // ============ IMPORT: ACTIVITEITEN ============
 
 export async function importActiviteiten(rows: CSVActiviteitRij[]): Promise<ImportResultaat> {
+  // Wis oude activiteiten data VOORDAT we nieuwe importeren
+  clearImportData()
+
   const resultaat: ImportResultaat = {
     totaal: rows.length,
     geimporteerd: 0,
@@ -419,21 +427,29 @@ export async function importActiviteiten(rows: CSVActiviteitRij[]): Promise<Impo
 
 // ============ CLEAR IMPORT DATA ============
 
-export function clearImportData(): void {
-  localStorage.removeItem(LS_CONTACTPERSONEN)
-  // Verwijder alle per-klant activiteiten keys
+/** Wis alle import-gerelateerde localStorage keys. Retourneert aantal verwijderde keys. */
+export function clearImportData(): number {
+  let verwijderd = 0
+  // Verwijder alle per-klant activiteiten keys + alle import-prefixed keys
   const keysToRemove: string[] = []
-  for (let i = 0; i < localStorage.length; i++) {
+  for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i)
-    if (key && key.startsWith(LS_ACTIVITEITEN_PREFIX)) {
+    if (key && (key.startsWith('forgedesk_activiteiten_') || key.startsWith('forgedesk_import_'))) {
       keysToRemove.push(key)
     }
   }
-  keysToRemove.forEach((key) => localStorage.removeItem(key))
-  // Ook oude key opruimen als die er nog is
-  localStorage.removeItem(LS_ACTIVITEITEN_OLD)
-  localStorage.removeItem('forgedesk_klant_historie')
-  localStorage.removeItem('forgedesk_import_log')
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key)
+    verwijderd++
+  }
+  // Ook legacy keys opruimen
+  for (const legacy of ['forgedesk_klant_historie', 'forgedesk_import_log']) {
+    if (localStorage.getItem(legacy) !== null) {
+      localStorage.removeItem(legacy)
+      verwijderd++
+    }
+  }
+  return verwijderd
 }
 
 // ============ TEMPLATE GENERATORS ============

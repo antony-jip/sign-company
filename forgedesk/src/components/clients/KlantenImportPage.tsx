@@ -19,6 +19,7 @@ import {
   ChevronUp,
   Users,
   FolderKanban,
+  Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -26,6 +27,7 @@ import {
   parseContactpersonen,
   importKlanten,
   importActiviteiten,
+  clearImportData,
   generateKlantenTemplate,
   generateActiviteitenTemplate,
 } from '@/services/importService'
@@ -273,7 +275,7 @@ export function KlantenImportPage() {
         {/* Stap 1: Template + Upload */}
         {stap === 'upload' && (
           <div className="space-y-4">
-            {/* Template download + voorbeeld */}
+            {/* Template download + voorbeeld + wis data */}
             <div className="flex items-center gap-3">
               <Button variant="outline" onClick={handleDownloadTemplate}>
                 <Download className="w-4 h-4 mr-2" />
@@ -286,6 +288,18 @@ export function KlantenImportPage() {
               >
                 {showVoorbeeld ? 'Verberg' : 'Bekijk'} voorbeeld
                 {showVoorbeeld ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 ml-auto"
+                onClick={() => {
+                  const verwijderd = clearImportData()
+                  toast.success(`Importdata gewist (${verwijderd} keys verwijderd)`)
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                Wis alle importdata
               </Button>
             </div>
 
