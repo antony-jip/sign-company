@@ -61,13 +61,13 @@ export interface Klant {
   // Klant labels + gepinde notitie
   klant_labels?: string[];
   gepinde_notitie?: string;
-  // James PRO import velden
+  // Import velden
   omzet_totaal?: number;
-  omzet_2026?: number;
   klant_sinds?: string;
   laatst_actief?: string;
   aantal_projecten?: number;
   aantal_offertes?: number;
+  offertes_akkoord?: number;
   totaal_offertewaarde?: number;
   accountmanager?: string;
   import_bron?: string;
@@ -76,33 +76,20 @@ export interface Klant {
   updated_at: string;
 }
 
-// ============ KLANT HISTORIE (AI-KENNISBANK) ============
+// ============ KLANT ACTIVITEITEN & IMPORT ============
 
-export interface KlantProject {
-  naam: string;
-  datum: string;
-  projectmanager: string;
-  waarde?: number;
-}
-
-export interface KlantOfferte {
-  nummer: number;
-  omschrijving: string;
-  datum: string;
-  status: string;
-  waarde: number;
-}
-
-export interface KlantHistorie {
+export interface KlantActiviteit {
+  id: string;
+  user_id: string;
   klant_id: string;
-  bedrijfsnaam: string;
-  specialisaties: string[];
-  conversie_percentage?: number;
-  projecten: KlantProject[];
-  offertes: KlantOfferte[];
+  datum: string;
+  type: 'project' | 'offerte';
+  omschrijving: string;
+  bedrag?: number;
+  status?: string;           // "Akkoord" | "In afwachting" | "Niet akkoord"
+  import_bron?: string;
+  created_at: string;
 }
-
-// ============ JAMES PRO IMPORT ============
 
 export interface CSVKlantRij {
   bedrijfsnaam: string;
@@ -114,27 +101,24 @@ export interface CSVKlantRij {
   kvk_nummer: string;
   btw_nummer: string;
   omzet_totaal: string;
-  omzet_2026: string;
   accountmanager: string;
   status: string;
   klant_sinds: string;
   laatst_actief: string;
   aantal_projecten: string;
   aantal_offertes: string;
+  offertes_akkoord: string;
   totaal_offertewaarde: string;
-  bron: string;
+  contactpersonen: string;
 }
 
-export interface CSVHistorieRij {
+export interface CSVActiviteitRij {
   bedrijfsnaam: string;
-  klant_sinds: string;
-  laatst_actief: string;
-  accountmanager: string;
-  specialisaties: string;
-  conversie_percentage: string;
-  totaal_offertewaarde: string;
-  projecten_samenvatting: string;
-  offertes_samenvatting: string;
+  datum: string;
+  type: string;
+  omschrijving: string;
+  bedrag: string;
+  status: string;
 }
 
 export interface ImportResultaat {

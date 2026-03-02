@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   FolderKanban,
   Calendar,
-  Layers,
-  BarChart3,
-  TrendingUp,
   FileText,
-  CheckCircle2,
+  Filter,
 } from 'lucide-react'
-import { getKlantHistorie } from '@/services/importService'
+import { getActiviteiten } from '@/services/importService'
 import { getProjectenByKlant, getOffertesByKlant } from '@/services/supabaseService'
-import type { KlantHistorie, Project, Offerte } from '@/types'
+import type { KlantActiviteit, Project, Offerte } from '@/types'
+import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
 interface KlantHistorieTabProps {
@@ -20,13 +20,13 @@ interface KlantHistorieTabProps {
   klantNaam: string
 }
 
-// Unified tijdlijn-item dat zowel geimporteerde als live data bevat
-interface HistorieRegel {
+interface TijdlijnItem {
   datum: string
-  naam: string
-  waarde: number
-  bron: 'import' | 'project' | 'offerte'
+  type: 'project' | 'offerte'
+  omschrijving: string
+  bedrag?: number
   status?: string
+  bron: 'import' | 'live'
 }
 
 function formatCurrency(value: number): string {
@@ -38,7 +38,7 @@ function formatCurrency(value: number): string {
 }
 
 function formatDate(dateStr: string): string {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   try {
     const d = new Date(dateStr)
     return d.toLocaleDateString('nl-NL', { year: 'numeric', month: '2-digit', day: '2-digit' })
@@ -47,95 +47,78 @@ function formatDate(dateStr: string): string {
   }
 }
 
-function getBronBadge(bron: HistorieRegel['bron'], status?: string) {
-  if (bron === 'project') {
-    return (
-      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-        Project
-      </Badge>
-    )
+function getStatusBadge(status?: string) {
+  if (!status) return null
+  const lower = status.toLowerCase()
+  if (lower === 'akkoord') {
+    return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-[10px] px-1.5 py-0">Akkoord</Badge>
   }
-  if (bron === 'offerte') {
-    const label = status === 'gefactureerd' ? 'Gefactureerd' : status === 'goedgekeurd' ? 'Goedgekeurd' : status || 'Offerte'
-    const color = status === 'gefactureerd'
-      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-      : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-    return (
-      <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${color}`}>
-        {label}
-      </Badge>
-    )
+  if (lower === 'in afwachting') {
+    return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] px-1.5 py-0">In afwachting</Badge>
   }
-  return (
-    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-      Import
-    </Badge>
-  )
+  if (lower === 'niet akkoord') {
+    return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[10px] px-1.5 py-0">Niet akkoord</Badge>
+  }
+  return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{status}</Badge>
 }
 
 export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) {
-  const [regels, setRegels] = useState<HistorieRegel[]>([])
-  const [specialisaties, setSpecialisaties] = useState<string[]>([])
-  const [conversiePercentage, setConversiePercentage] = useState<number | undefined>()
+  const navigate = useNavigate()
+  const [items, setItems] = useState<TijdlijnItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<'alles' | 'project' | 'offerte'>('alles')
 
   useEffect(() => {
     setLoading(true)
 
     Promise.all([
-      getKlantHistorie(klantId).catch(() => null),
+      Promise.resolve(getActiviteiten(klantId)),
       getProjectenByKlant(klantId).catch(() => [] as Project[]),
       getOffertesByKlant(klantId).catch(() => [] as Offerte[]),
     ])
-      .then(([historie, projecten, offertes]) => {
-        const items: HistorieRegel[] = []
+      .then(([activiteiten, projecten, offertes]) => {
+        const results: TijdlijnItem[] = []
 
-        // 1. Geimporteerde projecten (James PRO)
-        if (historie) {
-          setSpecialisaties(historie.specialisaties)
-          setConversiePercentage(historie.conversie_percentage)
-          for (const p of historie.projecten) {
-            items.push({
-              datum: p.datum,
-              naam: p.naam,
-              waarde: p.waarde || 0,
-              bron: 'import',
-            })
-          }
-        }
-
-        // 2. Live FORGEdesk projecten
-        for (const p of projecten) {
-          items.push({
-            datum: p.created_at,
-            naam: p.naam,
-            waarde: p.budget || 0,
-            bron: 'project',
-            status: p.status,
+        // Imported activiteiten
+        for (const a of activiteiten) {
+          results.push({
+            datum: a.datum,
+            type: a.type,
+            omschrijving: a.omschrijving,
+            bedrag: a.bedrag,
+            status: a.status,
+            bron: 'import',
           })
         }
 
-        // 3. Live FORGEdesk offertes (alleen goedgekeurd of gefactureerd)
+        // Live projects
+        for (const p of projecten) {
+          results.push({
+            datum: p.created_at,
+            type: 'project',
+            omschrijving: p.naam,
+            bedrag: p.budget || 0,
+            bron: 'live',
+          })
+        }
+
+        // Live offertes (goedgekeurd/gefactureerd)
         for (const o of offertes) {
           if (o.status === 'goedgekeurd' || o.status === 'gefactureerd') {
-            items.push({
+            results.push({
               datum: o.akkoord_op || o.created_at,
-              naam: o.titel || `Offerte #${o.nummer}`,
-              waarde: o.totaal || 0,
-              bron: 'offerte',
-              status: o.status,
+              type: 'offerte',
+              omschrijving: o.titel || `Offerte #${o.nummer}`,
+              bedrag: o.totaal || 0,
+              status: 'Akkoord',
+              bron: 'live',
             })
           }
         }
 
-        // Sorteer op datum (nieuwste eerst)
-        items.sort((a, b) => {
-          const da = a.datum || ''
-          const db = b.datum || ''
-          return db.localeCompare(da)
-        })
-
-        setRegels(items)
+        // Sort newest first
+        results.sort((a, b) => (b.datum || '').localeCompare(a.datum || ''))
+        setItems(results)
       })
       .catch(logger.error)
       .finally(() => setLoading(false))
@@ -154,96 +137,60 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
     )
   }
 
-  if (regels.length === 0) {
+  if (items.length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="py-12 text-center">
-          <BarChart3 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm font-medium text-foreground">Geen historie beschikbaar</p>
+          <FolderKanban className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-sm font-medium text-foreground">Geen activiteiten</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Historie wordt automatisch bijgehouden wanneer offertes goedgekeurd of gefactureerd worden.
+            Importeer historie via Klanten &gt; Importeren.
           </p>
+          <Button
+            variant="link"
+            className="mt-2"
+            onClick={() => navigate('/klanten/importeren')}
+          >
+            Ga naar importeren
+          </Button>
         </CardContent>
       </Card>
     )
   }
 
-  const totaalWaarde = regels.reduce((sum, r) => sum + r.waarde, 0)
-  const aantalProjecten = regels.filter((r) => r.bron === 'project' || r.bron === 'import').length
-  const aantalGoedgekeurd = regels.filter((r) => r.bron === 'offerte').length
+  const filteredItems = filter === 'alles' ? items : items.filter((i) => i.type === filter)
 
   return (
     <div className="space-y-4">
-      {/* Stats overview */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <Card className="border-gray-200 dark:border-gray-800">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <FolderKanban className="w-4 h-4 text-blue-500" />
-              <span className="text-xs text-muted-foreground">Projecten</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{aantalProjecten}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-gray-200 dark:border-gray-800">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <span className="text-xs text-muted-foreground">Totale waarde</span>
-            </div>
-            <p className="text-lg font-bold text-foreground">
-              {totaalWaarde > 0 ? formatCurrency(totaalWaarde) : '—'}
-            </p>
-          </CardContent>
-        </Card>
-        {aantalGoedgekeurd > 0 && (
-          <Card className="border-gray-200 dark:border-gray-800">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span className="text-xs text-muted-foreground">Goedgekeurd / Betaald</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">{aantalGoedgekeurd}</p>
-            </CardContent>
-          </Card>
-        )}
-        {conversiePercentage != null && (
-          <Card className="border-gray-200 dark:border-gray-800">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <BarChart3 className="w-4 h-4 text-blue-500" />
-                <span className="text-xs text-muted-foreground">Conversie</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">{conversiePercentage}%</p>
-            </CardContent>
-          </Card>
-        )}
+      {/* Filter knoppen */}
+      <div className="flex items-center gap-2">
+        <Filter className="w-4 h-4 text-muted-foreground" />
+        {(['alles', 'project', 'offerte'] as const).map((f) => {
+          const labels = { alles: 'Alles', project: 'Projecten', offerte: 'Offertes' }
+          const count = f === 'alles' ? items.length : items.filter((i) => i.type === f).length
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                filter === f
+                  ? 'bg-primary/12 text-accent dark:bg-primary/20 dark:text-primary ring-1 ring-primary/25'
+                  : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+              )}
+            >
+              {labels[f]} ({count})
+            </button>
+          )
+        })}
       </div>
 
-      {/* Specialisaties */}
-      {specialisaties.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <Layers className="w-4 h-4 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground mr-1">Specialisaties:</span>
-          {specialisaties.map((s) => (
-            <Badge key={s} variant="secondary" className="text-xs capitalize">
-              {s}
-            </Badge>
-          ))}
-        </div>
-      )}
-
-      {/* Volledige historie */}
+      {/* Tijdlijn tabel */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <FolderKanban className="w-4 h-4 text-blue-500" />
-            Volledige historie ({regels.length})
-            {totaalWaarde > 0 && (
-              <span className="text-xs font-normal text-muted-foreground ml-auto">
-                Totaal: {formatCurrency(totaalWaarde)}
-              </span>
-            )}
+            Activiteiten ({filteredItems.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
@@ -252,24 +199,38 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Datum</th>
-                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Omschrijving</th>
                   <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Type</th>
-                  <th className="text-right py-2 text-xs font-medium text-muted-foreground">Waarde</th>
+                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Omschrijving</th>
+                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Status</th>
+                  <th className="text-right py-2 text-xs font-medium text-muted-foreground">Bedrag</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {regels.map((r, i) => (
+                {filteredItems.map((item, i) => (
                   <tr key={i} className="hover:bg-muted/20">
                     <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3 h-3" />
-                        {formatDate(r.datum)}
+                        {formatDate(item.datum)}
                       </div>
                     </td>
-                    <td className="py-2 pr-3 font-medium">{r.naam}</td>
-                    <td className="py-2 pr-3">{getBronBadge(r.bron, r.status)}</td>
+                    <td className="py-2 pr-3">
+                      {item.type === 'project' ? (
+                        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-[10px] px-1.5 py-0">
+                          Project
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-[10px] px-1.5 py-0">
+                          Offerte
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 font-medium">{item.omschrijving}</td>
+                    <td className="py-2 pr-3">
+                      {getStatusBadge(item.status)}
+                    </td>
                     <td className="py-2 text-right font-medium tabular-nums whitespace-nowrap">
-                      {r.waarde > 0 ? formatCurrency(r.waarde) : '—'}
+                      {item.bedrag && item.bedrag > 0 ? formatCurrency(item.bedrag) : '-'}
                     </td>
                   </tr>
                 ))}

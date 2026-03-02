@@ -76,6 +76,12 @@ import {
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
 import { KlantHistorieTab } from './KlantHistorieTab'
+import {
+  getContactpersonen as getImportedContactpersonen,
+  createContactpersoon as createImportedContactpersoon,
+  deleteContactpersoon as deleteImportedContactpersoon,
+  type ImportContactpersoon,
+} from '@/services/importService'
 import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Vestiging, Factuur, Deal, Tijdregistratie } from '@/types'
 
 function getStatusBarColor(status: string): string {
@@ -129,6 +135,8 @@ export function ClientProfile() {
   const [editingContact, setEditingContact] = useState<Contactpersoon | null>(null)
   const [contactForm, setContactForm] = useState({ naam: '', functie: '', email: '', telefoon: '' })
   const csvFileRef = useRef<HTMLInputElement>(null)
+  // Imported contactpersonen (from CSV import)
+  const [importedContacts, setImportedContacts] = useState<ImportContactpersoon[]>([])
   // Vestiging form
   const [vestigingDialogOpen, setVestigingDialogOpen] = useState(false)
   const [editingVestiging, setEditingVestiging] = useState<Vestiging | null>(null)
@@ -168,6 +176,8 @@ export function ClientProfile() {
       setClientDeals(deals)
       const projectIds = new Set(projecten.map((p) => p.id))
       setClientTijdregistraties(allTijd.filter((t) => projectIds.has(t.project_id)))
+      // Load imported contacts
+      setImportedContacts(getImportedContactpersonen(id))
       setIsLoading(false)
     })
   }, [id])
@@ -598,7 +608,7 @@ export function ClientProfile() {
           <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500" />
-              Contactpersonen ({contactpersonen.length})
+              Contactpersonen ({contactpersonen.length + importedContacts.length})
             </CardTitle>
             <button
               onClick={openAddContact}
@@ -609,8 +619,9 @@ export function ClientProfile() {
             </button>
           </CardHeader>
           <CardContent className="pt-0">
-            {contactpersonen.length > 0 ? (
+            {(contactpersonen.length + importedContacts.length) > 0 ? (
               <div className="space-y-2">
+                {/* Regular contactpersonen */}
                 {contactpersonen.slice(0, 2).map((cp) => (
                   <div
                     key={cp.id}
@@ -625,13 +636,22 @@ export function ClientProfile() {
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {cp.email || cp.telefoon || cp.functie || '—'}
+                        {cp.email || cp.telefoon || cp.functie || '\u2014'}
                       </p>
                     </div>
                     <Pencil className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </div>
                 ))}
-                {contactpersonen.length > 2 && (
+                {/* Imported contactpersonen (show up to 2 total) */}
+                {contactpersonen.length < 2 && importedContacts.slice(0, 2 - contactpersonen.length).map((ic) => (
+                  <div key={ic.id} className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{ic.naam}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {ic.email || ic.telefoon || '\u2014'}
+                    </p>
+                  </div>
+                ))}
+                {(contactpersonen.length + importedContacts.length) > 2 && (
                   <button
                     onClick={() => setActiveTab('contactpersonen')}
                     className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
@@ -1238,7 +1258,7 @@ export function ClientProfile() {
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  Alle Contactpersonen ({contactpersonen.length})
+                  Alle Contactpersonen ({contactpersonen.length + importedContacts.length})
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <input
@@ -1263,23 +1283,20 @@ export function ClientProfile() {
                 </div>
               </CardHeader>
               <CardContent>
-                {contactpersonen.length === 0 ? (
+                {(contactpersonen.length + importedContacts.length) === 0 ? (
                   <div className="text-center py-8">
                     <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm">Nog geen contactpersonen toegevoegd</p>
+                    <p className="text-muted-foreground text-sm">Nog geen contactpersonen</p>
                     <div className="flex items-center justify-center gap-2 mt-3">
                       <Button size="sm" variant="outline" onClick={openAddContact}>
                         <Plus className="w-4 h-4 mr-1" />
                         Toevoegen
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => csvFileRef.current?.click()}>
-                        <Upload className="w-3.5 h-3.5 mr-1" />
-                        Importeer CSV
-                      </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {/* Regular contactpersonen */}
                     {contactpersonen.map((cp) => (
                       <div key={cp.id} className="py-3 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
@@ -1300,16 +1317,16 @@ export function ClientProfile() {
                             </p>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                               {cp.email && (
-                                <span className="flex items-center gap-1">
+                                <a href={`mailto:${cp.email}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
                                   <Mail className="w-3 h-3" />
                                   {cp.email}
-                                </span>
+                                </a>
                               )}
                               {cp.telefoon && (
-                                <span className="flex items-center gap-1">
+                                <a href={`tel:${cp.telefoon}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
                                   <Phone className="w-3 h-3" />
                                   {cp.telefoon}
-                                </span>
+                                </a>
                               )}
                             </div>
                           </div>
@@ -1324,6 +1341,53 @@ export function ClientProfile() {
                           </button>
                           <button
                             onClick={() => handleDeleteContact(cp.id)}
+                            className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Verwijderen"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Imported contactpersonen */}
+                    {importedContacts.map((ic) => (
+                      <div key={ic.id} className="py-3 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                              {ic.naam.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                              {ic.naam}
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Import</Badge>
+                            </p>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                              {ic.email && (
+                                <a href={`mailto:${ic.email}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
+                                  <Mail className="w-3 h-3" />
+                                  {ic.email}
+                                </a>
+                              )}
+                              {ic.telefoon && (
+                                <a href={`tel:${ic.telefoon}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
+                                  <Phone className="w-3 h-3" />
+                                  {ic.telefoon}
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`${ic.naam} verwijderen?`)) {
+                                deleteImportedContactpersoon(ic.id)
+                                setImportedContacts((prev) => prev.filter((c) => c.id !== ic.id))
+                                toast.success('Contactpersoon verwijderd')
+                              }
+                            }}
                             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             title="Verwijderen"
                           >

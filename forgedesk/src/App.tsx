@@ -19,6 +19,7 @@ import { ProjectDetail } from '@/components/projects/ProjectDetail'
 import { ProjectCreate } from '@/components/projects/ProjectCreate'
 import { ClientsLayout } from '@/components/clients/ClientsLayout'
 import { ClientProfile } from '@/components/clients/ClientProfile'
+import { KlantenImportPage } from '@/components/clients/KlantenImportPage'
 import { QuotesPipeline } from '@/components/quotes/QuotesPipeline'
 import { QuoteCreation } from '@/components/quotes/QuoteCreation'
 import { ForgeQuotePreview } from '@/components/quotes/ForgeQuotePreview'
@@ -100,6 +101,7 @@ function AppContent() {
         <Route path="projecten/nieuw" element={<ProjectCreate />} />
         <Route path="projecten/:id" element={<ProjectDetail />} />
         <Route path="klanten" element={<ClientsLayout />} />
+        <Route path="klanten/importeren" element={<KlantenImportPage />} />
         <Route path="klanten/:id" element={<ClientProfile />} />
         <Route path="deals" element={<DealsLayout />} />
         <Route path="deals/:id" element={<DealDetail />} />
