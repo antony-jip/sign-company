@@ -7,12 +7,12 @@
     <title>Workmate - Zakelijk Management</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=Nunito+Sans:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script>
-      // Laad opgeslagen font- en grootte-instellingen direct om FOUC te voorkomen
+      // Laad opgeslagen grootte-instelling direct om FOUC te voorkomen
+      document.documentElement.style.setProperty('--font-family', "'Inter'");
       try {
         const s = JSON.parse(localStorage.getItem('workmate_weergave_instellingen') || '{}');
-        if (s.font_family) document.documentElement.style.setProperty('--font-family', "'" + s.font_family + "'");
         const sizes = { klein: '14px', normaal: '16px', groot: '18px', 'extra-groot': '20px' };
         if (s.font_size && sizes[s.font_size]) document.documentElement.style.setProperty('--font-size', sizes[s.font_size]);
       } catch(e) {}

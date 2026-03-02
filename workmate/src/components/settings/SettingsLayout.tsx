@@ -58,12 +58,15 @@ import {
   CreditCard,
   Briefcase,
   ArrowRight,
+  Monitor,
+  PanelLeft,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { usePalette, PALETTES, APP_THEMES } from '@/contexts/PaletteContext'
+import { useSidebar } from '@/contexts/SidebarContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
@@ -76,18 +79,7 @@ import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 
 // Font systeem constanten
-const BESCHIKBARE_FONTS = [
-  { value: 'DM Sans', label: 'DM Sans', beschrijving: 'Clean & compact' },
-  { value: 'Manrope', label: 'Manrope', beschrijving: 'Modern & geometrisch' },
-  { value: 'Inter', label: 'Inter', beschrijving: 'Neutraal & veelzijdig' },
-  { value: 'Plus Jakarta Sans', label: 'Plus Jakarta Sans', beschrijving: 'Vriendelijk & modern' },
-  { value: 'Nunito Sans', label: 'Nunito Sans', beschrijving: 'Afgerond & leesbaar' },
-  { value: 'Outfit', label: 'Outfit', beschrijving: 'Strak & minimalistisch' },
-  { value: 'Poppins', label: 'Poppins', beschrijving: 'Rond & populair' },
-  { value: 'Raleway', label: 'Raleway', beschrijving: 'Elegant & dun' },
-  { value: 'Source Sans 3', label: 'Source Sans 3', beschrijving: 'Adobe classic' },
-  { value: 'Work Sans', label: 'Work Sans', beschrijving: 'Optimaal voor UI' },
-] as const
+const DEFAULT_FONT = 'Inter'
 
 type FontSize = 'klein' | 'normaal' | 'groot' | 'extra-groot'
 
@@ -106,12 +98,12 @@ function getFontSettings(): { font_family: string; font_size: FontSize } {
     if (stored) {
       const parsed = JSON.parse(stored)
       return {
-        font_family: parsed.font_family || 'DM Sans',
+        font_family: DEFAULT_FONT,
         font_size: parsed.font_size || 'normaal',
       }
     }
   } catch { /* ignore */ }
-  return { font_family: 'DM Sans', font_size: 'normaal' }
+  return { font_family: DEFAULT_FONT, font_size: 'normaal' }
 }
 
 function saveFontSettings(data: { font_family?: string; font_size?: FontSize }) {
@@ -2333,16 +2325,9 @@ function WeergaveTab() {
     setSidebarItems(ALL_SIDEBAR_ITEMS.map((i) => i.label))
   }
 
-  // Font & font size state
-  const [fontFamily, setFontFamily] = useState(() => getFontSettings().font_family)
+  // Font size state (font family is fixed to Inter)
   const [fontSize, setFontSize] = useState<FontSize>(() => getFontSettings().font_size)
-
-  const handleSelectFont = (font: string) => {
-    setFontFamily(font)
-    applyFontFamily(font)
-    saveFontSettings({ font_family: font })
-    toast.success(`Lettertype "${font}" ingesteld`)
-  }
+  const { layoutMode, setLayoutMode } = useSidebar()
 
   const handleSelectFontSize = (size: FontSize) => {
     setFontSize(size)
@@ -2525,37 +2510,110 @@ function WeergaveTab() {
 
         <Separator />
 
-        {/* Font Family Selector */}
+        {/* Layout Mode */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <Type className="w-5 h-5 text-primary" />
+            <Monitor className="w-5 h-5 text-primary" />
             <div>
               <p className="text-sm font-medium text-foreground">
-                Lettertype
+                Navigatie layout
               </p>
               <p className="text-xs text-muted-foreground">
-                Kies een lettertype voor de hele applicatie
+                Kies tussen een zijbalk of horizontale navigatie bovenin
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {BESCHIKBARE_FONTS.map((font) => (
-              <button
-                key={font.value}
-                onClick={() => handleSelectFont(font.value)}
-                className={cn(
-                  'p-3 rounded-lg border text-left transition-all',
-                  fontFamily === font.value
-                    ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                    : 'border-border hover:border-primary/30 hover:bg-muted/50'
-                )}
-              >
-                <span className="text-sm font-medium" style={{ fontFamily: font.value }}>
-                  {font.label}
-                </span>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{font.beschrijving}</p>
-              </button>
-            ))}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => {
+                setLayoutMode('sidebar')
+                toast.success('Zijbalk navigatie ingesteld')
+              }}
+              className={cn(
+                'relative rounded-xl border-2 p-4 transition-all duration-200 text-left',
+                layoutMode === 'sidebar'
+                  ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20'
+                  : 'border-border hover:border-primary/40 hover:shadow-sm'
+              )}
+            >
+              {/* Mini mockup - sidebar layout */}
+              <div className="rounded-lg overflow-hidden mb-3 border border-border/30 bg-muted/30">
+                <div className="flex h-14">
+                  <div className="w-6 border-r border-border/30 bg-muted/50 flex flex-col items-center pt-1.5 gap-1">
+                    <div className="w-3 h-0.5 rounded-full bg-muted-foreground/30" />
+                    <div className="w-3 h-0.5 rounded-full bg-primary/50" />
+                    <div className="w-3 h-0.5 rounded-full bg-muted-foreground/30" />
+                    <div className="w-3 h-0.5 rounded-full bg-muted-foreground/30" />
+                  </div>
+                  <div className="flex-1 p-1.5">
+                    <div className="w-full h-1 bg-muted-foreground/10 rounded mb-1.5" />
+                    <div className="grid grid-cols-3 gap-1">
+                      <div className="h-3 bg-muted-foreground/10 rounded" />
+                      <div className="h-3 bg-muted-foreground/10 rounded" />
+                      <div className="h-3 bg-muted-foreground/10 rounded" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className={cn('text-sm font-semibold', layoutMode === 'sidebar' ? 'text-primary' : 'text-foreground')}>
+                Zijbalk
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Navigatie aan de linkerkant
+              </p>
+              {layoutMode === 'sidebar' && (
+                <div className="absolute top-2 right-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                </div>
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                setLayoutMode('topnav')
+                toast.success('Top navigatie ingesteld')
+              }}
+              className={cn(
+                'relative rounded-xl border-2 p-4 transition-all duration-200 text-left',
+                layoutMode === 'topnav'
+                  ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20'
+                  : 'border-border hover:border-primary/40 hover:shadow-sm'
+              )}
+            >
+              {/* Mini mockup - topnav layout */}
+              <div className="rounded-lg overflow-hidden mb-3 border border-border/30 bg-muted/30">
+                <div className="flex flex-col h-14">
+                  <div className="h-3 border-b border-border/30 bg-muted/50 flex items-center px-1.5 gap-1">
+                    <div className="w-2 h-1 rounded-sm bg-primary/50" />
+                    <div className="w-3 h-0.5 rounded-full bg-muted-foreground/30" />
+                    <div className="w-3 h-0.5 rounded-full bg-muted-foreground/30" />
+                    <div className="w-3 h-0.5 rounded-full bg-muted-foreground/30" />
+                  </div>
+                  <div className="flex-1 p-1.5">
+                    <div className="grid grid-cols-3 gap-1">
+                      <div className="h-3 bg-muted-foreground/10 rounded" />
+                      <div className="h-3 bg-muted-foreground/10 rounded" />
+                      <div className="h-3 bg-muted-foreground/10 rounded" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 mt-1">
+                      <div className="h-3 bg-muted-foreground/10 rounded" />
+                      <div className="h-3 bg-muted-foreground/10 rounded" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className={cn('text-sm font-semibold', layoutMode === 'topnav' ? 'text-primary' : 'text-foreground')}>
+                Top navigatie
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Navigatie bovenin de pagina
+              </p>
+              {layoutMode === 'topnav' && (
+                <div className="absolute top-2 right-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                </div>
+              )}
+            </button>
           </div>
         </div>
 
