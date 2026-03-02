@@ -12,7 +12,8 @@ import type {
 // ============ LOCALSTORAGE KEYS ============
 
 const LS_CONTACTPERSONEN = 'forgedesk_import_contactpersonen'
-const LS_ACTIVITEITEN = 'forgedesk_import_activiteiten'
+const LS_ACTIVITEITEN_PREFIX = 'forgedesk_activiteiten_'
+const LS_ACTIVITEITEN_OLD = 'forgedesk_import_activiteiten'
 
 // ============ HELPERS ============
 
@@ -24,6 +25,32 @@ function getLocalData<T>(key: string): T[] {
 function setLocalData<T>(key: string, data: T[]): void {
   localStorage.setItem(key, JSON.stringify(data))
 }
+
+// Migratie: verplaats data van oude single-key naar per-klant keys
+function migreerOudeActiviteiten(): void {
+  const oudeData = localStorage.getItem(LS_ACTIVITEITEN_OLD)
+  if (!oudeData) return
+  try {
+    const items: KlantActiviteit[] = JSON.parse(oudeData)
+    const perKlant = new Map<string, KlantActiviteit[]>()
+    for (const item of items) {
+      if (!item.klant_id) continue
+      const bestaande = perKlant.get(item.klant_id) || []
+      bestaande.push(item)
+      perKlant.set(item.klant_id, bestaande)
+    }
+    for (const [klantId, activiteiten] of perKlant) {
+      const key = `${LS_ACTIVITEITEN_PREFIX}${klantId}`
+      const bestaande = getLocalData<KlantActiviteit>(key)
+      localStorage.setItem(key, JSON.stringify([...bestaande, ...activiteiten]))
+    }
+    localStorage.removeItem(LS_ACTIVITEITEN_OLD)
+  } catch {
+    localStorage.removeItem(LS_ACTIVITEITEN_OLD)
+  }
+}
+
+migreerOudeActiviteiten()
 
 function generateId(): string {
   return crypto.randomUUID()
@@ -186,21 +213,21 @@ export function deleteContactpersoon(id: string): void {
 // ============ ACTIVITEITEN CRUD ============
 
 export function getActiviteiten(klant_id: string): KlantActiviteit[] {
-  const all = getLocalData<KlantActiviteit>(LS_ACTIVITEITEN)
-  return all
-    .filter((a) => a.klant_id === klant_id)
+  const key = `${LS_ACTIVITEITEN_PREFIX}${klant_id}`
+  return getLocalData<KlantActiviteit>(key)
     .sort((a, b) => b.datum.localeCompare(a.datum))
 }
 
 function createActiviteit(data: Omit<KlantActiviteit, 'id' | 'created_at'>): KlantActiviteit {
-  const all = getLocalData<KlantActiviteit>(LS_ACTIVITEITEN)
+  const key = `${LS_ACTIVITEITEN_PREFIX}${data.klant_id}`
+  const all = getLocalData<KlantActiviteit>(key)
   const newRecord: KlantActiviteit = {
     ...data,
     id: generateId(),
     created_at: now(),
   }
   all.push(newRecord)
-  setLocalData(LS_ACTIVITEITEN, all)
+  setLocalData(key, all)
   return newRecord
 }
 
@@ -394,7 +421,17 @@ export async function importActiviteiten(rows: CSVActiviteitRij[]): Promise<Impo
 
 export function clearImportData(): void {
   localStorage.removeItem(LS_CONTACTPERSONEN)
-  localStorage.removeItem(LS_ACTIVITEITEN)
+  // Verwijder alle per-klant activiteiten keys
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith(LS_ACTIVITEITEN_PREFIX)) {
+      keysToRemove.push(key)
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key))
+  // Ook oude key opruimen als die er nog is
+  localStorage.removeItem(LS_ACTIVITEITEN_OLD)
   localStorage.removeItem('forgedesk_klant_historie')
   localStorage.removeItem('forgedesk_import_log')
 }
