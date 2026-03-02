@@ -21,6 +21,7 @@ import { createDocument, updateDocument, deleteDocument as deleteDocRecord } fro
 import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
+import { buildZip } from '../../utils/zipBuilder'
 import type { Document } from '@/types'
 
 interface ProjectPhotoGalleryProps {
@@ -149,22 +150,41 @@ export function ProjectPhotoGallery({
     setIsDownloading(true)
 
     try {
+      const entries: { name: string; data: Uint8Array }[] = []
+      let loaded = 0
+
       for (const photo of photos) {
         const url = photoUrls[photo.id]
         if (!url) continue
-        const a = document.createElement('a')
-        a.href = url
-        a.download = photo.naam
-        a.target = '_blank'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        // small delay between downloads
-        await new Promise(r => setTimeout(r, 300))
+        try {
+          const resp = await fetch(url)
+          const arrayBuf = await resp.arrayBuffer()
+          entries.push({ name: photo.naam, data: new Uint8Array(arrayBuf) })
+          loaded++
+          toast.loading(`Foto's ophalen... ${loaded}/${photos.length}`, { id: 'bulk-download' })
+        } catch {
+          logger.error(`Kon ${photo.naam} niet ophalen`)
+        }
       }
-      toast.success(`${photos.length} foto's gedownload`)
+
+      if (entries.length === 0) {
+        toast.error("Geen foto's beschikbaar voor download", { id: 'bulk-download' })
+        return
+      }
+
+      const zipBlob = buildZip(entries)
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `fotos-${projectId.slice(0, 8)}.zip`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      toast.success(`${entries.length} foto's gedownload als ZIP`, { id: 'bulk-download' })
     } catch {
-      toast.error('Download mislukt')
+      toast.error('Download mislukt', { id: 'bulk-download' })
     } finally {
       setIsDownloading(false)
     }

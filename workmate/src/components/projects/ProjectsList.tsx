@@ -20,6 +20,7 @@ import {
   Users,
   CalendarDays,
   Camera,
+  Eye,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -38,10 +39,10 @@ import {
   getPriorityColor,
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
-import { getProjecten, getKlanten, updateProject, createDocument } from '@/services/supabaseService'
+import { getProjecten, getKlanten, getOffertes, updateProject, createDocument } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Project, Klant } from '@/types'
+import type { Project, Klant, Offerte } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 
@@ -104,6 +105,7 @@ export function ProjectsList() {
   const { user } = useAuth()
   const [projecten, setProjecten] = useState<Project[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
+  const [offertes, setOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
@@ -154,13 +156,15 @@ export function ProjectsList() {
     async function fetchData() {
       try {
         setIsLoading(true)
-        const [projectenData, klantenData] = await Promise.all([
+        const [projectenData, klantenData, offertesData] = await Promise.all([
           getProjecten(),
           getKlanten(),
+          getOffertes(),
         ])
         if (!cancelled) {
           setProjecten(projectenData)
           setKlanten(klantenData)
+          setOffertes(offertesData)
         }
       } catch (error) {
         logger.error('Fout bij ophalen data:', error)
@@ -180,6 +184,10 @@ export function ProjectsList() {
   function getKlantContactpersoon(klantId: string): string {
     const klant = klanten.find((k) => k.id === klantId)
     return klant?.contactpersoon || ''
+  }
+
+  function getProjectOffertes(projectId: string): Offerte[] {
+    return offertes.filter((o) => o.project_id === projectId)
   }
 
   const gefilterdeProjecten = useMemo(() => {
@@ -646,9 +654,25 @@ export function ProjectsList() {
                       )}
                     </td>
 
-                    {/* Quick photo + Menu */}
+                    {/* Quick actions + Menu */}
                     <td className="py-3 px-2">
                       <div className="flex items-center gap-0.5 justify-end">
+                        {/* Quick offerte preview button */}
+                        {(() => {
+                          const projOffertes = getProjectOffertes(project.id)
+                          if (projOffertes.length === 0) return null
+                          const latestOfferte = projOffertes[0]
+                          return (
+                            <Link
+                              to={`/offertes/${latestOfferte.id}/preview`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                              title={`Offerte bekijken: ${latestOfferte.nummer || latestOfferte.titel}`}
+                            >
+                              <Eye className="w-4 h-4 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
+                            </Link>
+                          )
+                        })()}
                         {/* Quick photo upload button */}
                         <button
                           onClick={(e) => {
@@ -681,6 +705,18 @@ export function ProjectsList() {
                             >
                               Bekijken
                             </DropdownMenuItem>
+                            {getProjectOffertes(project.id).length > 0 && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const projOffertes = getProjectOffertes(project.id)
+                                  window.location.href = `/offertes/${projOffertes[0].id}/preview`
+                                }}
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-2" />
+                                Offerte bekijken
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation()

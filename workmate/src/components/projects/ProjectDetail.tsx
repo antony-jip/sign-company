@@ -1204,24 +1204,36 @@ export function ProjectDetail() {
                 const kolomTaken = projectTaken.filter((t) => t.status === kolom.key)
 
                 return (
-                  <div key={kolom.key} className="space-y-2">
+                  <div key={kolom.key} className="flex flex-col">
                     <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full bg-gradient-to-r ${kolom.bgKleur}`} />
                         <h3 className="text-xs font-semibold text-foreground">{kolom.label}</h3>
                       </div>
-                      <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 font-medium">
-                        {kolomTaken.length}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 font-medium">
+                          {kolomTaken.length}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setNieuweTaakStatus(kolom.key as Taak['status'])
+                            setNieuweTaakOpen(true)
+                          }}
+                          className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground/40 hover:text-foreground hover:bg-muted transition-colors"
+                          title={`Taak toevoegen in ${kolom.label}`}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
 
                     <div
-                      className="min-h-[80px] space-y-1.5 rounded-lg"
-                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('bg-primary/5') }}
-                      onDragLeave={(e) => { e.currentTarget.classList.remove('bg-primary/5') }}
+                      className="flex-1 min-h-[80px] flex flex-col gap-1.5 rounded-lg mt-2 p-1 transition-colors"
+                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('bg-primary/5', 'ring-1', 'ring-primary/20') }}
+                      onDragLeave={(e) => { e.currentTarget.classList.remove('bg-primary/5', 'ring-1', 'ring-primary/20') }}
                       onDrop={async (e) => {
                         e.preventDefault()
-                        e.currentTarget.classList.remove('bg-primary/5')
+                        e.currentTarget.classList.remove('bg-primary/5', 'ring-1', 'ring-primary/20')
                         const taakId = e.dataTransfer.getData('text/plain')
                         if (!taakId) return
                         try {
