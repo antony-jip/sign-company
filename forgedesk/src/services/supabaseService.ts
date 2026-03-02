@@ -67,7 +67,11 @@ function getLocalData<T>(key: string): T[] {
 }
 
 function setLocalData<T>(key: string, data: T[]): void {
-  localStorage.setItem(`forgedesk_${key}`, JSON.stringify(data))
+  try {
+    localStorage.setItem(`forgedesk_${key}`, JSON.stringify(data))
+  } catch (e) {
+    throw new Error(`localStorage quota exceeded voor ${key}`)
+  }
 }
 
 function generateId(): string {

@@ -298,6 +298,9 @@ function createActiviteit(data: Omit<KlantActiviteit, 'id' | 'created_at'>): Kla
 // ============ IMPORT: KLANTEN ============
 
 export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaat> {
+  // Wis activiteiten data om localStorage ruimte vrij te maken voor klantdata
+  clearImportData()
+
   const resultaat: ImportResultaat = {
     totaal: rows.length,
     geimporteerd: 0,
@@ -312,6 +315,7 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
   bestaandeKlanten.forEach((k) => klantMap.set(normalizeNaam(k.bedrijfsnaam), k))
 
   let contactpersonenAangemaakt = 0
+  let quotaVolContacten = 0
 
   for (const rij of rows) {
     try {
@@ -359,7 +363,6 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
           is_primair: false,
         }))
         contactpersonenAangemaakt += csvContactpersonen.length
-        console.log(`[Import] ${rij.bedrijfsnaam}: ${csvContactpersonen.length} contactpersonen geparsed`)
       }
 
       let klant: Klant
@@ -367,24 +370,31 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
         // Update existing — merge CSV contacts with existing ones
         const bestaandeContacten = bestaande.contactpersonen || []
         const bestaandeEmails = new Set(bestaandeContacten.map((c) => c.email?.toLowerCase()).filter(Boolean))
-        // Only add contacts that don't already exist (by email)
         const nieuweContacten = csvContactpersonen.filter(
           (c) => !c.email || !bestaandeEmails.has(c.email.toLowerCase())
         )
         const allContacts = [...bestaandeContacten, ...nieuweContacten]
-        console.log(`[Import] ${rij.bedrijfsnaam}: update met ${allContacts.length} contactpersonen (${bestaandeContacten.length} bestaand + ${nieuweContacten.length} nieuw)`)
-        klant = await updateKlant(bestaande.id, {
-          ...klantData,
-          contactpersonen: allContacts,
-        })
-        console.log(`[Import] ${rij.bedrijfsnaam}: na update heeft klant ${klant.contactpersonen?.length || 0} contactpersonen`)
+        try {
+          klant = await updateKlant(bestaande.id, {
+            ...klantData,
+            contactpersonen: allContacts,
+          })
+        } catch (quotaErr) {
+          // localStorage vol — sla op ZONDER contactpersonen
+          if (String(quotaErr).includes('quota') || String(quotaErr).includes('QuotaExceededError')) {
+            quotaVolContacten += allContacts.length
+            klant = await updateKlant(bestaande.id, klantData)
+          } else {
+            throw quotaErr
+          }
+        }
         klantMap.set(zoekNaam, klant)
       } else {
         // Create new — set first contact as primair
         if (csvContactpersonen.length > 0) {
           csvContactpersonen[0].is_primair = true
         }
-        klant = await createKlant({
+        const createData = {
           user_id: '',
           bedrijfsnaam: rij.bedrijfsnaam.trim(),
           contactpersoon: csvContactpersonen[0]?.naam || '',
@@ -402,7 +412,18 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
           notities: '',
           contactpersonen: csvContactpersonen,
           ...klantData,
-        })
+        }
+        try {
+          klant = await createKlant(createData)
+        } catch (quotaErr) {
+          // localStorage vol — sla op ZONDER contactpersonen
+          if (String(quotaErr).includes('quota') || String(quotaErr).includes('QuotaExceededError')) {
+            quotaVolContacten += csvContactpersonen.length
+            klant = await createKlant({ ...createData, contactpersonen: [] })
+          } else {
+            throw quotaErr
+          }
+        }
         klantMap.set(zoekNaam, klant)
       }
 
@@ -418,6 +439,11 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
   // Add contact count to details for UI
   if (contactpersonenAangemaakt > 0) {
     resultaat.fout_details.unshift(`_contactpersonen:${contactpersonenAangemaakt}`)
+  }
+  if (quotaVolContacten > 0) {
+    resultaat.fout_details.push(
+      `⚠ ${quotaVolContacten} contactpersonen konden niet worden opgeslagen (localStorage vol). Gebruik Supabase voor volledige opslag.`
+    )
   }
 
   return resultaat
