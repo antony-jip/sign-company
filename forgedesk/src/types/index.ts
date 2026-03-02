@@ -51,8 +51,87 @@ export interface Klant {
   // Klant labels + gepinde notitie
   klant_labels?: string[];
   gepinde_notitie?: string;
+  // James PRO import velden
+  omzet_totaal?: number;
+  omzet_2026?: number;
+  klant_sinds?: string;
+  laatst_actief?: string;
+  aantal_projecten?: number;
+  aantal_offertes?: number;
+  totaal_offertewaarde?: number;
+  accountmanager?: string;
+  import_bron?: string;
+  import_datum?: string;
   created_at: string;
   updated_at: string;
+}
+
+// ============ KLANT HISTORIE (AI-KENNISBANK) ============
+
+export interface KlantProject {
+  naam: string;
+  datum: string;
+  projectmanager: string;
+}
+
+export interface KlantOfferte {
+  nummer: number;
+  omschrijving: string;
+  datum: string;
+  status: string;
+  waarde: number;
+}
+
+export interface KlantHistorie {
+  klant_id: string;
+  bedrijfsnaam: string;
+  specialisaties: string[];
+  conversie_percentage?: number;
+  projecten: KlantProject[];
+  offertes: KlantOfferte[];
+}
+
+// ============ JAMES PRO IMPORT ============
+
+export interface CSVKlantRij {
+  bedrijfsnaam: string;
+  adres: string;
+  postcode: string;
+  plaats: string;
+  telefoon: string;
+  email: string;
+  kvk_nummer: string;
+  btw_nummer: string;
+  omzet_totaal: string;
+  omzet_2026: string;
+  accountmanager: string;
+  status: string;
+  klant_sinds: string;
+  laatst_actief: string;
+  aantal_projecten: string;
+  aantal_offertes: string;
+  totaal_offertewaarde: string;
+  bron: string;
+}
+
+export interface CSVHistorieRij {
+  bedrijfsnaam: string;
+  klant_sinds: string;
+  laatst_actief: string;
+  accountmanager: string;
+  specialisaties: string;
+  conversie_percentage: string;
+  totaal_offertewaarde: string;
+  projecten_samenvatting: string;
+  offertes_samenvatting: string;
+}
+
+export interface ImportResultaat {
+  totaal: number;
+  geimporteerd: number;
+  overgeslagen: number;
+  fouten: number;
+  fout_details: string[];
 }
 
 export interface Project {
