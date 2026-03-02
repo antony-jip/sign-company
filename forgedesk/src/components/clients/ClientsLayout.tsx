@@ -20,6 +20,7 @@ import {
   List,
   ArrowUpDown,
   Download,
+  Upload,
   FileText,
   Users,
   MoreHorizontal,
@@ -38,6 +39,7 @@ import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseServic
 import type { Klant, Project } from '@/types'
 import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
+import { ImportCSVDialog } from './ImportCSVDialog'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 
@@ -60,6 +62,7 @@ export function ClientsLayout() {
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [labelFilter, setLabelFilter] = useState<string>('alle')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   const fetchData = useCallback(() => {
     setLoading(true)
@@ -317,6 +320,16 @@ export function ClientsLayout() {
           />
         </div>
         <div className="flex items-center gap-2">
+          {/* Import button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-9"
+            onClick={() => setImportDialogOpen(true)}
+          >
+            <Upload className="w-4 h-4" />
+            Import
+          </Button>
           {/* Export buttons */}
           <div className="flex items-center">
             <Button
@@ -681,6 +694,12 @@ export function ClientsLayout() {
         }}
         onSaved={handleClientSaved}
         klant={editingKlant}
+      />
+
+      <ImportCSVDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImportComplete={fetchData}
       />
     </div>
   )
