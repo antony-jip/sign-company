@@ -2,6 +2,7 @@ import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
+import { LandingPage } from '@/components/landing/LandingPage'
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -19,6 +20,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
+    // On root "/" → show landing page instead of redirecting to login
+    if (location.pathname === '/') {
+      return <LandingPage />
+    }
+    // On any other protected route → redirect to login
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
