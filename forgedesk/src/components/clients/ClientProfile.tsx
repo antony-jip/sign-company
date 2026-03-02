@@ -76,7 +76,7 @@ import {
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
 import { KlantHistorieTab } from './KlantHistorieTab'
-import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal, Tijdregistratie } from '@/types'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Vestiging, Factuur, Deal, Tijdregistratie } from '@/types'
 
 function getStatusBarColor(status: string): string {
   switch (status) {
@@ -129,6 +129,10 @@ export function ClientProfile() {
   const [editingContact, setEditingContact] = useState<Contactpersoon | null>(null)
   const [contactForm, setContactForm] = useState({ naam: '', functie: '', email: '', telefoon: '' })
   const csvFileRef = useRef<HTMLInputElement>(null)
+  // Vestiging form
+  const [vestigingDialogOpen, setVestigingDialogOpen] = useState(false)
+  const [editingVestiging, setEditingVestiging] = useState<Vestiging | null>(null)
+  const [vestigingForm, setVestigingForm] = useState({ naam: '', adres: '', postcode: '', stad: '', land: 'Nederland' })
 
   useEffect(() => {
     if (!id) return
@@ -255,6 +259,66 @@ export function ClientProfile() {
     }
   }
 
+  // ── Vestiging CRUD ──
+  function openAddVestiging() {
+    setEditingVestiging(null)
+    setVestigingForm({ naam: '', adres: '', postcode: '', stad: '', land: 'Nederland' })
+    setVestigingDialogOpen(true)
+  }
+
+  function openEditVestiging(v: Vestiging) {
+    setEditingVestiging(v)
+    setVestigingForm({ naam: v.naam, adres: v.adres, postcode: v.postcode, stad: v.stad, land: v.land || 'Nederland' })
+    setVestigingDialogOpen(true)
+  }
+
+  async function handleSaveVestiging() {
+    if (!klant || !vestigingForm.naam.trim()) return
+    const current = klant.vestigingen || []
+
+    if (editingVestiging) {
+      const updated = current.map((v) =>
+        v.id === editingVestiging.id ? { ...v, ...vestigingForm } : v
+      )
+      try {
+        const updatedKlant = await updateKlant(klant.id, { vestigingen: updated })
+        setKlant(updatedKlant)
+        toast.success('Vestiging bijgewerkt')
+      } catch {
+        toast.error('Fout bij bijwerken')
+      }
+    } else {
+      const newVestiging: Vestiging = {
+        id: crypto.randomUUID(),
+        ...vestigingForm,
+      }
+      try {
+        const updatedKlant = await updateKlant(klant.id, {
+          vestigingen: [...current, newVestiging],
+        })
+        setKlant(updatedKlant)
+        toast.success('Vestiging toegevoegd')
+      } catch {
+        toast.error('Fout bij toevoegen')
+      }
+    }
+    setVestigingDialogOpen(false)
+  }
+
+  async function handleDeleteVestiging(vestigingId: string) {
+    if (!klant) return
+    const v = (klant.vestigingen || []).find((x) => x.id === vestigingId)
+    if (!window.confirm(`Weet je zeker dat je vestiging "${v?.naam}" wilt verwijderen?`)) return
+    const updated = (klant.vestigingen || []).filter((x) => x.id !== vestigingId)
+    try {
+      const updatedKlant = await updateKlant(klant.id, { vestigingen: updated })
+      setKlant(updatedKlant)
+      toast.success('Vestiging verwijderd')
+    } catch {
+      toast.error('Fout bij verwijderen')
+    }
+  }
+
   function downloadContactpersonenTemplate() {
     const header = 'naam;functie;email;telefoon;is_primair'
     const voorbeeldRijen = [
@@ -371,6 +435,7 @@ export function ClientProfile() {
   }
 
   const contactpersonen = klant.contactpersonen || []
+  const vestigingen = klant.vestigingen || []
   const tabs = [
     { key: 'projecten', label: 'Projecten', count: clientProjecten.length, icon: FolderKanban },
     { key: 'deals', label: 'Deals', count: clientDeals.length, icon: CreditCard },
@@ -591,33 +656,46 @@ export function ClientProfile() {
           </CardContent>
         </Card>
 
-        {/* Contact info */}
+        {/* Contact info + Vestigingen */}
         <Card className="border-gray-200 dark:border-gray-800">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <MapPin className="w-4 h-4 text-green-500" />
-              Adresgegevens
+              {vestigingen.length > 0 ? `Vestigingen (${vestigingen.length})` : 'Adresgegevens'}
             </CardTitle>
+            <button
+              onClick={openAddVestiging}
+              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title="Vestiging toevoegen"
+            >
+              <Plus className="w-4 h-4 text-gray-400 hover:text-green-500" />
+            </button>
           </CardHeader>
-          <CardContent className="pt-0 space-y-1">
-            {klant.adres && <p className="text-sm text-foreground">{klant.adres}</p>}
-            <p className="text-sm text-foreground">
-              {[klant.postcode, klant.stad].filter(Boolean).join(' ')}
-            </p>
-            {klant.land && <p className="text-sm text-muted-foreground">{klant.land}</p>}
-            {klant.telefoon && (
-              <p className="text-sm text-foreground">{klant.telefoon}</p>
-            )}
-            {klant.website && (
-              <a
-                href={klant.website.startsWith('http') ? klant.website : `https://${klant.website}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline block mt-1"
+          <CardContent className="pt-0 space-y-2">
+            {/* Hoofdvesttiging */}
+            <div>
+              {klant.adres && <p className="text-sm text-foreground">{klant.adres}</p>}
+              <p className="text-sm text-foreground">
+                {[klant.postcode, klant.stad].filter(Boolean).join(' ')}
+              </p>
+              {vestigingen.length === 0 && klant.land && <p className="text-sm text-muted-foreground">{klant.land}</p>}
+            </div>
+            {/* Extra vestigingen */}
+            {vestigingen.map((v) => (
+              <div
+                key={v.id}
+                className="flex items-center justify-between group cursor-pointer border-t border-border/50 pt-2"
+                onClick={() => openEditVestiging(v)}
               >
-                {klant.website}
-              </a>
-            )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{v.naam}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {[v.adres, v.postcode, v.stad].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+                <Pencil className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              </div>
+            ))}
           </CardContent>
         </Card>
 
@@ -1410,6 +1488,80 @@ export function ClientProfile() {
       />
 
       {/* Contact person dialog */}
+      {/* Vestiging dialog */}
+      <Dialog open={vestigingDialogOpen} onOpenChange={setVestigingDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingVestiging ? 'Vestiging bewerken' : 'Vestiging toevoegen'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingVestiging
+                ? 'Pas de gegevens van de vestiging aan.'
+                : 'Voeg een extra vestiging toe aan dit bedrijf.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="vest-naam">Naam <span className="text-red-500">*</span></Label>
+              <Input
+                id="vest-naam"
+                value={vestigingForm.naam}
+                onChange={(e) => setVestigingForm((f) => ({ ...f, naam: e.target.value }))}
+                placeholder="Bijv. Vestiging Amsterdam, Productiehal Zuid"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="vest-adres">Adres</Label>
+              <Input
+                id="vest-adres"
+                value={vestigingForm.adres}
+                onChange={(e) => setVestigingForm((f) => ({ ...f, adres: e.target.value }))}
+                placeholder="Straatnaam 123"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vest-postcode">Postcode</Label>
+                <Input
+                  id="vest-postcode"
+                  value={vestigingForm.postcode}
+                  onChange={(e) => setVestigingForm((f) => ({ ...f, postcode: e.target.value }))}
+                  placeholder="1234 AB"
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="vest-stad">Stad</Label>
+                <Input
+                  id="vest-stad"
+                  value={vestigingForm.stad}
+                  onChange={(e) => setVestigingForm((f) => ({ ...f, stad: e.target.value }))}
+                  placeholder="Amsterdam"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            {editingVestiging && (
+              <Button
+                variant="destructive"
+                onClick={() => { handleDeleteVestiging(editingVestiging.id); setVestigingDialogOpen(false) }}
+                className="mr-auto"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Verwijderen
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setVestigingDialogOpen(false)}>
+              Annuleren
+            </Button>
+            <Button onClick={handleSaveVestiging} disabled={!vestigingForm.naam.trim()}>
+              {editingVestiging ? 'Bijwerken' : 'Toevoegen'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>

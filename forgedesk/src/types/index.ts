@@ -30,6 +30,15 @@ export interface Contactpersoon {
   is_primair: boolean;
 }
 
+export interface Vestiging {
+  id: string;
+  naam: string;
+  adres: string;
+  postcode: string;
+  stad: string;
+  land: string;
+}
+
 export interface Klant {
   id: string;
   user_id: string;
@@ -48,6 +57,7 @@ export interface Klant {
   tags: string[];
   notities: string;
   contactpersonen: Contactpersoon[];
+  vestigingen?: Vestiging[];
   // Klant labels + gepinde notitie
   klant_labels?: string[];
   gepinde_notitie?: string;
@@ -156,6 +166,9 @@ export interface Project {
   bron_offerte_id?: string;
   // Contactpersoon koppeling
   contactpersoon_id?: string;
+  // Vestiging koppeling
+  vestiging_id?: string;
+  vestiging_naam?: string;
   // Feature 8: Project kopiëren / template
   is_template?: boolean;
   bron_project_id?: string;

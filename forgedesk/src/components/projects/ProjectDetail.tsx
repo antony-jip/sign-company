@@ -767,6 +767,9 @@ export function ProjectDetail() {
                   <p className="text-[13px] text-white/50 mt-1 flex items-center gap-1.5">
                     <Users className="h-3 w-3" />
                     {project.klant_naam || 'Onbekende klant'}
+                    {project.vestiging_naam && (
+                      <span className="text-white/40">· {project.vestiging_naam}</span>
+                    )}
                   </p>
                 </div>
               </div>

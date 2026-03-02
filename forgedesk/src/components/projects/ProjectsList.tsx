@@ -578,7 +578,10 @@ export function ProjectsList() {
                     {/* Klant */}
                     <td className="py-3 px-4 hidden lg:table-cell">
                       <span className="text-sm text-foreground">{klantNaam}</span>
-                      {contactpersoon && (
+                      {project.vestiging_naam && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{project.vestiging_naam}</p>
+                      )}
+                      {!project.vestiging_naam && contactpersoon && (
                         <p className="text-[11px] text-muted-foreground mt-0.5">{contactpersoon}</p>
                       )}
                     </td>

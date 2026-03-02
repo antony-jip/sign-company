@@ -32,6 +32,7 @@ export function ProjectCreate() {
   const [beschrijving, setBeschrijving] = useState('')
   const [klantId, setKlantId] = useState(paramKlantId)
   const [contactpersoonId, setContactpersoonId] = useState('')
+  const [vestigingId, setVestigingId] = useState('')
   const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren'>('gepland')
   const [prioriteit, setPrioriteit] = useState<'laag' | 'medium' | 'hoog' | 'kritiek'>('medium')
   const [startDatum, setStartDatum] = useState(() => new Date().toISOString().split('T')[0])
@@ -59,9 +60,14 @@ export function ProjectCreate() {
     return geselecteerdeKlant?.contactpersonen || []
   }, [geselecteerdeKlant])
 
-  // Reset contactpersoon when klant changes
+  const vestigingen = useMemo(() => {
+    return geselecteerdeKlant?.vestigingen || []
+  }, [geselecteerdeKlant])
+
+  // Reset contactpersoon + vestiging when klant changes
   useEffect(() => {
     setContactpersoonId('')
+    setVestigingId('')
   }, [klantId])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,6 +115,8 @@ export function ProjectCreate() {
         voortgang: 0,
         team_leden: teamLedenArray,
         contactpersoon_id: contactpersoonId || undefined,
+        vestiging_id: vestigingId || undefined,
+        vestiging_naam: vestigingId ? vestigingen.find((v) => v.id === vestigingId)?.naam : undefined,
       })
 
       toast.success('Project succesvol aangemaakt')
@@ -225,6 +233,28 @@ export function ProjectCreate() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Vestiging - alleen tonen als klant meerdere vestigingen heeft */}
+            {vestigingen.length > 0 && (
+              <div className="sm:col-span-2">
+                <Label htmlFor="vestiging" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                  Vestiging
+                </Label>
+                <Select value={vestigingId} onValueChange={setVestigingId}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Selecteer vestiging (optioneel)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vestigingen.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        <span>{v.naam}</span>
+                        {v.stad && <span className="text-muted-foreground ml-1.5">({v.stad})</span>}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         </div>
 
