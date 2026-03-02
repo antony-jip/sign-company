@@ -80,8 +80,25 @@ function now(): string {
 
 // ============ KLANTEN ============
 
-function ensureContactpersonen(klant: Omit<Klant, 'contactpersonen'> & { contactpersonen?: Contactpersoon[] }): Klant {
-  return { ...klant, contactpersonen: klant.contactpersonen || [] }
+function normalizeKlant(klant: Record<string, unknown>): Klant {
+  return {
+    ...klant,
+    bedrijfsnaam: (klant.bedrijfsnaam as string) || '',
+    contactpersoon: (klant.contactpersoon as string) || '',
+    email: (klant.email as string) || '',
+    telefoon: (klant.telefoon as string) || '',
+    adres: (klant.adres as string) || '',
+    postcode: (klant.postcode as string) || '',
+    stad: (klant.stad as string) || '',
+    land: (klant.land as string) || '',
+    website: (klant.website as string) || '',
+    kvk_nummer: (klant.kvk_nummer as string) || '',
+    btw_nummer: (klant.btw_nummer as string) || '',
+    status: (klant.status as string) || 'actief',
+    tags: Array.isArray(klant.tags) ? klant.tags : [],
+    notities: (klant.notities as string) || '',
+    contactpersonen: Array.isArray(klant.contactpersonen) ? klant.contactpersonen : [],
+  } as Klant
 }
 
 export async function getKlanten(): Promise<Klant[]> {
@@ -91,9 +108,9 @@ export async function getKlanten(): Promise<Klant[]> {
       .select('*')
       .order('bedrijfsnaam')
     if (error) throw error
-    return (data || []).map(ensureContactpersonen)
+    return (data || []).map(normalizeKlant)
   }
-  return getLocalData<Klant>('klanten').map(ensureContactpersonen)
+  return getLocalData<Klant>('klanten').map(normalizeKlant)
 }
 
 export async function getKlant(id: string): Promise<Klant | null> {
@@ -105,11 +122,11 @@ export async function getKlant(id: string): Promise<Klant | null> {
       .eq('id', id)
       .single()
     if (error) throw error
-    return data ? ensureContactpersonen(data) : null
+    return data ? normalizeKlant(data) : null
   }
   const klanten = getLocalData<Klant>('klanten')
   const found = klanten.find((k) => k.id === id)
-  return found ? ensureContactpersonen(found) : null
+  return found ? normalizeKlant(found) : null
 }
 
 export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'updated_at'>): Promise<Klant> {
