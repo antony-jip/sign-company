@@ -14,7 +14,7 @@ export function AppLayout() {
     return (
       <div className="flex flex-col h-screen overflow-hidden wm-mesh-gradient">
         <TopNav />
-        <main className="flex-1 overflow-y-auto relative z-0">
+        <main className="flex-1 overflow-y-auto" style={{ position: 'relative', zIndex: 0 }}>
           <div className="p-4 md:p-6 max-w-[1600px] mx-auto w-full animate-fade-in-up">
             <Outlet />
           </div>

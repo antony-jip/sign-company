@@ -33,16 +33,16 @@ const primaryNavItems: NavItem[] = [
   { label: 'Facturen', icon: Receipt, path: '/facturen' },
   { label: 'Taken', icon: CheckSquare, path: '/taken' },
   { label: 'Planning', icon: Calendar, path: '/kalender' },
-]
-
-const moreNavItems: NavItem[] = [
   { label: 'Deals', icon: Briefcase, path: '/deals' },
   { label: 'Montage', icon: Wrench, path: '/montage' },
   { label: 'Werkbonnen', icon: CheckSquare, path: '/werkbonnen' },
-  { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
   { label: 'Email', icon: Mail, path: '/email' },
-  { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
   { label: 'Financieel', icon: PiggyBank, path: '/financieel' },
+]
+
+const moreNavItems: NavItem[] = [
+  { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
+  { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
   { label: 'Documenten', icon: Files, path: '/documenten' },
   { label: 'Rapportages', icon: BarChart3, path: '/rapportages' },
   { label: 'Team', icon: UsersRound, path: '/team' },
@@ -109,7 +109,7 @@ export function TopNav() {
 
   return (
     <>
-      <header className="border-b border-border/50 wm-glass flex-shrink-0 z-30 relative">
+      <header className="border-b border-border/50 wm-glass flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
         {/* Main nav row */}
         <div className="flex items-center h-14 px-4 md:px-6">
           {/* Logo */}
