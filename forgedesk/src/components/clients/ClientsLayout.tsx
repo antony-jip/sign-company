@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   UserPlus,
   Search,
@@ -28,6 +29,8 @@ import {
   Receipt,
   Mail,
   Trash2,
+  CheckSquare,
+  X,
 } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
@@ -56,6 +59,7 @@ export function ClientsLayout() {
   const [sortField, setSortField] = useState<SortField>('bedrijfsnaam')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [labelFilter, setLabelFilter] = useState<string>('alle')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const fetchData = useCallback(() => {
     setLoading(true)
@@ -177,6 +181,40 @@ export function ClientsLayout() {
     } catch (error) {
       logger.error(error)
       toast.error('Fout bij verwijderen van klant')
+    }
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filteredKlanten.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredKlanten.map((k) => k.id)))
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    const confirmed = window.confirm(
+      `Weet je zeker dat je ${selectedIds.size} klant${selectedIds.size === 1 ? '' : 'en'} wilt verwijderen? Dit kan niet ongedaan worden.`
+    )
+    if (!confirmed) return
+    try {
+      await Promise.all([...selectedIds].map((id) => deleteKlant(id)))
+      toast.success(`${selectedIds.size} klant${selectedIds.size === 1 ? '' : 'en'} verwijderd`)
+      setSelectedIds(new Set())
+      fetchData()
+    } catch (error) {
+      logger.error(error)
+      toast.error('Fout bij verwijderen van klanten')
     }
   }
 
@@ -419,6 +457,42 @@ export function ClientsLayout() {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-lg">
+          <CheckSquare className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium text-foreground">
+            {selectedIds.size} van {filteredKlanten.length} geselecteerd
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={toggleSelectAll}
+          >
+            {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
+          </Button>
+          <div className="flex-1" />
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-1.5"
+            onClick={handleBulkDelete}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Verwijder ({selectedIds.size})
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+
       {/* Content */}
       {loading ? (
         <SkeletonTable rows={6} cols={4} />
@@ -462,6 +536,8 @@ export function ClientsLayout() {
               projectCount={projectCounts[klant.id] || 0}
               onEdit={handleEditClient}
               onDelete={handleDeleteClient}
+              selected={selectedIds.has(klant.id)}
+              onToggleSelect={() => toggleSelect(klant.id)}
             />
           ))}
         </div>
@@ -472,6 +548,13 @@ export function ClientsLayout() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
+                  <th className="w-10 px-3 py-3">
+                    <Checkbox
+                      checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Selecteer alles"
+                    />
+                  </th>
                   <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
                     Bedrijfsnaam
                   </th>
@@ -501,9 +584,20 @@ export function ClientsLayout() {
                 {filteredKlanten.map((klant) => (
                   <tr
                     key={klant.id}
-                    className="hover:bg-muted/30 cursor-pointer transition-colors group"
+                    className={cn(
+                      "hover:bg-muted/30 cursor-pointer transition-colors group",
+                      selectedIds.has(klant.id) && "bg-primary/5"
+                    )}
                     onClick={() => navigate(`/klanten/${klant.id}`)}
                   >
+                    <td className="w-10 px-3 py-3">
+                      <Checkbox
+                        checked={selectedIds.has(klant.id)}
+                        onCheckedChange={() => toggleSelect(klant.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Selecteer ${klant.bedrijfsnaam}`}
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">

@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Mail,
   Phone,
@@ -33,19 +34,36 @@ interface ClientCardProps {
   projectCount: number
   onEdit?: (klant: Klant) => void
   onDelete?: (id: string) => void
+  selected?: boolean
+  onToggleSelect?: () => void
 }
 
-export function ClientCard({ klant, projectCount, onEdit, onDelete }: ClientCardProps) {
+export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, onToggleSelect }: ClientCardProps) {
   const navigate = useNavigate()
 
   return (
     <Card
-      className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 group"
+      className={cn(
+        "cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 group",
+        selected && "ring-2 ring-primary border-primary/30"
+      )}
       onClick={() => navigate(`/klanten/${klant.id}`)}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
+            {onToggleSelect ? (
+              <div
+                className="flex-shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Checkbox
+                  checked={selected}
+                  onCheckedChange={onToggleSelect}
+                  aria-label={`Selecteer ${klant.bedrijfsnaam}`}
+                />
+              </div>
+            ) : null}
             <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
               <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
