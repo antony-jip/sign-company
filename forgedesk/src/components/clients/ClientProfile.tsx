@@ -51,6 +51,7 @@ import {
   CalendarPlus,
   Receipt,
   Upload,
+  History,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -74,6 +75,7 @@ import {
   updateKlant,
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
+import { KlantHistorieTab } from './KlantHistorieTab'
 import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Factuur, Deal, Tijdregistratie } from '@/types'
 
 function getStatusBarColor(status: string): string {
@@ -377,6 +379,7 @@ export function ClientProfile() {
     { key: 'tijdregistratie', label: 'Uren', count: clientTijdregistraties.length, icon: Clock },
     { key: 'communicatie', label: 'Communicatie', count: clientEmails.length, icon: Mail },
     { key: 'documenten', label: 'Documenten', count: clientDocumenten.length, icon: FileIcon },
+    { key: 'historie', label: 'Historie', count: 0, icon: History },
   ]
 
   return (
@@ -1255,6 +1258,11 @@ export function ClientProfile() {
                 )}
               </CardContent>
             </Card>
+          )}
+
+          {/* ════════ HISTORIE TAB ════════ */}
+          {activeTab === 'historie' && (
+            <KlantHistorieTab klantId={klant.id} klantNaam={klant.bedrijfsnaam} />
           )}
 
           {/* ════════ NOTITIES TAB (hidden tab) ════════ */}
