@@ -1,7 +1,7 @@
 import type { AppWeergaveInstellingen } from '@/types/weergave';
 import { DEFAULT_FONT, DEFAULT_FONT_SIZE } from '@/types/weergave';
 
-const STORAGE_KEY = 'workmate_weergave_instellingen';
+const STORAGE_KEY = 'forgedesk_weergave_instellingen';
 
 function createDefaultInstellingen(): AppWeergaveInstellingen {
   return {
