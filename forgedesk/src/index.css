@@ -936,6 +936,22 @@ textarea:focus {
 }
 
 /* ================================================================
+   MOBILE UTILITIES
+   ================================================================ */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide scrollbar but keep scrolling functional */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ================================================================
    PRINT — Hide chrome, show content
    ================================================================ */
 @media print {

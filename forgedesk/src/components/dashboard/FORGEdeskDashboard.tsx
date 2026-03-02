@@ -71,14 +71,14 @@ export function FORGEdeskDashboard() {
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 <span className="text-xs font-medium text-muted-foreground">{formattedDate}</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground font-display">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground font-display">
                 {getGreeting()}{userName ? ', ' : ''}
                 {userName && (
                   <span className="wm-gradient-text">{userName}</span>
                 )}
               </h1>
             </div>
-            {/* Sign-industry status pills */}
+            {/* Sign-industry status pills — scrollable on mobile */}
             <div className="hidden md:flex items-center gap-2">
               {heroCounts.montagesVandaag > 0 && (
                 <div className="flex items-center gap-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/30 px-2.5 py-1.5 rounded-full">
@@ -106,6 +106,35 @@ export function FORGEdeskDashboard() {
               )}
             </div>
           </div>
+          {/* Mobile status pills — horizontal scroll strip below greeting */}
+          {(heroCounts.montagesVandaag > 0 || heroCounts.openOffertes > 0 || heroCounts.actieveProjecten > 0 || heroCounts.teFactureren > 0) && (
+            <div className="flex md:hidden gap-2 overflow-x-auto -mx-5 px-5 pb-1 scrollbar-hide mt-2">
+              {heroCounts.montagesVandaag > 0 && (
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/30 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                  <Wrench className="w-3 h-3" />
+                  {heroCounts.montagesVandaag} montage{heroCounts.montagesVandaag !== 1 ? 's' : ''}
+                </div>
+              )}
+              {heroCounts.openOffertes > 0 && (
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-accent/15 border border-primary/20 dark:border-primary/15 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                  <FileText className="w-3 h-3" />
+                  {heroCounts.openOffertes} offertes
+                </div>
+              )}
+              {heroCounts.actieveProjecten > 0 && (
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-primary dark:text-primary bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary/15 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                  <FolderKanban className="w-3 h-3" />
+                  {heroCounts.actieveProjecten} projecten
+                </div>
+              )}
+              {heroCounts.teFactureren > 0 && (
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                  <Receipt className="w-3 h-3" />
+                  {heroCounts.teFactureren} te factureren
+                </div>
+              )}
+            </div>
+          )}
           <WeatherWidget />
         </div>
       </div>

@@ -321,7 +321,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-3 left-3 z-50 md:hidden wm-glass-subtle shadow-lg border border-border/50 rounded-xl"
+        className="fixed top-2.5 left-2.5 z-50 md:hidden wm-glass-subtle shadow-lg border border-border/50 rounded-xl w-9 h-9"
         onClick={() => setMobileOpen(!mobileOpen)}
         aria-label={mobileOpen ? 'Sluit menu' : 'Open menu'}
       >

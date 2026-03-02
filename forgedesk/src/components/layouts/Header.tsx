@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Sun, Moon, User, Settings, LogOut,
-  ChevronDown, Monitor,
+  ChevronDown, Monitor, Search, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -57,6 +57,7 @@ export function Header() {
   const location = useLocation()
   const navigate = useNavigate()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const userMenuRef = React.useRef<HTMLDivElement>(null)
 
   const pageMeta = getPageMeta(location.pathname)
@@ -93,12 +94,27 @@ export function Header() {
     : user?.email?.split('@')[0] || 'Gebruiker'
 
   return (
-    <header className="h-16 border-b border-border/50 wm-glass flex items-center justify-between px-4 md:px-6 flex-shrink-0 z-10">
+    <header className="h-14 md:h-16 border-b border-border/50 wm-glass flex items-center justify-between px-3 md:px-6 flex-shrink-0 z-10">
+      {/* Mobile search overlay */}
+      {mobileSearchOpen && (
+        <div className="absolute inset-x-0 top-0 h-14 z-20 bg-background border-b border-border/50 flex items-center gap-2 px-3 md:hidden">
+          <GlobalSearch className="flex flex-1" compact />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8 rounded-lg flex-shrink-0"
+            onClick={() => setMobileSearchOpen(false)}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
       {/* Left: Page title + subtitle */}
-      <div className="flex items-center gap-4 min-w-0">
-        <div className="w-10 md:hidden" />
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-9 md:hidden" />
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-foreground truncate font-display leading-tight">
+          <h1 className="text-base md:text-lg font-semibold text-foreground truncate font-display leading-tight">
             {pageMeta.title}
           </h1>
           {pageMeta.subtitle && (
@@ -109,16 +125,26 @@ export function Header() {
         </div>
       </div>
 
-      {/* Center: Search bar */}
+      {/* Center: Search bar (desktop) */}
       <GlobalSearch className="hidden md:flex flex-1 max-w-md mx-8" />
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-1">
-        {/* Language toggle */}
+      <div className="flex items-center gap-0.5 md:gap-1">
+        {/* Mobile search button */}
         <Button
           variant="ghost"
           size="icon"
-          className="w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
+          className="w-8 h-8 md:hidden rounded-lg text-muted-foreground hover:text-foreground"
+          onClick={() => setMobileSearchOpen(true)}
+          aria-label="Zoeken"
+        >
+          <Search className="w-4 h-4" />
+        </Button>
+        {/* Language toggle (hidden on small mobile) */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden sm:flex w-8 h-8 md:w-9 md:h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
           onClick={toggleLanguage}
           title={language === 'nl' ? 'Switch to English' : 'Wissel naar Nederlands'}
           aria-label={language === 'nl' ? 'Switch to English' : 'Wissel naar Nederlands'}
@@ -130,7 +156,7 @@ export function Header() {
         <Button
           variant="ghost"
           size="icon"
-          className="w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
+          className="w-8 h-8 md:w-9 md:h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
           onClick={toggleTheme}
           title={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
           aria-label={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
@@ -163,8 +189,8 @@ export function Header() {
             aria-expanded={userMenuOpen}
             aria-haspopup="true"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-primary/10">
-              <span className="text-white text-xs font-semibold">
+            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-primary/10">
+              <span className="text-white text-[10px] md:text-xs font-semibold">
                 {userInitial}
               </span>
             </div>
