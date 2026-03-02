@@ -78,6 +78,39 @@ import { logger } from '../../utils/logger'
 import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 
+// Shared sub-tab navigation component
+interface SubTab {
+  id: string
+  label: string
+  icon: React.ElementType
+}
+
+function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string; onChange: (id: string) => void }) {
+  return (
+    <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-x-auto mb-6">
+      {tabs.map((tab) => {
+        const Icon = tab.icon
+        const isActive = active === tab.id
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
+              isActive
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {tab.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // Font systeem constanten
 const DEFAULT_FONT = 'Inter'
 
@@ -233,9 +266,15 @@ export function SettingsLayout() {
 
 // ============ PROFIEL TAB ============
 
+const PROFIEL_TABS: SubTab[] = [
+  { id: 'gegevens', label: 'Gegevens', icon: User },
+  { id: 'foto', label: 'Profielfoto', icon: Camera },
+]
+
 function ProfielTab() {
   const { user } = useAuth()
   const { refreshProfile } = useAppSettings()
+  const [subTab, setSubTab] = useState('gegevens')
   const [voornaam, setVoornaam] = useState('')
   const [achternaam, setAchternaam] = useState('')
   const [functie, setFunctie] = useState('')
@@ -317,105 +356,100 @@ function ProfielTab() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Profiel Instellingen</CardTitle>
-        <CardDescription>Beheer uw persoonlijke gegevens en profielfoto</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Avatar Upload */}
-        <div className="flex items-center gap-6">
-          <div
-            className="relative w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors"
-            onClick={handleAvatarClick}
-          >
-            {avatarPreview ? (
-              <img
-                src={avatarPreview}
-                alt="Avatar"
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              <div className="flex flex-col items-center text-gray-400">
-                <User className="w-10 h-10" />
+    <>
+      <SubTabNav tabs={PROFIEL_TABS} active={subTab} onChange={setSubTab} />
+
+      {subTab === 'gegevens' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Persoonlijke Gegevens</CardTitle>
+            <CardDescription>Uw naam, functie en contactinformatie</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="voornaam">Voornaam</Label>
+                <Input id="voornaam" value={voornaam} onChange={(e) => setVoornaam(e.target.value)} />
               </div>
-            )}
-            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="w-6 h-6 text-white" />
+              <div className="space-y-2">
+                <Label htmlFor="achternaam">Achternaam</Label>
+                <Input id="achternaam" value={achternaam} onChange={(e) => setAchternaam(e.target.value)} />
+              </div>
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">Profielfoto</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Klik op de cirkel om een foto te uploaden. JPG, PNG tot 5MB.
-            </p>
-          </div>
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="functie">Functie</Label>
+              <Input id="functie" value={functie} onChange={(e) => setFunctie(e.target.value)} placeholder="Bijv. Eigenaar, Projectleider, Verkoper" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" value={email} readOnly disabled className="bg-gray-50 dark:bg-gray-800 cursor-not-allowed" />
+                <p className="text-xs text-gray-500 dark:text-gray-400">Email kan niet worden gewijzigd</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="telefoon">Telefoon</Label>
+                <Input id="telefoon" value={telefoon} onChange={(e) => setTelefoon(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={isSaving || isLoading}>
+                {isSaving ? 'Opslaan...' : 'Opslaan'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        <Separator />
-
-        {/* Form Fields */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="voornaam">Voornaam</Label>
-            <Input
-              id="voornaam"
-              value={voornaam}
-              onChange={(e) => setVoornaam(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="achternaam">Achternaam</Label>
-            <Input
-              id="achternaam"
-              value={achternaam}
-              onChange={(e) => setAchternaam(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="functie">Functie</Label>
-          <Input
-            id="functie"
-            value={functie}
-            onChange={(e) => setFunctie(e.target.value)}
-            placeholder="Bijv. Eigenaar, Projectleider, Verkoper"
-          />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" value={email} readOnly disabled className="bg-gray-50 dark:bg-gray-800 cursor-not-allowed" />
-            <p className="text-xs text-gray-500 dark:text-gray-400">Email kan niet worden gewijzigd</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="telefoon">Telefoon</Label>
-            <Input
-              id="telefoon"
-              value={telefoon}
-              onChange={(e) => setTelefoon(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={isSaving || isLoading}>
-            {isSaving ? 'Opslaan...' : 'Opslaan'}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {subTab === 'foto' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Profielfoto</CardTitle>
+            <CardDescription>Upload een profielfoto die zichtbaar is voor uw team</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center gap-6">
+              <div
+                className="relative w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors"
+                onClick={handleAvatarClick}
+              >
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                ) : (
+                  <div className="flex flex-col items-center text-gray-400">
+                    <User className="w-10 h-10" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Profielfoto</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Klik op de cirkel om een foto te uploaden. JPG, PNG tot 5MB.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={isSaving || isLoading}>
+                {isSaving ? 'Opslaan...' : 'Opslaan'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </>
   )
 }
 
 // ============ BEDRIJF TAB ============
+
+const BEDRIJF_TABS: SubTab[] = [
+  { id: 'algemeen', label: 'Algemeen', icon: Building2 },
+  { id: 'contact', label: 'Contact', icon: Phone },
+  { id: 'financieel', label: 'Financieel', icon: CreditCard },
+]
 
 function BedrijfTab() {
   const { user } = useAuth()
@@ -434,6 +468,7 @@ function BedrijfTab() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
+  const [subTab, setSubTab] = useState('algemeen')
 
   const loadCompanyData = useCallback(async () => {
     if (!user?.id) return
@@ -518,181 +553,125 @@ function BedrijfTab() {
     }
   }
 
+  const saveButton = (
+    <div className="flex justify-end mt-6">
+      <Button onClick={handleSave} disabled={isSaving || isLoading}>{isSaving ? 'Opslaan...' : 'Opslaan'}</Button>
+    </div>
+  )
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Bedrijfsgegevens</CardTitle>
-        <CardDescription>Deze gegevens worden gebruikt op offertes en facturen</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Logo Upload */}
-        <div className="flex items-center gap-6">
-          <div
-            className="relative w-32 h-20 rounded-lg bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors"
-            onClick={handleLogoClick}
-          >
-            {logoPreview ? (
-              <img
-                src={logoPreview}
-                alt="Logo"
-                className="w-full h-full object-contain p-2"
-              />
-            ) : (
-              <div className="flex flex-col items-center text-gray-400">
-                <Upload className="w-6 h-6" />
-                <span className="text-[10px] mt-1">Logo</span>
+    <>
+      <SubTabNav tabs={BEDRIJF_TABS} active={subTab} onChange={setSubTab} />
+
+      {subTab === 'algemeen' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Bedrijfsgegevens</CardTitle>
+            <CardDescription>Naam, adres en logo van uw bedrijf</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center gap-6">
+              <div className="relative w-32 h-20 rounded-lg bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors" onClick={handleLogoClick}>
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
+                ) : (
+                  <div className="flex flex-col items-center text-gray-400">
+                    <Upload className="w-6 h-6" />
+                    <span className="text-[10px] mt-1">Logo</span>
+                  </div>
+                )}
+                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
               </div>
-            )}
-            <input
-              ref={logoInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleLogoChange}
-              className="hidden"
-            />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">Bedrijfslogo</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Upload uw bedrijfslogo. PNG of SVG aanbevolen.
-            </p>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Form Fields */}
-        <div className="space-y-2">
-          <Label htmlFor="bedrijfsnaam">Bedrijfsnaam</Label>
-          <Input
-            id="bedrijfsnaam"
-            value={bedrijfsnaam}
-            onChange={(e) => setBedrijfsnaam(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="adres">Adres</Label>
-          <Input
-            id="adres"
-            value={adres}
-            onChange={(e) => setAdres(e.target.value)}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="postcode">Postcode</Label>
-            <Input
-              id="postcode"
-              value={postcode}
-              onChange={(e) => setPostcode(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="stad">Stad</Label>
-            <Input
-              id="stad"
-              value={stad}
-              onChange={(e) => setStad(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Contactgegevens */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <Phone className="w-4 h-4" />
-            Contactgegevens
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Bedrijfslogo</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload uw bedrijfslogo. PNG of SVG aanbevolen.</p>
+              </div>
+            </div>
+            <Separator />
             <div className="space-y-2">
-              <Label htmlFor="bedrijfs-telefoon">Telefoon</Label>
-              <Input
-                id="bedrijfs-telefoon"
-                type="tel"
-                value={bedrijfsTelefoon}
-                onChange={(e) => setBedrijfsTelefoon(e.target.value)}
-                placeholder="+31 (0)20 1234567"
-              />
+              <Label htmlFor="bedrijfsnaam">Bedrijfsnaam</Label>
+              <Input id="bedrijfsnaam" value={bedrijfsnaam} onChange={(e) => setBedrijfsnaam(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bedrijfs-email">E-mail</Label>
-              <Input
-                id="bedrijfs-email"
-                type="email"
-                value={bedrijfsEmail}
-                onChange={(e) => setBedrijfsEmail(e.target.value)}
-                placeholder="info@bedrijf.nl"
-              />
+              <Label htmlFor="adres">Adres</Label>
+              <Input id="adres" value={adres} onChange={(e) => setAdres(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="bedrijfs-website">Website</Label>
-              <Input
-                id="bedrijfs-website"
-                value={bedrijfsWebsite}
-                onChange={(e) => setBedrijfsWebsite(e.target.value)}
-                placeholder="www.bedrijf.nl"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="postcode">Postcode</Label>
+                <Input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="stad">Stad</Label>
+                <Input id="stad" value={stad} onChange={(e) => setStad(e.target.value)} />
+              </div>
             </div>
-          </div>
-        </div>
+            {saveButton}
+          </CardContent>
+        </Card>
+      )}
 
-        <Separator />
+      {subTab === 'contact' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Contactgegevens</CardTitle>
+            <CardDescription>Telefoon, e-mail en website van uw bedrijf</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bedrijfs-telefoon">Telefoon</Label>
+                <Input id="bedrijfs-telefoon" type="tel" value={bedrijfsTelefoon} onChange={(e) => setBedrijfsTelefoon(e.target.value)} placeholder="+31 (0)20 1234567" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bedrijfs-email">E-mail</Label>
+                <Input id="bedrijfs-email" type="email" value={bedrijfsEmail} onChange={(e) => setBedrijfsEmail(e.target.value)} placeholder="info@bedrijf.nl" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bedrijfs-website">Website</Label>
+                <Input id="bedrijfs-website" value={bedrijfsWebsite} onChange={(e) => setBedrijfsWebsite(e.target.value)} placeholder="www.bedrijf.nl" />
+              </div>
+            </div>
+            {saveButton}
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Juridisch & Financieel */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <CreditCard className="w-4 h-4" />
-            Juridisch &amp; Financieel
-          </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-            Deze gegevens worden weergegeven op facturen en offertes
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="kvk">KvK Nummer</Label>
-              <Input
-                id="kvk"
-                value={kvkNummer}
-                onChange={(e) => setKvkNummer(e.target.value)}
-                placeholder="12345678"
-              />
+      {subTab === 'financieel' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Juridisch &amp; Financieel</CardTitle>
+            <CardDescription>Deze gegevens worden weergegeven op facturen en offertes</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="kvk">KvK Nummer</Label>
+                <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder="12345678" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="btw">BTW Nummer</Label>
+                <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder="NL123456789B01" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="iban">IBAN</Label>
+                <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0123 4567 89" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="btw">BTW Nummer</Label>
-              <Input
-                id="btw"
-                value={btwNummer}
-                onChange={(e) => setBtwNummer(e.target.value)}
-                placeholder="NL123456789B01"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="iban">IBAN</Label>
-              <Input
-                id="iban"
-                value={iban}
-                onChange={(e) => setIban(e.target.value)}
-                placeholder="NL00 BANK 0123 4567 89"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={isSaving || isLoading}>
-            {isSaving ? 'Opslaan...' : 'Opslaan'}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            {saveButton}
+          </CardContent>
+        </Card>
+      )}
+    </>
   )
 }
 
 // ============ FACTURATIE TAB ============
+
+const FACTURATIE_TABS: SubTab[] = [
+  { id: 'nummering', label: 'Nummering', icon: Receipt },
+  { id: 'teksten', label: 'Teksten', icon: FileText },
+]
 
 function FacturatieTab() {
   const { user } = useAuth()
@@ -700,6 +679,7 @@ function FacturatieTab() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
+  const [subTab, setSubTab] = useState('nummering')
   const [factuurPrefix, setFactuurPrefix] = useState('FAC')
   const [betaaltermijn, setBetaaltermijn] = useState('30')
   const [voorwaarden, setVoorwaarden] = useState('')
@@ -759,110 +739,76 @@ function FacturatieTab() {
     )
   }
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Receipt className="w-5 h-5" />
-            Factuurnummering
-          </CardTitle>
-          <CardDescription>
-            Stel het prefix en de nummering van facturen in
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="factuur-prefix">Factuur prefix</Label>
-              <Input
-                id="factuur-prefix"
-                value={factuurPrefix}
-                onChange={(e) => setFactuurPrefix(e.target.value)}
-                placeholder="FAC"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Voorbeeld: {factuurPrefix}-2026-0001
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="betaaltermijn">Betaaltermijn (dagen)</Label>
-              <Input
-                id="betaaltermijn"
-                type="number"
-                value={betaaltermijn}
-                onChange={(e) => setBetaaltermijn(e.target.value)}
-                min="1"
-                max="365"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Standaard aantal dagen dat de klant heeft om te betalen
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Standaard Teksten
-          </CardTitle>
-          <CardDescription>
-            Teksten die automatisch op elke factuur verschijnen
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="intro-tekst">Introductietekst</Label>
-            <Textarea
-              id="intro-tekst"
-              value={introTekst}
-              onChange={(e) => setIntroTekst(e.target.value)}
-              placeholder="Bijv. Hierbij ontvangt u de factuur voor de geleverde werkzaamheden."
-              rows={2}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Wordt bovenaan de factuur weergegeven, onder de klantgegevens
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="outro-tekst">Afsluittekst</Label>
-            <Textarea
-              id="outro-tekst"
-              value={outroTekst}
-              onChange={(e) => setOutroTekst(e.target.value)}
-              placeholder="Bijv. Wij verzoeken u vriendelijk het bedrag binnen de gestelde termijn over te maken."
-              rows={2}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Wordt onderaan de factuurregels weergegeven
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="voorwaarden">Betalingsvoorwaarden</Label>
-            <Textarea
-              id="voorwaarden"
-              value={voorwaarden}
-              onChange={(e) => setVoorwaarden(e.target.value)}
-              placeholder="Bijv. Op al onze overeenkomsten zijn onze algemene voorwaarden van toepassing, gedeponeerd bij de KvK."
-              rows={3}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Kleine print onderaan de factuur met juridische voorwaarden
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? 'Opslaan...' : 'Instellingen opslaan'}
-        </Button>
-      </div>
+  const saveButton = (
+    <div className="flex justify-end mt-6">
+      <Button onClick={handleSave} disabled={isSaving}>
+        <Save className="w-4 h-4 mr-2" />
+        {isSaving ? 'Opslaan...' : 'Instellingen opslaan'}
+      </Button>
     </div>
+  )
+
+  return (
+    <>
+      <SubTabNav tabs={FACTURATIE_TABS} active={subTab} onChange={setSubTab} />
+
+      {subTab === 'nummering' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Receipt className="w-5 h-5" />
+              Factuurnummering
+            </CardTitle>
+            <CardDescription>Stel het prefix en de nummering van facturen in</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="factuur-prefix">Factuur prefix</Label>
+                <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value)} placeholder="FAC" />
+                <p className="text-xs text-gray-500 dark:text-gray-400">Voorbeeld: {factuurPrefix}-2026-0001</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="betaaltermijn">Betaaltermijn (dagen)</Label>
+                <Input id="betaaltermijn" type="number" value={betaaltermijn} onChange={(e) => setBetaaltermijn(e.target.value)} min="1" max="365" />
+                <p className="text-xs text-gray-500 dark:text-gray-400">Standaard aantal dagen dat de klant heeft om te betalen</p>
+              </div>
+            </div>
+            {saveButton}
+          </CardContent>
+        </Card>
+      )}
+
+      {subTab === 'teksten' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Standaard Teksten
+            </CardTitle>
+            <CardDescription>Teksten die automatisch op elke factuur verschijnen</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="intro-tekst">Introductietekst</Label>
+              <Textarea id="intro-tekst" value={introTekst} onChange={(e) => setIntroTekst(e.target.value)} placeholder="Bijv. Hierbij ontvangt u de factuur voor de geleverde werkzaamheden." rows={2} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">Wordt bovenaan de factuur weergegeven, onder de klantgegevens</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="outro-tekst">Afsluittekst</Label>
+              <Textarea id="outro-tekst" value={outroTekst} onChange={(e) => setOutroTekst(e.target.value)} placeholder="Bijv. Wij verzoeken u vriendelijk het bedrag binnen de gestelde termijn over te maken." rows={2} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">Wordt onderaan de factuurregels weergegeven</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="voorwaarden">Betalingsvoorwaarden</Label>
+              <Textarea id="voorwaarden" value={voorwaarden} onChange={(e) => setVoorwaarden(e.target.value)} placeholder="Bijv. Op al onze overeenkomsten zijn onze algemene voorwaarden van toepassing, gedeponeerd bij de KvK." rows={3} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">Kleine print onderaan de factuur met juridische voorwaarden</p>
+            </div>
+            {saveButton}
+          </CardContent>
+        </Card>
+      )}
+    </>
   )
 }
 
@@ -884,9 +830,18 @@ const KLEUR_OPTIES = [
   '#0891b2', '#4f46e5', '#be185d', '#1d4ed8', '#15803d',
 ]
 
+const AANPASSINGEN_TABS: SubTab[] = [
+  { id: 'branche', label: 'Branche', icon: Briefcase },
+  { id: 'offertes', label: 'Offertes', icon: FileText },
+  { id: 'pipeline', label: 'Pipeline', icon: ArrowRight },
+  { id: 'branding', label: 'Branding', icon: Palette },
+  { id: 'dashboard', label: 'Dashboard', icon: Settings },
+]
+
 function AanpassingenTab() {
   const { user } = useAuth()
   const { refreshSettings } = useAppSettings()
+  const [subTab, setSubTab] = useState('branche')
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -1017,7 +972,20 @@ function AanpassingenTab() {
     )
   }
 
+  const saveButton = (
+    <div className="flex justify-end mt-6">
+      <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+        <Save className="w-4 h-4" />
+        {isSaving ? 'Opslaan...' : 'Opslaan'}
+      </Button>
+    </div>
+  )
+
   return (
+    <>
+    <SubTabNav tabs={AANPASSINGEN_TABS} active={subTab} onChange={setSubTab} />
+
+    {subTab === 'branche' && (
     <div className="space-y-6">
       {/* Branche Selectie */}
       <Card>
@@ -1060,7 +1028,12 @@ function AanpassingenTab() {
           )}
         </CardContent>
       </Card>
+      {saveButton}
+    </div>
+    )}
 
+    {subTab === 'offertes' && (
+    <div className="space-y-6">
       {/* Offerte & Valuta Instellingen */}
       <Card>
         <CardHeader>
@@ -1147,7 +1120,12 @@ function AanpassingenTab() {
           </div>
         </CardContent>
       </Card>
+      {saveButton}
+    </div>
+    )}
 
+    {subTab === 'pipeline' && (
+    <div className="space-y-6">
       {/* Pipeline Aanpassing */}
       <Card>
         <CardHeader>
@@ -1219,7 +1197,12 @@ function AanpassingenTab() {
           </Button>
         </CardContent>
       </Card>
+      {saveButton}
+    </div>
+    )}
 
+    {subTab === 'branding' && (
+    <div className="space-y-6">
       {/* Branding */}
       <Card>
         <CardHeader>
@@ -1332,7 +1315,12 @@ function AanpassingenTab() {
           />
         </CardContent>
       </Card>
+      {saveButton}
+    </div>
+    )}
 
+    {subTab === 'dashboard' && (
+    <div className="space-y-6">
       {/* Dashboard Weergave */}
       <Card>
         <CardHeader>
@@ -1366,18 +1354,18 @@ function AanpassingenTab() {
         </CardContent>
       </Card>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-          <Save className="w-4 h-4" />
-          {isSaving ? 'Opslaan...' : 'Alle Aanpassingen Opslaan'}
-        </Button>
-      </div>
+      {saveButton}
     </div>
+    )}
+    </>
   )
 }
 
 // ============ MELDINGEN TAB ============
+
+const MELDINGEN_TABS: SubTab[] = [
+  { id: 'voorkeuren', label: 'Voorkeuren', icon: Bell },
+]
 
 function MeldingenTab() {
   const { user } = useAuth()
@@ -1385,6 +1373,7 @@ function MeldingenTab() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
+  const [subTab, setSubTab] = useState('voorkeuren')
   const [meldingFollowUp, setMeldingFollowUp] = useState(true)
   const [meldingVerlopen, setMeldingVerlopen] = useState(true)
   const [meldingNieuweOfferte, setMeldingNieuweOfferte] = useState(true)
@@ -1441,7 +1430,9 @@ function MeldingenTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <SubTabNav tabs={MELDINGEN_TABS} active={subTab} onChange={setSubTab} />
+      <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -1533,7 +1524,8 @@ function MeldingenTab() {
           {isSaving ? 'Opslaan...' : 'Meldingen Opslaan'}
         </Button>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
@@ -1872,7 +1864,12 @@ function EmailSettingsDialog({
   )
 }
 
+const INTEGRATIES_TABS: SubTab[] = [
+  { id: 'koppelingen', label: 'Koppelingen', icon: Puzzle },
+]
+
 function IntegratiesTab() {
+  const [subTab, setSubTab] = useState('koppelingen')
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
   const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
   // OpenAI key is now server-side only (configured via OPENAI_API_KEY env var on Vercel)
@@ -1949,6 +1946,8 @@ function IntegratiesTab() {
   ]
 
   return (
+    <>
+    <SubTabNav tabs={INTEGRATIES_TABS} active={subTab} onChange={setSubTab} />
     <div className="space-y-4">
       {integrations.map((integration) => (
         <Card
@@ -2021,12 +2020,20 @@ function IntegratiesTab() {
         onSaved={checkEmailStatus}
       />
     </div>
+    </>
   )
 }
 
 // ============ BEVEILIGING TAB ============
 
+const BEVEILIGING_TABS: SubTab[] = [
+  { id: 'wachtwoord', label: 'Wachtwoord', icon: Lock },
+  { id: 'tweefactor', label: 'Tweefactor', icon: Shield },
+  { id: 'sessies', label: 'Sessies', icon: Globe },
+]
+
 function BeveiligingTab() {
+  const [subTab, setSubTab] = useState('wachtwoord')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -2112,8 +2119,10 @@ function BeveiligingTab() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Change Password */}
+    <>
+      <SubTabNav tabs={BEVEILIGING_TABS} active={subTab} onChange={setSubTab} />
+
+      {subTab === 'wachtwoord' && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -2169,8 +2178,9 @@ function BeveiligingTab() {
           </Button>
         </CardContent>
       </Card>
+      )}
 
-      {/* Two-Factor Authentication */}
+      {subTab === 'tweefactor' && (
       <Card>
         <CardHeader>
           <CardTitle>Tweefactorauthenticatie</CardTitle>
@@ -2204,8 +2214,9 @@ function BeveiligingTab() {
           </div>
         </CardContent>
       </Card>
+      )}
 
-      {/* Active Sessions */}
+      {subTab === 'sessies' && (
       <Card>
         <CardHeader>
           <CardTitle>Actieve Sessies</CardTitle>
@@ -2250,7 +2261,8 @@ function BeveiligingTab() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      )}
+    </>
   )
 }
 
@@ -2286,6 +2298,13 @@ const ALL_SIDEBAR_ITEMS = [
   { label: 'Team', section: 'Beheer' },
   { label: 'Importeren', section: 'Beheer' },
   { label: 'AI Assistent', section: 'Beheer' },
+]
+
+const WEERGAVE_TABS: SubTab[] = [
+  { id: 'thema', label: 'Thema & Kleuren', icon: Sun },
+  { id: 'layout', label: 'Layout', icon: Monitor },
+  { id: 'voorkeuren', label: 'Voorkeuren', icon: Sliders },
+  { id: 'navigatie', label: 'Navigatie', icon: Settings },
 ]
 
 function WeergaveTab() {
@@ -2325,6 +2344,7 @@ function WeergaveTab() {
     setSidebarItems(ALL_SIDEBAR_ITEMS.map((i) => i.label))
   }
 
+  const [subTab, setSubTab] = useState('thema')
   // Font size state (font family is fixed to Inter)
   const [fontSize, setFontSize] = useState<FontSize>(() => getFontSettings().font_size)
   const { layoutMode, setLayoutMode } = useSidebar()
@@ -2348,15 +2368,16 @@ function WeergaveTab() {
 
   return (
     <>
+    <SubTabNav tabs={WEERGAVE_TABS} active={subTab} onChange={setSubTab} />
+
+    {subTab === 'thema' && (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Palette className="w-5 h-5" />
-          Weergave Instellingen
+          Thema &amp; Kleuren
         </CardTitle>
-        <CardDescription>
-          Pas het uiterlijk en gedrag van de applicatie aan
-        </CardDescription>
+        <CardDescription>Kies een thema en kleurenpalet</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* App Theme Picker */}
@@ -2508,8 +2529,20 @@ function WeergaveTab() {
           </div>
         </div>
 
-        <Separator />
+      </CardContent>
+    </Card>
+    )}
 
+    {subTab === 'layout' && (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Monitor className="w-5 h-5" />
+          Layout &amp; Lettergrootte
+        </CardTitle>
+        <CardDescription>Navigatie-indeling en tekstgrootte</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
         {/* Layout Mode */}
         <div>
           <div className="flex items-center gap-3 mb-4">
@@ -2651,8 +2684,20 @@ function WeergaveTab() {
           </div>
         </div>
 
-        <Separator />
+      </CardContent>
+    </Card>
+    )}
 
+    {subTab === 'voorkeuren' && (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Sliders className="w-5 h-5" />
+          Voorkeuren
+        </CardTitle>
+        <CardDescription>Taal en gedrag van de applicatie</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
         {/* Language Toggle */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -2732,8 +2777,9 @@ function WeergaveTab() {
         </div>
       </CardContent>
     </Card>
+    )}
 
-    {/* Sidebar Navigatie Aanpassen */}
+    {subTab === 'navigatie' && (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -2790,6 +2836,7 @@ function WeergaveTab() {
         </div>
       </CardContent>
     </Card>
+    )}
     </>
   )
 }

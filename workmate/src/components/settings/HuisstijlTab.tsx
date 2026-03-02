@@ -28,6 +28,7 @@ import {
   Minimize2,
   Check,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getDocumentStyle, upsertDocumentStyle, uploadBriefpapier } from '@/services/supabaseService'
@@ -40,6 +41,47 @@ import {
 import type { DocumentStyle, DocumentTemplateId } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+
+// ============ SUB-TAB NAVIGATION ============
+
+interface SubTab {
+  id: string
+  label: string
+  icon: React.ElementType
+}
+
+function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string; onChange: (id: string) => void }) {
+  return (
+    <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-x-auto mb-6">
+      {tabs.map((tab) => {
+        const Icon = tab.icon
+        const isActive = active === tab.id
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
+              isActive
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            )}
+          >
+            <Icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+const HUISSTIJL_TABS: SubTab[] = [
+  { id: 'template', label: 'Template & Kleuren', icon: LayoutTemplate },
+  { id: 'typografie', label: 'Typografie', icon: Type },
+  { id: 'layout', label: 'Layout', icon: Maximize2 },
+  { id: 'briefpapier', label: 'Briefpapier', icon: Image },
+]
 
 // ============ LIVE PREVIEW COMPONENT ============
 
@@ -401,6 +443,7 @@ export function HuisstijlTab() {
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [uploadingBriefpapier, setUploadingBriefpapier] = useState(false)
+  const [subTab, setSubTab] = useState('template')
   const briefpapierInputRef = useRef<HTMLInputElement>(null)
   const savedStyleRef = useRef<DocumentStyle | null>(null)
 
@@ -535,10 +578,14 @@ export function HuisstijlTab() {
         </div>
       </div>
 
+      <SubTabNav tabs={HUISSTIJL_TABS} active={subTab} onChange={setSubTab} />
+
       {/* Two column layout: editor + preview */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* LEFT: Editor controls */}
         <div className="space-y-4">
+          {subTab === 'template' && (
+          <>
           {/* Template keuze */}
           <Section title="Template" icon={LayoutTemplate} defaultOpen={true}>
             <div className="grid grid-cols-2 gap-3">
@@ -581,6 +628,37 @@ export function HuisstijlTab() {
             </div>
           </Section>
 
+          {/* Kleuren */}
+          <Section title="Kleuren" icon={Palette}>
+            <div className="grid grid-cols-2 gap-4">
+              <ColorPicker label="Primaire kleur" value={style.primaire_kleur} onChange={(v) => updateStyle({ primaire_kleur: v })} />
+              <ColorPicker label="Secundaire kleur" value={style.secundaire_kleur} onChange={(v) => updateStyle({ secundaire_kleur: v })} />
+              <ColorPicker label="Accent kleur" value={style.accent_kleur} onChange={(v) => updateStyle({ accent_kleur: v })} />
+              <ColorPicker label="Tekst kleur" value={style.tekst_kleur} onChange={(v) => updateStyle({ tekst_kleur: v })} />
+            </div>
+            <Separator />
+            <div className="grid grid-cols-2 gap-4">
+              <ColorPicker label="Tabel header kleur" value={style.tabel_header_kleur} onChange={(v) => updateStyle({ tabel_header_kleur: v })} />
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-600 dark:text-gray-400">Tabel stijl</Label>
+                <Select value={style.tabel_stijl} onValueChange={(v) => updateStyle({ tabel_stijl: v as 'striped' | 'grid' | 'plain' })}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="striped">Gestreept</SelectItem>
+                    <SelectItem value="grid">Rasterlijnen</SelectItem>
+                    <SelectItem value="plain">Minimaal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </Section>
+          </>
+          )}
+
+          {subTab === 'typografie' && (
+          <>
           {/* Lettertypen */}
           <Section title="Lettertypen" icon={Type} defaultOpen={true}>
             <div className="grid grid-cols-2 gap-4">
@@ -636,34 +714,11 @@ export function HuisstijlTab() {
               </div>
             </div>
           </Section>
+          </>
+          )}
 
-          {/* Kleuren */}
-          <Section title="Kleuren" icon={Palette}>
-            <div className="grid grid-cols-2 gap-4">
-              <ColorPicker label="Primaire kleur" value={style.primaire_kleur} onChange={(v) => updateStyle({ primaire_kleur: v })} />
-              <ColorPicker label="Secundaire kleur" value={style.secundaire_kleur} onChange={(v) => updateStyle({ secundaire_kleur: v })} />
-              <ColorPicker label="Accent kleur" value={style.accent_kleur} onChange={(v) => updateStyle({ accent_kleur: v })} />
-              <ColorPicker label="Tekst kleur" value={style.tekst_kleur} onChange={(v) => updateStyle({ tekst_kleur: v })} />
-            </div>
-            <Separator />
-            <div className="grid grid-cols-2 gap-4">
-              <ColorPicker label="Tabel header kleur" value={style.tabel_header_kleur} onChange={(v) => updateStyle({ tabel_header_kleur: v })} />
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Tabel stijl</Label>
-                <Select value={style.tabel_stijl} onValueChange={(v) => updateStyle({ tabel_stijl: v as 'striped' | 'grid' | 'plain' })}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="striped">Gestreept</SelectItem>
-                    <SelectItem value="grid">Rasterlijnen</SelectItem>
-                    <SelectItem value="plain">Minimaal</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </Section>
-
+          {subTab === 'layout' && (
+          <>
           {/* Marges & Layout */}
           <Section title="Marges & Layout" icon={Maximize2}>
             <div className="grid grid-cols-2 gap-4">
@@ -744,6 +799,41 @@ export function HuisstijlTab() {
             </div>
           </Section>
 
+          {/* Header & Footer */}
+          <Section title="Header & Footer" icon={Eye} defaultOpen={false}>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm text-gray-700 dark:text-gray-300">Header tonen</Label>
+              <Switch
+                checked={style.toon_header}
+                onCheckedChange={(v) => updateStyle({ toon_header: v })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm text-gray-700 dark:text-gray-300">Footer tonen</Label>
+              <Switch
+                checked={style.toon_footer}
+                onCheckedChange={(v) => updateStyle({ toon_footer: v })}
+              />
+            </div>
+            {style.toon_footer && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-600 dark:text-gray-400">
+                  Aangepaste footer tekst (laat leeg voor standaard)
+                </Label>
+                <Input
+                  value={style.footer_tekst}
+                  onChange={(e) => updateStyle({ footer_tekst: e.target.value })}
+                  placeholder="Bijv: Bedrijfsnaam | KvK: 12345678 | BTW: NL..."
+                  className="h-9 text-sm"
+                />
+              </div>
+            )}
+          </Section>
+          </>
+          )}
+
+          {subTab === 'briefpapier' && (
+          <>
           {/* Briefpapier */}
           <Section title="Briefpapier" icon={Image}>
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -808,37 +898,8 @@ export function HuisstijlTab() {
               </>
             )}
           </Section>
-
-          {/* Header & Footer */}
-          <Section title="Header & Footer" icon={Eye} defaultOpen={false}>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm text-gray-700 dark:text-gray-300">Header tonen</Label>
-              <Switch
-                checked={style.toon_header}
-                onCheckedChange={(v) => updateStyle({ toon_header: v })}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm text-gray-700 dark:text-gray-300">Footer tonen</Label>
-              <Switch
-                checked={style.toon_footer}
-                onCheckedChange={(v) => updateStyle({ toon_footer: v })}
-              />
-            </div>
-            {style.toon_footer && (
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">
-                  Aangepaste footer tekst (laat leeg voor standaard)
-                </Label>
-                <Input
-                  value={style.footer_tekst}
-                  onChange={(e) => updateStyle({ footer_tekst: e.target.value })}
-                  placeholder="Bijv: Bedrijfsnaam | KvK: 12345678 | BTW: NL..."
-                  className="h-9 text-sm"
-                />
-              </div>
-            )}
-          </Section>
+          </>
+          )}
         </div>
 
         {/* RIGHT: Live Preview */}
