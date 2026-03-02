@@ -20,6 +20,8 @@ import {
   AlertTriangle,
   ChevronDown,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   X,
   Calendar,
   Target,
@@ -28,11 +30,21 @@ import {
   Users,
   Eye,
   EyeOff,
+  MoreHorizontal,
+  CheckCircle2,
+  Download,
 } from 'lucide-react'
 import { getOffertes, updateOfferte } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Offerte } from '@/types'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { exportCSV, exportExcel } from '@/lib/export'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
@@ -90,6 +102,56 @@ const STATUS_LABELS: Record<string, string> = {
   afgewezen: 'Afgewezen',
   verlopen: 'Verlopen',
   gefactureerd: 'Gefactureerd',
+}
+
+const statusOpties = [
+  { value: 'alle', label: 'Alle' },
+  { value: 'concept', label: 'Concept' },
+  { value: 'verzonden', label: 'Verstuurd' },
+  { value: 'bekeken', label: 'Bekeken' },
+  { value: 'goedgekeurd', label: 'Akkoord' },
+  { value: 'gefactureerd', label: 'Gefactureerd' },
+  { value: 'afgewezen', label: 'Afgewezen' },
+  { value: 'verlopen', label: 'Verlopen' },
+]
+
+function getOfferteStatusDotColor(status: string): string {
+  switch (status) {
+    case 'concept': return 'bg-stone-400'
+    case 'verzonden': return 'bg-sky-500'
+    case 'bekeken': return 'bg-amber-500'
+    case 'goedgekeurd': return 'bg-primary'
+    case 'afgewezen': return 'bg-red-500'
+    case 'verlopen': return 'bg-orange-500'
+    case 'gefactureerd': return 'bg-violet-500'
+    default: return 'bg-stone-400'
+  }
+}
+
+function getOfferteStatusBorderColor(status: string): string {
+  switch (status) {
+    case 'concept': return 'border-l-stone-400'
+    case 'verzonden': return 'border-l-sky-500'
+    case 'bekeken': return 'border-l-amber-500'
+    case 'goedgekeurd': return 'border-l-primary'
+    case 'afgewezen': return 'border-l-red-500'
+    case 'verlopen': return 'border-l-orange-500'
+    case 'gefactureerd': return 'border-l-violet-500'
+    default: return 'border-l-stone-400'
+  }
+}
+
+function getOfferteStatusCellBg(status: string): string {
+  switch (status) {
+    case 'concept': return 'bg-stone-50/50 dark:bg-stone-950/20'
+    case 'verzonden': return 'bg-sky-50/50 dark:bg-sky-950/20'
+    case 'bekeken': return 'bg-amber-50/50 dark:bg-amber-950/20'
+    case 'goedgekeurd': return 'bg-wm-pale/15 dark:bg-primary/10'
+    case 'afgewezen': return 'bg-red-50/50 dark:bg-red-950/20'
+    case 'verlopen': return 'bg-orange-50/50 dark:bg-orange-950/20'
+    case 'gefactureerd': return 'bg-violet-50/50 dark:bg-violet-950/20'
+    default: return 'bg-muted/30 dark:bg-muted/20'
+  }
 }
 
 function getDaysOpen(createdAt: string): number {
@@ -151,7 +213,7 @@ export function QuotesPipeline() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState<ViewMode>('pipeline')
+  const [viewMode, setViewMode] = useState<ViewMode>('lijst')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('alle')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
   const [sortOption, setSortOption] = useState<SortOption>('newest')
@@ -437,6 +499,20 @@ export function QuotesPipeline() {
     [listSortColumn]
   )
 
+  const handleStatusChange = useCallback(async (offerteId: string, newStatus: string) => {
+    try {
+      const updates: Partial<Offerte> = { status: newStatus as Offerte['status'] }
+      if (newStatus === 'verzonden') updates.verstuurd_op = new Date().toISOString()
+      if (newStatus === 'goedgekeurd') updates.akkoord_op = new Date().toISOString()
+      const updated = await updateOfferte(offerteId, updates)
+      setOffertes((prev) => prev.map((o) => (o.id === offerteId ? { ...o, ...updated } : o)))
+      toast.success(`Status gewijzigd naar ${STATUS_LABELS[newStatus] || newStatus}`)
+    } catch (err) {
+      logger.error('Fout bij statuswijziging:', err)
+      toast.error('Kon status niet wijzigen')
+    }
+  }, [])
+
   const sortedListOffertes = useMemo(() => {
     const sorted = [...filteredOffertes]
     const dir = listSortDir === 'asc' ? 1 : -1
@@ -495,280 +571,209 @@ export function QuotesPipeline() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Financial Overview per Status */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {([
-          { key: 'concept' as const, label: 'Concept', borderColor: 'border-stone-200/60 dark:border-stone-700/60', bgColor: 'from-stone-50/80 to-card dark:from-stone-900/30 dark:to-card', dotColor: 'bg-stone-400', textColor: 'text-stone-600 dark:text-stone-400' },
-          { key: 'verzonden' as const, label: 'Verstuurd', borderColor: 'border-sky-200/60 dark:border-sky-800/60', bgColor: 'from-sky-50/80 to-card dark:from-sky-950/30 dark:to-card', dotColor: 'bg-sky-400', textColor: 'text-sky-600 dark:text-sky-400' },
-          { key: 'bekeken' as const, label: 'Bekeken', borderColor: 'border-amber-200/60 dark:border-amber-800/60', bgColor: 'from-amber-50/80 to-card dark:from-amber-950/30 dark:to-card', dotColor: 'bg-amber-400', textColor: 'text-amber-600 dark:text-amber-400' },
-          { key: 'goedgekeurd' as const, label: 'Akkoord', borderColor: 'border-primary/20 dark:border-primary/15', bgColor: 'from-wm-pale/20 to-card dark:from-primary/10 dark:to-card', dotColor: 'bg-primary', textColor: 'text-accent dark:text-wm-light' },
-          { key: 'verlopen' as const, label: 'Verlopen', borderColor: 'border-orange-200/60 dark:border-orange-800/60', bgColor: 'from-orange-50/80 to-card dark:from-orange-950/30 dark:to-card', dotColor: 'bg-orange-400', textColor: 'text-orange-600 dark:text-orange-400' },
-          { key: 'afgewezen' as const, label: 'Afgewezen', borderColor: 'border-red-200/60 dark:border-red-800/60', bgColor: 'from-red-50/80 to-card dark:from-red-950/30 dark:to-card', dotColor: 'bg-red-400', textColor: 'text-red-600 dark:text-red-400' },
-        ]).map((col) => {
-          const data = financialSummary.statusTotals[col.key] || { count: 0, totaal: 0 }
-          const isActive = statusFilter === col.key
-          return (
-            <button
-              key={col.key}
-              onClick={() => setStatusFilter(statusFilter === col.key ? 'alle' : col.key)}
-              className={`relative overflow-hidden rounded-2xl border ${col.borderColor} bg-gradient-to-br ${col.bgColor} backdrop-blur-sm p-4 text-left transition-all hover:shadow-md ${
-                isActive ? 'ring-2 ring-primary shadow-md' : ''
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
-                <span className={`text-xs font-medium ${col.textColor} uppercase tracking-wide`}>{col.label}</span>
-              </div>
-              <p className="text-lg font-bold text-foreground">{formatCurrency(data.totaal)}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {data.count} {data.count === 1 ? 'offerte' : 'offertes'}
-              </p>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Pipeline Totalen */}
-      <div className="flex items-center gap-6 px-5 py-2 text-sm text-muted-foreground">
-        <span>Totale pipeline: <strong className="text-foreground">{formatCurrency(financialSummary.pipelineTotaal)}</strong></span>
-        <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-        <span>Verwachte omzet: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(financialSummary.verwachteOmzet)}</strong></span>
-      </div>
-
-      {/* Sales Summary Bar */}
-      <div className="flex items-center gap-6 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
-        <div className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-muted-foreground">Pipeline:</span>
-          <span className="text-sm font-bold text-foreground">{formatCurrency(salesSummary.pipelineValue)}</span>
-        </div>
-        <div className="w-px h-5 bg-border" />
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Verstuurd:</span>
-          <span className="text-sm font-bold text-foreground">{formatCurrency(salesSummary.verstuurdValue)}</span>
-        </div>
-        <div className="w-px h-5 bg-border" />
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Akkoord deze maand:</span>
-          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(salesSummary.akkoordValue)}</span>
-        </div>
-      </div>
-
-      {/* Header Section */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight font-display">
-            Offertes
-          </h1>
-          <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
-            <span>{offertes.length} offertes</span>
-            <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-            <span>Totaalwaarde {formatCurrency(round2(offertes.reduce((s, o) => s + o.totaal, 0)))}</span>
-            <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-            <span className="flex items-center gap-1">
-              <TrendingUp className="h-3.5 w-3.5" />
-              {kpis.conversionRate}% conversie
-            </span>
+    <div className="space-y-5 animate-fade-in-up">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+            <FileText className="h-4.5 w-4.5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Offertes</h1>
+            <p className="text-xs text-muted-foreground">
+              {filteredOffertes.length} van {offertes.length} offertes
+            </p>
           </div>
         </div>
-        <Link to="/offertes/nieuw">
-          <Button className="rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <Plus className="h-4 w-4 mr-2" />
-            Nieuwe Offerte
-          </Button>
-        </Link>
+        <Button asChild size="sm" className="bg-gradient-to-r from-accent to-primary border-0">
+          <Link to="/offertes/nieuw">
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            Nieuwe offerte
+          </Link>
+        </Button>
       </div>
 
-      {/* Filter / View Bar */}
+      {/* ── Quick stats ── */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[220px] max-w-sm">
+        {kpis.openCount > 0 && (
+          <div className="flex items-center gap-1.5 text-xs font-medium text-sky-700 dark:text-sky-400 bg-sky-50/80 dark:bg-sky-900/20 border border-sky-200/50 dark:border-sky-800/30 px-2.5 py-1 rounded-full">
+            <FileText className="w-3 h-3" />
+            {kpis.openCount} open
+          </div>
+        )}
+        <div className="flex items-center gap-1.5 text-xs font-medium text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-primary/15 border border-primary/20 px-2.5 py-1 rounded-full">
+          <TrendingUp className="w-3 h-3" />
+          {kpis.conversionRate}% conversie
+        </div>
+        {kpis.overdueFollowUps > 0 && (
+          <div className="flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30 px-2.5 py-1 rounded-full">
+            <AlertTriangle className="w-3 h-3" />
+            {kpis.overdueFollowUps} achterstallig
+          </div>
+        )}
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50/80 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/30 px-2.5 py-1 rounded-full">
+          <DollarSign className="w-3 h-3" />
+          Pipeline {formatCurrency(financialSummary.pipelineTotaal)}
+        </div>
+      </div>
+
+      {/* ── Search + Filters ── */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            placeholder="Zoek op nummer, titel of klant..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Zoek op nummer, titel of klant..."
-            className="pl-10 rounded-xl bg-card/70 backdrop-blur-sm border-border"
+            className="pl-9 h-9 text-sm"
           />
-          {searchQuery && (
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap flex-1">
+          {statusOpties.map((optie) => {
+            const count = optie.value === 'alle'
+              ? offertes.length
+              : offertes.filter((o) => o.status === optie.value).length
+            if (optie.value !== 'alle' && count === 0) return null
+            return (
+              <button
+                key={optie.value}
+                onClick={() => setStatusFilter(optie.value as StatusFilter)}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
+                  statusFilter === optie.value
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                )}
+              >
+                {optie.label}
+                {count > 0 && <span className="ml-1 opacity-60">{count}</span>}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex items-center gap-1">
+          {/* View toggle */}
+          <div className="flex items-center bg-muted/60 rounded-md p-0.5 mr-1">
             <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setViewMode('lijst')}
+              className={cn(
+                'p-1.5 rounded transition-colors',
+                viewMode === 'lijst' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              )}
+              title="Lijstweergave"
             >
-              <X className="h-4 w-4" />
+              <List className="w-3.5 h-3.5" />
             </button>
-          )}
-        </div>
-
-        <div className="flex items-center bg-card/70 backdrop-blur-sm border border-border rounded-xl p-1">
-          <button
-            onClick={() => setViewMode('pipeline')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              viewMode === 'pipeline'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Kanban
-          </button>
-          <button
-            onClick={() => setViewMode('lijst')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              viewMode === 'lijst'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <List className="h-3.5 w-3.5" />
-            Lijst
-          </button>
-        </div>
-
-        {viewMode === 'pipeline' && (
-          <button
-            onClick={() => setShowClosed(!showClosed)}
-            className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl border transition-colors ${
-              showClosed
-                ? 'bg-primary/10 border-primary/30 text-primary'
-                : 'bg-card/70 border-border text-foreground/80 hover:bg-muted/50'
-            }`}
-          >
-            {showClosed ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-            Toon afgesloten
-          </button>
-        )}
-
-        <div className="relative" ref={priorityRef}>
-          <button
+            <button
+              onClick={() => setViewMode('pipeline')}
+              className={cn(
+                'p-1.5 rounded transition-colors',
+                viewMode === 'pipeline' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              )}
+              title="Kanban"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs text-muted-foreground"
             onClick={() => {
-              setShowPriorityDropdown(!showPriorityDropdown)
-              setShowSortDropdown(false)
+              const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag', 'Aangemaakt', 'Geldig tot']
+              const rows = filteredOffertes.map((o) => ({
+                Nummer: o.nummer,
+                Klant: o.klant_naam || 'Onbekend',
+                Titel: o.titel,
+                Status: STATUS_LABELS[o.status] || o.status,
+                Bedrag: formatCurrency(o.totaal),
+                Aangemaakt: formatDate(o.created_at),
+                'Geldig tot': formatDate(o.geldig_tot),
+              }))
+              exportCSV(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows)
             }}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-card/70 backdrop-blur-sm border border-border rounded-xl text-foreground/80 hover:bg-muted/50 transition-colors"
           >
-            <Target className="h-3.5 w-3.5" />
-            {priorityFilter === 'alle' ? 'Prioriteit' : priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1)}
-            <ChevronDown className="h-3.5 w-3.5" />
-          </button>
-          {showPriorityDropdown && (
-            <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[140px]">
-              {(['alle', 'urgent', 'hoog', 'medium', 'laag'] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => {
-                    setPriorityFilter(p)
-                    setShowPriorityDropdown(false)
-                  }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${
-                    priorityFilter === p ? 'text-accent dark:text-wm-light font-medium' : 'text-foreground/80'
-                  }`}
-                >
-                  {p === 'alle' ? 'Alle prioriteiten' : p.charAt(0).toUpperCase() + p.slice(1)}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="relative" ref={sortRef}>
-          <button
+            <Download className="w-3.5 h-3.5 mr-1" />
+            CSV
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs text-muted-foreground"
             onClick={() => {
-              setShowSortDropdown(!showSortDropdown)
-              setShowPriorityDropdown(false)
+              const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag', 'Aangemaakt', 'Geldig tot']
+              const rows = filteredOffertes.map((o) => ({
+                Nummer: o.nummer,
+                Klant: o.klant_naam || 'Onbekend',
+                Titel: o.titel,
+                Status: STATUS_LABELS[o.status] || o.status,
+                Bedrag: o.totaal,
+                Aangemaakt: formatDate(o.created_at),
+                'Geldig tot': formatDate(o.geldig_tot),
+              }))
+              exportExcel(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Offertes')
             }}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-card/70 backdrop-blur-sm border border-border rounded-xl text-foreground/80 hover:bg-muted/50 transition-colors"
           >
-            <ArrowUpDown className="h-3.5 w-3.5" />
-            Sorteren
-            <ChevronDown className="h-3.5 w-3.5" />
-          </button>
-          {showSortDropdown && (
-            <div className="absolute top-full right-0 mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[180px]">
-              {([
-                { value: 'newest' as const, label: 'Nieuwste eerst' },
-                { value: 'oldest' as const, label: 'Oudste eerst' },
-                { value: 'highest' as const, label: 'Hoogste waarde' },
-                { value: 'expiring' as const, label: 'Verloopt binnenkort' },
-              ]).map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    setSortOption(opt.value)
-                    setShowSortDropdown(false)
-                  }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${
-                    sortOption === opt.value ? 'text-accent dark:text-wm-light font-medium' : 'text-foreground/80'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Sales KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-primary/15 dark:border-primary/10 bg-gradient-to-br from-wm-pale/15 to-card dark:from-accent/10 dark:to-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-primary/20">
-              <FileText className="h-4 w-4 text-accent dark:text-wm-light" />
-            </div>
-            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-wide">Open</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{kpis.openCount}</p>
-          <p className="text-sm text-muted-foreground mt-0.5">{formatCurrency(kpis.openValue)}</p>
-        </div>
-
-        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-primary/15 dark:border-primary/10 bg-gradient-to-br from-wm-pale/10 to-card dark:from-primary/8 dark:to-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="wm-stat-icon p-1.5 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
-              <TrendingUp className="h-4 w-4" />
-            </div>
-            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-wide">Conversie</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{kpis.conversionRate}%</p>
-          <p className="text-sm text-muted-foreground mt-0.5">van verzonden</p>
-        </div>
-
-        <div className="relative overflow-hidden rounded-2xl border border-primary/30 dark:border-primary/20 bg-gradient-to-br from-wm-pale/30 to-white/80 dark:from-accent/30 dark:to-card backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-wm-pale/30 dark:bg-accent/30">
-              <DollarSign className="h-4 w-4 text-accent dark:text-primary" />
-            </div>
-            <span className="text-xs font-medium text-accent dark:text-primary uppercase tracking-wide">Gem. waarde</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{formatCurrency(kpis.avgValue)}</p>
-          <p className="text-sm text-muted-foreground mt-0.5">per offerte</p>
-        </div>
-
-        <div className="relative overflow-hidden rounded-2xl border border-red-200/50 dark:border-red-800/40 bg-gradient-to-br from-red-50/80 to-white/80 dark:from-red-950/40 dark:to-card backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/50">
-              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-            </div>
-            <span className="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide">Achterstallig</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{kpis.overdueFollowUps}</p>
-          <p className="text-sm text-muted-foreground mt-0.5">follow-ups</p>
-        </div>
-
-        <div className="relative overflow-hidden rounded-2xl border border-amber-200/50 dark:border-amber-800/40 bg-gradient-to-br from-amber-50/80 to-white/80 dark:from-amber-950/40 dark:to-card backdrop-blur-sm p-4 transition-shadow hover:shadow-md">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/50">
-              <BarChart3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            </div>
-            <span className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">Deze maand</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{kpis.thisMonthCount}</p>
-          <p className="text-sm text-muted-foreground mt-0.5">nieuwe offertes</p>
+            <FileText className="w-3.5 h-3.5 mr-1" />
+            Excel
+          </Button>
         </div>
       </div>
 
       {/* Pipeline (Kanban) View */}
       {viewMode === 'pipeline' && (
+        <>
+        {/* Financial Overview per Status */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {([
+            { key: 'concept' as const, label: 'Concept', borderColor: 'border-stone-200/60 dark:border-stone-700/60', bgColor: 'from-stone-50/80 to-card dark:from-stone-900/30 dark:to-card', dotColor: 'bg-stone-400', textColor: 'text-stone-600 dark:text-stone-400' },
+            { key: 'verzonden' as const, label: 'Verstuurd', borderColor: 'border-sky-200/60 dark:border-sky-800/60', bgColor: 'from-sky-50/80 to-card dark:from-sky-950/30 dark:to-card', dotColor: 'bg-sky-400', textColor: 'text-sky-600 dark:text-sky-400' },
+            { key: 'bekeken' as const, label: 'Bekeken', borderColor: 'border-amber-200/60 dark:border-amber-800/60', bgColor: 'from-amber-50/80 to-card dark:from-amber-950/30 dark:to-card', dotColor: 'bg-amber-400', textColor: 'text-amber-600 dark:text-amber-400' },
+            { key: 'goedgekeurd' as const, label: 'Akkoord', borderColor: 'border-primary/20 dark:border-primary/15', bgColor: 'from-wm-pale/20 to-card dark:from-primary/10 dark:to-card', dotColor: 'bg-primary', textColor: 'text-accent dark:text-wm-light' },
+            { key: 'verlopen' as const, label: 'Verlopen', borderColor: 'border-orange-200/60 dark:border-orange-800/60', bgColor: 'from-orange-50/80 to-card dark:from-orange-950/30 dark:to-card', dotColor: 'bg-orange-400', textColor: 'text-orange-600 dark:text-orange-400' },
+            { key: 'afgewezen' as const, label: 'Afgewezen', borderColor: 'border-red-200/60 dark:border-red-800/60', bgColor: 'from-red-50/80 to-card dark:from-red-950/30 dark:to-card', dotColor: 'bg-red-400', textColor: 'text-red-600 dark:text-red-400' },
+          ]).map((col) => {
+            const data = financialSummary.statusTotals[col.key] || { count: 0, totaal: 0 }
+            return (
+              <div
+                key={col.key}
+                className={`relative overflow-hidden rounded-2xl border ${col.borderColor} bg-gradient-to-br ${col.bgColor} backdrop-blur-sm p-4 text-left`}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
+                  <span className={`text-xs font-medium ${col.textColor} uppercase tracking-wide`}>{col.label}</span>
+                </div>
+                <p className="text-lg font-bold text-foreground">{formatCurrency(data.totaal)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {data.count} {data.count === 1 ? 'offerte' : 'offertes'}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Sales Summary Bar */}
+        <div className="flex items-center gap-6 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-muted-foreground">Pipeline:</span>
+            <span className="text-sm font-bold text-foreground">{formatCurrency(salesSummary.pipelineValue)}</span>
+          </div>
+          <div className="w-px h-5 bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Verstuurd:</span>
+            <span className="text-sm font-bold text-foreground">{formatCurrency(salesSummary.verstuurdValue)}</span>
+          </div>
+          <div className="w-px h-5 bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Akkoord deze maand:</span>
+            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(salesSummary.akkoordValue)}</span>
+          </div>
+        </div>
+
+        {/* Kanban Board */}
         <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 min-h-[480px] ${STATUS_COLUMNS.length <= 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-' + Math.min(STATUS_COLUMNS.length, 7)}`}>
           {STATUS_COLUMNS.map((col) => {
             const colOffertes = offertesByStatus[col.key] || []
@@ -986,133 +991,323 @@ export function QuotesPipeline() {
             )
           })}
         </div>
+
+        {/* Pipeline Overview Summary */}
+        <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              Pipeline Overzicht
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {DEFAULT_STATUS_COLUMNS.map((col) => {
+                const colOffertes = offertes.filter((o) => o.status === col.key)
+                const colTotal = round2(colOffertes.reduce((sum, o) => sum + o.totaal, 0))
+                return (
+                  <div
+                    key={col.key}
+                    className="text-center p-4 rounded-xl bg-gray-50/80 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700/50 transition-shadow hover:shadow-sm"
+                  >
+                    <div className="flex items-center justify-center gap-1.5 mb-2">
+                      <div className={`w-2 h-2 rounded-full ${col.accent}`} />
+                      <p className="text-sm font-medium text-muted-foreground">{col.label}</p>
+                    </div>
+                    <p className="text-xl font-bold text-foreground">{colOffertes.length}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{formatCurrency(colTotal)}</p>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Totaal alle offertes</span>
+              <div className="flex items-center gap-3">
+                <Badge variant="secondary" className="rounded-lg px-3 py-1 text-sm">
+                  {offertes.length} offertes
+                </Badge>
+                <span className="text-lg font-bold text-foreground">
+                  {formatCurrency(round2(offertes.reduce((s, o) => s + o.totaal, 0)))}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        </>
       )}
 
-      {/* List View */}
+      {/* ── List View (matches ProjectsList design) ── */}
       {viewMode === 'lijst' && (
         <>
-          {/* Filter pills */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {(['alle', 'concept', 'verzonden', 'bekeken', 'goedgekeurd', 'afgewezen', 'gefactureerd'] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  statusFilter === s
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-card/70 border border-border text-muted-foreground hover:bg-muted/50'
-                }`}
-              >
-                {s === 'alle' ? 'Alle' : STATUS_LABELS[s] || s}
-              </button>
-            ))}
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden">
-            <div className="overflow-x-auto">
+          {sortedListOffertes.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-16 text-center">
+                <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <h3 className="text-base font-medium text-foreground">Geen offertes gevonden</h3>
+                <p className="text-sm text-muted-foreground mt-1 mb-4">
+                  {searchQuery || statusFilter !== 'alle'
+                    ? 'Pas je filters aan of maak een nieuwe offerte aan.'
+                    : 'Maak je eerste offerte aan.'}
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/offertes/nieuw">
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    Nieuwe offerte
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
-                    {[
-                      { key: 'nummer', label: 'Nummer' },
-                      { key: 'klant_naam', label: 'Klant' },
-                      { key: 'titel', label: 'Titel' },
-                      { key: 'totaal', label: 'Bedrag' },
-                      { key: 'status', label: 'Status' },
-                      { key: 'days_open', label: 'Aangemaakt' },
-                      { key: 'geldig_tot', label: 'Geldig tot' },
-                    ].map((col) => (
-                      <th
-                        key={col.key}
-                        onClick={() => handleListSort(col.key)}
-                        className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors select-none"
-                      >
-                        <div className="flex items-center gap-1">
-                          {col.label}
-                          <ArrowUpDown className={`h-3 w-3 ${listSortColumn === col.key ? 'text-primary' : 'text-muted-foreground/40'}`} />
-                        </div>
-                      </th>
-                    ))}
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Acties
+                    <th className="text-left py-2.5 px-4 w-[110px]">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
                     </th>
+                    <th className="text-left py-2.5 px-4">
+                      <button
+                        onClick={() => handleListSort('nummer')}
+                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                      >
+                        Offerte
+                        {listSortColumn === 'nummer' ? (
+                          listSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="text-left py-2.5 px-4 hidden lg:table-cell">
+                      <button
+                        onClick={() => handleListSort('klant_naam')}
+                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                      >
+                        Klant
+                        {listSortColumn === 'klant_naam' ? (
+                          listSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="text-right py-2.5 px-4 hidden xl:table-cell">
+                      <button
+                        onClick={() => handleListSort('totaal')}
+                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
+                      >
+                        Bedrag
+                        {listSortColumn === 'totaal' ? (
+                          listSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="text-right py-2.5 px-4 hidden lg:table-cell">
+                      <button
+                        onClick={() => handleListSort('created_at')}
+                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
+                      >
+                        Datum
+                        {listSortColumn === 'created_at' ? (
+                          listSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="text-right py-2.5 px-4 hidden md:table-cell">
+                      <button
+                        onClick={() => handleListSort('geldig_tot')}
+                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
+                      >
+                        Geldig tot
+                        {listSortColumn === 'geldig_tot' ? (
+                          listSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="w-10 py-2.5 px-2" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
-                  {sortedListOffertes.length === 0 && (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-16 text-center">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                            <FileText className="h-6 w-6 text-primary/40" />
-                          </div>
-                          <p className="text-sm font-medium text-foreground">Geen offertes gevonden</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                <tbody>
                   {sortedListOffertes.map((offerte) => {
                     const expiryStatus = getExpiryStatus(offerte.geldig_tot)
 
                     return (
                       <tr
                         key={offerte.id}
-                        className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                        className="border-b border-border/50 last:border-0 hover:bg-muted/30 cursor-pointer transition-colors group"
                         onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })}
                       >
-                        <td className="px-4 py-3">
-                          <span className="text-sm font-mono font-semibold text-accent dark:text-wm-light">
-                            {offerte.nummer}
-                          </span>
+                        {/* Status */}
+                        <td className="py-0 px-0">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                className={cn(
+                                  'w-full h-full py-3 px-4 flex items-center gap-1.5 transition-colors border-l-[3px]',
+                                  getOfferteStatusBorderColor(offerte.status),
+                                  getOfferteStatusCellBg(offerte.status),
+                                  'hover:brightness-95 dark:hover:brightness-110'
+                                )}
+                              >
+                                <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getOfferteStatusDotColor(offerte.status))} />
+                                <span className="text-xs font-medium text-foreground">
+                                  {STATUS_LABELS[offerte.status] || offerte.status}
+                                </span>
+                                <ChevronDown className="w-3 h-3 text-muted-foreground/40 ml-auto" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-40">
+                              {statusOpties.filter(s => s.value !== 'alle').map((s) => (
+                                <DropdownMenuItem
+                                  key={s.value}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (s.value !== offerte.status) {
+                                      handleStatusChange(offerte.id, s.value)
+                                    }
+                                  }}
+                                  className={cn(
+                                    'flex items-center gap-2 text-xs',
+                                    s.value === offerte.status && 'font-semibold'
+                                  )}
+                                >
+                                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getOfferteStatusDotColor(s.value))} />
+                                  {s.label}
+                                  {s.value === offerte.status && <CheckCircle2 className="w-3 h-3 ml-auto text-primary" />}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-foreground/80">
-                            {offerte.klant_naam || 'Onbekende klant'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 max-w-[200px]">
-                          <span className="text-sm text-foreground/80 truncate block">
-                            {offerte.titel}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm font-semibold text-foreground">
-                            {formatCurrency(offerte.totaal)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${STATUS_BADGE_COLORS[offerte.status] || ''}`}>
-                            {STATUS_LABELS[offerte.status] || offerte.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-muted-foreground">
-                            {formatDate(offerte.created_at)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm text-muted-foreground">
-                              {formatDate(offerte.geldig_tot)}
-                            </span>
-                            {expiryStatus === 'expired' && (
-                              <span className="w-2 h-2 rounded-full bg-red-500" title="Verlopen" />
+
+                        {/* Offerte naam + prioriteit */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="min-w-0">
+                              <Link
+                                to={`/offertes/${offerte.id}/bewerken`}
+                                state={{ from: '/offertes' }}
+                                className="text-sm font-medium text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {offerte.nummer} — {offerte.titel}
+                              </Link>
+                            </div>
+                            {offerte.prioriteit && offerte.prioriteit !== 'laag' && (
+                              <Badge className={cn(PRIORITY_COLORS[offerte.prioriteit] || '', 'text-[9px] px-1.5 py-0 flex-shrink-0')}>
+                                {offerte.prioriteit}
+                              </Badge>
                             )}
-                            {expiryStatus === 'soon' && (
-                              <span className="w-2 h-2 rounded-full bg-orange-500" title="Verloopt binnenkort" />
+                            {expiryStatus === 'expired' && (
+                              <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[9px] px-1.5 py-0 flex-shrink-0">
+                                Verlopen
+                              </Badge>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })
-                            }}
-                            className="text-xs text-primary hover:underline"
-                          >
-                            Bewerk
-                          </button>
+
+                        {/* Klant */}
+                        <td className="py-3 px-4 hidden lg:table-cell">
+                          <span className="text-sm text-foreground">{offerte.klant_naam || 'Onbekende klant'}</span>
+                        </td>
+
+                        {/* Bedrag */}
+                        <td className="py-3 px-4 text-right hidden xl:table-cell">
+                          <span className="text-xs font-medium text-foreground tabular-nums">
+                            {formatCurrency(offerte.totaal)}
+                          </span>
+                        </td>
+
+                        {/* Datum */}
+                        <td className="py-3 px-4 text-right hidden lg:table-cell">
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {formatDate(offerte.created_at)}
+                          </span>
+                        </td>
+
+                        {/* Geldig tot */}
+                        <td className="py-3 px-4 text-right hidden md:table-cell">
+                          <div className="flex items-center gap-1.5 justify-end">
+                            <span className="text-xs text-muted-foreground tabular-nums">
+                              {formatDate(offerte.geldig_tot)}
+                            </span>
+                            {expiryStatus === 'expired' && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+                            {expiryStatus === 'soon' && <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
+                          </div>
+                        </td>
+
+                        {/* Quick actions */}
+                        <td className="py-3 px-2">
+                          <div className="flex items-center gap-0.5 justify-end">
+                            <Link
+                              to={`/offertes/${offerte.id}/preview`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Preview"
+                            >
+                              <Eye className="w-4 h-4 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
+                            </Link>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                  <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })
+                                  }}
+                                >
+                                  Bewerken
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    navigate(`/offertes/${offerte.id}/preview`)
+                                  }}
+                                >
+                                  <Eye className="w-3.5 h-3.5 mr-2" />
+                                  Preview bekijken
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    const csv = [
+                                      'Nummer;' + offerte.nummer,
+                                      'Klant;' + (offerte.klant_naam || 'Onbekend'),
+                                      'Titel;' + offerte.titel,
+                                      'Status;' + (STATUS_LABELS[offerte.status] || offerte.status),
+                                      'Bedrag;' + formatCurrency(offerte.totaal),
+                                      'Aangemaakt;' + formatDate(offerte.created_at),
+                                    ].join('\n')
+                                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                                    const url = URL.createObjectURL(blob)
+                                    const a = document.createElement('a')
+                                    a.href = url
+                                    a.download = `${offerte.nummer}.csv`
+                                    a.click()
+                                    URL.revokeObjectURL(url)
+                                  }}
+                                >
+                                  <Download className="w-3.5 h-3.5 mr-2" />
+                                  Export
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -1120,61 +1315,9 @@ export function QuotesPipeline() {
                 </tbody>
               </table>
             </div>
-          </div>
+          )}
         </>
       )}
-
-      {/* Pipeline Overview Summary */}
-      <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Users className="h-5 w-5 text-muted-foreground" />
-            Pipeline Overzicht
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {DEFAULT_STATUS_COLUMNS.map((col) => {
-              const colOffertes = offertes.filter((o) => o.status === col.key)
-              const colTotal = round2(colOffertes.reduce((sum, o) => sum + o.totaal, 0))
-
-              return (
-                <div
-                  key={col.key}
-                  className="text-center p-4 rounded-xl bg-gray-50/80 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700/50 transition-shadow hover:shadow-sm"
-                >
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <div className={`w-2 h-2 rounded-full ${col.accent}`} />
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {col.label}
-                    </p>
-                  </div>
-                  <p className="text-xl font-bold text-foreground">
-                    {colOffertes.length}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {formatCurrency(colTotal)}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">
-              Totaal alle offertes
-            </span>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="rounded-lg px-3 py-1 text-sm">
-                {offertes.length} offertes
-              </Badge>
-              <span className="text-lg font-bold text-foreground">
-                {formatCurrency(round2(offertes.reduce((s, o) => s + o.totaal, 0)))}
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
