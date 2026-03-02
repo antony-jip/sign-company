@@ -1,4 +1,4 @@
-import { getKlanten, createKlant, updateKlant } from './supabaseService'
+import { getKlanten, getKlant, createKlant, updateKlant } from './supabaseService'
 import { round2 } from '@/utils/budgetUtils'
 import type {
   Klant,
@@ -51,6 +51,65 @@ function migreerOudeActiviteiten(): void {
 }
 
 migreerOudeActiviteiten()
+
+/**
+ * Migratie: verplaats importcontactpersonen van aparte localStorage key
+ * naar het klant.contactpersonen veld op het klant-record.
+ * Draait eenmalig bij module-load.
+ */
+async function migreerImportContactpersonen(): Promise<void> {
+  const raw = localStorage.getItem(LS_CONTACTPERSONEN)
+  if (!raw) return
+  try {
+    const imported: ImportContactpersoon[] = JSON.parse(raw)
+    if (!imported.length) {
+      localStorage.removeItem(LS_CONTACTPERSONEN)
+      return
+    }
+    // Groepeer per klant
+    const perKlant = new Map<string, ImportContactpersoon[]>()
+    for (const ic of imported) {
+      if (!ic.klant_id) continue
+      const bestaande = perKlant.get(ic.klant_id) || []
+      bestaande.push(ic)
+      perKlant.set(ic.klant_id, bestaande)
+    }
+    // Voeg contactpersonen toe aan klant-records
+    for (const [klantId, contacts] of perKlant) {
+      try {
+        const klant = await getKlant(klantId)
+        if (!klant) continue
+        const bestaandeContacten: Contactpersoon[] = klant.contactpersonen || []
+        const bestaandeEmails = new Set(bestaandeContacten.map((c) => c.email?.toLowerCase()).filter(Boolean))
+        const nieuweContacten: Contactpersoon[] = contacts
+          .filter((ic) => !ic.email || !bestaandeEmails.has(ic.email.toLowerCase()))
+          .map((ic) => ({
+            id: crypto.randomUUID(),
+            naam: ic.naam || '',
+            email: ic.email || '',
+            telefoon: ic.telefoon || '',
+            functie: ic.functie || '',
+            is_primair: false,
+          }))
+        if (nieuweContacten.length > 0) {
+          await updateKlant(klantId, {
+            contactpersonen: [...bestaandeContacten, ...nieuweContacten],
+          })
+        }
+      } catch {
+        // Skip klant als er een fout is
+      }
+    }
+    // Verwijder de oude localStorage key na succesvolle migratie
+    localStorage.removeItem(LS_CONTACTPERSONEN)
+  } catch {
+    // Verwijder corrupte data
+    localStorage.removeItem(LS_CONTACTPERSONEN)
+  }
+}
+
+// Voer migratie async uit (blokkeert niet de pagina-load)
+migreerImportContactpersonen()
 
 function generateId(): string {
   return crypto.randomUUID()
@@ -287,17 +346,44 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
         import_datum: now(),
       }
 
+      // Parse contactpersonen from CSV column and convert to Contactpersoon format
+      let csvContactpersonen: Contactpersoon[] = []
+      if (rij.contactpersonen) {
+        const parsedContacts = parseContactpersonen(rij.contactpersonen)
+        csvContactpersonen = parsedContacts.map((pc) => ({
+          id: generateId(),
+          naam: pc.naam,
+          email: pc.email || '',
+          telefoon: pc.telefoon || '',
+          functie: '',
+          is_primair: false,
+        }))
+        contactpersonenAangemaakt += csvContactpersonen.length
+      }
+
       let klant: Klant
       if (bestaande) {
-        // Update existing
-        klant = await updateKlant(bestaande.id, klantData)
+        // Update existing — merge CSV contacts with existing ones
+        const bestaandeContacten = bestaande.contactpersonen || []
+        const bestaandeEmails = new Set(bestaandeContacten.map((c) => c.email?.toLowerCase()).filter(Boolean))
+        // Only add contacts that don't already exist (by email)
+        const nieuweContacten = csvContactpersonen.filter(
+          (c) => !c.email || !bestaandeEmails.has(c.email.toLowerCase())
+        )
+        klant = await updateKlant(bestaande.id, {
+          ...klantData,
+          contactpersonen: [...bestaandeContacten, ...nieuweContacten],
+        })
         klantMap.set(zoekNaam, klant)
       } else {
-        // Create new
+        // Create new — set first contact as primair
+        if (csvContactpersonen.length > 0) {
+          csvContactpersonen[0].is_primair = true
+        }
         klant = await createKlant({
           user_id: '',
           bedrijfsnaam: rij.bedrijfsnaam.trim(),
-          contactpersoon: '',
+          contactpersoon: csvContactpersonen[0]?.naam || '',
           email: rij.email || '',
           telefoon: rij.telefoon || '',
           adres: rij.adres || '',
@@ -310,26 +396,10 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
           status: klantData.status as Klant['status'],
           tags: [],
           notities: '',
-          contactpersonen: [],
+          contactpersonen: csvContactpersonen,
           ...klantData,
         })
         klantMap.set(zoekNaam, klant)
-      }
-
-      // Parse contactpersonen from CSV column
-      if (rij.contactpersonen) {
-        const parsedContacts = parseContactpersonen(rij.contactpersonen)
-        for (const pc of parsedContacts) {
-          createContactpersoon({
-            user_id: klant.user_id || '',
-            klant_id: klant.id,
-            naam: pc.naam,
-            email: pc.email,
-            telefoon: pc.telefoon,
-            import_bron: 'csv_import',
-          })
-          contactpersonenAangemaakt++
-        }
       }
 
       resultaat.geimporteerd++
@@ -430,11 +500,14 @@ export async function importActiviteiten(rows: CSVActiviteitRij[]): Promise<Impo
 /** Wis alle import-gerelateerde localStorage keys. Retourneert aantal verwijderde keys. */
 export function clearImportData(): number {
   let verwijderd = 0
-  // Verwijder alle per-klant activiteiten keys + alle import-prefixed keys
+  // Verwijder alle per-klant activiteiten keys + import-prefixed keys
+  // Bewaar contactpersonen — die horen bij klant records
   const keysToRemove: string[] = []
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i)
-    if (key && (key.startsWith('forgedesk_activiteiten_') || key.startsWith('forgedesk_import_'))) {
+    if (!key) continue
+    if (key === LS_CONTACTPERSONEN) continue // Bewaar contactpersonen
+    if (key.startsWith('forgedesk_activiteiten_') || key.startsWith('forgedesk_import_')) {
       keysToRemove.push(key)
     }
   }

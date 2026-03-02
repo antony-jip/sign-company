@@ -137,7 +137,7 @@ export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'upda
       .select()
       .single()
     if (error) throw error
-    return data
+    return normalizeKlant(data)
   }
   const klanten = getLocalData<Klant>('klanten')
   const newKlant: Klant = {
@@ -161,7 +161,7 @@ export async function updateKlant(id: string, updates: Partial<Klant>): Promise<
       .select()
       .single()
     if (error) throw error
-    return data
+    return normalizeKlant(data)
   }
   const klanten = getLocalData<Klant>('klanten')
   const index = klanten.findIndex((k) => k.id === id)
