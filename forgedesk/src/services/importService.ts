@@ -359,6 +359,7 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
           is_primair: false,
         }))
         contactpersonenAangemaakt += csvContactpersonen.length
+        console.log(`[Import] ${rij.bedrijfsnaam}: ${csvContactpersonen.length} contactpersonen geparsed`)
       }
 
       let klant: Klant
@@ -370,10 +371,13 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
         const nieuweContacten = csvContactpersonen.filter(
           (c) => !c.email || !bestaandeEmails.has(c.email.toLowerCase())
         )
+        const allContacts = [...bestaandeContacten, ...nieuweContacten]
+        console.log(`[Import] ${rij.bedrijfsnaam}: update met ${allContacts.length} contactpersonen (${bestaandeContacten.length} bestaand + ${nieuweContacten.length} nieuw)`)
         klant = await updateKlant(bestaande.id, {
           ...klantData,
-          contactpersonen: [...bestaandeContacten, ...nieuweContacten],
+          contactpersonen: allContacts,
         })
+        console.log(`[Import] ${rij.bedrijfsnaam}: na update heeft klant ${klant.contactpersonen?.length || 0} contactpersonen`)
         klantMap.set(zoekNaam, klant)
       } else {
         // Create new — set first contact as primair

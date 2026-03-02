@@ -80,6 +80,14 @@ function now(): string {
 
 // ============ KLANTEN ============
 
+function safeParseJsonArray(val: unknown): unknown[] {
+  if (Array.isArray(val)) return val
+  if (typeof val === 'string' && val.trim().startsWith('[')) {
+    try { const parsed = JSON.parse(val); if (Array.isArray(parsed)) return parsed } catch { /* ignore */ }
+  }
+  return []
+}
+
 function normalizeKlant(klant: Record<string, unknown>): Klant {
   return {
     ...klant,
@@ -95,9 +103,10 @@ function normalizeKlant(klant: Record<string, unknown>): Klant {
     kvk_nummer: (klant.kvk_nummer as string) || '',
     btw_nummer: (klant.btw_nummer as string) || '',
     status: (klant.status as string) || 'actief',
-    tags: Array.isArray(klant.tags) ? klant.tags : [],
+    tags: safeParseJsonArray(klant.tags) as string[],
     notities: (klant.notities as string) || '',
-    contactpersonen: Array.isArray(klant.contactpersonen) ? klant.contactpersonen : [],
+    contactpersonen: safeParseJsonArray(klant.contactpersonen) as Contactpersoon[],
+    vestigingen: safeParseJsonArray(klant.vestigingen) as Klant['vestigingen'],
   } as Klant
 }
 
