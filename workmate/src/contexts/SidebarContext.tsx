@@ -5,6 +5,8 @@ const MIN_WIDTH = 180
 const MAX_WIDTH = 360
 const COLLAPSED_WIDTH = 64
 
+export type LayoutMode = 'sidebar' | 'topnav'
+
 interface SidebarContextType {
   isCollapsed: boolean
   toggleSidebar: () => void
@@ -14,6 +16,8 @@ interface SidebarContextType {
   minWidth: number
   maxWidth: number
   collapsedWidth: number
+  layoutMode: LayoutMode
+  setLayoutMode: (mode: LayoutMode) => void
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
@@ -28,6 +32,11 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem('workmate_sidebar_width')
     const parsed = stored ? parseInt(stored, 10) : NaN
     return !isNaN(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH ? parsed : DEFAULT_WIDTH
+  })
+
+  const [layoutMode, setLayoutModeState] = useState<LayoutMode>(() => {
+    const stored = localStorage.getItem('workmate_layout_mode')
+    return stored === 'topnav' ? 'topnav' : 'sidebar'
   })
 
   const toggleSidebar = () => {
@@ -48,6 +57,11 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('workmate_sidebar_width', String(clamped))
   }
 
+  const setLayoutMode = (mode: LayoutMode) => {
+    setLayoutModeState(mode)
+    localStorage.setItem('workmate_layout_mode', mode)
+  }
+
   return (
     <SidebarContext.Provider value={{
       isCollapsed,
@@ -58,6 +72,8 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       minWidth: MIN_WIDTH,
       maxWidth: MAX_WIDTH,
       collapsedWidth: COLLAPSED_WIDTH,
+      layoutMode,
+      setLayoutMode,
     }}>
       {children}
     </SidebarContext.Provider>

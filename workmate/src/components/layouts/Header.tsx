@@ -2,12 +2,13 @@ import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Sun, Moon, User, Settings, LogOut,
-  ChevronDown,
+  ChevronDown, Monitor,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useSidebar } from '@/contexts/SidebarContext'
 import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
@@ -52,6 +53,7 @@ export function Header() {
   const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
   const { language, setLanguage } = useLanguage()
+  const { setLayoutMode } = useSidebar()
   const location = useLocation()
   const navigate = useNavigate()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -207,6 +209,16 @@ export function Header() {
                 >
                   <Settings className="w-4 h-4 text-muted-foreground" />
                   Instellingen
+                </button>
+                <button
+                  onClick={() => {
+                    setUserMenuOpen(false)
+                    setLayoutMode('topnav')
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-foreground/80 hover:bg-muted/50 transition-colors"
+                >
+                  <Monitor className="w-4 h-4 text-muted-foreground" />
+                  Top navigatie
                 </button>
               </div>
 
