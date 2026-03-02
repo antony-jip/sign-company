@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge'
 import {
   FolderKanban,
   Calendar,
-  User,
   Layers,
   BarChart3,
   TrendingUp,
@@ -138,8 +137,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
                   <tr className="border-b border-border">
                     <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Datum</th>
                     <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Project</th>
-                    <th className="text-right py-2 pr-3 text-xs font-medium text-muted-foreground">Waarde</th>
-                    <th className="text-left py-2 text-xs font-medium text-muted-foreground">Projectmanager</th>
+                    <th className="text-right py-2 text-xs font-medium text-muted-foreground">Waarde</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -152,16 +150,8 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
                         </div>
                       </td>
                       <td className="py-2 pr-3 font-medium">{p.naam}</td>
-                      <td className="py-2 pr-3 text-right font-medium tabular-nums whitespace-nowrap">
+                      <td className="py-2 text-right font-medium tabular-nums whitespace-nowrap">
                         {p.waarde ? formatCurrency(p.waarde) : '—'}
-                      </td>
-                      <td className="py-2 text-muted-foreground">
-                        {p.projectmanager ? (
-                          <div className="flex items-center gap-1.5">
-                            <User className="w-3 h-3" />
-                            {p.projectmanager}
-                          </div>
-                        ) : '—'}
                       </td>
                     </tr>
                   ))}
