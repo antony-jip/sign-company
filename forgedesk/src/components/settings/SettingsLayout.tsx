@@ -2270,6 +2270,7 @@ function BeveiligingTab() {
 
 // Alle mogelijke sidebar items met hun labels en secties
 const ALL_SIDEBAR_ITEMS = [
+  // Moet exact overeenkomen met navSections in Sidebar.tsx
   { label: 'Dashboard', section: 'Overzicht' },
   { label: 'Klanten', section: 'Verkoop' },
   { label: 'Deals', section: 'Verkoop' },
@@ -2281,23 +2282,12 @@ const ALL_SIDEBAR_ITEMS = [
   { label: 'Werkbonnen', section: 'Productie' },
   { label: 'Nacalculatie', section: 'Productie' },
   { label: 'Planning', section: 'Planning' },
-  { label: 'Tijdregistratie', section: 'Planning' },
-  { label: 'Booking', section: 'Planning' },
   { label: 'Email', section: 'Communicatie' },
   { label: 'Nieuwsbrieven', section: 'Communicatie' },
-  { label: 'Lead Capture', section: 'Communicatie' },
   { label: 'Financieel', section: 'Financieel' },
-  { label: 'Uitgaven', section: 'Financieel' },
-  { label: 'Leveranciers', section: 'Financieel' },
-  { label: 'Forecast', section: 'Financieel' },
   { label: 'Documenten', section: 'Beheer' },
-  { label: 'Voorraad', section: 'Beheer' },
-  { label: 'Bestelbonnen', section: 'Beheer' },
-  { label: 'Leveringsbonnen', section: 'Beheer' },
   { label: 'Rapportages', section: 'Beheer' },
   { label: 'Team', section: 'Beheer' },
-  { label: 'Importeren', section: 'Beheer' },
-  { label: 'AI Assistent', section: 'Beheer' },
 ]
 
 const WEERGAVE_TABS: SubTab[] = [
@@ -2793,7 +2783,7 @@ function WeergaveTab() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Groepeer per sectie */}
-        {['Overzicht', 'Werk', 'Planning', 'Communicatie', 'Beheer'].map((section) => {
+        {['Overzicht', 'Verkoop', 'Productie', 'Planning', 'Communicatie', 'Financieel', 'Beheer'].map((section) => {
           const sectionItems = ALL_SIDEBAR_ITEMS.filter((i) => i.section === section)
           return (
             <div key={section}>
