@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { createProject, getKlanten } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Klant } from '@/types'
@@ -20,14 +20,17 @@ import { logger } from '../../utils/logger'
 
 export function ProjectCreate() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
+
+  const paramKlantId = searchParams.get('klant_id') || ''
 
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [loading, setLoading] = useState(false)
 
   const [naam, setNaam] = useState('')
   const [beschrijving, setBeschrijving] = useState('')
-  const [klantId, setKlantId] = useState('')
+  const [klantId, setKlantId] = useState(paramKlantId)
   const [contactpersoonId, setContactpersoonId] = useState('')
   const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren'>('gepland')
   const [prioriteit, setPrioriteit] = useState<'laag' | 'medium' | 'hoog' | 'kritiek'>('medium')

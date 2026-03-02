@@ -2,7 +2,28 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Phone, MapPin, Building2, FolderKanban, Pin } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Building2,
+  FolderKanban,
+  Pin,
+  MoreHorizontal,
+  Eye,
+  Pencil,
+  FolderPlus,
+  FileText,
+  Receipt,
+  Trash2,
+} from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
 import type { Klant } from '@/types'
 
@@ -10,14 +31,16 @@ interface ClientCardProps {
   key?: React.Key
   klant: Klant
   projectCount: number
+  onEdit?: (klant: Klant) => void
+  onDelete?: (id: string) => void
 }
 
-export function ClientCard({ klant, projectCount }: ClientCardProps) {
+export function ClientCard({ klant, projectCount, onEdit, onDelete }: ClientCardProps) {
   const navigate = useNavigate()
 
   return (
     <Card
-      className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800"
+      className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 group"
       onClick={() => navigate(`/klanten/${klant.id}`)}
     >
       <CardHeader className="pb-3">
@@ -66,6 +89,60 @@ export function ClientCard({ klant, projectCount }: ClientCardProps) {
             <Badge className={cn('capitalize', getStatusColor(klant.status))}>
               {klant.status}
             </Badge>
+
+            {/* Action menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                >
+                  <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/klanten/${klant.id}`) }}>
+                  <Eye className="w-3.5 h-3.5 mr-2" />
+                  Bekijken
+                </DropdownMenuItem>
+                {onEdit && (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(klant) }}>
+                    <Pencil className="w-3.5 h-3.5 mr-2" />
+                    Bewerken
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projecten/nieuw?klant_id=${klant.id}`) }}>
+                  <FolderPlus className="w-3.5 h-3.5 mr-2" />
+                  Project aanmaken
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/offertes/nieuw?klant_id=${klant.id}`) }}>
+                  <FileText className="w-3.5 h-3.5 mr-2" />
+                  Offerte maken
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/facturen/nieuw?klant_id=${klant.id}`) }}>
+                  <Receipt className="w-3.5 h-3.5 mr-2" />
+                  Factuur aanmaken
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${klant.email}` }}>
+                  <Mail className="w-3.5 h-3.5 mr-2" />
+                  Klant mailen
+                </DropdownMenuItem>
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={(e) => { e.stopPropagation(); onDelete(klant.id) }}
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-2" />
+                      Verwijderen
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>

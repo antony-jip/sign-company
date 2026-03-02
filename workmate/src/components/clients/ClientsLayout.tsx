@@ -5,7 +5,30 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import { UserPlus, Search, LayoutGrid, List, Loader2, ArrowUpDown, Download, FileText, Users } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  UserPlus,
+  Search,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
+  Download,
+  FileText,
+  Users,
+  MoreHorizontal,
+  Eye,
+  Pencil,
+  FolderPlus,
+  Receipt,
+  Mail,
+  Trash2,
+} from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
@@ -26,6 +49,7 @@ export function ClientsLayout() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [editingKlant, setEditingKlant] = useState<Klant | undefined>(undefined)
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
@@ -133,8 +157,14 @@ export function ClientsLayout() {
 
   function handleClientSaved(klant: Klant) {
     setAddDialogOpen(false)
+    setEditingKlant(undefined)
     toast.success(`Klant "${klant.bedrijfsnaam}" opgeslagen`)
     fetchData()
+  }
+
+  function handleEditClient(klant: Klant) {
+    setEditingKlant(klant)
+    setAddDialogOpen(true)
   }
 
   async function handleDeleteClient(id: string) {
@@ -150,6 +180,75 @@ export function ClientsLayout() {
     }
   }
 
+  const exportHeaders = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'KvK', 'BTW', 'Status', 'Tags']
+  function getExportRows() {
+    return filteredKlanten.map((k) => ({
+      Bedrijfsnaam: k.bedrijfsnaam,
+      Contactpersoon: k.contactpersoon,
+      Email: k.email,
+      Telefoon: k.telefoon,
+      Adres: k.adres,
+      Postcode: k.postcode,
+      Stad: k.stad,
+      Website: k.website,
+      KvK: k.kvk_nummer,
+      BTW: k.btw_nummer,
+      Status: k.status,
+      Tags: k.tags.join(', '),
+    }))
+  }
+
+  function renderRowActions(klant: Klant) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/klanten/${klant.id}`) }}>
+            <Eye className="w-3.5 h-3.5 mr-2" />
+            Bekijken
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditClient(klant) }}>
+            <Pencil className="w-3.5 h-3.5 mr-2" />
+            Bewerken
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projecten/nieuw?klant_id=${klant.id}`) }}>
+            <FolderPlus className="w-3.5 h-3.5 mr-2" />
+            Project aanmaken
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/offertes/nieuw?klant_id=${klant.id}`) }}>
+            <FileText className="w-3.5 h-3.5 mr-2" />
+            Offerte maken
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/facturen/nieuw?klant_id=${klant.id}`) }}>
+            <Receipt className="w-3.5 h-3.5 mr-2" />
+            Factuur aanmaken
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${klant.email}` }}>
+            <Mail className="w-3.5 h-3.5 mr-2" />
+            Klant mailen
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={(e) => { e.stopPropagation(); handleDeleteClient(klant.id) }}
+            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-2" />
+            Verwijderen
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -162,13 +261,13 @@ export function ClientsLayout() {
             {filteredKlanten.length}
           </Badge>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
+        <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }}>
           <UserPlus className="w-4 h-4 mr-2" />
           Nieuwe Klant
         </Button>
       </div>
 
-      {/* Search + Export + View toggle */}
+      {/* Toolbar: Search + Export + View toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -186,24 +285,7 @@ export function ClientsLayout() {
               variant="outline"
               size="sm"
               className="gap-1.5 rounded-r-none border-r-0 h-9"
-              onClick={() => {
-                const headers = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'KvK', 'BTW', 'Status', 'Tags']
-                const rows = filteredKlanten.map((k) => ({
-                  Bedrijfsnaam: k.bedrijfsnaam,
-                  Contactpersoon: k.contactpersoon,
-                  Email: k.email,
-                  Telefoon: k.telefoon,
-                  Adres: k.adres,
-                  Postcode: k.postcode,
-                  Stad: k.stad,
-                  Website: k.website,
-                  KvK: k.kvk_nummer,
-                  BTW: k.btw_nummer,
-                  Status: k.status,
-                  Tags: k.tags.join(', '),
-                }))
-                exportCSV(`klanten-${new Date().toISOString().split('T')[0]}`, headers, rows)
-              }}
+              onClick={() => exportCSV(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows())}
             >
               <Download className="w-4 h-4" />
               CSV
@@ -212,49 +294,33 @@ export function ClientsLayout() {
               variant="outline"
               size="sm"
               className="gap-1.5 rounded-l-none h-9"
-              onClick={() => {
-                const headers = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'KvK', 'BTW', 'Status', 'Tags']
-                const rows = filteredKlanten.map((k) => ({
-                  Bedrijfsnaam: k.bedrijfsnaam,
-                  Contactpersoon: k.contactpersoon,
-                  Email: k.email,
-                  Telefoon: k.telefoon,
-                  Adres: k.adres,
-                  Postcode: k.postcode,
-                  Stad: k.stad,
-                  Website: k.website,
-                  KvK: k.kvk_nummer,
-                  BTW: k.btw_nummer,
-                  Status: k.status,
-                  Tags: k.tags.join(', '),
-                }))
-                exportExcel(`klanten-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Klanten')
-              }}
+              onClick={() => exportExcel(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows(), 'Klanten')}
             >
               <FileText className="w-4 h-4" />
               Excel
             </Button>
           </div>
-        </div>
-        <div className="flex items-center border rounded-md bg-background">
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'ghost'}
-            size="icon"
-            className="rounded-r-none"
-            onClick={() => setViewMode('grid')}
-            title="Rasterweergave"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'ghost'}
-            size="icon"
-            className="rounded-l-none"
-            onClick={() => setViewMode('list')}
-            title="Lijstweergave"
-          >
-            <List className="w-4 h-4" />
-          </Button>
+          {/* View toggle */}
+          <div className="flex items-center border rounded-md bg-background">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="icon"
+              className="rounded-r-none"
+              onClick={() => setViewMode('grid')}
+              title="Rasterweergave"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="icon"
+              className="rounded-l-none"
+              onClick={() => setViewMode('list')}
+              title="Lijstweergave"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -394,6 +460,8 @@ export function ClientsLayout() {
               key={klant.id}
               klant={klant}
               projectCount={projectCounts[klant.id] || 0}
+              onEdit={handleEditClient}
+              onDelete={handleDeleteClient}
             />
           ))}
         </div>
@@ -425,13 +493,15 @@ export function ClientsLayout() {
                   <th className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
                     Projecten
                   </th>
+                  <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 py-3 w-12">
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
                 {filteredKlanten.map((klant) => (
                   <tr
                     key={klant.id}
-                    className="hover:bg-muted/30 cursor-pointer transition-colors"
+                    className="hover:bg-muted/30 cursor-pointer transition-colors group"
                     onClick={() => navigate(`/klanten/${klant.id}`)}
                   >
                     <td className="px-4 py-3">
@@ -441,9 +511,30 @@ export function ClientsLayout() {
                             {klant.bedrijfsnaam.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <span className="text-sm font-medium text-foreground truncate">
-                          {klant.bedrijfsnaam}
-                        </span>
+                        <div className="min-w-0">
+                          <span className="text-sm font-medium text-foreground truncate block">
+                            {klant.bedrijfsnaam}
+                          </span>
+                          {(klant.klant_labels || []).length > 0 && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {(klant.klant_labels || []).map((label) => {
+                                const dotColors: Record<string, string> = {
+                                  vooruit_betalen: 'bg-orange-500',
+                                  niet_helpen: 'bg-red-500',
+                                  voorrang: 'bg-green-500',
+                                  grote_klant: 'bg-blue-500',
+                                  wanbetaler: 'bg-red-500',
+                                }
+                                return (
+                                  <span
+                                    key={label}
+                                    className={`w-1.5 h-1.5 rounded-full ${dotColors[label] || 'bg-gray-400'}`}
+                                  />
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
@@ -476,6 +567,9 @@ export function ClientsLayout() {
                         {projectCounts[klant.id] || 0}
                       </Badge>
                     </td>
+                    <td className="px-2 py-3 text-right">
+                      {renderRowActions(klant)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -484,11 +578,15 @@ export function ClientsLayout() {
         </Card>
       )}
 
-      {/* Add client dialog */}
+      {/* Add/Edit client dialog */}
       <AddEditClient
         open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
+        onOpenChange={(open) => {
+          setAddDialogOpen(open)
+          if (!open) setEditingKlant(undefined)
+        }}
         onSaved={handleClientSaved}
+        klant={editingKlant}
       />
     </div>
   )
