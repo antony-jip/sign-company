@@ -109,7 +109,7 @@ export function TopNav() {
 
   return (
     <>
-      <header className="border-b border-border/50 wm-glass flex-shrink-0 z-20">
+      <header className="border-b border-border/50 wm-glass flex-shrink-0 z-30 relative">
         {/* Main nav row */}
         <div className="flex items-center h-14 px-4 md:px-6">
           {/* Logo */}
@@ -207,7 +207,7 @@ export function TopNav() {
           <div className="flex-1" />
 
           {/* Search — desktop */}
-          <GlobalSearch className="hidden md:flex w-64 lg:w-72 mr-3" />
+          <GlobalSearch className="hidden md:flex w-44 lg:w-52 mr-3" compact />
 
           {/* Right actions */}
           <div className="flex items-center gap-0.5">
