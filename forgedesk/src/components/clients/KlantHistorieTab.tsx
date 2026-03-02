@@ -93,6 +93,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
   }
 
   const totaalOfferteWaarde = historie.offertes.reduce((sum, o) => sum + o.waarde, 0)
+  const totaalProjectWaarde = historie.projecten.reduce((sum, p) => sum + (p.waarde || 0), 0)
   const akkoordOffertes = historie.offertes.filter((o) => {
     const s = o.status.toLowerCase()
     return s === 'akkoord' || (s.includes('akkoord') && !s.includes('niet'))
@@ -110,6 +111,9 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
               <span className="text-xs text-muted-foreground">Projecten</span>
             </div>
             <p className="text-2xl font-bold text-foreground">{historie.projecten.length}</p>
+            {totaalProjectWaarde > 0 && (
+              <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(totaalProjectWaarde)}</p>
+            )}
           </CardContent>
         </Card>
         <Card className="border-gray-200 dark:border-gray-800">
@@ -162,6 +166,11 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
           <CardTitle className="text-base flex items-center gap-2">
             <FolderKanban className="w-4 h-4 text-blue-500" />
             Projecthistorie ({historie.projecten.length})
+            {totaalProjectWaarde > 0 && (
+              <span className="text-xs font-normal text-muted-foreground ml-auto">
+                Totaal: {formatCurrency(totaalProjectWaarde)}
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
@@ -172,6 +181,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
                   <tr className="border-b border-border">
                     <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Datum</th>
                     <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Project</th>
+                    <th className="text-right py-2 pr-3 text-xs font-medium text-muted-foreground">Waarde</th>
                     <th className="text-left py-2 text-xs font-medium text-muted-foreground">Projectmanager</th>
                   </tr>
                 </thead>
@@ -185,11 +195,16 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
                         </div>
                       </td>
                       <td className="py-2 pr-3 font-medium">{p.naam}</td>
+                      <td className="py-2 pr-3 text-right font-medium tabular-nums whitespace-nowrap">
+                        {p.waarde ? formatCurrency(p.waarde) : '—'}
+                      </td>
                       <td className="py-2 text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <User className="w-3 h-3" />
-                          {p.projectmanager || '—'}
-                        </div>
+                        {p.projectmanager ? (
+                          <div className="flex items-center gap-1.5">
+                            <User className="w-3 h-3" />
+                            {p.projectmanager}
+                          </div>
+                        ) : '—'}
                       </td>
                     </tr>
                   ))}

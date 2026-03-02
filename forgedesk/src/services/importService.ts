@@ -197,12 +197,24 @@ type ParsedHistorie = CSVHistorieRij
 function parseProjectenSamenvatting(raw: string): KlantProject[] {
   if (!raw || !raw.trim()) return []
   return raw.split(' | ').map((entry) => {
-    // Formaat: "2026-01-06 Projectnaam"
-    const spaceIndex = entry.indexOf(' ')
-    if (spaceIndex === -1) return { naam: entry, datum: '', projectmanager: '' }
+    // Formaat: "2026-01-06 €1234.56 Projectnaam" of "2026-01-06 Projectnaam"
+    const parts = entry.split(' ')
+    const datum = parts[0] || ''
+
+    // Check of het tweede deel een prijs is (begint met €)
+    if (parts[1] && parts[1].startsWith('€')) {
+      const waardeDeel = parts[1].replace('€', '').replace(',', '.')
+      return {
+        datum,
+        waarde: parseFloat(waardeDeel) || 0,
+        naam: parts.slice(2).join(' '),
+        projectmanager: '',
+      }
+    }
+
     return {
-      datum: entry.slice(0, spaceIndex),
-      naam: entry.slice(spaceIndex + 1),
+      datum,
+      naam: parts.slice(1).join(' '),
       projectmanager: '',
     }
   })

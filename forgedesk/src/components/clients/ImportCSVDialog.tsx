@@ -225,9 +225,9 @@ export function ImportCSVDialog({ open, onOpenChange, onImportComplete }: Import
                       </>
                     ) : (
                       <>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground">Specialisaties</th>
-                        <th className="text-right px-3 py-2 font-medium text-muted-foreground">Conversie</th>
                         <th className="text-right px-3 py-2 font-medium text-muted-foreground">Projecten</th>
+                        <th className="text-right px-3 py-2 font-medium text-muted-foreground">Offertes</th>
+                        <th className="text-right px-3 py-2 font-medium text-muted-foreground">Offerte waarde</th>
                       </>
                     )}
                   </tr>
@@ -251,14 +251,20 @@ export function ImportCSVDialog({ open, onOpenChange, onImportComplete }: Import
                         </>
                       ) : (
                         <>
-                          <td className="px-3 py-1.5">{(row as CSVHistorieRij).specialisaties}</td>
-                          <td className="px-3 py-1.5 text-right tabular-nums">
-                            {(row as CSVHistorieRij).conversie_percentage ? `${(row as CSVHistorieRij).conversie_percentage}%` : '-'}
-                          </td>
                           <td className="px-3 py-1.5 text-right tabular-nums">
                             {(row as CSVHistorieRij).projecten_samenvatting
                               ? (row as CSVHistorieRij).projecten_samenvatting.split(' | ').length
                               : 0}
+                          </td>
+                          <td className="px-3 py-1.5 text-right tabular-nums">
+                            {(row as CSVHistorieRij).offertes_samenvatting
+                              ? (row as CSVHistorieRij).offertes_samenvatting.split(' | ').length
+                              : 0}
+                          </td>
+                          <td className="px-3 py-1.5 text-right tabular-nums">
+                            {(row as CSVHistorieRij).totaal_offertewaarde
+                              ? `€${parseFloat((row as CSVHistorieRij).totaal_offertewaarde).toLocaleString('nl-NL', { minimumFractionDigits: 2 })}`
+                              : '-'}
                           </td>
                         </>
                       )}

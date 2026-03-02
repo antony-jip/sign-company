@@ -72,6 +72,7 @@ export interface KlantProject {
   naam: string;
   datum: string;
   projectmanager: string;
+  waarde?: number;
 }
 
 export interface KlantOfferte {
