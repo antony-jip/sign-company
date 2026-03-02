@@ -116,12 +116,12 @@ export function ClientsLayout() {
       const query = searchQuery.toLowerCase().trim()
       result = result.filter(
         (k) =>
-          k.bedrijfsnaam.toLowerCase().includes(query) ||
-          k.contactpersoon.toLowerCase().includes(query) ||
-          k.email.toLowerCase().includes(query) ||
-          k.telefoon.toLowerCase().includes(query) ||
-          k.stad.toLowerCase().includes(query) ||
-          k.tags.some((tag) => tag.toLowerCase().includes(query))
+          (k.bedrijfsnaam || '').toLowerCase().includes(query) ||
+          (k.contactpersoon || '').toLowerCase().includes(query) ||
+          (k.email || '').toLowerCase().includes(query) ||
+          (k.telefoon || '').toLowerCase().includes(query) ||
+          (k.stad || '').toLowerCase().includes(query) ||
+          (k.tags || []).some((tag) => tag.toLowerCase().includes(query))
       )
     }
 
@@ -130,16 +130,16 @@ export function ClientsLayout() {
       let cmp = 0
       switch (sortField) {
         case 'bedrijfsnaam':
-          cmp = a.bedrijfsnaam.localeCompare(b.bedrijfsnaam, 'nl')
+          cmp = (a.bedrijfsnaam || '').localeCompare(b.bedrijfsnaam || '', 'nl')
           break
         case 'contactpersoon':
-          cmp = a.contactpersoon.localeCompare(b.contactpersoon, 'nl')
+          cmp = (a.contactpersoon || '').localeCompare(b.contactpersoon || '', 'nl')
           break
         case 'stad':
           cmp = (a.stad || '').localeCompare(b.stad || '', 'nl')
           break
         case 'status':
-          cmp = a.status.localeCompare(b.status, 'nl')
+          cmp = (a.status || '').localeCompare(b.status || '', 'nl')
           break
         case 'created_at':
           cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
