@@ -1,4 +1,5 @@
 import supabase, { isSupabaseConfigured } from './supabaseClient'
+import { safeSetItem } from '@/utils/localStorageUtils'
 import type {
   Contactpersoon,
   Klant,
@@ -67,9 +68,7 @@ function getLocalData<T>(key: string): T[] {
 }
 
 function setLocalData<T>(key: string, data: T[]): void {
-  try {
-    localStorage.setItem(`forgedesk_${key}`, JSON.stringify(data))
-  } catch (e) {
+  if (!safeSetItem(`forgedesk_${key}`, JSON.stringify(data))) {
     throw new Error(`localStorage quota exceeded voor ${key}`)
   }
 }

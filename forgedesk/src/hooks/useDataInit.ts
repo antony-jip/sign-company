@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Email, Klant, Project, Offerte, OfferteItem, MontageAfspraak, Taak } from '@/types'
+import { safeSetItem } from '@/utils/localStorageUtils'
 
 const storageKeys = [
   'forgedesk_klanten',
@@ -614,7 +615,7 @@ export function useDataInit() {
       // Ensure all localStorage keys exist as empty arrays if not present
       for (const key of storageKeys) {
         if (!localStorage.getItem(key)) {
-          localStorage.setItem(key, '[]')
+          safeSetItem(key, '[]')
         }
       }
 
@@ -622,7 +623,7 @@ export function useDataInit() {
       const seedIfEmpty = (key: string, data: unknown[]) => {
         const existing = JSON.parse(localStorage.getItem(key) || '[]')
         if (existing.length === 0) {
-          localStorage.setItem(key, JSON.stringify(data))
+          safeSetItem(key, JSON.stringify(data))
         }
       }
 

@@ -1,5 +1,6 @@
 import { getKlanten, getKlant, createKlant, updateKlant } from './supabaseService'
 import { round2 } from '@/utils/budgetUtils'
+import { safeSetItem } from '@/utils/localStorageUtils'
 import type {
   Klant,
   Contactpersoon,
@@ -23,7 +24,7 @@ function getLocalData<T>(key: string): T[] {
 }
 
 function setLocalData<T>(key: string, data: T[]): void {
-  localStorage.setItem(key, JSON.stringify(data))
+  safeSetItem(key, JSON.stringify(data))
 }
 
 // Migratie: verplaats data van oude single-key naar per-klant keys
@@ -42,7 +43,7 @@ function migreerOudeActiviteiten(): void {
     for (const [klantId, activiteiten] of perKlant) {
       const key = `${LS_ACTIVITEITEN_PREFIX}${klantId}`
       const bestaande = getLocalData<KlantActiviteit>(key)
-      localStorage.setItem(key, JSON.stringify([...bestaande, ...activiteiten]))
+      safeSetItem(key, JSON.stringify([...bestaande, ...activiteiten]))
     }
     localStorage.removeItem(LS_ACTIVITEITEN_OLD)
   } catch {

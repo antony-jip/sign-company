@@ -5,6 +5,8 @@
 // omschrijving, materiaal, layout, montage
 // ============================================================
 
+import { safeSetItem } from './localStorageUtils'
+
 const AUTOFILL_FIELDS = ['omschrijving', 'materiaal', 'layout', 'montage'] as const
 export type AutofillField = typeof AUTOFILL_FIELDS[number]
 
@@ -71,7 +73,7 @@ export function initAutofillDefaults(): void {
   Object.entries(DEFAULT_SUGGESTIONS).forEach(([field, values]) => {
     const key = getStorageKey(field)
     if (!localStorage.getItem(key)) {
-      localStorage.setItem(key, JSON.stringify(values))
+      safeSetItem(key, JSON.stringify(values))
     }
   })
 }
@@ -90,8 +92,8 @@ export function saveAutofillValue(field: string, value: string): void {
   // Prepend (most recent first)
   filtered.unshift(value.trim())
 
-  // Cap at max
-  localStorage.setItem(key, JSON.stringify(filtered.slice(0, MAX_VALUES_PER_FIELD)))
+  // Cap at max — silently skip if localStorage is full
+  safeSetItem(key, JSON.stringify(filtered.slice(0, MAX_VALUES_PER_FIELD)))
 }
 
 /** Get matching suggestions for a query. */

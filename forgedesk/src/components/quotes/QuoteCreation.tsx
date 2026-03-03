@@ -71,6 +71,7 @@ import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVarian
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import type { CalculatieRegel } from '@/types'
 import { logger } from '../../utils/logger'
+import { safeSetItem } from '@/utils/localStorageUtils'
 
 const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
 2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
@@ -552,9 +553,13 @@ export function QuoteCreation() {
     try {
       const existing = JSON.parse(localStorage.getItem(CLIPBOARD_KEY) || '[]')
       const { id, ...template } = item
-      existing.push(template)
-      localStorage.setItem(CLIPBOARD_KEY, JSON.stringify(existing))
-      setClipboardCount(existing.length)
+      // Limit clipboard to 50 items to prevent unbounded growth
+      const updated = [...existing.slice(-49), template]
+      if (!safeSetItem(CLIPBOARD_KEY, JSON.stringify(updated))) {
+        toast.error('Onvoldoende opslagruimte voor klembord')
+        return
+      }
+      setClipboardCount(updated.length)
       toast.success('Item gekopieerd naar klembord')
     } catch {
       toast.error('Kon item niet kopiëren')
