@@ -2225,9 +2225,9 @@ function InstellingenSection() {
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-blue-600 border-blue-200">Sidebar</Badge>
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Calculatieregels met eenheid "uur" waarvan de productnaam of categorie een van deze termen bevat,
+              Calculatieregels en detail velden waarvan de productnaam, categorie of label een van deze termen bevat,
               worden automatisch meegeteld in het uren overzicht in de offerte sidebar. Zo zie je per offerte
-              het totaal aantal uren.
+              het totaal aantal uren per categorie en een totaal over alle items heen.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -2275,9 +2275,10 @@ function InstellingenSection() {
           </div>
           <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-100 dark:border-blue-900">
             <p className="text-xs text-blue-700 dark:text-blue-400">
-              <strong>Hoe werkt het?</strong> In de offerte sidebar worden alle calculatieregels met eenheid "uur" gegroepeerd.
-              Als een productnaam of categorie een van bovenstaande termen bevat, wordt het apart getoond met het aantal uren.
-              Onderaan zie je het totaal aantal uren over alle items heen.
+              <strong>Hoe werkt het?</strong> In de offerte sidebar worden uren automatisch herkend uit twee bronnen:
+              (1) <strong>calculatieregels</strong> — als de productnaam of categorie een van bovenstaande termen bevat, ongeacht de eenheid,
+              en (2) <strong>detail velden</strong> (namefields) — als het label een van de termen bevat en de waarde een getal is.
+              Per term zie je het totaal, plus een eindtotaal over alle items heen.
             </p>
           </div>
         </CardContent>
