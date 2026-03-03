@@ -6,10 +6,12 @@ import {
   FileText,
   PiggyBank,
   ArrowUpRight,
+  Receipt,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react'
-import { getProjecten, getKlanten, getOffertes } from '@/services/supabaseService'
-import type { Project, Klant, Offerte } from '@/types'
+import { getProjecten, getKlanten, getOffertes, getFacturen } from '@/services/supabaseService'
+import type { Project, Klant, Offerte, Factuur } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
@@ -70,16 +72,18 @@ export function StatisticsCards() {
   const [projecten, setProjecten] = useState<Project[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [facturen, setFacturen] = useState<Factuur[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getProjecten(), getKlanten(), getOffertes()])
-      .then(([p, k, o]) => {
+    Promise.all([getProjecten(), getKlanten(), getOffertes(), getFacturen().catch(() => [])])
+      .then(([p, k, o, f]) => {
         if (!cancelled) {
           setProjecten(p)
           setKlanten(k)
           setOffertes(o)
+          setFacturen(f)
         }
       })
       .catch(logger.error)
@@ -97,6 +101,17 @@ export function StatisticsCards() {
   const goedgekeurdeOffertes = offertes
     .filter((o) => o.status === 'goedgekeurd')
     .reduce((sum, o) => sum + o.totaal, 0)
+  const openstaandeFacturen = facturen
+    .filter((f) => f.status === 'verzonden' || f.status === 'vervallen')
+    .reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0)
+  const betaaldDezeMaand = facturen
+    .filter((f) => {
+      if (f.status !== 'betaald' || !f.betaaldatum) return false
+      const d = new Date(f.betaaldatum)
+      const now = new Date()
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    })
+    .reduce((sum, f) => sum + f.betaald_bedrag, 0)
 
   const animProjecten = useAnimatedCounter(loading ? 0 : actieveProjecten)
   const animKlanten = useAnimatedCounter(loading ? 0 : totaalKlanten)
@@ -153,10 +168,29 @@ export function StatisticsCards() {
       gradient: 'from-[#8b7355] to-[#b09670]',
       shadowColor: 'shadow-[#8b7355]/20',
     },
+    {
+      title: 'Openstaand',
+      value: formatCurrency(openstaandeFacturen),
+      subtitle: `${facturen.filter((f) => f.status === 'verzonden' || f.status === 'vervallen').length} facturen`,
+      change: facturen.filter((f) => f.status === 'vervallen').length > 0
+        ? `${facturen.filter((f) => f.status === 'vervallen').length} vervallen`
+        : undefined,
+      icon: Receipt,
+      gradient: 'from-red-500 to-orange-500',
+      shadowColor: 'shadow-red-500/20',
+    },
+    {
+      title: 'Betaald (maand)',
+      value: formatCurrency(betaaldDezeMaand),
+      subtitle: `${facturen.filter((f) => f.status === 'betaald' && f.betaaldatum && (() => { const d = new Date(f.betaaldatum); const n = new Date(); return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear() })()).length} facturen`,
+      icon: TrendingUp,
+      gradient: 'from-emerald-500 to-green-500',
+      shadowColor: 'shadow-emerald-500/20',
+    },
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 wm-stagger">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 wm-stagger">
       {stats.map((stat) => {
         const Icon = stat.icon
 

@@ -13,6 +13,7 @@ import { WorkflowWidget } from './WorkflowWidget'
 import { TeFacturerenWidget } from './TeFacturerenWidget'
 import { SalesForecastWidget } from './SalesForecastWidget'
 import { MontagePlanningWidget } from './MontagePlanningWidget'
+import { FloatingQuickActions } from './FloatingQuickActions'
 import { Wrench, FileText, FolderKanban, Receipt } from 'lucide-react'
 import { getMontageAfspraken, getOffertes, getProjecten } from '@/services/supabaseService'
 import type { MontageAfspraak, Offerte, Project } from '@/types'
@@ -162,6 +163,9 @@ export function FORGEdeskDashboard() {
           <CalendarMiniWidget />
         </div>
       </div>
+
+      {/* Floating quick action button — glass effect, bottom right */}
+      <FloatingQuickActions />
     </div>
   )
 }

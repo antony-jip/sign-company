@@ -46,6 +46,8 @@ import {
   Check,
   GripVertical,
   Camera,
+  Wrench,
+  MapPin,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -100,6 +102,8 @@ import {
   deleteProjectToewijzing,
   getWerkbonnenByProject,
   getFactuur,
+  getMontageAfsprakenByProject,
+  createMontageAfspraak,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -108,7 +112,7 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, MontageAfspraak } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
@@ -236,6 +240,16 @@ export function ProjectDetail() {
   const [alleMedewerkers, setAlleMedewerkers] = useState<Medewerker[]>([])
   const [projectToewijzingen, setProjectToewijzingen] = useState<ProjectToewijzing[]>([])
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
+  const [projectMontages, setProjectMontages] = useState<MontageAfspraak[]>([])
+  const [montageDialogOpen, setMontageDialogOpen] = useState(false)
+  const [montageTitel, setMontageTitel] = useState('')
+  const [montageDatum, setMontageDatum] = useState('')
+  const [montageStartTijd, setMontageStartTijd] = useState('08:00')
+  const [montageEindTijd, setMontageEindTijd] = useState('17:00')
+  const [montageLocatie, setMontageLocatie] = useState('')
+  const [montageNotities, setMontageNotities] = useState('')
+  const [montageMonteurs, setMontageMonteurs] = useState<string[]>([])
+  const [isSavingMontage, setIsSavingMontage] = useState(false)
   const [toewijzingMedewerkerId, setToewijzingMedewerkerId] = useState('')
   const [toewijzingRol, setToewijzingRol] = useState<ProjectToewijzing['rol']>('medewerker')
 
@@ -260,6 +274,51 @@ export function ProjectDetail() {
       setBriefingText(project.beschrijving)
     }
   }, [project?.beschrijving])
+
+  const handleOpenMontageDialog = () => {
+    setMontageTitel(project?.naam ? `Montage: ${project.naam}` : '')
+    setMontageLocatie(klant?.adres ? `${klant.adres}${klant.stad ? `, ${klant.stad}` : ''}` : '')
+    setMontageDatum('')
+    setMontageStartTijd('08:00')
+    setMontageEindTijd('17:00')
+    setMontageNotities('')
+    setMontageMonteurs([])
+    setMontageDialogOpen(true)
+  }
+
+  const handleSaveMontage = async () => {
+    if (!montageTitel.trim()) { toast.error('Vul een titel in'); return }
+    if (!montageDatum) { toast.error('Selecteer een datum'); return }
+    if (!montageLocatie.trim()) { toast.error('Vul een locatie in'); return }
+
+    try {
+      setIsSavingMontage(true)
+      const newMontage = await createMontageAfspraak({
+        user_id: user?.id || '',
+        project_id: id || '',
+        project_naam: project?.naam || '',
+        klant_id: project?.klant_id || '',
+        klant_naam: klant?.bedrijfsnaam || '',
+        titel: montageTitel,
+        beschrijving: '',
+        datum: montageDatum,
+        start_tijd: montageStartTijd,
+        eind_tijd: montageEindTijd,
+        locatie: montageLocatie,
+        monteurs: montageMonteurs,
+        materialen: [],
+        notities: montageNotities,
+        status: 'gepland',
+      })
+      setProjectMontages(prev => [...prev, newMontage])
+      setMontageDialogOpen(false)
+      toast.success('Montage ingepland')
+    } catch {
+      toast.error('Kon montage niet inplannen')
+    } finally {
+      setIsSavingMontage(false)
+    }
+  }
 
   const handleSaveBriefing = async () => {
     if (!project || !id) return
@@ -449,7 +508,7 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, montageData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
@@ -459,6 +518,7 @@ export function ProjectDetail() {
           getMedewerkers(),
           getProjectToewijzingen(id),
           getWerkbonnenByProject(id),
+          getMontageAfsprakenByProject(id).catch(() => []),
         ])
         if (!cancelled) {
           setProject(projectData)
@@ -470,6 +530,7 @@ export function ProjectDetail() {
           setAlleMedewerkers(medewerkersData || [])
           setProjectToewijzingen(toewijzingenData || [])
           setProjectWerkbonnen(werkbonnenData || [])
+          setProjectMontages(montageData || [])
         }
 
         // Fetch linked facturen for gefactureerde offertes
@@ -1506,6 +1567,71 @@ export function ProjectDetail() {
             </CardContent>
           </Card>
 
+          {/* ── Montage Planning ── */}
+          <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="p-1 rounded-md bg-blue-500/10">
+                    <Wrench className="h-3.5 w-3.5 text-blue-600" />
+                  </div>
+                  Montage
+                  <span className="text-xs text-muted-foreground font-normal">{projectMontages.length}</span>
+                </CardTitle>
+                <Button
+                  variant="ghost" size="icon" className="h-7 w-7"
+                  onClick={handleOpenMontageDialog}
+                  title="Montage inplannen"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {projectMontages.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">Geen montages gepland</p>
+                  <Button variant="link" size="sm" className="text-accent dark:text-primary mt-1 h-auto p-0" onClick={handleOpenMontageDialog}>
+                    Montage inplannen
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {projectMontages.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                      onClick={() => navigate('/montage')}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{m.titel}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <CalendarDays className="h-3 w-3 flex-shrink-0" />
+                          <span>{new Date(m.datum).toLocaleDateString('nl-NL')} {m.start_tijd}–{m.eind_tijd}</span>
+                        </div>
+                        {m.locatie && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{m.locatie}</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                        m.status === 'gepland' ? 'bg-blue-100 text-blue-700' :
+                        m.status === 'onderweg' ? 'bg-amber-100 text-amber-700' :
+                        m.status === 'bezig' ? 'bg-green-100 text-green-700' :
+                        m.status === 'afgerond' ? 'bg-emerald-100 text-emerald-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {m.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* ── Werkbonnen ── */}
           <Card className="border-gray-200/80 dark:border-gray-700/80">
             <CardHeader className="pb-3">
@@ -2192,6 +2318,77 @@ export function ProjectDetail() {
             >
               {kopieBezig ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Copy className="h-4 w-4 mr-1.5" />}
               {kopieBezig ? 'Kopiëren...' : 'Project kopiëren'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Montage inplannen dialog */}
+      <Dialog open={montageDialogOpen} onOpenChange={setMontageDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-blue-500" />
+              Montage inplannen
+            </DialogTitle>
+            <DialogDescription>
+              Plan een montage in voor {project?.naam || 'dit project'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-sm">Titel</Label>
+              <Input value={montageTitel} onChange={(e) => setMontageTitel(e.target.value)} placeholder="Bijv. Montage gevelreclame" className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-sm">Datum</Label>
+              <Input type="date" value={montageDatum} onChange={(e) => setMontageDatum(e.target.value)} className="mt-1" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-sm">Start</Label>
+                <Input type="time" value={montageStartTijd} onChange={(e) => setMontageStartTijd(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-sm">Eind</Label>
+                <Input type="time" value={montageEindTijd} onChange={(e) => setMontageEindTijd(e.target.value)} className="mt-1" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm">Locatie</Label>
+              <Input value={montageLocatie} onChange={(e) => setMontageLocatie(e.target.value)} placeholder="Adres / locatie" className="mt-1" />
+            </div>
+            {alleMedewerkers.length > 0 && (
+              <div>
+                <Label className="text-sm">Monteurs</Label>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {alleMedewerkers.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setMontageMonteurs(prev => prev.includes(m.id) ? prev.filter(x => x !== m.id) : [...prev, m.id])}
+                      className={cn(
+                        'px-2 py-1 rounded-md text-xs border transition-colors',
+                        montageMonteurs.includes(m.id)
+                          ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
+                          : 'bg-gray-50 border-gray-200 text-muted-foreground hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700'
+                      )}
+                    >
+                      {m.naam}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div>
+              <Label className="text-sm">Notities</Label>
+              <Textarea value={montageNotities} onChange={(e) => setMontageNotities(e.target.value)} placeholder="Optioneel..." rows={2} className="mt-1" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMontageDialogOpen(false)}>Annuleren</Button>
+            <Button onClick={handleSaveMontage} disabled={isSavingMontage}>
+              {isSavingMontage ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Wrench className="h-4 w-4 mr-1" />}
+              Inplannen
             </Button>
           </DialogFooter>
         </DialogContent>

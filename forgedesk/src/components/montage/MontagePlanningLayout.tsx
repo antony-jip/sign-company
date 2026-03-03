@@ -223,6 +223,8 @@ export function MontagePlanningLayout() {
   const [statusFilter, setStatusFilter] = useState<Set<MontageAfspraak["status"]>>(
     new Set(["gepland", "onderweg", "bezig", "uitgesteld"])
   );
+  const [draggingAfspraakId, setDraggingAfspraakId] = useState<string | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
 
   const weekDates = useMemo(() => getWeekDates(currentMonday), [currentMonday]);
   const weekNumber = useMemo(
@@ -618,6 +620,25 @@ export function MontagePlanningLayout() {
     }
   }
 
+  async function handleDragDrop(afspraakId: string, newDate: string) {
+    const afspraak = afspraken.find((a) => a.id === afspraakId);
+    if (!afspraak || afspraak.datum === newDate) return;
+    try {
+      await updateMontageAfspraak(afspraakId, { datum: newDate }).catch(() => null);
+      setAfspraken((prev) =>
+        prev.map((a) =>
+          a.id === afspraakId
+            ? { ...a, datum: newDate, updated_at: new Date().toISOString() }
+            : a
+        )
+      );
+      const dateObj = new Date(newDate + "T00:00:00");
+      toast.success(`Verplaatst naar ${formatDateDutch(dateObj)}`);
+    } catch {
+      toast.error("Kon afspraak niet verplaatsen");
+    }
+  }
+
   function getNextStatusActions(
     status: MontageAfspraak["status"]
   ): { status: MontageAfspraak["status"]; label: string; icon: React.ReactNode }[] {
@@ -721,10 +742,18 @@ export function MontagePlanningLayout() {
     return (
       <div
         key={afspraak.id}
+        draggable
+        onDragStart={(e) => {
+          setDraggingAfspraakId(afspraak.id);
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", afspraak.id);
+        }}
+        onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "rounded-lg border p-3 mb-2 cursor-pointer transition-shadow hover:shadow-md",
+          "rounded-lg border p-3 mb-2 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md",
           hasConflict ? "bg-red-50 border-red-300 ring-1 ring-red-200" : config.bgColor,
-          !hasConflict && config.borderColor
+          !hasConflict && config.borderColor,
+          draggingAfspraakId === afspraak.id && "opacity-50 ring-2 ring-primary"
         )}
         onClick={() => openEditDialog(afspraak)}
       >
@@ -802,7 +831,21 @@ export function MontagePlanningLayout() {
           const dayAfspraken = afsprakenPerDag[dateStr] || [];
 
           return (
-            <div key={dateStr} className="min-h-[200px]">
+            <div
+              key={dateStr}
+              className={cn(
+                "min-h-[200px] rounded-lg transition-colors",
+                dragOverDate === dateStr && "bg-primary/5 ring-2 ring-primary/30 ring-dashed"
+              )}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverDate(dateStr); }}
+              onDragLeave={() => setDragOverDate(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverDate(null);
+                const id = e.dataTransfer.getData("text/plain");
+                if (id) handleDragDrop(id, dateStr);
+              }}
+            >
               <div
                 className={cn(
                   "text-center py-2 rounded-t-lg mb-2 border-b-2",
