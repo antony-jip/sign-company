@@ -268,11 +268,17 @@ export function QuoteCreation() {
   const winstExBtw = round2(subtotaal - totaalInkoop)
   const margePercentage = subtotaal > 0 ? Math.round(((winstExBtw / subtotaal) * 100) * 10) / 10 : 0
 
-  // ── Montage & Voorbereiding uren uit calculatie-regels (verplichte items) ──
-  const { montageUren, voorbereidingUren, materiaalKosten } = useMemo(() => {
-    let montage = 0
-    let voorbereiding = 0
+  // ── Uren overzicht per configureerbaar veld + materiaalkosten ──
+  const urenVelden = settings.calculatie_uren_velden || ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
+
+  const { urenPerVeld, totaalUren, materiaalKosten } = useMemo(() => {
+    const urenMap: Record<string, number> = {}
+    let totaal = 0
     let materiaal = 0
+
+    // Initialiseer alle velden op 0
+    urenVelden.forEach((veld) => { urenMap[veld] = 0 })
+
     verplichtePrijsItems.forEach((item) => {
       const data = getActivePriceData(item)
       if (data.calculatie_regels && data.calculatie_regels.length > 0) {
@@ -280,19 +286,33 @@ export function QuoteCreation() {
           const isUur = r.eenheid === 'uur'
           const categorieLower = (r.categorie || '').toLowerCase()
           const naamLower = (r.product_naam || '').toLowerCase()
-          if (isUur && (categorieLower.includes('montage') || naamLower.includes('montage'))) {
-            montage += r.aantal
-          } else if (isUur && (categorieLower.includes('voorbereiding') || naamLower.includes('voorbereiding') || naamLower.includes('voorbereid'))) {
-            voorbereiding += r.aantal
+
+          if (isUur) {
+            // Check of deze regel matcht met een van de geconfigureerde uren-velden
+            let matched = false
+            for (const veld of urenVelden) {
+              const veldLower = veld.toLowerCase()
+              if (categorieLower.includes(veldLower) || naamLower.includes(veldLower)) {
+                urenMap[veld] = (urenMap[veld] || 0) + r.aantal
+                totaal += r.aantal
+                matched = true
+                break
+              }
+            }
+            // Niet-gematchte uren ook meetellen in totaal
+            if (!matched) {
+              totaal += r.aantal
+            }
           }
+
           if (categorieLower.includes('materiaal') || categorieLower === 'materiaal') {
             materiaal += round2(r.verkoop_prijs * r.aantal)
           }
         })
       }
     })
-    return { montageUren: montage, voorbereidingUren: voorbereiding, materiaalKosten: round2(materiaal) }
-  }, [verplichtePrijsItems])
+    return { urenPerVeld: urenMap, totaalUren: totaal, materiaalKosten: round2(materiaal) }
+  }, [verplichtePrijsItems, urenVelden])
 
   // ── Initialize autofill defaults (seeds localStorage on first use) ──
   useEffect(() => {
@@ -2285,23 +2305,29 @@ export function QuoteCreation() {
                     </>
                   )}
 
-                  {/* Uren + Materiaal */}
-                  {(montageUren > 0 || voorbereidingUren > 0 || materiaalKosten > 0) && (
+                  {/* Uren overzicht + Materiaal */}
+                  {(totaalUren > 0 || materiaalKosten > 0) && (
                     <>
                       <Separator className="opacity-50" />
                       <div className="space-y-2">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Uren & Materiaal</p>
                         <div className="space-y-1.5">
-                          {montageUren > 0 && (
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs text-muted-foreground">Montage</span></div>
-                              <span className="text-xs font-semibold text-amber-600">{montageUren} uur</span>
-                            </div>
-                          )}
-                          {voorbereidingUren > 0 && (
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-purple-500" /><span className="text-xs text-muted-foreground">Voorbereiding</span></div>
-                              <span className="text-xs font-semibold text-purple-600">{voorbereidingUren} uur</span>
+                          {/* Dynamische uren per geconfigureerd veld */}
+                          {urenVelden.map((veld) => {
+                            const uren = urenPerVeld[veld] || 0
+                            if (uren <= 0) return null
+                            return (
+                              <div key={veld} className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-purple-500" /><span className="text-xs text-muted-foreground">{veld}</span></div>
+                                <span className="text-xs font-semibold text-purple-600">{uren} uur</span>
+                              </div>
+                            )
+                          })}
+                          {/* Totaal uren */}
+                          {totaalUren > 0 && (
+                            <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800">
+                              <div className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs font-medium text-foreground">Totaal uren</span></div>
+                              <span className="text-xs font-bold text-amber-600">{totaalUren} uur</span>
                             </div>
                           )}
                           {materiaalKosten > 0 && (

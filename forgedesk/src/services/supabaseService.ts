@@ -1648,6 +1648,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     calculatie_eenheden: ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'],
     calculatie_standaard_marge: 35,
     calculatie_toon_inkoop_in_offerte: false,
+    calculatie_uren_velden: ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie'],
     offerte_regel_velden: ['Materiaal', 'Lay-out', 'Montage', 'Opmerking'],
     factuur_prefix: 'FAC',
     factuur_volgnummer: 1,

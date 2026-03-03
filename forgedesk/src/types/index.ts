@@ -508,6 +508,10 @@ export interface AppSettings {
   calculatie_eenheden: string[];               // Eenheden (bijv. "m²", "stuks", "uur")
   calculatie_standaard_marge: number;          // Standaard marge % voor nieuwe regels
   calculatie_toon_inkoop_in_offerte: boolean;  // Toon inkoopprijs in offerte (normaal niet!)
+  // Uren overzicht velden — welke productnamen/categorieën tellen als "uren" in de sidebar?
+  // Bijv. ["Montage", "Voorbereiding", "Ontwerp & DTP", "Applicatie"]
+  // Matched op product_naam of categorie (case-insensitive, contains-match)
+  calculatie_uren_velden: string[];
   // Offerte regel velden - welke tekstvelden wil je per offerte-item?
   // Bijv. ["Materiaal", "Lay-out", "Montage", "Opmerking"]
   offerte_regel_velden: string[];

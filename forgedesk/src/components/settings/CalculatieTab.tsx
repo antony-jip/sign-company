@@ -1965,7 +1965,11 @@ function InstellingenSection() {
   const [regelVelden, setRegelVelden] = useState<string[]>(
     settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking']
   )
+  const [urenVelden, setUrenVelden] = useState<string[]>(
+    settings.calculatie_uren_velden || ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
+  )
   const [nieuwVeld, setNieuwVeld] = useState('')
+  const [nieuwUrenVeld, setNieuwUrenVeld] = useState('')
   const [nieuweCat, setNieuweCat] = useState('')
   const [nieuweEenheid, setNieuweEenheid] = useState('')
 
@@ -1975,6 +1979,7 @@ function InstellingenSection() {
     setEenheden(settings.calculatie_eenheden || ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'])
     setToonInkoopInOfferte(settings.calculatie_toon_inkoop_in_offerte ?? false)
     setRegelVelden(settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking'])
+    setUrenVelden(settings.calculatie_uren_velden || ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie'])
   }, [settings])
 
   const handleSave = async () => {
@@ -1986,6 +1991,7 @@ function InstellingenSection() {
         calculatie_eenheden: eenheden,
         calculatie_toon_inkoop_in_offerte: toonInkoopInOfferte,
         offerte_regel_velden: regelVelden,
+        calculatie_uren_velden: urenVelden,
       })
       toast.success('Instellingen opgeslagen')
     } catch (err) {
@@ -2206,6 +2212,73 @@ function InstellingenSection() {
             >
               <Plus className="h-4 w-4 mr-1" /> Toevoegen
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Uren overzicht velden */}
+      <Card>
+        <CardContent className="p-5 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              Uren overzicht velden
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-blue-600 border-blue-200">Sidebar</Badge>
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Calculatieregels met eenheid "uur" waarvan de productnaam of categorie een van deze termen bevat,
+              worden automatisch meegeteld in het uren overzicht in de offerte sidebar. Zo zie je per offerte
+              het totaal aantal uren.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {urenVelden.map((veld) => (
+              <Badge key={veld} variant="secondary" className="gap-1 pl-2.5 pr-1 py-1 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800">
+                {veld}
+                <button
+                  onClick={() => setUrenVelden(urenVelden.filter((v) => v !== veld))}
+                  className="ml-1 hover:bg-purple-200 dark:hover:bg-purple-700 rounded-full p-0.5"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+            {urenVelden.length === 0 && (
+              <span className="text-xs text-gray-400 italic">Geen uren velden — alle uren worden als totaal getoond</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              value={nieuwUrenVeld}
+              onChange={(e) => setNieuwUrenVeld(e.target.value)}
+              placeholder="Bijv. Montage buiten, Installatie..."
+              className="w-48"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && nieuwUrenVeld.trim() && !urenVelden.includes(nieuwUrenVeld.trim())) {
+                  setUrenVelden([...urenVelden, nieuwUrenVeld.trim()])
+                  setNieuwUrenVeld('')
+                }
+              }}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (nieuwUrenVeld.trim() && !urenVelden.includes(nieuwUrenVeld.trim())) {
+                  setUrenVelden([...urenVelden, nieuwUrenVeld.trim()])
+                  setNieuwUrenVeld('')
+                }
+              }}
+              disabled={!nieuwUrenVeld.trim()}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Toevoegen
+            </Button>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-100 dark:border-blue-900">
+            <p className="text-xs text-blue-700 dark:text-blue-400">
+              <strong>Hoe werkt het?</strong> In de offerte sidebar worden alle calculatieregels met eenheid "uur" gegroepeerd.
+              Als een productnaam of categorie een van bovenstaande termen bevat, wordt het apart getoond met het aantal uren.
+              Onderaan zie je het totaal aantal uren over alle items heen.
+            </p>
           </div>
         </CardContent>
       </Card>
