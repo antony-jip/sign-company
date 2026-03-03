@@ -269,6 +269,9 @@ export function QuoteCreation() {
   const margePercentage = subtotaal > 0 ? Math.round(((winstExBtw / subtotaal) * 100) * 10) / 10 : 0
 
   // ── Uren overzicht per configureerbaar veld + materiaalkosten ──
+  // Haalt uren uit twee bronnen:
+  //   1. Calculatieregels (eenheid "uur") — matcht op product_naam of categorie
+  //   2. Detail velden (namefields) — matcht op label, pakt getal uit waarde
   const urenVelden = settings.calculatie_uren_velden || ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
 
   const { urenPerVeld, totaalUren, materiaalKosten } = useMemo(() => {
@@ -281,6 +284,8 @@ export function QuoteCreation() {
 
     verplichtePrijsItems.forEach((item) => {
       const data = getActivePriceData(item)
+
+      // Bron 1: Calculatieregels met eenheid "uur"
       if (data.calculatie_regels && data.calculatie_regels.length > 0) {
         data.calculatie_regels.forEach((r) => {
           const isUur = r.eenheid === 'uur'
@@ -288,7 +293,6 @@ export function QuoteCreation() {
           const naamLower = (r.product_naam || '').toLowerCase()
 
           if (isUur) {
-            // Check of deze regel matcht met een van de geconfigureerde uren-velden
             let matched = false
             for (const veld of urenVelden) {
               const veldLower = veld.toLowerCase()
@@ -299,7 +303,6 @@ export function QuoteCreation() {
                 break
               }
             }
-            // Niet-gematchte uren ook meetellen in totaal
             if (!matched) {
               totaal += r.aantal
             }
@@ -307,6 +310,31 @@ export function QuoteCreation() {
 
           if (categorieLower.includes('materiaal') || categorieLower === 'materiaal') {
             materiaal += round2(r.verkoop_prijs * r.aantal)
+          }
+        })
+      }
+
+      // Bron 2: Detail velden (namefields) — bijv. label "Voorbereiding", waarde "4" of "4 uur"
+      if (item.detail_regels && item.detail_regels.length > 0) {
+        item.detail_regels.forEach((dr) => {
+          const labelLower = (dr.label || '').toLowerCase()
+          const waarde = (dr.waarde || '').trim()
+          if (!waarde) return
+
+          // Probeer een getal uit de waarde te halen (bijv. "4", "4 uur", "2.5")
+          const numMatch = waarde.match(/^[\d]+([.,]\d+)?/)
+          if (!numMatch) return
+          const uren = parseFloat(numMatch[0].replace(',', '.'))
+          if (isNaN(uren) || uren <= 0) return
+
+          // Match tegen geconfigureerde uren-velden
+          for (const veld of urenVelden) {
+            const veldLower = veld.toLowerCase()
+            if (labelLower.includes(veldLower) || veldLower.includes(labelLower)) {
+              urenMap[veld] = (urenMap[veld] || 0) + uren
+              totaal += uren
+              break
+            }
           }
         })
       }
