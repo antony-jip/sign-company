@@ -208,20 +208,36 @@ export async function testEmailConnection(
   return response.json()
 }
 
+function getLocalEmailCredentials(): { gmail_address: string; app_password: string; imap_host?: string; imap_port?: number } {
+  try {
+    const stored = localStorage.getItem('forgedesk_email_settings')
+    if (stored) {
+      const settings = JSON.parse(stored)
+      if (settings.gmail_address && settings.app_password) {
+        return {
+          gmail_address: settings.gmail_address,
+          app_password: settings.app_password,
+          imap_host: settings.imap_host,
+          imap_port: settings.imap_port,
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
+}
+
 export async function fetchEmailsFromIMAP(
   folder?: string,
   limit?: number,
   offset?: number
 ): Promise<{ emails: IMAPEmailSummary[]; total: number }> {
-  const token = await getAuthToken()
+  const credentials = getLocalEmailCredentials()
 
   const response = await fetch('/api/fetch-emails', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      ...credentials,
       folder: folder || 'INBOX',
       limit: limit || 50,
       offset: offset || 0,
@@ -240,15 +256,13 @@ export async function readEmailFromIMAP(
   uid: number,
   folder?: string
 ): Promise<IMAPEmailDetail> {
-  const token = await getAuthToken()
+  const credentials = getLocalEmailCredentials()
 
   const response = await fetch('/api/read-email', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      ...credentials,
       uid,
       folder: folder || 'INBOX',
     }),
