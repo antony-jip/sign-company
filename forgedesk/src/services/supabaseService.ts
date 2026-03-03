@@ -3771,20 +3771,6 @@ export async function generateProjectNummer(): Promise<string> {
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
-export async function generateLeveringsbonNummer(): Promise<string> {
-  const jaar = new Date().getFullYear()
-  const items = await getLeveringsbonnen()
-  const prefix = `LB-${jaar}-`
-  const maxNr = items
-    .filter((l) => l.leveringsbon_nummer.startsWith(prefix))
-    .reduce((max, l) => {
-      const parts = l.leveringsbon_nummer.split('-')
-      const nr = parseInt(parts[parts.length - 1], 10)
-      return nr > max ? nr : max
-    }, 0)
-  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
-}
-
 // ============ CONVERSIE FUNCTIES ============
 
 export async function convertOfferteToFactuur(
