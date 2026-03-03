@@ -110,8 +110,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     return res.status(200).json({ success: true, message: 'Email verzonden' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Email verzenden mislukt:', error)
-    return res.status(500).json({ error: error.message || 'Email verzenden mislukt' })
+    const msg = error instanceof Error ? error.message : 'Email verzenden mislukt'
+    return res.status(500).json({ error: msg })
   }
 }

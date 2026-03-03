@@ -1,4 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -53,6 +54,7 @@ import {
   Wrench,
   ShieldAlert,
   Sparkles,
+  Loader2,
 } from 'lucide-react'
 import { formatDateTime, getInitials, cn } from '@/lib/utils'
 import type { Email } from '@/types'
@@ -61,6 +63,7 @@ import { toast } from 'sonner'
 
 interface EmailReaderProps {
   email: Email | null
+  isLoadingBody?: boolean
   onToggleStar?: (email: Email) => void
   onToggleRead?: (email: Email) => void
   onDelete?: (email: Email) => void
@@ -293,6 +296,7 @@ const mergeFields = [
 
 export function EmailReader({
   email,
+  isLoadingBody,
   onToggleStar,
   onToggleRead,
   onDelete,
@@ -900,9 +904,23 @@ export function EmailReader({
                 {isExpanded && (
                   <div className="px-6 pb-4">
                     <div className="ml-12 mb-4 text-xs text-muted-foreground">Aan: {msg.aan}</div>
-                    <div className="ml-12 prose prose-sm dark:prose-invert max-w-none">
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{msg.inhoud}</div>
-                    </div>
+                    {isLoadingBody ? (
+                      <div className="ml-12 flex items-center gap-2 py-8 text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm">Email laden...</span>
+                      </div>
+                    ) : msg.inhoud && (msg.inhoud.includes('<') && msg.inhoud.includes('>')) ? (
+                      <div className="ml-12 prose prose-sm dark:prose-invert max-w-none">
+                        <div
+                          className="text-sm leading-relaxed text-foreground email-html-content"
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.inhoud, { ADD_ATTR: ['target'] }) }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="ml-12 prose prose-sm dark:prose-invert max-w-none">
+                        <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{msg.inhoud}</div>
+                      </div>
+                    )}
                     {msg.bijlagen > 0 && (
                       <div className="ml-12 mt-4">
                         <div className="flex items-center gap-2 mb-2">

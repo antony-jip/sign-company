@@ -34,9 +34,11 @@ import {
   Zap,
   BarChart3,
   Users,
+  RefreshCw,
 } from 'lucide-react'
 import { getEmails, getKlanten, updateEmail, deleteEmail, createEmail, createKlant, createTaak, createProject, createDeal } from '@/services/supabaseService'
-import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
+import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
+import type { IMAPEmailSummary } from '@/services/gmailService'
 import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
@@ -196,11 +198,51 @@ export function EmailLayout() {
     to?: string; subject?: string; body?: string
   }>({})
 
-  // ── Load data ──
+  // ── IMAP total count (for pagination) ──
+  const [imapTotal, setImapTotal] = useState(0)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [useIMAP, setUseIMAP] = useState(false)
+
+  // Helper: convert IMAP summary to Email type for the existing UI
+  const imapToEmail = useCallback((msg: IMAPEmailSummary, folder: string): Email => ({
+    id: String(msg.uid),
+    user_id: user?.id || '',
+    gmail_id: String(msg.uid),
+    van: msg.fromName ? `${msg.fromName} <${msg.from}>` : msg.from,
+    aan: msg.to,
+    onderwerp: msg.subject,
+    inhoud: '', // body loaded on-demand via readEmailFromIMAP
+    datum: msg.date,
+    gelezen: msg.isRead,
+    starred: false,
+    labels: [],
+    bijlagen: msg.hasAttachments ? 1 : 0,
+    map: folder === 'INBOX' ? 'inbox' : folder.toLowerCase(),
+    created_at: msg.date,
+    updated_at: msg.date,
+  }), [user?.id])
+
+  // ── Load data (IMAP with Supabase fallback) ──
+  const loadEmails = useCallback(async (folder?: string) => {
+    const imapFolder = folder || 'INBOX'
+    try {
+      const result = await fetchEmailsFromIMAP(imapFolder, 50, 0)
+      setImapTotal(result.total)
+      setUseIMAP(true)
+      return result.emails.map((msg) => imapToEmail(msg, imapFolder))
+    } catch {
+      // IMAP niet beschikbaar, val terug op Supabase
+      setUseIMAP(false)
+      const data = await getEmails().catch(() => [])
+      return data
+    }
+  }, [imapToEmail])
+
   useEffect(() => {
     let cancelled = false
+    setIsLoading(true)
     Promise.all([
-      getEmails().catch(() => []),
+      loadEmails(),
       getKlanten().catch(() => []),
     ])
       .then(([emailData, klantData]) => {
@@ -211,7 +253,25 @@ export function EmailLayout() {
       })
       .finally(() => { if (!cancelled) setIsLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [loadEmails])
+
+  // ── Refresh emails (manual) ──
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    try {
+      const folderMap: Record<string, string> = {
+        inbox: 'INBOX', verzonden: 'verzonden', concepten: 'concepten',
+        prullenbak: 'prullenbak', gepland: 'gepland', gesnoozed: 'INBOX',
+      }
+      const emailData = await loadEmails(folderMap[selectedFolder] || 'INBOX')
+      setEmails(emailData)
+      toast.success('Inbox vernieuwd')
+    } catch {
+      toast.error('Kon emails niet vernieuwen')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [loadEmails, selectedFolder])
 
   // Clear checked when changing folder/filter
   useEffect(() => {
@@ -376,18 +436,49 @@ export function EmailLayout() {
     return ''
   }, [viewMode, selectedEmail, composeDefaults.to])
 
+  // ── Email body loading state (for IMAP on-demand fetch) ──
+  const [isLoadingBody, setIsLoadingBody] = useState(false)
+
   // ── Handlers ──
-  const handleSelectEmail = useCallback((email: Email) => {
+  const handleSelectEmail = useCallback(async (email: Email) => {
     setSelectedEmail(email)
     setViewMode('reading')
     setCheckedEmails(new Set())
+
+    // Mark as read locally
     if (!email.gelezen) {
       setEmails((prev) =>
         prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
       )
+    }
+
+    // If IMAP mode and body is empty, fetch full email content
+    if (useIMAP && !email.inhoud) {
+      setIsLoadingBody(true)
+      try {
+        const detail = await readEmailFromIMAP(Number(email.id))
+        const updatedEmail: Email = {
+          ...email,
+          gelezen: true,
+          inhoud: detail.bodyHtml || detail.bodyText || '',
+          aan: detail.to || email.aan,
+        }
+        setSelectedEmail(updatedEmail)
+        // Also update in the list so re-selecting doesn't re-fetch
+        setEmails((prev) =>
+          prev.map((e) => (e.id === email.id ? updatedEmail : e))
+        )
+      } catch (err: unknown) {
+        logger.error('Email body ophalen mislukt:', err)
+        toast.error('Kon email inhoud niet laden')
+      } finally {
+        setIsLoadingBody(false)
+      }
+    } else if (!useIMAP && !email.gelezen) {
+      // Supabase mode: update read status in DB
       updateEmail(email.id, { gelezen: true }).catch(() => {})
     }
-  }, [])
+  }, [useIMAP])
 
   const handleToggleStar = useCallback((email: Email) => {
     const newStarred = !email.starred
@@ -697,12 +788,28 @@ export function EmailLayout() {
     setViewMode(selectedEmail ? 'reading' : 'idle')
   }, [selectedEmail])
 
-  const handleFolderChange = useCallback((folder: EmailFolder) => {
+  const handleFolderChange = useCallback(async (folder: EmailFolder) => {
     setSelectedFolder(folder)
     setSelectedEmail(null)
     setViewMode('idle')
     setFilter('alle')
-  }, [])
+    // Reload from IMAP when changing folder
+    if (useIMAP) {
+      setIsLoading(true)
+      try {
+        const folderMap: Record<string, string> = {
+          inbox: 'INBOX', verzonden: 'verzonden', concepten: 'concepten',
+          prullenbak: 'prullenbak', gepland: 'gepland', gesnoozed: 'INBOX',
+        }
+        const emailData = await loadEmails(folderMap[folder] || 'INBOX')
+        setEmails(emailData)
+      } catch {
+        // keep existing emails
+      } finally {
+        setIsLoading(false)
+      }
+    }
+  }, [useIMAP, loadEmails])
 
   const handleBack = useCallback(() => {
     setSelectedEmail(null)
@@ -950,6 +1057,16 @@ export function EmailLayout() {
                   className="pl-10 h-9"
                 />
               </div>
+              <Button
+                onClick={handleRefresh}
+                size="sm"
+                variant="outline"
+                className="h-9 w-9 flex-shrink-0 p-0"
+                disabled={isRefreshing}
+                title="Vernieuwen"
+              >
+                <RefreshCw className={cn('w-3.5 h-3.5', isRefreshing && 'animate-spin')} />
+              </Button>
               <Button onClick={handleCompose} size="sm" className="gap-1.5 h-9 flex-shrink-0">
                 <Pencil className="w-3.5 h-3.5" />
                 Nieuw
@@ -1480,6 +1597,7 @@ export function EmailLayout() {
             ) : viewMode === 'reading' && selectedEmail ? (
               <EmailReader
                 email={selectedEmail}
+                isLoadingBody={isLoadingBody}
                 onToggleStar={handleToggleStar}
                 onToggleRead={handleToggleRead}
                 onDelete={handleDelete}

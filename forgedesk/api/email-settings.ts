@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const userId = await verifyUser(req)
-    const { gmail_address, app_password, smtp_host, smtp_port } = req.body
+    const { gmail_address, app_password, smtp_host, smtp_port, imap_host, imap_port } = req.body
 
     if (!gmail_address || !app_password) {
       return res.status(400).json({ error: 'Email adres en app wachtwoord zijn verplicht' })
@@ -38,6 +38,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         encrypted_app_password: encryptedPassword,
         smtp_host: smtp_host || 'smtp.gmail.com',
         smtp_port: smtp_port || 587,
+        imap_host: imap_host || 'imap.gmail.com',
+        imap_port: imap_port || 993,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' })
 
@@ -46,8 +48,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({ success: true, message: 'Email instellingen opgeslagen' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Email settings fout:', error)
-    return res.status(500).json({ error: error.message || 'Fout bij opslaan' })
+    const msg = error instanceof Error ? error.message : 'Fout bij opslaan'
+    return res.status(500).json({ error: msg })
   }
 }

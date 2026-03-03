@@ -1538,6 +1538,8 @@ interface EmailSettings {
   smtp_host: string
   smtp_port: number
   smtp_encryption: 'TLS' | 'SSL' | 'Geen'
+  imap_host: string
+  imap_port: number
   gmail_address: string
   app_password: string
   accept_self_signed: boolean
@@ -1547,6 +1549,8 @@ const DEFAULT_EMAIL_SETTINGS: EmailSettings = {
   smtp_host: 'smtp.gmail.com',
   smtp_port: 587,
   smtp_encryption: 'TLS',
+  imap_host: 'imap.gmail.com',
+  imap_port: 993,
   gmail_address: '',
   app_password: '',
   accept_self_signed: false,
@@ -1628,6 +1632,8 @@ function EmailSettingsDialog({
           app_password: settings.app_password,
           smtp_host: settings.smtp_host,
           smtp_port: settings.smtp_port,
+          imap_host: settings.imap_host,
+          imap_port: settings.imap_port,
         })
       }
 
@@ -1652,15 +1658,46 @@ function EmailSettingsDialog({
     setIsTesting(true)
     setError('')
     setSuccess('')
-    // In demo mode, just simulate a test
-    setTimeout(() => {
-      if (settings.gmail_address && settings.app_password && settings.smtp_host) {
-        setSuccess('Verbinding succesvol! (demo modus - echte test vereist Supabase)')
-      } else {
-        setError('Vul eerst alle verplichte velden in')
-      }
+
+    if (!settings.gmail_address || !settings.app_password) {
+      setError('Vul eerst e-mailadres en app-wachtwoord in')
       setIsTesting(false)
-    }, 1500)
+      return
+    }
+
+    try {
+      const { testEmailConnection } = await import('@/services/gmailService')
+      const result = await testEmailConnection(
+        settings.gmail_address,
+        settings.app_password,
+        {
+          smtp_host: settings.smtp_host,
+          smtp_port: settings.smtp_port,
+          imap_host: settings.imap_host,
+          imap_port: settings.imap_port,
+        }
+      )
+
+      if (result.imap_ok && result.smtp_ok) {
+        setSuccess('Verbinding gelukt! IMAP en SMTP werken beide correct.')
+      } else {
+        const parts: string[] = []
+        if (result.imap_ok) parts.push('IMAP: OK')
+        else parts.push('IMAP: Mislukt')
+        if (result.smtp_ok) parts.push('SMTP: OK')
+        else parts.push('SMTP: Mislukt')
+        const msg = parts.join(' | ')
+        if (result.error) {
+          setError(`${msg}. ${result.error}`)
+        } else {
+          setError(msg)
+        }
+      }
+    } catch (err: unknown) {
+      setError(`Test mislukt: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
+    } finally {
+      setIsTesting(false)
+    }
   }
 
   const handleDisconnect = () => {
@@ -1681,10 +1718,10 @@ function EmailSettingsDialog({
             <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
               <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
             </div>
-            E-mail SMTP Instellingen
+            E-mail Instellingen
           </DialogTitle>
           <DialogDescription>
-            Configureer je SMTP server om e-mails te verzenden vanuit Sign Company.
+            Configureer SMTP (verzenden) en IMAP (ontvangen) om e-mails te beheren vanuit FORGE.
           </DialogDescription>
         </DialogHeader>
 
@@ -1735,6 +1772,34 @@ function EmailSettingsDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* IMAP Server */}
+          <div className="space-y-2">
+            <Label htmlFor="imap_host" className="flex items-center gap-2 text-sm font-medium">
+              <Server className="w-3.5 h-3.5 text-muted-foreground" />
+              IMAP Serveradres (inbox ontvangen)
+            </Label>
+            <Input
+              id="imap_host"
+              placeholder="imap.gmail.com"
+              value={settings.imap_host}
+              onChange={(e) => setSettings({ ...settings, imap_host: e.target.value })}
+            />
+          </div>
+
+          {/* IMAP Port */}
+          <div className="space-y-2">
+            <Label htmlFor="imap_port" className="text-sm font-medium">
+              IMAP Poort
+            </Label>
+            <Input
+              id="imap_port"
+              type="number"
+              placeholder="993"
+              value={settings.imap_port}
+              onChange={(e) => setSettings({ ...settings, imap_port: parseInt(e.target.value) || 993 })}
+            />
           </div>
 
           <Separator />

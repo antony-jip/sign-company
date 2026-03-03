@@ -153,12 +153,124 @@ export async function searchEmails(query: string): Promise<Email[]> {
   return fetchEmails(query, 50)
 }
 
+// ============ IMAP EMAIL OPERATIONS ============
+
+export interface IMAPEmailSummary {
+  uid: number
+  from: string
+  fromName: string
+  to: string
+  subject: string
+  date: string
+  isRead: boolean
+  hasAttachments: boolean
+  // CRM koppeling (wordt in frontend ingevuld)
+  clientId?: string
+  clientName?: string
+}
+
+export interface IMAPEmailDetail extends IMAPEmailSummary {
+  cc?: string
+  bodyHtml: string
+  bodyText: string
+  attachments: { filename: string; contentType: string; size: number }[]
+  messageId?: string
+  inReplyTo?: string
+}
+
+export async function testEmailConnection(
+  gmail_address: string,
+  app_password: string,
+  options?: {
+    smtp_host?: string
+    smtp_port?: number
+    imap_host?: string
+    imap_port?: number
+  }
+): Promise<{ imap_ok: boolean; smtp_ok: boolean; error?: string }> {
+  const response = await fetch('/api/test-email-connection', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      gmail_address,
+      app_password,
+      smtp_host: options?.smtp_host || 'smtp.gmail.com',
+      smtp_port: options?.smtp_port || 587,
+      imap_host: options?.imap_host || 'imap.gmail.com',
+      imap_port: options?.imap_port || 993,
+    }),
+  })
+
+  if (!response.ok) {
+    return { imap_ok: false, smtp_ok: false, error: `Server fout: ${response.status}` }
+  }
+
+  return response.json()
+}
+
+export async function fetchEmailsFromIMAP(
+  folder?: string,
+  limit?: number,
+  offset?: number
+): Promise<{ emails: IMAPEmailSummary[]; total: number }> {
+  const token = await getAuthToken()
+
+  const response = await fetch('/api/fetch-emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      folder: folder || 'INBOX',
+      limit: limit || 50,
+      offset: offset || 0,
+    }),
+  })
+
+  if (!response.ok) {
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `Emails ophalen mislukt: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export async function readEmailFromIMAP(
+  uid: number,
+  folder?: string
+): Promise<IMAPEmailDetail> {
+  const token = await getAuthToken()
+
+  const response = await fetch('/api/read-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      uid,
+      folder: folder || 'INBOX',
+    }),
+  })
+
+  if (!response.ok) {
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `Email ophalen mislukt: ${response.status}`)
+  }
+
+  return response.json()
+}
+
 // ============ EMAIL SETTINGS ============
 
 export async function getEmailSettings(): Promise<{
   gmail_address: string
   smtp_host: string
   smtp_port: number
+  imap_host: string
+  imap_port: number
+  is_verified: boolean
 } | null> {
   if (!supabase) return null
   const { data: { session } } = await supabase.auth.getSession()
@@ -166,7 +278,7 @@ export async function getEmailSettings(): Promise<{
 
   const { data } = await supabase
     .from('user_email_settings')
-    .select('gmail_address, smtp_host, smtp_port')
+    .select('gmail_address, smtp_host, smtp_port, imap_host, imap_port, is_verified')
     .eq('user_id', session.user.id)
     .single()
 
@@ -178,6 +290,8 @@ export async function saveEmailSettings(settings: {
   app_password: string
   smtp_host?: string
   smtp_port?: number
+  imap_host?: string
+  imap_port?: number
 }): Promise<void> {
   const token = await getAuthToken()
 
