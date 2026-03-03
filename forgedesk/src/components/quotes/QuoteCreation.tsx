@@ -33,6 +33,7 @@ import {
   ShoppingCart,
   X,
   Plus,
+  Minus,
   UserPlus,
   Mail,
   Phone,
@@ -158,6 +159,9 @@ export function QuoteCreation() {
   const [gewenstTotaal, setGewenstTotaal] = useState('')
   const [afrondingskorting, setAfrondingskorting] = useState(0)
 
+  // ── Uren correctie — handmatige +/- vanuit sidebar ──
+  const [urenCorrectie, setUrenCorrectie] = useState<Record<string, number>>({})
+
   // ── Step 1: Items ──
   const [items, setItems] = useState<QuoteLineItem[]>([])
   const [notities, setNotities] = useState('')
@@ -275,13 +279,17 @@ export function QuoteCreation() {
   //   2. Detail velden (namefields) — matcht op label, pakt getal uit waarde
   const urenVelden = settings.calculatie_uren_velden || ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
 
-  const { urenPerVeld, totaalUren, materiaalKosten } = useMemo(() => {
+  const { urenPerVeld, totaalUren, materiaalKosten, tariefPerVeld } = useMemo(() => {
     const urenMap: Record<string, number> = {}
+    const tariefMap: Record<string, { totaalPrijs: number; totaalAantal: number }> = {}
     let totaal = 0
     let materiaal = 0
 
     // Initialiseer alle velden op 0
-    urenVelden.forEach((veld) => { urenMap[veld] = 0 })
+    urenVelden.forEach((veld) => {
+      urenMap[veld] = 0
+      tariefMap[veld] = { totaalPrijs: 0, totaalAantal: 0 }
+    })
 
     verplichtePrijsItems.forEach((item) => {
       const data = getActivePriceData(item)
@@ -298,6 +306,9 @@ export function QuoteCreation() {
             if (categorieLower.includes(veldLower) || naamLower.includes(veldLower)) {
               urenMap[veld] = (urenMap[veld] || 0) + r.aantal
               totaal += r.aantal
+              // Track tarief voor +/- berekening
+              tariefMap[veld].totaalPrijs += r.verkoop_prijs * r.aantal
+              tariefMap[veld].totaalAantal += r.aantal
               break
             }
           }
@@ -333,8 +344,41 @@ export function QuoteCreation() {
         })
       }
     })
-    return { urenPerVeld: urenMap, totaalUren: totaal, materiaalKosten: round2(materiaal) }
+
+    // Bereken gemiddeld tarief per veld (verkoop_prijs per uur)
+    const tarieven: Record<string, number> = {}
+    urenVelden.forEach((veld) => {
+      tarieven[veld] = tariefMap[veld].totaalAantal > 0
+        ? round2(tariefMap[veld].totaalPrijs / tariefMap[veld].totaalAantal)
+        : 0
+    })
+
+    return { urenPerVeld: urenMap, totaalUren: totaal, materiaalKosten: round2(materiaal), tariefPerVeld: tarieven }
   }, [verplichtePrijsItems, urenVelden])
+
+  // Bereken uren correctie bedrag (ex BTW)
+  const urenCorrectieBedrag = useMemo(() => {
+    let bedrag = 0
+    for (const veld of Object.keys(urenCorrectie)) {
+      const correctie = urenCorrectie[veld] || 0
+      const tarief = tariefPerVeld[veld] || 0
+      bedrag += correctie * tarief
+    }
+    return round2(bedrag)
+  }, [urenCorrectie, tariefPerVeld])
+
+  // Effectieve uren = basis + correctie
+  const effectieveUrenPerVeld = useMemo(() => {
+    const result: Record<string, number> = {}
+    urenVelden.forEach((veld) => {
+      result[veld] = (urenPerVeld[veld] || 0) + (urenCorrectie[veld] || 0)
+    })
+    return result
+  }, [urenPerVeld, urenCorrectie, urenVelden])
+
+  const effectieveTotaalUren = useMemo(() => {
+    return Object.values(effectieveUrenPerVeld).reduce((sum, u) => sum + u, 0)
+  }, [effectieveUrenPerVeld])
 
   // ── Initialize autofill defaults (seeds localStorage on first use) ──
   useEffect(() => {
@@ -462,6 +506,8 @@ export function QuoteCreation() {
         if (offerte.versie) setVersieNummer(offerte.versie)
         // FIX 16: Load afrondingskorting
         if (offerte.afrondingskorting_excl_btw) setAfrondingskorting(offerte.afrondingskorting_excl_btw)
+        // Load uren correctie
+        if (offerte.uren_correctie) setUrenCorrectie(offerte.uren_correctie)
         // Track status for factureren workflow
         setOfferteStatus(offerte.status)
         if (offerte.geconverteerd_naar_factuur_id) {
@@ -699,7 +745,7 @@ export function QuoteCreation() {
         const bruto = data.aantal * data.eenheidsprijs
         return sum + round2(bruto - bruto * (data.korting_percentage / 100))
       }, 0))
-      const effectiefSub = round2(rawSub + afrondingskorting)
+      const effectiefSub = round2(rawSub + afrondingskorting + urenCorrectieBedrag)
       const effectiefBtw = round2(effectiefSub * (rawSub > 0 ? round2(verplichtePrijsItemsLocal.reduce((sum, item) => {
         const data = getActivePriceData(item)
         const bruto = data.aantal * data.eenheidsprijs
@@ -708,6 +754,7 @@ export function QuoteCreation() {
       }, 0)) / rawSub : 0.21))
 
       const currentId = editOfferteId || autoSaveIdRef.current
+      const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
 
       if (currentId) {
         // Update existing
@@ -727,6 +774,7 @@ export function QuoteCreation() {
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
+          ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
           versie: versieNummer,
         })
 
@@ -785,6 +833,7 @@ export function QuoteCreation() {
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
+          ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
           versie: versieNummer,
         })
         autoSaveIdRef.current = newOfferte.id
@@ -2228,19 +2277,25 @@ export function QuoteCreation() {
                   ) : (
                     <button
                       onClick={() => {
-                        setGewenstTotaal(round2(subtotaal + btwBedrag + (afrondingskorting * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))).toFixed(2))
+                        setGewenstTotaal(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))).toFixed(2))
                         setIsEditingTotaal(true)
                       }}
                       className="text-xl font-bold text-white mt-0.5 hover:underline underline-offset-2 decoration-white/40 cursor-pointer text-left"
                       title="Klik om totaal aan te passen"
                     >
-                      {formatCurrency(round2(subtotaal + btwBedrag + (afrondingskorting * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))))}
+                      {formatCurrency(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))))}
                     </button>
                   )}
                   {afrondingskorting !== 0 && (
                     <div className="flex items-center justify-between mt-1">
                       <p className="text-[10px] text-white/60">Korting: {formatCurrency(afrondingskorting)} excl BTW</p>
                       <button onClick={() => setAfrondingskorting(0)} className="text-[9px] text-white/50 hover:text-white underline">Herstel</button>
+                    </div>
+                  )}
+                  {urenCorrectieBedrag !== 0 && (
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-[10px] text-white/60">Uren correctie: {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)} excl BTW</p>
+                      <button onClick={() => setUrenCorrectie({})} className="text-[9px] text-white/50 hover:text-white underline">Herstel</button>
                     </div>
                   )}
                   {optionelSubtotaal > 0 && (
@@ -2328,28 +2383,66 @@ export function QuoteCreation() {
                   )}
 
                   {/* Uren overzicht + Materiaal */}
-                  {(totaalUren > 0 || materiaalKosten > 0) && (
+                  {(totaalUren > 0 || effectieveTotaalUren > 0 || materiaalKosten > 0) && (
                     <>
                       <Separator className="opacity-50" />
                       <div className="space-y-2">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{materiaalKosten > 0 ? 'Uren & Materiaal' : 'Uren'}</p>
                         <div className="space-y-1.5">
-                          {/* Dynamische uren per geconfigureerd veld */}
+                          {/* Dynamische uren per geconfigureerd veld met +/- knoppen */}
                           {urenVelden.map((veld) => {
-                            const uren = urenPerVeld[veld] || 0
-                            if (uren <= 0) return null
+                            const basisUren = urenPerVeld[veld] || 0
+                            const correctie = urenCorrectie[veld] || 0
+                            const effectief = basisUren + correctie
+                            const tarief = tariefPerVeld[veld] || 0
+                            if (effectief <= 0 && basisUren <= 0) return null
                             return (
                               <div key={veld} className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-purple-500" /><span className="text-xs text-muted-foreground">{veld}</span></div>
-                                <span className="text-xs font-semibold text-purple-600">{uren} uur</span>
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="h-3.5 w-3.5 text-purple-500" />
+                                  <span className="text-xs text-muted-foreground">{veld}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {tarief > 0 && (
+                                    <button
+                                      onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) - 1 }))}
+                                      disabled={effectief <= 0}
+                                      className="h-5 w-5 rounded flex items-center justify-center bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                      title={`-1 uur ${veld} (${formatCurrency(tarief)}/u)`}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                  <span className={cn('text-xs font-semibold min-w-[3rem] text-right', correctie !== 0 ? 'text-purple-700 dark:text-purple-400' : 'text-purple-600')}>
+                                    {effectief} uur
+                                  </span>
+                                  {tarief > 0 && (
+                                    <button
+                                      onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) + 1 }))}
+                                      className="h-5 w-5 rounded flex items-center justify-center bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-600 transition-colors"
+                                      title={`+1 uur ${veld} (${formatCurrency(tarief)}/u)`}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             )
                           })}
                           {/* Totaal uren */}
-                          {totaalUren > 0 && (
+                          {effectieveTotaalUren > 0 && (
                             <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800">
                               <div className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs font-medium text-foreground">Totaal uren</span></div>
-                              <span className="text-xs font-bold text-amber-600">{totaalUren} uur</span>
+                              <span className="text-xs font-bold text-amber-600">{effectieveTotaalUren} uur</span>
+                            </div>
+                          )}
+                          {/* Uren correctie bedrag */}
+                          {urenCorrectieBedrag !== 0 && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-muted-foreground">Uren correctie</span>
+                              <span className={cn('text-[10px] font-medium', urenCorrectieBedrag > 0 ? 'text-green-600' : 'text-red-500')}>
+                                {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)}
+                              </span>
                             </div>
                           )}
                           {materiaalKosten > 0 && (

@@ -230,6 +230,8 @@ export interface Offerte {
   // Afrondingskorting (FIX 16)
   afrondingskorting_excl_btw?: number;
   aangepast_totaal?: number;
+  // Uren correctie — handmatige +/- aanpassingen vanuit sidebar
+  uren_correctie?: Record<string, number>;
   created_at: string;
   updated_at: string;
 }
