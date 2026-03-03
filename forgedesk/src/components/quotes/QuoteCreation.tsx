@@ -2332,7 +2332,7 @@ export function QuoteCreation() {
                     <>
                       <Separator className="opacity-50" />
                       <div className="space-y-2">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Uren & Materiaal</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{materiaalKosten > 0 ? 'Uren & Materiaal' : 'Uren'}</p>
                         <div className="space-y-1.5">
                           {/* Dynamische uren per geconfigureerd veld */}
                           {urenVelden.map((veld) => {
