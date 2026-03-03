@@ -270,7 +270,8 @@ export function QuoteCreation() {
 
   // ── Uren overzicht per configureerbaar veld + materiaalkosten ──
   // Haalt uren uit twee bronnen:
-  //   1. Calculatieregels (eenheid "uur") — matcht op product_naam of categorie
+  //   1. Calculatieregels — matcht productnaam/categorie tegen geconfigureerde uren-velden
+  //      (ongeacht eenheid — ook "stuks" wordt meegeteld als de naam matcht)
   //   2. Detail velden (namefields) — matcht op label, pakt getal uit waarde
   const urenVelden = settings.calculatie_uren_velden || ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
 
@@ -285,26 +286,19 @@ export function QuoteCreation() {
     verplichtePrijsItems.forEach((item) => {
       const data = getActivePriceData(item)
 
-      // Bron 1: Calculatieregels met eenheid "uur"
+      // Bron 1: Calculatieregels — match productnaam/categorie tegen uren-velden
       if (data.calculatie_regels && data.calculatie_regels.length > 0) {
         data.calculatie_regels.forEach((r) => {
-          const isUur = r.eenheid === 'uur'
           const categorieLower = (r.categorie || '').toLowerCase()
           const naamLower = (r.product_naam || '').toLowerCase()
 
-          if (isUur) {
-            let matched = false
-            for (const veld of urenVelden) {
-              const veldLower = veld.toLowerCase()
-              if (categorieLower.includes(veldLower) || naamLower.includes(veldLower)) {
-                urenMap[veld] = (urenMap[veld] || 0) + r.aantal
-                totaal += r.aantal
-                matched = true
-                break
-              }
-            }
-            if (!matched) {
+          // Check of deze regel matcht met een geconfigureerd uren-veld
+          for (const veld of urenVelden) {
+            const veldLower = veld.toLowerCase()
+            if (categorieLower.includes(veldLower) || naamLower.includes(veldLower)) {
+              urenMap[veld] = (urenMap[veld] || 0) + r.aantal
               totaal += r.aantal
+              break
             }
           }
 
