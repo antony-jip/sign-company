@@ -355,7 +355,7 @@ export function MontagePlanningLayout() {
   }, [medewerkers]);
 
   const monteurs = useMemo(
-    () => medewerkers.filter((m) => m.rol === "monteur" && m.status === "actief"),
+    () => medewerkers.filter((m) => m.status === "actief"),
     [medewerkers]
   );
 
@@ -421,7 +421,7 @@ export function MontagePlanningLayout() {
 
     const monteurNaam = selectedMonteur !== "alle"
       ? monteurMap[selectedMonteur]?.naam || ""
-      : "Alle monteurs";
+      : "Alle medewerkers";
 
     const rows = dagAfspraken
       .map(
@@ -449,7 +449,7 @@ export function MontagePlanningLayout() {
       ${dagAfspraken.length === 0
         ? '<p style="color:#999;font-style:italic;">Geen montages gepland voor vandaag.</p>'
         : `<table><thead><tr>
-          <th>Tijd</th><th>Titel</th><th>Klant</th><th>Locatie</th><th>Monteurs</th><th>Materialen</th><th>Notities</th>
+          <th>Tijd</th><th>Titel</th><th>Klant</th><th>Locatie</th><th>Medewerkers</th><th>Materialen</th><th>Notities</th>
         </tr></thead><tbody>${rows}</tbody></table>`
       }
       </body></html>`;
@@ -520,7 +520,7 @@ export function MontagePlanningLayout() {
       return;
     }
     if (formData.monteurs.length === 0) {
-      toast.error("Selecteer minimaal een monteur");
+      toast.error("Selecteer minimaal een medewerker");
       return;
     }
 
@@ -915,7 +915,7 @@ export function MontagePlanningLayout() {
                 Locatie
               </th>
               <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                Monteurs
+                Medewerkers
               </th>
               <th className="text-left py-3 px-4 font-semibold text-gray-700">
                 Status
@@ -1211,7 +1211,7 @@ export function MontagePlanningLayout() {
             <Separator />
 
             <div className="space-y-2">
-              <Label>Monteurs</Label>
+              <Label>Medewerkers</Label>
               <div className="grid grid-cols-2 gap-2">
                 {monteurs.map((monteur, idx) => (
                   <label
@@ -1419,7 +1419,7 @@ export function MontagePlanningLayout() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
-                  Monteurs beschikbaar
+                  Medewerkers beschikbaar
                 </p>
                 <p className="text-2xl font-bold">
                   {stats.monteursBeschikbaar}
@@ -1480,15 +1480,15 @@ export function MontagePlanningLayout() {
 
       {/* Filter bar */}
       <div className="flex items-center gap-4 flex-wrap">
-        {/* Monteur filter */}
+        {/* Medewerker filter */}
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" />
           <Select value={selectedMonteur} onValueChange={setSelectedMonteur}>
             <SelectTrigger className="w-[200px] h-9">
-              <SelectValue placeholder="Alle monteurs" />
+              <SelectValue placeholder="Alle medewerkers" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="alle">Alle monteurs</SelectItem>
+              <SelectItem value="alle">Alle medewerkers</SelectItem>
               {monteurs.map((m) => (
                 <SelectItem key={m.id} value={m.id}>{m.naam}</SelectItem>
               ))}
@@ -1598,7 +1598,7 @@ export function MontagePlanningLayout() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Monteurs overzicht
+            Medewerkers overzicht
           </CardTitle>
         </CardHeader>
         <CardContent>
