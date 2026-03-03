@@ -430,7 +430,14 @@ export function OfferteDetail() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/offertes')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold text-foreground tracking-tight">
+          <h1
+            className="text-xl font-bold text-foreground tracking-tight cursor-pointer hover:text-primary transition-colors"
+            title="Klik om nummer te kopiëren"
+            onClick={() => {
+              navigator.clipboard.writeText(offerte.nummer)
+              toast.success('Offertenummer gekopieerd')
+            }}
+          >
             {offerte.nummer}
           </h1>
 
@@ -494,15 +501,64 @@ export function OfferteDetail() {
                 <Send className="h-4 w-4 mr-1" />
                 Versturen
               </Button>
-              {offerte.status === 'goedgekeurd' && !offerte.geconverteerd_naar_factuur_id && (
+              {offerte.publiek_token && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const url = `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
+                    navigator.clipboard.writeText(url)
+                    toast.success('Offerte link gekopieerd naar klembord')
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Kopieer link
+                </Button>
+              )}
+              {!offerte.geconverteerd_naar_factuur_id ? (
                 <Button size="sm" onClick={handleMaakFactuur} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                   <Receipt className="h-4 w-4 mr-1" />
                   Maak factuur
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800"
+                  onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}`)}
+                >
+                  <Receipt className="h-4 w-4 mr-1" />
+                  Bekijk factuur
                 </Button>
               )}
               <Button size="sm" variant="outline" onClick={handleDuplicate} disabled={isDuplicating}>
                 {isDuplicating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Copy className="h-4 w-4 mr-1" />}
                 Dupliceren
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (items.length === 0) {
+                    toast.error('Geen items om te kopiëren')
+                    return
+                  }
+                  try {
+                    const templates = items.map(({ id, user_id, offerte_id, created_at, updated_at, ...rest }) => ({
+                      ...rest,
+                      soort: 'prijs' as const,
+                      extra_velden: rest.extra_velden || {},
+                    }))
+                    const key = 'forgedesk_clipboard_items'
+                    localStorage.setItem(key, JSON.stringify(templates))
+                    toast.success(`${templates.length} item${templates.length === 1 ? '' : 's'} gekopieerd — plak in een andere offerte`)
+                  } catch {
+                    toast.error('Kon items niet kopiëren')
+                  }
+                }}
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                Kopieer items
               </Button>
               <Button
                 size="sm"
@@ -594,6 +650,18 @@ export function OfferteDetail() {
                 >
                   Bekijk project
                   <ExternalLink className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+            {offerte.geconverteerd_naar_factuur_id && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Factuur</span>
+                <button
+                  onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}`)}
+                  className="text-emerald-600 hover:underline font-medium inline-flex items-center gap-1"
+                >
+                  <Receipt className="h-3 w-3" />
+                  Bekijk factuur
                 </button>
               </div>
             )}

@@ -119,6 +119,7 @@ interface QuoteItemsTableProps {
   ) => void
   suggesties?: OmschrijvingSuggestie[]
   onCopyItem?: (item: QuoteLineItem) => void
+  onCopyAllItems?: () => void
   clipboardCount?: number
   onPasteItems?: () => void
   onClearClipboard?: () => void
@@ -306,6 +307,7 @@ export function QuoteItemsTable({
   onUpdateItemWithVariantCalculatie,
   suggesties = [],
   onCopyItem,
+  onCopyAllItems,
   clipboardCount = 0,
   onPasteItems,
   onClearClipboard,
@@ -1272,6 +1274,16 @@ export function QuoteItemsTable({
               title="Klembord legen"
             >
               <X className="h-4 w-4" />
+            </button>
+          )}
+
+          {onCopyAllItems && items.filter(i => i.soort === 'prijs' && i.beschrijving.trim()).length > 1 && (
+            <button
+              onClick={onCopyAllItems}
+              className="py-3 px-4 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-600 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              Kopieer alle items
             </button>
           )}
         </div>

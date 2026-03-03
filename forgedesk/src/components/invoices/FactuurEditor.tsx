@@ -331,6 +331,9 @@ export function FactuurEditor() {
                 setTitel(offerte.titel)
                 if (offerte.project_id) setProjectId(offerte.project_id)
                 if (offerte.voorwaarden) setVoorwaarden(offerte.voorwaarden)
+                if (offerte.intro_tekst) setIntroTekst(offerte.intro_tekst)
+                if (offerte.outro_tekst) setOutroTekst(offerte.outro_tekst)
+                if (offerte.notities) setNotities(offerte.notities)
 
                 if (offerteItems.length > 0) {
                   setItems(

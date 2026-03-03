@@ -673,6 +673,25 @@ export function QuoteCreation() {
     }
   }, [])
 
+  const handleCopyAllItems = useCallback(() => {
+    try {
+      const pricedItems = items.filter(i => i.soort === 'prijs' && i.beschrijving.trim())
+      if (pricedItems.length === 0) {
+        toast.error('Geen items om te kopiëren')
+        return
+      }
+      const templates = pricedItems.map(({ id, ...rest }) => rest)
+      if (!safeSetItem(CLIPBOARD_KEY, JSON.stringify(templates))) {
+        toast.error('Onvoldoende opslagruimte voor klembord')
+        return
+      }
+      setClipboardCount(templates.length)
+      toast.success(`${templates.length} item${templates.length === 1 ? '' : 's'} gekopieerd naar klembord`)
+    } catch {
+      toast.error('Kon items niet kopiëren')
+    }
+  }, [items])
+
   const handleClearClipboard = useCallback(() => {
     localStorage.removeItem(CLIPBOARD_KEY)
     setClipboardCount(0)
@@ -1325,13 +1344,27 @@ export function QuoteCreation() {
       }
 
       hasUnsavedChangesRef.current = false
-      toast.success(
-        isEditMode
-          ? 'Offerte bijgewerkt'
-          : status === 'concept'
-            ? 'Offerte opgeslagen als concept'
-            : 'Offerte verzonden naar klant'
-      )
+      const toastMsg = isEditMode
+        ? 'Offerte bijgewerkt'
+        : status === 'concept'
+          ? 'Offerte opgeslagen als concept'
+          : 'Offerte verzonden naar klant'
+
+      toast.success(toastMsg, {
+        action: {
+          label: 'Maak factuur',
+          onClick: () => {
+            const params = new URLSearchParams({
+              offerte_id: savedOfferteId,
+              klant_id: selectedKlantId,
+            })
+            if (offerteTitel) params.set('titel', offerteTitel)
+            if (selectedProjectId) params.set('project_id', selectedProjectId)
+            navigate(`/facturen/nieuw?${params.toString()}`)
+          },
+        },
+        duration: 8000,
+      })
       navigate(`/offertes/${savedOfferteId}/bewerken`, { state: { from: (location.state as { from?: string })?.from || '/offertes' } })
     } catch (err) {
       logger.error('Failed to save offerte:', err)
@@ -1919,6 +1952,7 @@ export function QuoteCreation() {
                 onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
                 suggesties={omschrijvingSuggesties}
                 onCopyItem={handleCopyItem}
+                onCopyAllItems={handleCopyAllItems}
                 clipboardCount={clipboardCount}
                 onPasteItems={handlePasteItems}
                 onClearClipboard={handleClearClipboard}
