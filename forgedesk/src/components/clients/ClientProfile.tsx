@@ -52,7 +52,6 @@ import {
   Receipt,
   Upload,
   History,
-  Bot,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -77,7 +76,6 @@ import {
 } from '@/services/supabaseService'
 import { AddEditClient } from './AddEditClient'
 import { KlantHistorieTab } from './KlantHistorieTab'
-import { KlantAIChat } from './KlantAIChat'
 import {
   getContactpersonen as getImportedContactpersonen,
   createContactpersoon as createImportedContactpersoon,
@@ -457,7 +455,6 @@ export function ClientProfile() {
     { key: 'communicatie', label: 'Communicatie', count: clientEmails.length, icon: Mail },
     { key: 'documenten', label: 'Documenten', count: clientDocumenten.length, icon: FileIcon },
     { key: 'historie', label: 'Historie', count: 0, icon: History },
-    { key: 'ai-chat', label: 'AI Chat', count: 0, icon: Bot },
   ]
 
   return (
@@ -1434,22 +1431,6 @@ export function ClientProfile() {
             </Card>
           )}
 
-          {/* ════════ AI CHAT TAB ════════ */}
-          {activeTab === 'ai-chat' && (
-            <Card>
-              <CardContent className="p-0">
-                <KlantAIChat
-                  klantId={klant.id}
-                  klantNaam={klant.bedrijfsnaam}
-                  projecten={clientProjecten}
-                  offertes={clientOffertes}
-                  facturen={clientFacturen}
-                  deals={clientDeals}
-                  tijdregistraties={clientTijdregistraties}
-                />
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {/* Right Sidebar */}

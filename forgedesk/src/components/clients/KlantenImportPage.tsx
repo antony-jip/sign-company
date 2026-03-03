@@ -32,6 +32,7 @@ import {
   generateActiviteitenTemplate,
 } from '@/services/importService'
 import type { CSVKlantRij, CSVActiviteitRij, ImportResultaat } from '@/types'
+import { ImportAIChat } from './ImportAIChat'
 
 type ImportStap = 'upload' | 'preview' | 'importing' | 'resultaat'
 
@@ -266,6 +267,13 @@ export function KlantenImportPage() {
           {renderImportContent()}
         </TabsContent>
       </Tabs>
+
+      {/* AI Data Assistent */}
+      <Card>
+        <CardContent className="p-0">
+          <ImportAIChat />
+        </CardContent>
+      </Card>
     </div>
   )
 

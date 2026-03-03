@@ -278,6 +278,17 @@ export function getActiviteiten(klant_id: string): KlantActiviteit[] {
     .sort((a, b) => b.datum.localeCompare(a.datum))
 }
 
+export function getAllActiviteiten(): KlantActiviteit[] {
+  const all: KlantActiviteit[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith(LS_ACTIVITEITEN_PREFIX)) {
+      all.push(...getLocalData<KlantActiviteit>(key))
+    }
+  }
+  return all.sort((a, b) => b.datum.localeCompare(a.datum))
+}
+
 function createActiviteit(data: Omit<KlantActiviteit, 'id' | 'created_at'>): KlantActiviteit {
   const key = `${LS_ACTIVITEITEN_PREFIX}${data.klant_id}`
   const all = getLocalData<KlantActiviteit>(key)

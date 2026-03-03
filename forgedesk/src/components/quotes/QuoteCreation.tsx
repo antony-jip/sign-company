@@ -2343,11 +2343,11 @@ export function QuoteCreation() {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
                       <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Subtotaal</p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(subtotaal)}</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
                     </div>
                     <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
                       <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">BTW</p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(btwBedrag)}</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
                     </div>
                   </div>
                   {afrondingskorting !== 0 && (
@@ -2369,7 +2369,7 @@ export function QuoteCreation() {
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-green-400" /><span className="text-xs text-muted-foreground">Verkoop</span></div>
-                        <span className="text-xs font-semibold text-foreground">{formatCurrency(subtotaal)}</span>
+                        <span className="text-xs font-semibold text-foreground">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 text-emerald-500" /><span className="text-xs text-muted-foreground">Winst</span></div>

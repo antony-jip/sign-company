@@ -39,7 +39,6 @@ const navSections: NavSection[] = [
     section: 'Verkoop',
     items: [
       { label: 'Klanten', icon: Users, path: '/klanten' },
-      { label: 'Deals', icon: Briefcase, path: '/deals' },
       { label: 'Offertes', icon: FileText, path: '/offertes' },
       { label: 'Facturen', icon: Receipt, path: '/facturen' },
     ],
@@ -49,9 +48,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
       { label: 'Taken', icon: CheckSquare, path: '/taken' },
-      { label: 'Montage', icon: Wrench, path: '/montage' },
       { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
-      { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie' },
     ],
   },
   {
