@@ -78,6 +78,7 @@ import { generateFactuurPDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 
@@ -243,8 +244,9 @@ function isThisMonth(dateStr: string): boolean {
 
 export function FacturenLayout() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   // App settings (bedrijfsprofiel for PDF generation)
-  const { profile, primaireKleur, emailHandtekening, bedrijfsnaam } = useAppSettings()
+  const { profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   // Data state
@@ -507,7 +509,7 @@ export function FacturenLayout() {
         const betaalToken = generateBetaalToken()
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
         const newFactuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
-          user_id: '',
+          user_id: user?.id || '',
           klant_id: formData.klant_id,
           klant_naam: selectedKlant?.bedrijfsnaam || '',
           offerte_id: formData.offerte_id,
@@ -525,6 +527,7 @@ export function FacturenLayout() {
           voorwaarden: formData.voorwaarden,
           betaal_token: betaalToken,
           betaal_link: betaalLink,
+          factuur_type: 'standaard',
         }
 
         try {
@@ -533,6 +536,7 @@ export function FacturenLayout() {
           for (let i = 0; i < validItems.length; i++) {
             const item = validItems[i]
             await createFactuurItem({
+              user_id: user?.id || '',
               factuur_id: saved.id,
               beschrijving: item.beschrijving,
               aantal: item.aantal,
@@ -1070,7 +1074,7 @@ export function FacturenLayout() {
         factuurdatum: getTodayString(),
         vervaldatum: getDefaultVervaldatum(getTodayString()),
         notities: `Voorschot ${voorschotPercentage}% van offerte ${voorschotOfferte.nummer}`,
-        voorwaarden: 'Betaling binnen 14 dagen na factuurdatum.',
+        voorwaarden: factuurVoorwaarden || `Betaling binnen ${factuurBetaaltermijnDagen} dagen na factuurdatum.`,
         factuur_type: 'voorschot',
         betaal_token: vsToken,
         betaal_link: `${window.location.origin}/betalen/${vsToken}`,
@@ -1115,9 +1119,10 @@ export function FacturenLayout() {
       const selectedKlant = klanten.find((k) => k.id === eindafrekeningFactuur.klant_id)
 
       const voorschotTotaal = round2(betaaldeVoorschotten.reduce((s, f) => s + f.totaal, 0))
-      const restBedrag = round2(eindafrekeningFactuur.totaal - voorschotTotaal)
-      const restSubtotaal = round2(eindafrekeningFactuur.subtotaal - betaaldeVoorschotten.reduce((s, f) => s + f.subtotaal, 0))
-      const restBtw = round2(restBedrag - restSubtotaal)
+      const voorschotSubtotaal = round2(betaaldeVoorschotten.reduce((s, f) => s + f.subtotaal, 0))
+      const restSubtotaal = round2(eindafrekeningFactuur.subtotaal - voorschotSubtotaal)
+      const restBtw = round2(restSubtotaal * (eindafrekeningFactuur.subtotaal > 0 ? eindafrekeningFactuur.btw_bedrag / eindafrekeningFactuur.subtotaal : 0.21))
+      const restBedrag = round2(restSubtotaal + restBtw)
 
       const eaToken = generateBetaalToken()
       const eindafrekening: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {

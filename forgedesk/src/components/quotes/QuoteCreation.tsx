@@ -49,7 +49,6 @@ import {
   ChevronUp,
   ExternalLink,
   Copy,
-  Image,
   TrendingDown,
   DollarSign,
   MoreHorizontal,

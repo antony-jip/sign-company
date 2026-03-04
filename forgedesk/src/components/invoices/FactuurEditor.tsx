@@ -523,11 +523,13 @@ export function FactuurEditor() {
           bron_project_id: projectId || undefined,
           betaal_token: betaalToken,
           betaal_link: betaalLink,
+          factuur_type: 'standaard',
         })
 
         for (let i = 0; i < validItems.length; i++) {
           const item = validItems[i]
           await createFactuurItem({
+            user_id: user?.id || '',
             factuur_id: newFactuur.id,
             beschrijving: item.beschrijving,
             aantal: item.aantal,
