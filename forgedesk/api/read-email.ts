@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       flags: true,
     })
 
-    if (!message?.source) {
+    if (!message || !('source' in message) || !message.source) {
       await client.logout()
       return res.status(404).json({ error: 'Email niet gevonden' })
     }
@@ -66,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await client.logout()
 
     // Parse with mailparser
-    const parsed = await simpleParser(message.source)
+    const parsed = await simpleParser(message.source as Buffer)
 
     const attachments = (parsed.attachments || []).map((a) => ({
       filename: a.filename || 'bijlage',
@@ -77,8 +77,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       uid,
       from: parsed.from?.text || '',
-      to: parsed.to?.text || '',
-      cc: parsed.cc?.text || '',
+      to: Array.isArray(parsed.to) ? parsed.to.map(a => a.text).join(', ') : (parsed.to?.text || ''),
+      cc: Array.isArray(parsed.cc) ? parsed.cc.map(a => a.text).join(', ') : (parsed.cc?.text || ''),
       subject: parsed.subject || '',
       date: parsed.date?.toISOString() || '',
       bodyHtml: parsed.html || '',
