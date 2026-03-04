@@ -41,7 +41,7 @@ export interface Vestiging {
 
 export interface Klant {
   id: string;
-  user_id: string;
+  user_id?: string;
   bedrijfsnaam: string;
   contactpersoon: string;
   email: string;
@@ -80,7 +80,7 @@ export interface Klant {
 
 export interface KlantActiviteit {
   id: string;
-  user_id: string;
+  user_id?: string;
   klant_id: string;
   klant_naam?: string;
   datum: string;
@@ -133,7 +133,7 @@ export interface ImportResultaat {
 
 export interface Project {
   id: string;
-  user_id: string;
+  user_id?: string;
   klant_id: string;
   klant_naam?: string;
   naam: string;
@@ -164,7 +164,7 @@ export interface Project {
 
 export interface Taak {
   id: string;
-  user_id: string;
+  user_id?: string;
   project_id?: string;
   klant_id?: string;
   titel: string;
@@ -182,7 +182,7 @@ export interface Taak {
 
 export interface Offerte {
   id: string;
-  user_id: string;
+  user_id?: string;
   klant_id: string;
   klant_naam?: string;
   project_id?: string;
@@ -246,7 +246,7 @@ export interface OfferteActiviteit {
 
 export interface OfferteItem {
   id: string;
-  user_id: string;
+  user_id?: string;
   offerte_id: string;
   beschrijving: string;
   aantal: number;
@@ -284,7 +284,7 @@ export interface OfferteItem {
 
 export interface OfferteVersie {
   id: string;
-  user_id: string;
+  user_id?: string;
   offerte_id: string;
   versie_nummer: number;
   snapshot: string;
@@ -311,7 +311,7 @@ export interface OfferteItemPrijsVariant {
 
 export interface Document {
   id: string;
-  user_id: string;
+  user_id?: string;
   project_id: string | null;
   klant_id: string | null;
   naam: string;
@@ -329,7 +329,7 @@ export interface Document {
 
 export interface Email {
   id: string;
-  user_id: string;
+  user_id?: string;
   gmail_id: string;
   van: string;
   aan: string;
@@ -370,7 +370,7 @@ export interface EmailTracking {
 
 export interface EmailSequence {
   id: string;
-  user_id: string;
+  user_id?: string;
   naam: string;
   beschrijving: string;
   status: 'actief' | 'gepauzeerd' | 'concept';
@@ -392,7 +392,7 @@ export interface EmailSequenceStap {
 
 export interface CalendarEvent {
   id: string;
-  user_id: string;
+  user_id?: string;
   project_id: string | null;
   titel: string;
   beschrijving: string;
@@ -409,7 +409,7 @@ export interface CalendarEvent {
 
 export interface Grootboek {
   id: string;
-  user_id: string;
+  user_id?: string;
   code: string;
   naam: string;
   categorie: 'activa' | 'passiva' | 'omzet' | 'kosten';
@@ -420,7 +420,7 @@ export interface Grootboek {
 
 export interface BtwCode {
   id: string;
-  user_id: string;
+  user_id?: string;
   code: string;
   omschrijving: string;
   percentage: number;
@@ -431,7 +431,7 @@ export interface BtwCode {
 
 export interface Korting {
   id: string;
-  user_id: string;
+  user_id?: string;
   naam: string;
   type: 'percentage' | 'vast_bedrag';
   waarde: number;
@@ -443,7 +443,7 @@ export interface Korting {
 
 export interface AIChat {
   id: string;
-  user_id: string;
+  user_id?: string;
   rol: 'user' | 'assistant';
   bericht: string;
   created_at: string;
@@ -459,7 +459,7 @@ export interface NavItem {
 
 export interface Nieuwsbrief {
   id: string;
-  user_id: string;
+  user_id?: string;
   naam: string;
   onderwerp: string;
   html_inhoud: string;
@@ -473,7 +473,7 @@ export interface Nieuwsbrief {
 
 export interface AppSettings {
   id: string;
-  user_id: string;
+  user_id?: string;
   // Branche / Industry
   branche: string;
   branche_preset: 'sign_company' | 'bouw' | 'ict' | 'marketing' | 'detailhandel' | 'horeca' | 'zorg' | 'custom';
@@ -548,7 +548,7 @@ export interface PipelineStap {
  */
 export interface CalculatieProduct {
   id: string;
-  user_id: string;
+  user_id?: string;
   naam: string;                    // Bijv. "Dibond plaat 3mm", "Montage per uur"
   categorie: string;               // Bijv. "Materiaal", "Arbeid", "Transport"
   eenheid: string;                 // Bijv. "m²", "stuks", "uur", "meter"
@@ -588,7 +588,7 @@ export interface CalculatieRegel {
  */
 export interface CalculatieTemplate {
   id: string;
-  user_id: string;
+  user_id?: string;
   naam: string;                    // Bijv. "Standaard gevelreclame", "Autobelettering basis"
   beschrijving: string;            // Korte omschrijving waar de template voor is
   regels: CalculatieRegel[];       // De regels in dit template
@@ -618,7 +618,7 @@ export interface OfferteItemCalculatie {
  */
 export interface OfferteTemplate {
   id: string;
-  user_id: string;
+  user_id?: string;
   naam: string;                     // Bijv. "Autobelettering", "Gevelreclame"
   beschrijving: string;             // Korte uitleg waarvoor deze template is
   regels: OfferteTemplateRegel[];   // De vooringevulde offerte-regels
@@ -649,7 +649,7 @@ export interface OfferteTemplateRegel {
  */
 export interface TekeningGoedkeuring {
   id: string;
-  user_id: string;
+  user_id?: string;
   project_id: string;
   klant_id: string;
   // De documenten die ter goedkeuring zijn gestuurd
@@ -691,7 +691,7 @@ export interface EmailBijlage {
 
 export interface IngeplandEmail {
   id: string;
-  user_id: string;
+  user_id?: string;
   offerte_id: string;
   aan: string;
   cc?: string;
@@ -712,7 +712,7 @@ export type SortDirection = 'asc' | 'desc';
 
 export interface Factuur {
   id: string;
-  user_id: string;
+  user_id?: string;
   klant_id: string;
   klant_naam?: string;
   offerte_id?: string;
@@ -766,7 +766,7 @@ export interface Factuur {
 
 export interface FactuurItem {
   id: string;
-  user_id: string;
+  user_id?: string;
   factuur_id: string;
   beschrijving: string;
   aantal: number;
@@ -783,7 +783,7 @@ export interface FactuurItem {
 
 export interface Tijdregistratie {
   id: string;
-  user_id: string;
+  user_id?: string;
   project_id: string;
   project_naam?: string;
   taak_id?: string;
@@ -807,7 +807,7 @@ export interface Tijdregistratie {
 
 export interface Medewerker {
   id: string;
-  user_id: string;
+  user_id?: string;
   naam: string;
   email: string;
   telefoon: string;
@@ -830,7 +830,7 @@ export interface Medewerker {
 
 export interface Notificatie {
   id: string;
-  user_id: string;
+  user_id?: string;
   type: 'offerte_bekeken' | 'offerte_verlopen' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen';
   titel: string;
   bericht: string;
@@ -844,7 +844,7 @@ export interface Notificatie {
 
 export interface MontageAfspraak {
   id: string;
-  user_id: string;
+  user_id?: string;
   project_id: string;
   project_naam?: string;
   klant_id: string;
@@ -868,7 +868,7 @@ export interface MontageAfspraak {
 
 export interface Verlof {
   id: string;
-  user_id: string;
+  user_id?: string;
   medewerker_id: string;
   type: 'vakantie' | 'ziek' | 'ouderschapsverlof' | 'bijzonder' | 'bedrijfssluiting';
   start_datum: string;
@@ -881,7 +881,7 @@ export interface Verlof {
 
 export interface Bedrijfssluitingsdag {
   id: string;
-  user_id: string;
+  user_id?: string;
   datum: string;
   omschrijving: string;
   jaarlijks_herhalend: boolean;
@@ -893,7 +893,7 @@ export interface Bedrijfssluitingsdag {
 
 export interface ProjectToewijzing {
   id: string;
-  user_id: string;
+  user_id?: string;
   project_id: string;
   medewerker_id: string;
   rol: 'eigenaar' | 'medewerker' | 'viewer';
@@ -905,7 +905,7 @@ export interface ProjectToewijzing {
 
 export interface BookingSlot {
   id: string;
-  user_id: string;
+  user_id?: string;
   dag_van_week: number;
   start_tijd: string;
   eind_tijd: string;
@@ -917,7 +917,7 @@ export interface BookingSlot {
 
 export interface BookingAfspraak {
   id: string;
-  user_id: string;
+  user_id?: string;
   klant_naam: string;
   klant_email: string;
   klant_telefoon?: string;
@@ -935,7 +935,7 @@ export interface BookingAfspraak {
 
 export interface Werkbon {
   id: string;
-  user_id: string;
+  user_id?: string;
   werkbon_nummer: string;
   project_id: string;
   klant_id: string;
@@ -963,7 +963,7 @@ export interface Werkbon {
 
 export interface WerkbonRegel {
   id: string;
-  user_id: string;
+  user_id?: string;
   werkbon_id: string;
   type: 'arbeid' | 'materiaal' | 'overig';
   medewerker_id?: string;
@@ -981,7 +981,7 @@ export interface WerkbonRegel {
 
 export interface WerkbonFoto {
   id: string;
-  user_id: string;
+  user_id?: string;
   werkbon_id: string;
   type: 'voor' | 'na' | 'overig';
   url: string;
@@ -994,7 +994,7 @@ export interface WerkbonFoto {
 
 export interface HerinneringTemplate {
   id: string;
-  user_id: string;
+  user_id?: string;
   type: 'herinnering_1' | 'herinnering_2' | 'herinnering_3' | 'aanmaning';
   onderwerp: string;
   inhoud: string;
@@ -1008,7 +1008,7 @@ export interface HerinneringTemplate {
 
 export interface Leverancier {
   id: string;
-  user_id: string;
+  user_id?: string;
   bedrijfsnaam: string;
   contactpersoon?: string;
   email?: string;
@@ -1029,7 +1029,7 @@ export interface Leverancier {
 
 export interface Uitgave {
   id: string;
-  user_id: string;
+  user_id?: string;
   uitgave_nummer: string;
   leverancier_id?: string;
   project_id?: string;
@@ -1055,7 +1055,7 @@ export interface Uitgave {
 
 export interface Bestelbon {
   id: string;
-  user_id: string;
+  user_id?: string;
   bestelbon_nummer: string;
   leverancier_id: string;
   offerte_id?: string;
@@ -1076,7 +1076,7 @@ export interface Bestelbon {
 
 export interface BestelbonRegel {
   id: string;
-  user_id: string;
+  user_id?: string;
   bestelbon_id: string;
   omschrijving: string;
   aantal: number;
@@ -1095,7 +1095,7 @@ export interface BestelbonRegel {
 
 export interface Leveringsbon {
   id: string;
-  user_id: string;
+  user_id?: string;
   leveringsbon_nummer: string;
   klant_id: string;
   project_id?: string;
@@ -1117,7 +1117,7 @@ export interface Leveringsbon {
 
 export interface LeveringsbonRegel {
   id: string;
-  user_id: string;
+  user_id?: string;
   leveringsbon_id: string;
   omschrijving: string;
   aantal: number;
@@ -1131,7 +1131,7 @@ export interface LeveringsbonRegel {
 
 export interface VoorraadArtikel {
   id: string;
-  user_id: string;
+  user_id?: string;
   naam: string;
   sku?: string;
   categorie: string;
@@ -1152,7 +1152,7 @@ export interface VoorraadArtikel {
 
 export interface VoorraadMutatie {
   id: string;
-  user_id: string;
+  user_id?: string;
   artikel_id: string;
   type: 'inkoop' | 'verbruik' | 'correctie' | 'retour';
   aantal: number;
@@ -1170,7 +1170,7 @@ export interface VoorraadMutatie {
 
 export interface Deal {
   id: string;
-  user_id: string;
+  user_id?: string;
 
   // Koppeling
   klant_id: string;
@@ -1217,7 +1217,7 @@ export interface Deal {
 
 export interface DealActiviteit {
   id: string;
-  user_id: string;
+  user_id?: string;
   deal_id: string;
 
   type: 'notitie' | 'email' | 'telefoon' | 'vergadering' | 'offerte_verstuurd' | 'status_wijziging';
@@ -1235,7 +1235,7 @@ export interface DealActiviteit {
 
 export interface LeadFormulier {
   id: string;
-  user_id: string;
+  user_id?: string;
 
   naam: string;
   beschrijving?: string;
@@ -1271,7 +1271,7 @@ export interface LeadFormulierVeld {
 
 export interface LeadInzending {
   id: string;
-  user_id: string;
+  user_id?: string;
   formulier_id: string;
 
   data: Record<string, string>;
@@ -1317,7 +1317,7 @@ export type BriefpapierModus = 'geen' | 'achtergrond' | 'alleen_eerste_pagina';
 
 export interface DocumentStyle {
   id: string;
-  user_id: string;
+  user_id?: string;
   // Template basis
   template: DocumentTemplateId;
   // Lettertypen
