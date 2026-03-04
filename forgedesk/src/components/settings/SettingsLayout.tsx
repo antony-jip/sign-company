@@ -8,13 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 // Tabs removed - using custom left sidebar navigation
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
+// Dialog removed - email settings now inline
 import {
   Select,
   SelectContent,
@@ -1572,13 +1566,9 @@ function removeLocalEmailSettings(): void {
   localStorage.removeItem(EMAIL_SETTINGS_KEY)
 }
 
-function EmailSettingsDialog({
-  open,
-  onOpenChange,
+function EmailSettingsInline({
   onSaved,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
   onSaved: () => void
 }) {
   const [settings, setSettings] = useState<EmailSettings>(DEFAULT_EMAIL_SETTINGS)
@@ -1588,19 +1578,15 @@ function EmailSettingsDialog({
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // Load existing settings on open
+  // Load existing settings on mount
   useEffect(() => {
-    if (open) {
-      const existing = getLocalEmailSettings()
-      if (existing) {
-        setSettings(existing)
-      } else {
-        setSettings(DEFAULT_EMAIL_SETTINGS)
-      }
-      setError('')
-      setSuccess('')
+    const existing = getLocalEmailSettings()
+    if (existing) {
+      setSettings(existing)
+    } else {
+      setSettings(DEFAULT_EMAIL_SETTINGS)
     }
-  }, [open])
+  }, [])
 
   const handleSave = async () => {
     setError('')
@@ -1639,7 +1625,6 @@ function EmailSettingsDialog({
 
       setSuccess('E-mailinstellingen opgeslagen!')
       onSaved()
-      setTimeout(() => onOpenChange(false), 800)
     } catch (err: unknown) {
       // If Supabase save fails, local save already succeeded
       if (isSupabaseConfigured()) {
@@ -1647,7 +1632,6 @@ function EmailSettingsDialog({
       } else {
         setSuccess('E-mailinstellingen lokaal opgeslagen (demo modus)')
         onSaved()
-        setTimeout(() => onOpenChange(false), 800)
       }
     } finally {
       setIsSaving(false)
@@ -1711,21 +1695,20 @@ function EmailSettingsDialog({
   const isConnected = !!getLocalEmailSettings()
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-              <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
-            </div>
-            E-mail Instellingen
-          </DialogTitle>
-          <DialogDescription>
-            Configureer SMTP (verzenden) en IMAP (ontvangen) om e-mails te beheren vanuit FORGE.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 mt-2">
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+            <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
+          </div>
+          E-mail Instellingen
+        </CardTitle>
+        <CardDescription>
+          Configureer SMTP (verzenden) en IMAP (ontvangen) om e-mails te beheren vanuit FORGE.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
           {/* SMTP Server */}
           <div className="space-y-2">
             <Label htmlFor="smtp_host" className="flex items-center gap-2 text-sm font-medium">
@@ -1912,20 +1895,20 @@ function EmailSettingsDialog({
               <Save className="w-4 h-4" />
               {isSaving ? 'Opslaan...' : 'Opslaan'}
             </Button>
-            <Button variant="outline" onClick={handleTest} disabled={isTesting} className="gap-2">
-              <Mail className="w-4 h-4" />
-              {isTesting ? 'Testen...' : 'Test verbinding'}
-            </Button>
             {isConnected && (
-              <Button variant="ghost" onClick={handleDisconnect} className="gap-2 text-red-600 hover:text-red-700 ml-auto">
+              <Button variant="ghost" onClick={handleDisconnect} className="gap-2 text-red-600 hover:text-red-700">
                 <Trash2 className="w-4 h-4" />
                 Verwijderen
               </Button>
             )}
+            <Button variant="outline" onClick={handleTest} disabled={isTesting} className="gap-2 ml-auto">
+              <Mail className="w-4 h-4" />
+              {isTesting ? 'Testen...' : 'Test verbinding'}
+            </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -1940,7 +1923,6 @@ function IntegratiesTab() {
   // OpenAI key is now server-side only (configured via OPENAI_API_KEY env var on Vercel)
   const openaiConfigured = supabaseConnected
 
-  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
   const [emailConnected, setEmailConnected] = useState(false)
   const [emailAddress, setEmailAddress] = useState<string | null>(null)
 
@@ -2017,8 +1999,6 @@ function IntegratiesTab() {
       {integrations.map((integration) => (
         <Card
           key={integration.id}
-          className={integration.id === 'gmail' ? 'cursor-pointer hover:border-red-300 dark:hover:border-red-700 transition-colors' : ''}
-          onClick={integration.id === 'gmail' ? () => setEmailDialogOpen(true) : undefined}
         >
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
@@ -2064,24 +2044,14 @@ function IntegratiesTab() {
                   </p>
                 )}
 
-                {/* Gmail/Email setup info */}
-                {integration.id === 'gmail' && (
-                  <div className="mt-2">
-                    <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={(e) => { e.stopPropagation(); setEmailDialogOpen(true) }}>
-                      <Settings className="w-3 h-3" />
-                      {emailConnected ? 'Instellingen wijzigen' : 'SMTP Configureren'}
-                    </Button>
-                  </div>
-                )}
+                {/* Gmail/Email setup info - instellingen staan hieronder inline */}
               </div>
             </div>
           </CardContent>
         </Card>
       ))}
 
-      <EmailSettingsDialog
-        open={emailDialogOpen}
-        onOpenChange={setEmailDialogOpen}
+      <EmailSettingsInline
         onSaved={checkEmailStatus}
       />
     </div>
