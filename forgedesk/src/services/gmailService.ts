@@ -86,23 +86,22 @@ export async function sendEmail(
   to: string,
   subject: string,
   body: string,
-  options?: { cc?: string; html?: string; scheduledAt?: string }
+  options?: { cc?: string; html?: string }
 ): Promise<{ success: boolean; message: string }> {
-  const token = await getAuthToken()
+  const credentials = getLocalEmailCredentials()
 
   const response = await fetch('/api/send-email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({
+      ...credentials,
       to,
       subject,
       body,
       cc: options?.cc,
       html: options?.html,
-      scheduledAt: options?.scheduledAt,
     }),
   })
 
@@ -208,7 +207,7 @@ export async function testEmailConnection(
   return response.json()
 }
 
-function getLocalEmailCredentials(): { gmail_address: string; app_password: string; imap_host?: string; imap_port?: number } {
+function getLocalEmailCredentials(): { gmail_address: string; app_password: string; smtp_host?: string; smtp_port?: number; imap_host?: string; imap_port?: number } {
   try {
     const stored = localStorage.getItem('forgedesk_email_settings')
     if (stored) {
@@ -217,6 +216,8 @@ function getLocalEmailCredentials(): { gmail_address: string; app_password: stri
         return {
           gmail_address: settings.gmail_address,
           app_password: settings.app_password,
+          smtp_host: settings.smtp_host,
+          smtp_port: settings.smtp_port,
           imap_host: settings.imap_host,
           imap_port: settings.imap_port,
         }
