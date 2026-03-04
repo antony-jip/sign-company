@@ -755,7 +755,7 @@ export function EmailLayout() {
     const isScheduled = !!data.scheduledAt
 
     try {
-      await sendEmail(data.to, data.subject, data.body, {
+      await sendEmailViaApi(data.to, data.subject, data.body, {
         html: data.body,
       })
 
