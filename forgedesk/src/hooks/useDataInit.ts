@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Email, Klant, Project, Offerte, OfferteItem, MontageAfspraak, Taak } from '@/types'
+import type { Email, Klant, Project, Offerte, OfferteItem, MontageAfspraak, Taak, Factuur, FactuurItem } from '@/types'
 import { safeSetItem } from '@/utils/localStorageUtils'
 
 const storageKeys = [
@@ -19,6 +19,7 @@ const storageKeys = [
   'forgedesk_montage_afspraken',
   'forgedesk_werkbonnen',
   'forgedesk_facturen',
+  'forgedesk_factuur_items',
 ]
 
 // ── Demo seed data (only used when localStorage is empty) ──
@@ -457,7 +458,7 @@ const demoOffertes: Offerte[] = [
     project_id: 'proj-003',
     nummer: 'OFR-2026-022',
     titel: 'Terrassigning compleet',
-    status: 'bekeken',
+    status: 'gefactureerd',
     notities: 'Menuboards, windschermen, uithandbord',
     totaal: 4200,
     subtotaal: 3471.07,
@@ -605,6 +606,157 @@ const demoMontageAfspraken: MontageAfspraak[] = [
   },
 ]
 
+// ── Demo facturen ──
+
+const demoFacturen: Factuur[] = [
+  {
+    id: 'fact-001',
+    user_id: 'demo-user',
+    klant_id: 'klant-001',
+    klant_naam: 'Bakkerij Van Dijk',
+    offerte_id: 'off-001',
+    project_id: 'proj-001',
+    nummer: 'FAC-2026-012',
+    titel: 'Raambelettering openingstijden (2 ramen)',
+    status: 'betaald',
+    subtotaal: 400,
+    btw_bedrag: 84,
+    totaal: 484,
+    betaald_bedrag: 484,
+    factuurdatum: daysAgo(21).split('T')[0],
+    vervaldatum: daysAgo(7).split('T')[0],
+    betaaldatum: daysAgo(10).split('T')[0],
+    notities: 'Deelbetaling raambelettering, snel voldaan.',
+    voorwaarden: 'Betaling binnen 14 dagen na factuurdatum.',
+    bron_type: 'offerte',
+    bron_offerte_id: 'off-001',
+    bron_project_id: 'proj-001',
+    betaaltermijn_dagen: 14,
+    factuur_type: 'standaard',
+    created_at: daysAgo(21),
+    updated_at: daysAgo(10),
+  },
+  {
+    id: 'fact-002',
+    user_id: 'demo-user',
+    klant_id: 'klant-003',
+    klant_naam: 'Restaurant De Gouden Leeuw',
+    offerte_id: 'off-003',
+    project_id: 'proj-003',
+    nummer: 'FAC-2026-013',
+    titel: 'Voorschotfactuur terrassigning',
+    status: 'verzonden',
+    subtotaal: 1735.54,
+    btw_bedrag: 364.46,
+    totaal: 2100,
+    betaald_bedrag: 0,
+    factuurdatum: daysAgo(5).split('T')[0],
+    vervaldatum: new Date(Date.now() + 9 * 86400000).toISOString().split('T')[0],
+    notities: '50% voorschot terrassigning conform offerte OFR-2026-022.',
+    voorwaarden: 'Betaling binnen 14 dagen na factuurdatum.',
+    bron_type: 'offerte',
+    bron_offerte_id: 'off-003',
+    bron_project_id: 'proj-003',
+    betaaltermijn_dagen: 14,
+    factuur_type: 'voorschot',
+    voorschot_percentage: 50,
+    created_at: daysAgo(5),
+    updated_at: daysAgo(5),
+  },
+  {
+    id: 'fact-003',
+    user_id: 'demo-user',
+    klant_id: 'klant-005',
+    klant_naam: 'PrintWorks BV',
+    nummer: 'FAC-2026-010',
+    titel: 'Vinyl belettering 3 bedrijfswagens',
+    status: 'vervallen',
+    subtotaal: 1860,
+    btw_bedrag: 390.60,
+    totaal: 2250.60,
+    betaald_bedrag: 0,
+    factuurdatum: daysAgo(45).split('T')[0],
+    vervaldatum: daysAgo(15).split('T')[0],
+    betalingsherinnering_verzonden: true,
+    notities: 'Full-wrap belettering 3x Volkswagen Transporter.',
+    voorwaarden: 'Betaling binnen 30 dagen na factuurdatum.',
+    bron_type: 'handmatig',
+    betaaltermijn_dagen: 30,
+    herinnering_1_verstuurd: daysAgo(14),
+    factuur_type: 'standaard',
+    created_at: daysAgo(45),
+    updated_at: daysAgo(14),
+  },
+]
+
+const demoFactuurItems: FactuurItem[] = [
+  {
+    id: 'fi-001',
+    user_id: 'demo-user',
+    factuur_id: 'fact-001',
+    beschrijving: 'Raambelettering openingstijden',
+    aantal: 2,
+    eenheidsprijs: 200,
+    btw_percentage: 21,
+    korting_percentage: 0,
+    totaal: 400,
+    volgorde: 1,
+    created_at: daysAgo(21),
+  },
+  {
+    id: 'fi-002',
+    user_id: 'demo-user',
+    factuur_id: 'fact-002',
+    beschrijving: 'Menuboards buiten - Dibond wisselframe (2 stuks)',
+    aantal: 2,
+    eenheidsprijs: 450,
+    btw_percentage: 21,
+    korting_percentage: 0,
+    totaal: 900,
+    volgorde: 1,
+    created_at: daysAgo(5),
+  },
+  {
+    id: 'fi-003',
+    user_id: 'demo-user',
+    factuur_id: 'fact-002',
+    beschrijving: 'Windschermen met logo - mesh doek (4 stuks) - 50% voorschot',
+    aantal: 2,
+    eenheidsprijs: 300,
+    btw_percentage: 21,
+    korting_percentage: 0,
+    totaal: 600,
+    volgorde: 2,
+    created_at: daysAgo(5),
+  },
+  {
+    id: 'fi-004',
+    user_id: 'demo-user',
+    factuur_id: 'fact-002',
+    beschrijving: 'Uithandbord dubbelzijdig LED - 50% voorschot',
+    aantal: 1,
+    eenheidsprijs: 235.54,
+    btw_percentage: 21,
+    korting_percentage: 0,
+    totaal: 235.54,
+    volgorde: 3,
+    created_at: daysAgo(5),
+  },
+  {
+    id: 'fi-005',
+    user_id: 'demo-user',
+    factuur_id: 'fact-003',
+    beschrijving: 'Full-wrap belettering Volkswagen Transporter',
+    aantal: 3,
+    eenheidsprijs: 620,
+    btw_percentage: 21,
+    korting_percentage: 0,
+    totaal: 1860,
+    volgorde: 1,
+    created_at: daysAgo(45),
+  },
+]
+
 // ── Initialization ──
 
 export function useDataInit() {
@@ -634,6 +786,8 @@ export function useDataInit() {
       seedIfEmpty('forgedesk_offerte_items', demoOfferteItems)
       seedIfEmpty('forgedesk_taken', demoTaken)
       seedIfEmpty('forgedesk_montage_afspraken', demoMontageAfspraken)
+      seedIfEmpty('forgedesk_facturen', demoFacturen)
+      seedIfEmpty('forgedesk_factuur_items', demoFactuurItems)
     } catch (e) {
       console.warn('localStorage init failed:', e)
     }
