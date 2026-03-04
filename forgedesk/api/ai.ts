@@ -63,10 +63,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Sla chat op in database
     const lastUserMsg = messages[messages.length - 1]
     if (lastUserMsg?.role === 'user') {
-      await supabase.from('ai_chats').insert([
-        { user_id: userId, rol: 'user', bericht: lastUserMsg.content },
-        { user_id: userId, rol: 'assistant', bericht: data.choices?.[0]?.message?.content || '' },
-      ]).catch(() => {}) // Niet-kritiek als dit faalt
+      try {
+        await supabase.from('ai_chats').insert([
+          { user_id: userId, rol: 'user', bericht: lastUserMsg.content },
+          { user_id: userId, rol: 'assistant', bericht: data.choices?.[0]?.message?.content || '' },
+        ])
+      } catch {
+        // Niet-kritiek als dit faalt
+      }
     }
 
     return res.status(200).json(data)

@@ -72,6 +72,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { seq: `${startSeq}:${endSeq}` },
       { envelope: true, flags: true, bodyStructure: true }
     )) {
+      if (!message.envelope) continue
+
       const from = message.envelope.from?.[0]
       const toAddresses = message.envelope.to || []
 
