@@ -1231,7 +1231,7 @@ export function FactuurEditor() {
               <CardContent className="space-y-2">
                 {['herinnering_1_verstuurd', 'herinnering_2_verstuurd', 'herinnering_3_verstuurd', 'aanmaning_verstuurd'].map((field, idx) => {
                   const labels = ['1e herinnering', '2e herinnering', '3e herinnering', 'Aanmaning']
-                  const value = (existingFactuur as Record<string, unknown>)[field] as string | undefined
+                  const value = (existingFactuur as unknown as Record<string, unknown>)[field] as string | undefined
                   return (
                     <div key={field} className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">{labels[idx]}</span>

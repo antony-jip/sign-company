@@ -36,6 +36,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import type { Offerte, OfferteItem } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '../../utils/logger'
 
 interface ProjectOfferteEditorProps {
@@ -51,6 +52,7 @@ interface EditableItem extends OfferteItem {
 }
 
 export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: ProjectOfferteEditorProps) {
+  const { user } = useAuth()
   const { standaardBtw } = useAppSettings()
   const [offerte, setOfferte] = useState<Offerte | null>(null)
   const [items, setItems] = useState<EditableItem[]>([])
@@ -206,6 +208,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
       const newItems = items.filter(i => !i._deleted && i._isNew)
       await Promise.all(newItems.map((item, idx) =>
         createOfferteItem({
+          user_id: user?.id || '',
           offerte_id: offerteId,
           beschrijving: item.beschrijving,
           aantal: item.aantal,

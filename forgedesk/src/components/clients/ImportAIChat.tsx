@@ -144,7 +144,7 @@ function processQuery(q: string, data: AllData): { text: string; data?: Response
       type: 'Project', omschrijving: p.naam, datum: p.start_datum || '', bedrag: p.budget || 0, status: statusLabel(p.status)
     }))
     offertes.forEach(o => alleItems.push({
-      type: 'Offerte', omschrijving: o.onderwerp || o.nummer, datum: o.created_at || '', bedrag: o.totaal, status: statusLabel(o.status)
+      type: 'Offerte', omschrijving: o.titel || o.nummer, datum: o.created_at || '', bedrag: o.totaal, status: statusLabel(o.status)
     }))
     facturen.forEach(f => alleItems.push({
       type: 'Factuur', omschrijving: f.nummer, datum: f.factuurdatum || '', bedrag: f.totaal, status: statusLabel(f.status)

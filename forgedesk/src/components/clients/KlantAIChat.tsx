@@ -193,9 +193,9 @@ function processKlantQuery(q: string, data: KlantData): { text: string; data?: R
       text: `**Offertes voor ${data.klantNaam}:**\n• ${open.length} open (${eur(open.reduce((s, o) => s + o.totaal, 0))})\n• ${goedgekeurd.length} goedgekeurd (${eur(goedgekeurd.reduce((s, o) => s + o.totaal, 0))})\n• ${afgewezen.length} afgewezen\n\nTotale waarde: **${eur(totaal)}**`,
       data: all.length > 0 ? {
         type: 'table',
-        headers: ['Nummer', 'Onderwerp', 'Status', 'Bedrag'],
+        headers: ['Nummer', 'Titel', 'Status', 'Bedrag'],
         rows: all.map(o => ({
-          cells: [o.nummer, o.onderwerp || '—', statusLabel(o.status), eur(o.totaal)]
+          cells: [o.nummer, o.titel || '—', statusLabel(o.status), eur(o.totaal)]
         }))
       } : undefined
     }

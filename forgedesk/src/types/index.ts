@@ -82,6 +82,7 @@ export interface KlantActiviteit {
   id: string;
   user_id: string;
   klant_id: string;
+  klant_naam?: string;
   datum: string;
   type: 'project' | 'offerte';
   omschrijving: string;

@@ -563,6 +563,7 @@ export function TijdregistratieLayout() {
         // Factuuritems aanmaken
         for (const item of items) {
           await createFactuurItem({
+            user_id: regs[0].user_id,
             factuur_id: factuur.id,
             ...item,
           });

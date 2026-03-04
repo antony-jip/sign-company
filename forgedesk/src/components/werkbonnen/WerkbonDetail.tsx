@@ -495,7 +495,7 @@ export function WerkbonDetail() {
       })
 
       for (const item of factuurItems) {
-        await createFactuurItem({ ...item, factuur_id: factuur.id })
+        await createFactuurItem({ ...item, user_id: userId, factuur_id: factuur.id })
       }
 
       await updateWerkbon(werkbonId, { status: 'gefactureerd', factuur_id: factuur.id })

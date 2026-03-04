@@ -43,11 +43,14 @@ export async function signOut() {
 
 export async function getSession() {
   if (!isSupabaseConfigured() || !supabase) {
-    const user = localStorage.getItem('forgedesk_demo_user')
-    if (user) {
-      return { session: { access_token: 'demo', user: JSON.parse(user) }, user: JSON.parse(user) }
+    let user = localStorage.getItem('forgedesk_demo_user')
+    if (!user) {
+      // Auto-create demo user so the app is always accessible without login
+      const demoUser = { id: 'demo-user', email: 'demo@forgedesk.nl', user_metadata: { voornaam: 'Demo', achternaam: 'Gebruiker' } }
+      localStorage.setItem('forgedesk_demo_user', JSON.stringify(demoUser))
+      user = JSON.stringify(demoUser)
     }
-    return { session: null, user: null }
+    return { session: { access_token: 'demo', user: JSON.parse(user) }, user: JSON.parse(user) }
   }
   const { data } = await supabase.auth.getSession()
   const user = data.session?.user ? { id: data.session.user.id, email: data.session.user.email ?? '', user_metadata: (data.session.user.user_metadata ?? {}) as Record<string, string> } : null
@@ -73,11 +76,14 @@ export interface AuthSession {
 
 export function onAuthStateChange(callback: (event: string, session: AuthSession | null) => void) {
   if (!isSupabaseConfigured() || !supabase) {
-    // Demo mode - check localStorage
-    const user = localStorage.getItem('forgedesk_demo_user')
-    if (user) {
-      callback('SIGNED_IN', { access_token: 'demo', user: JSON.parse(user) })
+    // Demo mode - auto-create user if needed and always fire SIGNED_IN
+    let user = localStorage.getItem('forgedesk_demo_user')
+    if (!user) {
+      const demoUser = { id: 'demo-user', email: 'demo@forgedesk.nl', user_metadata: { voornaam: 'Demo', achternaam: 'Gebruiker' } }
+      localStorage.setItem('forgedesk_demo_user', JSON.stringify(demoUser))
+      user = JSON.stringify(demoUser)
     }
+    callback('SIGNED_IN', { access_token: 'demo', user: JSON.parse(user) })
     return { data: { subscription: { unsubscribe: () => {} } } }
   }
   return supabase.auth.onAuthStateChange((event, session) => {

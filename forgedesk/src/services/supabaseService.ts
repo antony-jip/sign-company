@@ -91,7 +91,8 @@ function safeParseJsonArray(val: unknown): unknown[] {
   return []
 }
 
-function normalizeKlant(klant: Record<string, unknown>): Klant {
+function normalizeKlant(raw: unknown): Klant {
+  const klant = raw as Record<string, unknown>;
   return {
     ...klant,
     bedrijfsnaam: (klant.bedrijfsnaam as string) || '',
@@ -403,15 +404,20 @@ export async function deleteTaak(id: string): Promise<void> {
 
 export async function getOffertes(): Promise<Offerte[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('offertes')
-      .select('*, klanten(bedrijfsnaam)')
-      .order('created_at', { ascending: false })
-    if (error) throw error
-    return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
-      ...o,
-      klant_naam: o.klanten?.bedrijfsnaam || '',
-    }))
+    try {
+      const { data, error } = await supabase
+        .from('offertes')
+        .select('*, klanten(bedrijfsnaam)')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
+        ...o,
+        klant_naam: o.klanten?.bedrijfsnaam || '',
+      }))
+    } catch (err) {
+      // Supabase failed — fall back to localStorage
+      console.warn('Supabase getOffertes failed, falling back to localStorage:', err)
+    }
   }
   const offertes = getLocalData<Offerte>('offertes')
   const klanten = getLocalData<Klant>('klanten')
