@@ -1966,7 +1966,9 @@ function InstellingenSection() {
     settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking']
   )
   const [urenVelden, setUrenVelden] = useState<string[]>(
-    settings.calculatie_uren_velden || ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
+    (settings.calculatie_uren_velden && settings.calculatie_uren_velden.length > 0)
+      ? settings.calculatie_uren_velden
+      : ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
   )
   const [nieuwVeld, setNieuwVeld] = useState('')
   const [nieuwUrenVeld, setNieuwUrenVeld] = useState('')
@@ -1979,7 +1981,10 @@ function InstellingenSection() {
     setEenheden(settings.calculatie_eenheden || ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'])
     setToonInkoopInOfferte(settings.calculatie_toon_inkoop_in_offerte ?? false)
     setRegelVelden(settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking'])
-    setUrenVelden(settings.calculatie_uren_velden || ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie'])
+    setUrenVelden((settings.calculatie_uren_velden && settings.calculatie_uren_velden.length > 0)
+      ? settings.calculatie_uren_velden
+      : ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
+    )
   }, [settings])
 
   const handleSave = async () => {

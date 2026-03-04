@@ -277,7 +277,9 @@ export function QuoteCreation() {
   //   1. Calculatieregels — matcht productnaam/categorie tegen geconfigureerde uren-velden
   //      (ongeacht eenheid — ook "stuks" wordt meegeteld als de naam matcht)
   //   2. Detail velden (namefields) — matcht op label, pakt getal uit waarde
-  const urenVelden = settings.calculatie_uren_velden || ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
+  const urenVelden = (settings.calculatie_uren_velden && settings.calculatie_uren_velden.length > 0)
+    ? settings.calculatie_uren_velden
+    : ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
 
   const { urenPerVeld, totaalUren, materiaalKosten, tariefPerVeld } = useMemo(() => {
     const urenMap: Record<string, number> = {}
