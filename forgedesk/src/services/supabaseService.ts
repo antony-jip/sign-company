@@ -2100,14 +2100,14 @@ export async function createVerlof(verlof: Omit<Verlof, 'id' | 'created_at'>): P
 export async function updateVerlof(id: string, updates: Partial<Verlof>): Promise<Verlof> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('verlof').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabase.from('verlof').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
     return data
   }
   const items = getLocalData<Verlof>('verlof')
   const index = items.findIndex((v) => v.id === id)
   if (index === -1) throw new Error('Verlof niet gevonden')
-  items[index] = { ...items[index], ...updates }
+  items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('verlof', items)
   return items[index]
 }
@@ -2229,14 +2229,14 @@ export async function createBookingSlot(slot: Omit<BookingSlot, 'id' | 'created_
 export async function updateBookingSlot(id: string, updates: Partial<BookingSlot>): Promise<BookingSlot> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('booking_slots').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabase.from('booking_slots').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
     return data
   }
   const items = getLocalData<BookingSlot>('booking_slots')
   const index = items.findIndex((s) => s.id === id)
   if (index === -1) throw new Error('Booking slot niet gevonden')
-  items[index] = { ...items[index], ...updates }
+  items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('booking_slots', items)
   return items[index]
 }
@@ -2291,14 +2291,14 @@ export async function createBookingAfspraak(afspraak: Omit<BookingAfspraak, 'id'
 export async function updateBookingAfspraak(id: string, updates: Partial<BookingAfspraak>): Promise<BookingAfspraak> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('booking_afspraken').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabase.from('booking_afspraken').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
     return data
   }
   const items = getLocalData<BookingAfspraak>('booking_afspraken')
   const index = items.findIndex((a) => a.id === id)
   if (index === -1) throw new Error('Booking afspraak niet gevonden')
-  items[index] = { ...items[index], ...updates }
+  items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('booking_afspraken', items)
   return items[index]
 }
@@ -2425,14 +2425,14 @@ export async function createWerkbonRegel(regel: Omit<WerkbonRegel, 'id' | 'creat
 export async function updateWerkbonRegel(id: string, updates: Partial<WerkbonRegel>): Promise<WerkbonRegel> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbon_regels').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabase.from('werkbon_regels').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
     return data
   }
   const items = getLocalData<WerkbonRegel>('werkbon_regels')
   const index = items.findIndex((r) => r.id === id)
   if (index === -1) throw new Error('Werkbon regel niet gevonden')
-  items[index] = { ...items[index], ...updates }
+  items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('werkbon_regels', items)
   return items[index]
 }
@@ -2546,14 +2546,14 @@ export async function createHerinneringTemplate(template: Omit<HerinneringTempla
 export async function updateHerinneringTemplate(id: string, updates: Partial<HerinneringTemplate>): Promise<HerinneringTemplate> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('herinnering_templates').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabase.from('herinnering_templates').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
     return data
   }
   const items = getLocalData<HerinneringTemplate>('herinnering_templates')
   const index = items.findIndex((t) => t.id === id)
   if (index === -1) throw new Error('Herinnering template niet gevonden')
-  items[index] = { ...items[index], ...updates }
+  items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('herinnering_templates', items)
   return items[index]
 }
@@ -2612,14 +2612,14 @@ export async function createLeverancier(lev: Omit<Leverancier, 'id' | 'created_a
 export async function updateLeverancier(id: string, updates: Partial<Leverancier>): Promise<Leverancier> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('leveranciers').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabase.from('leveranciers').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
     return data
   }
   const items = getLocalData<Leverancier>('leveranciers')
   const index = items.findIndex((l) => l.id === id)
   if (index === -1) throw new Error('Leverancier niet gevonden')
-  items[index] = { ...items[index], ...updates }
+  items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('leveranciers', items)
   return items[index]
 }
@@ -2947,14 +2947,14 @@ export async function createBestelbonRegel(data: Omit<BestelbonRegel, 'id' | 'cr
 export async function updateBestelbonRegel(id: string, updates: Partial<BestelbonRegel>): Promise<BestelbonRegel> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('bestelbon_regels').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabase.from('bestelbon_regels').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
     return data
   }
   const items = getLocalData<BestelbonRegel>('bestelbon_regels')
   const index = items.findIndex((r) => r.id === id)
   if (index === -1) throw new Error('BestelbonRegel niet gevonden')
-  items[index] = { ...items[index], ...updates }
+  items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('bestelbon_regels', items)
   return items[index]
 }
@@ -3088,14 +3088,14 @@ export async function createLeveringsbonRegel(data: Omit<LeveringsbonRegel, 'id'
 export async function updateLeveringsbonRegel(id: string, updates: Partial<LeveringsbonRegel>): Promise<LeveringsbonRegel> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('leveringsbon_regels').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabase.from('leveringsbon_regels').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
     return data
   }
   const items = getLocalData<LeveringsbonRegel>('leveringsbon_regels')
   const index = items.findIndex((r) => r.id === id)
   if (index === -1) throw new Error('LeveringsbonRegel niet gevonden')
-  items[index] = { ...items[index], ...updates }
+  items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('leveringsbon_regels', items)
   return items[index]
 }
@@ -3492,14 +3492,14 @@ export async function createLeadInzending(data: Omit<LeadInzending, 'id' | 'crea
 export async function updateLeadInzending(id: string, updates: Partial<LeadInzending>): Promise<LeadInzending> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('lead_inzendingen').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabase.from('lead_inzendingen').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
     if (error) throw error
     return data
   }
   const items = getLocalData<LeadInzending>('lead_inzendingen')
   const index = items.findIndex((i) => i.id === id)
   if (index === -1) throw new Error('LeadInzending niet gevonden')
-  items[index] = { ...items[index], ...updates }
+  items[index] = { ...items[index], ...updates, updated_at: now() }
   setLocalData('lead_inzendingen', items)
   return items[index]
 }
