@@ -50,6 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Fetch full email source by UID
     const message = await client.fetchOne(String(uid), {
+      uid: true,
       envelope: true,
       source: true,
       flags: true,
@@ -61,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Mark as read
-    await client.messageFlagsAdd(String(uid), ['\\Seen'])
+    await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true })
 
     await client.logout()
 
