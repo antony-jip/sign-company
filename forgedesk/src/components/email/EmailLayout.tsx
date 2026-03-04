@@ -755,8 +755,8 @@ export function EmailLayout() {
     const isScheduled = !!data.scheduledAt
 
     try {
-      await sendEmailViaApi(data.to, data.subject, data.body, {
-        scheduledAt: data.scheduledAt,
+      await sendEmail(data.to, data.subject, data.body, {
+        html: data.body,
       })
 
       const newEmail: Omit<Email, 'id' | 'created_at'> = {
