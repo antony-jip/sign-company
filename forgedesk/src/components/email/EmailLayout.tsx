@@ -456,7 +456,11 @@ export function EmailLayout() {
     if (useIMAP && !email.inhoud) {
       setIsLoadingBody(true)
       try {
-        const detail = await readEmailFromIMAP(Number(email.id))
+        const folderMap: Record<string, string> = {
+          inbox: 'INBOX', verzonden: 'verzonden', concepten: 'concepten',
+          prullenbak: 'prullenbak', gepland: 'gepland', gesnoozed: 'INBOX',
+        }
+        const detail = await readEmailFromIMAP(Number(email.id), folderMap[selectedFolder] || 'INBOX')
         const updatedEmail: Email = {
           ...email,
           gelezen: true,
@@ -478,7 +482,7 @@ export function EmailLayout() {
       // Supabase mode: update read status in DB
       updateEmail(email.id, { gelezen: true }).catch(() => {})
     }
-  }, [useIMAP])
+  }, [useIMAP, selectedFolder])
 
   const handleToggleStar = useCallback((email: Email) => {
     const newStarred = !email.starred
