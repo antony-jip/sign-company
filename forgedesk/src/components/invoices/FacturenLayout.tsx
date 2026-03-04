@@ -993,7 +993,7 @@ export function FacturenLayout() {
 
       const cnToken = generateBetaalToken()
       const creditnota: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
-        user_id: '',
+        user_id: user?.id || '',
         klant_id: creditnotaFactuur.klant_id,
         klant_naam: selectedKlant?.bedrijfsnaam || creditnotaFactuur.klant_naam || '',
         offerte_id: creditnotaFactuur.offerte_id,
@@ -1059,7 +1059,7 @@ export function FacturenLayout() {
 
       const vsToken = generateBetaalToken()
       const voorschotFactuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
-        user_id: '',
+        user_id: user?.id || '',
         klant_id: voorschotOfferte.klant_id,
         klant_naam: selectedKlant?.bedrijfsnaam || voorschotOfferte.klant_naam || '',
         offerte_id: voorschotOfferte.id,
@@ -1126,7 +1126,7 @@ export function FacturenLayout() {
 
       const eaToken = generateBetaalToken()
       const eindafrekening: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {
-        user_id: '',
+        user_id: user?.id || '',
         klant_id: eindafrekeningFactuur.klant_id,
         klant_naam: selectedKlant?.bedrijfsnaam || eindafrekeningFactuur.klant_naam || '',
         offerte_id: eindafrekeningFactuur.offerte_id,

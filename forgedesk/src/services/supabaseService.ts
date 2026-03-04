@@ -91,7 +91,8 @@ function safeParseJsonArray(val: unknown): unknown[] {
   return []
 }
 
-function normalizeKlant(klant: Record<string, unknown>): Klant {
+function normalizeKlant(raw: unknown): Klant {
+  const klant = raw as Record<string, unknown>;
   return {
     ...klant,
     bedrijfsnaam: (klant.bedrijfsnaam as string) || '',

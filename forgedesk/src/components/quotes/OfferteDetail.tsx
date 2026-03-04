@@ -323,6 +323,7 @@ export function OfferteDetail() {
       // Copy items
       for (const item of items) {
         await createOfferteItem({
+          user_id: user?.id || '',
           offerte_id: newOfferte.id,
           beschrijving: item.beschrijving,
           aantal: item.aantal,

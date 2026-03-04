@@ -290,6 +290,14 @@ export function MontagePlanningLayout() {
     return map;
   }, [weekAfspraken, weekDates]);
 
+  const monteurMap = useMemo(() => {
+    const map: Record<string, Medewerker> = {};
+    medewerkers.forEach((m) => {
+      map[m.id] = m;
+    });
+    return map;
+  }, [medewerkers]);
+
   // Conflict detection: find overlapping montages for the same monteur
   const conflicts = useMemo(() => {
     const found: { monteurId: string; monteurNaam: string; afspraak1: MontageAfspraak; afspraak2: MontageAfspraak }[] = [];
@@ -345,14 +353,6 @@ export function MontagePlanningLayout() {
     });
     return ids;
   }, [conflicts]);
-
-  const monteurMap = useMemo(() => {
-    const map: Record<string, Medewerker> = {};
-    medewerkers.forEach((m) => {
-      map[m.id] = m;
-    });
-    return map;
-  }, [medewerkers]);
 
   const monteurs = useMemo(
     () => medewerkers.filter((m) => m.status === "actief"),

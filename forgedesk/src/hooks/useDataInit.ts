@@ -491,21 +491,21 @@ const demoOffertes: Offerte[] = [
 
 const demoOfferteItems: OfferteItem[] = [
   {
-    id: 'oi-001', offerte_id: 'off-001',
+    id: 'oi-001', user_id: 'demo-user', offerte_id: 'off-001',
     beschrijving: 'Doosletters "Bakkerij Van Dijk" - LED verlicht',
     aantal: 1, eenheidsprijs: 2800, btw_percentage: 21, korting_percentage: 0,
     totaal: 2800, volgorde: 1,
     created_at: daysAgo(14),
   },
   {
-    id: 'oi-002', offerte_id: 'off-001',
+    id: 'oi-002', user_id: 'demo-user', offerte_id: 'off-001',
     beschrijving: 'Montage en elektrische aansluiting',
     aantal: 1, eenheidsprijs: 650, btw_percentage: 21, korting_percentage: 0,
     totaal: 650, volgorde: 2,
     created_at: daysAgo(14),
   },
   {
-    id: 'oi-003', offerte_id: 'off-001',
+    id: 'oi-003', user_id: 'demo-user', offerte_id: 'off-001',
     beschrijving: 'Raambelettering openingstijden (2 ramen)',
     aantal: 2, eenheidsprijs: 200, btw_percentage: 21, korting_percentage: 0,
     totaal: 400, volgorde: 3,

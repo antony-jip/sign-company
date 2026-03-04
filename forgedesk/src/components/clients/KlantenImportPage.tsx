@@ -477,7 +477,7 @@ Regels:
                           <td className="px-3 py-1.5 text-muted-foreground">{i + 1}</td>
                           {previewHeaders.map((h) => (
                             <td key={h} className="px-3 py-1.5 whitespace-nowrap max-w-[200px] truncate">
-                              {(row as Record<string, string>)[h] || <span className="text-muted-foreground">-</span>}
+                              {(row as unknown as Record<string, string>)[h] || <span className="text-muted-foreground">-</span>}
                             </td>
                           ))}
                         </tr>

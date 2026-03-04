@@ -804,6 +804,7 @@ export function QuoteCreation() {
         await Promise.all(
           items.map((item, index) =>
             createOfferteItem({
+              user_id: user.id,
               offerte_id: currentId,
               beschrijving: item.beschrijving,
               aantal: item.aantal,
@@ -861,6 +862,7 @@ export function QuoteCreation() {
         await Promise.all(
           items.map((item, index) =>
             createOfferteItem({
+              user_id: user.id,
               offerte_id: newOfferte.id,
               beschrijving: item.beschrijving,
               aantal: item.aantal,
@@ -1050,6 +1052,7 @@ export function QuoteCreation() {
       await Promise.all(
         items.map((item, index) =>
           createOfferteItem({
+            user_id: user.id,
             offerte_id: newOfferte.id,
             beschrijving: item.beschrijving,
             aantal: item.aantal,
@@ -1225,6 +1228,7 @@ export function QuoteCreation() {
         await Promise.all(
           items.map((item, index) =>
             createOfferteItem({
+              user_id: user.id,
               offerte_id: existingId,
               beschrijving: item.beschrijving,
               aantal: item.aantal,
@@ -1286,6 +1290,7 @@ export function QuoteCreation() {
         await Promise.all(
           items.map((item, index) =>
             createOfferteItem({
+              user_id: user.id,
               offerte_id: newOfferte.id,
               beschrijving: item.beschrijving,
               aantal: item.aantal,
