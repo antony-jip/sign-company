@@ -618,8 +618,8 @@ export function QuoteCreation() {
         if (item.id !== id) return item
         const updated = { ...item, [field]: value }
         if (updated.soort === 'prijs') {
-          const bruto = updated.aantal * updated.eenheidsprijs
-          updated.totaal = round2(bruto - bruto * (updated.korting_percentage / 100))
+          const bruto = round2(updated.aantal * updated.eenheidsprijs)
+          updated.totaal = round2(bruto - round2(bruto * (updated.korting_percentage / 100)))
         }
         return updated
       })
@@ -718,8 +718,8 @@ export function QuoteCreation() {
           calculatie_regels: data.calculatie_regels,
           heeft_calculatie: true,
         }
-        const bruto = updated.aantal * updated.eenheidsprijs
-        updated.totaal = round2(bruto - bruto * (updated.korting_percentage / 100))
+        const bruto = round2(updated.aantal * updated.eenheidsprijs)
+        updated.totaal = round2(bruto - round2(bruto * (updated.korting_percentage / 100)))
         return updated
       })
     )
@@ -1195,8 +1195,9 @@ export function QuoteCreation() {
       if ((isEditMode && editOfferteId) || autoSaveIdRef.current) {
         const existingId = editOfferteId || autoSaveIdRef.current!
         // Update existing offerte
-        const effectiefSubtotaal = round2(subtotaal + afrondingskorting)
+        const effectiefSubtotaal = round2(subtotaal + afrondingskorting + urenCorrectieBedrag)
         const effectiefBtw = round2(effectiefSubtotaal * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
+        const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
         await updateOfferte(existingId, {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
@@ -1213,6 +1214,7 @@ export function QuoteCreation() {
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
+          ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
           versie: versieNummer,
         })
         savedOfferteId = existingId
@@ -1255,8 +1257,9 @@ export function QuoteCreation() {
         )
       } else {
         // Create new offerte
-        const newEffectiefSub = round2(subtotaal + afrondingskorting)
+        const newEffectiefSub = round2(subtotaal + afrondingskorting + urenCorrectieBedrag)
         const newEffectiefBtw = round2(newEffectiefSub * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
+        const newHeeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
         const newOfferte = await createOfferte({
           user_id: user.id,
           klant_id: selectedKlantId,
@@ -1276,6 +1279,7 @@ export function QuoteCreation() {
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
+          ...(newHeeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
           versie: versieNummer,
         })
         savedOfferteId = newOfferte.id

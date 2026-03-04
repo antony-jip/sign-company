@@ -26,7 +26,7 @@ import {
   getWerkbonRegels, createWerkbonRegel, updateWerkbonRegel, deleteWerkbonRegel,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
   getKlanten, getProjecten, getProjectenByKlant, getMedewerkers,
-  createFactuur, createFactuurItem,
+  createFactuur, createFactuurItem, generateFactuurNummer,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -73,7 +73,7 @@ export function WerkbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { profile, primaireKleur } = useAppSettings()
+  const { profile, primaireKleur, standaardBtw, factuurPrefix, factuurBetaaltermijnDagen } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
@@ -309,10 +309,10 @@ export function WerkbonDetail() {
     const subtotaal = round2(regels.filter((r) => r.factureerbaar).reduce((sum, r) => sum + r.totaal, 0))
     const kmKosten = round2((kilometers || 0) * (kmTarief || 0))
     const totaalExcl = round2(subtotaal + kmKosten)
-    const btw = round2(totaalExcl * 0.21)
+    const btw = round2(totaalExcl * (standaardBtw / 100))
     const totaalIncl = round2(totaalExcl + btw)
     return { subtotaal, kmKosten, totaalExcl, btw, totaalIncl }
-  }, [regels, kilometers, kmTarief])
+  }, [regels, kilometers, kmTarief, standaardBtw])
 
   // Handtekening canvas
   const startDraw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -423,6 +423,7 @@ export function WerkbonDetail() {
       const factureerRegels = regels.filter((r) => r.factureerbaar)
       const klant = klanten.find((k) => k.id === klantId)
       const project = projecten.find((p) => p.id === projectId)
+      const btwPct = standaardBtw
 
       const factuurItems: { beschrijving: string; aantal: number; eenheidsprijs: number; btw_percentage: number; korting_percentage: number; totaal: number; volgorde: number }[] = []
       let volgorde = 0
@@ -434,9 +435,9 @@ export function WerkbonDetail() {
             beschrijving: `${regel.omschrijving}${regel.medewerker_id ? ` - ${medewerkers.find((m) => m.id === regel.medewerker_id)?.naam || ''}` : ''}`,
             aantal: regel.uren || 1,
             eenheidsprijs: regel.uurtarief || 0,
-            btw_percentage: 21,
+            btw_percentage: btwPct,
             korting_percentage: 0,
-            totaal: regel.totaal,
+            totaal: round2(regel.totaal),
             volgorde,
           })
         } else {
@@ -444,9 +445,9 @@ export function WerkbonDetail() {
             beschrijving: regel.omschrijving,
             aantal: regel.aantal || 1,
             eenheidsprijs: regel.prijs_per_eenheid || 0,
-            btw_percentage: 21,
+            btw_percentage: btwPct,
             korting_percentage: 0,
-            totaal: regel.totaal,
+            totaal: round2(regel.totaal),
             volgorde,
           })
         }
@@ -456,10 +457,10 @@ export function WerkbonDetail() {
       if (kilometers > 0 && kmTarief > 0) {
         volgorde++
         factuurItems.push({
-          beschrijving: `Kilometervergoeding (${kilometers} km × €${kmTarief.toFixed(2)})`,
+          beschrijving: `Kilometervergoeding (${kilometers} km × €${round2(kmTarief).toFixed(2)})`,
           aantal: kilometers,
           eenheidsprijs: kmTarief,
-          btw_percentage: 21,
+          btw_percentage: btwPct,
           korting_percentage: 0,
           totaal: round2(kilometers * kmTarief),
           volgorde,
@@ -467,14 +468,15 @@ export function WerkbonDetail() {
       }
 
       const subtotaal = round2(factuurItems.reduce((sum, i) => sum + i.totaal, 0))
-      const btw = round2(subtotaal * 0.21)
+      const btw = round2(subtotaal * (btwPct / 100))
+      const nummer = await generateFactuurNummer(factuurPrefix)
 
       const factuur = await createFactuur({
         user_id: userId,
         klant_id: klantId,
         klant_naam: klant?.bedrijfsnaam,
         project_id: projectId,
-        nummer: `F-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
+        nummer,
         titel: `Werkbon ${werkbonNummer} - ${project?.naam || ''}`,
         status: 'concept',
         subtotaal,
@@ -482,14 +484,14 @@ export function WerkbonDetail() {
         totaal: round2(subtotaal + btw),
         betaald_bedrag: 0,
         factuurdatum: new Date().toISOString().split('T')[0],
-        vervaldatum: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        vervaldatum: new Date(Date.now() + factuurBetaaltermijnDagen * 86400000).toISOString().split('T')[0],
         notities: `Werkbon: ${werkbonNummer}`,
         voorwaarden: '',
         bron_type: 'project',
         bron_project_id: projectId,
         werkbon_id: werkbonId,
         factuur_type: 'standaard',
-        betaaltermijn_dagen: 30,
+        betaaltermijn_dagen: factuurBetaaltermijnDagen,
       })
 
       for (const item of factuurItems) {

@@ -471,10 +471,10 @@ export function CalculatieModal({
               </thead>
               <tbody>
                 {regels.map((regel, index) => {
-                  const regelVerkoop = regel.aantal * regel.verkoop_prijs
-                  const kortingBedrag = regelVerkoop * (regel.korting_percentage / 100)
-                  const regelTotaal = regelVerkoop - kortingBedrag
-                  const regelInkoop = regel.aantal * regel.inkoop_prijs
+                  const regelVerkoop = round2(regel.aantal * regel.verkoop_prijs)
+                  const kortingBedrag = round2(regelVerkoop * (regel.korting_percentage / 100))
+                  const regelTotaal = round2(regelVerkoop - kortingBedrag)
+                  const regelInkoop = round2(regel.aantal * regel.inkoop_prijs)
                   const isWinst = regelTotaal > regelInkoop
 
                   return (

@@ -112,6 +112,7 @@ const statusLabels: Record<string, string> = {
   'in-review': 'In review',
   afgerond: 'Afgerond',
   'on-hold': 'On-hold',
+  'te-factureren': 'Te factureren',
 }
 
 export function ClientProfile() {

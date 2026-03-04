@@ -408,7 +408,7 @@ export function OfferteDetail() {
   }
 
   // Calculate totals
-  const subtotaal = items.reduce((sum, item) => sum + calculateLineTotaal(item), 0)
+  const subtotaal = round2(items.reduce((sum, item) => sum + calculateLineTotaal(item), 0))
   const btwGroups: Record<number, number> = {}
   items.forEach((item) => {
     const lineTotaal = calculateLineTotaal(item)

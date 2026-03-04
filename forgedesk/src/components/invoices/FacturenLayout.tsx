@@ -330,11 +330,11 @@ export function FacturenLayout() {
   const statistics = useMemo(() => {
     const openStatuses: FactuurStatus[] = ['verzonden', 'vervallen']
     const openFacturen = facturen.filter((f) => openStatuses.includes(f.status))
-    const totaalOpenstaand = openFacturen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0)
+    const totaalOpenstaand = round2(openFacturen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0))
 
-    const betaaldDezeMaand = facturen
+    const betaaldDezeMaand = round2(facturen
       .filter((f) => f.status === 'betaald' && f.betaaldatum && isThisMonth(f.betaaldatum))
-      .reduce((sum, f) => sum + f.betaald_bedrag, 0)
+      .reduce((sum, f) => sum + f.betaald_bedrag, 0))
 
     const vervallenCount = facturen.filter((f) => f.status === 'vervallen').length
 

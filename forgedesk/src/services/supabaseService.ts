@@ -3838,10 +3838,11 @@ export async function convertWerkbonToFactuur(
   const nummer = await generateFactuurNummer(factuurPrefix)
   const factureerbaar = regels.filter((r) => r.factureerbaar)
   const subtotaal = round2(factureerbaar.reduce((sum, r) => sum + r.totaal, 0))
-  const btw_bedrag = round2(subtotaal * 0.21)
-  const totaal = round2(subtotaal + btw_bedrag)
   // Kilometervergoeding
   const kmTotaal = round2((werkbon.kilometers || 0) * (werkbon.km_tarief || 0))
+  const totaalSubtotaal = round2(subtotaal + kmTotaal)
+  const btw_bedrag = round2(totaalSubtotaal * 0.21)
+  const totaal = round2(totaalSubtotaal + btw_bedrag)
   const factuur = await createFactuur({
     user_id: userId,
     klant_id: werkbon.klant_id,
@@ -3849,9 +3850,9 @@ export async function convertWerkbonToFactuur(
     nummer,
     titel: `Factuur werkbon ${werkbon.werkbon_nummer}`,
     status: 'concept',
-    subtotaal: round2(subtotaal + kmTotaal),
-    btw_bedrag: round2((subtotaal + kmTotaal) * 0.21),
-    totaal: round2((subtotaal + kmTotaal) * 1.21),
+    subtotaal: totaalSubtotaal,
+    btw_bedrag,
+    totaal,
     betaald_bedrag: 0,
     factuurdatum: new Date().toISOString().split('T')[0],
     vervaldatum: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],

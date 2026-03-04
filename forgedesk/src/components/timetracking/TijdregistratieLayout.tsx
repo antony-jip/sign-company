@@ -596,7 +596,7 @@ export function TijdregistratieLayout() {
       Eind: r.eind_tijd,
       "Duur (uur)": (r.duur_minuten / 60).toFixed(2),
       Uurtarief: r.uurtarief.toFixed(2),
-      Totaal: ((r.duur_minuten / 60) * r.uurtarief).toFixed(2),
+      Totaal: round2((r.duur_minuten / 60) * r.uurtarief).toFixed(2),
       Facturabel: r.facturabel ? "Ja" : "Nee",
     }));
     exportCSV("tijdregistratie", headers, exportData);
@@ -613,7 +613,7 @@ export function TijdregistratieLayout() {
       Eind: r.eind_tijd,
       "Duur (uur)": (r.duur_minuten / 60).toFixed(2),
       Uurtarief: r.uurtarief.toFixed(2),
-      Totaal: ((r.duur_minuten / 60) * r.uurtarief).toFixed(2),
+      Totaal: round2((r.duur_minuten / 60) * r.uurtarief).toFixed(2),
       Facturabel: r.facturabel ? "Ja" : "Nee",
     }));
     exportExcel("tijdregistratie", headers, exportData);

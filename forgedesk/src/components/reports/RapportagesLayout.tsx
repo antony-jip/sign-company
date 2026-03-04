@@ -325,7 +325,7 @@ export function RapportagesLayout() {
           uren: Math.round(uren * 10) / 10,
           projecten: projectIds.size,
           uurtarief: m.uurtarief,
-          omzet: Math.round(uren * m.uurtarief * 100) / 100,
+          omzet: round2(uren * m.uurtarief),
         };
       })
       .sort((a, b) => b.uren - a.uren);
@@ -416,7 +416,7 @@ export function RapportagesLayout() {
     const headers = ['Maand', 'Omzet'];
     const data = maandelijksOmzet.map((m) => ({
       Maand: m.maand,
-      Omzet: Math.round(m.waarde * 100) / 100,
+      Omzet: round2(m.waarde),
     }));
     if (type === 'csv') {
       exportCSV('maandelijkse-omzet', headers, data);

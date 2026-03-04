@@ -1094,7 +1094,7 @@ export function generateBestelbonPDF(
     r.aantal.toString(),
     r.eenheid || 'stuk',
     formatCurrency(r.eenheidsprijs),
-    formatCurrency(Math.round(r.aantal * r.eenheidsprijs * 100) / 100),
+    formatCurrency(round2(r.aantal * r.eenheidsprijs)),
   ])
 
   const tableStyles = getAutoTableStyles(brand, docStyle)
@@ -1343,7 +1343,7 @@ export function generateWerkbonPDF(
   }
 
   if (werkbonData.kilometers && werkbonData.kilometers > 0) {
-    doc.text(`Kilometers: ${werkbonData.kilometers} km \u00d7 \u20ac${(werkbonData.km_tarief || 0).toFixed(2)} = ${formatCurrency(werkbonData.kilometers * (werkbonData.km_tarief || 0))}`, margins.left, y)
+    doc.text(`Kilometers: ${werkbonData.kilometers} km \u00d7 \u20ac${round2(werkbonData.km_tarief || 0).toFixed(2)} = ${formatCurrency(round2(werkbonData.kilometers * (werkbonData.km_tarief || 0)))}`, margins.left, y)
     y += 5
   }
 
