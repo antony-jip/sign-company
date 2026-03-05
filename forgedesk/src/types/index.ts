@@ -140,8 +140,8 @@ export interface Project {
   beschrijving: string;
   status: 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren';
   prioriteit: 'laag' | 'medium' | 'hoog' | 'kritiek';
-  start_datum: string;
-  eind_datum: string;
+  start_datum: string | undefined;
+  eind_datum: string | undefined;
   budget: number;
   besteed: number;
   voortgang: number;
@@ -172,7 +172,7 @@ export interface Taak {
   status: 'todo' | 'bezig' | 'review' | 'klaar';
   prioriteit: 'laag' | 'medium' | 'hoog' | 'kritiek';
   toegewezen_aan: string;
-  deadline: string;
+  deadline: string | undefined;
   geschatte_tijd: number;
   bestede_tijd: number;
   locatie?: string;
