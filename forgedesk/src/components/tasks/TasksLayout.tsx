@@ -395,7 +395,15 @@ export function TasksLayout() {
       const updated = await updateTaak(editingTaak!.id, {
         titel: formData.titel.trim(), beschrijving: formData.beschrijving.trim(),
         status: formData.status, prioriteit: formData.prioriteit,
-        toegewezen_aan: formData.toegewezen_aan.trim(), deadline: formData.deadline || undefined,
+        toegewezen_aan: formData.toegewezen_aan.trim(), deadline: (() => {
+          if (!formData.deadline) return undefined
+          // Bewaar bestaande tijd als de datum hetzelfde is
+          const existing = editingTaak?.deadline
+          if (existing && existing.includes('T') && existing.startsWith(formData.deadline)) {
+            return existing
+          }
+          return formData.deadline
+        })(),
         geschatte_tijd: formData.geschatte_tijd, bestede_tijd: formData.bestede_tijd,
         project_id: formData.project_id || undefined,
         klant_id: formData.klant_id || undefined,
