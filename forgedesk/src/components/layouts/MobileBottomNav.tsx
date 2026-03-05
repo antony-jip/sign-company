@@ -31,8 +31,7 @@ const PRIMARY_ITEMS: MobileNavItem[] = [
 const MORE_ITEMS: MobileNavItem[] = [
   { label: 'Facturen', icon: Receipt, path: '/facturen' },
   { label: 'Werkbonnen', icon: ClipboardList, path: '/werkbonnen' },
-  { label: 'Montage', icon: Wrench, path: '/montage' },
-  { label: 'Kalender', icon: Calendar, path: '/kalender' },
+  { label: 'Planning', icon: Calendar, path: '/planning' },
   { label: 'Tijdregistratie', icon: Clock, path: '/tijdregistratie' },
 ]
 

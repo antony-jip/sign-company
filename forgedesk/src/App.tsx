@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
@@ -27,7 +27,7 @@ import { OfferteDetail } from '@/components/quotes/OfferteDetail'
 import { DocumentsLayout } from '@/components/documents/DocumentsLayout'
 import { EmailLayout } from '@/components/email/EmailLayout'
 import { EmailComposePage } from '@/components/email/EmailComposePage'
-import { CalendarLayout } from '@/components/calendar/CalendarLayout'
+import { PlanningLayout } from '@/components/planning/PlanningLayout'
 import { FinancialLayout } from '@/components/financial/FinancialLayout'
 import { TasksLayout } from '@/components/tasks/TasksLayout'
 import { FORGEdeskAIChat } from '@/components/ai/FORGEdeskAIChat'
@@ -39,7 +39,6 @@ import { FactuurEditor } from '@/components/invoices/FactuurEditor'
 import { RapportagesLayout } from '@/components/reports/RapportagesLayout'
 import { TijdregistratieLayout } from '@/components/timetracking/TijdregistratieLayout'
 import { NacalculatieLayout } from '@/components/nacalculatie/NacalculatieLayout'
-import { MontagePlanningLayout } from '@/components/montage/MontagePlanningLayout'
 import { TeamLayout } from '@/components/team/TeamLayout'
 import { CommandPalette } from '@/components/shared/CommandPalette'
 import { ClientApprovalPage } from '@/components/approval/ClientApprovalPage'
@@ -114,7 +113,9 @@ function AppContent() {
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
         <Route path="email/compose" element={<EmailComposePage />} />
-        <Route path="kalender" element={<CalendarLayout />} />
+        <Route path="planning" element={<PlanningLayout />} />
+        <Route path="kalender" element={<Navigate to="/planning" replace />} />
+        <Route path="montage" element={<Navigate to="/planning?modus=montage" replace />} />
         <Route path="financieel" element={<FinancialLayout />} />
         <Route path="taken" element={<TasksLayout />} />
         <Route path="facturen" element={<FacturenLayout />} />
@@ -124,7 +125,6 @@ function AppContent() {
         <Route path="rapportages" element={<RapportagesLayout />} />
         <Route path="tijdregistratie" element={<TijdregistratieLayout />} />
         <Route path="nacalculatie" element={<NacalculatieLayout />} />
-        <Route path="montage" element={<MontagePlanningLayout />} />
         <Route path="team" element={<TeamLayout />} />
         <Route path="nieuwsbrieven" element={<NewsletterBuilder />} />
         <Route path="importeren" element={<DataImportLayout />} />
