@@ -475,9 +475,9 @@ export function TasksLayout() {
     <>
       <div className="flex flex-col h-[calc(100vh-120px)]">
         {/* === TOP BAR === */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold text-foreground tracking-tight">{weekLabel}</h1>
+        <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-3 border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate">{weekLabel}</h1>
             <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
               <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" onClick={() => setWeekOffset((w) => w - 1)}>
                 <ChevronLeft className="w-4 h-4" />
@@ -495,14 +495,14 @@ export function TasksLayout() {
               </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5 flex-shrink-0">
               {([['alle', 'Alle'], ['project', 'Projecttaken'], ['los', 'Losse taken']] as const).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setTaskFilter(key)}
                   className={cn(
-                    'text-xs px-2.5 py-1 rounded-md transition-all duration-200',
+                    'text-xs px-2.5 py-1 rounded-md transition-all duration-200 whitespace-nowrap',
                     taskFilter === key
                       ? 'bg-background text-foreground shadow-sm font-medium'
                       : 'text-muted-foreground hover:text-foreground'
@@ -515,7 +515,7 @@ export function TasksLayout() {
             <button
               onClick={() => setShowCompleted(!showCompleted)}
               className={cn(
-                'text-xs px-3 py-1.5 rounded-lg border transition-all duration-200',
+                'text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 whitespace-nowrap flex-shrink-0',
                 showCompleted
                   ? 'bg-primary/10 border-primary/30 text-accent dark:text-wm-light shadow-sm'
                   : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'

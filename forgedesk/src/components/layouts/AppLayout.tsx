@@ -13,10 +13,10 @@ export function AppLayout() {
 
   if (layoutMode === 'topnav') {
     return (
-      <div className="flex flex-col h-screen overflow-hidden wm-mesh-gradient">
+      <div className="flex flex-col h-[100dvh] overflow-hidden wm-mesh-gradient">
         <TopNav />
-        <main className="flex-1 overflow-y-auto" style={{ position: 'relative', zIndex: 0 }}>
-          <div className="p-4 md:p-6 pb-20 md:pb-6 max-w-[1600px] mx-auto w-full animate-fade-in-up">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ position: 'relative', zIndex: 0 }}>
+          <div className="p-3 sm:p-4 md:p-6 pb-20 md:pb-6 max-w-[1600px] mx-auto w-full animate-fade-in-up">
             <Outlet />
           </div>
         </main>
@@ -26,17 +26,17 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden wm-mesh-gradient">
+    <div className="flex h-[100dvh] overflow-hidden wm-mesh-gradient">
       <Sidebar />
       <div
         className={cn(
-          'flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out'
+          'flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ease-in-out'
         )}
       >
         <Header />
         <HeaderNav />
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-6 pb-20 md:pb-6 max-w-[1600px] mx-auto w-full animate-fade-in-up">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-3 sm:p-4 md:p-6 pb-20 md:pb-6 max-w-[1600px] mx-auto w-full animate-fade-in-up">
             <Outlet />
           </div>
         </main>

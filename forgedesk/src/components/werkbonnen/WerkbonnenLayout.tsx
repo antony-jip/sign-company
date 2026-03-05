@@ -151,24 +151,26 @@ export function WerkbonnenLayout() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 px-3 sm:px-6 py-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ClipboardCheck className="h-6 w-6 text-primary" />
-            Werkbonnen
+            <ClipboardCheck className="h-6 w-6 text-primary flex-shrink-0" />
+            <span className="truncate">Werkbonnen</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Beheer werkbonnen voor montage en service werkzaamheden
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportCSV}>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex">
             <Download className="h-4 w-4 mr-1" /> CSV
           </Button>
-          <Button onClick={() => navigate('/werkbonnen/nieuw')}>
-            <Plus className="h-4 w-4 mr-1" /> Nieuwe werkbon
+          <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm">
+            <Plus className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Nieuwe werkbon</span>
+            <span className="sm:hidden">Nieuw</span>
           </Button>
         </div>
       </div>
@@ -200,12 +202,13 @@ export function WerkbonnenLayout() {
             className="pl-10"
           />
         </div>
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex gap-1 flex-wrap overflow-x-auto scrollbar-hide">
           {(['alle', 'concept', 'ingediend', 'goedgekeurd', 'gefactureerd'] as const).map((status) => (
             <Button
               key={status}
               variant={filterStatus === status ? 'default' : 'outline'}
               size="sm"
+              className="whitespace-nowrap"
               onClick={() => setFilterStatus(status)}
             >
               {status === 'alle' ? 'Alle' : STATUS_CONFIG[status].label}
@@ -230,7 +233,7 @@ export function WerkbonnenLayout() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-2xl border border-border/60 bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden">
+        <div className="rounded-2xl border border-border/60 bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

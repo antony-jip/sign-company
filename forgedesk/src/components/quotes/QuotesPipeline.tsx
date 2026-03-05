@@ -573,22 +573,23 @@ export function QuotesPipeline() {
   return (
     <div className="space-y-5 animate-fade-in-up">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
             <FileText className="h-4.5 w-4.5 text-white" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Offertes</h1>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Offertes</h1>
             <p className="text-xs text-muted-foreground">
               {filteredOffertes.length} van {offertes.length} offertes
             </p>
           </div>
         </div>
-        <Button asChild size="sm" className="bg-gradient-to-r from-accent to-primary border-0">
+        <Button asChild size="sm" className="bg-gradient-to-r from-accent to-primary border-0 flex-shrink-0">
           <Link to="/offertes/nieuw">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Nieuwe offerte
+            <span className="hidden sm:inline">Nieuwe offerte</span>
+            <span className="sm:hidden">Nieuw</span>
           </Link>
         </Button>
       </div>
@@ -618,18 +619,89 @@ export function QuotesPipeline() {
       </div>
 
       {/* ── Search + Filters ── */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Zoek op nummer, titel of klant..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-sm"
-          />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Zoek op nummer, titel of klant..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-sm"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* View toggle */}
+            <div className="flex items-center bg-muted/60 rounded-md p-0.5 mr-1">
+              <button
+                onClick={() => setViewMode('lijst')}
+                className={cn(
+                  'p-1.5 rounded transition-colors',
+                  viewMode === 'lijst' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="Lijstweergave"
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode('pipeline')}
+                className={cn(
+                  'p-1.5 rounded transition-colors',
+                  viewMode === 'pipeline' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="Kanban"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:flex h-8 px-2 text-xs text-muted-foreground"
+              onClick={() => {
+                const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag', 'Aangemaakt', 'Geldig tot']
+                const rows = filteredOffertes.map((o) => ({
+                  Nummer: o.nummer,
+                  Klant: o.klant_naam || 'Onbekend',
+                  Titel: o.titel,
+                  Status: STATUS_LABELS[o.status] || o.status,
+                  Bedrag: formatCurrency(o.totaal),
+                  Aangemaakt: formatDate(o.created_at),
+                  'Geldig tot': formatDate(o.geldig_tot),
+                }))
+                exportCSV(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows)
+              }}
+            >
+              <Download className="w-3.5 h-3.5 mr-1" />
+              CSV
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:flex h-8 px-2 text-xs text-muted-foreground"
+              onClick={() => {
+                const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag', 'Aangemaakt', 'Geldig tot']
+                const rows = filteredOffertes.map((o) => ({
+                  Nummer: o.nummer,
+                  Klant: o.klant_naam || 'Onbekend',
+                  Titel: o.titel,
+                  Status: STATUS_LABELS[o.status] || o.status,
+                  Bedrag: o.totaal,
+                  Aangemaakt: formatDate(o.created_at),
+                  'Geldig tot': formatDate(o.geldig_tot),
+                }))
+                exportExcel(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Offertes')
+              }}
+            >
+              <FileText className="w-3.5 h-3.5 mr-1" />
+              Excel
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap flex-1">
+        {/* Status filter pills - scrollable on mobile */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
           {statusOpties.map((optie) => {
             const count = optie.value === 'alle'
               ? offertes.length
@@ -640,7 +712,7 @@ export function QuotesPipeline() {
                 key={optie.value}
                 onClick={() => setStatusFilter(optie.value as StatusFilter)}
                 className={cn(
-                  'px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
+                  'px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
                   statusFilter === optie.value
                     ? 'bg-foreground text-background'
                     : 'bg-muted/60 text-muted-foreground hover:bg-muted'
@@ -651,74 +723,6 @@ export function QuotesPipeline() {
               </button>
             )
           })}
-        </div>
-
-        <div className="flex items-center gap-1">
-          {/* View toggle */}
-          <div className="flex items-center bg-muted/60 rounded-md p-0.5 mr-1">
-            <button
-              onClick={() => setViewMode('lijst')}
-              className={cn(
-                'p-1.5 rounded transition-colors',
-                viewMode === 'lijst' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              )}
-              title="Lijstweergave"
-            >
-              <List className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setViewMode('pipeline')}
-              className={cn(
-                'p-1.5 rounded transition-colors',
-                viewMode === 'pipeline' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              )}
-              title="Kanban"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-xs text-muted-foreground"
-            onClick={() => {
-              const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag', 'Aangemaakt', 'Geldig tot']
-              const rows = filteredOffertes.map((o) => ({
-                Nummer: o.nummer,
-                Klant: o.klant_naam || 'Onbekend',
-                Titel: o.titel,
-                Status: STATUS_LABELS[o.status] || o.status,
-                Bedrag: formatCurrency(o.totaal),
-                Aangemaakt: formatDate(o.created_at),
-                'Geldig tot': formatDate(o.geldig_tot),
-              }))
-              exportCSV(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows)
-            }}
-          >
-            <Download className="w-3.5 h-3.5 mr-1" />
-            CSV
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-xs text-muted-foreground"
-            onClick={() => {
-              const headers = ['Nummer', 'Klant', 'Titel', 'Status', 'Bedrag', 'Aangemaakt', 'Geldig tot']
-              const rows = filteredOffertes.map((o) => ({
-                Nummer: o.nummer,
-                Klant: o.klant_naam || 'Onbekend',
-                Titel: o.titel,
-                Status: STATUS_LABELS[o.status] || o.status,
-                Bedrag: o.totaal,
-                Aangemaakt: formatDate(o.created_at),
-                'Geldig tot': formatDate(o.geldig_tot),
-              }))
-              exportExcel(`offertes-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Offertes')
-            }}
-          >
-            <FileText className="w-3.5 h-3.5 mr-1" />
-            Excel
-          </Button>
         </div>
       </div>
 
@@ -755,21 +759,21 @@ export function QuotesPipeline() {
         </div>
 
         {/* Sales Summary Bar */}
-        <div className="flex items-center gap-6 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-6 px-4 sm:px-5 py-3 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-muted-foreground">Pipeline:</span>
-            <span className="text-sm font-bold text-foreground">{formatCurrency(salesSummary.pipelineValue)}</span>
+            <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Pipeline:</span>
+            <span className="text-xs sm:text-sm font-bold text-foreground whitespace-nowrap">{formatCurrency(salesSummary.pipelineValue)}</span>
           </div>
-          <div className="w-px h-5 bg-border" />
+          <div className="hidden sm:block w-px h-5 bg-border" />
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Verstuurd:</span>
-            <span className="text-sm font-bold text-foreground">{formatCurrency(salesSummary.verstuurdValue)}</span>
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Verstuurd:</span>
+            <span className="text-xs sm:text-sm font-bold text-foreground whitespace-nowrap">{formatCurrency(salesSummary.verstuurdValue)}</span>
           </div>
-          <div className="w-px h-5 bg-border" />
+          <div className="hidden sm:block w-px h-5 bg-border" />
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Akkoord deze maand:</span>
-            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(salesSummary.akkoordValue)}</span>
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Akkoord:</span>
+            <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{formatCurrency(salesSummary.akkoordValue)}</span>
           </div>
         </div>
 
@@ -1020,7 +1024,7 @@ export function QuotesPipeline() {
                 )
               })}
             </div>
-            <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+            <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <span className="text-sm font-medium text-muted-foreground">Totaal alle offertes</span>
               <div className="flex items-center gap-3">
                 <Badge variant="secondary" className="rounded-lg px-3 py-1 text-sm">
@@ -1058,7 +1062,8 @@ export function QuotesPipeline() {
               </CardContent>
             </Card>
           ) : (
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
+              <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
@@ -1314,6 +1319,7 @@ export function QuotesPipeline() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </>

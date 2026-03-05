@@ -187,25 +187,25 @@ export function SettingsLayout() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex-shrink-0">
           <Settings className="w-6 h-6 text-gray-600 dark:text-gray-400" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display truncate">
             Instellingen
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
             Beheer uw profiel, bedrijfsgegevens en voorkeuren
           </p>
         </div>
       </div>
 
       {/* Two-column layout: sidebar nav + content */}
-      <div className="flex gap-6 min-h-[calc(100vh-12rem)]">
+      <div className="flex flex-col md:flex-row gap-6 min-h-[calc(100vh-12rem)]">
         {/* Left sidebar navigation */}
-        <nav className="w-56 flex-shrink-0">
-          <Card className="sticky top-6">
-            <div className="p-2 space-y-0.5">
+        <nav className="w-full md:w-56 flex-shrink-0">
+          <Card className="md:sticky md:top-6">
+            <div className="p-2 space-y-0.5 md:block flex overflow-x-auto scrollbar-hide md:overflow-visible gap-1 md:gap-0">
               {settingsTabs.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
@@ -213,7 +213,7 @@ export function SettingsLayout() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 ${
+                    className={`w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 ${
                       isActive
                         ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 shadow-sm'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
@@ -224,7 +224,7 @@ export function SettingsLayout() {
                       <span className={`text-sm block truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
                         {tab.label}
                       </span>
-                      <span className={`text-[11px] block truncate ${isActive ? 'text-blue-600/70 dark:text-blue-400/70' : 'text-gray-400 dark:text-gray-500'}`}>
+                      <span className={`text-[11px] hidden md:block truncate ${isActive ? 'text-blue-600/70 dark:text-blue-400/70' : 'text-gray-400 dark:text-gray-500'}`}>
                         {tab.description}
                       </span>
                     </div>
@@ -233,15 +233,15 @@ export function SettingsLayout() {
               })}
 
               {/* Separator + Team link */}
-              <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+              <div className="my-2 border-t border-gray-200 dark:border-gray-700 hidden md:block" />
               <button
                 onClick={() => navigate('/team')}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                className="w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
               >
                 <Users className="w-4 h-4 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <span className="text-sm block truncate font-medium">Teamleden</span>
-                  <span className="text-[11px] block truncate text-gray-400 dark:text-gray-500">Medewerkers, rollen en verlof</span>
+                  <span className="text-[11px] hidden md:block truncate text-gray-400 dark:text-gray-500">Medewerkers, rollen en verlof</span>
                 </div>
                 <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
               </button>
