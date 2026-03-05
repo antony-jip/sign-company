@@ -49,12 +49,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await client.mailboxOpen(imapFolder)
 
     // Fetch full email source by UID
-    const message = await client.fetchOne(String(uid), {
-      uid: true,
-      envelope: true,
-      source: true,
-      flags: true,
-    })
+    let message = null
+    for await (const msg of client.fetch(
+      { uid: `${uid}:${uid}` },
+      { envelope: true, source: true, flags: true }
+    )) {
+      message = msg
+      break
+    }
 
     if (!message || !('source' in message) || !message.source) {
       await client.logout()
@@ -62,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Mark as read
-    await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true })
+    await client.messageFlagsAdd({ uid: `${uid}:${uid}` }, ['\\Seen'])
 
     await client.logout()
 

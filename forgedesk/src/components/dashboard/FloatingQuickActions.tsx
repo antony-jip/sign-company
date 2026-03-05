@@ -23,7 +23,7 @@ export function FloatingQuickActions() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-end gap-2">
+    <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-40 flex flex-col-reverse items-end gap-2">
       {/* Action items - animate in/out */}
       {isOpen && (
         <div className="flex flex-col-reverse gap-2 mb-1">

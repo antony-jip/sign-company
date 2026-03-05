@@ -740,13 +740,13 @@ export function CalendarLayout() {
       </div>
 
       {/* ── Main Layout: Calendar + Sidebar ── */}
-      <div className="flex gap-4">
+      <div className="flex flex-col lg:flex-row gap-4">
         {/* ──── Week Grid (Main Area) ──── */}
         <div className="flex-1 min-w-0">
           {/* Navigation bar */}
           <Card className="mb-3">
             <CardContent className="p-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
                     Vandaag
@@ -757,7 +757,7 @@ export function CalendarLayout() {
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentDate((d) => addWeeks(d, 1))}>
                     <ChevronRight className="w-4 h-4" />
                   </Button>
-                  <h2 className="text-lg font-semibold text-foreground capitalize">
+                  <h2 className="text-sm sm:text-lg font-semibold text-foreground capitalize truncate">
                     {weekLabel}
                   </h2>
                 </div>

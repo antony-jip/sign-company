@@ -111,10 +111,10 @@ export function Header() {
       )}
 
       {/* Left: Page title + subtitle */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-9 md:hidden" />
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <div className="w-9 md:hidden flex-shrink-0" />
         <div className="min-w-0">
-          <h1 className="text-base md:text-lg font-semibold text-foreground truncate font-display leading-tight">
+          <h1 className="text-sm sm:text-base md:text-lg font-semibold text-foreground truncate font-display leading-tight">
             {pageMeta.title}
           </h1>
           {pageMeta.subtitle && (

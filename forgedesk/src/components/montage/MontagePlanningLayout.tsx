@@ -824,7 +824,7 @@ export function MontagePlanningLayout() {
 
   function renderWeekView() {
     return (
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-2 min-w-[700px]">
         {weekDates.map((date, dayIndex) => {
           const dateStr = formatDate(date);
           const isToday = dateStr === todayStr;
@@ -1363,22 +1363,23 @@ export function MontagePlanningLayout() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight font-display">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-display truncate">
             Montage Planning
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 truncate">
             Plan en beheer montage afspraken voor installatieteams
           </p>
         </div>
-        <Button onClick={openNewDialog} size="lg">
+        <Button onClick={openNewDialog} size="lg" className="flex-shrink-0">
           <Plus className="h-5 w-5 mr-2" />
-          Nieuwe montage
+          <span className="hidden sm:inline">Nieuwe montage</span>
+          <span className="sm:hidden">Nieuw</span>
         </Button>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -1479,7 +1480,7 @@ export function MontagePlanningLayout() {
       )}
 
       {/* Filter bar */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 flex-wrap">
         {/* Medewerker filter */}
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" />
@@ -1497,7 +1498,7 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Status filters */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
           <Filter className="h-4 w-4 text-muted-foreground" />
           {(Object.keys(STATUS_CONFIG) as MontageAfspraak["status"][]).map((status) => (
             <Button
@@ -1518,7 +1519,7 @@ export function MontagePlanningLayout() {
         <div className="flex-1" />
 
         {/* Print button */}
-        <Button variant="outline" size="sm" onClick={printDagplanning} className="h-9">
+        <Button variant="outline" size="sm" onClick={printDagplanning} className="h-9 hidden sm:flex">
           <Printer className="h-4 w-4 mr-1.5" />
           Print dagplanning
         </Button>
@@ -1526,8 +1527,8 @@ export function MontagePlanningLayout() {
 
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Button
                 variant="outline"
                 size="icon"
@@ -1537,8 +1538,8 @@ export function MontagePlanningLayout() {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
 
-              <div className="text-center min-w-[180px]">
-                <CardTitle className="text-lg">
+              <div className="text-center min-w-[140px] sm:min-w-[180px]">
+                <CardTitle className="text-base sm:text-lg">
                   Week {weekNumber}, {year}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -1574,7 +1575,8 @@ export function MontagePlanningLayout() {
                 className="h-8"
               >
                 <LayoutGrid className="h-4 w-4 mr-1.5" />
-                Weekoverzicht
+                <span className="hidden sm:inline">Weekoverzicht</span>
+                <span className="sm:hidden">Week</span>
               </Button>
               <Button
                 variant={viewMode === "list" ? "default" : "ghost"}
@@ -1583,13 +1585,14 @@ export function MontagePlanningLayout() {
                 className="h-8"
               >
                 <List className="h-4 w-4 mr-1.5" />
-                Lijstweergave
+                <span className="hidden sm:inline">Lijstweergave</span>
+                <span className="sm:hidden">Lijst</span>
               </Button>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           {viewMode === "week" ? renderWeekView() : renderListView()}
         </CardContent>
       </Card>

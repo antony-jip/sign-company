@@ -288,22 +288,23 @@ export function ProjectsList() {
       />
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
             <FolderKanban className="h-4.5 w-4.5 text-white" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Projecten</h1>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-foreground truncate">Projecten</h1>
             <p className="text-xs text-muted-foreground">
               {gefilterdeProjecten.length} van {projecten.length} projecten
             </p>
           </div>
         </div>
-        <Button asChild size="sm" className="bg-gradient-to-r from-accent to-primary border-0">
+        <Button asChild size="sm" className="bg-gradient-to-r from-accent to-primary border-0 flex-shrink-0">
           <Link to="/projecten/nieuw">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Nieuw project
+            <span className="hidden sm:inline">Nieuw project</span>
+            <span className="sm:hidden">Nieuw</span>
           </Link>
         </Button>
       </div>
@@ -348,7 +349,7 @@ export function ProjectsList() {
           />
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap flex-1">
+        <div className="flex items-center gap-1.5 flex-wrap flex-1 overflow-x-auto scrollbar-hide">
           {statusOpties.map((optie) => {
             const count = optie.value === 'alle'
               ? projecten.length
@@ -372,7 +373,7 @@ export function ProjectsList() {
           })}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="hidden sm:flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -436,7 +437,8 @@ export function ProjectsList() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
@@ -736,6 +738,7 @@ export function ProjectsList() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

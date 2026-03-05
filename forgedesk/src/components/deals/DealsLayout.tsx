@@ -280,16 +280,16 @@ export function DealsLayout() {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
             <Briefcase className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground font-display">Sales Pipeline</h1>
-            <p className="text-sm text-muted-foreground">{kpis.aantalOpen} open deals — {formatCurrency(kpis.openWaarde)} pipeline</p>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-foreground font-display truncate">Sales Pipeline</h1>
+            <p className="text-sm text-muted-foreground truncate">{kpis.aantalOpen} open deals — {formatCurrency(kpis.openWaarde)} pipeline</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <div className="flex bg-muted rounded-lg p-0.5">
             <Button variant={viewMode === 'kanban' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('kanban')} className="gap-1 h-7 text-xs">
               <LayoutGrid className="h-3.5 w-3.5" /> Kanban
@@ -332,7 +332,7 @@ export function DealsLayout() {
           <Input placeholder="Zoek op titel of klant..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
         <Select value={filterBron} onValueChange={setFilterBron}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Bron" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Bron" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="alle">Alle bronnen</SelectItem>
             {Object.entries(BRON_LABELS).map(([k, v]) => (
@@ -341,7 +341,7 @@ export function DealsLayout() {
           </SelectContent>
         </Select>
         <Select value={filterMedewerker} onValueChange={setFilterMedewerker}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="Eigenaar" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Eigenaar" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="alle">Alle eigenaren</SelectItem>
             {medewerkers.filter((m) => m.status === 'actief').map((m) => (

@@ -291,18 +291,18 @@ export function ClientsLayout() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-foreground font-display">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground font-display truncate">
             Klanten
           </h1>
-          <Badge variant="secondary" className="text-sm font-medium">
+          <Badge variant="secondary" className="text-sm font-medium flex-shrink-0">
             {filteredKlanten.length}
           </Badge>
         </div>
-        <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }}>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Nieuwe Klant
+        <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} className="flex-shrink-0">
+          <UserPlus className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Nieuwe Klant</span>
         </Button>
       </div>
 
@@ -322,14 +322,14 @@ export function ClientsLayout() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 h-9"
+            className="gap-1.5 h-9 hidden sm:flex"
             onClick={() => navigate('/klanten/importeren')}
           >
             <Upload className="w-4 h-4" />
             Importeren
           </Button>
           {/* Export buttons */}
-          <div className="flex items-center">
+          <div className="hidden sm:flex items-center">
             <Button
               variant="outline"
               size="sm"
@@ -374,9 +374,9 @@ export function ClientsLayout() {
       </div>
 
       {/* Filter pills + Sort toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex flex-col gap-3">
         {/* Status filter pills */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
           {(['alle', 'actief', 'inactief', 'prospect'] as StatusFilter[]).map((f) => {
             const labels: Record<StatusFilter, string> = {
               alle: 'Alle',
@@ -413,7 +413,7 @@ export function ClientsLayout() {
         <div className="h-4 w-px bg-border hidden sm:block" />
 
         {/* Label filter */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
           {[
             { value: 'alle', label: 'Alle labels' },
             { value: 'vooruit_betalen', label: 'Vooruit betalen' },
@@ -539,7 +539,7 @@ export function ClientsLayout() {
         </Card>
       ) : viewMode === 'grid' ? (
         /* ==================== GRID VIEW ==================== */
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {filteredKlanten.map((klant) => (
             <ClientCard
               key={klant.id}

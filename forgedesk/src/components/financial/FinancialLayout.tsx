@@ -130,14 +130,14 @@ export function FinancialLayout() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg">
+        <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg flex-shrink-0">
           <PiggyBank className="w-6 h-6 text-accent dark:text-primary" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display truncate">
             Financieel Overzicht
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
             Beheer uw financi&euml;le administratie en instellingen
           </p>
         </div>
@@ -145,7 +145,7 @@ export function FinancialLayout() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="overzicht">Overzicht</TabsTrigger>
           <TabsTrigger value="grootboek">Grootboek</TabsTrigger>
           <TabsTrigger value="btw">BTW Instellingen</TabsTrigger>

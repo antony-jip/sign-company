@@ -975,7 +975,7 @@ export function EmailLayout() {
   return (
     <div className="h-full flex flex-col">
       {/* ── Top Tab Bar ── */}
-      <div className="flex items-center gap-1 mb-4">
+      <div className="flex items-center gap-1 mb-4 overflow-x-auto scrollbar-hide">
         {([
           { id: 'email' as EmailTab, label: 'Email', icon: Mail },
           { id: 'gedeelde-inbox' as EmailTab, label: 'Team Inbox', icon: Users },
@@ -989,7 +989,7 @@ export function EmailLayout() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
                 activeTab === tab.id
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -1112,7 +1112,7 @@ export function EmailLayout() {
 
             {/* Filter chips + Font size */}
             <div className="px-3 pb-2 flex items-center justify-between border-b">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
                 {(['alle', 'ongelezen', 'met-ster', 'vastgepind', 'bijlagen'] as FilterType[]).map((f) => {
                   const labels: Record<FilterType, string> = {
                     alle: 'Alle',
@@ -1617,7 +1617,7 @@ export function EmailLayout() {
 
           {/* ═══ CRM Sidebar (only when reading/composing) ═══ */}
           {showSidebar && (
-            <div className="border-l">
+            <div className="border-l hidden md:block">
               <ContactSidebar
                 contact={currentContact}
                 senderName={currentSenderName}

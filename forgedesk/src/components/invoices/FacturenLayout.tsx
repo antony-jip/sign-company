@@ -1207,21 +1207,21 @@ export function FacturenLayout() {
     <div className="space-y-6">
       {/* ── Header ────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
             <FileText className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground font-display">Facturen</h1>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-foreground font-display truncate">Facturen</h1>
             <p className="text-sm text-muted-foreground">
               {filteredFacturen.length} van {facturen.length} facturen
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 hidden sm:flex">
                 <Download className="h-4 w-4" />
                 Exporteer
               </Button>
@@ -1238,7 +1238,7 @@ export function FacturenLayout() {
           <Button
             variant="outline"
             onClick={() => setOfferteDialogOpen(true)}
-            className="gap-2"
+            className="gap-2 hidden sm:flex"
             size="sm"
           >
             <FileInput className="h-4 w-4" />
@@ -1250,7 +1250,8 @@ export function FacturenLayout() {
             size="sm"
           >
             <Plus className="h-4 w-4" />
-            Nieuwe factuur
+            <span className="hidden sm:inline">Nieuwe factuur</span>
+            <span className="sm:hidden">Nieuw</span>
           </Button>
         </div>
       </div>
@@ -1356,7 +1357,7 @@ export function FacturenLayout() {
       </div>
 
       {/* Filter pills */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
         {FILTER_OPTIONS.map((option) => {
           const count = statusCounts[option.value] || 0
           return (
@@ -1415,7 +1416,7 @@ export function FacturenLayout() {
       </div>
 
       {/* ── Table ─────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-border/60 bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden">
+      <div className="rounded-2xl border border-border/60 bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
