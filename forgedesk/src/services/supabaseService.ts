@@ -179,9 +179,12 @@ export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'upda
       const { data: { user } } = await supabase.auth.getUser()
       user_id = user?.id || ''
     }
+    const klantInsert = { ...klant, user_id }
+    if (!Array.isArray(klantInsert.tags)) klantInsert.tags = []
+    if (!Array.isArray(klantInsert.klant_labels)) klantInsert.klant_labels = []
     const { data, error } = await supabase
       .from('klanten')
-      .insert({ ...klant, user_id })
+      .insert(klantInsert)
       .select()
       .single()
     if (error) throw error
