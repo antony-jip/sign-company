@@ -91,10 +91,20 @@ const DATE_FIELDS = [
   'start_tijd', 'eind_tijd',
 ] as const
 
+const UUID_FIELDS = [
+  'project_id', 'klant_id', 'medewerker_id', 'factuur_id',
+  'offerte_id', 'document_id', 'contact_id', 'leverancier_id',
+] as const
+
 function sanitizeDates<T extends Record<string, unknown>>(data: T): T {
   const result = { ...data } as Record<string, unknown>
   for (const field of DATE_FIELDS) {
     if (field in result && (result[field] === '' || result[field] === undefined)) {
+      delete result[field]
+    }
+  }
+  for (const field of UUID_FIELDS) {
+    if (field in result && result[field] === '') {
       delete result[field]
     }
   }
