@@ -81,6 +81,26 @@ function now(): string {
   return new Date().toISOString()
 }
 
+const DATE_FIELDS = [
+  'start_datum', 'eind_datum', 'startdatum', 'einddatum',
+  'deadline', 'datum', 'vervaldatum', 'factuurdatum', 'betaaldatum',
+  'geldig_tot', 'follow_up_datum', 'laatste_contact',
+  'eerste_bekeken_op', 'laatst_bekeken_op',
+  'herinnering_1_verstuurd', 'herinnering_2_verstuurd',
+  'herinnering_3_verstuurd', 'aanmaning_verstuurd',
+  'start_tijd', 'eind_tijd',
+] as const
+
+function sanitizeDates<T extends Record<string, unknown>>(data: T): T {
+  const result = { ...data }
+  for (const field of DATE_FIELDS) {
+    if (field in result && result[field] === '') {
+      (result as Record<string, unknown>)[field] = null
+    }
+  }
+  return result
+}
+
 // ============ KLANTEN ============
 
 function safeParseJsonArray(val: unknown): unknown[] {
@@ -254,7 +274,7 @@ export async function createProject(project: Omit<Project, 'id' | 'created_at' |
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('projecten')
-      .insert(project)
+      .insert(sanitizeDates(project))
       .select()
       .single()
     if (error) throw error
@@ -277,7 +297,7 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('projecten')
-      .update({ ...updates, updated_at: now() })
+      .update(sanitizeDates({ ...updates, updated_at: now() }))
       .eq('id', id)
       .select()
       .single()
@@ -351,7 +371,7 @@ export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('taken')
-      .insert(taak)
+      .insert(sanitizeDates(taak))
       .select()
       .single()
     if (error) throw error
@@ -374,7 +394,7 @@ export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Ta
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('taken')
-      .update({ ...updates, updated_at: now() })
+      .update(sanitizeDates({ ...updates, updated_at: now() }))
       .eq('id', id)
       .select()
       .single()
@@ -488,7 +508,7 @@ export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' |
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offertes')
-      .insert(offerte)
+      .insert(sanitizeDates(offerte))
       .select()
       .single()
     if (error) throw error
@@ -511,7 +531,7 @@ export async function updateOfferte(id: string, updates: Partial<Offerte>): Prom
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offertes')
-      .update({ ...updates, updated_at: now() })
+      .update(sanitizeDates({ ...updates, updated_at: now() }))
       .eq('id', id)
       .select()
       .single()
@@ -837,7 +857,7 @@ export async function createEvent(event: Omit<CalendarEvent, 'id' | 'created_at'
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('events')
-      .insert(event)
+      .insert(sanitizeDates(event))
       .select()
       .single()
     if (error) throw error
@@ -860,7 +880,7 @@ export async function updateEvent(id: string, updates: Partial<CalendarEvent>): 
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('events')
-      .update({ ...updates, updated_at: now() })
+      .update(sanitizeDates({ ...updates, updated_at: now() }))
       .eq('id', id)
       .select()
       .single()
@@ -1798,7 +1818,7 @@ export async function getFactuur(id: string): Promise<Factuur> {
 }
 
 export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'>): Promise<Factuur> {
-  const newFactuur: Factuur = { ...factuur, id: generateId(), created_at: now(), updated_at: now() } as Factuur
+  const newFactuur: Factuur = { ...sanitizeDates(factuur), id: generateId(), created_at: now(), updated_at: now() } as Factuur
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('facturen').insert(newFactuur).select().single()
     if (error) throw error
@@ -1813,7 +1833,7 @@ export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' |
 export async function updateFactuur(id: string, updates: Partial<Factuur>): Promise<Factuur> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('facturen').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('facturen').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
   }
@@ -1871,7 +1891,7 @@ export async function getTijdregistraties(): Promise<Tijdregistratie[]> {
 }
 
 export async function createTijdregistratie(entry: Omit<Tijdregistratie, 'id' | 'created_at' | 'updated_at'>): Promise<Tijdregistratie> {
-  const newEntry: Tijdregistratie = { ...entry, id: generateId(), created_at: now(), updated_at: now() } as Tijdregistratie
+  const newEntry: Tijdregistratie = { ...sanitizeDates(entry), id: generateId(), created_at: now(), updated_at: now() } as Tijdregistratie
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('tijdregistraties').insert(newEntry).select().single()
     if (error) throw error
@@ -1886,7 +1906,7 @@ export async function createTijdregistratie(entry: Omit<Tijdregistratie, 'id' | 
 export async function updateTijdregistratie(id: string, updates: Partial<Tijdregistratie>): Promise<Tijdregistratie> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('tijdregistraties').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('tijdregistraties').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
   }
@@ -2019,7 +2039,7 @@ export async function getMontageAfspraken(): Promise<MontageAfspraak[]> {
 }
 
 export async function createMontageAfspraak(afspraak: Omit<MontageAfspraak, 'id' | 'created_at' | 'updated_at'>): Promise<MontageAfspraak> {
-  const newAfspraak: MontageAfspraak = { ...afspraak, id: generateId(), created_at: now(), updated_at: now() } as MontageAfspraak
+  const newAfspraak: MontageAfspraak = { ...sanitizeDates(afspraak), id: generateId(), created_at: now(), updated_at: now() } as MontageAfspraak
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('montage_afspraken').insert(newAfspraak).select().single()
     if (error) throw error
@@ -2034,7 +2054,7 @@ export async function createMontageAfspraak(afspraak: Omit<MontageAfspraak, 'id'
 export async function updateMontageAfspraak(id: string, updates: Partial<MontageAfspraak>): Promise<MontageAfspraak> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('montage_afspraken').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('montage_afspraken').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
   }
@@ -2091,7 +2111,7 @@ export async function getVerlofByMedewerker(medewerkerId: string): Promise<Verlo
 }
 
 export async function createVerlof(verlof: Omit<Verlof, 'id' | 'created_at'>): Promise<Verlof> {
-  const newVerlof: Verlof = { ...verlof, id: generateId(), created_at: now() } as Verlof
+  const newVerlof: Verlof = { ...sanitizeDates(verlof), id: generateId(), created_at: now() } as Verlof
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('verlof').insert(newVerlof).select().single()
     if (error) throw error
@@ -2106,7 +2126,7 @@ export async function createVerlof(verlof: Omit<Verlof, 'id' | 'created_at'>): P
 export async function updateVerlof(id: string, updates: Partial<Verlof>): Promise<Verlof> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('verlof').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('verlof').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
   }
@@ -2139,7 +2159,7 @@ export async function getBedrijfssluitingsdagen(): Promise<Bedrijfssluitingsdag[
 }
 
 export async function createBedrijfssluitingsdag(dag: Omit<Bedrijfssluitingsdag, 'id' | 'created_at'>): Promise<Bedrijfssluitingsdag> {
-  const newDag: Bedrijfssluitingsdag = { ...dag, id: generateId(), created_at: now() } as Bedrijfssluitingsdag
+  const newDag: Bedrijfssluitingsdag = { ...sanitizeDates(dag), id: generateId(), created_at: now() } as Bedrijfssluitingsdag
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('bedrijfssluitingsdagen').insert(newDag).select().single()
     if (error) throw error
@@ -2365,7 +2385,7 @@ export async function getWerkbonnenByKlant(klantId: string): Promise<Werkbon[]> 
 
 export async function createWerkbon(werkbon: Omit<Werkbon, 'id' | 'werkbon_nummer' | 'created_at' | 'updated_at'>): Promise<Werkbon> {
   const werkbon_nummer = await generateWerkbonNummer()
-  const newWerkbon: Werkbon = { ...werkbon, id: generateId(), werkbon_nummer, created_at: now(), updated_at: now() } as Werkbon
+  const newWerkbon: Werkbon = { ...sanitizeDates(werkbon), id: generateId(), werkbon_nummer, created_at: now(), updated_at: now() } as Werkbon
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('werkbonnen').insert(newWerkbon).select().single()
     if (error) throw error
@@ -2380,7 +2400,7 @@ export async function createWerkbon(werkbon: Omit<Werkbon, 'id' | 'werkbon_numme
 export async function updateWerkbon(id: string, updates: Partial<Werkbon>): Promise<Werkbon> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbonnen').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('werkbonnen').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
   }
@@ -2695,7 +2715,7 @@ export async function getUitgavenByLeverancier(leverancierId: string): Promise<U
 
 export async function createUitgave(uitgave: Omit<Uitgave, 'id' | 'uitgave_nummer' | 'created_at' | 'updated_at'>): Promise<Uitgave> {
   const uitgave_nummer = await generateUitgaveNummer()
-  const newUitgave: Uitgave = { ...uitgave, id: generateId(), uitgave_nummer, created_at: now(), updated_at: now() } as Uitgave
+  const newUitgave: Uitgave = { ...sanitizeDates(uitgave), id: generateId(), uitgave_nummer, created_at: now(), updated_at: now() } as Uitgave
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('uitgaven').insert(newUitgave).select().single()
     if (error) throw error
@@ -2710,7 +2730,7 @@ export async function createUitgave(uitgave: Omit<Uitgave, 'id' | 'uitgave_numme
 export async function updateUitgave(id: string, updates: Partial<Uitgave>): Promise<Uitgave> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('uitgaven').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('uitgaven').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
   }
@@ -2889,7 +2909,7 @@ export async function getBestelbonnenByLeverancier(leverancierId: string): Promi
 
 export async function createBestelbon(data: Omit<Bestelbon, 'id' | 'bestelbon_nummer' | 'created_at' | 'updated_at'>): Promise<Bestelbon> {
   const bestelbon_nummer = await generateBestelbonNummer()
-  const newItem: Bestelbon = { ...data, id: generateId(), bestelbon_nummer, created_at: now(), updated_at: now() } as Bestelbon
+  const newItem: Bestelbon = { ...sanitizeDates(data), id: generateId(), bestelbon_nummer, created_at: now(), updated_at: now() } as Bestelbon
   if (isSupabaseConfigured() && supabase) {
     const { data: saved, error } = await supabase.from('bestelbonnen').insert(newItem).select().single()
     if (error) throw error
@@ -2904,7 +2924,7 @@ export async function createBestelbon(data: Omit<Bestelbon, 'id' | 'bestelbon_nu
 export async function updateBestelbon(id: string, updates: Partial<Bestelbon>): Promise<Bestelbon> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('bestelbonnen').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('bestelbonnen').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
   }
@@ -3030,7 +3050,7 @@ export async function getLeveringsbonnenByKlant(klantId: string): Promise<Leveri
 
 export async function createLeveringsbon(data: Omit<Leveringsbon, 'id' | 'leveringsbon_nummer' | 'created_at' | 'updated_at'>): Promise<Leveringsbon> {
   const leveringsbon_nummer = await generateLeveringsbonNummer()
-  const newItem: Leveringsbon = { ...data, id: generateId(), leveringsbon_nummer, created_at: now(), updated_at: now() } as Leveringsbon
+  const newItem: Leveringsbon = { ...sanitizeDates(data), id: generateId(), leveringsbon_nummer, created_at: now(), updated_at: now() } as Leveringsbon
   if (isSupabaseConfigured() && supabase) {
     const { data: saved, error } = await supabase.from('leveringsbonnen').insert(newItem).select().single()
     if (error) throw error
@@ -3045,7 +3065,7 @@ export async function createLeveringsbon(data: Omit<Leveringsbon, 'id' | 'leveri
 export async function updateLeveringsbon(id: string, updates: Partial<Leveringsbon>): Promise<Leveringsbon> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('leveringsbonnen').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('leveringsbonnen').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
   }
@@ -3304,7 +3324,7 @@ export async function getDealsByMedewerker(medewerkerId: string): Promise<Deal[]
 }
 
 export async function createDeal(data: Omit<Deal, 'id' | 'created_at' | 'updated_at'>): Promise<Deal> {
-  const newItem: Deal = { ...data, id: generateId(), created_at: now(), updated_at: now() } as Deal
+  const newItem: Deal = { ...sanitizeDates(data), id: generateId(), created_at: now(), updated_at: now() } as Deal
   if (isSupabaseConfigured() && supabase) {
     const { data: saved, error } = await supabase.from('deals').insert(newItem).select().single()
     if (error) throw error
@@ -3319,7 +3339,7 @@ export async function createDeal(data: Omit<Deal, 'id' | 'created_at' | 'updated
 export async function updateDeal(id: string, updates: Partial<Deal>): Promise<Deal> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('deals').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('deals').update(sanitizeDates({ ...updates, updated_at: now() })).eq('id', id).select().single()
     if (error) throw error
     return data
   }
@@ -3355,7 +3375,7 @@ export async function getDealActiviteiten(dealId: string): Promise<DealActivitei
 }
 
 export async function createDealActiviteit(data: Omit<DealActiviteit, 'id' | 'created_at'>): Promise<DealActiviteit> {
-  const newItem: DealActiviteit = { ...data, id: generateId(), created_at: now() } as DealActiviteit
+  const newItem: DealActiviteit = { ...sanitizeDates(data), id: generateId(), created_at: now() } as DealActiviteit
   if (isSupabaseConfigured() && supabase) {
     const { data: saved, error } = await supabase.from('deal_activiteiten').insert(newItem).select().single()
     if (error) throw error
