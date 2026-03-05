@@ -325,7 +325,7 @@ export function TasksLayout() {
         status: 'todo',
         prioriteit: priority,
         toegewezen_aan: '',
-        deadline: deadline || null,
+        deadline: deadline || undefined,
         geschatte_tijd: 0,
         bestede_tijd: 0,
         project_id: projectId || '',
@@ -395,7 +395,7 @@ export function TasksLayout() {
       const updated = await updateTaak(editingTaak!.id, {
         titel: formData.titel.trim(), beschrijving: formData.beschrijving.trim(),
         status: formData.status, prioriteit: formData.prioriteit,
-        toegewezen_aan: formData.toegewezen_aan.trim(), deadline: formData.deadline || null,
+        toegewezen_aan: formData.toegewezen_aan.trim(), deadline: formData.deadline || undefined,
         geschatte_tijd: formData.geschatte_tijd, bestede_tijd: formData.bestede_tijd,
         project_id: formData.project_id || undefined,
         klant_id: formData.klant_id || undefined,
