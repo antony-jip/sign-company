@@ -174,9 +174,14 @@ export async function getKlant(id: string): Promise<Klant | null> {
 
 export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'updated_at'>): Promise<Klant> {
   if (isSupabaseConfigured() && supabase) {
+    let user_id = klant.user_id
+    if (!user_id) {
+      const { data: { user } } = await supabase.auth.getUser()
+      user_id = user?.id || ''
+    }
     const { data, error } = await supabase
       .from('klanten')
-      .insert(klant)
+      .insert({ ...klant, user_id })
       .select()
       .single()
     if (error) throw error
