@@ -92,13 +92,13 @@ const DATE_FIELDS = [
 ] as const
 
 function sanitizeDates<T extends Record<string, unknown>>(data: T): T {
-  const result = { ...data }
+  const result = { ...data } as Record<string, unknown>
   for (const field of DATE_FIELDS) {
-    if (field in result && result[field] === '') {
-      (result as Record<string, unknown>)[field] = null
+    if (field in result && (result[field] === '' || result[field] === undefined)) {
+      delete result[field]
     }
   }
-  return result
+  return result as T
 }
 
 // ============ KLANTEN ============
