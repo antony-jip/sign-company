@@ -399,7 +399,7 @@ export function ProjectDetail() {
         status: 'gepland',
         prioriteit: project.prioriteit,
         start_datum: kopieStartDatum,
-        eind_datum: null,
+        eind_datum: undefined,
         budget: project.budget,
         besteed: 0,
         voortgang: 0,
@@ -418,7 +418,7 @@ export function ProjectDetail() {
           status: 'todo',
           prioriteit: taak.prioriteit,
           toegewezen_aan: taak.toegewezen_aan,
-          deadline: null,
+          deadline: undefined,
           geschatte_tijd: taak.geschatte_tijd,
           bestede_tijd: 0,
         })

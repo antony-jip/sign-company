@@ -871,7 +871,7 @@ export function EmailLayout() {
         status: 'todo',
         prioriteit: 'medium',
         toegewezen_aan: '',
-        deadline: null,
+        deadline: undefined,
         geschatte_tijd: 0,
         bestede_tijd: 0,
       })
@@ -900,7 +900,7 @@ export function EmailLayout() {
         status: 'gepland',
         prioriteit: 'medium',
         start_datum: new Date().toISOString().split('T')[0],
-        eind_datum: null,
+        eind_datum: undefined,
         budget: 0,
         besteed: 0,
         voortgang: 0,
@@ -945,7 +945,7 @@ export function EmailLayout() {
         status: 'todo',
         prioriteit: 'medium',
         toegewezen_aan: '',
-        deadline: null,
+        deadline: undefined,
         geschatte_tijd: 0,
         bestede_tijd: 0,
       })
