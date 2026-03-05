@@ -52,7 +52,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
     // Compute bar positions for each task
     const takenBars = taken.map((taak) => {
       const taakStart = new Date(taak.created_at).getTime()
-      const taakEind = new Date(taak.deadline).getTime()
+      const taakEind = new Date(taak.deadline ?? "").getTime()
 
       const left = Math.max(0, ((taakStart - start) / totalDuur) * 100)
       const right = Math.min(100, ((taakEind - start) / totalDuur) * 100)
@@ -154,7 +154,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
                 <p className="font-medium text-sm text-foreground">{taak.titel}</p>
                 <div className="mt-1.5 space-y-1">
                   <p className="text-xs text-muted-foreground">
-                    {formatDate(taak.created_at)} - {formatDate(taak.deadline)}
+                    {formatDate(taak.created_at)} - {formatDate(taak.deadline ?? "")}
                   </p>
                   <div className="flex gap-1.5">
                     <Badge className={`${getStatusColor(taak.status)} text-[10px] px-1.5 py-0`}>
@@ -201,7 +201,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
               {taak.toegewezen_aan}
             </span>
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {formatDate(taak.deadline)}
+              {formatDate(taak.deadline ?? "")}
             </span>
           </div>
         ))}

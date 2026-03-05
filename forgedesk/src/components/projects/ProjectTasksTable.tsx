@@ -64,7 +64,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
           comparison = a.toegewezen_aan.localeCompare(b.toegewezen_aan, 'nl')
           break
         case 'deadline':
-          comparison = new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+          comparison = new Date(a.deadline ?? "").getTime() - new Date(b.deadline ?? "").getTime()
           break
       }
 
@@ -120,7 +120,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
         </thead>
         <tbody>
           {sortedTaken.map((taak) => {
-            const isOverdue = new Date(taak.deadline) < new Date() && taak.status !== 'klaar'
+            const isOverdue = new Date(taak.deadline ?? "") < new Date() && taak.status !== 'klaar'
 
             return (
               <tr
@@ -158,7 +158,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
                         : 'text-foreground'
                     }`}
                   >
-                    {formatDate(taak.deadline)}
+                    {formatDate(taak.deadline ?? "")}
                     {isOverdue && (
                       <span className="ml-1 text-xs text-red-500">(verlopen)</span>
                     )}

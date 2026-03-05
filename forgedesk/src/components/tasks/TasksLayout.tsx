@@ -266,7 +266,7 @@ export function TasksLayout() {
 
     activeTaken.forEach((t) => {
       if (!t.deadline) return
-      const deadline = new Date(t.deadline)
+      const deadline = new Date(t.deadline ?? "")
       deadline.setHours(0, 0, 0, 0)
       const key = deadline.toDateString()
       if (map.has(key)) {
@@ -277,8 +277,8 @@ export function TasksLayout() {
     // Sort each day: scheduled tasks by hour, then unscheduled by priority
     map.forEach((tasks) => {
       tasks.sort((a, b) => {
-        const aHour = getHourFromDeadline(a.deadline)
-        const bHour = getHourFromDeadline(b.deadline)
+        const aHour = getHourFromDeadline(a.deadline ?? "")
+        const bHour = getHourFromDeadline(b.deadline ?? "")
         // Scheduled tasks first, sorted by hour
         if (aHour !== null && bHour !== null) return aHour - bHour
         if (aHour !== null) return -1
@@ -814,8 +814,8 @@ function DayColumn({
   }, [resizingTaakId, resizeStartY, resizeStartHeight, onResize])
 
   // Separate scheduled and unscheduled tasks
-  const scheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline) !== null)
-  const unscheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline) === null)
+  const scheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline ?? "") !== null)
+  const unscheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline ?? "") === null)
 
   function handleDragOver(e: React.DragEvent, hour: number) {
     e.preventDefault()
@@ -919,7 +919,7 @@ function DayColumn({
 
       {/* Scheduled tasks - positioned at their time */}
       {scheduledTasks.map((taak) => {
-        const hour = getHourFromDeadline(taak.deadline)!
+        const hour = getHourFromDeadline(taak.deadline ?? "")!
         const topPx = (hour - 7) * HOUR_HEIGHT + 4
         const duration = taak.geschatte_tijd || 0
         const isResizing = resizingTaakId === taak.id
@@ -1030,7 +1030,7 @@ function TaskCard({
   const isDone = taak.status === 'klaar'
   const [justCompleted, setJustCompleted] = useState(false)
   const colors = PRIORITEIT_COLORS[taak.prioriteit]
-  const hour = getHourFromDeadline(taak.deadline)
+  const hour = getHourFromDeadline(taak.deadline ?? "")
 
   function handleToggle(e: React.MouseEvent) {
     e.stopPropagation()
