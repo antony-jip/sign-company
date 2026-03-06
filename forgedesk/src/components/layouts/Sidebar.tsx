@@ -166,16 +166,19 @@ export function Sidebar() {
       <NavLink
         to={item.path}
         className={cn(
-          'wm-sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 relative group',
+          'flex items-center gap-3 py-[7px] px-[10px] rounded-[10px] text-[13px] font-medium transition-all duration-200 relative group',
           isActive
-            ? 'active text-foreground'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+            ? 'bg-background font-semibold text-foreground'
+            : 'text-muted-foreground hover:bg-background hover:text-foreground',
           isCollapsed && 'justify-center px-2'
         )}
       >
+        {isActive && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[16px] bg-sage-deep rounded-r-[3px]" />
+        )}
         <Icon className={cn(
-          'w-[17px] h-[17px] flex-shrink-0 transition-colors duration-200',
-          isActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-muted-foreground'
+          'w-4 h-4 flex-shrink-0 transition-colors duration-200',
+          isActive ? 'opacity-65' : 'opacity-40 group-hover:opacity-60'
         )} />
         {!isCollapsed && <span className="truncate">{item.label}</span>}
       </NavLink>
@@ -201,25 +204,16 @@ export function Sidebar() {
       <div
         className={cn(
           'flex items-center h-16 px-4 border-b border-border/50 flex-shrink-0',
-          isCollapsed ? 'justify-center' : 'gap-3'
+          isCollapsed ? 'justify-center' : 'gap-[9px]'
         )}
       >
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent via-primary to-wm-pale flex items-center justify-center flex-shrink-0 shadow-md shadow-primary/20">
-          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="4" width="20" height="12" rx="2" />
-            <path d="M8 20h8" />
-            <path d="M12 16v4" />
-            <path d="M7 9h2" />
-            <path d="M15 9h2" />
-            <path d="M10 12h4" />
-          </svg>
+        <div className="w-[30px] h-[30px] rounded-[9px] bg-gradient-to-br from-blush to-mist flex items-center justify-center flex-shrink-0 font-extrabold text-[13px] text-foreground hover:scale-[1.08] hover:rotate-[-3deg] transition-transform">
+          F
         </div>
         {!isCollapsed && (
-          <div>
-            <span className="text-[15px] font-bold text-foreground tracking-tight font-display">
-              Sign Company
-            </span>
-          </div>
+          <span className="text-[15px] font-bold tracking-[-0.03em]">
+            Forge<span className="font-normal text-muted-foreground">desk</span>
+          </span>
         )}
       </div>
 
@@ -250,7 +244,7 @@ export function Sidebar() {
       <div className="border-t border-border/50 p-3 space-y-2 flex-shrink-0">
         {!isCollapsed && user && (
           <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors duration-200">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0 ring-2 ring-primary/10">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage to-blush flex items-center justify-center flex-shrink-0 ring-2 ring-primary/10">
               <span className="text-white text-xs font-semibold">
                 {(user.user_metadata?.voornaam?.[0] || user.email?.[0] || 'U').toUpperCase()}
               </span>
@@ -278,7 +272,7 @@ export function Sidebar() {
 
         {isCollapsed && user && (
           <div className="relative group flex justify-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center cursor-pointer ring-2 ring-primary/10">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage to-blush flex items-center justify-center cursor-pointer ring-2 ring-primary/10">
               <span className="text-white text-xs font-semibold">
                 {(user.user_metadata?.voornaam?.[0] || user.email?.[0] || 'U').toUpperCase()}
               </span>
