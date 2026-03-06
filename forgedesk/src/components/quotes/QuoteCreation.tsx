@@ -2197,20 +2197,20 @@ export function QuoteCreation() {
                   {geconverteerdNaarFactuurId ? (
                     <>
                       {/* Already invoiced */}
-                      <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-4">
+                      <div className="bg-[#E8F5EC] dark:bg-[#162018] p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle2 className="h-4 w-4 text-white" />
-                          <p className="text-[10px] uppercase tracking-wider text-white/80 font-medium">Gefactureerd</p>
+                          <CheckCircle2 className="h-4 w-4 text-[#4A9960] dark:text-[#6ACA80]" />
+                          <p className="text-[10px] uppercase tracking-wider text-[#4A9960]/80 dark:text-[#6ACA80]/80 font-medium">Gefactureerd</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex-1">
-                            <p className="text-[10px] text-white/60">Offerte bedrag</p>
-                            <p className="text-sm font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                            <p className="text-[10px] text-[#4A9960]/60 dark:text-[#6ACA80]/60">Offerte bedrag</p>
+                            <p className="text-sm font-bold text-[#4A9960] dark:text-[#6ACA80]">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
                           </div>
-                          <ArrowRight className="h-4 w-4 text-white/50 flex-shrink-0" />
+                          <ArrowRight className="h-4 w-4 text-[#4A9960]/40 dark:text-[#6ACA80]/40 flex-shrink-0" />
                           <div className="flex-1 text-right">
-                            <p className="text-[10px] text-white/60">Factuur</p>
-                            <p className="text-sm font-bold text-white">{linkedFactuur ? formatCurrency(linkedFactuur.totaal) : '...'}</p>
+                            <p className="text-[10px] text-[#4A9960]/60 dark:text-[#6ACA80]/60">Factuur</p>
+                            <p className="text-sm font-bold text-[#4A9960] dark:text-[#6ACA80]">{linkedFactuur ? formatCurrency(linkedFactuur.totaal) : '...'}</p>
                           </div>
                         </div>
                       </div>
@@ -2288,12 +2288,12 @@ export function QuoteCreation() {
               {/* ── SAMENVATTING CARD ── */}
               <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm">
                 {/* Totaal header */}
-                <div className="bg-gradient-to-br from-accent to-primary p-4">
-                  <p className="text-[10px] uppercase tracking-wider text-white/70 font-medium">Totaal incl BTW</p>
+                <div className="bg-mist dark:bg-mist/15 p-4">
+                  <p className="text-[10px] uppercase tracking-wider text-foreground/70 font-medium">Totaal incl BTW</p>
                   {isEditingTotaal ? (
                     <div className="mt-1">
                       <div className="flex items-center gap-1">
-                        <span className="text-white font-bold text-lg">€</span>
+                        <span className="text-foreground font-bold text-lg">€</span>
                         <input
                           type="number"
                           value={gewenstTotaal}
@@ -2312,11 +2312,11 @@ export function QuoteCreation() {
                           }}
                           autoFocus
                           step={0.01}
-                          className="bg-white/20 text-white font-bold text-lg rounded px-2 py-0.5 w-32 border-0 outline-none placeholder:text-white/40"
+                          className="bg-foreground/10 text-foreground font-bold text-lg rounded px-2 py-0.5 w-32 border-0 outline-none placeholder:text-foreground/40"
                           placeholder={round2(subtotaal + btwBedrag).toFixed(2)}
                         />
                       </div>
-                      <p className="text-[9px] text-white/50 mt-0.5">Enter = bevestig, Esc = annuleer</p>
+                      <p className="text-[9px] text-foreground/50 mt-0.5">Enter = bevestig, Esc = annuleer</p>
                     </div>
                   ) : (
                     <button
@@ -2324,7 +2324,7 @@ export function QuoteCreation() {
                         setGewenstTotaal(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))).toFixed(2))
                         setIsEditingTotaal(true)
                       }}
-                      className="text-xl font-bold text-white mt-0.5 hover:underline underline-offset-2 decoration-white/40 cursor-pointer text-left"
+                      className="text-xl font-bold text-foreground mt-0.5 hover:underline underline-offset-2 decoration-foreground/40 cursor-pointer text-left"
                       title="Klik om totaal aan te passen"
                     >
                       {formatCurrency(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))))}
