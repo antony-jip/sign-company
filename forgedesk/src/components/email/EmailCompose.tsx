@@ -36,7 +36,7 @@ import {
   Type,
   ArrowLeft,
   FileSignature,
-  Undo,
+
   Users,
   Pencil,
   Trash2,
@@ -194,7 +194,6 @@ function saveSignatures(sigs: Signature[]) {
   localStorage.setItem(SIGNATURES_STORAGE_KEY, JSON.stringify(sigs))
 }
 
-const UNDO_SEND_SECONDS = 5
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -265,11 +264,6 @@ export function EmailCompose({
       : []
     return [...custom, ...savedSignatures, ...DEFAULT_SIGNATURES]
   }, [emailHandtekening, savedSignatures])
-
-  // Undo send
-  const [undoTimer, setUndoTimer] = useState<number | null>(null)
-  const [undoCountdown, setUndoCountdown] = useState(0)
-  const undoCallbackRef = useRef<(() => void) | null>(null)
 
   // File upload
   const [attachments, setAttachments] = useState<File[]>([])
@@ -367,25 +361,6 @@ export function EmailCompose({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showScheduleDropdown, showMergeFields, showSuggestions, showSignatureDropdown])
 
-  // Undo send countdown
-  useEffect(() => {
-    if (undoCountdown <= 0) return
-    const interval = setInterval(() => {
-      setUndoCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          // Timer expired, actually send
-          undoCallbackRef.current?.()
-          undoCallbackRef.current = null
-          setUndoTimer(null)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [undoCountdown > 0 ? 1 : 0]) // only re-run when starting/stopping
-
   const handleSelectContact = useCallback((klant: Klant) => {
     const email = klant.contactpersonen?.[0]?.email || ''
     if (email) {
@@ -435,16 +410,6 @@ export function EmailCompose({
     if (selectedSignature === id) setSelectedSignature('zakelijk')
     toast.success('Handtekening verwijderd')
   }, [savedSignatures, selectedSignature])
-
-  const handleUndoSend = useCallback(() => {
-    if (undoTimer) {
-      clearTimeout(undoTimer)
-      setUndoTimer(null)
-    }
-    setUndoCountdown(0)
-    undoCallbackRef.current = null
-    toast.success('Verzending geannuleerd')
-  }, [undoTimer])
 
   // Format commands
   const updateFormatState = useCallback(() => {
@@ -571,37 +536,15 @@ export function EmailCompose({
     const body = editorRef.current?.innerText || ''
     const sendData = { to: to.trim(), subject: subject.trim(), body, scheduledAt: scheduledAt || undefined }
 
-    // If scheduled, send immediately (no undo)
-    if (scheduledAt) {
-      setIsSending(true)
-      try {
-        onSend?.(sendData)
-        resetAndClose()
-      } catch (error) {
-        logger.error('Verzenden mislukt:', error)
-      } finally {
-        setIsSending(false)
-      }
-      return
+    setIsSending(true)
+    try {
+      onSend?.(sendData)
+      resetAndClose()
+    } catch (error) {
+      logger.error('Verzenden mislukt:', error)
+    } finally {
+      setIsSending(false)
     }
-
-    // Undo send: start countdown
-    setUndoCountdown(UNDO_SEND_SECONDS)
-    undoCallbackRef.current = () => {
-      try {
-        onSend?.(sendData)
-        resetAndClose()
-      } catch (error) {
-        logger.error('Verzenden mislukt:', error)
-      }
-    }
-    const timer = window.setTimeout(() => {
-      undoCallbackRef.current?.()
-      undoCallbackRef.current = null
-      setUndoTimer(null)
-      setUndoCountdown(0)
-    }, UNDO_SEND_SECONDS * 1000)
-    setUndoTimer(timer)
   }
 
   // Ctrl+Enter to send
@@ -970,25 +913,6 @@ export function EmailCompose({
           </div>
         </div>
       </ScrollArea>
-
-      {/* ── Undo send bar ── */}
-      {undoCountdown > 0 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t bg-amber-50 dark:bg-amber-900/20">
-          <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
-            <Send className="w-4 h-4" />
-            Email wordt verzonden in {undoCountdown}s...
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300"
-            onClick={handleUndoSend}
-          >
-            <Undo className="w-3.5 h-3.5" />
-            Ongedaan maken
-          </Button>
-        </div>
-      )}
 
       {/* ── Footer / Actions ── */}
       <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/10">

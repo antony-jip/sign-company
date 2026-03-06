@@ -9,7 +9,7 @@ import { cn, truncate } from '@/lib/utils'
 import { formatDateTime } from '@/lib/utils'
 import type { Email } from '@/types'
 import type { FontSize } from './emailTypes'
-import { extractSenderName, extractSenderEmail, formatShortDate, fontSizeClasses, SNOOZE_OPTIONS } from './emailHelpers'
+import { extractSenderName, extractSenderEmail, formatShortDate, fontSizeClasses, stripHtml, SNOOZE_OPTIONS } from './emailHelpers'
 import type { EmailContact } from '@/utils/emailUtils'
 
 interface EmailListItemProps {
@@ -57,6 +57,8 @@ export function EmailListItem({
   const displayName = email.map === 'verzonden' || email.map === 'concepten'
     ? extractSenderName(email.aan)
     : extractSenderName(email.van)
+
+  const previewText = truncate(stripHtml(email.inhoud).replace(/\n/g, ' '), 80)
 
   const visibleLabels = email.labels.filter(
     (l) => l !== 'verzonden' && l !== 'prullenbak' && l !== 'gepland'
@@ -138,9 +140,11 @@ export function EmailListItem({
           )}>
             {email.onderwerp}
           </span>
-          <span className={cn('text-muted-foreground truncate', fs.preview)}>
-            — {truncate(email.inhoud.replace(/\n/g, ' '), 60)}
-          </span>
+          {previewText && (
+            <span className={cn('text-muted-foreground truncate', fs.preview)}>
+              — {previewText}
+            </span>
+          )}
         </div>
 
         {/* Thread count badge */}
