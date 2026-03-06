@@ -241,12 +241,39 @@ table tbody tr:hover td:first-child::before {
 @layer components {
   /* Label that whispers — table headers, meta info, section labels */
   .label-subtle {
-    @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
+    @apply text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground;
   }
 
   /* Tabular numbers — amounts line up perfectly */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Alert banner — verlopen facturen etc. */
+  .alert-banner {
+    @apply flex items-center gap-[10px] px-[18px] py-[13px] rounded-2xl font-medium text-[13.5px];
+  }
+  .alert-banner-danger {
+    background: #FAE8E6;
+    color: #C45B4F;
+  }
+  .dark .alert-banner-danger {
+    background: #2A1A18;
+    color: #DA7B70;
+  }
+
+  /* Empty state — centered, minimal */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 text-center;
+  }
+  .empty-state-icon {
+    @apply w-[44px] h-[44px] rounded-2xl bg-background flex items-center justify-center mb-3;
+  }
+  .empty-state-title {
+    @apply text-[15px] font-bold mb-1;
+  }
+  .empty-state-description {
+    @apply text-[13px] text-muted-foreground max-w-[280px] mb-5;
   }
 }
 
@@ -274,17 +301,27 @@ tbody tr:hover {
   }
 }
 
-/* Data table — distinctive header and zebra warmth */
+/* Data table — clean header, hover only (no zebra) */
 @layer components {
   .wm-table thead {
-    background: linear-gradient(
-      to right,
-      hsl(var(--muted) / 0.5),
-      hsl(var(--muted) / 0.3)
-    );
+    background: transparent;
   }
-  .wm-table tbody tr:nth-child(even) {
-    background: hsl(var(--muted) / 0.15);
+  .wm-table thead th {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: hsl(var(--muted-foreground));
+    padding: 10px 18px;
+  }
+  .wm-table tbody td {
+    padding: 13px 18px;
+  }
+  .wm-table tbody tr {
+    cursor: pointer;
+  }
+  .wm-table tbody tr:hover {
+    background: hsl(var(--background));
   }
 }
 
