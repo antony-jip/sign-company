@@ -110,8 +110,8 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
     : 'relative'
 
   const pageClass = fullscreen
-    ? 'w-[595px] h-[842px] bg-white shadow-2xl overflow-hidden'
-    : 'w-full aspect-[210/297] bg-white shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden rounded-lg'
+    ? 'relative w-[595px] h-[842px] bg-white shadow-2xl overflow-hidden'
+    : 'relative w-full aspect-[210/297] bg-white shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden rounded-lg'
 
   return (
     <div className={containerClass}>
