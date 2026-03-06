@@ -52,6 +52,7 @@ import {
   Receipt,
   Upload,
   History,
+  ArrowRightLeft,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -65,6 +66,7 @@ import {
 import { exportCSV, exportExcel } from '@/lib/export'
 import {
   getKlant,
+  getKlanten,
   getProjectenByKlant,
   getEmails,
   getDocumenten,
@@ -142,6 +144,13 @@ export function ClientProfile() {
   const [vestigingDialogOpen, setVestigingDialogOpen] = useState(false)
   const [editingVestiging, setEditingVestiging] = useState<Vestiging | null>(null)
   const [vestigingForm, setVestigingForm] = useState({ naam: '', adres: '', postcode: '', stad: '', land: 'Nederland' })
+  // Move contactpersoon to another company
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false)
+  const [movingContact, setMovingContact] = useState<Contactpersoon | null>(null)
+  const [moveSearch, setMoveSearch] = useState('')
+  const [moveKlanten, setMoveKlanten] = useState<Klant[]>([])
+  const [selectedMoveKlant, setSelectedMoveKlant] = useState<Klant | null>(null)
+  const [moveLoading, setMoveLoading] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -267,6 +276,44 @@ export function ClientProfile() {
       toast.success('Contactpersoon verwijderd')
     } catch {
       toast.error('Fout bij verwijderen')
+    }
+  }
+
+  // ── Move contactpersoon to another company ──
+  async function openMoveDialog(contact: Contactpersoon) {
+    setMovingContact(contact)
+    setMoveSearch('')
+    setSelectedMoveKlant(null)
+    setMoveDialogOpen(true)
+    try {
+      const allKlanten = await getKlanten()
+      setMoveKlanten(allKlanten.filter((k) => k.id !== klant?.id))
+    } catch {
+      toast.error('Fout bij ophalen bedrijven')
+    }
+  }
+
+  async function handleMoveContact() {
+    if (!klant || !movingContact || !selectedMoveKlant) return
+    setMoveLoading(true)
+    try {
+      // Remove from current company
+      const currentContacts = (klant.contactpersonen || []).filter((c) => c.id !== movingContact.id)
+      // Add to new company
+      const targetContacts = [...(selectedMoveKlant.contactpersonen || []), movingContact]
+      await Promise.all([
+        updateKlant(klant.id, { contactpersonen: currentContacts }),
+        updateKlant(selectedMoveKlant.id, { contactpersonen: targetContacts }),
+      ])
+      // Reload current klant
+      const refreshed = await getKlant(klant.id)
+      setKlant(refreshed)
+      toast.success(`${movingContact.naam} verplaatst naar ${selectedMoveKlant.bedrijfsnaam}`)
+      setMoveDialogOpen(false)
+    } catch {
+      toast.error('Fout bij verplaatsen contactpersoon')
+    } finally {
+      setMoveLoading(false)
     }
   }
 
@@ -1341,6 +1388,13 @@ export function ClientProfile() {
                             <Pencil className="w-3.5 h-3.5 text-gray-400" />
                           </button>
                           <button
+                            onClick={() => openMoveDialog(cp)}
+                            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            title="Verplaats naar ander bedrijf"
+                          >
+                            <ArrowRightLeft className="w-3.5 h-3.5 text-gray-400" />
+                          </button>
+                          <button
                             onClick={() => handleDeleteContact(cp.id)}
                             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             title="Verwijderen"
@@ -1690,6 +1744,77 @@ export function ClientProfile() {
             </Button>
             <Button onClick={handleSaveContact} disabled={!contactForm.naam.trim()}>
               {editingContact ? 'Bijwerken' : 'Toevoegen'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move contactpersoon dialog */}
+      <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Verplaats {movingContact?.naam || 'contactpersoon'} naar ander bedrijf
+            </DialogTitle>
+            <DialogDescription>
+              Zoek een bedrijf om deze contactpersoon naartoe te verplaatsen.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              placeholder="Zoek bedrijf..."
+              value={moveSearch}
+              onChange={(e) => {
+                setMoveSearch(e.target.value)
+                setSelectedMoveKlant(null)
+              }}
+            />
+            <div className="max-h-64 overflow-y-auto space-y-1">
+              {moveKlanten
+                .filter((k) =>
+                  k.bedrijfsnaam.toLowerCase().includes(moveSearch.toLowerCase())
+                )
+                .slice(0, 8)
+                .map((k) => (
+                  <button
+                    key={k.id}
+                    onClick={() => setSelectedMoveKlant(k)}
+                    className={cn(
+                      'w-full text-left px-3 py-2 rounded-md text-sm transition-colors',
+                      selectedMoveKlant?.id === k.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                    )}
+                  >
+                    <p className="font-medium">{k.bedrijfsnaam}</p>
+                    {k.contactpersoon && (
+                      <p className={cn(
+                        'text-xs',
+                        selectedMoveKlant?.id === k.id
+                          ? 'text-primary-foreground/70'
+                          : 'text-muted-foreground'
+                      )}>{k.contactpersoon}</p>
+                    )}
+                  </button>
+                ))}
+              {moveKlanten.filter((k) =>
+                k.bedrijfsnaam.toLowerCase().includes(moveSearch.toLowerCase())
+              ).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Geen bedrijven gevonden
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>
+              Annuleren
+            </Button>
+            <Button
+              onClick={handleMoveContact}
+              disabled={!selectedMoveKlant || moveLoading}
+            >
+              {moveLoading ? 'Verplaatsen...' : 'Verplaatsen'}
             </Button>
           </DialogFooter>
         </DialogContent>

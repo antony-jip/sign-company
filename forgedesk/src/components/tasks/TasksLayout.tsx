@@ -825,6 +825,54 @@ function DayColumn({
   const scheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline ?? "") !== null)
   const unscheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline ?? "") === null)
 
+  // Compute overlap columns so tasks at the same time sit side-by-side
+  const taskColumns = useMemo(() => {
+    const cols: Record<string, { col: number; totalCols: number }> = {}
+    if (scheduledTasks.length === 0) return cols
+
+    // Build intervals: [startHour, endHour, taakId]
+    const intervals = scheduledTasks.map((t) => {
+      const h = getHourFromDeadline(t.deadline)!
+      const dur = t.geschatte_tijd || 1
+      return { id: t.id, start: h, end: h + dur }
+    }).sort((a, b) => a.start - b.start || a.end - b.end)
+
+    // Greedy column assignment
+    const assigned: { id: string; start: number; end: number; col: number }[] = []
+    for (const iv of intervals) {
+      // Find the first column where no existing task overlaps
+      let col = 0
+      while (assigned.some((a) => a.col === col && a.start < iv.end && a.end > iv.start)) {
+        col++
+      }
+      assigned.push({ ...iv, col })
+    }
+
+    // Group overlapping clusters to find totalCols per cluster
+    // Two tasks are in the same cluster if they transitively overlap
+    const clusters: typeof assigned[] = []
+    for (const item of assigned) {
+      let merged = false
+      for (const cluster of clusters) {
+        if (cluster.some((c) => c.start < item.end && c.end > item.start)) {
+          cluster.push(item)
+          merged = true
+          break
+        }
+      }
+      if (!merged) clusters.push([item])
+    }
+
+    for (const cluster of clusters) {
+      const totalCols = Math.max(...cluster.map((c) => c.col)) + 1
+      for (const item of cluster) {
+        cols[item.id] = { col: item.col, totalCols }
+      }
+    }
+
+    return cols
+  }, [scheduledTasks])
+
   function handleDragOver(e: React.DragEvent, hour: number) {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
@@ -936,12 +984,20 @@ function DayColumn({
         const heightPx = baseHeightPx !== null
           ? (isResizing ? Math.max(HOUR_HEIGHT * 0.5, baseHeightPx + resizeDeltaPx) : baseHeightPx)
           : null
+        // Column positioning for overlapping tasks
+        const colInfo = taskColumns[taak.id]
+        const colCount = colInfo?.totalCols || 1
+        const colIndex = colInfo?.col || 0
+        const widthPercent = 100 / colCount
+        const leftPercent = colIndex * widthPercent
         return (
           <div
             key={taak.id}
-            className={cn('absolute left-1 right-1 z-10', isResizing && 'z-30')}
+            className={cn('absolute z-10', isResizing && 'z-30')}
             style={{
               top: topPx,
+              left: `calc(${leftPercent}% + 4px)`,
+              width: `calc(${widthPercent}% - 8px)`,
               height: heightPx !== null ? `${heightPx - 6}px` : undefined,
             }}
           >

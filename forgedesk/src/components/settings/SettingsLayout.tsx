@@ -341,9 +341,10 @@ function ProfielTab() {
       })
       await refreshProfile()
       toast.success('Profiel succesvol opgeslagen')
-    } catch (err) {
+    } catch (err: any) {
       logger.error('Fout bij opslaan profiel:', err)
-      toast.error('Kon profiel niet opslaan')
+      const msg = err?.message || err?.details || 'Onbekende fout'
+      toast.error(`Kon profiel niet opslaan: ${msg}`)
     } finally {
       setIsSaving(false)
     }
@@ -539,9 +540,10 @@ function BedrijfTab() {
       })
       await refreshProfile()
       toast.success('Bedrijfsgegevens succesvol opgeslagen')
-    } catch (err) {
+    } catch (err: any) {
       logger.error('Fout bij opslaan bedrijfsgegevens:', err)
-      toast.error('Kon bedrijfsgegevens niet opslaan')
+      const msg = err?.message || err?.details || 'Onbekende fout'
+      toast.error(`Kon bedrijfsgegevens niet opslaan: ${msg}`)
     } finally {
       setIsSaving(false)
     }

@@ -41,6 +41,7 @@ import {
   Pencil,
   Trash2,
   Plus,
+  Minus,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateEmailDraft } from '@/services/aiService'
@@ -229,7 +230,11 @@ export function EmailCompose({
 
   const [to, setTo] = useState(defaultTo)
   const [cc, setCc] = useState('')
+  const [bcc, setBcc] = useState('')
   const [showCc, setShowCc] = useState(false)
+  const [showBcc, setShowBcc] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const [subject, setSubject] = useState(defaultSubject)
   const [template, setTemplate] = useState('none')
   const [isSending, setIsSending] = useState(false)
@@ -599,10 +604,54 @@ export function EmailCompose({
     setUndoTimer(timer)
   }
 
+  // Ctrl+Enter to send
+  useEffect(() => {
+    if (!open) return
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        handleSend()
+      }
+      if (e.key === 'Escape' && isFullscreen) {
+        e.preventDefault()
+        setIsFullscreen(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, isFullscreen])
+
+  // Drag & drop for attachments
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length > 0) {
+      setAttachments((prev) => [...prev, ...files])
+      toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} toegevoegd`)
+    }
+  }, [])
+
   const resetAndClose = () => {
     setTo(defaultTo)
     setCc('')
+    setBcc('')
     setShowCc(false)
+    setShowBcc(false)
+    setIsFullscreen(false)
     setSubject(defaultSubject)
     setTemplate('none')
     setScheduledAt('')
@@ -620,9 +669,29 @@ export function EmailCompose({
   if (!open) return null
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className={cn(
+        'flex flex-col',
+        isFullscreen
+          ? 'fixed inset-0 z-50 bg-background'
+          : 'h-full'
+      )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none">
+          <div className="bg-background rounded-lg p-6 shadow-lg text-center">
+            <Paperclip className="w-8 h-8 text-primary mx-auto mb-2" />
+            <p className="text-sm font-medium">Sleep bestanden hier om toe te voegen</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/20">
+      <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/20 dark:bg-muted/10">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={resetAndClose}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
@@ -638,6 +707,15 @@ export function EmailCompose({
           >
             <Sparkles className="w-3.5 h-3.5" />
             AI Genereren
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            title={isFullscreen ? 'Verkleinen' : 'Volledig scherm'}
+          >
+            {isFullscreen ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
           </Button>
         </div>
       </div>
@@ -666,14 +744,24 @@ export function EmailCompose({
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-between w-20 flex-shrink-0">
               <Label className="text-sm font-medium">Aan</Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 px-1 text-[10px] text-muted-foreground"
-                onClick={() => setShowCc(!showCc)}
-              >
-                CC {showCc ? <ChevronUp className="w-2.5 h-2.5 ml-0.5" /> : <ChevronDown className="w-2.5 h-2.5 ml-0.5" />}
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1 text-[10px] text-muted-foreground"
+                  onClick={() => setShowCc(!showCc)}
+                >
+                  CC
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1 text-[10px] text-muted-foreground"
+                  onClick={() => setShowBcc(!showBcc)}
+                >
+                  BCC
+                </Button>
+              </div>
             </div>
             <div className="relative flex-1" ref={suggestionsRef}>
               <Input
@@ -719,6 +807,14 @@ export function EmailCompose({
             <div className="flex items-center gap-3">
               <Label className="text-sm font-medium w-20 flex-shrink-0">CC</Label>
               <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@voorbeeld.nl" type="email" className="h-9" />
+            </div>
+          )}
+
+          {/* BCC field */}
+          {showBcc && (
+            <div className="flex items-center gap-3">
+              <Label className="text-sm font-medium w-20 flex-shrink-0">BCC</Label>
+              <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@voorbeeld.nl" type="email" className="h-9" />
             </div>
           )}
 
@@ -1034,7 +1130,7 @@ export function EmailCompose({
                 {scheduledAt ? (
                   <><Clock className="w-4 h-4" />{isSending ? 'Inplannen...' : 'Inplannen'}</>
                 ) : (
-                  <><Send className="w-4 h-4" />{isSending ? 'Verzenden...' : 'Verzenden'}</>
+                  <><Send className="w-4 h-4" />{isSending ? 'Verzenden...' : 'Verzenden'}<span className="text-[10px] opacity-60 ml-1 hidden sm:inline">Ctrl+Enter</span></>
                 )}
               </Button>
               <Button
