@@ -1,56 +1,73 @@
-import React from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { SalesPulseWidget } from './SalesPulseWidget'
+import { StatisticsCards } from './StatisticsCards'
+import { RecenteActiviteitWidget } from './RecenteActiviteitWidget'
+import { OpenstaandeOffertesWidget } from './OpenstaandeOffertesWidget'
 import { TodayPlanningWidget } from './TodayPlanningWidget'
 import { WeatherWidget } from './WeatherWidget'
-import { QuickActions } from './QuickActions'
-import { AIInsightWidget } from './AIInsightWidget'
 import { PriorityTasks } from './PriorityTasks'
-import { CalendarMiniWidget } from './CalendarMiniWidget'
-import { SalesFollowUpWidget } from './SalesFollowUpWidget'
-import { WorkflowWidget } from './WorkflowWidget'
-import { TeFacturerenWidget } from './TeFacturerenWidget'
-import { SalesForecastWidget } from './SalesForecastWidget'
 import { MontagePlanningWidget } from './MontagePlanningWidget'
-import { FloatingQuickActions } from './FloatingQuickActions'
-import { Wrench, FileText, FolderKanban, Receipt } from 'lucide-react'
-import { getMontageAfspraken, getOffertes, getProjecten } from '@/services/supabaseService'
-import type { MontageAfspraak, Offerte, Project } from '@/types'
-import { isToday } from 'date-fns'
+import { AlertTriangle } from 'lucide-react'
+import { getFacturen } from '@/services/supabaseService'
+import type { Factuur } from '@/types'
+import { formatCurrency } from '@/lib/utils'
+import { logger } from '../../utils/logger'
+
+// Playful greetings that rotate
+const GREETINGS: { greeting: string; timeOfDay: 'morning' | 'afternoon' | 'evening' }[] = [
+  { greeting: 'Goedemorgen', timeOfDay: 'morning' },
+  { greeting: 'Bonjour', timeOfDay: 'morning' },
+  { greeting: 'Buenos días', timeOfDay: 'morning' },
+  { greeting: 'Buongiorno', timeOfDay: 'morning' },
+  { greeting: 'Goedemiddag', timeOfDay: 'afternoon' },
+  { greeting: 'Bon après-midi', timeOfDay: 'afternoon' },
+  { greeting: 'Buenas tardes', timeOfDay: 'afternoon' },
+  { greeting: 'Buon pomeriggio', timeOfDay: 'afternoon' },
+  { greeting: 'Goedenavond', timeOfDay: 'evening' },
+  { greeting: 'Bonsoir', timeOfDay: 'evening' },
+  { greeting: 'Buenas noches', timeOfDay: 'evening' },
+  { greeting: 'Buonasera', timeOfDay: 'evening' },
+]
+
+function getPlayfulGreeting(): string {
+  const hour = new Date().getHours()
+  const timeOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'
+  const options = GREETINGS.filter(g => g.timeOfDay === timeOfDay)
+  // Use day of year as seed so it changes daily but stays consistent within the day
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
+  return options[dayOfYear % options.length].greeting
+}
 
 export function FORGEdeskDashboard() {
+  const navigate = useNavigate()
   const { user } = useAuth()
-  const { profile, toonFollowUpIndicatoren } = useAppSettings()
+  const { profile } = useAppSettings()
   const userName = profile?.voornaam || user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
 
-  const [heroCounts, setHeroCounts] = React.useState({ montagesVandaag: 0, openOffertes: 0, actieveProjecten: 0, teFactureren: 0 })
+  // Verlopen facturen for alert bar
+  const [verlopenFacturen, setVerlopenFacturen] = useState<{ count: number; bedrag: number }>({ count: 0, bedrag: 0 })
 
-  React.useEffect(() => {
+  useEffect(() => {
     let cancelled = false
-    Promise.all([getMontageAfspraken(), getOffertes(), getProjecten()])
-      .then(([montages, offertes, projecten]: [MontageAfspraak[], Offerte[], Project[]]) => {
+    getFacturen()
+      .then((facturen: Factuur[]) => {
         if (cancelled) return
-        const montagesVandaag = montages.filter(
-          (m) => m.status !== 'afgerond' && isToday(new Date(m.datum))
-        ).length
-        const openOffertes = offertes.filter((o) =>
-          ['verzonden', 'bekeken'].includes(o.status)
-        ).length
-        const actieveProjecten = projecten.filter((p) => p.status === 'actief').length
-        const teFactureren = offertes.filter((o) => o.status === 'goedgekeurd').length
-        setHeroCounts({ montagesVandaag, openOffertes, actieveProjecten, teFactureren })
+        const now = new Date()
+        const verlopen = facturen.filter(
+          f => (f.status === 'verzonden' || f.status === 'vervallen') && new Date(f.vervaldatum) < now
+        )
+        setVerlopenFacturen({
+          count: verlopen.length,
+          bedrag: verlopen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0),
+        })
       })
-      .catch(() => {})
+      .catch(logger.error)
     return () => { cancelled = true }
   }, [])
 
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Goedemorgen'
-    if (hour < 18) return 'Goedemiddag'
-    return 'Goedenavond'
-  }
+  const greeting = useMemo(() => getPlayfulGreeting(), [])
 
   const today = new Date()
   const dateStr = today.toLocaleDateString('nl-NL', {
@@ -63,109 +80,61 @@ export function FORGEdeskDashboard() {
 
   return (
     <div className="space-y-5">
-      {/* Welcome + Weather banner */}
-      <div className="wm-welcome-banner rounded-2xl p-5 md:p-6">
-        <div className="relative z-10">
-          <div className="flex items-start justify-between mb-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-xs font-medium text-muted-foreground">{formattedDate}</span>
-              </div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground font-display">
-                {getGreeting()}{userName ? ', ' : ''}
-                {userName && (
-                  <span className="wm-gradient-text">{userName}</span>
-                )}
-              </h1>
-            </div>
-            {/* Sign-industry status pills — scrollable on mobile */}
-            <div className="hidden md:flex items-center gap-2">
-              {heroCounts.montagesVandaag > 0 && (
-                <div className="flex items-center gap-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/30 px-2.5 py-1.5 rounded-full">
-                  <Wrench className="w-3 h-3" />
-                  {heroCounts.montagesVandaag} montage{heroCounts.montagesVandaag !== 1 ? 's' : ''} vandaag
-                </div>
-              )}
-              {heroCounts.openOffertes > 0 && (
-                <div className="flex items-center gap-1.5 text-xs font-medium text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-accent/15 border border-primary/20 dark:border-primary/15 px-2.5 py-1.5 rounded-full">
-                  <FileText className="w-3 h-3" />
-                  {heroCounts.openOffertes} open offerte{heroCounts.openOffertes !== 1 ? 's' : ''}
-                </div>
-              )}
-              {heroCounts.actieveProjecten > 0 && (
-                <div className="flex items-center gap-1.5 text-xs font-medium text-primary dark:text-primary bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary/15 px-2.5 py-1.5 rounded-full">
-                  <FolderKanban className="w-3 h-3" />
-                  {heroCounts.actieveProjecten} actie{heroCounts.actieveProjecten !== 1 ? 've' : 'f'} project{heroCounts.actieveProjecten !== 1 ? 'en' : ''}
-                </div>
-              )}
-              {heroCounts.teFactureren > 0 && (
-                <div className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 px-2.5 py-1.5 rounded-full">
-                  <Receipt className="w-3 h-3" />
-                  {heroCounts.teFactureren} te factureren
-                </div>
-              )}
-            </div>
-          </div>
-          {/* Mobile status pills — horizontal scroll strip below greeting */}
-          {(heroCounts.montagesVandaag > 0 || heroCounts.openOffertes > 0 || heroCounts.actieveProjecten > 0 || heroCounts.teFactureren > 0) && (
-            <div className="flex md:hidden gap-2 overflow-x-auto -mx-5 px-5 pb-1 scrollbar-hide mt-2">
-              {heroCounts.montagesVandaag > 0 && (
-                <div className="flex items-center gap-1.5 text-[11px] font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/30 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
-                  <Wrench className="w-3 h-3" />
-                  {heroCounts.montagesVandaag} montage{heroCounts.montagesVandaag !== 1 ? 's' : ''}
-                </div>
-              )}
-              {heroCounts.openOffertes > 0 && (
-                <div className="flex items-center gap-1.5 text-[11px] font-medium text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-accent/15 border border-primary/20 dark:border-primary/15 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
-                  <FileText className="w-3 h-3" />
-                  {heroCounts.openOffertes} offertes
-                </div>
-              )}
-              {heroCounts.actieveProjecten > 0 && (
-                <div className="flex items-center gap-1.5 text-[11px] font-medium text-primary dark:text-primary bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary/15 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
-                  <FolderKanban className="w-3 h-3" />
-                  {heroCounts.actieveProjecten} projecten
-                </div>
-              )}
-              {heroCounts.teFactureren > 0 && (
-                <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
-                  <Receipt className="w-3 h-3" />
-                  {heroCounts.teFactureren} te factureren
-                </div>
-              )}
-            </div>
-          )}
-          <WeatherWidget />
+      {/* Compact header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.04em] leading-tight text-foreground">
+            {greeting}{userName ? ', ' : ''}
+            {userName && <span className="wm-gradient-text">{userName}</span>}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">{formattedDate}</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate('/offertes/nieuw')}
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2 rounded-[10px] bg-foreground text-background hover:shadow-md hover:-translate-y-px transition-all active:scale-[0.96]"
+          >
+            + Nieuwe offerte
+          </button>
         </div>
       </div>
 
-      {/* Sales pulse — actionable metrics */}
-      <SalesPulseWidget />
-
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left column — planning & tasks */}
-        <div className="lg:col-span-2 space-y-5">
-          <TodayPlanningWidget />
-          <MontagePlanningWidget />
-          <PriorityTasks />
-          <QuickActions />
+      {/* Alert bar — verlopen facturen */}
+      {verlopenFacturen.count > 0 && (
+        <div
+          onClick={() => navigate('/facturen')}
+          className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-destructive/8 dark:bg-destructive/10 text-destructive cursor-pointer hover:bg-destructive/12 transition-colors"
+        >
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span className="text-[13.5px] font-medium">
+            <strong>{verlopenFacturen.count} facturen verlopen</strong> — {formatCurrency(verlopenFacturen.bedrag)} openstaand
+          </span>
+          <span className="ml-auto text-[13px] font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
+            Bekijk →
+          </span>
         </div>
+      )}
 
-        {/* Right column — sales & actions */}
-        <div className="space-y-5">
-          <TeFacturerenWidget />
-          <WorkflowWidget />
-          {toonFollowUpIndicatoren && <SalesFollowUpWidget />}
-          <SalesForecastWidget />
-          <AIInsightWidget />
-          <CalendarMiniWidget />
-        </div>
+      {/* 4 stat cards */}
+      <StatisticsCards />
+
+      {/* Row 1: Recente activiteit | Vandaag planning */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <RecenteActiviteitWidget />
+        <TodayPlanningWidget />
       </div>
 
-      {/* Floating quick action button — glass effect, bottom right */}
-      <FloatingQuickActions />
+      {/* Row 2: Taken | Openstaande offertes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <PriorityTasks />
+        <OpenstaandeOffertesWidget />
+      </div>
+
+      {/* Weather */}
+      <WeatherWidget />
+
+      {/* Montage planning */}
+      <MontagePlanningWidget />
     </div>
   )
 }
