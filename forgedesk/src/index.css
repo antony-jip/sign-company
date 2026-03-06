@@ -5,17 +5,17 @@
 /* ================================================================
    FORGEDESK DESIGN SYSTEM v3
    Earthy, premium, distinctive — #3D3522 #4A442D #386150 #58B09C #CAF7E2
-   Fonts: DM Sans (headings + body)
+   Fonts: Plus Jakarta Sans (headings + body)
    ================================================================ */
 
 /* ================================================================
-   FONTS — DM Sans via Google Fonts
+   FONTS — Plus Jakarta Sans via Google Fonts
    ================================================================ */
 
 @layer base {
   :root {
     /* Font customization */
-    --font-family: 'DM Sans';
+    --font-family: 'Plus Jakarta Sans';
     --font-size: 16px;
 
     /* Core palette — warm earth + botanical teal/mint */
