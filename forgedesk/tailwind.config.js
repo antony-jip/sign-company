@@ -55,6 +55,23 @@ export default {
         "wm-hover": "hsl(var(--wm-hover))",
         "wm-light": "hsl(var(--wm-light))",
         "wm-pale": "hsl(var(--wm-pale))",
+        // Pastel palette — FORGEdesk signature
+        blush: {
+          DEFAULT: '#F0D9D0',
+          deep: '#C49585',
+        },
+        sage: {
+          DEFAULT: '#C8D5CC',
+          deep: '#5A8264',
+        },
+        mist: {
+          DEFAULT: '#CDD5DE',
+          deep: '#5D7A93',
+        },
+        cream: {
+          DEFAULT: '#EDE8D8',
+          deep: '#9A8E6E',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
