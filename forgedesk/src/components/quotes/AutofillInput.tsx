@@ -124,7 +124,7 @@ export function AutofillInput({
         className={className}
       />
       {shouldShowDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-foreground border border-border dark:border-border rounded-lg shadow-lg max-h-48 overflow-auto">
           {suggestions.map((suggestion, i) => (
             <button
               key={suggestion}
@@ -133,7 +133,7 @@ export function AutofillInput({
                 'w-full text-left px-3 py-2 text-sm transition-colors',
                 i === focusedIndex
                   ? 'bg-accent text-accent-foreground'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  : 'hover:bg-muted dark:hover:bg-foreground/80'
               )}
               onMouseDown={(e) => {
                 e.preventDefault()

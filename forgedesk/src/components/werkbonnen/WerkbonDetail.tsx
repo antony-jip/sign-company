@@ -63,7 +63,7 @@ function resizeImage(file: File, maxWidth: number): Promise<Blob> {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  concept: { label: 'Concept', color: 'text-gray-700', bg: 'bg-gray-100' },
+  concept: { label: 'Concept', color: 'text-foreground/70', bg: 'bg-muted' },
   ingediend: { label: 'Ingediend', color: 'text-blue-700', bg: 'bg-blue-100' },
   goedgekeurd: { label: 'Goedgekeurd', color: 'text-green-700', bg: 'bg-green-100' },
   gefactureerd: { label: 'Gefactureerd', color: 'text-purple-700', bg: 'bg-purple-100' },
@@ -746,7 +746,7 @@ export function WerkbonDetail() {
                           'text-xs font-medium px-2 py-0.5 rounded-full',
                           regel.type === 'arbeid' ? 'bg-blue-100 text-blue-700' :
                           regel.type === 'materiaal' ? 'bg-orange-100 text-orange-700' :
-                          'bg-gray-100 text-gray-700'
+                          'bg-muted text-foreground/70'
                         )}>
                           {regel.type === 'arbeid' ? 'Arbeid' : regel.type === 'materiaal' ? 'Materiaal' : 'Overig'}
                         </span>

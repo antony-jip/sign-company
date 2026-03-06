@@ -150,7 +150,7 @@ export function PublicBookingPage() {
 
   if (bevestigd) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background dark:bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full text-center">
           <CardContent className="py-12 space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -172,7 +172,7 @@ export function PublicBookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8">
+    <div className="min-h-screen bg-background dark:bg-background p-4 md:p-8">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -254,7 +254,7 @@ export function PublicBookingPage() {
                             'px-3 py-1.5 rounded-md text-xs font-medium border transition-colors',
                             gekozenTijd === tijd
                               ? 'bg-primary text-primary-foreground border-primary'
-                              : 'border-gray-200 dark:border-gray-700 hover:border-primary hover:text-primary'
+                              : 'border-border dark:border-border hover:border-primary hover:text-primary'
                           )}
                         >
                           {tijd}

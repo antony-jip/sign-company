@@ -38,7 +38,7 @@ function getFileIconColor(type: string): string {
   if (lower.includes('spreadsheet') || lower.includes('xlsx') || lower.includes('xls')) return 'text-green-500'
   if (lower.includes('image') || lower.includes('png') || lower.includes('jpg') || lower.includes('jpeg')) return 'text-primary'
   if (lower.includes('word') || lower.includes('docx') || lower.includes('doc')) return 'text-blue-500'
-  return 'text-gray-500'
+  return 'text-muted-foreground'
 }
 
 function formatFileSize(bytes: number): string {
@@ -154,9 +154,9 @@ export function DocumentsLayout() {
           {/* Upload zone */}
           <div
             onClick={handleUploadZoneClick}
-            className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 mb-4 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors"
+            className="border-2 border-dashed border-border dark:border-border rounded-lg p-6 mb-4 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors"
           >
-            <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+            <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground/60" />
             <p className="text-sm text-muted-foreground">
               Sleep bestanden hierheen of klik om te uploaden
             </p>

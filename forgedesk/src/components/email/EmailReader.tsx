@@ -101,7 +101,7 @@ function getLabelColor(label: string): string {
     case 'klant': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
     case 'project': return 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-light'
     case 'leverancier': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
-    default: return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+    default: return 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
   }
 }
 
@@ -119,7 +119,7 @@ function getFileTypeColor(name: string): string {
     case 'xls': case 'xlsx': return 'bg-green-600'
     case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-primary'
     case 'zip': case 'rar': return 'bg-yellow-600'
-    default: return 'bg-gray-500'
+    default: return 'bg-muted-foreground'
   }
 }
 
@@ -822,7 +822,7 @@ export function EmailReader({
             {email.starred ? (
               <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
             ) : (
-              <Star className="w-5 h-5 text-gray-300 hover:text-yellow-400 transition-colors" />
+              <Star className="w-5 h-5 text-muted-foreground/50 hover:text-yellow-400 transition-colors" />
             )}
           </button>
         </div>
@@ -976,7 +976,7 @@ export function EmailReader({
                                         <X className="w-3.5 h-3.5" />
                                       </button>
                                     </div>
-                                    <div className="flex items-center justify-center h-32 bg-white dark:bg-gray-900 rounded border">
+                                    <div className="flex items-center justify-center h-32 bg-white dark:bg-foreground rounded border">
                                       <div className="text-center text-muted-foreground">
                                         <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
                                         <p className="text-xs">PDF voorbeeld</p>
@@ -1034,7 +1034,7 @@ export function EmailReader({
           <div className="p-4">
             <button
               onClick={() => openReply('reply')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all text-sm text-muted-foreground"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-border dark:border-border hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all text-sm text-muted-foreground"
             >
               <Reply className="w-4 h-4" />
               Klik hier om te antwoorden...

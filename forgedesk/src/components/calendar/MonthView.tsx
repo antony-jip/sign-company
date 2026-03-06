@@ -35,7 +35,7 @@ function getEventColor(type: CalendarEvent['type']): string {
     case 'persoonlijk':
       return 'bg-green-500 text-white'
     default:
-      return 'bg-gray-500 text-white'
+      return 'bg-muted-foreground text-white'
   }
 }
 

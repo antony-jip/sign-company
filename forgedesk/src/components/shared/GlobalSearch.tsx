@@ -296,7 +296,7 @@ function getStatusBadgeColor(status?: string): string {
   switch (status) {
     case 'actief': case 'bezig': case 'onderweg': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
     case 'goedgekeurd': case 'klaar': case 'betaald': case 'afgerond': return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-    case 'concept': case 'todo': case 'gepland': return 'bg-gray-100 text-gray-700 dark:bg-gray-800/40 dark:text-gray-300'
+    case 'concept': case 'todo': case 'gepland': return 'bg-muted text-foreground/70 dark:bg-foreground/80/40 dark:text-muted-foreground/50'
     case 'verzonden': case 'review': case 'in-review': case 'bekeken': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
     case 'afgewezen': case 'verlopen': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
     default: return 'bg-muted text-muted-foreground'

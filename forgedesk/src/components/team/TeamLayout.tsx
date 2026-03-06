@@ -489,7 +489,7 @@ export function TeamLayout() {
                               'inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-medium',
                               status === 'beschikbaar' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
                               status === 'halve-dag' && 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-                              status === 'vrij' && 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500',
+                              status === 'vrij' && 'bg-muted text-muted-foreground/60 dark:bg-foreground/80 dark:text-muted-foreground',
                             )}>
                               {status === 'beschikbaar' ? <CheckCircle className="w-4 h-4" /> : status === 'halve-dag' ? <Clock className="w-4 h-4" /> : <X className="w-4 h-4" />}
                             </div>
@@ -511,7 +511,7 @@ export function TeamLayout() {
                 <span className="text-muted-foreground">Halve dag</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs">
-                <div className="w-3 h-3 rounded bg-gray-100 dark:bg-gray-800" />
+                <div className="w-3 h-3 rounded bg-muted dark:bg-foreground/80" />
                 <span className="text-muted-foreground">Vrij</span>
               </div>
             </div>
@@ -560,7 +560,7 @@ export function TeamLayout() {
                               v.type === 'ziek' && 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
                               v.type === 'ouderschapsverlof' && 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
                               v.type === 'bijzonder' && 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-                              v.type === 'bedrijfssluiting' && 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                              v.type === 'bedrijfssluiting' && 'bg-muted text-foreground/70 dark:bg-foreground/80 dark:text-muted-foreground/50',
                             )}>
                               {v.type.charAt(0).toUpperCase() + v.type.slice(1)}
                             </Badge>
@@ -938,7 +938,7 @@ export function TeamLayout() {
                       'text-xs',
                       m.status === 'actief'
                         ? 'border-green-200 bg-green-100 text-green-800'
-                        : 'border-gray-200 bg-gray-100 text-gray-600'
+                        : 'border-border bg-muted text-muted-foreground'
                     )}
                   >
                     {m.status === 'actief' ? 'Actief' : 'Inactief'}

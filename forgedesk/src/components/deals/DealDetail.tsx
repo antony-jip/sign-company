@@ -31,7 +31,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 // ============ CONSTANTS ============
 
 const ACTIVITEIT_TYPE_CONFIG: Record<DealActiviteit['type'], { label: string; icon: typeof Phone; color: string }> = {
-  notitie: { label: 'Notitie', icon: StickyNote, color: 'text-gray-500 bg-gray-100 dark:bg-gray-800' },
+  notitie: { label: 'Notitie', icon: StickyNote, color: 'text-muted-foreground bg-muted dark:bg-foreground/80' },
   email: { label: 'Email', icon: Mail, color: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30' },
   telefoon: { label: 'Telefoon', icon: Phone, color: 'text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30' },
   vergadering: { label: 'Vergadering', icon: Calendar, color: 'text-purple-500 bg-purple-100 dark:bg-purple-900/30' },
@@ -305,7 +305,7 @@ export function DealDetail() {
         <div className="lg:col-span-2 space-y-4">
           {/* Quick add buttons */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-500">Snel toevoegen:</span>
+            <span className="text-sm font-medium text-muted-foreground">Snel toevoegen:</span>
             {[
               { type: 'notitie' as const, icon: StickyNote, label: 'Notitie' },
               { type: 'email' as const, icon: Mail, label: 'Email' },
@@ -322,7 +322,7 @@ export function DealDetail() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Activiteiten</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Activiteiten</CardTitle>
                 <Button variant="outline" size="sm" onClick={() => { setActType('notitie'); setActBeschrijving(''); setActDialogOpen(true) }} className="gap-1">
                   <Plus className="h-3.5 w-3.5" /> Activiteit
                 </Button>
@@ -347,9 +347,9 @@ export function DealDetail() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
                             <Badge variant="outline" className="text-[10px]">{cfg.label}</Badge>
-                            <span className="text-[11px] text-gray-400">{formatDateTime(act.datum)}</span>
+                            <span className="text-[11px] text-muted-foreground/60">{formatDateTime(act.datum)}</span>
                           </div>
-                          <p className="text-sm text-gray-700 dark:text-gray-300">{act.beschrijving}</p>
+                          <p className="text-sm text-foreground/70 dark:text-muted-foreground/50">{act.beschrijving}</p>
                         </div>
                       </div>
                     )
@@ -365,13 +365,13 @@ export function DealDetail() {
           {/* Waarde + Kans */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Waarde & Kans</CardTitle>
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Waarde & Kans</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label>Verwachte waarde</Label>
                 <Input type="number" min={0} step={100} value={verwachteWaarde} onChange={(e) => setVerwachteWaarde(parseFloat(e.target.value) || 0)} />
-                <p className="text-xs text-gray-400 mt-1">Gewogen: {formatCurrency(round2(verwachteWaarde * kansPercentage / 100))}</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Gewogen: {formatCurrency(round2(verwachteWaarde * kansPercentage / 100))}</p>
               </div>
               <div>
                 <Label>Kans percentage ({kansPercentage}%)</Label>
@@ -379,9 +379,9 @@ export function DealDetail() {
                   type="range" min={0} max={100} step={5}
                   value={kansPercentage}
                   onChange={(e) => setKansPercentage(parseInt(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-500"
+                  className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer dark:bg-foreground/70 accent-blue-500"
                 />
-                <div className="flex justify-between text-[10px] text-gray-400">
+                <div className="flex justify-between text-[10px] text-muted-foreground/60">
                   <span>0%</span><span>50%</span><span>100%</span>
                 </div>
               </div>
@@ -395,7 +395,7 @@ export function DealDetail() {
           {/* Details */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Details</CardTitle>
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -434,7 +434,7 @@ export function DealDetail() {
           {/* Volgende actie */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Volgende actie</CardTitle>
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Volgende actie</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Input value={volgendeActie} onChange={(e) => setVolgendeActie(e.target.value)} placeholder="Bijv. Offerte versturen" />
@@ -445,22 +445,22 @@ export function DealDetail() {
           {/* Koppelingen */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Koppelingen</CardTitle>
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Koppelingen</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="text-sm">
-                <span className="text-gray-500">Klant: </span>
+                <span className="text-muted-foreground">Klant: </span>
                 <button className="text-blue-600 hover:underline" onClick={() => klant && navigate(`/klanten/${klant.id}`)}>{klant?.bedrijfsnaam || '-'}</button>
               </div>
               {deal.offerte_ids && deal.offerte_ids.length > 0 && (
                 <div className="text-sm">
-                  <span className="text-gray-500">Offertes: </span>
+                  <span className="text-muted-foreground">Offertes: </span>
                   <span>{deal.offerte_ids.length} gekoppeld</span>
                 </div>
               )}
               {deal.project_id && (
                 <div className="text-sm">
-                  <span className="text-gray-500">Project: </span>
+                  <span className="text-muted-foreground">Project: </span>
                   <button className="text-blue-600 hover:underline" onClick={() => navigate(`/projecten/${deal.project_id}`)}>Bekijk project</button>
                 </div>
               )}

@@ -56,7 +56,7 @@ export function FloatingQuickActions() {
           'h-14 w-14 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300',
           'backdrop-blur-xl border border-white/20',
           isOpen
-            ? 'bg-gray-900/80 dark:bg-white/20 rotate-45 scale-110'
+            ? 'bg-foreground/80 dark:bg-white/20 rotate-45 scale-110'
             : 'bg-primary/80 dark:bg-primary/60 hover:bg-primary/90 dark:hover:bg-primary/80 hover:scale-110 hover:shadow-2xl',
         )}
       >

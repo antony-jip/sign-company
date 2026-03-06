@@ -123,9 +123,9 @@ function getTagColor(tag: string): string {
     partner: 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-light',
     klacht: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
     overheid: 'bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300',
-    particulier: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    particulier: 'bg-muted text-foreground/70 dark:bg-foreground/80 dark:text-muted-foreground/50',
   }
-  return colors[tag] || 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+  return colors[tag] || 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
 }
 
 function getDealStatusColor(status: string): string {
@@ -135,7 +135,7 @@ function getDealStatusColor(status: string): string {
     pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
     lost: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
   }
-  return colors[status] || 'bg-gray-100 text-gray-600'
+  return colors[status] || 'bg-muted text-muted-foreground'
 }
 
 function getDealStatusLabel(status: string): string {
@@ -162,7 +162,7 @@ function getActivityColor(type: string): string {
     case 'email': return 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400'
     case 'call': return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400'
     case 'meeting': return 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-primary'
-    default: return 'bg-gray-100 text-gray-600'
+    default: return 'bg-muted text-muted-foreground'
   }
 }
 
@@ -283,7 +283,7 @@ function AddContactForm({
                 'text-[10px]',
                 form.status === 'actief' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
                 form.status === 'prospect' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
-                form.status === 'inactief' && 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+                form.status === 'inactief' && 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60',
               )}>
                 {form.status}
               </Badge>
@@ -1168,8 +1168,8 @@ export function ContactSidebar({
               {contact.notes && (
                 <div className="mb-4">
                   <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-md bg-gray-500/10 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-3 h-3 text-gray-500" />
+                    <span className="w-5 h-5 rounded-md bg-muted-foreground/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-3 h-3 text-muted-foreground" />
                     </span>
                     Notities
                   </h4>

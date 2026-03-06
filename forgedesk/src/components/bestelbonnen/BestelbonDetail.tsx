@@ -362,7 +362,7 @@ export function BestelbonDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Gegevens</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Gegevens</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -396,7 +396,7 @@ export function BestelbonDetail() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Details</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -439,7 +439,7 @@ export function BestelbonDetail() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Regels</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Regels</CardTitle>
             <Button variant="outline" size="sm" onClick={handleAddRegel} className="gap-1">
               <Plus className="h-3.5 w-3.5" />
               Regel toevoegen
@@ -455,7 +455,7 @@ export function BestelbonDetail() {
           ) : (
             <div className="space-y-3">
               {/* Header */}
-              <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
+              <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
                 <div className="col-span-4">Omschrijving</div>
                 <div className="col-span-1 text-right">Aantal</div>
                 <div className="col-span-1">Eenheid</div>
@@ -501,7 +501,7 @@ export function BestelbonDetail() {
                       className="text-sm text-right"
                     />
                   </div>
-                  <div className="col-span-2 text-right text-sm font-semibold text-gray-900 dark:text-white">
+                  <div className="col-span-2 text-right text-sm font-semibold text-foreground dark:text-white">
                     {formatCurrency(round2(regel.aantal * regel.prijs_per_eenheid))}
                   </div>
                   <div className="col-span-1">
@@ -532,8 +532,8 @@ export function BestelbonDetail() {
               <Separator />
 
               <div className="flex justify-between items-center px-1">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Totaal</span>
-                <span className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(berekenTotaal)}</span>
+                <span className="text-sm font-semibold text-foreground/70 dark:text-muted-foreground/50">Totaal</span>
+                <span className="text-lg font-bold text-foreground dark:text-white">{formatCurrency(berekenTotaal)}</span>
               </div>
 
               {ontvangenStatus && (

@@ -52,7 +52,7 @@ interface SubTab {
 
 function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string; onChange: (id: string) => void }) {
   return (
-    <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-x-auto mb-6">
+    <div className="flex items-center gap-1 p-1 bg-muted dark:bg-foreground/80 rounded-xl overflow-x-auto mb-6">
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = active === tab.id
@@ -63,8 +63,8 @@ function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string;
             className={cn(
               'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
               isActive
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-white dark:bg-foreground/70 text-foreground dark:text-white shadow-sm'
+                : 'text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/50'
             )}
           >
             <Icon className="w-4 h-4" />
@@ -111,7 +111,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
 
   const pageClass = fullscreen
     ? 'w-[595px] h-[842px] bg-white shadow-2xl overflow-hidden'
-    : 'w-full aspect-[210/297] bg-white shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden rounded-lg'
+    : 'w-full aspect-[210/297] bg-white shadow-lg border border-border dark:border-border overflow-hidden rounded-lg'
 
   return (
     <div className={containerClass}>
@@ -128,9 +128,9 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
         {!fullscreen && (
           <button
             onClick={() => setFullscreen(true)}
-            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-gray-800/90 rounded-md p-1.5 shadow-sm"
+            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-foreground/80/90 rounded-md p-1.5 shadow-sm"
           >
-            <Maximize2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
+            <Maximize2 className="w-3.5 h-3.5 text-muted-foreground dark:text-muted-foreground/50" />
           </button>
         )}
 
@@ -379,19 +379,19 @@ function Section({ title, icon: Icon, children, defaultOpen = true }: {
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+    <div className="border border-border dark:border-border rounded-lg overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-background dark:bg-foreground/80/50 hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
       >
         <div className="flex items-center gap-2.5">
-          <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{title}</span>
+          <Icon className="w-4 h-4 text-muted-foreground dark:text-muted-foreground/60" />
+          <span className="font-medium text-sm text-foreground/70 dark:text-muted-foreground/50">{title}</span>
         </div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-gray-400" />
+          <ChevronUp className="w-4 h-4 text-muted-foreground/60" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-gray-400" />
+          <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
         )}
       </button>
       {isOpen && <div className="p-4 space-y-4">{children}</div>}
@@ -408,14 +408,14 @@ function ColorPicker({ label, value, onChange }: {
 }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs text-gray-600 dark:text-gray-400">{label}</Label>
+      <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">{label}</Label>
       <div className="flex items-center gap-2">
         <div className="relative">
           <input
             type="color"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-8 h-8 rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer appearance-none bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0"
+            className="w-8 h-8 rounded-md border border-border dark:border-border cursor-pointer appearance-none bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0"
           />
         </div>
         <Input
@@ -559,8 +559,8 @@ export function HuisstijlTab() {
       {/* Header with save/reset */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Document Huisstijl</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h2 className="text-lg font-semibold text-foreground dark:text-white">Document Huisstijl</h2>
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
             Pas de stijl van uw offertes, facturen en andere documenten aan
           </p>
         </div>
@@ -598,7 +598,7 @@ export function HuisstijlTab() {
                     className={`relative text-left p-3 rounded-lg border-2 transition-all ${
                       isActive
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        : 'border-border dark:border-border hover:border-border dark:hover:border-border'
                     }`}
                   >
                     {isActive && (
@@ -606,10 +606,10 @@ export function HuisstijlTab() {
                         <Check className="w-4 h-4 text-blue-500" />
                       </div>
                     )}
-                    <p className={`font-medium text-sm ${isActive ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'}`}>
+                    <p className={`font-medium text-sm ${isActive ? 'text-blue-700 dark:text-blue-300' : 'text-foreground/80 dark:text-muted-foreground/30'}`}>
                       {tmpl.naam}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">
                       {tmpl.preview_beschrijving}
                     </p>
                     {/* Color dots */}
@@ -617,7 +617,7 @@ export function HuisstijlTab() {
                       {[tmpl.defaults.primaire_kleur, tmpl.defaults.secundaire_kleur, tmpl.defaults.accent_kleur].map((kleur, i) => (
                         <div
                           key={i}
-                          className="w-3 h-3 rounded-full border border-white dark:border-gray-600 shadow-sm"
+                          className="w-3 h-3 rounded-full border border-white dark:border-border shadow-sm"
                           style={{ backgroundColor: kleur }}
                         />
                       ))}
@@ -640,7 +640,7 @@ export function HuisstijlTab() {
             <div className="grid grid-cols-2 gap-4">
               <ColorPicker label="Tabel header kleur" value={style.tabel_header_kleur} onChange={(v) => updateStyle({ tabel_header_kleur: v })} />
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Tabel stijl</Label>
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Tabel stijl</Label>
                 <Select value={style.tabel_stijl} onValueChange={(v) => updateStyle({ tabel_stijl: v as 'striped' | 'grid' | 'plain' })}>
                   <SelectTrigger className="h-9">
                     <SelectValue />
@@ -663,7 +663,7 @@ export function HuisstijlTab() {
           <Section title="Lettertypen" icon={Type} defaultOpen={true}>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Koptekst font</Label>
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Koptekst font</Label>
                 <Select value={style.heading_font} onValueChange={(v) => updateStyle({ heading_font: v })}>
                   <SelectTrigger className="h-9">
                     <SelectValue />
@@ -672,14 +672,14 @@ export function HuisstijlTab() {
                     {BESCHIKBARE_FONTS.map((f) => (
                       <SelectItem key={f.naam} value={f.naam}>
                         <span style={{ fontFamily: `'${f.naam}', ${f.categorie}` }}>{f.label}</span>
-                        <span className="ml-2 text-xs text-gray-400">({f.categorie})</span>
+                        <span className="ml-2 text-xs text-muted-foreground/60">({f.categorie})</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Bodytekst font</Label>
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Bodytekst font</Label>
                 <Select value={style.body_font} onValueChange={(v) => updateStyle({ body_font: v })}>
                   <SelectTrigger className="h-9">
                     <SelectValue />
@@ -688,7 +688,7 @@ export function HuisstijlTab() {
                     {BESCHIKBARE_FONTS.map((f) => (
                       <SelectItem key={f.naam} value={f.naam}>
                         <span style={{ fontFamily: `'${f.naam}', ${f.categorie}` }}>{f.label}</span>
-                        <span className="ml-2 text-xs text-gray-400">({f.categorie})</span>
+                        <span className="ml-2 text-xs text-muted-foreground/60">({f.categorie})</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -696,7 +696,7 @@ export function HuisstijlTab() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-gray-600 dark:text-gray-400">
+              <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                 Basisgrootte: {style.font_grootte_basis}pt
               </Label>
               <input
@@ -708,7 +708,7 @@ export function HuisstijlTab() {
                 onChange={(e) => updateStyle({ font_grootte_basis: parseInt(e.target.value) })}
                 className="w-full accent-blue-500"
               />
-              <div className="flex justify-between text-[10px] text-gray-400">
+              <div className="flex justify-between text-[10px] text-muted-foreground/60">
                 <span>8pt</span>
                 <span>14pt</span>
               </div>
@@ -723,7 +723,7 @@ export function HuisstijlTab() {
           <Section title="Marges & Layout" icon={Maximize2}>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Boven ({style.marge_boven}mm)</Label>
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Boven ({style.marge_boven}mm)</Label>
                 <input
                   type="range"
                   min={5}
@@ -734,7 +734,7 @@ export function HuisstijlTab() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Onder ({style.marge_onder}mm)</Label>
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Onder ({style.marge_onder}mm)</Label>
                 <input
                   type="range"
                   min={5}
@@ -745,7 +745,7 @@ export function HuisstijlTab() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Links ({style.marge_links}mm)</Label>
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Links ({style.marge_links}mm)</Label>
                 <input
                   type="range"
                   min={10}
@@ -756,7 +756,7 @@ export function HuisstijlTab() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Rechts ({style.marge_rechts}mm)</Label>
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Rechts ({style.marge_rechts}mm)</Label>
                 <input
                   type="range"
                   min={10}
@@ -773,7 +773,7 @@ export function HuisstijlTab() {
             {/* Logo positie & grootte */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Logo positie</Label>
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Logo positie</Label>
                 <Select value={style.logo_positie} onValueChange={(v) => updateStyle({ logo_positie: v as 'links' | 'rechts' | 'midden' })}>
                   <SelectTrigger className="h-9">
                     <SelectValue />
@@ -786,7 +786,7 @@ export function HuisstijlTab() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">Logo grootte ({style.logo_grootte}%)</Label>
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Logo grootte ({style.logo_grootte}%)</Label>
                 <input
                   type="range"
                   min={50}
@@ -802,14 +802,14 @@ export function HuisstijlTab() {
           {/* Header & Footer */}
           <Section title="Header & Footer" icon={Eye} defaultOpen={false}>
             <div className="flex items-center justify-between">
-              <Label className="text-sm text-gray-700 dark:text-gray-300">Header tonen</Label>
+              <Label className="text-sm text-foreground/70 dark:text-muted-foreground/50">Header tonen</Label>
               <Switch
                 checked={style.toon_header}
                 onCheckedChange={(v) => updateStyle({ toon_header: v })}
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label className="text-sm text-gray-700 dark:text-gray-300">Footer tonen</Label>
+              <Label className="text-sm text-foreground/70 dark:text-muted-foreground/50">Footer tonen</Label>
               <Switch
                 checked={style.toon_footer}
                 onCheckedChange={(v) => updateStyle({ toon_footer: v })}
@@ -817,7 +817,7 @@ export function HuisstijlTab() {
             </div>
             {style.toon_footer && (
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-600 dark:text-gray-400">
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Aangepaste footer tekst (laat leeg voor standaard)
                 </Label>
                 <Input
@@ -836,7 +836,7 @@ export function HuisstijlTab() {
           <>
           {/* Briefpapier */}
           <Section title="Briefpapier" icon={Image}>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
               Upload uw eigen briefpapier als achtergrond voor alle documenten. Gebruik een hoge resolutie afbeelding (A4 formaat).
             </p>
 
@@ -873,14 +873,14 @@ export function HuisstijlTab() {
 
             {style.briefpapier_url && (
               <>
-                <div className="rounded-md border border-gray-200 dark:border-gray-700 p-2 bg-gray-50 dark:bg-gray-800/50">
+                <div className="rounded-md border border-border dark:border-border p-2 bg-background dark:bg-foreground/80/50">
                   <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
                     <Check className="w-3.5 h-3.5" />
                     Briefpapier geüpload
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-gray-600 dark:text-gray-400">Briefpapier modus</Label>
+                  <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Briefpapier modus</Label>
                   <Select
                     value={style.briefpapier_modus}
                     onValueChange={(v) => updateStyle({ briefpapier_modus: v as 'geen' | 'achtergrond' | 'alleen_eerste_pagina' })}
@@ -906,10 +906,10 @@ export function HuisstijlTab() {
         <div className="xl:sticky xl:top-6 xl:self-start">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <h3 className="text-sm font-medium text-foreground/70 dark:text-muted-foreground/50">
                 Live voorbeeld
               </h3>
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="text-xs text-muted-foreground/60 dark:text-muted-foreground">
                 Klik om te vergroten
               </span>
             </div>

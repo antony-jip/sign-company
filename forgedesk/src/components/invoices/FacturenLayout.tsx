@@ -1983,7 +1983,7 @@ export function FacturenLayout() {
                         <th className="px-3 py-2 w-10" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                    <tbody className="divide-y divide-border dark:divide-border/50">
                       {formData.items.map((item) => (
                         <tr key={item.id} className="group">
                           <td className="px-3 py-2">

@@ -527,7 +527,7 @@ export function CalendarLayout() {
               key={mId}
               className={cn(
                 dims,
-                'rounded-full flex items-center justify-center text-white font-bold ring-2 ring-white dark:ring-gray-900',
+                'rounded-full flex items-center justify-center text-white font-bold ring-2 ring-white dark:ring-border',
                 getAvatarColor(idx >= 0 ? idx : 0)
               )}
               title={mw?.naam || mId}
@@ -540,7 +540,7 @@ export function CalendarLayout() {
           <div
             className={cn(
               dims,
-              'rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 font-bold ring-2 ring-white dark:ring-gray-900'
+              'rounded-full flex items-center justify-center text-muted-foreground dark:text-muted-foreground/50 bg-secondary dark:bg-foreground/70 font-bold ring-2 ring-white dark:ring-border'
             )}
           >
             +{monteurIds.length - 3}
@@ -703,7 +703,7 @@ export function CalendarLayout() {
 
       {/* ── Stats Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-900 border-blue-200/50 dark:border-blue-800/50">
+        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-background border-blue-200/50 dark:border-blue-800/50">
           <CardContent className="p-3">
             <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Vandaag</p>
             <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{todayAfspraken.length}</p>
@@ -712,7 +712,7 @@ export function CalendarLayout() {
             </p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-primary/5 to-white dark:from-primary/10 dark:to-gray-900 border-primary/20">
+        <Card className="bg-gradient-to-br from-primary/5 to-white dark:from-primary/10 dark:to-background border-primary/20">
           <CardContent className="p-3">
             <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Deze week</p>
             <p className="text-2xl font-bold text-accent dark:text-primary">{weekAfspraken.length}</p>
@@ -763,13 +763,13 @@ export function CalendarLayout() {
                 </div>
                 {/* Medewerker switcher tabs */}
                 {medewerkers.length > 0 && (
-                  <div className="hidden md:flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                  <div className="hidden md:flex items-center gap-1 bg-muted dark:bg-foreground/80 rounded-lg p-0.5">
                     <button
                       onClick={() => setActiveMedewerker(null)}
                       className={cn(
                         'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                         !activeMedewerker
-                          ? 'bg-white dark:bg-gray-700 text-foreground shadow-sm'
+                          ? 'bg-white dark:bg-foreground/70 text-foreground shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
@@ -785,7 +785,7 @@ export function CalendarLayout() {
                           className={cn(
                             'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                             isActive
-                              ? 'bg-white dark:bg-gray-700 text-foreground shadow-sm'
+                              ? 'bg-white dark:bg-foreground/70 text-foreground shadow-sm'
                               : 'text-muted-foreground hover:text-foreground'
                           )}
                         >
@@ -822,12 +822,12 @@ export function CalendarLayout() {
                   {/* ── Time column ── */}
                   <div className="w-[50px] flex-shrink-0">
                     {/* Sticky header spacer */}
-                    <div className="sticky top-0 z-10 bg-card border-b border-gray-200 dark:border-gray-700 h-[60px]" />
+                    <div className="sticky top-0 z-10 bg-card border-b border-border dark:border-border h-[60px]" />
                     {/* Hour labels */}
                     {HOURS.map((hour) => (
                       <div
                         key={hour}
-                        className="border-b border-gray-100 dark:border-gray-800 text-[10px] text-muted-foreground text-right pr-2 pt-1"
+                        className="border-b border-border dark:border-border text-[10px] text-muted-foreground text-right pr-2 pt-1"
                         style={{ height: `${HOUR_HEIGHT}px` }}
                       >
                         {`${String(hour).padStart(2, '0')}:00`}
@@ -843,11 +843,11 @@ export function CalendarLayout() {
                     const taskCount = getTasksForDay(date).length
 
                     return (
-                      <div key={date.toISOString()} className="flex-1 min-w-0 border-l border-gray-200 dark:border-gray-700">
+                      <div key={date.toISOString()} className="flex-1 min-w-0 border-l border-border dark:border-border">
                         {/* Sticky day header */}
                         <div
                           className={cn(
-                            'sticky top-0 z-10 bg-card border-b border-gray-200 dark:border-gray-700 px-2 py-2 text-center h-[60px] flex flex-col items-center justify-center',
+                            'sticky top-0 z-10 bg-card border-b border-border dark:border-border px-2 py-2 text-center h-[60px] flex flex-col items-center justify-center',
                             today && 'bg-primary/5 dark:bg-primary/10'
                           )}
                         >
@@ -885,7 +885,7 @@ export function CalendarLayout() {
                             <div
                               key={hour}
                               className={cn(
-                                'border-b border-gray-100 dark:border-gray-800 group cursor-pointer',
+                                'border-b border-border dark:border-border group cursor-pointer',
                                 today && 'bg-primary/[0.02] dark:bg-primary/[0.04]'
                               )}
                               style={{ height: `${HOUR_HEIGHT}px` }}
@@ -1041,7 +1041,7 @@ export function CalendarLayout() {
                           isSelected
                             ? 'bg-primary/10 ring-1 ring-primary/30 hover:bg-primary/15'
                             : isActive
-                              ? 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'
+                              ? 'bg-background dark:bg-foreground/80/50 hover:bg-muted dark:hover:bg-foreground/80'
                               : 'opacity-40 hover:opacity-70'
                         )}
                       >
@@ -1271,7 +1271,7 @@ export function CalendarLayout() {
                           'flex items-center gap-2.5 p-1.5 rounded-md cursor-pointer transition-colors',
                           isChecked
                             ? 'bg-primary/10'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                            : 'hover:bg-background dark:hover:bg-foreground/80'
                         )}
                       >
                         <Checkbox

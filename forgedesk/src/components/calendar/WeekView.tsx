@@ -38,7 +38,7 @@ function getEventColor(type: CalendarEvent['type']): string {
     case 'persoonlijk':
       return 'bg-green-500/90 border-green-600 text-white'
     default:
-      return 'bg-gray-500/90 border-gray-600 text-white'
+      return 'bg-muted-foreground/90 border-border text-white'
   }
 }
 
@@ -151,7 +151,7 @@ export function WeekView({ currentDate, selectedDate, events, onSelectDate }: We
                 {hours.map((hour) => (
                   <div
                     key={hour}
-                    className="absolute w-full border-t border-gray-100 dark:border-gray-800"
+                    className="absolute w-full border-t border-border dark:border-border"
                     style={{ top: (hour - HOUR_START) * HOUR_HEIGHT }}
                   />
                 ))}

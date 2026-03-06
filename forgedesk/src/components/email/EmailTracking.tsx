@@ -43,7 +43,7 @@ function getStatusConfig(status: ReturnType<typeof getTrackingStatus>) {
     case 'opened':
       return { label: 'Geopend', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300', icon: Eye }
     case 'delivered':
-      return { label: 'Afgeleverd', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400', icon: CheckCheck }
+      return { label: 'Afgeleverd', color: 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60', icon: CheckCheck }
     case 'not_tracked':
       return { label: 'Niet gevolgd', color: 'bg-muted text-muted-foreground', icon: AlertCircle }
   }

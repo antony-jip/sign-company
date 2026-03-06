@@ -167,7 +167,7 @@ function generateTypedNummer(existing: { nummer: string }[], prefix: string): st
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  concept: { label: 'Concept', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
+  concept: { label: 'Concept', color: 'bg-muted text-foreground/70 dark:bg-foreground/70 dark:text-muted-foreground/50' },
   verzonden: { label: 'Verzonden', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
   betaald: { label: 'Betaald', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
   vervallen: { label: 'Vervallen', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
@@ -1012,7 +1012,7 @@ export function FactuurEditor() {
             'flex items-center gap-3 rounded-lg border px-4 py-2.5 text-sm',
             currentStatus === 'betaald' && 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300',
             currentStatus === 'verzonden' && !isVervallen && 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300',
-            currentStatus === 'concept' && 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300',
+            currentStatus === 'concept' && 'bg-background border-border text-foreground/70 dark:bg-foreground/80 dark:border-border dark:text-muted-foreground/50',
             currentStatus === 'gecrediteerd' && 'bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300',
             isVervallen && 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
           )}>

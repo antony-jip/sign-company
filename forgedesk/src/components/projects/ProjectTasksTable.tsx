@@ -96,7 +96,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700">
+          <tr className="border-b border-border dark:border-border">
             {[
               { field: 'titel' as SortField, label: 'Titel' },
               { field: 'status' as SortField, label: 'Status' },
@@ -125,7 +125,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
             return (
               <tr
                 key={taak.id}
-                className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150"
+                className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors duration-150"
               >
                 <td className="py-3 px-4">
                   <div>

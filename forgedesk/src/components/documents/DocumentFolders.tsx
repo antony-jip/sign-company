@@ -53,7 +53,7 @@ export function DocumentFolders({ activeFolder, onFolderChange, documents }: Doc
                 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                 isActive
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:text-muted-foreground/60 dark:hover:bg-foreground/80 dark:hover:text-muted-foreground/30'
               )}
             >
               <Icon className={cn(
@@ -65,7 +65,7 @@ export function DocumentFolders({ activeFolder, onFolderChange, documents }: Doc
                 'text-xs px-2 py-0.5 rounded-full',
                 isActive
                   ? 'bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200'
-                  : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                  : 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
               )}>
                 {count}
               </span>

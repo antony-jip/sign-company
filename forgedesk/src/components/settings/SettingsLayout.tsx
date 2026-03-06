@@ -81,7 +81,7 @@ interface SubTab {
 
 function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string; onChange: (id: string) => void }) {
   return (
-    <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-x-auto mb-6">
+    <div className="flex items-center gap-1 p-1 bg-muted dark:bg-foreground/80 rounded-xl overflow-x-auto mb-6">
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = active === tab.id
@@ -92,8 +92,8 @@ function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string;
             className={cn(
               'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
               isActive
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-white dark:bg-foreground/70 text-foreground dark:text-white shadow-sm'
+                : 'text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/50'
             )}
           >
             <Icon className="h-4 w-4" />
@@ -187,14 +187,14 @@ export function SettingsLayout() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex-shrink-0">
-          <Settings className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+        <div className="p-2 bg-muted dark:bg-foreground/80 rounded-lg flex-shrink-0">
+          <Settings className="w-6 h-6 text-muted-foreground dark:text-muted-foreground/60" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display truncate">
+          <h1 className="text-2xl font-bold text-foreground dark:text-white font-display truncate">
             Instellingen
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 truncate">
             Beheer uw profiel, bedrijfsgegevens en voorkeuren
           </p>
         </div>
@@ -216,7 +216,7 @@ export function SettingsLayout() {
                     className={`w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 ${
                       isActive
                         ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+                        : 'text-muted-foreground dark:text-muted-foreground/60 hover:bg-muted dark:hover:bg-foreground/80 hover:text-foreground dark:hover:text-muted-foreground/30'
                     }`}
                   >
                     <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
@@ -224,7 +224,7 @@ export function SettingsLayout() {
                       <span className={`text-sm block truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
                         {tab.label}
                       </span>
-                      <span className={`text-[11px] hidden md:block truncate ${isActive ? 'text-blue-600/70 dark:text-blue-400/70' : 'text-gray-400 dark:text-gray-500'}`}>
+                      <span className={`text-[11px] hidden md:block truncate ${isActive ? 'text-blue-600/70 dark:text-blue-400/70' : 'text-muted-foreground/60 dark:text-muted-foreground'}`}>
                         {tab.description}
                       </span>
                     </div>
@@ -233,17 +233,17 @@ export function SettingsLayout() {
               })}
 
               {/* Separator + Team link */}
-              <div className="my-2 border-t border-gray-200 dark:border-gray-700 hidden md:block" />
+              <div className="my-2 border-t border-border dark:border-border hidden md:block" />
               <button
                 onClick={() => navigate('/team')}
-                className="w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                className="w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-muted-foreground dark:text-muted-foreground/60 hover:bg-muted dark:hover:bg-foreground/80 hover:text-foreground dark:hover:text-muted-foreground/30"
               >
                 <Users className="w-4 h-4 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <span className="text-sm block truncate font-medium">Teamleden</span>
-                  <span className="text-[11px] hidden md:block truncate text-gray-400 dark:text-gray-500">Medewerkers, rollen en verlof</span>
+                  <span className="text-[11px] hidden md:block truncate text-muted-foreground/60 dark:text-muted-foreground">Medewerkers, rollen en verlof</span>
                 </div>
-                <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                <ArrowRight className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
               </button>
             </div>
           </Card>
@@ -378,8 +378,8 @@ function ProfielTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" value={email} readOnly disabled className="bg-gray-50 dark:bg-gray-800 cursor-not-allowed" />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Email kan niet worden gewijzigd</p>
+                <Input id="email" value={email} readOnly disabled className="bg-background dark:bg-foreground/80 cursor-not-allowed" />
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Email kan niet worden gewijzigd</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="telefoon">Telefoon</Label>
@@ -404,13 +404,13 @@ function ProfielTab() {
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
               <div
-                className="relative w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors"
+                className="relative w-24 h-24 rounded-full bg-muted dark:bg-foreground/80 border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors"
                 onClick={handleAvatarClick}
               >
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                 ) : (
-                  <div className="flex flex-col items-center text-gray-400">
+                  <div className="flex flex-col items-center text-muted-foreground/60">
                     <User className="w-10 h-10" />
                   </div>
                 )}
@@ -420,8 +420,8 @@ function ProfielTab() {
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Profielfoto</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm font-medium text-foreground dark:text-white">Profielfoto</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-1">
                   Klik op de cirkel om een foto te uploaden. JPG, PNG tot 5MB.
                 </p>
               </div>
@@ -567,11 +567,11 @@ function BedrijfTab() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
-              <div className="relative w-32 h-20 rounded-lg bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors" onClick={handleLogoClick}>
+              <div className="relative w-32 h-20 rounded-lg bg-muted dark:bg-foreground/80 border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors" onClick={handleLogoClick}>
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
                 ) : (
-                  <div className="flex flex-col items-center text-gray-400">
+                  <div className="flex flex-col items-center text-muted-foreground/60">
                     <Upload className="w-6 h-6" />
                     <span className="text-[10px] mt-1">Logo</span>
                   </div>
@@ -579,8 +579,8 @@ function BedrijfTab() {
                 <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Bedrijfslogo</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload uw bedrijfslogo. PNG of SVG aanbevolen.</p>
+                <p className="text-sm font-medium text-foreground dark:text-white">Bedrijfslogo</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-1">Upload uw bedrijfslogo. PNG of SVG aanbevolen.</p>
               </div>
             </div>
             <Separator />
@@ -728,7 +728,7 @@ function FacturatieTab() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-12 text-center text-gray-500 dark:text-gray-400">
+        <CardContent className="p-12 text-center text-muted-foreground dark:text-muted-foreground/60">
           Factuurinstellingen laden...
         </CardContent>
       </Card>
@@ -762,12 +762,12 @@ function FacturatieTab() {
               <div className="space-y-2">
                 <Label htmlFor="factuur-prefix">Factuur prefix</Label>
                 <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value)} placeholder="FAC" />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Voorbeeld: {factuurPrefix}-2026-0001</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {factuurPrefix}-2026-0001</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="betaaltermijn">Betaaltermijn (dagen)</Label>
                 <Input id="betaaltermijn" type="number" value={betaaltermijn} onChange={(e) => setBetaaltermijn(e.target.value)} min="1" max="365" />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Standaard aantal dagen dat de klant heeft om te betalen</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Standaard aantal dagen dat de klant heeft om te betalen</p>
               </div>
             </div>
             {saveButton}
@@ -788,17 +788,17 @@ function FacturatieTab() {
             <div className="space-y-2">
               <Label htmlFor="intro-tekst">Introductietekst</Label>
               <Textarea id="intro-tekst" value={introTekst} onChange={(e) => setIntroTekst(e.target.value)} placeholder="Bijv. Hierbij ontvangt u de factuur voor de geleverde werkzaamheden." rows={2} />
-              <p className="text-xs text-gray-500 dark:text-gray-400">Wordt bovenaan de factuur weergegeven, onder de klantgegevens</p>
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt bovenaan de factuur weergegeven, onder de klantgegevens</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="outro-tekst">Afsluittekst</Label>
               <Textarea id="outro-tekst" value={outroTekst} onChange={(e) => setOutroTekst(e.target.value)} placeholder="Bijv. Wij verzoeken u vriendelijk het bedrag binnen de gestelde termijn over te maken." rows={2} />
-              <p className="text-xs text-gray-500 dark:text-gray-400">Wordt onderaan de factuurregels weergegeven</p>
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt onderaan de factuurregels weergegeven</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="voorwaarden">Betalingsvoorwaarden</Label>
               <Textarea id="voorwaarden" value={voorwaarden} onChange={(e) => setVoorwaarden(e.target.value)} placeholder="Bijv. Op al onze overeenkomsten zijn onze algemene voorwaarden van toepassing, gedeponeerd bij de KvK." rows={3} />
-              <p className="text-xs text-gray-500 dark:text-gray-400">Kleine print onderaan de factuur met juridische voorwaarden</p>
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Kleine print onderaan de factuur met juridische voorwaarden</p>
             </div>
             {saveButton}
           </CardContent>
@@ -961,7 +961,7 @@ function AanpassingenTab() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-12 text-center text-gray-500 dark:text-gray-400">
+        <CardContent className="p-12 text-center text-muted-foreground dark:text-muted-foreground/60">
           Instellingen laden...
         </CardContent>
       </Card>
@@ -1003,11 +1003,11 @@ function AanpassingenTab() {
                 className={`p-3 rounded-xl border-2 text-left transition-all duration-200 ${
                   branchePreset === preset.key
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 shadow-sm'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    : 'border-border dark:border-border hover:border-border dark:hover:border-border'
                 }`}
               >
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">{preset.label}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{preset.beschrijving}</p>
+                <p className="text-sm font-semibold text-foreground dark:text-white">{preset.label}</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{preset.beschrijving}</p>
               </button>
             ))}
           </div>
@@ -1084,7 +1084,7 @@ function AanpassingenTab() {
                 placeholder="OFF"
                 maxLength={5}
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                 Voorbeeld: {offertePrefix}-2026-0001
               </p>
             </div>
@@ -1095,12 +1095,12 @@ function AanpassingenTab() {
                   checked={autoFollowUp}
                   onCheckedChange={setAutoFollowUp}
                 />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-muted-foreground dark:text-muted-foreground/60">
                   {autoFollowUp ? 'Actief' : 'Uit'}
                 </span>
                 {autoFollowUp && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">na</span>
+                    <span className="text-sm text-muted-foreground dark:text-muted-foreground/60">na</span>
                     <Input
                       type="number"
                       min="1"
@@ -1108,7 +1108,7 @@ function AanpassingenTab() {
                       value={followUpDagen}
                       onChange={(e) => setFollowUpDagen(e.target.value)}
                     />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">dagen</span>
+                    <span className="text-sm text-muted-foreground dark:text-muted-foreground/60">dagen</span>
                   </div>
                 )}
               </div>
@@ -1133,9 +1133,9 @@ function AanpassingenTab() {
             {pipelineStappen.map((stap, index) => (
               <div
                 key={stap.key}
-                className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
+                className="flex items-center gap-3 p-3 rounded-lg bg-background dark:bg-foreground/80/50 border border-border dark:border-border"
               >
-                <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <GripVertical className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
                 <div
                   className="w-3 h-3 rounded-full flex-shrink-0"
                   style={{
@@ -1180,7 +1180,7 @@ function AanpassingenTab() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleRemovePipelineStap(index)}
-                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+                  className="h-8 w-8 p-0 text-muted-foreground/60 hover:text-red-500"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -1216,7 +1216,7 @@ function AanpassingenTab() {
                     onClick={() => setPrimaireKleur(kleur)}
                     className={`w-8 h-8 rounded-full border-2 transition-all ${
                       primaireKleur === kleur
-                        ? 'border-gray-900 dark:border-white scale-110 shadow-lg'
+                        ? 'border-border dark:border-white scale-110 shadow-lg'
                         : 'border-transparent hover:scale-105'
                     }`}
                     style={{ backgroundColor: kleur }}
@@ -1246,7 +1246,7 @@ function AanpassingenTab() {
                     onClick={() => setSecundaireKleur(kleur)}
                     className={`w-8 h-8 rounded-full border-2 transition-all ${
                       secundaireKleur === kleur
-                        ? 'border-gray-900 dark:border-white scale-110 shadow-lg'
+                        ? 'border-border dark:border-white scale-110 shadow-lg'
                         : 'border-transparent hover:scale-105'
                     }`}
                     style={{ backgroundColor: kleur }}
@@ -1270,8 +1270,8 @@ function AanpassingenTab() {
           </div>
 
           {/* Preview */}
-          <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Voorbeeld</p>
+          <div className="p-4 rounded-xl border border-border dark:border-border bg-white dark:bg-foreground">
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-2">Voorbeeld</p>
             <div className="flex items-center gap-3">
               <div
                 className="px-4 py-2 rounded-lg text-white text-sm font-medium"
@@ -1326,24 +1326,24 @@ function AanpassingenTab() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Conversie rate tonen</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Percentage goedgekeurde offertes</p>
+              <p className="text-sm font-medium text-foreground dark:text-white">Conversie rate tonen</p>
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Percentage goedgekeurde offertes</p>
             </div>
             <Switch checked={toonConversieRate} onCheckedChange={setToonConversieRate} />
           </div>
           <Separator />
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Dagen open tonen</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Hoeveel dagen een offerte al openstaat</p>
+              <p className="text-sm font-medium text-foreground dark:text-white">Dagen open tonen</p>
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Hoeveel dagen een offerte al openstaat</p>
             </div>
             <Switch checked={toonDagenOpen} onCheckedChange={setToonDagenOpen} />
           </div>
           <Separator />
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Follow-up indicatoren</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Bel- en follow-up iconen op offerte kaarten</p>
+              <p className="text-sm font-medium text-foreground dark:text-white">Follow-up indicatoren</p>
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Bel- en follow-up iconen op offerte kaarten</p>
             </div>
             <Switch checked={toonFollowUpIndicatoren} onCheckedChange={setToonFollowUpIndicatoren} />
           </div>
@@ -1418,7 +1418,7 @@ function MeldingenTab() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-12 text-center text-gray-500 dark:text-gray-400">
+        <CardContent className="p-12 text-center text-muted-foreground dark:text-muted-foreground/60">
           Meldingsinstellingen laden...
         </CardContent>
       </Card>
@@ -1447,10 +1447,10 @@ function MeldingenTab() {
                 <Bell className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-semibold text-foreground dark:text-white">
                   Follow-up Herinneringen
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Ontvang meldingen wanneer een follow-up is gepland of achterstallig
                 </p>
               </div>
@@ -1465,10 +1465,10 @@ function MeldingenTab() {
                 <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-semibold text-foreground dark:text-white">
                   Verlopen Offertes
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Waarschuwing wanneer offertes hun geldigheidsdatum naderen of overschrijden
                 </p>
               </div>
@@ -1483,10 +1483,10 @@ function MeldingenTab() {
                 <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-semibold text-foreground dark:text-white">
                   Nieuwe Offerte Bevestiging
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Bevestiging wanneer een nieuwe offerte is aangemaakt
                 </p>
               </div>
@@ -1501,10 +1501,10 @@ function MeldingenTab() {
                 <Settings className="w-5 h-5 text-accent dark:text-wm-light" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-semibold text-foreground dark:text-white">
                   Status Wijzigingen
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Melding wanneer een offerte van status verandert (bijv. bekeken, goedgekeurd)
                 </p>
               </div>
@@ -1821,7 +1821,7 @@ function EmailSettingsInline({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-muted-foreground"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -2007,14 +2007,14 @@ function IntegratiesTab() {
               {integration.icon}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-1">
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                  <h3 className="text-base font-semibold text-foreground dark:text-white">
                     {integration.name}
                   </h3>
                   <Badge
                     className={
                       integration.connected
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                        : 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
                     }
                   >
                     {integration.connected ? (
@@ -2030,18 +2030,18 @@ function IntegratiesTab() {
                     )}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
                   {integration.description}
                 </p>
                 {integration.details && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 font-mono">
+                  <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mt-1 font-mono">
                     {integration.details}
                   </p>
                 )}
 
                 {/* OpenAI - server-side configured */}
                 {integration.id === 'openai' && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                  <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mt-2">
                     De OpenAI API key wordt veilig op de server geconfigureerd (OPENAI_API_KEY environment variable).
                   </p>
                 )}
@@ -2184,7 +2184,7 @@ function BeveiligingTab() {
               <button
                 type="button"
                 onClick={() => setShowPasswords(!showPasswords)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
               >
                 {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -2228,10 +2228,10 @@ function BeveiligingTab() {
         <CardContent>
           <div className="flex items-center justify-between max-w-md">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-foreground dark:text-white">
                 2FA Inschakelen
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-1">
                 {twoFactorEnabled
                   ? 'Tweefactorauthenticatie is actief'
                   : 'Beveilig uw account met een extra verificatiestap'}
@@ -2267,10 +2267,10 @@ function BeveiligingTab() {
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-foreground dark:text-white">
                     Huidige sessie
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                     Browser - Laatst actief: Nu
                   </p>
                 </div>
@@ -2279,14 +2279,14 @@ function BeveiligingTab() {
                 Actief
               </Badge>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-foreground/80/50">
               <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-gray-400" />
+                <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-foreground dark:text-white">
                     Chrome - Windows
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                     Laatst actief: 2 dagen geleden
                   </p>
                 </div>
@@ -2824,16 +2824,16 @@ function WeergaveTab() {
           const sectionItems = ALL_SIDEBAR_ITEMS.filter((i) => i.section === section)
           return (
             <div key={section}>
-              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-semibold text-muted-foreground dark:text-muted-foreground/60 uppercase tracking-wider mb-2">
                 {section}
               </h4>
               <div className="space-y-2">
                 {sectionItems.map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                    className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/30"
                   >
-                    <span className="text-sm text-gray-900 dark:text-white">{item.label}</span>
+                    <span className="text-sm text-foreground dark:text-white">{item.label}</span>
                     <Switch
                       checked={sidebarItems.includes(item.label)}
                       onCheckedChange={() => toggleSidebarItem(item.label)}
@@ -2847,9 +2847,9 @@ function WeergaveTab() {
         })}
 
         {/* Instellingen (altijd aan) */}
-        <div className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/30">
-          <span className="text-sm text-gray-900 dark:text-white">Instellingen</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">Altijd zichtbaar</span>
+        <div className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-background dark:bg-foreground/80/30">
+          <span className="text-sm text-foreground dark:text-white">Instellingen</span>
+          <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">Altijd zichtbaar</span>
         </div>
 
         <div className="flex items-center justify-between pt-2">

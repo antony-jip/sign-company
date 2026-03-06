@@ -92,11 +92,11 @@ export function CalendarMiniWidget() {
       <CardContent className="space-y-4">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/60" />
           </div>
         ) : (<>
         {/* Month header */}
-        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
+        <p className="text-sm font-semibold text-foreground/70 dark:text-muted-foreground/50 text-center">
           {formattedMonth}
         </p>
 
@@ -105,7 +105,7 @@ export function CalendarMiniWidget() {
           {WEEKDAY_LABELS.map((day) => (
             <div
               key={day}
-              className="text-[11px] font-medium text-gray-400 dark:text-gray-500 py-1"
+              className="text-[11px] font-medium text-muted-foreground/60 dark:text-muted-foreground py-1"
             >
               {day}
             </div>
@@ -149,12 +149,12 @@ export function CalendarMiniWidget() {
         </div>
 
         {/* Upcoming events */}
-        <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <div className="space-y-2 pt-2 border-t border-border dark:border-border">
+          <p className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/60 uppercase tracking-wider">
             Aankomende afspraken
           </p>
           {upcomingEvents.length === 0 ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">
+            <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground text-center py-2">
               Geen aankomende afspraken
             </p>
           ) : (
@@ -163,19 +163,19 @@ export function CalendarMiniWidget() {
               return (
                 <div
                   key={event.id}
-                  className="flex items-start gap-2 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                  className="flex items-start gap-2 p-2 rounded-md hover:bg-background dark:hover:bg-foreground/80/50 transition-colors cursor-pointer"
                 >
                   <div
                     className="w-1 h-full min-h-[32px] rounded-full flex-shrink-0"
                     style={{ backgroundColor: event.kleur }}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-medium text-foreground dark:text-white truncate">
                       {event.titel}
                     </p>
                     <div className="flex items-center gap-1 mt-0.5">
-                      <Clock className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <Clock className="h-3 w-3 text-muted-foreground/60" />
+                      <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                         {format(eventDate, 'd MMM, HH:mm', { locale: nl })}
                       </span>
                     </div>

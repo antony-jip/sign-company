@@ -133,7 +133,7 @@ const goedkeuringStatusLabels: Record<string, string> = {
 }
 
 const taakStatusKolommen: Array<{ key: string; label: string; kleur: string; bgKleur: string }> = [
-  { key: 'todo', label: 'Todo', kleur: 'border-t-gray-400', bgKleur: 'from-gray-400 to-gray-500' },
+  { key: 'todo', label: 'Todo', kleur: 'border-t-muted-foreground/40', bgKleur: 'from-muted-foreground/40 to-muted-foreground' },
   { key: 'bezig', label: 'Bezig', kleur: 'border-t-blue-500', bgKleur: 'from-blue-400 to-blue-600' },
   { key: 'review', label: 'Review', kleur: 'border-t-yellow-500', bgKleur: 'from-yellow-400 to-orange-500' },
   { key: 'klaar', label: 'Klaar', kleur: 'border-t-green-500', bgKleur: 'from-emerald-400 to-green-600' },
@@ -149,7 +149,7 @@ function getFileIcon(type: string, size: string = 'h-8 w-8') {
     return <FileImage className={`${size} text-primary`} />
   if (type.includes('illustrator') || type.includes('acad'))
     return <File className={`${size} text-orange-500`} />
-  return <File className={`${size} text-gray-400`} />
+  return <File className={`${size} text-muted-foreground/60`} />
 }
 
 function formatFileSize(bytes: number): string {
@@ -972,7 +972,7 @@ export function ProjectDetail() {
                 {projectOffertes.length > 0 ? (
                   <div className="mt-3 space-y-2">
                     {projectOffertes.filter(o => o.status !== 'gefactureerd').map((offerte) => (
-                      <div key={offerte.id} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg px-3 py-2 border border-indigo-200 dark:border-indigo-800">
+                      <div key={offerte.id} className="flex items-center justify-between bg-white dark:bg-foreground/80 rounded-lg px-3 py-2 border border-indigo-200 dark:border-indigo-800">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-sm font-medium truncate">{offerte.titel}</span>
                           <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
@@ -1026,7 +1026,7 @@ export function ProjectDetail() {
       )}
 
       {/* ── Briefing Sectie ── */}
-      <Card className="border-gray-200/80 dark:border-gray-700/80">
+      <Card className="border-border/80 dark:border-border/80">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1338,7 +1338,7 @@ export function ProjectDetail() {
 
           {/* Table View */}
           {takenWeergave === 'tabel' && (
-            <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <Card className="border-border/80 dark:border-border/80">
               <CardContent className="p-0">
                 <ProjectTasksTable taken={projectTaken} />
               </CardContent>
@@ -1347,7 +1347,7 @@ export function ProjectDetail() {
 
           {/* ── Goedkeuringen Sectie ── */}
           {goedkeuringen.length > 0 && (
-            <Card className="border-gray-200/80 dark:border-gray-700/80">
+            <Card className="border-border/80 dark:border-border/80">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
@@ -1361,7 +1361,7 @@ export function ProjectDetail() {
                 {goedkeuringen.map((gk) => (
                   <div
                     key={gk.id}
-                    className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 space-y-2"
+                    className="bg-background dark:bg-foreground/80/50 rounded-xl p-4 space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -1444,7 +1444,7 @@ export function ProjectDetail() {
         {/* ────────────── Rechter Sidebar ────────────── */}
         <div className="space-y-6">
           {/* ── Team ── */}
-          <Card className="border-gray-200/80 dark:border-gray-700/80">
+          <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
@@ -1462,7 +1462,7 @@ export function ProjectDetail() {
                   {project.team_leden.map((lid) => (
                     <div
                       key={lid}
-                      className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2"
+                      className="flex items-center gap-2.5 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2"
                     >
                       <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-wm-pale flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
                         {getInitials(lid)}
@@ -1476,7 +1476,7 @@ export function ProjectDetail() {
           </Card>
 
           {/* ── Projectrechten ── */}
-          <Card className="border-gray-200/80 dark:border-gray-700/80">
+          <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
@@ -1493,14 +1493,14 @@ export function ProjectDetail() {
                   {projectToewijzingen.map((tw) => {
                     const mw = alleMedewerkers.find(m => m.id === tw.medewerker_id)
                     return (
-                      <div key={tw.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                      <div key={tw.id} className="flex items-center gap-2 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2">
                         <div className="h-6 w-6 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
                           {getInitials(mw?.naam || '?')}
                         </div>
                         <span className="text-sm font-medium text-foreground truncate flex-1">{mw?.naam || 'Onbekend'}</span>
                         <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
                           tw.rol === 'eigenaar' ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
-                          tw.rol === 'viewer' ? 'border-gray-300 bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400' :
+                          tw.rol === 'viewer' ? 'border-border bg-background text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60' :
                           'border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                         }`}>
                           {tw.rol}
@@ -1527,7 +1527,7 @@ export function ProjectDetail() {
                 <select
                   value={toewijzingMedewerkerId}
                   onChange={(e) => setToewijzingMedewerkerId(e.target.value)}
-                  className="flex-1 text-xs border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="flex-1 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
                 >
                   <option value="">Medewerker...</option>
                   {alleMedewerkers
@@ -1538,7 +1538,7 @@ export function ProjectDetail() {
                 <select
                   value={toewijzingRol}
                   onChange={(e) => setToewijzingRol(e.target.value as ProjectToewijzing['rol'])}
-                  className="w-24 text-xs border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-24 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
                 >
                   <option value="medewerker">Medewerker</option>
                   <option value="eigenaar">Eigenaar</option>
@@ -1568,7 +1568,7 @@ export function ProjectDetail() {
           </Card>
 
           {/* ── Montage Planning ── */}
-          <Card className="border-gray-200/80 dark:border-gray-700/80">
+          <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -1600,7 +1600,7 @@ export function ProjectDetail() {
                   {projectMontages.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
                       onClick={() => navigate('/montage')}
                     >
                       <div className="min-w-0 flex-1">
@@ -1633,7 +1633,7 @@ export function ProjectDetail() {
           </Card>
 
           {/* ── Werkbonnen ── */}
-          <Card className="border-gray-200/80 dark:border-gray-700/80">
+          <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -1661,7 +1661,7 @@ export function ProjectDetail() {
                   {projectWerkbonnen.map((wb) => (
                     <div
                       key={wb.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
                       onClick={() => navigate(`/werkbonnen/${wb.id}`)}
                     >
                       <div>
@@ -1669,7 +1669,7 @@ export function ProjectDetail() {
                         <p className="text-xs text-muted-foreground">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        wb.status === 'concept' ? 'bg-gray-100 text-gray-700' :
+                        wb.status === 'concept' ? 'bg-muted text-foreground/70' :
                         wb.status === 'ingediend' ? 'bg-blue-100 text-blue-700' :
                         wb.status === 'goedgekeurd' ? 'bg-green-100 text-green-700' :
                         'bg-purple-100 text-purple-700'
@@ -1685,7 +1685,7 @@ export function ProjectDetail() {
 
 
           {/* ── Offertes ── */}
-          <Card className="border-gray-200/80 dark:border-gray-700/80">
+          <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -1726,7 +1726,7 @@ export function ProjectDetail() {
                     return (
                       <div
                         key={offerte.id}
-                        className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 space-y-1.5"
+                        className="bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2.5 space-y-1.5"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-medium text-foreground truncate">{offerte.titel}</p>
@@ -1878,7 +1878,7 @@ export function ProjectDetail() {
                     id="email-aan"
                     value={klant?.email || project.klant_naam || 'Klant'}
                     readOnly
-                    className="bg-gray-50 dark:bg-gray-800"
+                    className="bg-background dark:bg-foreground/80"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1943,7 +1943,7 @@ export function ProjectDetail() {
           />
 
           {/* ── Bestanden (drag & drop + upload button) ── */}
-          <Card className="border-gray-200/80 dark:border-gray-700/80">
+          <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -1984,7 +1984,7 @@ export function ProjectDetail() {
                 className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 cursor-pointer ${
                   isDragging
                     ? 'border-primary bg-primary/10 dark:bg-primary/20'
-                    : 'border-gray-300 dark:border-gray-700 hover:border-primary'
+                    : 'border-border dark:border-border hover:border-primary'
                 }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => {
@@ -2019,7 +2019,7 @@ export function ProjectDetail() {
                   {projectDocumenten.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 group hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      className="flex items-center gap-2.5 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-foreground/80 transition-colors cursor-pointer"
                     >
                       <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
                         {getFileIcon(doc.type)}
@@ -2164,14 +2164,14 @@ export function ProjectDetail() {
                       className={`flex items-center gap-2.5 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                         selectedDocIds.includes(doc.id)
                           ? 'bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/30'
-                          : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent'
+                          : 'bg-background dark:bg-foreground/80/50 hover:bg-muted dark:hover:bg-foreground/80 border border-transparent'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={selectedDocIds.includes(doc.id)}
                         onChange={() => toggleDocSelection(doc.id)}
-                        className="rounded border-gray-300 text-accent focus:ring-primary"
+                        className="rounded border-border text-accent focus:ring-primary"
                       />
                       <div className="flex-shrink-0">
                         {getFileIcon(doc.type, 'h-5 w-5')}
@@ -2199,7 +2199,7 @@ export function ProjectDetail() {
                 <select
                   value={selectedOfferteId}
                   onChange={e => setSelectedOfferteId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
                 >
                   <option value="">Geen offerte bijvoegen</option>
                   {projectOffertes.map(o => (
@@ -2217,7 +2217,7 @@ export function ProjectDetail() {
               <Input
                 value={klant?.email || project.klant_naam || ''}
                 readOnly
-                className="bg-gray-50 dark:bg-gray-800"
+                className="bg-background dark:bg-foreground/80"
               />
             </div>
 
@@ -2284,7 +2284,7 @@ export function ProjectDetail() {
               <select
                 value={kopieKlantId}
                 onChange={(e) => setKopieKlantId(e.target.value)}
-                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
               >
                 <option value="">Zelfde klant behouden</option>
                 {alleKlanten.map((k) => (
@@ -2300,7 +2300,7 @@ export function ProjectDetail() {
                 onChange={(e) => setKopieStartDatum(e.target.value)}
               />
             </div>
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
+            <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
               <p>Wordt gekopieerd:</p>
               <ul className="list-disc list-inside space-y-0.5">
                 <li>{projectTaken.length} taken (status wordt reset naar 'todo')</li>
@@ -2370,7 +2370,7 @@ export function ProjectDetail() {
                         'px-2 py-1 rounded-md text-xs border transition-colors',
                         montageMonteurs.includes(m.id)
                           ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
-                          : 'bg-gray-50 border-gray-200 text-muted-foreground hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700'
+                          : 'bg-background border-border text-muted-foreground hover:bg-muted dark:bg-foreground/80 dark:border-border'
                       )}
                     >
                       {m.naam}
@@ -2401,7 +2401,7 @@ export function ProjectDetail() {
 
 function InfoRow({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
+    <div className="flex items-center justify-between py-2 border-b border-border dark:border-border last:border-0">
       <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</span>
       {children || <span className="text-sm font-medium text-foreground">{value}</span>}
     </div>

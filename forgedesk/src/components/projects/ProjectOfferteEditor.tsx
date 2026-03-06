@@ -261,14 +261,14 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
               </div>
               <div className="space-y-2">
                 <Label>Nummer</Label>
-                <Input value={offerte?.nummer || ''} readOnly className="bg-gray-50 dark:bg-gray-800" />
+                <Input value={offerte?.nummer || ''} readOnly className="bg-background dark:bg-foreground/80" />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
                 <select
                   value={status}
                   onChange={e => setStatus(e.target.value as Offerte['status'])}
-                  className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white h-9"
+                  className="w-full text-sm border border-border dark:border-border rounded-md px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white h-9"
                 >
                   <option value="concept">Concept</option>
                   <option value="verzonden">Verzonden</option>
@@ -307,7 +307,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                     {items.map((item, index) => {
                       if (item._deleted) return null
                       return (
-                        <div key={item.id} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 space-y-2">
+                        <div key={item.id} className="bg-background dark:bg-foreground/80/50 rounded-lg p-3 space-y-2">
                           <div className="flex items-start gap-2">
                             <div className="flex-1 space-y-2">
                               <Input

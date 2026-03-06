@@ -11,9 +11,9 @@ export function NotFoundPage() {
       <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6">
         <MapPin className="w-12 h-12 text-blue-500 dark:text-blue-400" />
       </div>
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">404</h1>
-      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Pagina niet gevonden</h2>
-      <p className="text-gray-500 dark:text-gray-400 max-w-md mb-8">
+      <h1 className="text-4xl font-bold text-foreground dark:text-white mb-2">404</h1>
+      <h2 className="text-xl font-semibold text-foreground/70 dark:text-muted-foreground/50 mb-2">Pagina niet gevonden</h2>
+      <p className="text-muted-foreground dark:text-muted-foreground/60 max-w-md mb-8">
         De pagina die je zoekt bestaat niet of is verplaatst. Controleer de URL of ga terug naar het dashboard.
       </p>
       <div className="flex gap-3">

@@ -10,10 +10,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex items-center justify-center h-screen bg-background dark:bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-gray-500">Laden...</p>
+          <p className="text-muted-foreground">Laden...</p>
         </div>
       </div>
     )

@@ -797,7 +797,7 @@ export function QuotesPipeline() {
                 onDrop={(e) => handleDrop(e, col.key)}
               >
                 {/* Column Header */}
-                <div className={`px-4 py-3 ${col.headerBg} backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50`}>
+                <div className={`px-4 py-3 ${col.headerBg} backdrop-blur-sm border-b border-border/50 dark:border-border/50`}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className={`w-2 h-2 rounded-full ${col.accent}`} />
                     <h3 className="font-semibold text-sm text-foreground">
@@ -871,7 +871,7 @@ export function QuotesPipeline() {
                           </p>
 
                           {/* Amount + relative date */}
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700/50">
+                          <div className="flex items-center justify-between pt-2 border-t border-border dark:border-border/50">
                             <span className="text-sm font-bold text-foreground">
                               {formatCurrency(offerte.totaal)}
                             </span>
@@ -1012,7 +1012,7 @@ export function QuotesPipeline() {
                 return (
                   <div
                     key={col.key}
-                    className="text-center p-4 rounded-xl bg-gray-50/80 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700/50 transition-shadow hover:shadow-sm"
+                    className="text-center p-4 rounded-xl bg-background/80 dark:bg-foreground/70/30 border border-border dark:border-border/50 transition-shadow hover:shadow-sm"
                   >
                     <div className="flex items-center justify-center gap-1.5 mb-2">
                       <div className={`w-2 h-2 rounded-full ${col.accent}`} />
