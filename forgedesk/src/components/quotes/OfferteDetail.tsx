@@ -231,10 +231,15 @@ export function OfferteDetail() {
   // Open send dialog
   const openSendDialog = useCallback(() => {
     if (!offerte || !klant) return
-    setSendTo(klant.email || '')
+    const selectedCp = offerte.contactpersoon_id
+      ? klant.contactpersonen?.find(c => c.id === offerte.contactpersoon_id)
+      : klant.contactpersonen?.find(c => c.is_primair) || klant.contactpersonen?.[0]
+    const contactEmail = selectedCp?.email || klant.email || ''
+    const contactNaam = selectedCp?.naam || klant.contactpersoon || klant.bedrijfsnaam
+    setSendTo(contactEmail)
     setSendSubject(`Offerte ${offerte.nummer} — ${offerte.titel}`)
     setSendBody(
-      `Beste ${klant.contactpersoon || klant.bedrijfsnaam},\n\nHierbij ontvangt u onze offerte ${offerte.nummer} voor "${offerte.titel}".\n\nWij zien uw reactie graag tegemoet.\n\nMet vriendelijke groet,\n${bedrijfsnaam || 'Uw bedrijf'}`
+      `Beste ${contactNaam},\n\nHierbij ontvangt u onze offerte ${offerte.nummer} voor "${offerte.titel}".\n\nWij zien uw reactie graag tegemoet.\n\nMet vriendelijke groet,\n${bedrijfsnaam || 'Uw bedrijf'}`
     )
     setShowSendDialog(true)
   }, [offerte, klant, bedrijfsnaam])
@@ -245,8 +250,11 @@ export function OfferteDetail() {
     setIsSending(true)
     try {
       // Actually send the email
+      const sendCp = offerte.contactpersoon_id
+        ? klant?.contactpersonen?.find(c => c.id === offerte.contactpersoon_id)
+        : null
       const { subject, html } = offerteVerzendTemplate({
-        klantNaam: klant?.contactpersoon || klant?.bedrijfsnaam || '',
+        klantNaam: sendCp?.naam || klant?.contactpersoon || klant?.bedrijfsnaam || '',
         offerteNummer: offerte.nummer,
         offerteTitel: offerte.titel,
         totaalBedrag: formatCurrency(offerte.totaal),
