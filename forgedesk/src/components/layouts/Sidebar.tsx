@@ -8,13 +8,14 @@ import {
   ClipboardCheck, ShoppingCart, Warehouse,
   Briefcase, UserPlus, Files, Newspaper,
   Upload, Bot, Calculator, TrendingUp, PackageCheck,
-  CalendarCheck,
+  CalendarCheck, Sun, Moon,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/button'
 
 interface NavItem {
@@ -85,6 +86,7 @@ export function Sidebar() {
   const { isCollapsed, toggleSidebar, sidebarWidth, setSidebarWidth, collapsedWidth } = useSidebar()
   const { user, logout } = useAuth()
   const { settings } = useAppSettings()
+  const { theme, toggleTheme } = useTheme()
   const location = useLocation()
 
   // Filter navigatie op basis van instellingen — Instellingen is altijd zichtbaar
@@ -283,25 +285,34 @@ export function Sidebar() {
           </div>
         )}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            'w-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-200 h-8 text-xs',
-            isCollapsed && 'px-0 justify-center'
-          )}
-          onClick={toggleSidebar}
-          aria-label={isCollapsed ? 'Sidebar uitklappen' : 'Sidebar inklappen'}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <>
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Inklappen
-            </>
-          )}
-        </Button>
+        <div className={cn('flex items-center gap-1', isCollapsed ? 'flex-col' : '')}>
+          <button
+            onClick={toggleTheme}
+            title={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
+            className="w-[28px] h-[28px] rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:bg-background hover:text-foreground hover:rotate-[18deg] transition-all"
+          >
+            {theme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
+          </button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'flex-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-200 h-8 text-xs',
+              isCollapsed && 'px-0 justify-center w-full'
+            )}
+            onClick={toggleSidebar}
+            aria-label={isCollapsed ? 'Sidebar uitklappen' : 'Sidebar inklappen'}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <>
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Inklappen
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </>
   )

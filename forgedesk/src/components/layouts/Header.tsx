@@ -152,20 +152,14 @@ export function Header() {
         </Button>
 
         {/* Theme toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 md:w-9 md:h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
+        <button
           onClick={toggleTheme}
           title={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
           aria-label={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
+          className="w-[28px] h-[28px] rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:bg-background hover:text-foreground hover:rotate-[18deg] transition-all"
         >
-          {theme === 'light' ? (
-            <Moon className="w-4 h-4" />
-          ) : (
-            <Sun className="w-4 h-4" />
-          )}
-        </Button>
+          {theme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
+        </button>
 
         {/* Notifications */}
         <NotificatieCenter />
@@ -188,7 +182,7 @@ export function Header() {
             aria-expanded={userMenuOpen}
             aria-haspopup="true"
           >
-            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-primary/10">
+            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-sage to-blush flex items-center justify-center ring-2 ring-border">
               <span className="text-white text-[10px] md:text-xs font-semibold">
                 {userInitial}
               </span>
