@@ -10,6 +10,10 @@ export function extractSenderEmail(from: string): string {
   return match ? match[1] : from
 }
 
+export function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
 export function getAvatarColor(name: string): string {
   const colors = [
     'bg-primary', 'bg-emerald-500', 'bg-[#4A442D]', 'bg-amber-500',
