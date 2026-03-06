@@ -449,7 +449,7 @@ export function AITextGenerator() {
           </Button>
 
           {!aiConfigured && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 text-center">
               Demo modus - configureer OPENAI_API_KEY op de server voor AI-gegenereerde teksten
             </p>
           )}
@@ -485,18 +485,18 @@ export function AITextGenerator() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/60 dark:text-muted-foreground">
               <Loader2 className="w-8 h-8 animate-spin mb-3" />
               <p className="text-sm">Tekst wordt gegenereerd...</p>
             </div>
           ) : output ? (
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 min-h-[300px]">
-              <pre className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200 font-sans leading-relaxed">
+            <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-4 min-h-[300px]">
+              <pre className="whitespace-pre-wrap text-sm text-foreground/80 dark:text-muted-foreground/30 font-sans leading-relaxed">
                 {output}
               </pre>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/60 dark:text-muted-foreground">
               <Sparkles className="w-8 h-8 mb-3 opacity-50" />
               <p className="text-sm text-center">
                 Selecteer een type, toon en klik op "Genereer Tekst"

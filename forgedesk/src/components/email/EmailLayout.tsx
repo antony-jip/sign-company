@@ -504,8 +504,8 @@ export function EmailLayout() {
           {/* ═══ Column 1: Folder Sidebar (desktop only) ═══ */}
           <div className={cn(
             'border-r flex-shrink-0 flex flex-col bg-muted/20 dark:bg-muted/10',
-            // Hide on mobile when reading/composing
-            viewMode !== 'idle' ? 'hidden lg:flex w-[200px]' : 'hidden md:flex w-[200px]'
+            // Always visible on md+ screens, hidden on mobile
+            'hidden md:flex w-[200px]'
           )}>
             {/* Compose button */}
             <div className="p-3">
@@ -580,15 +580,11 @@ export function EmailLayout() {
             </div>
           </div>
 
-          {/* ═══ Column 2: Email List ═══ */}
+          {/* ═══ Column 2: Email List (inline / full-width, hidden when reading) ═══ */}
           <div className={cn(
-            'flex flex-col min-w-0',
-            // On mobile: full width when idle, hidden when reading/composing
-            // On desktop: fixed width list panel
-            viewMode === 'idle'
-              ? 'flex-1 lg:w-[420px] lg:flex-none'
-              : 'hidden lg:flex lg:w-[420px] lg:flex-none',
-            viewMode !== 'idle' && 'lg:border-r'
+            'flex flex-col min-w-0 flex-1',
+            // Hide list when reading/composing (Pipedrive-style: reader takes full width)
+            viewMode !== 'idle' && 'hidden'
           )}>
             {/* Search + actions */}
             <div className="p-3 flex items-center gap-2">
@@ -910,26 +906,6 @@ export function EmailLayout() {
             </div>
           )}
 
-          {/* ── Desktop: When idle and no email selected, show welcome pane ── */}
-          {viewMode === 'idle' && (
-            <div className="flex-1 hidden lg:flex flex-col items-center justify-center text-muted-foreground">
-              <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                <Mail className="w-10 h-10 opacity-20" />
-              </div>
-              <p className="text-sm font-medium mb-1">Selecteer een email</p>
-              <p className="text-xs">Klik op een email om deze te lezen</p>
-              <div className="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground/50">
-                <kbd className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono">j</kbd>
-                <span>/</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono">k</kbd>
-                <span>navigeer</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono ml-2">Enter</kbd>
-                <span>open</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono ml-2">c</kbd>
-                <span>nieuw</span>
-              </div>
-            </div>
-          )}
         </Card>
       )}
 

@@ -269,14 +269,14 @@ function AutocompleteInput({
         className={className}
       />
       {showSuggestions && filtered.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-foreground border border-border dark:border-border rounded-lg shadow-lg max-h-48 overflow-auto">
           {filtered.map((s, i) => (
             <button
               key={s.beschrijving}
               type="button"
               className={cn(
                 'w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between gap-2',
-                i === focusedIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                i === focusedIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-muted dark:hover:bg-foreground/80'
               )}
               onMouseDown={(e) => {
                 e.preventDefault()
@@ -518,14 +518,14 @@ export function QuoteItemsTable({
         return (
           <div
             key={item.id}
-            className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm"
+            className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm"
           >
             {/* ──── HEADER: nummer + item naam + optioneel badge + totaal + acties ──── */}
             <div className={cn(
-              "flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700",
+              "flex items-center gap-3 px-4 py-3 border-b border-border dark:border-border",
               item.is_optioneel
                 ? "bg-amber-50/60 dark:bg-amber-900/10 border-dashed"
-                : "bg-gray-50/80 dark:bg-gray-800/50"
+                : "bg-background/80 dark:bg-foreground/80/50"
             )}>
               <div className={cn(
                 "h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0",
@@ -572,7 +572,7 @@ export function QuoteItemsTable({
                   "flex-shrink-0 p-1 rounded transition-colors",
                   item.is_optioneel
                     ? "text-amber-600 dark:text-amber-400 hover:text-amber-700"
-                    : "text-gray-300 hover:text-amber-500 dark:text-gray-600 dark:hover:text-amber-400"
+                    : "text-muted-foreground/50 hover:text-amber-500 dark:text-muted-foreground dark:hover:text-amber-400"
                 )}
                 title={item.is_optioneel ? 'Maak verplicht' : 'Maak optioneel'}
               >
@@ -581,7 +581,7 @@ export function QuoteItemsTable({
 
               <button
                 onClick={() => toggleCollapse(item.id)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0 p-1"
+                className="text-muted-foreground/60 hover:text-muted-foreground dark:hover:text-muted-foreground/50 flex-shrink-0 p-1"
               >
                 {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </button>
@@ -589,7 +589,7 @@ export function QuoteItemsTable({
               {onCopyItem && (
                 <button
                   onClick={() => onCopyItem(item)}
-                  className="text-gray-400 hover:text-blue-500 flex-shrink-0 p-1"
+                  className="text-muted-foreground/60 hover:text-blue-500 flex-shrink-0 p-1"
                   title="Kopieer naar klembord"
                 >
                   <Copy className="h-4 w-4" />
@@ -598,7 +598,7 @@ export function QuoteItemsTable({
 
               <button
                 onClick={() => onRemoveItem(item.id)}
-                className="text-gray-400 hover:text-red-500 flex-shrink-0 p-1"
+                className="text-muted-foreground/60 hover:text-red-500 flex-shrink-0 p-1"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -608,7 +608,7 @@ export function QuoteItemsTable({
             {!isCollapsed && (
               <>
                 {/* ── FIX 9: Afmetingen B×H ── */}
-                <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800">
+                <div className="px-4 py-2.5 border-b border-border dark:border-border">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Afmetingen</span>
@@ -688,7 +688,7 @@ export function QuoteItemsTable({
                 </div>
 
                 {/* ── TEKENING / BIJLAGE per item ── */}
-                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                <div className="px-4 py-2 border-b border-border dark:border-border">
                   <div className="flex items-center gap-2">
                     <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tekening / Bijlage</span>
@@ -700,7 +700,7 @@ export function QuoteItemsTable({
                   {item.bijlage_url ? (
                     <div className="mt-2 relative inline-block group">
                       {item.bijlage_type === 'application/pdf' ? (
-                        <div className="h-20 w-28 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex flex-col items-center justify-center text-muted-foreground">
+                        <div className="h-20 w-28 rounded-lg border border-border dark:border-border bg-background dark:bg-foreground/80 flex flex-col items-center justify-center text-muted-foreground">
                           <Paperclip className="h-6 w-6 mb-1" />
                           <span className="text-[10px] truncate max-w-[90px]">{item.bijlage_naam || 'PDF'}</span>
                         </div>
@@ -708,7 +708,7 @@ export function QuoteItemsTable({
                         <img
                           src={item.bijlage_url}
                           alt={item.beschrijving || 'Item bijlage'}
-                          className="h-20 w-auto rounded-lg border border-gray-200 dark:border-gray-700 object-cover"
+                          className="h-20 w-auto rounded-lg border border-border dark:border-border object-cover"
                         />
                       )}
                       <button
@@ -768,7 +768,7 @@ export function QuoteItemsTable({
                 </div>
 
                 {/* ── FIX 15: Interne notitie ── */}
-                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                <div className="px-4 py-2 border-b border-border dark:border-border">
                   <button
                     onClick={() => {
                       // Toggle: if empty, open with empty string; if has content, collapse
@@ -805,13 +805,13 @@ export function QuoteItemsTable({
                 </div>
 
                 {/* Beschrijving-regels (dynamisch) */}
-                <div className="px-4 py-3 space-y-1.5 border-b border-gray-100 dark:border-gray-800">
+                <div className="px-4 py-3 space-y-1.5 border-b border-border dark:border-border">
                   {detailRegels.map((regel) => (
                     <div key={regel.id} className="flex items-center gap-1.5 group">
                       {/* Verwijder knop */}
                       <button
                         onClick={() => removeDetailRegel(item.id, regel.id)}
-                        className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                        className="text-muted-foreground/50 hover:text-red-500 dark:text-muted-foreground dark:hover:text-red-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
                         title="Verwijder rij"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -820,7 +820,7 @@ export function QuoteItemsTable({
                       {/* Dupliceer knop */}
                       <button
                         onClick={() => duplicateDetailRegel(item.id, regel.id)}
-                        className="text-gray-300 hover:text-blue-500 dark:text-gray-600 dark:hover:text-blue-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                        className="text-muted-foreground/50 hover:text-blue-500 dark:text-muted-foreground dark:hover:text-blue-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
                         title="Dupliceer rij"
                       >
                         <Copy className="h-3 w-3" />
@@ -831,10 +831,10 @@ export function QuoteItemsTable({
                         value={regel.label}
                         onChange={(e) => updateDetailRegelField(item.id, regel.id, 'label', e.target.value)}
                         placeholder="Label..."
-                        className="w-28 flex-shrink-0 h-8 text-xs font-medium border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 focus-visible:border-gray-300 shadow-none text-muted-foreground"
+                        className="w-28 flex-shrink-0 h-8 text-xs font-medium border-transparent bg-transparent hover:border-border dark:hover:border-border focus-visible:border-border shadow-none text-muted-foreground"
                       />
 
-                      <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">:</span>
+                      <span className="text-muted-foreground/50 dark:text-muted-foreground flex-shrink-0">:</span>
 
                       {/* Waarde — with autofill for omschrijving/materiaal/lay-out/montage */}
                       {labelToAutofillField(regel.label) ? (
@@ -867,7 +867,7 @@ export function QuoteItemsTable({
                 </div>
 
                 {/* ──── PRIJSBEREKENING ──── */}
-                <div className="px-4 py-3 bg-gray-50/50 dark:bg-gray-800/30">
+                <div className="px-4 py-3 bg-background/50 dark:bg-foreground/80/30">
                   {/* Modus: enkele prijs (geen varianten) */}
                   {(!item.prijs_varianten || item.prijs_varianten.length === 0) && (
                     <>
@@ -906,7 +906,7 @@ export function QuoteItemsTable({
                                 'absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center transition-colors',
                                 item.heeft_calculatie
                                   ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
-                                  : 'bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-blue-900/40 dark:hover:text-blue-400'
+                                  : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-foreground/80 dark:text-muted-foreground/60 dark:hover:bg-blue-900/40 dark:hover:text-blue-400'
                               )}
                               title={item.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie openen'}
                             >
@@ -963,7 +963,7 @@ export function QuoteItemsTable({
 
                       {/* Calculatie indicator */}
                       {item.heeft_calculatie && item.calculatie_regels && item.calculatie_regels.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="mt-2 pt-2 border-t border-border dark:border-border">
                           <button
                             onClick={() => openCalculatie(item.id)}
                             className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
@@ -987,7 +987,7 @@ export function QuoteItemsTable({
                                 <span className="text-[11px] text-muted-foreground">
                                   ({formatCurrency(margeData.marge)})
                                 </span>
-                                <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 max-w-[120px]">
+                                <div className="flex-1 h-1.5 rounded-full bg-secondary dark:bg-foreground/70 max-w-[120px]">
                                   <div
                                     className={cn('h-full rounded-full transition-all', colors.bar)}
                                     style={{ width: `${Math.min(100, Math.max(0, margeData.percentage))}%` }}
@@ -1000,7 +1000,7 @@ export function QuoteItemsTable({
                       )}
 
                       {/* Dupliceer prijs knop */}
-                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                      <div className="mt-2 pt-2 border-t border-border dark:border-border">
                         <button
                           onClick={() => addPrijsVariant(item.id)}
                           className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors"
@@ -1032,7 +1032,7 @@ export function QuoteItemsTable({
                               'rounded-lg border p-3 transition-all',
                               isActive
                                 ? 'border-primary/50 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 ring-1 ring-primary/20'
-                                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                                : 'border-border dark:border-border bg-white dark:bg-foreground'
                             )}
                           >
                             {/* Variant header: label + active toggle + remove */}
@@ -1043,7 +1043,7 @@ export function QuoteItemsTable({
                                   'h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors',
                                   isActive
                                     ? 'border-primary bg-primary text-white'
-                                    : 'border-gray-300 dark:border-gray-600 hover:border-primary/50'
+                                    : 'border-border dark:border-border hover:border-primary/50'
                                 )}
                                 title={isActive ? 'Actieve optie (telt mee in totaal)' : 'Maak dit de actieve optie'}
                               >
@@ -1054,7 +1054,7 @@ export function QuoteItemsTable({
                                 value={variant.label}
                                 onChange={(e) => updatePrijsVariantField(item.id, variant.id, 'label', e.target.value)}
                                 placeholder="Optie naam..."
-                                className="h-7 text-xs font-semibold border-transparent bg-transparent hover:border-gray-200 dark:hover:border-gray-700 focus-visible:border-gray-300 shadow-none flex-1 max-w-[180px]"
+                                className="h-7 text-xs font-semibold border-transparent bg-transparent hover:border-border dark:hover:border-border focus-visible:border-border shadow-none flex-1 max-w-[180px]"
                               />
 
                               {isActive && (
@@ -1069,7 +1069,7 @@ export function QuoteItemsTable({
 
                               <button
                                 onClick={() => removePrijsVariant(item.id, variant.id)}
-                                className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 flex-shrink-0 p-0.5"
+                                className="text-muted-foreground/50 hover:text-red-500 dark:text-muted-foreground dark:hover:text-red-400 flex-shrink-0 p-0.5"
                                 title="Verwijder variant"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -1112,7 +1112,7 @@ export function QuoteItemsTable({
                                       'absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded flex items-center justify-center transition-colors',
                                       variant.heeft_calculatie
                                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
-                                        : 'bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-400'
+                                        : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-foreground/80 dark:text-muted-foreground/60'
                                     )}
                                     title={variant.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie openen'}
                                   >
@@ -1159,7 +1159,7 @@ export function QuoteItemsTable({
 
                             {/* Variant calculatie indicator */}
                             {variant.heeft_calculatie && variant.calculatie_regels && variant.calculatie_regels.length > 0 && (
-                              <div className="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-800">
+                              <div className="mt-1.5 pt-1.5 border-t border-border dark:border-border">
                                 <button
                                   onClick={() => openCalculatie(item.id, variant.id)}
                                   className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
@@ -1183,7 +1183,7 @@ export function QuoteItemsTable({
                                       <span className="text-[10px] text-muted-foreground">
                                         ({formatCurrency(margeData.marge)})
                                       </span>
-                                      <div className="flex-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700 max-w-[100px]">
+                                      <div className="flex-1 h-1 rounded-full bg-secondary dark:bg-foreground/70 max-w-[100px]">
                                         <div
                                           className={cn('h-full rounded-full transition-all', colors.bar)}
                                           style={{ width: `${Math.min(100, Math.max(0, margeData.percentage))}%` }}
@@ -1217,7 +1217,7 @@ export function QuoteItemsTable({
 
       {/* ========= LEGE STAAT ========= */}
       {items.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-10 text-center">
+        <div className="rounded-xl border-2 border-dashed border-border dark:border-border p-10 text-center">
           <div className="text-3xl mb-2">📋</div>
           <p className="text-sm font-medium text-foreground">Nog geen items</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -1251,7 +1251,7 @@ export function QuoteItemsTable({
         <div className="flex items-center gap-2">
           <button
             onClick={() => onAddItem()}
-            className="flex-1 py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm font-medium text-muted-foreground hover:text-accent hover:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-xl border-2 border-dashed border-border dark:border-border text-sm font-medium text-muted-foreground hover:text-accent hover:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Item toevoegen
@@ -1270,7 +1270,7 @@ export function QuoteItemsTable({
           {clipboardCount > 0 && onClearClipboard && (
             <button
               onClick={onClearClipboard}
-              className="py-3 px-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm text-muted-foreground hover:text-red-500 hover:border-red-300 dark:hover:border-red-600 transition-colors flex items-center gap-2"
+              className="py-3 px-3 rounded-xl border-2 border-dashed border-border dark:border-border text-sm text-muted-foreground hover:text-red-500 hover:border-red-300 dark:hover:border-red-600 transition-colors flex items-center gap-2"
               title="Klembord legen"
             >
               <X className="h-4 w-4" />

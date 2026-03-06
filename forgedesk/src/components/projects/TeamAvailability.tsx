@@ -53,7 +53,7 @@ export function TeamAvailability({ teamLeden }: TeamAvailabilityProps) {
         return (
           <Card
             key={lid}
-            className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-gray-700"
+            className="hover:shadow-md transition-shadow duration-200 border-border dark:border-border"
           >
             <CardContent className="p-5">
               <div className="flex items-start gap-4">

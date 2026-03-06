@@ -138,27 +138,27 @@ export function LeadCaptureLayout() {
                       {form.actief ? (
                         <ToggleRight className="h-6 w-6 text-emerald-500" />
                       ) : (
-                        <ToggleLeft className="h-6 w-6 text-gray-400" />
+                        <ToggleLeft className="h-6 w-6 text-muted-foreground/60" />
                       )}
                     </button>
                   </div>
-                  {form.beschrijving && <p className="text-xs text-gray-500 mt-1">{form.beschrijving}</p>}
+                  {form.beschrijving && <p className="text-xs text-muted-foreground mt-1">{form.beschrijving}</p>}
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-4 text-sm">
                     <div>
-                      <span className="text-gray-500">Inzendingen: </span>
+                      <span className="text-muted-foreground">Inzendingen: </span>
                       <span className="font-semibold">{total}</span>
                     </div>
                     {nieuw > 0 && (
                       <Badge className="bg-red-100 text-red-700 text-[10px]">{nieuw} nieuw</Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-400">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground/60">
                     <span>{form.velden.length} velden</span>
                     <span>{form.actief ? 'Actief' : 'Inactief'}</span>
                   </div>
-                  <div className="flex items-center gap-1 pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-1 pt-2 border-t border-border dark:border-border">
                     <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={() => navigate(`/leads/formulieren/${form.id}`)}>
                       <Eye className="h-3.5 w-3.5" /> Bewerken
                     </Button>

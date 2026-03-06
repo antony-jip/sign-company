@@ -314,7 +314,7 @@ export function MontagePlanningWidget() {
                                   <div
                                     key={mId}
                                     className={cn(
-                                      'w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white ring-1 ring-white dark:ring-gray-900',
+                                      'w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white ring-1 ring-white dark:ring-border',
                                       AVATAR_COLORS[idx % AVATAR_COLORS.length]
                                     )}
                                     title={mw?.naam || mId}

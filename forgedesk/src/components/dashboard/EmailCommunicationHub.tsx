@@ -82,10 +82,10 @@ export function EmailCommunicationHub() {
       <CardContent className="space-y-1">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/60" />
           </div>
         ) : recentUnread.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 py-4 text-center">
             Geen ongelezen berichten
           </p>
         ) : (
@@ -102,7 +102,7 @@ export function EmailCommunicationHub() {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && navigate('/email')}
-                className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 cursor-pointer"
+                className="flex items-start gap-3 p-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 transition-colors duration-150 cursor-pointer"
               >
                 {/* Avatar */}
                 <div
@@ -117,18 +117,18 @@ export function EmailCommunicationHub() {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-semibold text-foreground dark:text-white truncate">
                       {senderName}
                     </p>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                      <span className="text-[11px] text-muted-foreground/60 dark:text-muted-foreground whitespace-nowrap">
                         {timeAgo(email.datum)}
                       </span>
                       {/* Unread indicator */}
                       <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-0.5">
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 truncate mt-0.5">
                     {email.onderwerp}
                   </p>
                 </div>
@@ -138,7 +138,7 @@ export function EmailCommunicationHub() {
         )}
 
         {/* View all link */}
-        <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="pt-3 border-t border-border dark:border-border">
           <Link
             to="/email"
             className="flex items-center justify-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors py-1"

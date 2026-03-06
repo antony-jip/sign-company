@@ -309,7 +309,7 @@ export function CommandPalette() {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-900"
+        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-2xl border border-border dark:border-border overflow-hidden bg-white dark:bg-foreground"
         style={{
           animation: 'commandPaletteSlideIn 150ms ease-out forwards',
         }}
@@ -318,8 +318,8 @@ export function CommandPalette() {
         aria-label="Command Palette"
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 border-b border-gray-200 dark:border-gray-700">
-          <Search className="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+        <div className="flex items-center gap-3 px-4 border-b border-border dark:border-border">
+          <Search className="w-5 h-5 text-muted-foreground/60 dark:text-muted-foreground flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -327,14 +327,14 @@ export function CommandPalette() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
             placeholder="Zoek offertes, klanten, projecten..."
-            className="flex-1 py-4 text-base bg-transparent outline-none text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            className="flex-1 py-4 text-base bg-transparent outline-none text-foreground dark:text-white placeholder:text-muted-foreground/60 dark:placeholder:text-muted-foreground"
             autoComplete="off"
             spellCheck={false}
           />
           {isLoading && (
-            <Loader2 className="w-4 h-4 text-gray-400 dark:text-gray-500 animate-spin flex-shrink-0" />
+            <Loader2 className="w-4 h-4 text-muted-foreground/60 dark:text-muted-foreground animate-spin flex-shrink-0" />
           )}
-          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground/60 dark:text-muted-foreground bg-muted dark:bg-foreground/80 rounded-md border border-border dark:border-border flex-shrink-0">
             Esc
           </kbd>
         </div>
@@ -347,7 +347,7 @@ export function CommandPalette() {
         >
           {filteredResults.length === 0 && !isLoading && (
             <div className="px-4 py-8 text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
                 Geen resultaten gevonden voor &ldquo;{query}&rdquo;
               </p>
             </div>
@@ -355,8 +355,8 @@ export function CommandPalette() {
 
           {filteredResults.length === 0 && isLoading && (
             <div className="px-4 py-8 flex items-center justify-center">
-              <Loader2 className="w-5 h-5 text-gray-400 dark:text-gray-500 animate-spin" />
-              <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+              <Loader2 className="w-5 h-5 text-muted-foreground/60 dark:text-muted-foreground animate-spin" />
+              <span className="ml-2 text-sm text-muted-foreground dark:text-muted-foreground/60">
                 Gegevens laden...
               </span>
             </div>
@@ -366,7 +366,7 @@ export function CommandPalette() {
             <div key={group.category}>
               {/* Category header */}
               <div className="px-4 pt-3 pb-1">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 dark:text-muted-foreground">
                   {group.category}
                 </span>
               </div>
@@ -394,7 +394,7 @@ export function CommandPalette() {
                       ${
                         isSelected
                           ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                          : 'text-foreground/70 dark:text-muted-foreground/50 hover:bg-background dark:hover:bg-foreground/80/50'
                       }
                     `}
                     onClick={() => selectItem(item)}
@@ -406,7 +406,7 @@ export function CommandPalette() {
                         ${
                           isSelected
                             ? 'bg-blue-100 dark:bg-blue-800/50 text-blue-600 dark:text-blue-400'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                            : 'bg-muted dark:bg-foreground/80 text-muted-foreground dark:text-muted-foreground/60'
                         }
                       `}
                     >
@@ -415,7 +415,7 @@ export function CommandPalette() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.label}</p>
                       {item.subtitle !== item.category && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                        <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground truncate">
                           {item.subtitle}
                         </p>
                       )}
@@ -432,31 +432,31 @@ export function CommandPalette() {
 
               {/* Divider between groups (not after last) */}
               {groupIndex < groupedResults.length - 1 && (
-                <div className="mx-4 my-2 border-t border-gray-100 dark:border-gray-800" />
+                <div className="mx-4 my-2 border-t border-border dark:border-border" />
               )}
             </div>
           ))}
         </div>
 
         {/* Footer hints */}
-        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-          <span className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-            <kbd className="inline-flex items-center justify-center w-5 h-5 rounded bg-gray-200 dark:bg-gray-700 text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-border dark:border-border bg-background dark:bg-foreground/80/50">
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60 dark:text-muted-foreground">
+            <kbd className="inline-flex items-center justify-center w-5 h-5 rounded bg-secondary dark:bg-foreground/70 text-[10px] font-semibold text-muted-foreground dark:text-muted-foreground/60">
               &uarr;
             </kbd>
-            <kbd className="inline-flex items-center justify-center w-5 h-5 rounded bg-gray-200 dark:bg-gray-700 text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+            <kbd className="inline-flex items-center justify-center w-5 h-5 rounded bg-secondary dark:bg-foreground/70 text-[10px] font-semibold text-muted-foreground dark:text-muted-foreground/60">
               &darr;
             </kbd>
             Navigeer
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-gray-200 dark:bg-gray-700 text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60 dark:text-muted-foreground">
+            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-secondary dark:bg-foreground/70 text-[10px] font-semibold text-muted-foreground dark:text-muted-foreground/60">
               Enter
             </kbd>
             Openen
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-gray-200 dark:bg-gray-700 text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60 dark:text-muted-foreground">
+            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-secondary dark:bg-foreground/70 text-[10px] font-semibold text-muted-foreground dark:text-muted-foreground/60">
               Esc
             </kbd>
             Sluiten

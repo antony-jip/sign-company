@@ -209,7 +209,7 @@ function getFileTypeColor(name: string): string {
     case 'xls': case 'xlsx': return 'bg-green-600'
     case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-primary'
     case 'zip': case 'rar': return 'bg-yellow-600'
-    default: return 'bg-gray-500'
+    default: return 'bg-muted-foreground'
   }
 }
 

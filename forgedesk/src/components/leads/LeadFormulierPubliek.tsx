@@ -149,7 +149,7 @@ export function LeadFormulierPubliek() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
       </div>
     )
@@ -157,11 +157,11 @@ export function LeadFormulierPubliek() {
 
   if (notFound || !formulier) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <h2 className="text-lg font-bold text-gray-700">Formulier niet gevonden</h2>
-          <p className="text-sm text-gray-500">Dit formulier bestaat niet of is niet meer actief.</p>
+          <AlertCircle className="h-12 w-12 text-muted-foreground/60 mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-foreground/70">Formulier niet gevonden</h2>
+          <p className="text-sm text-muted-foreground">Dit formulier bestaat niet of is niet meer actief.</p>
         </div>
       </div>
     )
@@ -169,11 +169,11 @@ export function LeadFormulierPubliek() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md px-6">
           <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Bedankt!</h2>
-          <p className="text-gray-600">{formulier.bedank_tekst}</p>
+          <h2 className="text-xl font-bold text-foreground mb-2">Bedankt!</h2>
+          <p className="text-muted-foreground">{formulier.bedank_tekst}</p>
         </div>
       </div>
     )
@@ -226,11 +226,11 @@ export function LeadFormulierPubliek() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">{formulier.naam}</h2>
-          {formulier.beschrijving && <p className="text-sm text-gray-500 mt-1">{formulier.beschrijving}</p>}
+          <h2 className="text-xl font-bold text-foreground">{formulier.naam}</h2>
+          {formulier.beschrijving && <p className="text-sm text-muted-foreground mt-1">{formulier.beschrijving}</p>}
         </div>
 
         <div className="space-y-4">

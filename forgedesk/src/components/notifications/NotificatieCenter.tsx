@@ -84,8 +84,8 @@ const typeConfig: Record<
   },
   algemeen: {
     icon: Bell,
-    colorClass: "text-gray-600",
-    bgClass: "bg-gray-100",
+    colorClass: "text-muted-foreground",
+    bgClass: "bg-muted",
   },
 };
 

@@ -128,7 +128,7 @@ export function VATCodesSettings() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-lg">BTW Codes</CardTitle>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 mt-1">
               Beheer de BTW tarieven voor uw offertes en facturen
             </p>
           </div>
@@ -140,27 +140,27 @@ export function VATCodesSettings() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+          <div className="py-8 text-center text-muted-foreground dark:text-muted-foreground/60">
             Laden...
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                <tr className="border-b border-border dark:border-border">
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                     Code
                   </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                     Omschrijving
                   </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                  <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                     Percentage
                   </th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                  <th className="text-center py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                     Actief
                   </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                  <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                     Acties
                   </th>
                 </tr>
@@ -168,7 +168,7 @@ export function VATCodesSettings() {
               <tbody>
                 {btwCodes.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground dark:text-muted-foreground/60">
                       Geen BTW codes gevonden
                     </td>
                   </tr>
@@ -176,15 +176,15 @@ export function VATCodesSettings() {
                   btwCodes.map((btw) => (
                     <tr
                       key={btw.id}
-                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
                     >
-                      <td className="py-3 px-4 font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      <td className="py-3 px-4 font-mono text-xs font-semibold text-foreground/70 dark:text-muted-foreground/50">
                         {btw.code}
                       </td>
-                      <td className="py-3 px-4 text-gray-900 dark:text-white">
+                      <td className="py-3 px-4 text-foreground dark:text-white">
                         {btw.omschrijving}
                       </td>
-                      <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">
+                      <td className="py-3 px-4 text-right font-semibold text-foreground dark:text-white">
                         {btw.percentage}%
                       </td>
                       <td className="py-3 px-4">
@@ -200,7 +200,7 @@ export function VATCodesSettings() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-gray-400 hover:text-blue-600"
+                            className="h-8 w-8 text-muted-foreground/60 hover:text-blue-600"
                             onClick={() => openEdit(btw)}
                           >
                             <Pencil className="w-4 h-4" />
@@ -208,7 +208,7 @@ export function VATCodesSettings() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-gray-400 hover:text-red-600"
+                            className="h-8 w-8 text-muted-foreground/60 hover:text-red-600"
                             onClick={() => handleDelete(btw.id)}
                           >
                             <Trash2 className="w-4 h-4" />

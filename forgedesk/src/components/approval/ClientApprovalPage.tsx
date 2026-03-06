@@ -37,7 +37,7 @@ function getFileIcon(type: string) {
   if (type.includes('pdf')) return <FileText className="h-10 w-10 text-red-500" />
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
     return <FileImage className="h-10 w-10 text-primary" />
-  return <File className="h-10 w-10 text-gray-400" />
+  return <File className="h-10 w-10 text-muted-foreground/60" />
 }
 
 function isImageType(type: string): boolean {
@@ -216,7 +216,7 @@ export function ClientApprovalPage() {
         <Toaster position="top-center" richColors />
         <div className="text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto" />
-          <p className="text-gray-500 mt-4 text-sm">Even geduld, we laden alles voor u...</p>
+          <p className="text-muted-foreground mt-4 text-sm">Even geduld, we laden alles voor u...</p>
         </div>
       </div>
     )
@@ -231,8 +231,8 @@ export function ClientApprovalPage() {
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <FileText className="h-8 w-8 text-red-500" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Link niet geldig</h1>
-          <p className="text-gray-500">
+          <h1 className="text-xl font-bold text-foreground mb-2">Link niet geldig</h1>
+          <p className="text-muted-foreground">
             Deze goedkeuringslink is niet (meer) geldig. Neem contact op met het bedrijf als u denkt dat dit een fout is.
           </p>
         </div>
@@ -264,8 +264,8 @@ export function ClientApprovalPage() {
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Sparkles className="h-10 w-10 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Goedgekeurd!</h2>
-            <p className="text-gray-500">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Goedgekeurd!</h2>
+            <p className="text-muted-foreground">
               Bedankt voor uw goedkeuring. We gaan direct aan de slag!
             </p>
           </div>
@@ -278,28 +278,28 @@ export function ClientApprovalPage() {
           <div className="relative max-w-4xl max-h-[90vh] w-full" onClick={e => e.stopPropagation()}>
             <button
               onClick={() => setPreviewDoc(null)}
-              className="absolute -top-3 -right-3 z-10 h-8 w-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100"
+              className="absolute -top-3 -right-3 z-10 h-8 w-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-muted"
             >
               <X className="h-4 w-4" />
             </button>
             <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="font-medium text-gray-900 text-sm">{previewDoc.naam}</p>
+              <div className="px-4 py-3 border-b border-border">
+                <p className="font-medium text-foreground text-sm">{previewDoc.naam}</p>
               </div>
               {isImageType(previewDoc.type) ? (
-                <div className="bg-gray-50 p-4 flex items-center justify-center min-h-[300px]">
+                <div className="bg-background p-4 flex items-center justify-center min-h-[300px]">
                   <div className="text-center">
                     <FileImage className="h-20 w-20 text-primary/50 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">Afbeelding preview</p>
-                    <p className="text-xs text-gray-400 mt-1">{previewDoc.naam} ({formatFileSize(previewDoc.grootte)})</p>
+                    <p className="text-sm text-muted-foreground">Afbeelding preview</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">{previewDoc.naam} ({formatFileSize(previewDoc.grootte)})</p>
                   </div>
                 </div>
               ) : (
-                <div className="bg-gray-50 p-8 flex items-center justify-center min-h-[300px]">
+                <div className="bg-background p-8 flex items-center justify-center min-h-[300px]">
                   <div className="text-center">
                     {getFileIcon(previewDoc.type)}
-                    <p className="text-sm text-gray-500 mt-3">{previewDoc.naam}</p>
-                    <p className="text-xs text-gray-400 mt-1">{formatFileSize(previewDoc.grootte)}</p>
+                    <p className="text-sm text-muted-foreground mt-3">{previewDoc.naam}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">{formatFileSize(previewDoc.grootte)}</p>
                   </div>
                 </div>
               )}
@@ -309,7 +309,7 @@ export function ClientApprovalPage() {
       )}
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white border-b border-border shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -325,9 +325,9 @@ export function ClientApprovalPage() {
                 </div>
               )}
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Tekening Goedkeuring</h1>
+                <h1 className="text-lg font-bold text-foreground">Tekening Goedkeuring</h1>
                 {project && (
-                  <p className="text-sm text-gray-500">Project: {project.naam}</p>
+                  <p className="text-sm text-muted-foreground">Project: {project.naam}</p>
                 )}
               </div>
             </div>
@@ -342,10 +342,10 @@ export function ClientApprovalPage() {
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Progress Stepper */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-5">
           <div className="flex items-center justify-between relative">
             {/* Connection line */}
-            <div className="absolute top-5 left-[10%] right-[10%] h-0.5 bg-gray-200" />
+            <div className="absolute top-5 left-[10%] right-[10%] h-0.5 bg-secondary" />
             <div
               className="absolute top-5 left-[10%] h-0.5 bg-gradient-to-r from-primary to-accent transition-all duration-700"
               style={{ width: `${currentStap >= 2 ? 80 : currentStap * 40}%` }}
@@ -372,12 +372,12 @@ export function ClientApprovalPage() {
                   <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-500 ${
                     isActive
                       ? `${activeColor} text-white shadow-lg ${isCurrent ? 'ring-4 ring-blue-100 scale-110' : ''}`
-                      : 'bg-gray-100 text-gray-400'
+                      : 'bg-muted text-muted-foreground/60'
                   }`}>
                     <StapIcon className="h-5 w-5" />
                   </div>
                   <span className={`text-xs mt-2 font-medium ${
-                    isActive ? 'text-gray-900' : 'text-gray-400'
+                    isActive ? 'text-foreground' : 'text-muted-foreground/60'
                   }`}>
                     {index === 2 && goedkeuring.status === 'goedgekeurd' ? 'Goedgekeurd' :
                      index === 2 && goedkeuring.status === 'revisie' ? 'Revisie' : stap.label}
@@ -390,21 +390,21 @@ export function ClientApprovalPage() {
 
         {/* Original Message */}
         {goedkeuring.email_bericht && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
             <button
               onClick={() => setShowBericht(!showBericht)}
-              className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-background transition-colors"
             >
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground/70">
                 <MessageSquare className="h-4 w-4 text-blue-500" />
                 Bericht van het bedrijf
               </div>
-              {showBericht ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+              {showBericht ? <ChevronUp className="h-4 w-4 text-muted-foreground/60" /> : <ChevronDown className="h-4 w-4 text-muted-foreground/60" />}
             </button>
             {showBericht && (
-              <div className="px-5 pb-4 border-t border-gray-100">
+              <div className="px-5 pb-4 border-t border-border">
                 <div className="bg-blue-50/50 rounded-xl p-4 mt-3">
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{goedkeuring.email_bericht}</p>
+                  <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">{goedkeuring.email_bericht}</p>
                 </div>
               </div>
             )}
@@ -452,13 +452,13 @@ export function ClientApprovalPage() {
 
         {/* Tabs */}
         {offerte && (
-          <div className="flex bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="flex bg-white rounded-xl border border-border overflow-hidden">
             <button
               onClick={() => setActiveTab('tekeningen')}
               className={`flex-1 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'tekeningen'
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  : 'text-muted-foreground hover:bg-background'
               }`}
             >
               <FileImage className="h-4 w-4 inline mr-2" />
@@ -469,7 +469,7 @@ export function ClientApprovalPage() {
               className={`flex-1 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'offerte'
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  : 'text-muted-foreground hover:bg-background'
               }`}
             >
               <Receipt className="h-4 w-4 inline mr-2" />
@@ -480,32 +480,32 @@ export function ClientApprovalPage() {
 
         {/* Tekeningen Tab */}
         {activeTab === 'tekeningen' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Tekeningen & Bestanden</h2>
-              <p className="text-sm text-gray-500 mt-1">
+          <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
+            <div className="px-6 py-4 border-b border-border">
+              <h2 className="font-semibold text-foreground">Tekeningen & Bestanden</h2>
+              <p className="text-sm text-muted-foreground mt-1">
                 Bekijk de onderstaande bestanden en geef uw goedkeuring of vraag een revisie aan.
               </p>
             </div>
 
             <div className="p-6 space-y-3">
               {documenten.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">Geen bestanden gevonden.</p>
+                <p className="text-muted-foreground text-center py-8">Geen bestanden gevonden.</p>
               ) : (
                 documenten.map((doc) => (
                   <div key={doc.id} className="space-y-0">
                     <div
-                      className="flex items-center gap-4 bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition-colors cursor-pointer"
+                      className="flex items-center gap-4 bg-background rounded-xl p-4 hover:bg-muted transition-colors cursor-pointer"
                       onClick={() => setPreviewDoc(doc)}
                     >
                       <div className="flex-shrink-0">
                         {getFileIcon(doc.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{doc.naam}</p>
+                        <p className="font-medium text-foreground truncate">{doc.naam}</p>
                         <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs text-gray-500">{formatFileSize(doc.grootte)}</span>
-                          <span className="text-xs text-gray-400">{formatDate(doc.created_at)}</span>
+                          <span className="text-xs text-muted-foreground">{formatFileSize(doc.grootte)}</span>
+                          <span className="text-xs text-muted-foreground/60">{formatDate(doc.created_at)}</span>
                           {isImageType(doc.type) && (
                             <span className="inline-flex items-center gap-1 text-xs text-accent bg-wm-pale/40 px-1.5 py-0.5 rounded">
                               <ZoomIn className="h-3 w-3" />
@@ -532,11 +532,11 @@ export function ClientApprovalPage() {
 
             {/* Summary bar */}
             {documenten.length > 0 && (
-              <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs text-gray-500">
+              <div className="px-6 py-3 bg-background border-t border-border flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
                   {documenten.length} bestand{documenten.length > 1 ? 'en' : ''} ter goedkeuring
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-muted-foreground/60">
                   Totaal {formatFileSize(documenten.reduce((sum, d) => sum + d.grootte, 0))}
                 </span>
               </div>
@@ -546,16 +546,16 @@ export function ClientApprovalPage() {
 
         {/* Offerte Tab */}
         {activeTab === 'offerte' && offerte && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
+          <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
+            <div className="px-6 py-4 border-b border-border">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-semibold text-gray-900">{offerte.titel}</h2>
-                  <p className="text-sm text-gray-500">{offerte.nummer}</p>
+                  <h2 className="font-semibold text-foreground">{offerte.titel}</h2>
+                  <p className="text-sm text-muted-foreground">{offerte.nummer}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-500">Geldig tot</p>
-                  <p className="text-sm font-medium text-gray-900">{formatDate(offerte.geldig_tot)}</p>
+                  <p className="text-sm text-muted-foreground">Geldig tot</p>
+                  <p className="text-sm font-medium text-foreground">{formatDate(offerte.geldig_tot)}</p>
                 </div>
               </div>
             </div>
@@ -564,24 +564,24 @@ export function ClientApprovalPage() {
             <div className="px-6 py-4">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="text-left py-2 px-1 font-semibold text-gray-600 w-8">#</th>
-                    <th className="text-left py-2 px-1 font-semibold text-gray-600">Beschrijving</th>
-                    <th className="text-right py-2 px-1 font-semibold text-gray-600 w-16">Aantal</th>
-                    <th className="text-right py-2 px-1 font-semibold text-gray-600 w-24">Prijs</th>
-                    <th className="text-right py-2 px-1 font-semibold text-gray-600 w-16">BTW</th>
-                    <th className="text-right py-2 px-1 font-semibold text-gray-600 w-24">Totaal</th>
+                  <tr className="border-b-2 border-border">
+                    <th className="text-left py-2 px-1 font-semibold text-muted-foreground w-8">#</th>
+                    <th className="text-left py-2 px-1 font-semibold text-muted-foreground">Beschrijving</th>
+                    <th className="text-right py-2 px-1 font-semibold text-muted-foreground w-16">Aantal</th>
+                    <th className="text-right py-2 px-1 font-semibold text-muted-foreground w-24">Prijs</th>
+                    <th className="text-right py-2 px-1 font-semibold text-muted-foreground w-16">BTW</th>
+                    <th className="text-right py-2 px-1 font-semibold text-muted-foreground w-24">Totaal</th>
                   </tr>
                 </thead>
                 <tbody>
                   {offerteItems.map((item, index) => (
-                    <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50/50">
-                      <td className="py-2.5 px-1 text-gray-400">{index + 1}</td>
-                      <td className="py-2.5 px-1 text-gray-900">{item.beschrijving}</td>
-                      <td className="py-2.5 px-1 text-right text-gray-700">{item.aantal}</td>
-                      <td className="py-2.5 px-1 text-right text-gray-700">{formatCurrency(item.eenheidsprijs)}</td>
-                      <td className="py-2.5 px-1 text-right text-gray-500">{item.btw_percentage}%</td>
-                      <td className="py-2.5 px-1 text-right font-medium text-gray-900">
+                    <tr key={item.id} className="border-b border-border hover:bg-background/50">
+                      <td className="py-2.5 px-1 text-muted-foreground/60">{index + 1}</td>
+                      <td className="py-2.5 px-1 text-foreground">{item.beschrijving}</td>
+                      <td className="py-2.5 px-1 text-right text-foreground/70">{item.aantal}</td>
+                      <td className="py-2.5 px-1 text-right text-foreground/70">{formatCurrency(item.eenheidsprijs)}</td>
+                      <td className="py-2.5 px-1 text-right text-muted-foreground">{item.btw_percentage}%</td>
+                      <td className="py-2.5 px-1 text-right font-medium text-foreground">
                         {formatCurrency(calculateLineTotaal(item))}
                       </td>
                     </tr>
@@ -593,16 +593,16 @@ export function ClientApprovalPage() {
               <div className="flex justify-end mt-4">
                 <div className="w-64 space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Subtotaal</span>
+                    <span className="text-muted-foreground">Subtotaal</span>
                     <span className="font-medium">{formatCurrency(offerteSubtotaal)}</span>
                   </div>
                   {Object.entries(btwGroups).map(([pct, bedrag]) => (
                     <div key={pct} className="flex justify-between text-sm">
-                      <span className="text-gray-500">BTW {pct}%</span>
+                      <span className="text-muted-foreground">BTW {pct}%</span>
                       <span className="font-medium">{formatCurrency(bedrag)}</span>
                     </div>
                   ))}
-                  <div className="flex justify-between border-t-2 border-gray-300 pt-2 mt-2">
+                  <div className="flex justify-between border-t-2 border-border pt-2 mt-2">
                     <span className="text-base font-bold">Totaal</span>
                     <span className="text-base font-bold text-blue-600">{formatCurrency(offerteTotaal)}</span>
                   </div>
@@ -613,9 +613,9 @@ export function ClientApprovalPage() {
             {/* Terms */}
             {offerte.voorwaarden && (
               <div className="px-6 pb-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Voorwaarden</h4>
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap">{offerte.voorwaarden}</p>
+                <div className="bg-background rounded-lg p-4">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Voorwaarden</h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offerte.voorwaarden}</p>
                 </div>
               </div>
             )}
@@ -624,8 +624,8 @@ export function ClientApprovalPage() {
 
         {/* Approval Actions */}
         {!isDecided && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-4">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-border p-6 space-y-4">
+            <h2 className="font-semibold text-foreground flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-blue-600" />
               Uw beoordeling
             </h2>
@@ -634,7 +634,7 @@ export function ClientApprovalPage() {
               <>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-foreground/70 mb-1">
                       Uw naam (voor goedkeuring)
                     </label>
                     <input
@@ -642,7 +642,7 @@ export function ClientApprovalPage() {
                       value={goedgekeurdDoor}
                       onChange={e => setGoedgekeurdDoor(e.target.value)}
                       placeholder="Uw volledige naam..."
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -650,7 +650,7 @@ export function ClientApprovalPage() {
                     <button
                       onClick={handleGoedkeuren}
                       disabled={isSubmitting || !goedgekeurdDoor.trim()}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all shadow-lg shadow-green-200 disabled:shadow-none"
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-muted disabled:to-secondary disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all shadow-lg shadow-green-200 disabled:shadow-none"
                     >
                       <CheckCircle2 className="h-5 w-5" />
                       {isSubmitting ? 'Bezig...' : 'Goedkeuren'}
@@ -658,7 +658,7 @@ export function ClientApprovalPage() {
                     <button
                       onClick={() => setShowRevisieForm(true)}
                       disabled={isSubmitting}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-400 text-white font-medium rounded-xl transition-all shadow-lg shadow-amber-200 disabled:shadow-none"
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 disabled:from-muted disabled:to-secondary text-white font-medium rounded-xl transition-all shadow-lg shadow-amber-200 disabled:shadow-none"
                     >
                       <RotateCcw className="h-5 w-5" />
                       Revisie Aanvragen
@@ -670,7 +670,7 @@ export function ClientApprovalPage() {
               <>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-foreground/70 mb-1">
                       Wat moet er aangepast worden?
                     </label>
                     <textarea
@@ -678,23 +678,23 @@ export function ClientApprovalPage() {
                       onChange={e => setRevisieOpmerkingen(e.target.value)}
                       placeholder="Beschrijf zo duidelijk mogelijk wat er aangepast moet worden..."
                       rows={4}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+                      className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
                     />
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground/60 mt-1">
                       Tip: wees zo specifiek mogelijk, verwijs naar bestands- of itemnamen.
                     </p>
                   </div>
                   <div className="flex gap-3">
                     <button
                       onClick={() => setShowRevisieForm(false)}
-                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                      className="flex-1 px-6 py-3 border border-border text-foreground/70 font-medium rounded-xl hover:bg-background transition-colors"
                     >
                       Annuleren
                     </button>
                     <button
                       onClick={handleRevisie}
                       disabled={isSubmitting || !revisieOpmerkingen.trim()}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 disabled:from-muted disabled:to-secondary disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all"
                     >
                       <RotateCcw className="h-5 w-5" />
                       {isSubmitting ? 'Verzenden...' : 'Revisie Versturen'}
@@ -708,11 +708,11 @@ export function ClientApprovalPage() {
 
         {/* Footer */}
         <div className="text-center py-4 space-y-1">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground/60">
             Verstuurd op {formatDate(goedkeuring.created_at)}
           </p>
           {companyProfile?.bedrijfsnaam && (
-            <p className="text-xs text-gray-300">
+            <p className="text-xs text-muted-foreground/50">
               {companyProfile.bedrijfsnaam}
             </p>
           )}

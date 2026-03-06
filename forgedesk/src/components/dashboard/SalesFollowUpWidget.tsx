@@ -55,7 +55,7 @@ function getPriorityIndicator(prioriteit?: string): { dot: string; label: string
     case 'laag':
       return { dot: 'bg-green-500', label: 'Laag' }
     default:
-      return { dot: 'bg-gray-400', label: '' }
+      return { dot: 'bg-muted-foreground/40', label: '' }
   }
 }
 
@@ -113,22 +113,22 @@ function FollowUpItemRow({
             {priority.dot && (
               <span className={cn('h-1.5 w-1.5 rounded-full flex-shrink-0', priority.dot)} />
             )}
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+            <p className="text-sm font-medium text-foreground dark:text-white truncate">
               {item.offerte.klant_naam || 'Onbekende klant'}
             </p>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">
             {item.offerte.nummer} &middot; {formatCurrency(item.offerte.totaal)}
           </p>
           {item.offerte.follow_up_notitie && (
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 italic leading-relaxed">
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-1 italic leading-relaxed">
               &ldquo;{truncateText(item.offerte.follow_up_notitie, 60)}&rdquo;
             </p>
           )}
           {item.offerte.contact_pogingen != null && item.offerte.contact_pogingen > 0 && (
             <div className="flex items-center gap-1 mt-1">
-              <Phone className="h-3 w-3 text-gray-400" />
-              <span className="text-[11px] text-gray-400">
+              <Phone className="h-3 w-3 text-muted-foreground/60" />
+              <span className="text-[11px] text-muted-foreground/60">
                 {item.offerte.contact_pogingen}x contact
               </span>
             </div>
@@ -138,7 +138,7 @@ function FollowUpItemRow({
           <span className={cn('text-[11px] font-medium px-2 py-0.5 rounded-full', styles.badge)}>
             {daysLabel}
           </span>
-          <ArrowRight className="h-3 w-3 text-gray-300 dark:text-gray-600" />
+          <ArrowRight className="h-3 w-3 text-muted-foreground/50 dark:text-muted-foreground" />
         </div>
       </div>
     </Link>
@@ -170,7 +170,7 @@ function ExpiringQuoteRow({ item }: { key?: string | number; item: ExpiringQuote
         )}
       />
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug">
+        <p className="text-xs text-foreground/70 dark:text-muted-foreground/50 leading-snug">
           {isExpired ? (
             <>
               Offerte <span className="font-semibold">{item.offerte.nummer}</span> is{' '}
@@ -195,7 +195,7 @@ function ExpiringQuoteRow({ item }: { key?: string | number; item: ExpiringQuote
           )}
         </p>
       </div>
-      <ArrowRight className="h-3 w-3 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+      <ArrowRight className="h-3 w-3 text-muted-foreground/50 dark:text-muted-foreground flex-shrink-0" />
     </Link>
   )
 }
@@ -206,7 +206,7 @@ function EmptyState({ message }: { message: string }) {
       <div className="flex items-center justify-center h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30">
         <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
       </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400 text-center">{message}</p>
+      <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 text-center">{message}</p>
     </div>
   )
 }
@@ -367,14 +367,14 @@ export function SalesFollowUpWidget() {
   }, [overdueItems.length, todayItems.length, upcomingItems.length])
 
   return (
-    <Card className="rounded-2xl border border-gray-200/60 dark:border-gray-700/40 shadow-sm backdrop-blur-sm bg-white/80 dark:bg-gray-900/80">
+    <Card className="rounded-2xl border border-border/60 dark:border-border/40 shadow-sm backdrop-blur-sm bg-white/80 dark:bg-foreground/80">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
               <Bell className="h-4 w-4 text-white" />
             </div>
-            <span className="text-base font-semibold text-gray-900 dark:text-white">
+            <span className="text-base font-semibold text-foreground dark:text-white">
               Opvolging & Follow-ups
             </span>
           </div>
@@ -392,7 +392,7 @@ export function SalesFollowUpWidget() {
       <CardContent className="space-y-4">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/60" />
           </div>
         ) : !hasContent ? (
           <EmptyState message="Alles is bijgewerkt! Geen openstaande follow-ups of verlopende offertes." />
@@ -401,14 +401,14 @@ export function SalesFollowUpWidget() {
             {/* Follow-up tabs */}
             {hasFollowUps && (
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full grid grid-cols-3 h-9 bg-gray-100/80 dark:bg-gray-800/60 rounded-xl p-0.5">
+                <TabsList className="w-full grid grid-cols-3 h-9 bg-muted/80 dark:bg-foreground/80/60 rounded-xl p-0.5">
                   <TabsTrigger
                     value="achterstallig"
                     className={cn(
                       'text-xs rounded-lg data-[state=active]:shadow-sm transition-all',
                       overdueItems.length > 0
                         ? 'data-[state=active]:bg-red-50 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/40 dark:data-[state=active]:text-red-300'
-                        : 'data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700'
+                        : 'data-[state=active]:bg-white dark:data-[state=active]:bg-foreground/70'
                     )}
                   >
                     <AlertTriangle className="h-3 w-3 mr-1" />
@@ -426,7 +426,7 @@ export function SalesFollowUpWidget() {
                       'text-xs rounded-lg data-[state=active]:shadow-sm transition-all',
                       todayItems.length > 0
                         ? 'data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 dark:data-[state=active]:bg-orange-900/40 dark:data-[state=active]:text-orange-300'
-                        : 'data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700'
+                        : 'data-[state=active]:bg-white dark:data-[state=active]:bg-foreground/70'
                     )}
                   >
                     <Clock className="h-3 w-3 mr-1" />
@@ -443,7 +443,7 @@ export function SalesFollowUpWidget() {
                       'text-xs rounded-lg data-[state=active]:shadow-sm transition-all',
                       upcomingItems.length > 0
                         ? 'data-[state=active]:bg-primary/10 data-[state=active]:text-accent dark:data-[state=active]:bg-primary/20 dark:data-[state=active]:text-wm-light'
-                        : 'data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700'
+                        : 'data-[state=active]:bg-white dark:data-[state=active]:bg-foreground/70'
                     )}
                   >
                     <CalendarClock className="h-3 w-3 mr-1" />
@@ -517,11 +517,11 @@ export function SalesFollowUpWidget() {
             {hasExpiringQuotes && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 pt-1">
-                  <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-                  <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider flex-shrink-0">
+                  <div className="h-px flex-1 bg-secondary dark:bg-foreground/70" />
+                  <span className="text-[11px] font-medium text-muted-foreground/60 dark:text-muted-foreground uppercase tracking-wider flex-shrink-0">
                     Verlopende offertes
                   </span>
-                  <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-px flex-1 bg-secondary dark:bg-foreground/70" />
                 </div>
                 <ScrollArea className="max-h-[160px]">
                   <div className="space-y-1.5 pr-2">
@@ -537,42 +537,42 @@ export function SalesFollowUpWidget() {
 
         {/* Quick stats row */}
         {!loading && (
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-gray-50/80 dark:bg-gray-800/40 backdrop-blur-sm">
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border dark:border-border">
+            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-foreground/80/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
                 <TrendingUp className="h-3 w-3 text-primary" />
-                <span className="text-[11px] text-gray-500 dark:text-gray-400">Open</span>
+                <span className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">Open</span>
               </div>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">
+              <span className="text-sm font-bold text-foreground dark:text-white">
                 {openCount}
               </span>
-              <span className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight text-center">
+              <span className="text-[10px] text-muted-foreground/60 dark:text-muted-foreground leading-tight text-center">
                 {formatCurrency(openValue)}
               </span>
             </div>
 
-            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-gray-50/80 dark:bg-gray-800/40 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-foreground/80/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3 text-green-500" />
-                <span className="text-[11px] text-gray-500 dark:text-gray-400">Conversie</span>
+                <span className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">Conversie</span>
               </div>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">
+              <span className="text-sm font-bold text-foreground dark:text-white">
                 {conversionRate}%
               </span>
-              <span className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight text-center">
+              <span className="text-[10px] text-muted-foreground/60 dark:text-muted-foreground leading-tight text-center">
                 deze maand
               </span>
             </div>
 
-            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-gray-50/80 dark:bg-gray-800/40 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-foreground/80/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
                 <Timer className="h-3 w-3 text-[#4A442D]" />
-                <span className="text-[11px] text-gray-500 dark:text-gray-400">Gem. reactie</span>
+                <span className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">Gem. reactie</span>
               </div>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">
+              <span className="text-sm font-bold text-foreground dark:text-white">
                 {avgResponseDays}d
               </span>
-              <span className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight text-center">
+              <span className="text-[10px] text-muted-foreground/60 dark:text-muted-foreground leading-tight text-center">
                 goedgekeurd
               </span>
             </div>

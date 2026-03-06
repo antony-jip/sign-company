@@ -134,10 +134,10 @@ export function FinancialLayout() {
           <PiggyBank className="w-6 h-6 text-accent dark:text-primary" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display truncate">
+          <h1 className="text-2xl font-bold text-foreground dark:text-white font-display truncate">
             Financieel Overzicht
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 truncate">
             Beheer uw financi&euml;le administratie en instellingen
           </p>
         </div>
@@ -163,10 +163,10 @@ export function FinancialLayout() {
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground/60">
                           {stat.label}
                         </p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-2xl font-bold text-foreground dark:text-white">
                           {stat.value}
                         </p>
                       </div>
@@ -190,7 +190,7 @@ export function FinancialLayout() {
               <CardContent>
                 {maandData.length === 0 ? (
                   <div className="h-[350px] flex items-center justify-center">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
                       Voeg grootboekrekeningen toe om het overzicht te zien
                     </p>
                   </div>
@@ -198,16 +198,16 @@ export function FinancialLayout() {
                 <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={maandData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border dark:stroke-border" />
                       <XAxis
                         dataKey="maand"
                         tick={{ fontSize: 12 }}
-                        className="text-gray-600 dark:text-gray-400"
+                        className="text-muted-foreground dark:text-muted-foreground/60"
                       />
                       <YAxis
                         tick={{ fontSize: 12 }}
                         tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
-                        className="text-gray-600 dark:text-gray-400"
+                        className="text-muted-foreground dark:text-muted-foreground/60"
                       />
                       <Tooltip
                         formatter={formatTooltipValue}
@@ -271,7 +271,7 @@ export function FinancialLayout() {
                         verticalAlign="bottom"
                         height={36}
                         formatter={(value) => (
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <span className="text-sm text-foreground/70 dark:text-muted-foreground/50">
                             {value}
                           </span>
                         )}
@@ -296,30 +296,30 @@ export function FinancialLayout() {
             </CardHeader>
             <CardContent>
               {openstaandeOffertes.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+                <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 text-center py-8">
                   Geen openstaande offertes
                 </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-700">
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                      <tr className="border-b border-border dark:border-border">
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                           Nummer
                         </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                           Klant
                         </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                           Titel
                         </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                           Status
                         </th>
-                        <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                        <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                           Totaal
                         </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                           Geldig tot
                         </th>
                       </tr>
@@ -328,15 +328,15 @@ export function FinancialLayout() {
                       {openstaandeOffertes.map((offerte) => (
                         <tr
                           key={offerte.id}
-                          className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                          className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
                         >
-                          <td className="py-3 px-4 font-mono text-xs text-gray-600 dark:text-gray-400">
+                          <td className="py-3 px-4 font-mono text-xs text-muted-foreground dark:text-muted-foreground/60">
                             {offerte.nummer}
                           </td>
-                          <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
+                          <td className="py-3 px-4 font-medium text-foreground dark:text-white">
                             {offerte.klant_naam}
                           </td>
-                          <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
+                          <td className="py-3 px-4 text-foreground/70 dark:text-muted-foreground/50">
                             {offerte.titel}
                           </td>
                           <td className="py-3 px-4">
@@ -344,10 +344,10 @@ export function FinancialLayout() {
                               {offerte.status.charAt(0).toUpperCase() + offerte.status.slice(1)}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">
+                          <td className="py-3 px-4 text-right font-semibold text-foreground dark:text-white">
                             {formatCurrency(offerte.totaal)}
                           </td>
-                          <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                          <td className="py-3 px-4 text-muted-foreground dark:text-muted-foreground/60">
                             {new Date(offerte.geldig_tot).toLocaleDateString('nl-NL')}
                           </td>
                         </tr>

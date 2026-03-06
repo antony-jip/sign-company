@@ -41,10 +41,10 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="w-8 h-8 text-red-500 dark:text-red-400" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-xl font-semibold text-foreground dark:text-white mb-2">
             Er is iets misgegaan
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 max-w-md mb-2">
+          <p className="text-muted-foreground dark:text-muted-foreground/60 max-w-md mb-2">
             Er is een onverwachte fout opgetreden. Probeer het opnieuw.
           </p>
           {this.state.error && (

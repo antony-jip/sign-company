@@ -5,87 +5,118 @@
 /* ================================================================
    FORGEDESK DESIGN SYSTEM v3
    Earthy, premium, distinctive — #3D3522 #4A442D #386150 #58B09C #CAF7E2
-   Fonts: DM Sans (headings + body)
+   Fonts: Plus Jakarta Sans (headings + body)
    ================================================================ */
 
 /* ================================================================
-   FONTS — DM Sans via Google Fonts
+   FONTS — Plus Jakarta Sans via Google Fonts
    ================================================================ */
 
 @layer base {
   :root {
     /* Font customization */
-    --font-family: 'DM Sans';
-    --font-size: 16px;
+    --font-family: 'Plus Jakarta Sans';
+    --font-size: 14px;
 
-    /* Core palette — warm earth + botanical teal/mint */
-    --background: 150 18% 97%;
-    --foreground: 42 28% 16%;
-    --card: 150 12% 99%;
-    --card-foreground: 42 28% 16%;
-    --popover: 150 12% 99%;
-    --popover-foreground: 42 28% 16%;
-    --primary: 163 36% 52%;
+    /* Achtergrond */
+    --background: 36 18% 93%;          /* #EFEDE8 warm off-white */
+    --foreground: 0 0% 10%;            /* #1A1A1A */
+
+    /* Cards */
+    --card: 0 0% 100%;                 /* #FFFFFF */
+    --card-foreground: 0 0% 10%;
+
+    /* Sidebar */
+    --sidebar-background: 40 20% 97%;  /* #FBFAF7 */
+    --sidebar-foreground: 0 0% 42%;    /* #6B6B6B */
+    --sidebar-primary: 145 22% 45%;    /* #5A8264 sage-deep */
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 36 18% 93%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 36 12% 90%;      /* #E8E6E0 */
+    --sidebar-ring: 145 22% 45%;
+
+    /* Primary: zwart — voor hoofdknoppen */
+    --primary: 0 0% 10%;               /* #1A1A1A */
     --primary-foreground: 0 0% 100%;
-    --secondary: 152 18% 92%;
-    --secondary-foreground: 42 28% 16%;
-    --muted: 148 12% 93%;
-    --muted-foreground: 44 10% 44%;
-    --accent: 155 27% 30%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 4 68% 48%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 148 12% 86%;
-    --input: 148 12% 86%;
-    --ring: 163 36% 52%;
-    --radius: 0.75rem;
 
-    /* FORGEdesk design tokens — earthy-botanical palette */
-    --wm-gradient-start: #386150;
-    --wm-gradient-mid: #58B09C;
-    --wm-gradient-end: #CAF7E2;
-    --wm-sidebar-bg: 150 14% 97%;
-    --wm-sidebar-hover: 150 12% 94%;
-    --wm-sidebar-active: 163 36% 52%;
-    --wm-hover: 163 33% 45%;
-    --wm-light: 163 46% 66%;
-    --wm-pale: 146 76% 88%;
+    /* Secondary */
+    --secondary: 36 12% 90%;           /* #E8E6E0 */
+    --secondary-foreground: 0 0% 42%;
+
+    /* Muted */
+    --muted: 36 12% 90%;
+    --muted-foreground: 0 0% 42%;      /* #6B6B6B */
+
+    /* Accent */
+    --accent: 36 18% 93%;
+    --accent-foreground: 0 0% 10%;
+
+    /* Borders */
+    --border: 36 12% 90%;              /* #E8E6E0 */
+    --input: 36 12% 90%;
+    --ring: 145 22% 45%;
+
+    /* Destructive */
+    --destructive: 5 52% 54%;          /* #C45B4F */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    /* Radius */
+    --radius: 0.625rem;                /* 10px voor buttons/inputs */
+
+    /* FORGEdesk design tokens */
+    --wm-gradient-start: #5A8264;
+    --wm-gradient-mid: #C8D5CC;
+    --wm-gradient-end: #F0D9D0;
+    --wm-sidebar-bg: 40 20% 97%;
+    --wm-sidebar-hover: 36 18% 93%;
+    --wm-sidebar-active: 145 22% 45%;
+    --wm-hover: 145 22% 45%;
+    --wm-light: 145 22% 65%;
+    --wm-pale: 145 30% 88%;
     --wm-glass: rgba(255, 255, 255, 0.72);
     --wm-glass-border: rgba(255, 255, 255, 0.20);
-    --wm-shadow-color: 155 20% 40%;
-    --wm-glow: 0 0 40px rgba(88, 176, 156, 0.15);
+    --wm-shadow-color: 0 0% 50%;
+    --wm-glow: 0 0 40px rgba(90, 130, 100, 0.15);
     --wm-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
   }
 
   .dark {
-    --background: 42 28% 6%;
-    --foreground: 150 22% 93%;
-    --card: 42 24% 9%;
-    --card-foreground: 150 22% 93%;
-    --popover: 42 24% 9%;
-    --popover-foreground: 150 22% 93%;
-    --primary: 163 40% 58%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 42 18% 13%;
-    --secondary-foreground: 150 22% 93%;
-    --muted: 42 16% 12%;
-    --muted-foreground: 44 10% 55%;
-    --accent: 155 32% 40%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 4 62% 42%;
+    --background: 40 6% 8%;            /* #141413 */
+    --foreground: 40 6% 90%;           /* #E8E8E4 */
+    --card: 40 6% 12%;                 /* #1E1E1C */
+    --card-foreground: 40 6% 90%;
+    --sidebar-background: 40 4% 10%;   /* #191918 */
+    --sidebar-foreground: 40 4% 54%;
+    --sidebar-border: 40 8% 18%;       /* #2E2E2A */
+    --primary: 40 6% 90%;
+    --primary-foreground: 40 6% 8%;
+    --secondary: 40 8% 18%;
+    --secondary-foreground: 40 4% 54%;
+    --muted: 40 8% 18%;
+    --muted-foreground: 40 4% 36%;
+    --accent: 40 8% 18%;
+    --accent-foreground: 40 6% 90%;
+    --border: 40 8% 18%;
+    --input: 40 8% 18%;
+    --destructive: 5 58% 65%;
     --destructive-foreground: 0 0% 100%;
-    --border: 42 16% 14%;
-    --input: 42 16% 14%;
-    --ring: 163 40% 58%;
+    --popover: 40 6% 12%;
+    --popover-foreground: 40 6% 90%;
+    --ring: 145 22% 45%;
 
-    --wm-sidebar-bg: 42 24% 9%;
-    --wm-sidebar-hover: 42 20% 12%;
-    --wm-hover: 163 36% 50%;
-    --wm-light: 163 46% 70%;
-    --wm-pale: 146 76% 88%;
-    --wm-glass: rgba(20, 18, 12, 0.85);
+    --wm-sidebar-bg: 40 4% 10%;
+    --wm-sidebar-hover: 40 8% 14%;
+    --wm-hover: 145 22% 50%;
+    --wm-light: 145 22% 65%;
+    --wm-pale: 145 30% 20%;
+    --wm-glass: rgba(20, 20, 18, 0.85);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
-    --wm-glow: 0 0 40px rgba(88, 176, 156, 0.08);
+    --wm-glow: 0 0 40px rgba(90, 130, 100, 0.08);
   }
 }
 
@@ -98,26 +129,97 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased leading-relaxed;
-    font-family: var(--font-family), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
-  /* Heading typography — tight, confident */
+  /* Heading typography */
   h1, h2, h3, h4 {
-    font-family: var(--font-family), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
-  h1 { @apply text-2xl font-semibold tracking-tight; }
-  h2 { @apply text-xl font-semibold tracking-tight; }
-  h3 { @apply text-lg font-medium; }
+  h1 { @apply text-[28px] font-extrabold tracking-[-0.04em] leading-tight; }
+  h2 { @apply text-xl font-bold tracking-[-0.02em]; }
+  h3 { @apply text-lg font-semibold; }
   h4 { @apply text-base font-medium; }
 
   /* Tabular numbers in tables — digits align neatly */
   table td, table th {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Selection color */
+  ::selection {
+    background: #F0D9D0;
+    color: #1A1A1A;
+  }
+}
+
+/* ================================================================
+   MICRO-ANIMATIONS — Subtle, performance-safe
+   ================================================================ */
+
+/* Smooth transitions on interactive elements */
+button, a, [role="button"], input, select, textarea {
+  transition: all 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Button press effect */
+button:active:not(:disabled), [role="button"]:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Stat card hover: lift + glow */
+.stat-card-hover {
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.stat-card-hover:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+
+/* Table row: subtle left border on hover */
+table tbody tr td:first-child {
+  position: relative;
+}
+table tbody tr td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 2.5px;
+  background: #C49585;
+  border-radius: 0 2px 2px 0;
+  opacity: 0;
+  transform: scaleY(0.5);
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+table tbody tr:hover td:first-child::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+/* Focus visible: blush ring */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background, #EFEDE8), 0 0 0 4px #C49585;
+  border-radius: 6px;
+}
+
+/* Page load animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleInNew {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* ================================================================
@@ -139,12 +241,39 @@
 @layer components {
   /* Label that whispers — table headers, meta info, section labels */
   .label-subtle {
-    @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
+    @apply text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground;
   }
 
   /* Tabular numbers — amounts line up perfectly */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Alert banner — verlopen facturen etc. */
+  .alert-banner {
+    @apply flex items-center gap-[10px] px-[18px] py-[13px] rounded-2xl font-medium text-[13.5px];
+  }
+  .alert-banner-danger {
+    background: #FAE8E6;
+    color: #C45B4F;
+  }
+  .dark .alert-banner-danger {
+    background: #2A1A18;
+    color: #DA7B70;
+  }
+
+  /* Empty state — centered, minimal */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 text-center;
+  }
+  .empty-state-icon {
+    @apply w-[44px] h-[44px] rounded-2xl bg-background flex items-center justify-center mb-3;
+  }
+  .empty-state-title {
+    @apply text-[15px] font-bold mb-1;
+  }
+  .empty-state-description {
+    @apply text-[13px] text-muted-foreground max-w-[280px] mb-5;
   }
 }
 
@@ -172,17 +301,27 @@ tbody tr:hover {
   }
 }
 
-/* Data table — distinctive header and zebra warmth */
+/* Data table — clean header, hover only (no zebra) */
 @layer components {
   .wm-table thead {
-    background: linear-gradient(
-      to right,
-      hsl(var(--muted) / 0.5),
-      hsl(var(--muted) / 0.3)
-    );
+    background: transparent;
   }
-  .wm-table tbody tr:nth-child(even) {
-    background: hsl(var(--muted) / 0.15);
+  .wm-table thead th {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: hsl(var(--muted-foreground));
+    padding: 10px 18px;
+  }
+  .wm-table tbody td {
+    padding: 13px 18px;
+  }
+  .wm-table tbody tr {
+    cursor: pointer;
+  }
+  .wm-table tbody tr:hover {
+    background: hsl(var(--background));
   }
 }
 

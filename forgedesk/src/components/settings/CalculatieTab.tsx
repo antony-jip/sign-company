@@ -203,7 +203,7 @@ export function CalculatieTab() {
   return (
     <div className="space-y-5">
       {/* Sub-tab navigation */}
-      <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-x-auto">
+      <div className="flex items-center gap-1 p-1 bg-muted dark:bg-foreground/80 rounded-xl overflow-x-auto">
         {SUB_TABS.map((tab) => {
           const Icon = tab.icon
           const isActive = subTab === tab.id
@@ -214,8 +214,8 @@ export function CalculatieTab() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                 isActive
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'bg-white dark:bg-foreground/70 text-foreground dark:text-white shadow-sm'
+                  : 'text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/50'
               )}
             >
               <Icon className="h-4 w-4" />
@@ -371,10 +371,10 @@ function StartSection({
               <Calculator className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+              <h2 className="text-xl font-bold text-foreground dark:text-white mb-1">
                 Calculatie & Offerte Templates
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 leading-relaxed">
                 Stel hier je prijsopbouw in. Voeg producten toe, maak calculatie templates
                 en offerte sjablonen zodat je in 3 klikken een professionele offerte maakt.
               </p>
@@ -387,16 +387,16 @@ function StartSection({
       <Card>
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-sm font-semibold text-foreground dark:text-white">
               Instellen in 3 stappen
             </h3>
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/60">
               {completedSteps}/{steps.length} klaar
             </span>
           </div>
 
           {/* Progress bar */}
-          <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full mb-5 overflow-hidden">
+          <div className="h-2 bg-muted dark:bg-foreground/80 rounded-full mb-5 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
               style={{ width: `${progressPct}%` }}
@@ -412,7 +412,7 @@ function StartSection({
                   'flex items-center gap-4 p-3 rounded-xl border transition-all',
                   step.done
                     ? 'border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-800 hover:bg-blue-50/30 dark:hover:bg-blue-950/10'
+                    : 'border-border dark:border-border hover:border-blue-300 dark:hover:border-blue-800 hover:bg-blue-50/30 dark:hover:bg-blue-950/10'
                 )}
               >
                 <div
@@ -420,7 +420,7 @@ function StartSection({
                     'flex items-center justify-center h-8 w-8 rounded-full text-sm font-bold flex-shrink-0',
                     step.done
                       ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                      : 'bg-muted dark:bg-foreground/80 text-muted-foreground dark:text-muted-foreground/60'
                   )}
                 >
                   {step.done ? <Check className="h-4 w-4" /> : step.nr}
@@ -428,7 +428,7 @@ function StartSection({
                 <div className="flex-1 min-w-0">
                   <p className={cn(
                     'text-sm font-medium',
-                    step.done ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-white'
+                    step.done ? 'text-green-700 dark:text-green-400' : 'text-foreground dark:text-white'
                   )}>
                     {step.title}
                     {step.done && (
@@ -437,7 +437,7 @@ function StartSection({
                       </Badge>
                     )}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{step.desc}</p>
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{step.desc}</p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={step.action} className="flex-shrink-0 text-xs">
                   {step.actionLabel}
@@ -452,7 +452,7 @@ function StartSection({
       {/* Hoe werkt het — visual flow */}
       <Card>
         <CardContent className="p-5">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground dark:text-white mb-3 flex items-center gap-2">
             <HelpCircle className="h-4 w-4 text-blue-500" />
             Hoe werkt het calculatiesysteem?
           </h3>
@@ -473,10 +473,10 @@ function StartSection({
                 )}>
                   <s.icon className="h-5 w-5" />
                 </div>
-                <p className="text-xs font-semibold text-gray-900 dark:text-white">{s.title}</p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{s.desc}</p>
+                <p className="text-xs font-semibold text-foreground dark:text-white">{s.title}</p>
+                <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{s.desc}</p>
                 {i < 3 && (
-                  <ArrowRight className="hidden sm:block absolute right-[-14px] top-3 h-4 w-4 text-gray-300 dark:text-gray-600" />
+                  <ArrowRight className="hidden sm:block absolute right-[-14px] top-3 h-4 w-4 text-muted-foreground/50 dark:text-muted-foreground" />
                 )}
               </div>
             ))}
@@ -507,7 +507,7 @@ function StartSection({
                     'rounded-xl border p-4 transition-all',
                     isInstalled
                       ? 'border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-800 hover:shadow-sm'
+                      : 'border-border dark:border-border hover:border-blue-300 dark:hover:border-blue-800 hover:shadow-sm'
                   )}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -519,9 +519,9 @@ function StartSection({
                       </Badge>
                     )}
                   </div>
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{starter.naam}</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-3">{starter.beschrijving}</p>
-                  <div className="text-[11px] text-gray-400 dark:text-gray-500 mb-3">
+                  <h4 className="text-sm font-semibold text-foreground dark:text-white">{starter.naam}</h4>
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5 mb-3">{starter.beschrijving}</p>
+                  <div className="text-[11px] text-muted-foreground/60 dark:text-muted-foreground mb-3">
                     {starter.regels.length} regels
                   </div>
                   {!isInstalled && (
@@ -547,33 +547,33 @@ function StartSection({
       <div className="grid grid-cols-3 gap-3">
         <button
           onClick={() => onNavigate('producten')}
-          className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-800 transition-all text-left hover:shadow-sm"
+          className="p-4 rounded-xl border border-border dark:border-border hover:border-blue-300 dark:hover:border-blue-800 transition-all text-left hover:shadow-sm"
         >
           <div className="flex items-center gap-2 mb-1">
             <Package className="h-4 w-4 text-blue-500" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{productenCount}</span>
+            <span className="text-2xl font-bold text-foreground dark:text-white">{productenCount}</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Producten in catalogus</p>
+          <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Producten in catalogus</p>
         </button>
         <button
           onClick={() => onNavigate('templates')}
-          className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-800 transition-all text-left hover:shadow-sm"
+          className="p-4 rounded-xl border border-border dark:border-border hover:border-blue-300 dark:hover:border-blue-800 transition-all text-left hover:shadow-sm"
         >
           <div className="flex items-center gap-2 mb-1">
             <Calculator className="h-4 w-4 text-indigo-500" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{templatesCount}</span>
+            <span className="text-2xl font-bold text-foreground dark:text-white">{templatesCount}</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Calculatie templates</p>
+          <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Calculatie templates</p>
         </button>
         <button
           onClick={() => onNavigate('offerte-tpl')}
-          className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-800 transition-all text-left hover:shadow-sm"
+          className="p-4 rounded-xl border border-border dark:border-border hover:border-blue-300 dark:hover:border-blue-800 transition-all text-left hover:shadow-sm"
         >
           <div className="flex items-center gap-2 mb-1">
             <Copy className="h-4 w-4 text-purple-500" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{offerteTemplatesCount}</span>
+            <span className="text-2xl font-bold text-foreground dark:text-white">{offerteTemplatesCount}</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Offerte templates</p>
+          <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Offerte templates</p>
         </button>
       </div>
     </div>
@@ -720,8 +720,8 @@ function ProductenSection({
                 <Package className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Productcatalogus</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <h2 className="text-lg font-bold text-foreground dark:text-white">Productcatalogus</h2>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Voeg je materialen, diensten en producten toe. Deze kun je snel kiezen bij calculaties.
                 </p>
               </div>
@@ -752,7 +752,7 @@ function ProductenSection({
         <Card>
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-foreground dark:text-white">
                 {editProductId ? 'Product bewerken' : 'Nieuw product toevoegen'}
               </h3>
             </div>
@@ -765,7 +765,7 @@ function ProductenSection({
                   onChange={(e) => setProductNaam(e.target.value)}
                   placeholder="Bijv. Dibond plaat 3mm"
                 />
-                <p className="text-[11px] text-gray-400">De naam die je in calculaties ziet</p>
+                <p className="text-[11px] text-muted-foreground/60">De naam die je in calculaties ziet</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Categorie</Label>
@@ -797,7 +797,7 @@ function ProductenSection({
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Inkoopprijs per eenheid</Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60">€</span>
                   <Input
                     type="number"
                     value={productInkoop || ''}
@@ -812,7 +812,7 @@ function ProductenSection({
                     className="pl-7"
                   />
                 </div>
-                <p className="text-[11px] text-gray-400">Wat je zelf betaalt</p>
+                <p className="text-[11px] text-muted-foreground/60">Wat je zelf betaalt</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Marge (%)</Label>
@@ -829,14 +829,14 @@ function ProductenSection({
                     placeholder="35"
                     className="pr-7"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60">%</span>
                 </div>
-                <p className="text-[11px] text-gray-400">Je winstmarge</p>
+                <p className="text-[11px] text-muted-foreground/60">Je winstmarge</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Verkoopprijs per eenheid</Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60">€</span>
                   <Input
                     type="number"
                     value={productVerkoop || ''}
@@ -853,21 +853,21 @@ function ProductenSection({
                     className="pl-7"
                   />
                 </div>
-                <p className="text-[11px] text-gray-400">Wat de klant betaalt</p>
+                <p className="text-[11px] text-muted-foreground/60">Wat de klant betaalt</p>
               </div>
             </div>
 
             {/* Margin preview */}
             {productInkoop > 0 && productVerkoop > 0 && (
-              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 flex items-center gap-4 text-xs">
-                <span className="text-gray-500">Winst per eenheid:</span>
+              <div className="p-3 rounded-lg bg-background dark:bg-foreground/80/50 flex items-center gap-4 text-xs">
+                <span className="text-muted-foreground">Winst per eenheid:</span>
                 <span className={cn(
                   'font-semibold',
                   productVerkoop - productInkoop > 0 ? 'text-green-600' : 'text-red-500'
                 )}>
                   {formatCurrency(productVerkoop - productInkoop)}
                 </span>
-                <span className="text-gray-500">Marge:</span>
+                <span className="text-muted-foreground">Marge:</span>
                 <span className={cn(
                   'font-semibold',
                   productMarge > 0 ? 'text-green-600' : 'text-red-500'
@@ -914,17 +914,17 @@ function ProductenSection({
 
       {/* Product list */}
       {isLoading ? (
-        <Card><CardContent className="p-8 text-center text-sm text-gray-500">Laden...</CardContent></Card>
+        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Laden...</CardContent></Card>
       ) : producten.length === 0 && !showForm ? (
         <Card>
           <CardContent className="p-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center mx-auto mb-4">
               <Package className="h-8 w-8 text-blue-500/40" />
             </div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <p className="text-sm font-medium text-foreground/70 dark:text-muted-foreground/50 mb-1">
               Nog geen producten in je catalogus
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+            <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mb-4">
               Voeg je eerste product toe om te beginnen met calculeren.
             </p>
             <Button onClick={() => { resetForm(); setShowForm(true) }} size="sm">
@@ -938,36 +938,36 @@ function ProductenSection({
           {(Object.entries(productenPerCategorie) as [string, CalculatieProduct[]][]).map(([categorie, prods]) => (
             <Card key={categorie}>
               <CardContent className="p-0">
-                <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {categorie} <span className="text-gray-400 dark:text-gray-500 font-normal">({prods.length})</span>
+                <div className="px-4 py-2.5 border-b border-border dark:border-border bg-background/50 dark:bg-foreground/80/30">
+                  <h4 className="text-xs font-semibold text-muted-foreground dark:text-muted-foreground/60 uppercase tracking-wider">
+                    {categorie} <span className="text-muted-foreground/60 dark:text-muted-foreground font-normal">({prods.length})</span>
                   </h4>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-100 dark:border-gray-800">
-                        <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400 text-xs">Product</th>
-                        <th className="text-center px-3 py-2 font-medium text-gray-500 dark:text-gray-400 text-xs w-20">Eenheid</th>
-                        <th className="text-right px-3 py-2 font-medium text-gray-500 dark:text-gray-400 text-xs w-24">Inkoop</th>
-                        <th className="text-right px-3 py-2 font-medium text-gray-500 dark:text-gray-400 text-xs w-24">Verkoop</th>
-                        <th className="text-right px-3 py-2 font-medium text-gray-500 dark:text-gray-400 text-xs w-20">Marge</th>
-                        <th className="text-center px-3 py-2 font-medium text-gray-500 dark:text-gray-400 text-xs w-16">Actief</th>
+                      <tr className="border-b border-border dark:border-border">
+                        <th className="text-left px-4 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs">Product</th>
+                        <th className="text-center px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-20">Eenheid</th>
+                        <th className="text-right px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-24">Inkoop</th>
+                        <th className="text-right px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-24">Verkoop</th>
+                        <th className="text-right px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-20">Marge</th>
+                        <th className="text-center px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-16">Actief</th>
                         <th className="w-20" />
                       </tr>
                     </thead>
                     <tbody>
                       {prods.map((p) => (
-                        <tr key={p.id} className="border-t border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                        <tr key={p.id} className="border-t border-border dark:border-border/50 hover:bg-background dark:hover:bg-foreground/80/30 transition-colors">
                           <td className="px-4 py-2.5">
-                            <span className="font-medium text-gray-900 dark:text-white">{p.naam}</span>
-                            {p.notitie && <span className="block text-xs text-gray-400 dark:text-gray-500">{p.notitie}</span>}
+                            <span className="font-medium text-foreground dark:text-white">{p.naam}</span>
+                            {p.notitie && <span className="block text-xs text-muted-foreground/60 dark:text-muted-foreground">{p.notitie}</span>}
                           </td>
-                          <td className="px-3 py-2.5 text-center text-gray-500 dark:text-gray-400">{p.eenheid}</td>
-                          <td className="px-3 py-2.5 text-right text-gray-500 dark:text-gray-400">{formatCurrency(p.inkoop_prijs)}</td>
-                          <td className="px-3 py-2.5 text-right font-medium text-gray-900 dark:text-gray-100">{formatCurrency(p.verkoop_prijs)}</td>
+                          <td className="px-3 py-2.5 text-center text-muted-foreground dark:text-muted-foreground/60">{p.eenheid}</td>
+                          <td className="px-3 py-2.5 text-right text-muted-foreground dark:text-muted-foreground/60">{formatCurrency(p.inkoop_prijs)}</td>
+                          <td className="px-3 py-2.5 text-right font-medium text-foreground dark:text-muted-foreground/20">{formatCurrency(p.verkoop_prijs)}</td>
                           <td className="px-3 py-2.5 text-right">
-                            <span className={p.standaard_marge > 0 ? 'font-medium text-green-600 dark:text-green-400' : 'text-gray-500'}>
+                            <span className={p.standaard_marge > 0 ? 'font-medium text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
                               {Math.round(p.standaard_marge)}%
                             </span>
                           </td>
@@ -976,10 +976,10 @@ function ProductenSection({
                           </td>
                           <td className="px-2 py-2.5">
                             <div className="flex items-center gap-0.5">
-                              <Button variant="ghost" size="icon" onClick={() => handleEdit(p)} className="h-7 w-7 text-gray-400 hover:text-blue-500">
+                              <Button variant="ghost" size="icon" onClick={() => handleEdit(p)} className="h-7 w-7 text-muted-foreground/60 hover:text-blue-500">
                                 <Edit2 className="h-3.5 w-3.5" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="h-7 w-7 text-gray-400 hover:text-red-500">
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="h-7 w-7 text-muted-foreground/60 hover:text-red-500">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
@@ -1178,8 +1178,8 @@ function TemplatesSection({
                 <Calculator className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Calculatie Templates</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <h2 className="text-lg font-bold text-foreground dark:text-white">Calculatie Templates</h2>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Bouw standaard calculaties die je snel kunt laden bij het maken van een offerte.
                 </p>
               </div>
@@ -1222,7 +1222,7 @@ function TemplatesSection({
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-foreground dark:text-white flex items-center gap-2">
                 <Zap className="h-4 w-4 text-amber-500" />
                 Kant-en-klare templates installeren
               </h3>
@@ -1230,7 +1230,7 @@ function TemplatesSection({
                 Sluiten
               </Button>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-4">
               Klik op "Installeren" om een template toe te voegen. Je kunt de prijzen daarna aanpassen.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1243,14 +1243,14 @@ function TemplatesSection({
                       'rounded-xl border p-3 transition-all',
                       isInstalled
                         ? 'border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                        : 'border-border dark:border-border hover:border-indigo-300'
                     )}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">{starter.icon}</span>
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">{starter.naam}</h4>
+                      <h4 className="text-sm font-medium text-foreground dark:text-white">{starter.naam}</h4>
                     </div>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">{starter.regels.length} regels</p>
+                    <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/60 mb-2">{starter.regels.length} regels</p>
                     {isInstalled ? (
                       <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">
                         <Check className="h-3 w-3 mr-0.5" /> Geinstalleerd
@@ -1279,7 +1279,7 @@ function TemplatesSection({
       {showForm && (
         <Card>
           <CardContent className="p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-sm font-semibold text-foreground dark:text-white">
               {editId ? 'Template bewerken' : 'Nieuwe calculatie template'}
             </h3>
 
@@ -1291,7 +1291,7 @@ function TemplatesSection({
                   onChange={(e) => setTplNaam(e.target.value)}
                   placeholder="Bijv. Standaard gevelreclame"
                 />
-                <p className="text-[11px] text-gray-400">Herkenbare naam voor deze calculatie</p>
+                <p className="text-[11px] text-muted-foreground/60">Herkenbare naam voor deze calculatie</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Beschrijving</Label>
@@ -1310,16 +1310,16 @@ function TemplatesSection({
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-medium">Calculatie regels</Label>
                 {producten.length > 0 && (
-                  <p className="text-[11px] text-gray-400">
+                  <p className="text-[11px] text-muted-foreground/60">
                     Klik op het product-icoon om uit je catalogus te kiezen
                   </p>
                 )}
               </div>
 
               {tplRegels.length === 0 ? (
-                <div className="p-6 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
-                  <Layers className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                <div className="p-6 rounded-xl border-2 border-dashed border-border dark:border-border text-center">
+                  <Layers className="h-8 w-8 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-3">
                     Voeg regels toe aan je template. Elke regel is een product of dienst met prijs.
                   </p>
                   <Button variant="outline" size="sm" onClick={addRegel} className="text-xs">
@@ -1329,23 +1329,23 @@ function TemplatesSection({
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+                  <div className="overflow-x-auto rounded-xl border border-border dark:border-border">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                          <th className="text-left px-3 py-2 font-medium text-gray-500 min-w-[180px]">Product / Dienst</th>
-                          <th className="text-center px-2 py-2 font-medium text-gray-500 w-16">Aantal</th>
-                          <th className="text-center px-2 py-2 font-medium text-gray-500 w-16">Eenh.</th>
-                          <th className="text-right px-2 py-2 font-medium text-gray-500 w-20">Inkoop</th>
-                          <th className="text-right px-2 py-2 font-medium text-gray-500 w-20">Verkoop</th>
-                          <th className="text-right px-2 py-2 font-medium text-gray-500 w-16">Marge</th>
-                          <th className="text-right px-2 py-2 font-medium text-gray-500 w-20">Subtotaal</th>
+                        <tr className="bg-background dark:bg-foreground/80/50 border-b border-border dark:border-border">
+                          <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[180px]">Product / Dienst</th>
+                          <th className="text-center px-2 py-2 font-medium text-muted-foreground w-16">Aantal</th>
+                          <th className="text-center px-2 py-2 font-medium text-muted-foreground w-16">Eenh.</th>
+                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-20">Inkoop</th>
+                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-20">Verkoop</th>
+                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-16">Marge</th>
+                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-20">Subtotaal</th>
                           <th className="w-8" />
                         </tr>
                       </thead>
                       <tbody>
                         {tplRegels.map((regel) => (
-                          <tr key={regel.id} className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/20">
+                          <tr key={regel.id} className="border-t border-border dark:border-border hover:bg-background/50 dark:hover:bg-foreground/80/20">
                             <td className="px-1 py-1.5">
                               <div className="flex items-center gap-1">
                                 {producten.length > 0 && (
@@ -1361,7 +1361,7 @@ function TemplatesSection({
                                     }}
                                   >
                                     <SelectTrigger className="border-0 bg-transparent shadow-none h-7 w-8 px-0.5 flex-shrink-0">
-                                      <Package className="h-3 w-3 text-gray-400" />
+                                      <Package className="h-3 w-3 text-muted-foreground/60" />
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="__custom__">Handmatig invoeren</SelectItem>
@@ -1435,14 +1435,14 @@ function TemplatesSection({
                                     regel.marge_percentage > 0 ? 'text-green-600 dark:text-green-400' : ''
                                   )}
                                 />
-                                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</span>
+                                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/60">%</span>
                               </div>
                             </td>
-                            <td className="px-2 py-1.5 text-right text-xs font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-right text-xs font-medium text-foreground/70 dark:text-muted-foreground/50 whitespace-nowrap">
                               {formatCurrency(regel.aantal * regel.verkoop_prijs)}
                             </td>
                             <td className="px-1 py-1.5">
-                              <Button variant="ghost" size="icon" onClick={() => removeRegel(regel.id)} className="h-6 w-6 text-gray-400 hover:text-red-500">
+                              <Button variant="ghost" size="icon" onClick={() => removeRegel(regel.id)} className="h-6 w-6 text-muted-foreground/60 hover:text-red-500">
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </td>
@@ -1456,16 +1456,16 @@ function TemplatesSection({
                   {(() => {
                     const t = berekenTotalen(tplRegels)
                     return (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>Inkoop: <strong className="text-gray-700 dark:text-gray-300">{formatCurrency(t.inkoop)}</strong></span>
-                          <span>Verkoop: <strong className="text-gray-700 dark:text-gray-300">{formatCurrency(t.verkoop)}</strong></span>
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-foreground/80/50">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span>Inkoop: <strong className="text-foreground/70 dark:text-muted-foreground/50">{formatCurrency(t.inkoop)}</strong></span>
+                          <span>Verkoop: <strong className="text-foreground/70 dark:text-muted-foreground/50">{formatCurrency(t.verkoop)}</strong></span>
                           <span>
                             Marge: <strong className={t.marge >= 0 ? 'text-green-600' : 'text-red-500'}>
                               {formatCurrency(t.marge)}
                             </strong>
                             {t.inkoop > 0 && (
-                              <span className="text-gray-400 ml-1">
+                              <span className="text-muted-foreground/60 ml-1">
                                 ({Math.round((t.marge / t.inkoop) * 100)}%)
                               </span>
                             )}
@@ -1496,17 +1496,17 @@ function TemplatesSection({
 
       {/* Template list */}
       {isLoading ? (
-        <Card><CardContent className="p-8 text-center text-sm text-gray-500">Laden...</CardContent></Card>
+        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Laden...</CardContent></Card>
       ) : templates.length === 0 && !showForm ? (
         <Card>
           <CardContent className="p-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center mx-auto mb-4">
               <Calculator className="h-8 w-8 text-indigo-500/40" />
             </div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <p className="text-sm font-medium text-foreground/70 dark:text-muted-foreground/50 mb-1">
               Nog geen calculatie templates
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+            <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mb-4">
               Maak je eerste template of installeer een kant-en-klare.
             </p>
             <div className="flex items-center justify-center gap-2">
@@ -1531,21 +1531,21 @@ function TemplatesSection({
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm text-gray-900 dark:text-white">{t.naam}</p>
+                        <p className="font-medium text-sm text-foreground dark:text-white">{t.naam}</p>
                         {!t.actief && (
                           <Badge variant="secondary" className="text-[10px]">Inactief</Badge>
                         )}
                       </div>
                       {t.beschrijving && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.beschrijving}</p>
+                        <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{t.beschrijving}</p>
                       )}
-                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground/60">
                         <span className="flex items-center gap-1">
                           <Layers className="h-3 w-3" />
                           {t.regels.length} regel(s)
                         </span>
                         <span>Inkoop {formatCurrency(totalen.inkoop)}</span>
-                        <span className="font-medium text-gray-600 dark:text-gray-300">Verkoop {formatCurrency(totalen.verkoop)}</span>
+                        <span className="font-medium text-muted-foreground dark:text-muted-foreground/50">Verkoop {formatCurrency(totalen.verkoop)}</span>
                         <span className={totalen.marge >= 0 ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>
                           Marge {formatCurrency(totalen.marge)}
                         </span>
@@ -1553,10 +1553,10 @@ function TemplatesSection({
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                       <Switch checked={t.actief} onCheckedChange={() => handleToggleActief(t)} />
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(t)} className="h-8 w-8 text-gray-400 hover:text-blue-500">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(t)} className="h-8 w-8 text-muted-foreground/60 hover:text-blue-500">
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)} className="h-8 w-8 text-gray-400 hover:text-red-500">
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)} className="h-8 w-8 text-muted-foreground/60 hover:text-red-500">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -1699,8 +1699,8 @@ function OfferteTemplatesSubSection({
                 <Copy className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Offerte Templates</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <h2 className="text-lg font-bold text-foreground dark:text-white">Offerte Templates</h2>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Maak herbruikbare offerte sjablonen. Bij een offerte importeer je een template zodat de regels automatisch worden ingevuld.
                 </p>
               </div>
@@ -1730,7 +1730,7 @@ function OfferteTemplatesSubSection({
       {showForm && (
         <Card>
           <CardContent className="p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-sm font-semibold text-foreground dark:text-white">
               {editId ? 'Template bewerken' : 'Nieuwe offerte template'}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1756,13 +1756,13 @@ function OfferteTemplatesSubSection({
 
             <div className="space-y-3">
               <Label className="text-xs font-medium">Template regels</Label>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                 Voeg de regels toe die standaard op de offerte komen wanneer je deze template importeert.
               </p>
 
               {tplRegels.length === 0 ? (
-                <div className="p-6 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                <div className="p-6 rounded-xl border-2 border-dashed border-border dark:border-border text-center">
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-3">
                     Voeg een prijsregel of tekstregel toe.
                   </p>
                   <div className="flex gap-2 justify-center">
@@ -1780,16 +1780,16 @@ function OfferteTemplatesSubSection({
                     {tplRegels.map((regel, idx) => (
                       <div
                         key={idx}
-                        className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-2"
+                        className="bg-white dark:bg-foreground rounded-xl border border-border dark:border-border p-3 space-y-2"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Badge variant={regel.soort === 'prijs' ? 'default' : 'secondary'} className="text-[10px]">
                               {regel.soort === 'prijs' ? 'Prijsregel' : 'Tekstregel'}
                             </Badge>
-                            <span className="text-xs text-gray-400">#{idx + 1}</span>
+                            <span className="text-xs text-muted-foreground/60">#{idx + 1}</span>
                           </div>
-                          <Button variant="ghost" size="icon" onClick={() => removeRegel(idx)} className="h-6 w-6 text-gray-400 hover:text-red-500">
+                          <Button variant="ghost" size="icon" onClick={() => removeRegel(idx)} className="h-6 w-6 text-muted-foreground/60 hover:text-red-500">
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
@@ -1803,7 +1803,7 @@ function OfferteTemplatesSubSection({
                           <div className="grid grid-cols-2 gap-2">
                             {regelVelden.map((veld) => (
                               <div key={veld} className="space-y-0.5">
-                                <Label className="text-[10px] text-gray-400">{veld}</Label>
+                                <Label className="text-[10px] text-muted-foreground/60">{veld}</Label>
                                 <Input
                                   value={regel.extra_velden[veld] || ''}
                                   onChange={(e) =>
@@ -1821,7 +1821,7 @@ function OfferteTemplatesSubSection({
                         {regel.soort === 'prijs' && (
                           <div className="grid grid-cols-4 gap-2">
                             <div className="space-y-0.5">
-                              <Label className="text-[10px] text-gray-400">Aantal</Label>
+                              <Label className="text-[10px] text-muted-foreground/60">Aantal</Label>
                               <Input
                                 type="number"
                                 value={regel.aantal || ''}
@@ -1831,7 +1831,7 @@ function OfferteTemplatesSubSection({
                               />
                             </div>
                             <div className="space-y-0.5">
-                              <Label className="text-[10px] text-gray-400">Prijs</Label>
+                              <Label className="text-[10px] text-muted-foreground/60">Prijs</Label>
                               <Input
                                 type="number"
                                 value={regel.eenheidsprijs || ''}
@@ -1842,7 +1842,7 @@ function OfferteTemplatesSubSection({
                               />
                             </div>
                             <div className="space-y-0.5">
-                              <Label className="text-[10px] text-gray-400">BTW %</Label>
+                              <Label className="text-[10px] text-muted-foreground/60">BTW %</Label>
                               <Input
                                 type="number"
                                 value={regel.btw_percentage}
@@ -1851,7 +1851,7 @@ function OfferteTemplatesSubSection({
                               />
                             </div>
                             <div className="space-y-0.5">
-                              <Label className="text-[10px] text-gray-400">Korting %</Label>
+                              <Label className="text-[10px] text-muted-foreground/60">Korting %</Label>
                               <Input
                                 type="number"
                                 value={regel.korting_percentage || ''}
@@ -1890,17 +1890,17 @@ function OfferteTemplatesSubSection({
 
       {/* List */}
       {isLoading ? (
-        <Card><CardContent className="p-8 text-center text-sm text-gray-500">Laden...</CardContent></Card>
+        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Laden...</CardContent></Card>
       ) : offerteTemplates.length === 0 && !showForm ? (
         <Card>
           <CardContent className="p-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 flex items-center justify-center mx-auto mb-4">
               <Copy className="h-8 w-8 text-purple-500/40" />
             </div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <p className="text-sm font-medium text-foreground/70 dark:text-muted-foreground/50 mb-1">
               Nog geen offerte templates
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+            <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mb-4">
               Maak templates aan zodat je bij het maken van een offerte snel regels kunt importeren.
             </p>
             <Button size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
@@ -1917,13 +1917,13 @@ function OfferteTemplatesSubSection({
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm text-gray-900 dark:text-white">{t.naam}</p>
+                      <p className="font-medium text-sm text-foreground dark:text-white">{t.naam}</p>
                       {!t.actief && <Badge variant="secondary" className="text-[10px]">Inactief</Badge>}
                     </div>
                     {t.beschrijving && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.beschrijving}</p>
+                      <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{t.beschrijving}</p>
                     )}
-                    <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
+                    <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground/60">
                       <span>{t.regels.length} regel(s)</span>
                       <span>{t.regels.filter((r) => r.soort === 'prijs').length} prijs</span>
                       <span>{t.regels.filter((r) => r.soort === 'tekst').length} tekst</span>
@@ -1931,10 +1931,10 @@ function OfferteTemplatesSubSection({
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch checked={t.actief} onCheckedChange={() => handleToggleActief(t)} />
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(t)} className="h-8 w-8 text-gray-400 hover:text-blue-500">
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(t)} className="h-8 w-8 text-muted-foreground/60 hover:text-blue-500">
                       <Edit2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)} className="h-8 w-8 text-gray-400 hover:text-red-500">
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)} className="h-8 w-8 text-muted-foreground/60 hover:text-red-500">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -2013,12 +2013,12 @@ function InstellingenSection() {
       <Card>
         <CardContent className="p-5">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 shadow-md">
+            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-muted-foreground to-foreground/60 shadow-md">
               <Settings className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Basisinstellingen</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <h2 className="text-lg font-bold text-foreground dark:text-white">Basisinstellingen</h2>
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                 Standaard waarden, categorieën, eenheden en offerte velden.
               </p>
             </div>
@@ -2029,7 +2029,7 @@ function InstellingenSection() {
       {/* Standaard waarden */}
       <Card>
         <CardContent className="p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Standaard waarden</h3>
+          <h3 className="text-sm font-semibold text-foreground dark:text-white">Standaard waarden</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -2044,7 +2044,7 @@ function InstellingenSection() {
                   step={1}
                   className="w-28"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Wordt ingevuld bij nieuwe calculatieregels
                 </p>
               </div>
@@ -2053,7 +2053,7 @@ function InstellingenSection() {
               <Label className="text-xs font-medium">Toon inkoopprijs in offerte</Label>
               <div className="flex items-center gap-3">
                 <Switch checked={toonInkoopInOfferte} onCheckedChange={setToonInkoopInOfferte} />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   {toonInkoopInOfferte ? 'Zichtbaar voor klant' : 'Verborgen (aanbevolen)'}
                 </p>
               </div>
@@ -2066,8 +2066,8 @@ function InstellingenSection() {
       <Card>
         <CardContent className="p-5 space-y-3">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Product categorieën</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <h3 className="text-sm font-semibold text-foreground dark:text-white">Product categorieën</h3>
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">
               Categorieën helpen je producten te organiseren. Bijv. Materiaal, Arbeid, Transport.
             </p>
           </div>
@@ -2077,7 +2077,7 @@ function InstellingenSection() {
                 {cat}
                 <button
                   onClick={() => setCategorieen(categorieen.filter((c) => c !== cat))}
-                  className="ml-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-0.5"
+                  className="ml-1 hover:bg-secondary dark:hover:bg-foreground/70 rounded-full p-0.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -2118,8 +2118,8 @@ function InstellingenSection() {
       <Card>
         <CardContent className="p-5 space-y-3">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Eenheden</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <h3 className="text-sm font-semibold text-foreground dark:text-white">Eenheden</h3>
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">
               Eenheden bepalen hoe je producten telt. Bijv. stuks, m², uur.
             </p>
           </div>
@@ -2129,7 +2129,7 @@ function InstellingenSection() {
                 {e}
                 <button
                   onClick={() => setEenheden(eenheden.filter((ee) => ee !== e))}
-                  className="ml-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-0.5"
+                  className="ml-1 hover:bg-secondary dark:hover:bg-foreground/70 rounded-full p-0.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -2170,8 +2170,8 @@ function InstellingenSection() {
       <Card>
         <CardContent className="p-5 space-y-3">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Offerte regel velden</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <h3 className="text-sm font-semibold text-foreground dark:text-white">Offerte regel velden</h3>
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">
               Extra tekstvelden per offerte-regel. Deze verschijnen onder de omschrijving. Bijv. Materiaal, Lay-out, Montage.
             </p>
           </div>
@@ -2181,14 +2181,14 @@ function InstellingenSection() {
                 {veld}
                 <button
                   onClick={() => setRegelVelden(regelVelden.filter((v) => v !== veld))}
-                  className="ml-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-0.5"
+                  className="ml-1 hover:bg-secondary dark:hover:bg-foreground/70 rounded-full p-0.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
               </Badge>
             ))}
             {regelVelden.length === 0 && (
-              <span className="text-xs text-gray-400 italic">Geen extra velden</span>
+              <span className="text-xs text-muted-foreground/60 italic">Geen extra velden</span>
             )}
           </div>
           <div className="flex gap-2">
@@ -2225,11 +2225,11 @@ function InstellingenSection() {
       <Card>
         <CardContent className="p-5 space-y-3">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground dark:text-white flex items-center gap-2">
               Uren overzicht velden
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-blue-600 border-blue-200">Sidebar</Badge>
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">
               Calculatieregels en detail velden waarvan de productnaam, categorie of label een van deze termen bevat,
               worden automatisch meegeteld in het uren overzicht in de offerte sidebar. Zo zie je per offerte
               het totaal aantal uren per categorie en een totaal over alle items heen.
@@ -2248,7 +2248,7 @@ function InstellingenSection() {
               </Badge>
             ))}
             {urenVelden.length === 0 && (
-              <span className="text-xs text-gray-400 italic">Geen uren velden — alle uren worden als totaal getoond</span>
+              <span className="text-xs text-muted-foreground/60 italic">Geen uren velden — alle uren worden als totaal getoond</span>
             )}
           </div>
           <div className="flex gap-2">

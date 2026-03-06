@@ -1623,7 +1623,7 @@ export function QuoteCreation() {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Klant</Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                     <Input value={klantSearch} onChange={(e) => setKlantSearch(e.target.value)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10" />
                   </div>
                   <Select value={selectedKlantId} onValueChange={(val) => { setSelectedKlantId(val); setKlantSearch('') }}>
@@ -1633,7 +1633,7 @@ export function QuoteCreation() {
                         <SelectItem key={klant.id} value={klant.id}>
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{klant.bedrijfsnaam}</span>
-                            {klant.contactpersoon && (<><span className="text-gray-400">-</span><span className="text-gray-500">{klant.contactpersoon}</span></>)}
+                            {klant.contactpersoon && (<><span className="text-muted-foreground/60">-</span><span className="text-muted-foreground">{klant.contactpersoon}</span></>)}
                           </div>
                         </SelectItem>
                       ))}
@@ -1694,9 +1694,9 @@ export function QuoteCreation() {
                     {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
                       <div className="space-y-1.5">
                         {selectedKlant.contactpersonen?.map((cp) => (
-                          <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg border p-2.5 transition-all', selectedContactId === cp.id ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50')}>
+                          <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg border p-2.5 transition-all', selectedContactId === cp.id ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20' : 'border-border dark:border-border hover:border-border hover:bg-background')}>
                             <div className="flex items-center gap-2">
-                              <div className={cn('w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold', selectedContactId === cp.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500')}>{cp.naam[0]?.toUpperCase()}</div>
+                              <div className={cn('w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold', selectedContactId === cp.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground')}>{cp.naam[0]?.toUpperCase()}</div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-foreground truncate">{cp.naam}</p>
                                 {cp.functie && <p className="text-[11px] text-muted-foreground truncate">{cp.functie}</p>}
@@ -1716,7 +1716,7 @@ export function QuoteCreation() {
                       </div>
                     )}
                     {!showNewContact ? (
-                      <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-accent transition-colors py-2 px-2 rounded-lg hover:bg-gray-50">
+                      <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-accent transition-colors py-2 px-2 rounded-lg hover:bg-background">
                         <UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon toevoegen
                       </button>
                     ) : (
@@ -1733,7 +1733,7 @@ export function QuoteCreation() {
                       </div>
                     )}
                     {!showNewContact && (
-                      <div className="space-y-1.5 pt-1 border-t border-gray-100">
+                      <div className="space-y-1.5 pt-1 border-t border-border">
                         <Label className="text-[11px] text-muted-foreground">Of typ een naam</Label>
                         <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-8 text-sm" />
                       </div>
@@ -1741,7 +1741,7 @@ export function QuoteCreation() {
                   </>
                 ) : (
                   <div className="text-center py-6">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2"><User className="h-5 w-5 text-gray-400" /></div>
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-2"><User className="h-5 w-5 text-muted-foreground/60" /></div>
                     <p className="text-sm text-muted-foreground">Selecteer eerst een klant</p>
                   </div>
                 )}
@@ -1765,7 +1765,7 @@ export function QuoteCreation() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="offerte-nummer" className="flex items-center gap-1.5"><Hash className="h-3 w-3 text-muted-foreground" />Nummer</Label>
-                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="bg-gray-50 dark:bg-gray-800 text-sm" />
+                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="bg-background dark:bg-foreground/80 text-sm" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="geldig-tot" className="flex items-center gap-1.5"><Calendar className="h-3 w-3 text-muted-foreground" />Geldig tot</Label>
@@ -1787,7 +1787,7 @@ export function QuoteCreation() {
               <p className="text-sm text-muted-foreground mb-3">Elk item is een complete prijsberekening. Je kunt later altijd items toevoegen of verwijderen.</p>
               <div className="flex items-center gap-2">
                 {ITEM_COUNT_OPTIONS.map((count) => (
-                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-12 w-12 rounded-xl text-lg font-bold transition-all border-2', itemCount === count ? 'border-primary bg-gradient-to-br from-accent to-primary text-white shadow-md scale-110' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-foreground hover:border-gray-300')}>
+                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-12 w-12 rounded-xl text-lg font-bold transition-all border-2', itemCount === count ? 'border-primary bg-gradient-to-br from-accent to-primary text-white shadow-md scale-110' : 'border-border dark:border-border bg-white dark:bg-foreground text-foreground hover:border-border')}>
                     {count}
                   </button>
                 ))}
@@ -1818,7 +1818,7 @@ export function QuoteCreation() {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Back + Title + Badges */}
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" className="hover:bg-white/50 dark:hover:bg-gray-800/50 flex-shrink-0" onClick={() => {
+            <Button variant="ghost" size="icon" className="hover:bg-white/50 dark:hover:bg-foreground/80/50 flex-shrink-0" onClick={() => {
               const from = (location.state as { from?: string })?.from
               navigate(from || '/offertes')
             }}>
@@ -1827,7 +1827,7 @@ export function QuoteCreation() {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl font-bold text-foreground font-display truncate">{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
-                <Badge variant="outline" className="text-xs font-mono bg-white/50 dark:bg-gray-800/50 flex-shrink-0"><Hash className="h-3 w-3 mr-1" />{offerteNummer}</Badge>
+                <Badge variant="outline" className="text-xs font-mono bg-white/50 dark:bg-foreground/80/50 flex-shrink-0"><Hash className="h-3 w-3 mr-1" />{offerteNummer}</Badge>
                 {versieNummer > 1 && (
                   <Badge variant="outline" className="text-[10px] bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 cursor-pointer flex-shrink-0" onClick={() => setShowVersieHistorie(!showVersieHistorie)}>v{versieNummer}</Badge>
                 )}
@@ -1869,14 +1869,14 @@ export function QuoteCreation() {
                 {showActionsMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowActionsMenu(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg py-1 w-48">
-                      <button onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 disabled:opacity-50">
+                    <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-foreground rounded-lg border border-border dark:border-border shadow-lg py-1 w-48">
+                      <button onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-foreground/80 flex items-center gap-2 disabled:opacity-50">
                         <Copy className="h-3.5 w-3.5" />{isDuplicating ? 'Dupliceren...' : 'Dupliceer offerte'}
                       </button>
-                      <button onClick={() => { handleNieuweVersie(); setShowActionsMenu(false) }} disabled={isSavingVersie} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 disabled:opacity-50">
+                      <button onClick={() => { handleNieuweVersie(); setShowActionsMenu(false) }} disabled={isSavingVersie} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-foreground/80 flex items-center gap-2 disabled:opacity-50">
                         <Clock className="h-3.5 w-3.5" />{isSavingVersie ? 'Opslaan...' : `Nieuwe versie (v${versieNummer})`}
                       </button>
-                      <button onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2">
+                      <button onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-foreground/80 flex items-center gap-2">
                         <Building2 className="h-3.5 w-3.5" />Klant wijzigen
                       </button>
                     </div>
@@ -1900,7 +1900,7 @@ export function QuoteCreation() {
             </CardHeader>
             <CardContent className="space-y-2">
               {versieHistorie.map((v) => (
-                <div key={v.id} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
+                <div key={v.id} className="flex items-center justify-between rounded-lg border border-border dark:border-border px-3 py-2">
                   <div>
                     <span className="text-sm font-medium">Versie {v.versie_nummer}</span>
                     <span className="text-xs text-muted-foreground ml-2">{new Date(v.created_at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
@@ -1997,7 +1997,7 @@ export function QuoteCreation() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-muted-foreground to-foreground/60 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
                 Notities & Voorwaarden
               </CardTitle>
             </CardHeader>
@@ -2068,7 +2068,7 @@ export function QuoteCreation() {
                   {/* Inplannen */}
                   <div className="space-y-3">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={emailScheduled} onChange={(e) => setEmailScheduled(e.target.checked)} className="rounded border-gray-300" />
+                      <input type="checkbox" checked={emailScheduled} onChange={(e) => setEmailScheduled(e.target.checked)} className="rounded border-border" />
                       <CalendarClock className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Inplannen</span>
                     </label>
@@ -2117,7 +2117,7 @@ export function QuoteCreation() {
             {/* ── Mobile collapse toggle ── */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="lg:hidden w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+              className="lg:hidden w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border dark:border-border bg-white dark:bg-foreground"
             >
               <span className="text-sm font-semibold">Klant & Samenvatting</span>
               <div className="flex items-center gap-2">
@@ -2129,8 +2129,8 @@ export function QuoteCreation() {
             <div className={cn('space-y-4', sidebarCollapsed && 'hidden lg:block')}>
               {/* ── KLANTGEGEVENS CARD ── */}
               {selectedKlant ? (
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
-                  <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2 px-4 py-3 bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm">
+                  <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2 px-4 py-3 bg-background/80 dark:bg-foreground/80/50 border-b border-border dark:border-border hover:bg-muted dark:hover:bg-foreground/80 transition-colors">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-sm">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                     </div>
@@ -2169,23 +2169,23 @@ export function QuoteCreation() {
                       )}
 
                       {(selectedKlant.kvk_nummer || selectedKlant.btw_nummer) && (
-                        <div className="text-xs text-foreground space-y-0.5 pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <div className="text-xs text-foreground space-y-0.5 pt-2 border-t border-border dark:border-border">
                           {selectedKlant.kvk_nummer && <p>KvK: {selectedKlant.kvk_nummer}</p>}
                           {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
                         </div>
                       )}
 
-                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-800">
+                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border dark:border-border">
                         {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"><Phone className="h-3 w-3" />Bellen</a>}
                         {selectedKlant.email && <a href={`mailto:${selectedKlant.email}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"><Mail className="h-3 w-3" />Email</a>}
-                        <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 transition-colors"><ExternalLink className="h-3 w-3" />Profiel</Link>
+                        <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-background text-foreground/70 border border-border hover:bg-muted transition-colors"><ExternalLink className="h-3 w-3" />Profiel</Link>
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-6 text-center">
-                  <Building2 className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                <div className="rounded-xl border-2 border-dashed border-border dark:border-border p-6 text-center">
+                  <Building2 className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">Geen klant geselecteerd</p>
                   <Button variant="outline" size="sm" className="mt-2 text-xs h-7" onClick={() => setShowKlantSelector(true)}>Klant kiezen</Button>
                 </div>
@@ -2193,7 +2193,7 @@ export function QuoteCreation() {
 
               {/* ── FACTUREREN WORKFLOW CARD ── */}
               {isEditMode && (offerteStatus === 'goedgekeurd' || offerteStatus === 'gefactureerd' || geconverteerdNaarFactuurId) && (
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
+                <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm">
                   {geconverteerdNaarFactuurId ? (
                     <>
                       {/* Already invoiced */}
@@ -2224,7 +2224,7 @@ export function QuoteCreation() {
                             <Badge className={cn('text-[10px]',
                               linkedFactuur.status === 'betaald' && 'bg-emerald-100 text-emerald-700 border-emerald-200',
                               linkedFactuur.status === 'verzonden' && 'bg-blue-100 text-blue-700 border-blue-200',
-                              linkedFactuur.status === 'concept' && 'bg-gray-100 text-gray-700 border-gray-200',
+                              linkedFactuur.status === 'concept' && 'bg-muted text-foreground/70 border-border',
                               linkedFactuur.status === 'vervallen' && 'bg-red-100 text-red-700 border-red-200',
                               linkedFactuur.status === 'gecrediteerd' && 'bg-orange-100 text-orange-700 border-orange-200',
                             )}>
@@ -2286,7 +2286,7 @@ export function QuoteCreation() {
               )}
 
               {/* ── SAMENVATTING CARD ── */}
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
+              <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm">
                 {/* Totaal header */}
                 <div className="bg-gradient-to-br from-accent to-primary p-4">
                   <p className="text-[10px] uppercase tracking-wider text-white/70 font-medium">Totaal incl BTW</p>
@@ -2351,11 +2351,11 @@ export function QuoteCreation() {
                 <div className="p-4 space-y-4">
                   {/* Subtotaal + BTW */}
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
+                    <div className="rounded-lg bg-background/80 dark:bg-foreground/80/50 p-2.5">
                       <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">Subtotaal</p>
                       <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
                     </div>
-                    <div className="rounded-lg bg-gray-50/80 dark:bg-gray-800/50 p-2.5">
+                    <div className="rounded-lg bg-background/80 dark:bg-foreground/80/50 p-2.5">
                       <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">BTW</p>
                       <p className="text-sm font-semibold text-foreground mt-0.5">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
                     </div>
@@ -2397,7 +2397,7 @@ export function QuoteCreation() {
                         <span className={cn('text-lg font-bold', margeColor.text)}>{totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}</span>
                       </div>
                       {totaalInkoop > 0 && (
-                        <div className="mt-2 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700">
+                        <div className="mt-2 h-1.5 rounded-full bg-secondary dark:bg-foreground/70">
                           <div className={cn('h-full rounded-full transition-all', margeColor.bar)} style={{ width: `${Math.min(100, Math.max(0, margePercentage))}%` }} />
                         </div>
                       )}
@@ -2475,7 +2475,7 @@ export function QuoteCreation() {
                           })}
                           {/* Totaal uren */}
                           {effectieveTotaalUren > 0 && (
-                            <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800">
+                            <div className="flex items-center justify-between pt-1 border-t border-border dark:border-border">
                               <div className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs font-medium text-foreground">Totaal uren</span></div>
                               <span className="text-xs font-bold text-amber-600">{effectieveTotaalUren} uur</span>
                             </div>

@@ -151,7 +151,7 @@ export function BookingBeheer() {
                   {slots
                     .sort((a, b) => a.dag_van_week - b.dag_van_week)
                     .map((slot) => (
-                    <div key={slot.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                    <div key={slot.id} className="flex items-center justify-between bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px] w-8 justify-center">
                           {DAGEN_KORT[slot.dag_van_week]}
@@ -218,11 +218,11 @@ export function BookingBeheer() {
                   {afspraken
                     .sort((a, b) => b.datum.localeCompare(a.datum) || b.start_tijd.localeCompare(a.start_tijd))
                     .map((afspraak) => (
-                    <div key={afspraak.id} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-4 py-3">
+                    <div key={afspraak.id} className="flex items-center gap-3 bg-background dark:bg-foreground/80/50 rounded-lg px-4 py-3">
                       <div className="flex-shrink-0">
                         <div className={cn(
                           'w-10 h-10 rounded-lg flex flex-col items-center justify-center text-white',
-                          afspraak.status === 'geannuleerd' ? 'bg-gray-400' :
+                          afspraak.status === 'geannuleerd' ? 'bg-muted-foreground/40' :
                           afspraak.status === 'bevestigd' ? 'bg-emerald-500' : 'bg-blue-500'
                         )}>
                           <span className="text-[10px] font-medium leading-none">
@@ -241,7 +241,7 @@ export function BookingBeheer() {
                           <Badge className={cn('text-[10px] px-1.5 py-0',
                             afspraak.status === 'gepland' && 'bg-blue-100 text-blue-700',
                             afspraak.status === 'bevestigd' && 'bg-emerald-100 text-emerald-700',
-                            afspraak.status === 'geannuleerd' && 'bg-gray-100 text-gray-500',
+                            afspraak.status === 'geannuleerd' && 'bg-muted text-muted-foreground',
                           )}>
                             {afspraak.status}
                           </Badge>
@@ -302,7 +302,7 @@ export function BookingBeheer() {
               <select
                 value={slotForm.dag_van_week}
                 onChange={(e) => setSlotForm(p => ({ ...p, dag_van_week: Number(e.target.value) }))}
-                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
               >
                 {DAGEN.map((dag, i) => (
                   <option key={i} value={i}>{dag}</option>

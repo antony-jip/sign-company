@@ -851,13 +851,13 @@ export function MontagePlanningLayout() {
                   "text-center py-2 rounded-t-lg mb-2 border-b-2",
                   isToday
                     ? "bg-blue-50 border-blue-500"
-                    : "bg-gray-50 border-gray-200"
+                    : "bg-background border-border"
                 )}
               >
                 <div
                   className={cn(
                     "text-sm font-semibold",
-                    isToday ? "text-blue-700" : "text-gray-700"
+                    isToday ? "text-blue-700" : "text-foreground/70"
                   )}
                 >
                   {DAG_NAMEN[dayIndex]}
@@ -898,32 +898,32 @@ export function MontagePlanningLayout() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b bg-gray-50">
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
+            <tr className="border-b bg-background">
+              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
                 Datum
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
                 Tijd
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
                 Project
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
                 Klant
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
                 Locatie
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
                 Medewerkers
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
                 Status
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
                 Materialen
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
                 Acties
               </th>
             </tr>
@@ -950,7 +950,7 @@ export function MontagePlanningLayout() {
                   <tr
                     key={afspraak.id}
                     className={cn(
-                      "border-b hover:bg-gray-50 transition-colors",
+                      "border-b hover:bg-background transition-colors",
                       rowConflict && "bg-red-50/60"
                     )}
                   >
@@ -1117,7 +1117,7 @@ export function MontagePlanningLayout() {
                   value={formData.klant_naam}
                   disabled
                   placeholder="Wordt automatisch ingevuld"
-                  className="bg-gray-50"
+                  className="bg-background"
                 />
               </div>
             </div>
@@ -1220,14 +1220,14 @@ export function MontagePlanningLayout() {
                       "flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors",
                       formData.monteurs.includes(monteur.id)
                         ? "bg-blue-50 border-blue-300"
-                        : "hover:bg-gray-50"
+                        : "hover:bg-background"
                     )}
                   >
                     <input
                       type="checkbox"
                       checked={formData.monteurs.includes(monteur.id)}
                       onChange={() => toggleMonteur(monteur.id)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                     <div
                       className={cn(
@@ -1433,8 +1433,8 @@ export function MontagePlanningLayout() {
         <Card className={conflicts.length > 0 ? "border-red-200 bg-red-50/50" : ""}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className={cn("p-3 rounded-xl", conflicts.length > 0 ? "bg-red-100" : "bg-gray-100")}>
-                <AlertTriangle className={cn("h-6 w-6", conflicts.length > 0 ? "text-red-600" : "text-gray-400")} />
+              <div className={cn("p-3 rounded-xl", conflicts.length > 0 ? "bg-red-100" : "bg-muted")}>
+                <AlertTriangle className={cn("h-6 w-6", conflicts.length > 0 ? "text-red-600" : "text-muted-foreground/60")} />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">

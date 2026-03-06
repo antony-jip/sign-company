@@ -376,11 +376,11 @@ export function UitgavenLayout() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-2xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm overflow-hidden">
+        <div className="rounded-2xl border bg-white/80 dark:bg-foreground/80 backdrop-blur-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-gray-50 dark:bg-gray-800/50">
+                <tr className="border-b bg-background dark:bg-foreground/80/50">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Datum</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Leverancier</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Omschrijving</th>
@@ -395,7 +395,7 @@ export function UitgavenLayout() {
                 {gefilterd.map((u) => {
                   const cfg = STATUS_CONFIG[u.status] || STATUS_CONFIG.open
                   return (
-                    <tr key={u.id} className="group hover:bg-gray-50/80 dark:hover:bg-gray-800/50">
+                    <tr key={u.id} className="group hover:bg-background/80 dark:hover:bg-foreground/80/50">
                       <td className="px-4 py-3 text-sm">{new Date(u.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3 text-sm">{getLeverancierNaam(u.leverancier_id)}</td>
                       <td className="px-4 py-3 text-sm max-w-[200px] truncate">{u.omschrijving}</td>
@@ -514,7 +514,7 @@ export function UitgavenLayout() {
                 </div>
                 <div>
                   <Label>Incl. BTW</Label>
-                  <Input readOnly value={formatCurrency(inclBtwBerekend)} className="bg-gray-50" />
+                  <Input readOnly value={formatCurrency(inclBtwBerekend)} className="bg-background" />
                 </div>
               </div>
 

@@ -157,21 +157,21 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
         <Separator />
 
         {/* Calculated Results */}
-        <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+        <div className="space-y-3 bg-background dark:bg-foreground/80/50 rounded-lg p-4">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Arbeidskosten</span>
-            <span className="font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-muted-foreground dark:text-muted-foreground/60">Arbeidskosten</span>
+            <span className="font-medium text-foreground dark:text-muted-foreground/20">
               {formatCurrency(berekening.arbeidskosten)}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Materiaalkosten</span>
-            <span className="font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-muted-foreground dark:text-muted-foreground/60">Materiaalkosten</span>
+            <span className="font-medium text-foreground dark:text-muted-foreground/20">
               {formatCurrency(materiaalkosten)}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-muted-foreground dark:text-muted-foreground/60">
               Marge ({margePercentage}%)
             </span>
             <span className="font-medium text-green-600 dark:text-green-400">
@@ -182,14 +182,14 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
           <Separator className="my-1" />
 
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Subtotaal</span>
-            <span className="font-semibold text-gray-900 dark:text-gray-100">
+            <span className="text-muted-foreground dark:text-muted-foreground/60">Subtotaal</span>
+            <span className="font-semibold text-foreground dark:text-muted-foreground/20">
               {formatCurrency(berekening.subtotaal)}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">BTW ({btwPercentage}%)</span>
-            <span className="font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-muted-foreground dark:text-muted-foreground/60">BTW ({btwPercentage}%)</span>
+            <span className="font-medium text-foreground dark:text-muted-foreground/20">
               {formatCurrency(berekening.btw)}
             </span>
           </div>
@@ -197,7 +197,7 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
           <Separator className="my-1" />
 
           <div className="flex justify-between text-lg font-bold">
-            <span className="text-gray-900 dark:text-white">Totaal</span>
+            <span className="text-foreground dark:text-white">Totaal</span>
             <span className="text-blue-600 dark:text-blue-400">
               {formatCurrency(berekening.totaal)}
             </span>

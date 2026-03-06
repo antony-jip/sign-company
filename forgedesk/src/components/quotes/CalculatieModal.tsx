@@ -293,19 +293,19 @@ export function CalculatieModal({
                 Template laden
               </Button>
               {showTemplates && (
-                <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 min-w-[250px]">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-1">
+                <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-foreground border border-border dark:border-border rounded-lg shadow-lg p-2 min-w-[250px]">
+                  <p className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/60 px-2 py-1">
                     Kies een template:
                   </p>
                   {templates.filter(t => t.actief).map((t) => (
                     <button
                       key={t.id}
                       onClick={() => laadTemplate(t)}
-                      className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
                     >
                       <span className="font-medium">{t.naam}</span>
                       {t.beschrijving && (
-                        <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        <span className="block text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">
                           {t.beschrijving}
                         </span>
                       )}
@@ -318,7 +318,7 @@ export function CalculatieModal({
                       onClose()
                       navigate('/instellingen', { state: { tab: 'calculatie' } })
                     }}
-                    className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2 text-muted-foreground"
+                    className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors flex items-center gap-2 text-muted-foreground"
                   >
                     <Settings className="h-3.5 w-3.5" />
                     Templates beheren
@@ -367,14 +367,14 @@ export function CalculatieModal({
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-gray-50 dark:bg-gray-800/50">
+                <tr className="bg-background dark:bg-foreground/80/50">
                   {/* Kolom headers met uitleg tooltips */}
-                  <th className="text-left px-3 py-2.5 font-medium text-gray-600 dark:text-gray-400 min-w-[200px]">
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 min-w-[200px]">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1">
                           Product
-                          <HelpCircle className="h-3 w-3 text-gray-400" />
+                          <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>De naam van het product, materiaal of de dienst.<br />Kies uit je catalogus of typ een naam.</p>
@@ -382,12 +382,12 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-center px-2 py-2.5 font-medium text-gray-600 dark:text-gray-400 w-20">
+                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-20">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 mx-auto">
                           Aantal
-                          <HelpCircle className="h-3 w-3 text-gray-400" />
+                          <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Hoeveel stuks, m&sup2;, uren, etc.</p>
@@ -395,15 +395,15 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-center px-2 py-2.5 font-medium text-gray-600 dark:text-gray-400 w-20">
+                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-20">
                     Eenh.
                   </th>
-                  <th className="text-right px-2 py-2.5 font-medium text-gray-600 dark:text-gray-400 w-28">
+                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-28">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
                           Inkoop
-                          <HelpCircle className="h-3 w-3 text-gray-400" />
+                          <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Wat jij betaalt per eenheid (inkoopprijs).<br />Dit ziet de klant NIET op de offerte.</p>
@@ -411,12 +411,12 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-2 py-2.5 font-medium text-gray-600 dark:text-gray-400 w-28">
+                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-28">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
                           Verkoop
-                          <HelpCircle className="h-3 w-3 text-gray-400" />
+                          <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Wat de klant betaalt per eenheid (verkoopprijs).<br />Wordt automatisch berekend op basis van inkoop + marge.</p>
@@ -424,12 +424,12 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-2 py-2.5 font-medium text-gray-600 dark:text-gray-400 w-20">
+                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-20">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
                           Marge%
-                          <HelpCircle className="h-3 w-3 text-gray-400" />
+                          <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Je winstmarge in procenten.<br />Pas dit aan om de verkoopprijs te wijzigen,<br />of wijzig de verkoopprijs om de marge te zien.</p>
@@ -437,12 +437,12 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-2 py-2.5 font-medium text-gray-600 dark:text-gray-400 w-20">
+                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-20">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
                           Korting%
-                          <HelpCircle className="h-3 w-3 text-gray-400" />
+                          <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Korting die je de klant geeft op deze regel.</p>
@@ -450,12 +450,12 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-center px-2 py-2.5 font-medium text-gray-600 dark:text-gray-400 w-16">
+                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-16">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 mx-auto">
                           Nacalc.
-                          <HelpCircle className="h-3 w-3 text-gray-400" />
+                          <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Vink aan als dit een nacalculatie-post is.<br />Deze regel wordt achteraf verrekend<br />op basis van werkelijke kosten.</p>
@@ -463,7 +463,7 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-2 py-2.5 font-medium text-gray-600 dark:text-gray-400 w-28">
+                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-28">
                     Regeltotaal
                   </th>
                   <th className="w-10" />
@@ -480,10 +480,10 @@ export function CalculatieModal({
                   return (
                     <tr
                       key={regel.id}
-                      className={`border-b border-gray-100 dark:border-gray-800 ${
+                      className={`border-b border-border dark:border-border ${
                         index % 2 === 0
-                          ? 'bg-white dark:bg-gray-900'
-                          : 'bg-gray-50/50 dark:bg-gray-800/20'
+                          ? 'bg-white dark:bg-foreground'
+                          : 'bg-background/50 dark:bg-foreground/80/20'
                       } hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors`}
                     >
                       {/* Product */}
@@ -502,11 +502,11 @@ export function CalculatieModal({
                               }}
                             >
                               <SelectTrigger className="border-0 bg-transparent shadow-none h-8 w-[60px] px-1 flex-shrink-0">
-                                <Package className="h-3.5 w-3.5 text-gray-400" />
+                                <Package className="h-3.5 w-3.5 text-muted-foreground/60" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="__custom__">
-                                  <span className="text-gray-500">Handmatig invoeren</span>
+                                  <span className="text-muted-foreground">Handmatig invoeren</span>
                                 </SelectItem>
                                 {producten.filter(p => p.actief).map((p) => (
                                   <SelectItem key={p.id} value={p.id}>
@@ -515,7 +515,7 @@ export function CalculatieModal({
                                         {p.categorie}
                                       </Badge>
                                       <span>{p.naam}</span>
-                                      <span className="text-gray-400 text-xs ml-auto">
+                                      <span className="text-muted-foreground/60 text-xs ml-auto">
                                         {formatCurrency(p.verkoop_prijs)}
                                       </span>
                                     </div>
@@ -604,7 +604,7 @@ export function CalculatieModal({
                                   : ''
                             }`}
                           />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60">%</span>
                         </div>
                       </td>
 
@@ -620,7 +620,7 @@ export function CalculatieModal({
                             step={1}
                             className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 text-right text-sm pr-6"
                           />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60">%</span>
                         </div>
                       </td>
 
@@ -637,7 +637,7 @@ export function CalculatieModal({
                       <td className="px-3 py-1.5 text-right">
                         <span className={`font-medium text-sm ${
                           isWinst
-                            ? 'text-gray-900 dark:text-gray-100'
+                            ? 'text-foreground dark:text-muted-foreground/20'
                             : 'text-red-600 dark:text-red-400'
                         }`}>
                           {formatCurrency(regelTotaal)}
@@ -650,7 +650,7 @@ export function CalculatieModal({
                           variant="ghost"
                           size="icon"
                           onClick={() => removeRegel(regel.id)}
-                          className="h-7 w-7 text-gray-400 hover:text-red-500"
+                          className="h-7 w-7 text-muted-foreground/60 hover:text-red-500"
                           disabled={regels.length <= 1}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -694,22 +694,22 @@ export function CalculatieModal({
           </div>
 
           {/* Totalen blok rechts */}
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 space-y-2">
+          <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-4 border border-border dark:border-border space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Totaal inkoop</span>
-              <span className="font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal inkoop</span>
+              <span className="font-medium text-foreground/70 dark:text-muted-foreground/50">
                 {formatCurrency(totalen.totaalInkoop)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Totaal verkoop</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">
+              <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal verkoop</span>
+              <span className="font-medium text-foreground dark:text-muted-foreground/20">
                 {formatCurrency(totalen.totaalVerkoop)}
               </span>
             </div>
             {totalen.totaalKorting > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Totaal korting</span>
+                <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal korting</span>
                 <span className="font-medium text-orange-600 dark:text-orange-400">
                   - {formatCurrency(totalen.totaalKorting)}
                 </span>
@@ -717,7 +717,7 @@ export function CalculatieModal({
             )}
             <Separator className="my-1" />
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">
+              <span className="text-muted-foreground dark:text-muted-foreground/60">
                 Marge ({Math.round(totalen.margePercentage)}%)
               </span>
               <span className={`font-bold ${
@@ -730,7 +730,7 @@ export function CalculatieModal({
             </div>
             <Separator className="my-1" />
             <div className="flex justify-between text-base font-bold">
-              <span className="text-gray-900 dark:text-white">Verkooptotaal</span>
+              <span className="text-foreground dark:text-white">Verkooptotaal</span>
               <span className="text-blue-600 dark:text-blue-400">
                 {formatCurrency(totalen.totaalVerkoop)}
               </span>

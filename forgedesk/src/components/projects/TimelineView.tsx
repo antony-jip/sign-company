@@ -10,7 +10,7 @@ interface TimelineViewProps {
 }
 
 const statusKleuren: Record<string, string> = {
-  todo: 'bg-gray-400 dark:bg-gray-500',
+  todo: 'bg-muted-foreground/40 dark:bg-muted-foreground',
   bezig: 'bg-blue-500 dark:bg-blue-400',
   review: 'bg-yellow-500 dark:bg-yellow-400',
   klaar: 'bg-green-500 dark:bg-green-400',
@@ -97,13 +97,13 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
       </div>
 
       {/* Timeline chart */}
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="border border-border dark:border-border rounded-lg overflow-hidden">
         {/* Month headers */}
-        <div className="relative h-8 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+        <div className="relative h-8 bg-background dark:bg-foreground/80/50 border-b border-border dark:border-border">
           {timeline.maanden.map((maand, index) => (
             <div
               key={index}
-              className="absolute top-0 h-full flex items-center border-l border-gray-200 dark:border-gray-700 px-2"
+              className="absolute top-0 h-full flex items-center border-l border-border dark:border-border px-2"
               style={{ left: `${maand.positie}%` }}
             >
               <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
@@ -118,13 +118,13 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
           {timeline.taken.map((taak, index) => (
             <div
               key={taak.id}
-              className="relative h-10 border-b border-gray-100 dark:border-gray-800 last:border-b-0 group hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors duration-150"
+              className="relative h-10 border-b border-border dark:border-border last:border-b-0 group hover:bg-background dark:hover:bg-foreground/80/30 transition-colors duration-150"
             >
               {/* Month grid lines */}
               {timeline.maanden.map((maand, mi) => (
                 <div
                   key={mi}
-                  className="absolute top-0 h-full border-l border-gray-100 dark:border-gray-800"
+                  className="absolute top-0 h-full border-l border-border dark:border-border"
                   style={{ left: `${maand.positie}%` }}
                 />
               ))}
@@ -140,7 +140,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
               >
                 <div
                   className={`w-full h-full rounded-md ${
-                    statusKleuren[taak.status] || 'bg-gray-400'
+                    statusKleuren[taak.status] || 'bg-muted-foreground/40'
                   } opacity-80 hover:opacity-100 transition-opacity duration-150`}
                 />
                 {/* Label overlay */}
@@ -150,7 +150,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
               </div>
 
               {/* Tooltip on hover */}
-              <div className="absolute left-0 top-full z-20 hidden group-hover:block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 min-w-[200px] pointer-events-none">
+              <div className="absolute left-0 top-full z-20 hidden group-hover:block bg-white dark:bg-foreground border border-border dark:border-border rounded-lg shadow-lg p-3 min-w-[200px] pointer-events-none">
                 <p className="font-medium text-sm text-foreground">{taak.titel}</p>
                 <div className="mt-1.5 space-y-1">
                   <p className="text-xs text-muted-foreground">
@@ -193,7 +193,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
           >
             <div
               className={`w-2.5 h-2.5 rounded-sm flex-shrink-0 ${
-                statusKleuren[taak.status] || 'bg-gray-400'
+                statusKleuren[taak.status] || 'bg-muted-foreground/40'
               }`}
             />
             <span className="text-foreground font-medium flex-1 truncate">{taak.titel}</span>

@@ -271,10 +271,10 @@ export function NacalculatieLayout() {
             <Calculator className="w-6 h-6 text-accent dark:text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+            <h1 className="text-2xl font-bold text-foreground dark:text-white font-display">
               Nacalculatie
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
               Vergelijk offertes met werkelijke kosten
             </p>
           </div>
@@ -284,8 +284,8 @@ export function NacalculatieLayout() {
             <Card key={i}>
               <CardContent className="p-5">
                 <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24" />
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-32" />
+                  <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-24" />
+                  <div className="h-8 bg-secondary dark:bg-foreground/70 rounded w-32" />
                 </div>
               </CardContent>
             </Card>
@@ -294,9 +294,9 @@ export function NacalculatieLayout() {
         <Card>
           <CardContent className="p-8">
             <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+              <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-full" />
+              <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-3/4" />
+              <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-1/2" />
             </div>
           </CardContent>
         </Card>
@@ -313,10 +313,10 @@ export function NacalculatieLayout() {
             <Calculator className="w-6 h-6 text-accent dark:text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+            <h1 className="text-2xl font-bold text-foreground dark:text-white font-display">
               Nacalculatie
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
               Vergelijk offertes met werkelijke kosten
             </p>
           </div>
@@ -339,7 +339,7 @@ export function NacalculatieLayout() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground/60">
                   Gemiddelde marge
                 </p>
                 <p className={cn(
@@ -372,13 +372,13 @@ export function NacalculatieLayout() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground/60">
                   Projecten boven budget
                 </p>
                 <p className="text-2xl font-bold text-red-700 dark:text-red-400">
                   {samenvatting.bovenBudget}
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground">
                   projecten
                 </p>
               </div>
@@ -393,13 +393,13 @@ export function NacalculatieLayout() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground/60">
                   Projecten onder budget
                 </p>
                 <p className="text-2xl font-bold text-green-700 dark:text-green-400">
                   {samenvatting.onderBudget}
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground">
                   projecten
                 </p>
               </div>
@@ -414,7 +414,7 @@ export function NacalculatieLayout() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground/60">
                   Totaal verschil
                 </p>
                 <p className={cn(
@@ -487,36 +487,36 @@ export function NacalculatieLayout() {
         </CardHeader>
         <CardContent>
           {gefilterdeData.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 text-center py-8">
               Geen afgeronde projecten gevonden
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                  <tr className="border-b border-border dark:border-border">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Project
                     </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Klant
                     </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Offerte
                     </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Werkelijk
                     </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Verschil
                     </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Marge
                     </th>
-                    <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-center py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Status
                     </th>
-                    <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-center py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Detail
                     </th>
                   </tr>
@@ -528,18 +528,18 @@ export function NacalculatieLayout() {
                     return (
                       <tr
                         key={regel.projectId}
-                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                        className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
                       >
-                        <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
+                        <td className="py-3 px-4 font-medium text-foreground dark:text-white">
                           {regel.projectNaam}
                         </td>
-                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
+                        <td className="py-3 px-4 text-foreground/70 dark:text-muted-foreground/50">
                           {regel.klantNaam}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono text-gray-900 dark:text-white">
+                        <td className="py-3 px-4 text-right font-mono text-foreground dark:text-white">
                           {formatCurrency(regel.offerteTotaal)}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono text-gray-900 dark:text-white">
+                        <td className="py-3 px-4 text-right font-mono text-foreground dark:text-white">
                           {formatCurrency(regel.werkelijkeKosten)}
                         </td>
                         <td className={cn(
@@ -607,25 +607,25 @@ export function NacalculatieLayout() {
               return (
                 <div
                   key={regel.projectId}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 transition-colors cursor-pointer"
                   onClick={() => setDetailProjectId(regel.projectId)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium text-gray-900 dark:text-white truncate">
+                        <span className="font-medium text-foreground dark:text-white truncate">
                           {regel.projectNaam}
                         </span>
-                        <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">
+                        <span className="text-xs text-muted-foreground/60 dark:text-muted-foreground hidden sm:inline">
                           {regel.klantNaam}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 shrink-0 ml-2">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 hidden md:inline">
+                        <span className="text-xs text-muted-foreground dark:text-muted-foreground/60 hidden md:inline">
                           {formatCurrency(regel.offerteTotaal)}
                         </span>
-                        <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400 hidden md:inline">
+                        <ChevronRight className="w-4 h-4 text-muted-foreground/50 dark:text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground dark:text-muted-foreground/60 hidden md:inline">
                           {formatCurrency(regel.werkelijkeKosten)}
                         </span>
                         <span className={cn('text-sm font-semibold w-20 text-right', status.tekstKleur)}>
@@ -636,7 +636,7 @@ export function NacalculatieLayout() {
                         </span>
                       </div>
                     </div>
-                    <div className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className="relative h-2 bg-muted dark:bg-foreground/80 rounded-full overflow-hidden">
                       <div
                         className={cn(
                           'absolute top-0 left-0 h-full rounded-full transition-all duration-500',
@@ -670,7 +670,7 @@ export function NacalculatieLayout() {
                     {getStatusIndicator(detailData.margePercentage).label}
                   </Badge>
                 </DialogTitle>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
                   {detailData.klantNaam}
                 </p>
               </DialogHeader>
@@ -681,12 +681,12 @@ export function NacalculatieLayout() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 {/* Left: Offerte regels */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground/70 dark:text-muted-foreground/50 mb-3 flex items-center gap-2">
                     <Euro className="w-4 h-4" />
                     Offerte regels (gecalculeerd)
                   </h3>
                   {detailData.offerteItems.length === 0 ? (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 italic py-4">
+                    <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground italic py-4">
                       Geen offerte-items beschikbaar
                     </p>
                   ) : (
@@ -694,27 +694,27 @@ export function NacalculatieLayout() {
                       {detailData.offerteItems.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-sm"
+                          className="flex items-center justify-between p-2 bg-background dark:bg-foreground/80/50 rounded-lg text-sm"
                         >
                           <div className="min-w-0 flex-1">
-                            <p className="font-medium text-gray-800 dark:text-gray-200 truncate">
+                            <p className="font-medium text-foreground/80 dark:text-muted-foreground/30 truncate">
                               {item.beschrijving}
                             </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                            <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground">
                               {item.aantal} x {formatCurrency(item.eenheidsprijs)}
                             </p>
                           </div>
-                          <span className="font-mono font-semibold text-gray-900 dark:text-white ml-2 shrink-0">
+                          <span className="font-mono font-semibold text-foreground dark:text-white ml-2 shrink-0">
                             {formatCurrency(item.totaal)}
                           </span>
                         </div>
                       ))}
                       <Separator />
                       <div className="flex items-center justify-between p-2 font-semibold">
-                        <span className="text-gray-700 dark:text-gray-300">
+                        <span className="text-foreground/70 dark:text-muted-foreground/50">
                           Totaal offerte
                         </span>
-                        <span className="font-mono text-gray-900 dark:text-white">
+                        <span className="font-mono text-foreground dark:text-white">
                           {formatCurrency(detailData.offerteTotaal)}
                         </span>
                       </div>
@@ -724,19 +724,19 @@ export function NacalculatieLayout() {
 
                 {/* Right: Werkelijke kosten */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground/70 dark:text-muted-foreground/50 mb-3 flex items-center gap-2">
                     <Package className="w-4 h-4" />
                     Werkelijke kosten
                   </h3>
 
                   {/* Tijdregistratie uren x tarief */}
                   <div className="mb-4">
-                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <h4 className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/60 uppercase tracking-wider mb-2 flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
                       Tijdregistratie
                     </h4>
                     {detailData.tijdregistraties.length === 0 ? (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 italic py-2">
+                      <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground italic py-2">
                         Geen uren geregistreerd
                       </p>
                     ) : (
@@ -750,24 +750,24 @@ export function NacalculatieLayout() {
                               className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm"
                             >
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium text-gray-800 dark:text-gray-200 truncate">
+                                <p className="font-medium text-foreground/80 dark:text-muted-foreground/30 truncate">
                                   {t.omschrijving}
                                 </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500">
+                                <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground">
                                   {uren.toFixed(1)} uur x {formatCurrency(t.uurtarief)}/u
                                 </p>
                               </div>
-                              <span className="font-mono font-semibold text-gray-900 dark:text-white ml-2 shrink-0">
+                              <span className="font-mono font-semibold text-foreground dark:text-white ml-2 shrink-0">
                                 {formatCurrency(kosten)}
                               </span>
                             </div>
                           )
                         })}
                         <div className="flex items-center justify-between p-2 text-sm">
-                          <span className="text-gray-500 dark:text-gray-400 font-medium">
+                          <span className="text-muted-foreground dark:text-muted-foreground/60 font-medium">
                             Subtotaal uren
                           </span>
-                          <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">
+                          <span className="font-mono font-semibold text-foreground/70 dark:text-muted-foreground/50">
                             {formatCurrency(detailData.tijdKosten)}
                           </span>
                         </div>
@@ -777,15 +777,15 @@ export function NacalculatieLayout() {
 
                   {/* Materiaalkosten (from besteed) */}
                   <div className="mb-4">
-                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <h4 className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/60 uppercase tracking-wider mb-2 flex items-center gap-1">
                       <Package className="w-3.5 h-3.5" />
                       Materiaalkosten (besteed)
                     </h4>
                     <div className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm">
-                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                      <span className="font-medium text-foreground/80 dark:text-muted-foreground/30">
                         Materialen en externe kosten
                       </span>
-                      <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                      <span className="font-mono font-semibold text-foreground dark:text-white">
                         {formatCurrency(detailData.materiaalKosten)}
                       </span>
                     </div>
@@ -794,15 +794,15 @@ export function NacalculatieLayout() {
                   {/* Uitgaven */}
                   {detailData.uitgavenKosten > 0 && (
                     <div>
-                      <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <h4 className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/60 uppercase tracking-wider mb-2 flex items-center gap-1">
                         <Euro className="w-3.5 h-3.5" />
                         Uitgaven (leveranciers)
                       </h4>
                       <div className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm">
-                        <span className="font-medium text-gray-800 dark:text-gray-200">
+                        <span className="font-medium text-foreground/80 dark:text-muted-foreground/30">
                           Leveranciers & overige uitgaven
                         </span>
-                        <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                        <span className="font-mono font-semibold text-foreground dark:text-white">
                           {formatCurrency(detailData.uitgavenKosten)}
                         </span>
                       </div>
@@ -813,10 +813,10 @@ export function NacalculatieLayout() {
 
                   {/* Totaal werkelijk */}
                   <div className="flex items-center justify-between p-2 font-semibold mt-2">
-                    <span className="text-gray-700 dark:text-gray-300">
+                    <span className="text-foreground/70 dark:text-muted-foreground/50">
                       Totaal werkelijk
                     </span>
-                    <span className="font-mono text-gray-900 dark:text-white">
+                    <span className="font-mono text-foreground dark:text-white">
                       {formatCurrency(detailData.werkelijkeKosten)}
                     </span>
                   </div>
@@ -826,24 +826,24 @@ export function NacalculatieLayout() {
               <Separator className="my-4" />
 
               {/* Totaal vergelijking with profit/loss */}
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+              <div className="bg-background dark:bg-foreground/80/50 rounded-xl p-5">
+                <h3 className="text-sm font-semibold text-foreground/70 dark:text-muted-foreground/50 mb-4">
                   Totaal vergelijking
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="text-center p-3 bg-white dark:bg-gray-900 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <div className="text-center p-3 bg-white dark:bg-foreground rounded-lg">
+                    <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-1">
                       Offerte bedrag
                     </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    <p className="text-lg font-bold text-foreground dark:text-white">
                       {formatCurrency(detailData.offerteTotaal)}
                     </p>
                   </div>
-                  <div className="text-center p-3 bg-white dark:bg-gray-900 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <div className="text-center p-3 bg-white dark:bg-foreground rounded-lg">
+                    <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-1">
                       Werkelijke kosten
                     </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    <p className="text-lg font-bold text-foreground dark:text-white">
                       {formatCurrency(detailData.werkelijkeKosten)}
                     </p>
                   </div>
@@ -853,7 +853,7 @@ export function NacalculatieLayout() {
                       ? 'bg-green-50 dark:bg-green-900/30'
                       : 'bg-red-50 dark:bg-red-900/30',
                   )}>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-1">
                       {detailData.verschil >= 0 ? 'Winst' : 'Verlies'}
                     </p>
                     <p className={cn(
@@ -878,7 +878,7 @@ export function NacalculatieLayout() {
 
                 {/* Cost breakdown bar */}
                 <div className="mt-4">
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground dark:text-muted-foreground/60 mb-1">
                     <span>Kostenverdeling</span>
                     <span>
                       {detailData.werkelijkeKosten > 0
@@ -887,7 +887,7 @@ export function NacalculatieLayout() {
                       }
                     </span>
                   </div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex">
+                  <div className="h-3 bg-secondary dark:bg-foreground/70 rounded-full overflow-hidden flex">
                     <div
                       className="bg-primary h-full transition-all duration-300"
                       style={{
@@ -916,20 +916,20 @@ export function NacalculatieLayout() {
                   <div className="flex items-center gap-4 mt-2 text-xs flex-wrap">
                     <span className="flex items-center gap-1">
                       <span className="w-2.5 h-2.5 bg-primary rounded-full inline-block" />
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-muted-foreground dark:text-muted-foreground/60">
                         Arbeid ({formatCurrency(detailData.tijdKosten)})
                       </span>
                     </span>
                     <span className="flex items-center gap-1">
                       <span className="w-2.5 h-2.5 bg-orange-500 rounded-full inline-block" />
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-muted-foreground dark:text-muted-foreground/60">
                         Materiaal ({formatCurrency(detailData.materiaalKosten)})
                       </span>
                     </span>
                     {detailData.uitgavenKosten > 0 && (
                       <span className="flex items-center gap-1">
                         <span className="w-2.5 h-2.5 bg-red-500 rounded-full inline-block" />
-                        <span className="text-gray-500 dark:text-gray-400">
+                        <span className="text-muted-foreground dark:text-muted-foreground/60">
                           Uitgaven ({formatCurrency(detailData.uitgavenKosten)})
                         </span>
                       </span>

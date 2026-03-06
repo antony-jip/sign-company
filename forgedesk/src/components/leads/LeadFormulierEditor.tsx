@@ -192,7 +192,7 @@ export function LeadFormulierEditor() {
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Algemeen</CardTitle>
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Algemeen</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -210,14 +210,14 @@ export function LeadFormulierEditor() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Velden</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Velden</CardTitle>
                 <Button variant="outline" size="sm" onClick={handleAddVeld} className="gap-1"><Plus className="h-3.5 w-3.5" /> Veld</Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {velden.map((veld, index) => (
-                <div key={veld.id} className="flex items-start gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                  <GripVertical className="h-4 w-4 text-gray-400 mt-2 flex-shrink-0" />
+                <div key={veld.id} className="flex items-start gap-2 p-3 bg-background dark:bg-foreground/80/50 rounded-lg">
+                  <GripVertical className="h-4 w-4 text-muted-foreground/60 mt-2 flex-shrink-0" />
                   <div className="flex-1 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       <Input value={veld.label} onChange={(e) => handleUpdateVeld(veld.id, { label: e.target.value })} placeholder="Label" className="text-sm" />
@@ -252,7 +252,7 @@ export function LeadFormulierEditor() {
           {/* Settings */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Instellingen</CardTitle>
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Instellingen</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -281,12 +281,12 @@ export function LeadFormulierEditor() {
         <div>
           <Card className="sticky top-4">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Preview</CardTitle>
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Preview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-xl p-6 bg-white dark:bg-gray-900 space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{naam || 'Formulier titel'}</h3>
-                {beschrijving && <p className="text-sm text-gray-500">{beschrijving}</p>}
+              <div className="border rounded-xl p-6 bg-white dark:bg-foreground space-y-4">
+                <h3 className="text-lg font-bold text-foreground dark:text-white">{naam || 'Formulier titel'}</h3>
+                {beschrijving && <p className="text-sm text-muted-foreground">{beschrijving}</p>}
                 <Separator />
                 {velden.map((veld) => (
                   <div key={veld.id}>

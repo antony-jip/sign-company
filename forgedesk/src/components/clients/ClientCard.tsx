@@ -68,10 +68,10 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
               <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-semibold text-base text-gray-900 dark:text-white truncate">
+              <h3 className="font-semibold text-base text-foreground dark:text-white truncate">
                 {klant.bedrijfsnaam}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 truncate">
                 {klant.contactpersoon}
               </p>
             </div>
@@ -96,7 +96,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
               return (
                 <span
                   key={label}
-                  className={`w-2.5 h-2.5 rounded-full ${dotColors[label] || 'bg-gray-400'}`}
+                  className={`w-2.5 h-2.5 rounded-full ${dotColors[label] || 'bg-muted-foreground/40'}`}
                   title={labelNames[label] || label}
                 />
               )
@@ -167,26 +167,26 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
       <CardContent className="space-y-3">
         {/* Contact details */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Mail className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+          <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground/60">
+            <Mail className="w-4 h-4 flex-shrink-0 text-muted-foreground/60 dark:text-muted-foreground" />
             <span className="truncate">{klant.email}</span>
           </div>
           {klant.telefoon && (
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <Phone className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground/60">
+              <Phone className="w-4 h-4 flex-shrink-0 text-muted-foreground/60 dark:text-muted-foreground" />
               <span>{klant.telefoon}</span>
             </div>
           )}
           {klant.stad && (
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <MapPin className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground/60">
+              <MapPin className="w-4 h-4 flex-shrink-0 text-muted-foreground/60 dark:text-muted-foreground" />
               <span>{klant.stad}</span>
             </div>
           )}
         </div>
 
         {/* Tags and project count */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between pt-2 border-t border-border dark:border-border">
           <div className="flex flex-wrap gap-1.5">
             {klant.tags.slice(0, 3).map((tag) => (
               <Badge
@@ -203,7 +203,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/60 flex-shrink-0 ml-2">
             <FolderKanban className="w-4 h-4" />
             <span className="font-medium">{projectCount}</span>
           </div>

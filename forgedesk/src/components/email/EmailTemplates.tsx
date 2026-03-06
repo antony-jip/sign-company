@@ -106,7 +106,7 @@ function getCategoryColor(category: string): string {
     Klantrelatie: 'bg-wm-pale/30 text-[#3D3522] dark:bg-accent/30 dark:text-wm-pale',
     Financieel: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
   }
-  return colors[category] || 'bg-gray-100 text-gray-800'
+  return colors[category] || 'bg-muted text-foreground/80'
 }
 
 export function EmailTemplates() {

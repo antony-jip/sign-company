@@ -204,7 +204,7 @@ export function GeneralLedgerSettings() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+          <div className="py-8 text-center text-muted-foreground dark:text-muted-foreground/60">
             Laden...
           </div>
         ) : (
@@ -212,11 +212,11 @@ export function GeneralLedgerSettings() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <tr className="border-b border-border dark:border-border">
                     <th className="text-left py-3 px-4">
                       <button
                         onClick={() => toggleSort('code')}
-                        className="flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                        className="flex items-center gap-1 font-medium text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/30 transition-colors"
                       >
                         Code
                         <ArrowUpDown className="w-3 h-3" />
@@ -225,19 +225,19 @@ export function GeneralLedgerSettings() {
                     <th className="text-left py-3 px-4">
                       <button
                         onClick={() => toggleSort('naam')}
-                        className="flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                        className="flex items-center gap-1 font-medium text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/30 transition-colors"
                       >
                         Naam
                         <ArrowUpDown className="w-3 h-3" />
                       </button>
                     </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Categorie
                     </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Saldo
                     </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
                       Acties
                     </th>
                   </tr>
@@ -245,7 +245,7 @@ export function GeneralLedgerSettings() {
                 <tbody>
                   {filteredAccounts.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan={5} className="py-8 text-center text-muted-foreground dark:text-muted-foreground/60">
                         Geen grootboekrekeningen gevonden
                       </td>
                     </tr>
@@ -253,12 +253,12 @@ export function GeneralLedgerSettings() {
                     filteredAccounts.map((account) => (
                       <tr
                         key={account.id}
-                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                        className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
                       >
-                        <td className="py-3 px-4 font-mono text-xs text-gray-600 dark:text-gray-400">
+                        <td className="py-3 px-4 font-mono text-xs text-muted-foreground dark:text-muted-foreground/60">
                           {account.code}
                         </td>
-                        <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
+                        <td className="py-3 px-4 font-medium text-foreground dark:text-white">
                           {account.naam}
                         </td>
                         <td className="py-3 px-4">
@@ -266,7 +266,7 @@ export function GeneralLedgerSettings() {
                             {categorieLabels[account.categorie]}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">
+                        <td className="py-3 px-4 text-right font-semibold text-foreground dark:text-white">
                           {formatCurrency(account.saldo)}
                         </td>
                         <td className="py-3 px-4">
@@ -274,7 +274,7 @@ export function GeneralLedgerSettings() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-gray-400 hover:text-blue-600"
+                              className="h-8 w-8 text-muted-foreground/60 hover:text-blue-600"
                               onClick={() => openEdit(account)}
                             >
                               <Pencil className="w-4 h-4" />
@@ -282,7 +282,7 @@ export function GeneralLedgerSettings() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-gray-400 hover:text-red-600"
+                              className="h-8 w-8 text-muted-foreground/60 hover:text-red-600"
                               onClick={() => handleDelete(account.id)}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -297,20 +297,20 @@ export function GeneralLedgerSettings() {
             </div>
 
             {/* Category Totals */}
-            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            <div className="mt-6 pt-4 border-t border-border dark:border-border">
+              <h3 className="text-sm font-semibold text-foreground/70 dark:text-muted-foreground/50 mb-3">
                 Totalen per categorie
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {(Object.entries(categoryTotals) as [string, number][]).map(([cat, total]) => (
                   <div
                     key={cat}
-                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                    className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-foreground/80/50"
                   >
                     <Badge className={categorieColors[cat]}>
                       {categorieLabels[cat]}
                     </Badge>
-                    <span className="font-semibold text-sm text-gray-900 dark:text-white">
+                    <span className="font-semibold text-sm text-foreground dark:text-white">
                       {formatCurrency(total)}
                     </span>
                   </div>

@@ -633,7 +633,7 @@ export function ClientsLayout() {
                                 return (
                                   <span
                                     key={label}
-                                    className={`w-1.5 h-1.5 rounded-full ${dotColors[label] || 'bg-gray-400'}`}
+                                    className={`w-1.5 h-1.5 rounded-full ${dotColors[label] || 'bg-muted-foreground/40'}`}
                                   />
                                 )
                               })}

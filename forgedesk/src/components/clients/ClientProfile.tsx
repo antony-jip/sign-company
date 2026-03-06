@@ -93,7 +93,7 @@ function getStatusBarColor(status: string): string {
     case 'in-review': return 'bg-amber-500'
     case 'afgerond': return 'bg-emerald-500'
     case 'on-hold': return 'bg-red-500'
-    default: return 'bg-gray-400'
+    default: return 'bg-muted-foreground/40'
   }
 }
 
@@ -104,7 +104,7 @@ function getStatusBorderColor(status: string): string {
     case 'in-review': return 'border-l-amber-500'
     case 'afgerond': return 'border-l-emerald-500'
     case 'on-hold': return 'border-l-red-500'
-    default: return 'border-l-gray-400'
+    default: return 'border-l-muted-foreground/40'
   }
 }
 
@@ -477,7 +477,7 @@ export function ClientProfile() {
   if (!klant) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <p className="text-lg text-gray-500 dark:text-gray-400">
+        <p className="text-lg text-muted-foreground dark:text-muted-foreground/60">
           Klant niet gevonden
         </p>
         <Button variant="outline" onClick={() => navigate('/klanten')}>
@@ -527,10 +527,10 @@ export function ClientProfile() {
             </Badge>
             <button
               onClick={() => setEditDialogOpen(true)}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
               title="Bewerken"
             >
-              <Pencil className="w-4 h-4 text-gray-400" />
+              <Pencil className="w-4 h-4 text-muted-foreground/60" />
             </button>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -632,7 +632,7 @@ export function ClientProfile() {
                 wanbetaler: 'Wanbetaler',
               }
               return (
-                <Badge key={label} className={colors[label] || 'bg-gray-100 text-gray-700'}>
+                <Badge key={label} className={colors[label] || 'bg-muted text-foreground/70'}>
                   {labels[label] || label}
                 </Badge>
               )
@@ -652,7 +652,7 @@ export function ClientProfile() {
       {/* ── Info Cards Row ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Contactpersonen */}
-        <Card className="border-gray-200 dark:border-gray-800">
+        <Card className="border-border dark:border-border">
           <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500" />
@@ -660,10 +660,10 @@ export function ClientProfile() {
             </CardTitle>
             <button
               onClick={openAddContact}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
               title="Contactpersoon toevoegen"
             >
-              <Plus className="w-4 h-4 text-gray-400 hover:text-blue-500" />
+              <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-blue-500" />
             </button>
           </CardHeader>
           <CardContent className="pt-0">
@@ -687,7 +687,7 @@ export function ClientProfile() {
                         {cp.email || cp.telefoon || cp.functie || '\u2014'}
                       </p>
                     </div>
-                    <Pencil className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    <Pencil className="w-3 h-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </div>
                 ))}
                 {/* Imported contactpersonen (show up to 2 total) */}
@@ -725,7 +725,7 @@ export function ClientProfile() {
         </Card>
 
         {/* Contact info + Vestigingen */}
-        <Card className="border-gray-200 dark:border-gray-800">
+        <Card className="border-border dark:border-border">
           <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <MapPin className="w-4 h-4 text-green-500" />
@@ -733,10 +733,10 @@ export function ClientProfile() {
             </CardTitle>
             <button
               onClick={openAddVestiging}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
               title="Vestiging toevoegen"
             >
-              <Plus className="w-4 h-4 text-gray-400 hover:text-green-500" />
+              <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-green-500" />
             </button>
           </CardHeader>
           <CardContent className="pt-0 space-y-2">
@@ -761,14 +761,14 @@ export function ClientProfile() {
                     {[v.adres, v.postcode, v.stad].filter(Boolean).join(', ')}
                   </p>
                 </div>
-                <Pencil className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                <Pencil className="w-3 h-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
               </div>
             ))}
           </CardContent>
         </Card>
 
         {/* Financieel */}
-        <Card className="border-gray-200 dark:border-gray-800">
+        <Card className="border-border dark:border-border">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-primary" />
@@ -801,7 +801,7 @@ export function ClientProfile() {
         </Card>
 
         {/* Opmerking / Quick note */}
-        <Card className="border-gray-200 dark:border-gray-800">
+        <Card className="border-border dark:border-border">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-amber-500" />
@@ -863,14 +863,14 @@ export function ClientProfile() {
             <Card>
               {clientProjecten.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <FolderKanban className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <FolderKanban className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground">Geen projecten voor deze klant</p>
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                      <tr className="border-b border-border dark:border-border">
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Omschrijving</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">PM</th>
@@ -879,7 +879,7 @@ export function ClientProfile() {
                         <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Downloads</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tbody className="divide-y divide-border dark:divide-border">
                       {clientProjecten
                         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                         .map((project) => {
@@ -890,7 +890,7 @@ export function ClientProfile() {
                             <tr
                               key={project.id}
                               className={cn(
-                                'hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors border-l-4',
+                                'hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors border-l-4',
                                 getStatusBorderColor(project.status)
                               )}
                               onClick={() => navigate(`/projecten/${project.id}`)}
@@ -975,7 +975,7 @@ export function ClientProfile() {
                                     ]
                                     exportCSV(project.naam.replace(/\s+/g, '-').toLowerCase(), headers, rows)
                                   }}
-                                  className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors inline-flex"
+                                  className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors inline-flex"
                                   title="Download CSV"
                                 >
                                   <FileText className="w-4 h-4 text-muted-foreground hover:text-blue-600" />
@@ -996,14 +996,14 @@ export function ClientProfile() {
             <Card>
               {clientOffertes.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <FileText className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground">Geen offertes voor deze klant</p>
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                      <tr className="border-b border-border dark:border-border">
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
@@ -1011,11 +1011,11 @@ export function ClientProfile() {
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Geldig tot</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tbody className="divide-y divide-border dark:divide-border">
                       {clientOffertes.map((offerte) => (
                         <tr
                           key={offerte.id}
-                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                          className="hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
                           onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
                         >
                           <td className="py-3 px-4">
@@ -1055,14 +1055,14 @@ export function ClientProfile() {
             <Card>
               {clientDeals.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <CreditCard className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground">Geen deals voor deze klant</p>
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                      <tr className="border-b border-border dark:border-border">
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fase</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
@@ -1070,11 +1070,11 @@ export function ClientProfile() {
                         <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Kans</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tbody className="divide-y divide-border dark:divide-border">
                       {clientDeals.map((deal) => (
                         <tr
                           key={deal.id}
-                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                          className="hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
                           onClick={() => navigate(`/deals/${deal.id}`)}
                         >
                           <td className="py-3 px-4 text-sm font-medium">{deal.titel}</td>
@@ -1105,14 +1105,14 @@ export function ClientProfile() {
             <Card>
               {clientFacturen.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <Receipt className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <Receipt className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground">Geen facturen voor deze klant</p>
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                      <tr className="border-b border-border dark:border-border">
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
@@ -1120,9 +1120,9 @@ export function ClientProfile() {
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Datum</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tbody className="divide-y divide-border dark:divide-border">
                       {clientFacturen.map((factuur) => (
-                        <tr key={factuur.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <tr key={factuur.id} className="hover:bg-background dark:hover:bg-foreground/80/50 transition-colors">
                           <td className="py-3 px-4">
                             <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
                           </td>
@@ -1132,7 +1132,7 @@ export function ClientProfile() {
                               factuur.status === 'betaald' ? 'bg-emerald-100 text-emerald-700' :
                               factuur.status === 'vervallen' ? 'bg-red-100 text-red-700' :
                               factuur.status === 'verzonden' ? 'bg-blue-100 text-blue-700' :
-                              'bg-gray-100 text-gray-700'
+                              'bg-muted text-foreground/70'
                             )}>
                               {factuur.status}
                             </Badge>
@@ -1197,7 +1197,7 @@ export function ClientProfile() {
               {clientEmails.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <Mail className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <Mail className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
                     <p className="text-muted-foreground">Geen emailcommunicatie gevonden</p>
                   </CardContent>
                 </Card>
@@ -1212,8 +1212,8 @@ export function ClientProfile() {
                   >
                     <CardContent className="py-4">
                       <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <div className="w-9 h-9 rounded-full bg-muted dark:bg-foreground/80 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Mail className="w-4 h-4 text-muted-foreground dark:text-muted-foreground/60" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
@@ -1230,7 +1230,7 @@ export function ClientProfile() {
                                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                               )}
                               {email.bijlagen > 0 && (
-                                <div className="flex items-center gap-1 text-xs text-gray-400">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
                                   <Paperclip className="w-3.5 h-3.5" />
                                   {email.bijlagen}
                                 </div>
@@ -1258,7 +1258,7 @@ export function ClientProfile() {
               {clientDocumenten.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <FileIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <FileIcon className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
                     <p className="text-muted-foreground">Geen documenten gevonden</p>
                   </CardContent>
                 </Card>
@@ -1278,7 +1278,7 @@ export function ClientProfile() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border dark:border-border">
                           <Badge className={cn('text-xs capitalize', getStatusColor(doc.status))}>
                             {doc.status}
                           </Badge>
@@ -1333,7 +1333,7 @@ export function ClientProfile() {
               <CardContent>
                 {(contactpersonen.length + importedContacts.length) === 0 ? (
                   <div className="text-center py-8">
-                    <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <Users className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
                     <p className="text-muted-foreground text-sm">Nog geen contactpersonen</p>
                     <div className="flex items-center justify-center gap-2 mt-3">
                       <Button size="sm" variant="outline" onClick={openAddContact}>
@@ -1343,7 +1343,7 @@ export function ClientProfile() {
                     </div>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                  <div className="divide-y divide-border dark:divide-border">
                     {/* Regular contactpersonen */}
                     {contactpersonen.map((cp) => (
                       <div key={cp.id} className="py-3 flex items-center justify-between gap-4">
@@ -1382,24 +1382,24 @@ export function ClientProfile() {
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             onClick={() => openEditContact(cp)}
-                            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
                             title="Bewerken"
                           >
-                            <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                            <Pencil className="w-3.5 h-3.5 text-muted-foreground/60" />
                           </button>
                           <button
                             onClick={() => openMoveDialog(cp)}
-                            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
                             title="Verplaats naar ander bedrijf"
                           >
-                            <ArrowRightLeft className="w-3.5 h-3.5 text-gray-400" />
+                            <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
                           </button>
                           <button
                             onClick={() => handleDeleteContact(cp.id)}
                             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             title="Verwijderen"
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
                           </button>
                         </div>
                       </div>
@@ -1446,7 +1446,7 @@ export function ClientProfile() {
                             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             title="Verwijderen"
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
                           </button>
                         </div>
                       </div>
@@ -1491,7 +1491,7 @@ export function ClientProfile() {
         {/* Right Sidebar */}
         <div className="w-full xl:w-80 flex-shrink-0 space-y-4">
           {/* Notities */}
-          <Card className="border-gray-200 dark:border-gray-800">
+          <Card className="border-border dark:border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <StickyNote className="w-4 h-4 text-amber-500" />
@@ -1513,7 +1513,7 @@ export function ClientProfile() {
           </Card>
 
           {/* Tags */}
-          <Card className="border-gray-200 dark:border-gray-800">
+          <Card className="border-border dark:border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Tag className="w-4 h-4 text-green-500" />
@@ -1536,7 +1536,7 @@ export function ClientProfile() {
           </Card>
 
           {/* Export */}
-          <Card className="border-gray-200 dark:border-gray-800">
+          <Card className="border-border dark:border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Download className="w-4 h-4 text-blue-500" />
@@ -1783,7 +1783,7 @@ export function ClientProfile() {
                       'w-full text-left px-3 py-2 rounded-md text-sm transition-colors',
                       selectedMoveKlant?.id === k.id
                         ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                        : 'hover:bg-muted dark:hover:bg-foreground/80'
                     )}
                   >
                     <p className="font-medium">{k.bedrijfsnaam}</p>

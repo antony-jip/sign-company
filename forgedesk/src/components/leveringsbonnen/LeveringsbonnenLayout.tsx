@@ -230,8 +230,8 @@ export function LeveringsbonnenLayout() {
                       </td>
                       <td className="px-4 py-3 text-sm text-foreground/80">{getKlantNaam(lb.klant_id)}</td>
                       <td className="px-4 py-3 text-sm text-foreground/80">{getProjectNaam(lb.project_id)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-muted-foreground">{lb.datum ? formatDate(lb.datum) : '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-muted-foreground max-w-[200px] truncate">{lb.locatie_adres || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground">{lb.datum ? formatDate(lb.datum) : '-'}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground max-w-[200px] truncate">{lb.locatie_adres || '-'}</td>
                       <td className="px-4 py-3">
                         <Badge variant="secondary" className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
                           <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}

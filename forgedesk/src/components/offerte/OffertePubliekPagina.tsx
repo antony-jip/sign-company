@@ -125,7 +125,7 @@ export function OffertePubliekPagina() {
         <Toaster position="top-center" richColors />
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-gray-500">Offerte laden...</p>
+          <p className="text-sm text-muted-foreground">Offerte laden...</p>
         </div>
       </div>
     )
@@ -139,8 +139,8 @@ export function OffertePubliekPagina() {
         <Card className="max-w-md w-full">
           <CardContent className="flex flex-col items-center gap-4 py-12">
             <AlertTriangle className="h-12 w-12 text-amber-500" />
-            <h2 className="text-xl font-semibold text-gray-800">Offerte niet gevonden</h2>
-            <p className="text-sm text-gray-500 text-center">
+            <h2 className="text-xl font-semibold text-foreground/80">Offerte niet gevonden</h2>
+            <p className="text-sm text-muted-foreground text-center">
               Deze link is ongeldig of verlopen. Neem contact op met het bedrijf.
             </p>
           </CardContent>
@@ -170,10 +170,10 @@ export function OffertePubliekPagina() {
             </div>
           )}
           {companyProfile?.bedrijfsnaam && (
-            <p className="text-sm font-medium text-gray-600">{companyProfile.bedrijfsnaam}</p>
+            <p className="text-sm font-medium text-muted-foreground">{companyProfile.bedrijfsnaam}</p>
           )}
-          <h1 className="text-2xl font-bold text-gray-900">Offerte bekijken</h1>
-          <p className="text-sm text-gray-500">{offerte.nummer}</p>
+          <h1 className="text-2xl font-bold text-foreground">Offerte bekijken</h1>
+          <p className="text-sm text-muted-foreground">{offerte.nummer}</p>
         </div>
 
         {/* Status */}
@@ -209,30 +209,30 @@ export function OffertePubliekPagina() {
         {/* Offerte details */}
         <Card>
           <CardContent className="p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">{offerte.titel}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{offerte.titel}</h2>
 
             <Separator />
 
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-500">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <Building2 className="h-4 w-4" />
                 <span>Klant</span>
               </div>
-              <div className="font-medium text-gray-900">{offerte.klant_naam || '-'}</div>
+              <div className="font-medium text-foreground">{offerte.klant_naam || '-'}</div>
 
-              <div className="flex items-center gap-2 text-gray-500">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 <span>Datum</span>
               </div>
-              <div className="font-medium text-gray-900">{formatDate(offerte.created_at)}</div>
+              <div className="font-medium text-foreground">{formatDate(offerte.created_at)}</div>
 
               {offerte.geldig_tot && (
                 <>
-                  <div className="flex items-center gap-2 text-gray-500">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>Geldig tot</span>
                   </div>
-                  <div className="font-medium text-gray-900">{formatDate(offerte.geldig_tot)}</div>
+                  <div className="font-medium text-foreground">{formatDate(offerte.geldig_tot)}</div>
                 </>
               )}
             </div>
@@ -243,11 +243,11 @@ export function OffertePubliekPagina() {
         {items.length > 0 && (
           <Card>
             <CardContent className="p-6">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Regels</h3>
+              <h3 className="text-sm font-semibold text-foreground/70 uppercase tracking-wide mb-4">Regels</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b text-left text-xs text-gray-500 uppercase tracking-wide">
+                    <tr className="border-b text-left text-xs text-muted-foreground uppercase tracking-wide">
                       <th className="pb-2 pr-4">Omschrijving</th>
                       <th className="pb-2 pr-4 text-right">Aantal</th>
                       <th className="pb-2 pr-4 text-right">Prijs</th>
@@ -255,7 +255,7 @@ export function OffertePubliekPagina() {
                       <th className="pb-2 text-right">Totaal</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-border">
                     {items.map((item) => (
                       <tr key={item.id}>
                         <td className="py-2 pr-4">{item.beschrijving}</td>
@@ -272,17 +272,17 @@ export function OffertePubliekPagina() {
               <Separator className="my-4" />
 
               <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotaal</span>
                   <span>{formatCurrency(offerte.subtotaal)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>BTW</span>
                   <span>{formatCurrency(offerte.btw_bedrag)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="text-base font-bold text-gray-900">Totaal</span>
+                  <span className="text-base font-bold text-foreground">Totaal</span>
                   <span className="text-2xl font-bold text-blue-600">
                     {formatCurrency(offerte.totaal)}
                   </span>
@@ -298,14 +298,14 @@ export function OffertePubliekPagina() {
             <CardContent className="p-6 space-y-4">
               {offerte.notities && (
                 <div>
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Opmerkingen</h3>
-                  <p className="text-sm text-gray-700 whitespace-pre-line">{offerte.notities}</p>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Opmerkingen</h3>
+                  <p className="text-sm text-foreground/70 whitespace-pre-line">{offerte.notities}</p>
                 </div>
               )}
               {offerte.voorwaarden && (
                 <div>
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Voorwaarden</h3>
-                  <p className="text-sm text-gray-600 whitespace-pre-line">{offerte.voorwaarden}</p>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Voorwaarden</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">{offerte.voorwaarden}</p>
                 </div>
               )}
             </CardContent>
@@ -316,8 +316,8 @@ export function OffertePubliekPagina() {
         {!isAfgerond && !isVerlopen && !submitted && (
           <Card>
             <CardContent className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Uw reactie</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-lg font-semibold text-foreground">Uw reactie</h3>
+              <p className="text-sm text-muted-foreground">
                 Wat vindt u van deze offerte? U kunt direct goedkeuren, afwijzen, of een vraag stellen.
               </p>
 
@@ -327,7 +327,7 @@ export function OffertePubliekPagina() {
                   <textarea
                     value={vraagTekst}
                     onChange={(e) => setVraagTekst(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm min-h-[100px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[100px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Typ hier uw vraag of opmerking..."
                   />
                   <div className="flex gap-2">
@@ -383,8 +383,8 @@ export function OffertePubliekPagina() {
           <Card>
             <CardContent className="flex flex-col items-center gap-4 py-8">
               <CheckCircle2 className="h-12 w-12 text-emerald-500" />
-              <h3 className="text-lg font-semibold text-gray-900">Bedankt voor uw reactie!</h3>
-              <p className="text-sm text-gray-500 text-center">
+              <h3 className="text-lg font-semibold text-foreground">Bedankt voor uw reactie!</h3>
+              <p className="text-sm text-muted-foreground text-center">
                 {reactie === 'goedgekeurd'
                   ? 'De offerte is goedgekeurd. Het bedrijf neemt contact met u op over de volgende stappen.'
                   : reactie === 'afgewezen'
@@ -396,7 +396,7 @@ export function OffertePubliekPagina() {
         )}
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-400 pb-8">
+        <p className="text-center text-xs text-muted-foreground/60 pb-8">
           Offerte {offerte.nummer}{companyProfile?.bedrijfsnaam ? ` \u00b7 ${companyProfile.bedrijfsnaam}` : ''}
         </p>
       </div>

@@ -37,7 +37,7 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: 
 }
 
 const PRIORITEIT_CONFIG: Record<Prioriteit, { label: string; color: string }> = {
-  laag: { label: 'Laag', color: 'bg-gray-100 text-gray-600' },
+  laag: { label: 'Laag', color: 'bg-muted text-muted-foreground' },
   normaal: { label: 'Normaal', color: 'bg-blue-100 text-blue-600' },
   hoog: { label: 'Hoog', color: 'bg-orange-100 text-orange-600' },
   urgent: { label: 'Urgent', color: 'bg-red-100 text-red-600' },
@@ -289,7 +289,7 @@ export function GedeeldeInboxLayout() {
                     'w-1.5 h-10 rounded-full flex-shrink-0',
                     prioriteit === 'urgent' ? 'bg-red-500' :
                     prioriteit === 'hoog' ? 'bg-orange-500' :
-                    prioriteit === 'normaal' ? 'bg-blue-400' : 'bg-gray-300'
+                    prioriteit === 'normaal' ? 'bg-blue-400' : 'bg-border'
                   )} />
 
                   {/* Toegewezen avatar */}

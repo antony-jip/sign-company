@@ -110,7 +110,7 @@ export function EmailListItem({
           {email.starred ? (
             <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
           ) : (
-            <Star className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-60 transition-opacity dark:text-gray-600" />
+            <Star className="w-3.5 h-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-60 transition-opacity dark:text-muted-foreground" />
           )}
         </button>
 
@@ -166,7 +166,7 @@ export function EmailListItem({
                   label === 'klant' && 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300',
                   label === 'project' && 'bg-primary/10 text-primary',
                   label === 'leverancier' && 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300',
-                  !['offerte', 'klant', 'project', 'leverancier'].includes(label) && 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                  !['offerte', 'klant', 'project', 'leverancier'].includes(label) && 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
                 )}
               >
                 {label}

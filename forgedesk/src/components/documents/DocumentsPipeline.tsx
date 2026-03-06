@@ -12,10 +12,10 @@ interface DocumentsPipelineProps {
 }
 
 const pipelineColumns = [
-  { id: 'concept', label: 'Concept', color: 'border-t-gray-400' },
+  { id: 'concept', label: 'Concept', color: 'border-t-muted-foreground/40' },
   { id: 'review', label: 'Review', color: 'border-t-yellow-400' },
   { id: 'definitief', label: 'Definitief', color: 'border-t-green-400' },
-  { id: 'gearchiveerd', label: 'Gearchiveerd', color: 'border-t-gray-300' },
+  { id: 'gearchiveerd', label: 'Gearchiveerd', color: 'border-t-border' },
 ] as const
 
 function getFileIcon(type: string) {

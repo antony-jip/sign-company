@@ -397,7 +397,7 @@ export function LeveringsbonDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Klant & Project</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Klant & Project</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -435,7 +435,7 @@ export function LeveringsbonDetail() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Locatie & Status</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Locatie & Status</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -480,7 +480,7 @@ export function LeveringsbonDetail() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">Geleverde items</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Geleverde items</CardTitle>
             <Button variant="outline" size="sm" onClick={handleAddRegel} className="gap-1">
               <Plus className="h-3.5 w-3.5" />
               Item toevoegen
@@ -496,7 +496,7 @@ export function LeveringsbonDetail() {
           ) : (
             <div className="space-y-3">
               {/* Header - NO PRICE COLUMNS */}
-              <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
+              <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
                 <div className="col-span-5">Omschrijving</div>
                 <div className="col-span-2 text-right">Aantal</div>
                 <div className="col-span-2">Eenheid</div>
