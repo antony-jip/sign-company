@@ -129,25 +129,33 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased leading-relaxed;
-    font-family: var(--font-family), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
-  /* Heading typography — tight, confident */
+  /* Heading typography */
   h1, h2, h3, h4 {
-    font-family: var(--font-family), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
-  h1 { @apply text-2xl font-semibold tracking-tight; }
-  h2 { @apply text-xl font-semibold tracking-tight; }
-  h3 { @apply text-lg font-medium; }
+  h1 { @apply text-[28px] font-extrabold tracking-[-0.04em] leading-tight; }
+  h2 { @apply text-xl font-bold tracking-[-0.02em]; }
+  h3 { @apply text-lg font-semibold; }
   h4 { @apply text-base font-medium; }
 
   /* Tabular numbers in tables — digits align neatly */
   table td, table th {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: #F0D9D0;
+    color: #1A1A1A;
   }
 }
 
