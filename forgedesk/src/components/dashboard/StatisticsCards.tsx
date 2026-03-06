@@ -21,8 +21,7 @@ interface StatCard {
   subtitle: string
   change?: string
   icon: LucideIcon
-  gradient: string
-  shadowColor: string
+  bgColor: string
 }
 
 // Animated counter hook
@@ -141,32 +140,28 @@ export function StatisticsCards() {
       subtitle: `${projecten.length} totaal`,
       change: projecten.length > 0 ? `${Math.round((actieveProjecten / projecten.length) * 100)}%` : undefined,
       icon: FolderKanban,
-      gradient: 'from-primary to-wm-light',
-      shadowColor: 'shadow-primary/20',
+      bgColor: 'bg-blush dark:bg-blush/15',
     },
     {
       title: 'Totaal Klanten',
       value: animKlanten.toString(),
       subtitle: `${klanten.filter((k) => k.status === 'actief').length} actief`,
       icon: Users,
-      gradient: 'from-accent to-primary',
-      shadowColor: 'shadow-accent/20',
+      bgColor: 'bg-sage dark:bg-sage/15',
     },
     {
       title: 'Open Offertes',
       value: formatCurrency(openstaandeOffertes),
       subtitle: `${offertes.filter((o) => ['verzonden', 'bekeken', 'concept'].includes(o.status)).length} offertes`,
       icon: FileText,
-      gradient: 'from-[#4A442D] to-[#6b6549]',
-      shadowColor: 'shadow-[#4A442D]/20',
+      bgColor: 'bg-mist dark:bg-mist/15',
     },
     {
       title: 'Goedgekeurd',
       value: formatCurrency(goedgekeurdeOffertes),
       subtitle: `${offertes.filter((o) => o.status === 'goedgekeurd').length} goedgekeurd`,
       icon: PiggyBank,
-      gradient: 'from-[#8b7355] to-[#b09670]',
-      shadowColor: 'shadow-[#8b7355]/20',
+      bgColor: 'bg-cream dark:bg-cream/15',
     },
     {
       title: 'Openstaand',
@@ -176,55 +171,50 @@ export function StatisticsCards() {
         ? `${facturen.filter((f) => f.status === 'vervallen').length} vervallen`
         : undefined,
       icon: Receipt,
-      gradient: 'from-red-500 to-orange-500',
-      shadowColor: 'shadow-red-500/20',
+      bgColor: 'bg-blush dark:bg-blush/15',
     },
     {
       title: 'Betaald (maand)',
       value: formatCurrency(betaaldDezeMaand),
       subtitle: `${facturen.filter((f) => f.status === 'betaald' && f.betaaldatum && (() => { const d = new Date(f.betaaldatum); const n = new Date(); return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear() })()).length} facturen`,
       icon: TrendingUp,
-      gradient: 'from-emerald-500 to-green-500',
-      shadowColor: 'shadow-emerald-500/20',
+      bgColor: 'bg-sage dark:bg-sage/15',
     },
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 wm-stagger">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
       {stats.map((stat) => {
         const Icon = stat.icon
 
         return (
-          <Card key={stat.title} className="wm-stat-card cursor-default group overflow-hidden">
-            <CardContent className="p-5 relative">
-              <Sparkline />
+          <div key={stat.title} className={`${stat.bgColor} rounded-2xl p-[22px] cursor-default group stat-card-hover relative overflow-hidden`}>
+            <Sparkline />
 
-              <div className="flex items-start justify-between mb-4">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground mb-1.5">
                   {stat.title}
                 </p>
-                <div className={`wm-stat-icon flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br ${stat.gradient} ${stat.shadowColor} shadow-lg`}>
-                  <Icon className="h-[18px] w-[18px] text-white" />
-                </div>
+                <p className="text-[32px] font-extrabold tracking-[-0.04em] tabular-nums leading-none text-foreground">
+                  {stat.value}
+                </p>
               </div>
+              <Icon className="h-5 w-5 text-foreground/30" />
+            </div>
 
-              <p className="text-3xl font-bold text-foreground tracking-tight">
-                {stat.value}
-              </p>
-
-              <div className="mt-3 flex items-center gap-2">
-                {stat.change && (
-                  <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-accent dark:text-primary bg-wm-pale/40 dark:bg-primary/10 px-1.5 py-0.5 rounded-md">
-                    <ArrowUpRight className="w-3 h-3" />
-                    {stat.change}
-                  </span>
-                )}
-                <span className="text-xs text-muted-foreground">
-                  {stat.subtitle}
+            <div className="mt-2 flex items-center gap-2">
+              {stat.change && (
+                <span className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-[#4A9960]">
+                  <ArrowUpRight className="w-3 h-3" />
+                  {stat.change}
                 </span>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+              <span className="text-[12px] text-muted-foreground">
+                {stat.subtitle}
+              </span>
+            </div>
+          </div>
         )
       })}
     </div>

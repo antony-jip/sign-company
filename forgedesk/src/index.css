@@ -160,6 +160,69 @@
 }
 
 /* ================================================================
+   MICRO-ANIMATIONS — Subtle, performance-safe
+   ================================================================ */
+
+/* Smooth transitions on interactive elements */
+button, a, [role="button"], input, select, textarea {
+  transition: all 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Button press effect */
+button:active:not(:disabled), [role="button"]:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Stat card hover: lift + glow */
+.stat-card-hover {
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.stat-card-hover:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+
+/* Table row: subtle left border on hover */
+table tbody tr td:first-child {
+  position: relative;
+}
+table tbody tr td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 2.5px;
+  background: #C49585;
+  border-radius: 0 2px 2px 0;
+  opacity: 0;
+  transform: scaleY(0.5);
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+table tbody tr:hover td:first-child::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+/* Focus visible: blush ring */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background, #EFEDE8), 0 0 0 4px #C49585;
+  border-radius: 6px;
+}
+
+/* Page load animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleInNew {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ================================================================
    SCROLLBAR — Ultra-thin, elegant
    ================================================================ */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
