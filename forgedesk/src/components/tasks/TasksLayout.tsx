@@ -122,7 +122,7 @@ function toDateTimeStr(d: Date, hour: number): string {
   return `${toDateStr(d)}T${String(hour).padStart(2, '0')}:00:00`
 }
 
-function getHourFromDeadline(deadline: string): number | null {
+function getHourFromDeadline(deadline: string | undefined): number | null {
   if (!deadline || !deadline.includes('T')) return null
   const timePart = deadline.split('T')[1]
   if (!timePart) return null
