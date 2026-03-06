@@ -19,7 +19,7 @@
     --font-size: 14px;
 
     /* Achtergrond */
-    --background: 36 18% 93%;          /* #EFEDE8 warm off-white */
+    --background: 40 14% 95%;          /* #F4F3F0 warm off-white */
     --foreground: 0 0% 10%;            /* #1A1A1A */
 
     /* Cards */
@@ -31,7 +31,7 @@
     --sidebar-foreground: 0 0% 42%;    /* #6B6B6B */
     --sidebar-primary: 145 22% 45%;    /* #5A8264 sage-deep */
     --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 36 18% 93%;
+    --sidebar-accent: 40 14% 95%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 36 12% 90%;      /* #E8E6E0 */
     --sidebar-ring: 145 22% 45%;
@@ -49,7 +49,7 @@
     --muted-foreground: 0 0% 42%;      /* #6B6B6B */
 
     /* Accent */
-    --accent: 36 18% 93%;
+    --accent: 40 14% 95%;
     --accent-foreground: 0 0% 10%;
 
     /* Borders */
