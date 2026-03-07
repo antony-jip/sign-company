@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { DisplayCards } from './DisplayCards';
+import { ContainerScroll } from './ContainerScroll';
 
 export const Hero: React.FC = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -24,11 +26,11 @@ export const Hero: React.FC = () => {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen bg-[#FAFAF7] overflow-hidden pt-24 pb-16 lg:pt-32 lg:pb-20">
+    <section ref={sectionRef} className="relative bg-[#FAFAF7] overflow-hidden pt-24 pb-0 lg:pt-32">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* Desktop: side by side layout */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:gap-12">
-          {/* LEFT SIDE — Text */}
+          {/* LEFT SIDE — Text + DisplayCards */}
           <div className="lg:w-[38%] flex-shrink-0 mb-10 lg:mb-0 lg:pt-8">
             {/* Logo + tagline */}
             <div className="mb-6">
@@ -65,9 +67,14 @@ export const Hero: React.FC = () => {
             </div>
 
             {/* Trust line */}
-            <p className="text-sm text-[#A0A0A0] mt-6">
+            <p className="text-sm text-[#A0A0A0] mt-6 mb-10">
               Direct aan de slag &middot; Geen creditcard &middot; Onbeperkt medewerkers
             </p>
+
+            {/* DisplayCards — Stacked cards */}
+            <div className="hidden lg:flex justify-start">
+              <DisplayCards />
+            </div>
           </div>
 
           {/* RIGHT SIDE — Workshop Canvas (desktop) */}
@@ -250,6 +257,86 @@ export const Hero: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ContainerScroll — App Preview with glow */}
+      <div className="mt-8 lg:mt-16 px-6">
+        <ContainerScroll>
+          <div className="bg-[#F4F3F0] rounded-2xl lg:rounded-3xl shadow-2xl overflow-hidden border border-[#E8E6E0] max-w-[900px] mx-auto">
+            {/* Browser chrome mockup */}
+            <div className="bg-white/80 border-b border-[#E8E6E0] px-4 py-3 flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-[#F0D9D0]" />
+                <div className="w-3 h-3 rounded-full bg-[#C8D5CC]" />
+                <div className="w-3 h-3 rounded-full bg-[#CDD5DE]" />
+              </div>
+              <div className="flex-1 bg-[#F4F3F0] rounded-lg px-4 py-1 text-xs text-[#A0A0A0] text-center ml-4">
+                app.forgedesk.nl
+              </div>
+            </div>
+
+            {/* App mockup content */}
+            <div className="p-6 lg:p-8">
+              {/* Top nav */}
+              <div className="flex items-center justify-between mb-6">
+                <span className="text-sm font-bold text-gray-900">FORGE<span className="font-light">desk</span></span>
+                <div className="flex gap-6 text-xs text-[#6B6B6B]">
+                  <span className="text-gray-900 font-semibold">Dashboard</span>
+                  <span>Offertes</span>
+                  <span>Klanten</span>
+                  <span>Facturen</span>
+                </div>
+              </div>
+
+              {/* Dashboard grid */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-[#E8E6E0]">
+                  <p className="text-xs text-[#A0A0A0] mb-1">Omzet deze maand</p>
+                  <p className="text-xl font-bold text-gray-900">&euro;14.850</p>
+                  <p className="text-xs text-[#5A8264] font-semibold mt-1">&#8593; 23% vs vorige maand</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-[#E8E6E0]">
+                  <p className="text-xs text-[#A0A0A0] mb-1">Open offertes</p>
+                  <p className="text-xl font-bold text-gray-900">7</p>
+                  <p className="text-xs text-[#6B6B6B] mt-1">&euro;8.420 waarde</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-[#E8E6E0]">
+                  <p className="text-xs text-[#A0A0A0] mb-1">Projecten actief</p>
+                  <p className="text-xl font-bold text-gray-900">4</p>
+                  <p className="text-xs text-[#6B6B6B] mt-1">2 deze week gepland</p>
+                </div>
+              </div>
+
+              {/* Activity rows */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm border border-[#E8E6E0]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-[#C8D5CC]" />
+                    <span className="text-sm text-gray-900">Bakkerij Jansen — Lichtreclame</span>
+                  </div>
+                  <span className="text-xs text-[#A0A0A0]">Vandaag</span>
+                </div>
+                <div className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm border border-[#E8E6E0]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-[#F0D9D0]" />
+                    <span className="text-sm text-gray-900">Garage De Vries — Gevelreclame</span>
+                  </div>
+                  <span className="text-xs text-[#A0A0A0]">Gisteren</span>
+                </div>
+                <div className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm border border-[#E8E6E0]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-[#CDD5DE]" />
+                    <span className="text-sm text-gray-900">Kapsalon Mooi — Raambelettering</span>
+                  </div>
+                  <span className="text-xs text-[#A0A0A0]">2 dagen geleden</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ContainerScroll>
+      </div>
+
+      {/* Bottom spacing */}
+      <div className="pb-16 lg:pb-20" />
     </section>
   );
 };
