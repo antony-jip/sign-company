@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
 import {
   Send,
   ArrowLeft,
@@ -303,6 +304,10 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
                 onKeyUp={updateFormatState}
                 className="min-h-[300px] max-h-[600px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none whitespace-pre-wrap"
                 suppressContentEditableWarning
+              />
+              <AIContentEditableToolbar
+                editorRef={editorRef}
+                onContentChange={handleEditorInput}
               />
             </div>
 

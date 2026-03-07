@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
 import {
   Select,
   SelectContent,
@@ -892,6 +893,10 @@ export function EmailCompose({
                 onKeyUp={updateFormatState}
                 className="min-h-[240px] max-h-[500px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none"
                 suppressContentEditableWarning
+              />
+              <AIContentEditableToolbar
+                editorRef={editorRef}
+                onContentChange={handleEditorInput}
               />
             </div>
 
