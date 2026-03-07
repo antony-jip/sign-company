@@ -9,34 +9,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+        blush: {
+          DEFAULT: '#F0D9D0',
+          light: '#F7ECE7',
+          deep: '#C49585',
         },
-        secondary: {
-          50: '#fef3c7',
-          100: '#fde68a',
-          200: '#fcd34d',
-          300: '#fbbf24',
-          400: '#f59e0b',
-          500: '#d97706',
-          600: '#b45309',
-          700: '#92400e',
-          800: '#78350f',
-          900: '#451a03',
+        sage: {
+          DEFAULT: '#C8D5CC',
+          light: '#E4EBE6',
+          deep: '#5A8264',
+        },
+        mist: {
+          DEFAULT: '#CDD5DE',
+          light: '#E6EAF0',
+          deep: '#5D7A93',
+        },
+        cream: {
+          DEFAULT: '#EDE8D8',
+          light: '#F6F4EC',
+          deep: '#9A8E6E',
         },
       },
       fontFamily: {
-        sans: ['var(--font-family)', 'Manrope', 'system-ui', 'sans-serif'],
-        heading: ['var(--font-family)', 'Manrope', 'system-ui', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        heading: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
       },
     },
   },

@@ -1,110 +1,83 @@
+'use client';
+
 import React from 'react';
-import { PortfolioItem } from '@/types/landing-page';
+import { useScrollAnimation } from './useScrollAnimation';
 
-interface PortfolioProps {
-  title?: string;
-  subtitle?: string;
-  items: PortfolioItem[];
-  showMoreLink?: string;
-}
+const included = [
+  'Onbeperkt offertes & facturen',
+  'Projectbeheer met tijdregistratie',
+  'Digitale werkbonnen',
+  'CRM met contacthistorie',
+  'E-mail integratie',
+  'Productcatalogus & prijslijsten',
+  'Rapportages & dashboards',
+  'Onbeperkt gebruikers',
+  'Nederlandse support',
+  'Automatische back-ups',
+  'Mobiel toegankelijk',
+  'Maandelijks opzegbaar',
+];
 
-export const Portfolio: React.FC<PortfolioProps> = ({
-  title = 'Onze Projecten',
-  subtitle,
-  items,
-  showMoreLink = '/projecten',
-}) => {
+export const Pricing: React.FC = () => {
+  const ref = useScrollAnimation();
+
   return (
-    <section className="py-16 lg:py-24 bg-gray-50">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-heading font-bold text-gray-900 mb-4">
-            {title}
+    <section id="pricing" ref={ref} className="py-20 lg:py-32 bg-white">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <p className="fade-up text-sm font-semibold tracking-widest uppercase text-gray-400 mb-4">
+            Eén prijs, alles inbegrepen
+          </p>
+          <h2 className="fade-up stagger-1 text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
+            Simpel. Eerlijk. Compleet.
           </h2>
-          {subtitle && (
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
-          )}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow-sm overflow-hidden group hover:shadow-lg transition-shadow duration-300"
-            >
-              <div className="aspect-w-16 aspect-h-10 bg-gray-200 relative overflow-hidden">
-                <div
-                  className="w-full h-48 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-4xl font-bold"
-                  style={{
-                    backgroundImage: item.image ? `url(${item.image})` : undefined,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                >
-                  {!item.image && item.title.charAt(0)}
-                </div>
-                <div className="absolute top-4 left-4">
-                  <span className="bg-secondary-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                    {item.category}
-                  </span>
-                </div>
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-gray-600 mb-3">{item.description}</p>
-                <div className="flex items-center text-sm text-gray-500">
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                  {item.location}
-                </div>
-              </div>
+
+        <div className="fade-up stagger-2 max-w-lg mx-auto">
+          <div className="rounded-3xl border-2 border-gray-900 p-10 relative">
+            {/* Badge */}
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+              <span className="bg-gray-900 text-white text-sm font-semibold px-5 py-1.5 rounded-full">
+                Alles inbegrepen
+              </span>
             </div>
-          ))}
-        </div>
-        {showMoreLink && (
-          <div className="text-center mt-12">
+
+            {/* Price */}
+            <div className="text-center mb-8 pt-2">
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-6xl font-extrabold text-gray-900">€49</span>
+                <span className="text-xl text-gray-400 font-medium">/ maand</span>
+              </div>
+              <p className="text-gray-500 mt-2">excl. BTW — maandelijks opzegbaar</p>
+            </div>
+
+            {/* Feature list */}
+            <ul className="space-y-3 mb-10">
+              {included.map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-sage-deep mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* CTA */}
             <a
-              href={showMoreLink}
-              className="inline-flex items-center bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-4 rounded-lg transition-colors duration-200"
+              href="#contact"
+              className="block w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 rounded-full text-center transition-colors text-base"
             >
-              Bekijk meer projecten
-              <svg
-                className="ml-2 w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
+              Start 14 dagen gratis
             </a>
+            <p className="text-center text-sm text-gray-400 mt-4">
+              Geen creditcard nodig — direct aan de slag
+            </p>
           </div>
-        )}
+        </div>
       </div>
     </section>
   );
 };
 
-export default Portfolio;
+export default Pricing;
