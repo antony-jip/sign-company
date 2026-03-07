@@ -86,7 +86,7 @@ export async function sendEmail(
   to: string,
   subject: string,
   body: string,
-  options?: { cc?: string; html?: string }
+  options?: { cc?: string; html?: string; scheduledAt?: string }
 ): Promise<{ success: boolean; message: string }> {
   const credentials = getLocalEmailCredentials()
 
