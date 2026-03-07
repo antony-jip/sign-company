@@ -1753,14 +1753,30 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
 export async function updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile> {
   assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+    const { data: existing } = await supabase
       .from('profiles')
-      .update({ ...updates, updated_at: now() })
+      .select('id')
       .eq('id', userId)
-      .select()
       .single()
-    if (error) throw error
-    return data
+
+    if (existing) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ ...updates, updated_at: now() })
+        .eq('id', userId)
+        .select()
+        .single()
+      if (error) throw error
+      return data
+    } else {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({ id: userId, ...updates, created_at: now(), updated_at: now() })
+        .select()
+        .single()
+      if (error) throw error
+      return data
+    }
   }
   const profiles = getLocalData<Profile>('profiles')
   const index = profiles.findIndex((p) => p.id === userId)
