@@ -53,6 +53,8 @@ function ForgieMascot({ size = 40, className }: { size?: number; className?: str
   )
 }
 
+const FORGIE_INTRO_SEEN_KEY = 'forgie-intro-seen'
+
 export function ForgieChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ForgieChatMessage[]>([])
@@ -60,8 +62,20 @@ export function ForgieChatWidget() {
   const [loading, setLoading] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
+  const [showIntroBubble, setShowIntroBubble] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Show intro bubble once for new users
+  useEffect(() => {
+    if (localStorage.getItem(FORGIE_INTRO_SEEN_KEY)) return
+    const showTimer = setTimeout(() => setShowIntroBubble(true), 1500)
+    const hideTimer = setTimeout(() => {
+      setShowIntroBubble(false)
+      localStorage.setItem(FORGIE_INTRO_SEEN_KEY, '1')
+    }, 7000)
+    return () => { clearTimeout(showTimer); clearTimeout(hideTimer) }
+  }, [])
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -268,7 +282,13 @@ export function ForgieChatWidget() {
 
       {/* Floating action button – Forgie mascot with glass effect */}
       <button
-        onClick={() => setIsOpen(prev => !prev)}
+        onClick={() => {
+          setIsOpen(prev => !prev)
+          if (showIntroBubble) {
+            setShowIntroBubble(false)
+            localStorage.setItem(FORGIE_INTRO_SEEN_KEY, '1')
+          }
+        }}
         className={cn(
           'fixed bottom-5 right-5 sm:right-7 z-50 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 group',
           'hover:scale-110 active:scale-95',
@@ -291,7 +311,14 @@ export function ForgieChatWidget() {
             {hasUnread && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse" />
             )}
-            {/* Speech bubble hint */}
+            {/* One-time intro speech bubble for new users */}
+            {showIntroBubble && !isOpen && (
+              <span className="absolute -top-14 -left-28 bg-white dark:bg-card backdrop-blur-sm text-xs text-foreground font-medium px-3 py-2 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 whitespace-nowrap pointer-events-none border border-orange-200/50 dark:border-orange-400/20">
+                Hoi! Ik ben <strong>Forgie</strong>, je AI-assistent 🦊
+                <span className="absolute -bottom-1.5 right-8 w-3 h-3 bg-white dark:bg-card border-b border-r border-orange-200/50 dark:border-orange-400/20 rotate-45" />
+              </span>
+            )}
+            {/* Hover hint */}
             <span className="absolute -top-8 right-0 bg-white/90 dark:bg-card/90 backdrop-blur-sm text-[10px] text-foreground font-medium px-2 py-1 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none border border-white/30">
               Vraag het Forgie! 🦊
             </span>
