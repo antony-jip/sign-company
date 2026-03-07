@@ -865,7 +865,7 @@ export function WerkbonDetail() {
                     <Button variant="outline" size="sm" asChild className="min-h-[44px]">
                       <span><Plus className="h-3 w-3 mr-1" /> {type === 'voor' ? 'Voor' : type === 'na' ? 'Na' : 'Overig'}</span>
                     </Button>
-                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                    <input type="file" accept="image/*" className="hidden"
                       onChange={(e) => handleFotoToevoegen(e, type)} disabled={isNew} />
                   </label>
                 ))}

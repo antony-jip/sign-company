@@ -1,11 +1,10 @@
 import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  Sun, Moon, User, Settings, LogOut,
+  User, Settings, LogOut,
   ChevronDown, Monitor, Search, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -49,7 +48,6 @@ function getPageMeta(pathname: string): { title: string; subtitle?: string } {
 }
 
 export function Header() {
-  const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
   const { language, setLanguage } = useLanguage()
   const { setLayoutMode } = useSidebar()
@@ -150,16 +148,6 @@ export function Header() {
         >
           <span className="text-xs font-bold">{language.toUpperCase()}</span>
         </Button>
-
-        {/* Theme toggle */}
-        <button
-          onClick={toggleTheme}
-          title={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
-          aria-label={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
-          className="w-[28px] h-[28px] rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:bg-background hover:text-foreground hover:rotate-[18deg] transition-all"
-        >
-          {theme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
-        </button>
 
         {/* Notifications */}
         <NotificatieCenter />

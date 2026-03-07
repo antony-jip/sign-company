@@ -30,7 +30,6 @@ import {
   Eye,
   EyeOff,
   Sun,
-  Moon,
   Sliders,
   Bell,
   Plus,
@@ -55,11 +54,10 @@ import {
   Monitor,
   PanelLeft,
 } from 'lucide-react'
-import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { usePalette, PALETTES, APP_THEMES } from '@/contexts/PaletteContext'
+import { usePalette, APP_THEMES } from '@/contexts/PaletteContext'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
@@ -2310,7 +2308,6 @@ const ALL_SIDEBAR_ITEMS = [
   // Moet exact overeenkomen met navSections in Sidebar.tsx
   { label: 'Dashboard', section: 'Overzicht' },
   { label: 'Klanten', section: 'Verkoop' },
-  { label: 'Deals', section: 'Verkoop' },
   { label: 'Offertes', section: 'Verkoop' },
   { label: 'Facturen', section: 'Verkoop' },
   { label: 'Projecten', section: 'Productie' },
@@ -2335,10 +2332,9 @@ const WEERGAVE_TABS: SubTab[] = [
 ]
 
 function WeergaveTab() {
-  const { theme, toggleTheme } = useTheme()
   const { language, setLanguage } = useLanguage()
   const { settings, updateSettings } = useAppSettings()
-  const { paletteId, setPaletteId, appThemeId, setAppThemeId } = usePalette()
+  const { appThemeId, setAppThemeId } = usePalette()
   const [sidebarItems, setSidebarItems] = useState<string[]>(
     settings.sidebar_items || ALL_SIDEBAR_ITEMS.map((i) => i.label)
   )
@@ -2404,7 +2400,7 @@ function WeergaveTab() {
           <Palette className="w-5 h-5" />
           Thema &amp; Kleuren
         </CardTitle>
-        <CardDescription>Kies een thema en kleurenpalet</CardDescription>
+        <CardDescription>Kies een thema — elk thema heeft zijn eigen kleuren</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* App Theme Picker */}
@@ -2420,7 +2416,7 @@ function WeergaveTab() {
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {APP_THEMES.map((t) => {
               const isActive = appThemeId === t.id
               return (
@@ -2483,68 +2479,6 @@ function WeergaveTab() {
                   <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
                     {t.beschrijving}
                   </p>
-                  {isActive && (
-                    <div className="absolute top-2 right-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
-                    </div>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Color Palette Picker */}
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <Palette className="w-5 h-5 text-primary" />
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                Kleurenpalet
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Kies je favoriete accentkleur — werkt met elk thema
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {PALETTES.map((p) => {
-              const isActive = paletteId === p.id
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    setPaletteId(p.id)
-                    toast.success(`Palet "${p.naam}" geactiveerd`)
-                  }}
-                  className={`relative group rounded-xl border-2 p-3 transition-all duration-200 text-left ${
-                    isActive
-                      ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20'
-                      : 'border-border hover:border-primary/40 hover:shadow-sm'
-                  }`}
-                >
-                  {/* Color swatch */}
-                  <div className="flex gap-1 mb-2.5">
-                    {p.preview.map((color, i) => (
-                      <div
-                        key={i}
-                        className={`h-6 flex-1 transition-transform duration-200 ${
-                          i === 0 ? 'rounded-l-md' : i === 2 ? 'rounded-r-md' : ''
-                        } ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                  {/* Label */}
-                  <p className={`text-sm font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
-                    {p.naam}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                    {p.beschrijving}
-                  </p>
-                  {/* Active indicator */}
                   {isActive && (
                     <div className="absolute top-2 right-2">
                       <CheckCircle2 className="w-4 h-4 text-primary" />
