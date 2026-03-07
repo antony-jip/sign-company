@@ -32,9 +32,7 @@ import {
   Sun,
   Sliders,
   Bell,
-  Plus,
   Trash2,
-  GripVertical,
   Save,
   Calculator,
   Mail,
@@ -49,7 +47,6 @@ import {
   Globe,
   Phone,
   CreditCard,
-  Briefcase,
   ArrowRight,
   Monitor,
   PanelLeft,
@@ -63,7 +60,7 @@ import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
 import { useNavigate } from 'react-router-dom'
-import type { AppSettings, PipelineStap } from '@/types'
+import type { AppSettings } from '@/types'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
@@ -151,24 +148,24 @@ function applyFontSize(size: FontSize) {
 const settingsTabs = [
   { id: 'profiel', label: 'Profiel', icon: User, description: 'Uw persoonlijke gegevens' },
   { id: 'bedrijf', label: 'Bedrijf', icon: Building2, description: 'Bedrijfsinformatie en logo' },
-  { id: 'facturatie', label: 'Facturatie', icon: Receipt, description: 'Factuur prefix, betaaltermijn en teksten' },
-  { id: 'huisstijl', label: 'Huisstijl', icon: FileText, description: 'Document styling en briefpapier' },
+  { id: 'documenten', label: 'Documenten', icon: FileText, description: 'Offertes, facturen en nummering' },
+  { id: 'huisstijl', label: 'Huisstijl', icon: Palette, description: 'Document styling en briefpapier' },
   { id: 'calculatie', label: 'Calculatie', icon: Calculator, description: 'Producten, marges en eenheden' },
-  { id: 'aanpassingen', label: 'Aanpassingen', icon: Sliders, description: 'Pipeline, statussen en workflows' },
+  { id: 'email', label: 'Email', icon: Mail, description: 'Handtekening, afzender en SMTP' },
   { id: 'meldingen', label: 'Meldingen', icon: Bell, description: 'E-mail en pushnotificaties' },
   { id: 'integraties', label: 'Integraties', icon: Puzzle, description: 'Koppelingen met externe diensten' },
   { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
-  { id: 'weergave', label: 'Weergave', icon: Palette, description: 'Thema, taal en lay-out' },
+  { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
 ] as const
 
 function renderTabContent(tabId: string) {
   switch (tabId) {
     case 'profiel': return <ProfielTab />
     case 'bedrijf': return <BedrijfTab />
-    case 'facturatie': return <FacturatieTab />
+    case 'documenten': return <DocumentenTab />
     case 'huisstijl': return <HuisstijlTab />
     case 'calculatie': return <CalculatieTab />
-    case 'aanpassingen': return <AanpassingenTab />
+    case 'email': return <EmailTab />
     case 'meldingen': return <MeldingenTab />
     case 'integraties': return <IntegratiesTab />
     case 'beveiliging': return <BeveiligingTab />
@@ -660,227 +657,62 @@ function BedrijfTab() {
   )
 }
 
-// ============ FACTURATIE TAB ============
+// ============ DOCUMENTEN TAB ============
 
-const FACTURATIE_TABS: SubTab[] = [
-  { id: 'nummering', label: 'Nummering', icon: Receipt },
-  { id: 'teksten', label: 'Teksten', icon: FileText },
-]
-
-function FacturatieTab() {
-  const { user } = useAuth()
-  const { refreshSettings } = useAppSettings()
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-
-  const [subTab, setSubTab] = useState('nummering')
-  const [factuurPrefix, setFactuurPrefix] = useState('FAC')
-  const [betaaltermijn, setBetaaltermijn] = useState('30')
-  const [voorwaarden, setVoorwaarden] = useState('')
-  const [introTekst, setIntroTekst] = useState('')
-  const [outroTekst, setOutroTekst] = useState('')
-
-  const loadSettings = useCallback(async () => {
-    if (!user?.id) return
-    try {
-      setIsLoading(true)
-      const data = await getAppSettings(user.id)
-      setFactuurPrefix(data.factuur_prefix || 'FAC')
-      setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
-      setVoorwaarden(data.factuur_voorwaarden || '')
-      setIntroTekst(data.factuur_intro_tekst || '')
-      setOutroTekst(data.factuur_outro_tekst || '')
-    } catch (err) {
-      logger.error('Fout bij laden factuurinstellingen:', err)
-      toast.error('Kon factuurinstellingen niet laden')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [user])
-
-  useEffect(() => {
-    loadSettings()
-  }, [loadSettings])
-
-  const handleSave = async () => {
-    if (!user?.id) return
-    try {
-      setIsSaving(true)
-      await updateAppSettings(user.id, {
-        factuur_prefix: factuurPrefix,
-        factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
-        factuur_voorwaarden: voorwaarden,
-        factuur_intro_tekst: introTekst,
-        factuur_outro_tekst: outroTekst,
-      })
-      await refreshSettings()
-      toast.success('Factuurinstellingen opgeslagen')
-    } catch (err) {
-      logger.error('Fout bij opslaan factuurinstellingen:', err)
-      toast.error('Kon factuurinstellingen niet opslaan')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-12 text-center text-muted-foreground dark:text-muted-foreground/60">
-          Factuurinstellingen laden...
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const saveButton = (
-    <div className="flex justify-end mt-6">
-      <Button onClick={handleSave} disabled={isSaving}>
-        <Save className="w-4 h-4 mr-2" />
-        {isSaving ? 'Opslaan...' : 'Instellingen opslaan'}
-      </Button>
-    </div>
-  )
-
-  return (
-    <>
-      <SubTabNav tabs={FACTURATIE_TABS} active={subTab} onChange={setSubTab} />
-
-      {subTab === 'nummering' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Receipt className="w-5 h-5" />
-              Factuurnummering
-            </CardTitle>
-            <CardDescription>Stel het prefix en de nummering van facturen in</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="factuur-prefix">Factuur prefix</Label>
-                <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value)} placeholder="FAC" />
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {factuurPrefix}-2026-0001</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="betaaltermijn">Betaaltermijn (dagen)</Label>
-                <Input id="betaaltermijn" type="number" value={betaaltermijn} onChange={(e) => setBetaaltermijn(e.target.value)} min="1" max="365" />
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Standaard aantal dagen dat de klant heeft om te betalen</p>
-              </div>
-            </div>
-            {saveButton}
-          </CardContent>
-        </Card>
-      )}
-
-      {subTab === 'teksten' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Standaard Teksten
-            </CardTitle>
-            <CardDescription>Teksten die automatisch op elke factuur verschijnen</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="intro-tekst">Introductietekst</Label>
-              <Textarea id="intro-tekst" value={introTekst} onChange={(e) => setIntroTekst(e.target.value)} placeholder="Bijv. Hierbij ontvangt u de factuur voor de geleverde werkzaamheden." rows={2} />
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt bovenaan de factuur weergegeven, onder de klantgegevens</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="outro-tekst">Afsluittekst</Label>
-              <Textarea id="outro-tekst" value={outroTekst} onChange={(e) => setOutroTekst(e.target.value)} placeholder="Bijv. Wij verzoeken u vriendelijk het bedrag binnen de gestelde termijn over te maken." rows={2} />
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt onderaan de factuurregels weergegeven</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="voorwaarden">Betalingsvoorwaarden</Label>
-              <Textarea id="voorwaarden" value={voorwaarden} onChange={(e) => setVoorwaarden(e.target.value)} placeholder="Bijv. Op al onze overeenkomsten zijn onze algemene voorwaarden van toepassing, gedeponeerd bij de KvK." rows={3} />
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Kleine print onderaan de factuur met juridische voorwaarden</p>
-            </div>
-            {saveButton}
-          </CardContent>
-        </Card>
-      )}
-    </>
-  )
-}
-
-// ============ AANPASSINGEN TAB ============
-
-const BRANCHE_PRESETS: { key: AppSettings['branche_preset']; label: string; beschrijving: string }[] = [
-  { key: 'sign_company', label: 'Reclame & Signbedrijf', beschrijving: 'Borden, wraps, lichtreclame, belettering' },
-  { key: 'bouw', label: 'Bouw & Renovatie', beschrijving: 'Aannemerij, verbouwing, installatie' },
-  { key: 'ict', label: 'ICT & Software', beschrijving: 'Webdev, consultancy, managed services' },
-  { key: 'marketing', label: 'Marketing & Reclame', beschrijving: 'Campagnes, design, branding' },
-  { key: 'detailhandel', label: 'Detailhandel', beschrijving: 'Winkel, webshop, groothandel' },
-  { key: 'horeca', label: 'Horeca', beschrijving: 'Restaurant, catering, evenementen' },
-  { key: 'zorg', label: 'Zorg & Welzijn', beschrijving: 'Thuiszorg, praktijk, coaching' },
-  { key: 'custom', label: 'Aangepast', beschrijving: 'Stel alles zelf in' },
-]
-
-const KLEUR_OPTIES = [
-  '#2563eb', '#7c3aed', '#059669', '#dc2626', '#d97706',
-  '#0891b2', '#4f46e5', '#be185d', '#1d4ed8', '#15803d',
-]
-
-const AANPASSINGEN_TABS: SubTab[] = [
-  { id: 'branche', label: 'Branche', icon: Briefcase },
+const DOCUMENTEN_TABS: SubTab[] = [
   { id: 'offertes', label: 'Offertes', icon: FileText },
-  { id: 'pipeline', label: 'Pipeline', icon: ArrowRight },
-  { id: 'branding', label: 'Branding', icon: Palette },
-  { id: 'dashboard', label: 'Dashboard', icon: Settings },
+  { id: 'facturen', label: 'Facturen', icon: Receipt },
 ]
 
-function AanpassingenTab() {
+function DocumentenTab() {
   const { user } = useAuth()
   const { refreshSettings } = useAppSettings()
-  const [subTab, setSubTab] = useState('branche')
-  const [settings, setSettings] = useState<AppSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [subTab, setSubTab] = useState('offertes')
 
-  // Local form state
-  const [branchePreset, setBranchePreset] = useState<AppSettings['branche_preset']>('sign_company')
-  const [branche, setBranche] = useState('')
-  const [valuta, setValuta] = useState('EUR')
-  const [standaardBtw, setStandaardBtw] = useState('21')
+  // Offerte velden
   const [offertePrefix, setOffertePrefix] = useState('OFF')
   const [offerteGeldigheid, setOfferteGeldigheid] = useState('30')
-  const [autoFollowUp, setAutoFollowUp] = useState(true)
-  const [followUpDagen, setFollowUpDagen] = useState('7')
-  const [emailHandtekening, setEmailHandtekening] = useState('')
-  const [primaireKleur, setPrimaireKleur] = useState('#2563eb')
-  const [secundaireKleur, setSecundaireKleur] = useState('#7c3aed')
-  const [pipelineStappen, setPipelineStappen] = useState<PipelineStap[]>([])
-  const [toonConversieRate, setToonConversieRate] = useState(true)
-  const [toonDagenOpen, setToonDagenOpen] = useState(true)
-  const [toonFollowUpIndicatoren, setToonFollowUpIndicatoren] = useState(true)
+  const [standaardBtw, setStandaardBtw] = useState('21')
+  const [offerteIntroTekst, setOfferteIntroTekst] = useState('')
+  const [offerteOutroTekst, setOfferteOutroTekst] = useState('')
+
+  // Factuur velden
+  const [factuurPrefix, setFactuurPrefix] = useState('FAC')
+  const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
+  const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
+  const [betaaltermijn, setBetaaltermijn] = useState('30')
+  const [voorwaarden, setVoorwaarden] = useState('')
+  const [herinnering1, setHerinnering1] = useState('')
+  const [herinnering2, setHerinnering2] = useState('')
+  const [aanmaningTekst, setAanmaningTekst] = useState('')
+  const [standaardUurtarief, setStandaardUurtarief] = useState('75')
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
     try {
       setIsLoading(true)
       const data = await getAppSettings(user.id)
-      setSettings(data)
-      setBranchePreset(data.branche_preset)
-      setBranche(data.branche)
-      setValuta(data.valuta)
-      setStandaardBtw(String(data.standaard_btw))
-      setOffertePrefix(data.offerte_prefix)
-      setOfferteGeldigheid(String(data.offerte_geldigheid_dagen))
-      setAutoFollowUp(data.auto_follow_up)
-      setFollowUpDagen(String(data.follow_up_dagen))
-      setEmailHandtekening(data.email_handtekening)
-      setPrimaireKleur(data.primaire_kleur)
-      setSecundaireKleur(data.secundaire_kleur)
-      setPipelineStappen(data.pipeline_stappen)
-      setToonConversieRate(data.toon_conversie_rate)
-      setToonDagenOpen(data.toon_dagen_open)
-      setToonFollowUpIndicatoren(data.toon_follow_up_indicatoren)
+      // Offertes
+      setOffertePrefix(data.offerte_prefix || 'OFF')
+      setOfferteGeldigheid(String(data.offerte_geldigheid_dagen || 30))
+      setStandaardBtw(String(data.standaard_btw || 21))
+      setOfferteIntroTekst(data.offerte_intro_tekst || '')
+      setOfferteOutroTekst(data.offerte_outro_tekst || '')
+      // Facturen
+      setFactuurPrefix(data.factuur_prefix || 'FAC')
+      setCreditnotaPrefix(data.creditnota_prefix || 'CN')
+      setWerkbonPrefix(data.werkbon_prefix || 'WB')
+      setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
+      setVoorwaarden(data.factuur_voorwaarden || '')
+      setHerinnering1(data.herinnering_1_tekst || '')
+      setHerinnering2(data.herinnering_2_tekst || '')
+      setAanmaningTekst(data.aanmaning_tekst || '')
+      setStandaardUurtarief(String(data.standaard_uurtarief || 75))
     } catch (err) {
-      logger.error('Fout bij laden instellingen:', err)
-      toast.error('Kon instellingen niet laden')
+      logger.error('Fout bij laden documentinstellingen:', err)
+      toast.error('Kon documentinstellingen niet laden')
     } finally {
       setIsLoading(false)
     }
@@ -890,67 +722,33 @@ function AanpassingenTab() {
     loadSettings()
   }, [loadSettings])
 
-  const handleBrancheChange = (preset: AppSettings['branche_preset']) => {
-    setBranchePreset(preset)
-    const found = BRANCHE_PRESETS.find((b) => b.key === preset)
-    if (found && preset !== 'custom') {
-      setBranche(found.label)
-    }
-  }
-
-  const handleAddPipelineStap = () => {
-    const newStap: PipelineStap = {
-      key: `custom_${Date.now()}`,
-      label: 'Nieuwe stap',
-      kleur: 'blue',
-      volgorde: pipelineStappen.length,
-      actief: true,
-    }
-    setPipelineStappen([...pipelineStappen, newStap])
-  }
-
-  const handleRemovePipelineStap = (index: number) => {
-    const stap = pipelineStappen[index]
-    if (['concept', 'goedgekeurd', 'afgewezen'].includes(stap.key)) {
-      toast.error('Deze standaard stap kan niet worden verwijderd')
-      return
-    }
-    setPipelineStappen(pipelineStappen.filter((_, i) => i !== index))
-  }
-
-  const handleUpdatePipelineStap = (index: number, updates: Partial<PipelineStap>) => {
-    setPipelineStappen(
-      pipelineStappen.map((stap, i) => (i === index ? { ...stap, ...updates } : stap))
-    )
-  }
-
   const handleSave = async () => {
     if (!user?.id) return
     try {
       setIsSaving(true)
       await updateAppSettings(user.id, {
-        branche_preset: branchePreset,
-        branche,
-        valuta,
-        valuta_symbool: valuta === 'EUR' ? '\u20AC' : valuta === 'USD' ? '$' : valuta === 'GBP' ? '\u00A3' : valuta,
-        standaard_btw: parseFloat(standaardBtw) || 21,
+        // Offertes
         offerte_prefix: offertePrefix,
         offerte_geldigheid_dagen: parseInt(offerteGeldigheid) || 30,
-        auto_follow_up: autoFollowUp,
-        follow_up_dagen: parseInt(followUpDagen) || 7,
-        email_handtekening: emailHandtekening,
-        primaire_kleur: primaireKleur,
-        secundaire_kleur: secundaireKleur,
-        pipeline_stappen: pipelineStappen,
-        toon_conversie_rate: toonConversieRate,
-        toon_dagen_open: toonDagenOpen,
-        toon_follow_up_indicatoren: toonFollowUpIndicatoren,
+        standaard_btw: parseFloat(standaardBtw) || 21,
+        offerte_intro_tekst: offerteIntroTekst,
+        offerte_outro_tekst: offerteOutroTekst,
+        // Facturen
+        factuur_prefix: factuurPrefix,
+        creditnota_prefix: creditnotaPrefix,
+        werkbon_prefix: werkbonPrefix,
+        factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
+        factuur_voorwaarden: voorwaarden,
+        herinnering_1_tekst: herinnering1,
+        herinnering_2_tekst: herinnering2,
+        aanmaning_tekst: aanmaningTekst,
+        standaard_uurtarief: parseFloat(standaardUurtarief) || 75,
       })
       await refreshSettings()
-      toast.success('Aanpassingen opgeslagen')
+      toast.success('Documentinstellingen opgeslagen')
     } catch (err) {
-      logger.error('Fout bij opslaan aanpassingen:', err)
-      toast.error('Kon aanpassingen niet opslaan')
+      logger.error('Fout bij opslaan documentinstellingen:', err)
+      toast.error('Kon documentinstellingen niet opslaan')
     } finally {
       setIsSaving(false)
     }
@@ -960,7 +758,7 @@ function AanpassingenTab() {
     return (
       <Card>
         <CardContent className="p-12 text-center text-muted-foreground dark:text-muted-foreground/60">
-          Instellingen laden...
+          Documentinstellingen laden...
         </CardContent>
       </Card>
     )
@@ -977,380 +775,319 @@ function AanpassingenTab() {
 
   return (
     <>
-    <SubTabNav tabs={AANPASSINGEN_TABS} active={subTab} onChange={setSubTab} />
+      <SubTabNav tabs={DOCUMENTEN_TABS} active={subTab} onChange={setSubTab} />
 
-    {subTab === 'branche' && (
-    <div className="space-y-6">
-      {/* Branche Selectie */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sliders className="w-5 h-5" />
-            Branche & Sector
-          </CardTitle>
-          <CardDescription>
-            Kies uw branche voor geoptimaliseerde instellingen en terminologie
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {BRANCHE_PRESETS.map((preset) => (
-              <button
-                key={preset.key}
-                onClick={() => handleBrancheChange(preset.key)}
-                className={`p-3 rounded-xl border-2 text-left transition-all duration-200 ${
-                  branchePreset === preset.key
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 shadow-sm'
-                    : 'border-border dark:border-border hover:border-border dark:hover:border-border'
-                }`}
-              >
-                <p className="text-sm font-semibold text-foreground dark:text-white">{preset.label}</p>
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{preset.beschrijving}</p>
-              </button>
-            ))}
-          </div>
-          {branchePreset === 'custom' && (
-            <div className="space-y-2 mt-4">
-              <Label htmlFor="custom-branche">Aangepaste branche naam</Label>
-              <Input
-                id="custom-branche"
-                value={branche}
-                onChange={(e) => setBranche(e.target.value)}
-                placeholder="Bijv. Grafische Vormgeving"
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      {saveButton}
-    </div>
-    )}
+      {subTab === 'offertes' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Offerte Instellingen
+              </CardTitle>
+              <CardDescription>Nummering, geldigheid en standaardteksten voor offertes</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="offerte-prefix">Offerte prefix</Label>
+                  <Input
+                    id="offerte-prefix"
+                    value={offertePrefix}
+                    onChange={(e) => setOffertePrefix(e.target.value.toUpperCase())}
+                    placeholder="OFF"
+                    maxLength={5}
+                  />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
+                    Voorbeeld: {offertePrefix}-2026-0001
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="offerte-geldigheid">Geldigheidsduur (dagen)</Label>
+                  <Input
+                    id="offerte-geldigheid"
+                    type="number"
+                    min="1"
+                    value={offerteGeldigheid}
+                    onChange={(e) => setOfferteGeldigheid(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="standaard-btw">Standaard BTW %</Label>
+                  <Input
+                    id="standaard-btw"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={standaardBtw}
+                    onChange={(e) => setStandaardBtw(e.target.value)}
+                  />
+                </div>
+              </div>
 
-    {subTab === 'offertes' && (
-    <div className="space-y-6">
-      {/* Offerte & Valuta Instellingen */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Offerte Instellingen</CardTitle>
-          <CardDescription>Configureer standaardwaarden voor offertes en facturatie</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="valuta">Valuta</Label>
-              <Select value={valuta} onValueChange={setValuta}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                  <SelectItem value="USD">Dollar (USD)</SelectItem>
-                  <SelectItem value="GBP">Pond (GBP)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="standaard-btw">Standaard BTW %</Label>
-              <Input
-                id="standaard-btw"
-                type="number"
-                min="0"
-                max="100"
-                value={standaardBtw}
-                onChange={(e) => setStandaardBtw(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="offerte-geldigheid">Geldigheid (dagen)</Label>
-              <Input
-                id="offerte-geldigheid"
-                type="number"
-                min="1"
-                value={offerteGeldigheid}
-                onChange={(e) => setOfferteGeldigheid(e.target.value)}
-              />
-            </div>
-          </div>
+              <Separator />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="offerte-prefix">Offerte Prefix</Label>
-              <Input
-                id="offerte-prefix"
-                value={offertePrefix}
-                onChange={(e) => setOffertePrefix(e.target.value.toUpperCase())}
-                placeholder="OFF"
-                maxLength={5}
-              />
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                Voorbeeld: {offertePrefix}-2026-0001
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>Automatische Follow-up</Label>
-              <div className="flex items-center gap-4">
-                <Switch
-                  checked={autoFollowUp}
-                  onCheckedChange={setAutoFollowUp}
-                />
-                <span className="text-sm text-muted-foreground dark:text-muted-foreground/60">
-                  {autoFollowUp ? 'Actief' : 'Uit'}
-                </span>
-                {autoFollowUp && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-muted-foreground/60">na</span>
-                    <Input
-                      type="number"
-                      min="1"
-                      className="w-20"
-                      value={followUpDagen}
-                      onChange={(e) => setFollowUpDagen(e.target.value)}
-                    />
-                    <span className="text-sm text-muted-foreground dark:text-muted-foreground/60">dagen</span>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="offerte-intro">Standaard introductietekst</Label>
+                  <Textarea
+                    id="offerte-intro"
+                    value={offerteIntroTekst}
+                    onChange={(e) => setOfferteIntroTekst(e.target.value)}
+                    placeholder="Bijv. Naar aanleiding van ons gesprek doen wij u hierbij een vrijblijvende offerte toekomen."
+                    rows={2}
+                  />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt bovenaan de offerte weergegeven</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="offerte-outro">Standaard afsluittekst</Label>
+                  <Textarea
+                    id="offerte-outro"
+                    value={offerteOutroTekst}
+                    onChange={(e) => setOfferteOutroTekst(e.target.value)}
+                    placeholder="Bijv. Wij vertrouwen erop u een passend aanbod te hebben gedaan."
+                    rows={2}
+                  />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt onderaan de offerte weergegeven</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {saveButton}
+        </div>
+      )}
+
+      {subTab === 'facturen' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="w-5 h-5" />
+                Factuur Instellingen
+              </CardTitle>
+              <CardDescription>Nummering, betaaltermijnen en herinneringsteksten</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Prefixes */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="factuur-prefix">Factuur prefix</Label>
+                  <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value.toUpperCase())} placeholder="FAC" maxLength={5} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {factuurPrefix}-2026-0001</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="creditnota-prefix">Creditnota prefix</Label>
+                  <Input id="creditnota-prefix" value={creditnotaPrefix} onChange={(e) => setCreditnotaPrefix(e.target.value.toUpperCase())} placeholder="CN" maxLength={5} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {creditnotaPrefix}-2026-0001</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="werkbon-prefix">Werkbon prefix</Label>
+                  <Input id="werkbon-prefix" value={werkbonPrefix} onChange={(e) => setWerkbonPrefix(e.target.value.toUpperCase())} placeholder="WB" maxLength={5} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {werkbonPrefix}-2026-0001</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Betaling */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="betaaltermijn">Betaaltermijn (dagen)</Label>
+                  <Input id="betaaltermijn" type="number" value={betaaltermijn} onChange={(e) => setBetaaltermijn(e.target.value)} min="1" max="365" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="standaard-uurtarief">Standaard uurtarief</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">&euro;</span>
+                    <Input id="standaard-uurtarief" type="number" value={standaardUurtarief} onChange={(e) => setStandaardUurtarief(e.target.value)} min="0" className="pl-7" />
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      {saveButton}
-    </div>
-    )}
 
-    {subTab === 'pipeline' && (
-    <div className="space-y-6">
-      {/* Pipeline Aanpassing */}
+              <div className="space-y-2">
+                <Label htmlFor="voorwaarden">Standaard betalingsvoorwaarden</Label>
+                <Textarea id="voorwaarden" value={voorwaarden} onChange={(e) => setVoorwaarden(e.target.value)} placeholder="Bijv. Op al onze overeenkomsten zijn onze algemene voorwaarden van toepassing, gedeponeerd bij de KvK." rows={3} />
+              </div>
+
+              <Separator />
+
+              {/* Herinneringen */}
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-foreground dark:text-white">Herinneringsteksten</p>
+                <div className="space-y-2">
+                  <Label htmlFor="herinnering1">Herinnering 1</Label>
+                  <Textarea id="herinnering1" value={herinnering1} onChange={(e) => setHerinnering1(e.target.value)} placeholder="Bijv. Wellicht is het u ontgaan, maar wij hebben nog geen betaling ontvangen voor onderstaande factuur." rows={2} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="herinnering2">Herinnering 2</Label>
+                  <Textarea id="herinnering2" value={herinnering2} onChange={(e) => setHerinnering2(e.target.value)} placeholder="Bijv. Ondanks onze eerdere herinnering hebben wij nog geen betaling ontvangen." rows={2} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="aanmaning">Aanmaning</Label>
+                  <Textarea id="aanmaning" value={aanmaningTekst} onChange={(e) => setAanmaningTekst(e.target.value)} placeholder="Bijv. Indien wij binnen 7 dagen geen betaling ontvangen, zijn wij genoodzaakt verdere stappen te ondernemen." rows={2} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {saveButton}
+        </div>
+      )}
+    </>
+  )
+}
+
+// ============ EMAIL TAB ============
+
+const EMAIL_TABS: SubTab[] = [
+  { id: 'handtekening', label: 'Handtekening', icon: FileText },
+  { id: 'verbinding', label: 'Verbinding', icon: Server },
+]
+
+function EmailTab() {
+  const { user } = useAuth()
+  const { refreshSettings } = useAppSettings()
+  const [subTab, setSubTab] = useState('handtekening')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const [emailHandtekening, setEmailHandtekening] = useState('')
+  const [afzenderNaam, setAfzenderNaam] = useState('')
+
+  const loadSettings = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      setIsLoading(true)
+      const data = await getAppSettings(user.id)
+      setEmailHandtekening(data.email_handtekening || '')
+      setAfzenderNaam(data.afzender_naam || '')
+    } catch (err) {
+      logger.error('Fout bij laden e-mailinstellingen:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  const handleSave = async () => {
+    if (!user?.id) return
+    try {
+      setIsSaving(true)
+      await updateAppSettings(user.id, {
+        email_handtekening: emailHandtekening,
+        afzender_naam: afzenderNaam,
+      })
+      await refreshSettings()
+      toast.success('E-mailinstellingen opgeslagen')
+    } catch (err) {
+      logger.error('Fout bij opslaan e-mailinstellingen:', err)
+      toast.error('Kon e-mailinstellingen niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Check email connection
+  const [emailConnected, setEmailConnected] = useState(false)
+  const checkEmailStatus = useCallback(() => {
+    const localSettings = getLocalEmailSettings()
+    setEmailConnected(!!(localSettings?.gmail_address && localSettings?.app_password))
+  }, [])
+  useEffect(() => { checkEmailStatus() }, [checkEmailStatus])
+
+  if (isLoading) {
+    return (
       <Card>
-        <CardHeader>
-          <CardTitle>Pipeline Stappen</CardTitle>
-          <CardDescription>Pas de offerte pipeline stappen aan voor uw workflow</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            {pipelineStappen.map((stap, index) => (
-              <div
-                key={stap.key}
-                className="flex items-center gap-3 p-3 rounded-lg bg-background dark:bg-foreground/80/50 border border-border dark:border-border"
-              >
-                <GripVertical className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
-                <div
-                  className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{
-                    backgroundColor:
-                      stap.kleur === 'gray' ? '#9ca3af' :
-                      stap.kleur === 'blue' ? '#3b82f6' :
-                      stap.kleur === 'purple' ? '#8b5cf6' :
-                      stap.kleur === 'green' ? '#22c55e' :
-                      stap.kleur === 'red' ? '#ef4444' :
-                      stap.kleur === 'orange' ? '#f97316' :
-                      stap.kleur === 'teal' ? '#14b8a6' :
-                      '#6b7280'
-                  }}
-                />
-                <Input
-                  value={stap.label}
-                  onChange={(e) => handleUpdatePipelineStap(index, { label: e.target.value })}
-                  className="flex-1 h-8"
-                />
-                <Select
-                  value={stap.kleur}
-                  onValueChange={(v) => handleUpdatePipelineStap(index, { kleur: v })}
-                >
-                  <SelectTrigger className="w-28 h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gray">Grijs</SelectItem>
-                    <SelectItem value="blue">Blauw</SelectItem>
-                    <SelectItem value="purple">Paars</SelectItem>
-                    <SelectItem value="green">Groen</SelectItem>
-                    <SelectItem value="red">Rood</SelectItem>
-                    <SelectItem value="orange">Oranje</SelectItem>
-                    <SelectItem value="teal">Teal</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Switch
-                  checked={stap.actief}
-                  onCheckedChange={(checked) => handleUpdatePipelineStap(index, { actief: checked })}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemovePipelineStap(index)}
-                  className="h-8 w-8 p-0 text-muted-foreground/60 hover:text-red-500"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-          <Button variant="outline" size="sm" onClick={handleAddPipelineStap} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Stap Toevoegen
-          </Button>
+        <CardContent className="p-12 text-center text-muted-foreground dark:text-muted-foreground/60">
+          E-mailinstellingen laden...
         </CardContent>
       </Card>
-      {saveButton}
+    )
+  }
+
+  const saveButton = (
+    <div className="flex justify-end mt-6">
+      <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+        <Save className="w-4 h-4" />
+        {isSaving ? 'Opslaan...' : 'Opslaan'}
+      </Button>
     </div>
-    )}
+  )
 
-    {subTab === 'branding' && (
-    <div className="space-y-6">
-      {/* Branding */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Branding & Kleuren</CardTitle>
-          <CardDescription>Pas de visuele identiteit aan voor offertes en communicatie</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <Label>Primaire kleur</Label>
-              <div className="flex flex-wrap gap-2">
-                {KLEUR_OPTIES.map((kleur) => (
-                  <button
-                    key={`prim-${kleur}`}
-                    onClick={() => setPrimaireKleur(kleur)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${
-                      primaireKleur === kleur
-                        ? 'border-border dark:border-white scale-110 shadow-lg'
-                        : 'border-transparent hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: kleur }}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
+  return (
+    <>
+      <SubTabNav tabs={EMAIL_TABS} active={subTab} onChange={setSubTab} />
+
+      {subTab === 'handtekening' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5" />
+                E-mail Handtekening
+              </CardTitle>
+              <CardDescription>Wordt automatisch toegevoegd aan uitgaande e-mails</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="afzender-naam">Standaard afzendernaam</Label>
                 <Input
-                  type="color"
-                  value={primaireKleur}
-                  onChange={(e) => setPrimaireKleur(e.target.value)}
-                  className="w-10 h-8 p-0 border-0 cursor-pointer"
+                  id="afzender-naam"
+                  value={afzenderNaam}
+                  onChange={(e) => setAfzenderNaam(e.target.value)}
+                  placeholder="Bijv. Jan de Vries - Sign Company B.V."
                 />
-                <Input
-                  value={primaireKleur}
-                  onChange={(e) => setPrimaireKleur(e.target.value)}
-                  className="w-24 h-8 font-mono text-xs"
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
+                  De naam die ontvangers zien als afzender
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email-handtekening">Handtekening</Label>
+                <Textarea
+                  id="email-handtekening"
+                  value={emailHandtekening}
+                  onChange={(e) => setEmailHandtekening(e.target.value)}
+                  placeholder={"Met vriendelijke groet,\n\nJan de Vries\nSales Manager\nSign Company B.V.\nTel: 020-1234567"}
+                  rows={6}
                 />
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
+                  Naam, functie, telefoonnummer en bedrijfsgegevens
+                </p>
               </div>
-            </div>
-            <div className="space-y-3">
-              <Label>Secundaire kleur</Label>
-              <div className="flex flex-wrap gap-2">
-                {KLEUR_OPTIES.map((kleur) => (
-                  <button
-                    key={`sec-${kleur}`}
-                    onClick={() => setSecundaireKleur(kleur)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${
-                      secundaireKleur === kleur
-                        ? 'border-border dark:border-white scale-110 shadow-lg'
-                        : 'border-transparent hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: kleur }}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="color"
-                  value={secundaireKleur}
-                  onChange={(e) => setSecundaireKleur(e.target.value)}
-                  className="w-10 h-8 p-0 border-0 cursor-pointer"
-                />
-                <Input
-                  value={secundaireKleur}
-                  onChange={(e) => setSecundaireKleur(e.target.value)}
-                  className="w-24 h-8 font-mono text-xs"
-                />
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+          {saveButton}
+        </div>
+      )}
 
-          {/* Preview */}
-          <div className="p-4 rounded-xl border border-border dark:border-border bg-card">
-            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-2">Voorbeeld</p>
-            <div className="flex items-center gap-3">
-              <div
-                className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                style={{ backgroundColor: primaireKleur }}
-              >
-                Primaire Knop
-              </div>
-              <div
-                className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                style={{ backgroundColor: secundaireKleur }}
-              >
-                Secundaire Knop
-              </div>
-              <div
-                className="px-3 py-1 rounded-full text-xs font-medium"
-                style={{ backgroundColor: primaireKleur + '20', color: primaireKleur }}
-              >
-                Badge
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Email Handtekening */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Email Handtekening</CardTitle>
-          <CardDescription>Wordt automatisch toegevoegd aan uitgaande emails</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Textarea
-            value={emailHandtekening}
-            onChange={(e) => setEmailHandtekening(e.target.value)}
-            placeholder="Met vriendelijke groet,&#10;&#10;Jan de Vries&#10;Sales Manager&#10;Uw Bedrijf B.V.&#10;Tel: 020-1234567"
-            rows={5}
-          />
-        </CardContent>
-      </Card>
-      {saveButton}
-    </div>
-    )}
-
-    {subTab === 'dashboard' && (
-    <div className="space-y-6">
-      {/* Dashboard Weergave */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Dashboard Weergave</CardTitle>
-          <CardDescription>Bepaal welke indicatoren u wilt zien in de pipeline en dashboard</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground dark:text-white">Conversie rate tonen</p>
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Percentage goedgekeurde offertes</p>
-            </div>
-            <Switch checked={toonConversieRate} onCheckedChange={setToonConversieRate} />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground dark:text-white">Dagen open tonen</p>
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Hoeveel dagen een offerte al openstaat</p>
-            </div>
-            <Switch checked={toonDagenOpen} onCheckedChange={setToonDagenOpen} />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground dark:text-white">Follow-up indicatoren</p>
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Bel- en follow-up iconen op offerte kaarten</p>
-            </div>
-            <Switch checked={toonFollowUpIndicatoren} onCheckedChange={setToonFollowUpIndicatoren} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {saveButton}
-    </div>
-    )}
+      {subTab === 'verbinding' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Server className="w-5 h-5" />
+                E-mail Verbinding
+              </CardTitle>
+              <CardDescription>
+                {emailConnected
+                  ? 'E-mail is verbonden en geconfigureerd'
+                  : 'Configureer SMTP en IMAP om e-mails te verzenden en ontvangen vanuit FORGE'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {emailConnected && (
+                <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <span className="text-sm text-green-700 dark:text-green-300">E-mail verbinding actief</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <EmailSettingsInline onSaved={checkEmailStatus} />
+        </div>
+      )}
     </>
   )
 }

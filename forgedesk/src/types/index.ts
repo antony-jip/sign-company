@@ -530,6 +530,17 @@ export interface AppSettings {
   factuur_voorwaarden: string;
   factuur_intro_tekst: string;
   factuur_outro_tekst: string;
+  creditnota_prefix: string;
+  werkbon_prefix: string;
+  herinnering_1_tekst: string;
+  herinnering_2_tekst: string;
+  aanmaning_tekst: string;
+  standaard_uurtarief: number;
+  // Offerte teksten
+  offerte_intro_tekst: string;
+  offerte_outro_tekst: string;
+  // Email
+  afzender_naam: string;
   created_at: string;
   updated_at: string;
 }
