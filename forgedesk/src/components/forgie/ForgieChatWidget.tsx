@@ -96,9 +96,9 @@ export function ForgieChatWidget() {
     <>
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-8rem)] bg-card border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-8rem)] bg-card/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b bg-card flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-card/50 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 bg-blush/20 rounded-lg">
                 <Sparkles className="w-4 h-4 text-blush-deep" />
@@ -235,10 +235,10 @@ export function ForgieChatWidget() {
       <button
         onClick={() => setIsOpen(prev => !prev)}
         className={cn(
-          'fixed bottom-4 right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95',
+          'fixed bottom-4 right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-xl border border-white/20',
           isOpen
-            ? 'bg-muted text-foreground hover:bg-muted/80'
-            : 'bg-blush-deep text-white hover:bg-blush-deep/90'
+            ? 'bg-muted/70 text-foreground hover:bg-muted/60'
+            : 'bg-blush-deep/80 text-white hover:bg-blush-deep/70'
         )}
       >
         {isOpen ? (
