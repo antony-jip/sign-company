@@ -123,6 +123,7 @@ interface QuoteItemsTableProps {
   clipboardCount?: number
   onPasteItems?: () => void
   onClearClipboard?: () => void
+  toonM2?: boolean
 }
 
 function calculateLineTotaal(item: QuoteLineItem): number {
@@ -311,6 +312,7 @@ export function QuoteItemsTable({
   clipboardCount = 0,
   onPasteItems,
   onClearClipboard,
+  toonM2 = true,
 }: QuoteItemsTableProps) {
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
@@ -675,7 +677,7 @@ export function QuoteItemsTable({
                           className="h-8 text-sm"
                         />
                       </div>
-                      {((item.breedte_mm || 0) > 0 && (item.hoogte_mm || 0) > 0) && (
+                      {toonM2 && ((item.breedte_mm || 0) > 0 && (item.hoogte_mm || 0) > 0) && (
                         <div className="pt-4 flex items-center gap-1.5">
                           <span className="text-xs text-muted-foreground">=</span>
                           <span className="text-sm font-semibold text-foreground tabular-nums">
@@ -1017,7 +1019,7 @@ export function QuoteItemsTable({
                     <div className="space-y-2">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                          Prijsvarianten — klant kiest 1 optie
+                          Prijsopties — beide op offerte, vink de standaard aan
                         </span>
                       </div>
 
@@ -1045,7 +1047,7 @@ export function QuoteItemsTable({
                                     ? 'border-primary bg-primary text-white'
                                     : 'border-border dark:border-border hover:border-primary/50'
                                 )}
-                                title={isActive ? 'Actieve optie (telt mee in totaal)' : 'Maak dit de actieve optie'}
+                                title={isActive ? 'Standaard optie (telt mee in offerte-totaal)' : 'Maak dit de standaard optie'}
                               >
                                 {isActive && <Check className="h-3 w-3" />}
                               </button>
@@ -1059,7 +1061,12 @@ export function QuoteItemsTable({
 
                               {isActive && (
                                 <span className="text-[10px] font-medium text-primary bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 rounded">
-                                  actief
+                                  standaard
+                                </span>
+                              )}
+                              {!isActive && (
+                                <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                  meerprijs
                                 </span>
                               )}
 

@@ -518,6 +518,8 @@ export interface AppSettings {
   // Offerte regel velden - welke tekstvelden wil je per offerte-item?
   // Bijv. ["Materiaal", "Lay-out", "Montage", "Opmerking"]
   offerte_regel_velden: string[];
+  // Offerte layout instellingen
+  offerte_toon_m2?: boolean;  // Toon m² berekening achter afmetingen (default: true)
   // KvK integratie
   kvk_api_key?: string;
   kvk_api_enabled?: boolean;
