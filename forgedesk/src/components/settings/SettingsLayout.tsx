@@ -1070,7 +1070,7 @@ function EmailTab() {
   const [teamLoading, setTeamLoading] = useState(false)
   const [savingMwId, setSavingMwId] = useState<string | null>(null)
   const [teamEdits, setTeamEdits] = useState<Record<string, { handtekening: string; afbeelding: string }>>({})
-  const isAdmin = profile?.app_rol === 'admin' || true // fallback: toon altijd voor nu
+  const isAdmin = true // TODO: koppel aan app_rol wanneer rollen geïmplementeerd zijn
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
