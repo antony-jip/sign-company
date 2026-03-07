@@ -2242,61 +2242,114 @@ function InstellingenSection() {
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-blue-600 border-blue-200">Sidebar</Badge>
             </h3>
             <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">
-              Calculatieregels en detail velden waarvan de productnaam, categorie of label een van deze termen bevat,
-              worden automatisch meegeteld in het uren overzicht in de offerte sidebar. Zo zie je per offerte
-              het totaal aantal uren per categorie en een totaal over alle items heen.
+              Kies welke uren-categorieën je wilt zien in het offerte-overzicht.
+            </p>
+            <p className="text-[11px] text-muted-foreground/50 dark:text-muted-foreground/40 mt-0.5">
+              Deze categorieën worden automatisch herkend uit je offerte-regels en getoond als totaal in de sidebar.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {urenVelden.map((veld) => (
-              <Badge key={veld} variant="secondary" className="gap-1 pl-2.5 pr-1 py-1 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800">
-                {veld}
-                <button
-                  onClick={() => setUrenVelden(urenVelden.filter((v) => v !== veld))}
-                  className="ml-1 hover:bg-purple-200 dark:hover:bg-purple-700 rounded-full p-0.5"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Links: tags en toevoegen */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {urenVelden.map((veld, i) => {
+                  const pastelColors = [
+                    'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800',
+                    'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+                    'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-800',
+                    'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+                    'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800',
+                    'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800',
+                  ]
+                  return (
+                    <Badge key={veld} variant="secondary" className={`gap-1 pl-2.5 pr-1 py-1 ${pastelColors[i % pastelColors.length]}`}>
+                      {veld}
+                      <button
+                        onClick={() => setUrenVelden(urenVelden.filter((v) => v !== veld))}
+                        className="ml-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )
+                })}
+                {urenVelden.length === 0 && (
+                  <span className="text-xs text-muted-foreground/60 italic">Geen categorieën — voeg er een toe</span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={nieuwUrenVeld}
+                  onChange={(e) => setNieuwUrenVeld(e.target.value)}
+                  placeholder="Bijv. Montage buiten, Installatie..."
+                  className="w-48"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && nieuwUrenVeld.trim() && !urenVelden.includes(nieuwUrenVeld.trim())) {
+                      setUrenVelden([...urenVelden, nieuwUrenVeld.trim()])
+                      setNieuwUrenVeld('')
+                    }
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (nieuwUrenVeld.trim() && !urenVelden.includes(nieuwUrenVeld.trim())) {
+                      setUrenVelden([...urenVelden, nieuwUrenVeld.trim()])
+                      setNieuwUrenVeld('')
+                    }
+                  }}
+                  disabled={!nieuwUrenVeld.trim()}
                 >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-            {urenVelden.length === 0 && (
-              <span className="text-xs text-muted-foreground/60 italic">Geen uren velden — alle uren worden als totaal getoond</span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              value={nieuwUrenVeld}
-              onChange={(e) => setNieuwUrenVeld(e.target.value)}
-              placeholder="Bijv. Montage buiten, Installatie..."
-              className="w-48"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && nieuwUrenVeld.trim() && !urenVelden.includes(nieuwUrenVeld.trim())) {
-                  setUrenVelden([...urenVelden, nieuwUrenVeld.trim()])
-                  setNieuwUrenVeld('')
-                }
-              }}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (nieuwUrenVeld.trim() && !urenVelden.includes(nieuwUrenVeld.trim())) {
-                  setUrenVelden([...urenVelden, nieuwUrenVeld.trim()])
-                  setNieuwUrenVeld('')
-                }
-              }}
-              disabled={!nieuwUrenVeld.trim()}
-            >
-              <Plus className="h-4 w-4 mr-1" /> Toevoegen
-            </Button>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-100 dark:border-blue-900">
-            <p className="text-xs text-blue-700 dark:text-blue-400">
-              <strong>Hoe werkt het?</strong> In de offerte sidebar worden uren automatisch herkend uit twee bronnen:
-              (1) <strong>calculatieregels</strong> — als de productnaam of categorie een van bovenstaande termen bevat, ongeacht de eenheid,
-              en (2) <strong>detail velden</strong> (namefields) — als het label een van de termen bevat en de waarde een getal is.
-              Per term zie je het totaal, plus een eindtotaal over alle items heen.
-            </p>
+                  <Plus className="h-4 w-4 mr-1" /> Toevoegen
+                </Button>
+              </div>
+            </div>
+
+            {/* Rechts: live preview */}
+            <div className="bg-white dark:bg-card rounded-2xl border border-border shadow-sm p-4 space-y-3">
+              <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Uren &amp; Materiaal</p>
+              <div className="space-y-1.5">
+                {urenVelden.map((veld, i) => {
+                  const dummyUren = [5, 3, 4, 2, 6, 1, 8, 7]
+                  const uren = dummyUren[i % dummyUren.length]
+                  return (
+                    <div key={veld} className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 text-muted-foreground dark:text-muted-foreground/70">
+                        <span className="text-xs">&#9201;</span>
+                        {veld}
+                      </span>
+                      <span className="text-foreground dark:text-white font-medium tabular-nums">{uren} uur</span>
+                    </div>
+                  )
+                })}
+              </div>
+              {urenVelden.length > 0 && (
+                <>
+                  <div className="border-t border-border/50 pt-2 space-y-1.5">
+                    <div className="flex items-center justify-between text-sm font-semibold">
+                      <span className="flex items-center gap-2 text-foreground dark:text-white">
+                        <span className="text-xs">&#128295;</span>
+                        Totaal uren
+                      </span>
+                      <span className="text-foreground dark:text-white tabular-nums">
+                        {urenVelden.reduce((sum, _, i) => sum + [5, 3, 4, 2, 6, 1, 8, 7][i % 8], 0)} uur
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 text-muted-foreground dark:text-muted-foreground/70">
+                        <span className="text-xs">&#128230;</span>
+                        Materiaal
+                      </span>
+                      <span className="text-foreground dark:text-white font-medium tabular-nums">&euro; 420,00</span>
+                    </div>
+                  </div>
+                </>
+              )}
+              {urenVelden.length === 0 && (
+                <p className="text-xs text-muted-foreground/40 italic text-center py-4">Voeg categorieën toe om de preview te zien</p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
