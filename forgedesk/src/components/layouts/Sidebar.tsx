@@ -174,7 +174,7 @@ export function Sidebar() {
         )}
       >
         {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[16px] bg-sage-deep rounded-r-[3px]" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[16px] rounded-r-[3px]" style={{ background: `hsl(var(--sidebar-primary))` }} />
         )}
         <Icon className={cn(
           'w-4 h-4 flex-shrink-0 transition-colors duration-200',
@@ -207,7 +207,10 @@ export function Sidebar() {
           isCollapsed ? 'justify-center' : 'gap-[9px]'
         )}
       >
-        <div className="w-[30px] h-[30px] rounded-[9px] bg-gradient-to-br from-blush to-mist flex items-center justify-center flex-shrink-0 font-extrabold text-[13px] text-foreground hover:scale-[1.08] hover:rotate-[-3deg] transition-transform">
+        <div
+          className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center flex-shrink-0 font-extrabold text-[13px] text-foreground hover:scale-[1.08] hover:rotate-[-3deg] transition-transform"
+          style={{ background: `linear-gradient(135deg, var(--wm-gradient-end), var(--wm-gradient-start))` }}
+        >
           F
         </div>
         {!isCollapsed && (
