@@ -1,64 +1,68 @@
+'use client';
+
 import React from 'react';
-import { USP } from '@/types/landing-page';
+import { useScrollAnimation } from './useScrollAnimation';
 
-interface USPsProps {
-  title?: string;
-  subtitle?: string;
-  usps: USP[];
-}
+const steps = [
+  {
+    number: '01',
+    title: 'Account aanmaken',
+    description: 'Maak je account aan in 30 seconden. Geen creditcard nodig, geen verplichtingen.',
+    bg: 'bg-blush-light',
+    accent: 'text-blush-deep',
+  },
+  {
+    number: '02',
+    title: 'Data importeren',
+    description: 'Importeer je klanten, producten en prijslijsten. Of begin helemaal vers.',
+    bg: 'bg-sage-light',
+    accent: 'text-sage-deep',
+  },
+  {
+    number: '03',
+    title: 'Direct aan de slag',
+    description: 'Maak je eerste offerte, start een project en ontdek hoe snel alles gaat.',
+    bg: 'bg-mist-light',
+    accent: 'text-mist-deep',
+  },
+];
 
-export const USPs: React.FC<USPsProps> = ({
-  title = 'Waarom Sign Company?',
-  subtitle,
-  usps,
-}) => {
+export const HowItWorks: React.FC = () => {
+  const ref = useScrollAnimation();
+
   return (
-    <section className="py-16 lg:py-24 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-heading font-bold text-gray-900 mb-4">
-            {title}
+    <section id="over-ons" ref={ref} className="py-20 lg:py-32 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <p className="fade-up text-sm font-semibold tracking-widest uppercase text-gray-400 mb-4">
+            Zo simpel is het
+          </p>
+          <h2 className="fade-up stagger-1 text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
+            In drie stappen live.
           </h2>
-          {subtitle && (
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
-          )}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {usps.map((usp, index) => (
-            <div key={index} className="text-center">
-              <div className="w-20 h-20 bg-secondary-100 text-secondary-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl font-bold">{index + 1}</span>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          {/* Connecting line (desktop only) */}
+          <div className="hidden md:block absolute top-7 left-[20%] right-[20%] h-0.5 bg-gray-200" />
+
+          {steps.map((step, index) => (
+            <div key={step.number} className={`fade-up stagger-${index + 1} text-center relative`}>
+              <div className={`w-14 h-14 ${step.bg} ${step.accent} rounded-full flex items-center justify-center mx-auto mb-6 text-lg font-bold relative z-10`}>
+                {step.number}
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {usp.title}
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                {step.title}
               </h3>
-              <p className="text-gray-600">{usp.description}</p>
+              <p className="text-gray-500 max-w-xs mx-auto leading-relaxed">
+                {step.description}
+              </p>
             </div>
           ))}
-        </div>
-        <div className="mt-16 bg-primary-900 rounded-2xl p-8 md:p-12 text-center text-white">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-secondary-400 mb-2">42+</div>
-              <div className="text-primary-200">Jaar ervaring</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-secondary-400 mb-2">1983</div>
-              <div className="text-primary-200">Opgericht</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-secondary-400 mb-2">500+</div>
-              <div className="text-primary-200">Projecten per jaar</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-secondary-400 mb-2">100%</div>
-              <div className="text-primary-200">Eigen productie</div>
-            </div>
-          </div>
         </div>
       </div>
     </section>
   );
 };
 
-export default USPs;
+export default HowItWorks;

@@ -1,102 +1,82 @@
+'use client';
+
 import React from 'react';
+import { useScrollAnimation } from './useScrollAnimation';
 
-interface HeroProps {
-  h1: string;
-  intro: string;
-  ctaText?: string;
-  ctaLink?: string;
-  backgroundImage?: string;
-  location?: string;
-}
+export const Hero: React.FC = () => {
+  const ref = useScrollAnimation();
 
-export const Hero: React.FC<HeroProps> = ({
-  h1,
-  intro,
-  ctaText = 'Vraag gratis advies aan',
-  ctaLink = '#contact',
-  backgroundImage,
-  location,
-}) => {
   return (
-    <section className="relative bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 text-white py-20 lg:py-32">
-      {backgroundImage && (
-        <div
-          className="absolute inset-0 opacity-20 bg-cover bg-center"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
-        />
-      )}
-      <div className="container mx-auto px-4 relative z-10">
+    <section ref={ref} className="relative pt-32 pb-20 lg:pt-44 lg:pb-32 bg-white overflow-hidden">
+      {/* Subtle pastel accents */}
+      <div className="absolute top-20 right-0 w-96 h-96 bg-blush-light rounded-full blur-3xl opacity-40" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-sage-light rounded-full blur-3xl opacity-40" />
+      <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-mist-light rounded-full blur-3xl opacity-30" />
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          {location && (
-            <span className="inline-block bg-secondary-500 text-white text-sm font-semibold px-4 py-1 rounded-full mb-6">
-              {location}
-            </span>
-          )}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-6 leading-tight">
-            {h1}
-          </h1>
-          <p className="text-xl md:text-2xl text-primary-100 mb-8 max-w-3xl mx-auto">
-            {intro}
+          {/* Tagline */}
+          <p className="fade-up text-sm font-semibold tracking-widest uppercase text-gray-400 mb-6">
+            Door creatievelingen, voor creatievelingen
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+          {/* Main Heading */}
+          <h1 className="fade-up stagger-1 text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 leading-[1.08] tracking-tight mb-8">
+            Je hele bedrijf.
+            <br />
+            <span className="text-gray-400">Eén app.</span>
+            <br />
+            <span className="relative inline-block">
+              <span className="relative z-10">€49 per maand.</span>
+              <span className="absolute bottom-2 left-0 w-full h-3 bg-cream opacity-60 -z-0 rounded" />
+            </span>
+          </h1>
+
+          {/* Sub copy */}
+          <p className="fade-up stagger-2 text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Offertes, projecten, werkbonnen, facturatie en CRM — alles wat je nodig hebt om je
+            creatieve bedrijf te runnen. Zonder gedoe.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="fade-up stagger-3 flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href={ctaLink}
-              className="inline-flex items-center justify-center bg-secondary-500 hover:bg-secondary-600 text-white font-semibold px-8 py-4 rounded-lg transition-colors duration-200 text-lg"
+              href="#pricing"
+              className="inline-flex items-center justify-center bg-gray-900 hover:bg-gray-800 text-white font-semibold px-8 py-4 rounded-full transition-colors text-base"
             >
-              {ctaText}
-              <svg
-                className="ml-2 w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
+              Start gratis proefperiode
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </a>
             <a
-              href="tel:+31228123456"
-              className="inline-flex items-center justify-center bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-lg transition-colors duration-200 text-lg border border-white/30"
+              href="#features"
+              className="inline-flex items-center justify-center bg-white hover:bg-gray-50 text-gray-700 font-semibold px-8 py-4 rounded-full transition-colors text-base border border-gray-200"
             >
-              <svg
-                className="mr-2 w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                />
-              </svg>
-              Bel direct
+              Bekijk features
             </a>
           </div>
-          <div className="mt-12 flex flex-wrap justify-center gap-8 text-sm">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2 text-secondary-400" fill="currentColor" viewBox="0 0 20 20">
+
+          {/* Trust badges */}
+          <div className="fade-up stagger-4 mt-14 flex flex-wrap justify-center gap-8 text-sm text-gray-400">
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              42 jaar ervaring
-            </div>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2 text-secondary-400" fill="currentColor" viewBox="0 0 20 20">
+              Geen creditcard nodig
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              Gratis advies
-            </div>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2 text-secondary-400" fill="currentColor" viewBox="0 0 20 20">
+              14 dagen gratis
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              Eigen montage
-            </div>
+              Direct aan de slag
+            </span>
           </div>
         </div>
       </div>

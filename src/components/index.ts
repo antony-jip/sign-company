@@ -1,11 +1,9 @@
 export { Hero } from './Hero';
-export { Services } from './Services';
-export { USPs } from './USPs';
-export { Portfolio } from './Portfolio';
-export { FAQ } from './FAQ';
-export { CTA } from './CTA';
-export { Location } from './Location';
+export { Features } from './Services';
+export { HowItWorks } from './USPs';
+export { Pricing } from './Portfolio';
+export { Testimonials } from './FAQ';
+export { CTASection } from './CTA';
+export { SocialProof } from './SocialProof';
 export { Header } from './Header';
 export { Footer } from './Footer';
-export { FontLoader } from './FontLoader';
-export { FontSelector } from './FontSelector';

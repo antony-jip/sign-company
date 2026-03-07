@@ -1,164 +1,85 @@
 'use client';
 
-import React, { useState } from 'react';
-import { companyInfo } from '@/lib/company-info';
-
-interface HeaderProps {
-  transparent?: boolean;
-}
+import React, { useState, useEffect } from 'react';
 
 const navigation = [
-  { name: 'Home', href: '/' },
-  {
-    name: 'Diensten',
-    href: '/diensten',
-    children: [
-      { name: 'Gevelreclame', href: '/gevelreclame/' },
-      { name: 'Autobelettering', href: '/autobelettering/' },
-      { name: 'Bootstickers', href: '/bootstickers-enkhuizen/' },
-      { name: 'Interieur Signing', href: '/interieur-signing-noord-holland/' },
-      { name: 'Bewegwijzering', href: '/bewegwijzering-west-friesland/' },
-      { name: 'Carwrapping', href: '/carwrapping-lelystad/' },
-    ],
-  },
-  {
-    name: 'Locaties',
-    href: '/locaties',
-    children: [
-      { name: 'Enkhuizen', href: '/gevelreclame-enkhuizen/' },
-      { name: 'Hoorn', href: '/gevelreclame-hoorn/' },
-      { name: 'Medemblik', href: '/gevelreclame-medemblik/' },
-      { name: 'Lelystad', href: '/signing-lelystad/' },
-      { name: 'Alkmaar', href: '/gevelreclame-alkmaar/' },
-      { name: 'Texel', href: '/signing-texel/' },
-    ],
-  },
-  { name: 'Projecten', href: '/projecten' },
-  { name: 'Over ons', href: '/over-ons' },
-  { name: 'Contact', href: '/contact' },
+  { name: 'Features', href: '#features' },
+  { name: 'Pricing', href: '#pricing' },
+  { name: 'Over ons', href: '#over-ons' },
 ];
 
-export const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
+export const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <header
-      className={`w-full z-50 ${
-        transparent
-          ? 'absolute top-0 left-0 right-0 bg-transparent'
-          : 'relative bg-white shadow-sm'
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm'
+          : 'bg-transparent'
       }`}
     >
-      <div className="container mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <a href="/" className="flex items-center">
-            <span
-              className={`text-2xl font-bold ${
-                transparent ? 'text-white' : 'text-primary-900'
-              }`}
-            >
-              {companyInfo.name}
+            <span className="text-xl font-bold tracking-tight text-gray-900">
+              FORGE<span className="font-light">desk</span>
             </span>
           </a>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center gap-8">
             {navigation.map((item) => (
-              <div key={item.name} className="relative group">
-                <a
-                  href={item.href}
-                  className={`font-medium transition-colors ${
-                    transparent
-                      ? 'text-white/90 hover:text-white'
-                      : 'text-gray-700 hover:text-primary-600'
-                  }`}
-                  onMouseEnter={() => item.children && setOpenDropdown(item.name)}
-                  onMouseLeave={() => setOpenDropdown(null)}
-                >
-                  {item.name}
-                  {item.children && (
-                    <svg
-                      className="inline-block w-4 h-4 ml-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  )}
-                </a>
-                {item.children && openDropdown === item.name && (
-                  <div
-                    className="absolute top-full left-0 w-56 bg-white rounded-lg shadow-lg py-2 mt-1"
-                    onMouseEnter={() => setOpenDropdown(item.name)}
-                    onMouseLeave={() => setOpenDropdown(null)}
-                  >
-                    {item.children.map((child) => (
-                      <a
-                        key={child.name}
-                        href={child.href}
-                        className="block px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
-                      >
-                        {child.name}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <a
+                key={item.name}
+                href={item.href}
+                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                {item.name}
+              </a>
             ))}
           </nav>
 
-          {/* CTA Button */}
-          <div className="hidden lg:flex items-center space-x-4">
+          {/* Desktop CTA */}
+          <div className="hidden md:flex items-center gap-4">
             <a
-              href={`tel:${companyInfo.phone}`}
-              className={`font-medium ${
-                transparent ? 'text-white' : 'text-gray-700'
-              }`}
+              href="https://app.forgedesk.nl"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
-              {companyInfo.phone}
+              Inloggen
             </a>
             <a
-              href="#contact"
-              className="bg-secondary-500 hover:bg-secondary-600 text-white font-semibold px-6 py-2 rounded-lg transition-colors"
+              href="#pricing"
+              className="bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
             >
-              Offerte aanvragen
+              Gratis proberen
             </a>
           </div>
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden"
+            className="md:hidden p-2"
             onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle menu"
+            aria-label="Menu openen"
           >
             <svg
-              className={`w-6 h-6 ${transparent ? 'text-white' : 'text-gray-900'}`}
+              className="w-6 h-6 text-gray-900"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
               {isOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
               ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
               )}
             </svg>
           </button>
@@ -166,38 +87,33 @@ export const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden bg-white rounded-lg shadow-lg mt-2 py-4">
-            {navigation.map((item) => (
-              <div key={item.name}>
+          <div className="md:hidden bg-white rounded-2xl shadow-lg mt-2 p-6 border border-gray-100">
+            <nav className="flex flex-col gap-4">
+              {navigation.map((item) => (
                 <a
+                  key={item.name}
                   href={item.href}
-                  className="block px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600"
+                  onClick={() => setIsOpen(false)}
+                  className="text-base font-medium text-gray-700 hover:text-gray-900 py-2"
                 >
                   {item.name}
                 </a>
-                {item.children && (
-                  <div className="pl-4">
-                    {item.children.map((child) => (
-                      <a
-                        key={child.name}
-                        href={child.href}
-                        className="block px-4 py-2 text-sm text-gray-600 hover:bg-primary-50 hover:text-primary-600"
-                      >
-                        {child.name}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            <div className="px-4 pt-4 mt-4 border-t">
+              ))}
+              <hr className="border-gray-100" />
               <a
-                href="#contact"
-                className="block w-full bg-secondary-500 hover:bg-secondary-600 text-white font-semibold px-6 py-3 rounded-lg text-center transition-colors"
+                href="https://app.forgedesk.nl"
+                className="text-base font-medium text-gray-600 py-2"
               >
-                Offerte aanvragen
+                Inloggen
               </a>
-            </div>
+              <a
+                href="#pricing"
+                onClick={() => setIsOpen(false)}
+                className="bg-gray-900 text-white font-semibold px-6 py-3 rounded-full text-center"
+              >
+                Gratis proberen
+              </a>
+            </nav>
           </div>
         )}
       </div>
