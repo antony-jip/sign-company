@@ -543,6 +543,7 @@ export interface AppSettings {
   // Email
   afzender_naam: string;
   // Forgie
+  forgie_enabled: boolean;
   forgie_bedrijfscontext: string;
   created_at: string;
   updated_at: string;

@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Upload, Trash2, Save, FileText, Loader2, CheckCircle2 } from 'lucide-react'
+import { Upload, Trash2, Save, FileText, Loader2, CheckCircle2, Bot } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { toast } from 'sonner'
@@ -129,8 +131,40 @@ export function ForgieTab() {
     }
   }, [loadImports])
 
+  const handleToggleForgie = useCallback(async (enabled: boolean) => {
+    try {
+      await updateSettings({ forgie_enabled: enabled })
+      toast.success(enabled ? 'Forgie ingeschakeld' : 'Forgie uitgeschakeld')
+    } catch {
+      toast.error('Instelling opslaan mislukt')
+    }
+  }, [updateSettings])
+
   return (
     <div className="space-y-6">
+      {/* Forgie aan/uit */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Forgie assistent</CardTitle>
+          <CardDescription>
+            Schakel de Forgie AI-assistent in of uit. Wanneer uitgeschakeld wordt het vosje niet meer getoond.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="forgie-toggle" className="flex items-center gap-2 cursor-pointer">
+              <Bot className="w-4 h-4 text-muted-foreground" />
+              <span>Forgie tonen</span>
+            </Label>
+            <Switch
+              id="forgie-toggle"
+              checked={settings.forgie_enabled ?? true}
+              onCheckedChange={handleToggleForgie}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Bedrijfscontext */}
       <Card>
         <CardHeader>

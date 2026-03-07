@@ -8,6 +8,7 @@ import {
   clearForgieHistory,
   type ForgieChatMessage,
 } from '@/services/forgieChatService'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 const SUGGESTIE_CHIPS = [
   'Wat staat er open?',
@@ -56,6 +57,7 @@ function ForgieMascot({ size = 40, className }: { size?: number; className?: str
 const FORGIE_INTRO_SEEN_KEY = 'forgie-intro-seen'
 
 export function ForgieChatWidget() {
+  const { forgieEnabled } = useAppSettings()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ForgieChatMessage[]>([])
   const [input, setInput] = useState('')
@@ -143,11 +145,13 @@ export function ForgieChatWidget() {
     }
   }, [handleSend])
 
+  if (!forgieEnabled) return null
+
   return (
     <>
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-8rem)] bg-card/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div className="fixed bottom-24 right-6 z-[9999] w-[360px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-8rem)] bg-card/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-card/50 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center gap-2.5">
@@ -289,10 +293,11 @@ export function ForgieChatWidget() {
             localStorage.setItem(FORGIE_INTRO_SEEN_KEY, '1')
           }
         }}
+        style={{ right: 24, bottom: 24, left: 'auto' }}
         className={cn(
-          'fixed bottom-5 right-5 sm:right-7 z-50 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 group',
+          'fixed z-[9999] rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 group',
           'hover:scale-110 active:scale-95',
-          isOpen ? 'w-12 h-12' : 'w-16 h-16'
+          isOpen ? 'w-14 h-14' : 'w-[68px] h-[68px]'
         )}
       >
         {/* Glass background */}
@@ -300,14 +305,14 @@ export function ForgieChatWidget() {
           'absolute inset-0 rounded-full backdrop-blur-xl border transition-colors duration-200',
           isOpen
             ? 'bg-white/60 dark:bg-white/10 border-white/40'
-            : 'bg-white/70 dark:bg-white/15 border-white/50 shadow-[0_8px_32px_rgba(232,130,90,0.25)]'
+            : 'bg-white/70 dark:bg-white/15 border-white/50 shadow-[0_8px_32px_rgba(232,130,90,0.35)]'
         )} />
 
         {isOpen ? (
           <X className="w-5 h-5 text-foreground relative z-10" />
         ) : (
           <span className="relative z-10 flex items-center justify-center">
-            <ForgieMascot size={44} className="drop-shadow-sm transition-transform duration-200 group-hover:rotate-6" />
+            <ForgieMascot size={48} className="drop-shadow-sm transition-transform duration-200 group-hover:rotate-6" />
             {hasUnread && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse" />
             )}
