@@ -376,7 +376,7 @@ export function UitgavenLayout() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-2xl border bg-white/80 dark:bg-foreground/80 backdrop-blur-sm overflow-hidden">
+        <div className="rounded-2xl border bg-card/80 backdrop-blur-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

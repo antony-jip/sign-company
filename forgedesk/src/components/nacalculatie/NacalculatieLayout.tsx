@@ -831,7 +831,7 @@ export function NacalculatieLayout() {
                   Totaal vergelijking
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="text-center p-3 bg-white dark:bg-foreground rounded-lg">
+                  <div className="text-center p-3 bg-card rounded-lg">
                     <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-1">
                       Offerte bedrag
                     </p>
@@ -839,7 +839,7 @@ export function NacalculatieLayout() {
                       {formatCurrency(detailData.offerteTotaal)}
                     </p>
                   </div>
-                  <div className="text-center p-3 bg-white dark:bg-foreground rounded-lg">
+                  <div className="text-center p-3 bg-card rounded-lg">
                     <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-1">
                       Werkelijke kosten
                     </p>

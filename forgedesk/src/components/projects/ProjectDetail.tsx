@@ -972,7 +972,7 @@ export function ProjectDetail() {
                 {projectOffertes.length > 0 ? (
                   <div className="mt-3 space-y-2">
                     {projectOffertes.filter(o => o.status !== 'gefactureerd').map((offerte) => (
-                      <div key={offerte.id} className="flex items-center justify-between bg-white dark:bg-foreground/80 rounded-lg px-3 py-2 border border-indigo-200 dark:border-indigo-800">
+                      <div key={offerte.id} className="flex items-center justify-between bg-card rounded-lg px-3 py-2 border border-indigo-200 dark:border-indigo-800">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-sm font-medium truncate">{offerte.titel}</span>
                           <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
@@ -1527,7 +1527,7 @@ export function ProjectDetail() {
                 <select
                   value={toewijzingMedewerkerId}
                   onChange={(e) => setToewijzingMedewerkerId(e.target.value)}
-                  className="flex-1 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
+                  className="flex-1 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-card text-foreground dark:text-white"
                 >
                   <option value="">Medewerker...</option>
                   {alleMedewerkers
@@ -1538,7 +1538,7 @@ export function ProjectDetail() {
                 <select
                   value={toewijzingRol}
                   onChange={(e) => setToewijzingRol(e.target.value as ProjectToewijzing['rol'])}
-                  className="w-24 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
+                  className="w-24 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-card text-foreground dark:text-white"
                 >
                   <option value="medewerker">Medewerker</option>
                   <option value="eigenaar">Eigenaar</option>
@@ -2199,7 +2199,7 @@ export function ProjectDetail() {
                 <select
                   value={selectedOfferteId}
                   onChange={e => setSelectedOfferteId(e.target.value)}
-                  className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
+                  className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-card text-foreground dark:text-white"
                 >
                   <option value="">Geen offerte bijvoegen</option>
                   {projectOffertes.map(o => (
@@ -2284,7 +2284,7 @@ export function ProjectDetail() {
               <select
                 value={kopieKlantId}
                 onChange={(e) => setKopieKlantId(e.target.value)}
-                className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
+                className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-card text-foreground dark:text-white"
               >
                 <option value="">Zelfde klant behouden</option>
                 {alleKlanten.map((k) => (

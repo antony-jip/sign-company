@@ -460,7 +460,7 @@ export function OfferteDetail() {
               </Badge>
             </button>
             {statusOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-foreground/80 border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+              <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
                 {STATUS_OPTIONS.map((opt) => (
                   <button
                     key={opt.key}

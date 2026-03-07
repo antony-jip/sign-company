@@ -144,7 +144,7 @@ export function ProjectCreate() {
 
       <form onSubmit={handleSubmit}>
         {/* Project info */}
-        <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground p-5 mb-4">
+        <div className="rounded-xl border border-border dark:border-border bg-card p-5 mb-4">
           <div className="space-y-4">
             <div>
               <Label htmlFor="naam" className="text-xs font-medium text-muted-foreground mb-1.5 block">
@@ -177,7 +177,7 @@ export function ProjectCreate() {
         </div>
 
         {/* Klant + Contactpersoon */}
-        <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground p-5 mb-4">
+        <div className="rounded-xl border border-border dark:border-border bg-card p-5 mb-4">
           <div className="flex items-center gap-2 mb-3">
             <User className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Klant & Contact</span>
@@ -259,7 +259,7 @@ export function ProjectCreate() {
         </div>
 
         {/* Status + Prioriteit + Datums */}
-        <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground p-5 mb-4">
+        <div className="rounded-xl border border-border dark:border-border bg-card p-5 mb-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</Label>
@@ -316,7 +316,7 @@ export function ProjectCreate() {
         </div>
 
         {/* Budget + Team */}
-        <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground p-5 mb-6">
+        <div className="rounded-xl border border-border dark:border-border bg-card p-5 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Budget (&euro;)</Label>

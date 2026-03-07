@@ -309,7 +309,7 @@ export function CommandPalette() {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-2xl border border-border dark:border-border overflow-hidden bg-white dark:bg-foreground"
+        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-lg border border-border dark:border-border overflow-hidden bg-card"
         style={{
           animation: 'commandPaletteSlideIn 150ms ease-out forwards',
         }}

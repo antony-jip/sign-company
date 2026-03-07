@@ -244,7 +244,7 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
       </div>
 
       {/* Email form */}
-      <div className="rounded-2xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm">
+      <div className="rounded-2xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
         <div className="p-6 space-y-4">
           {/* To */}
           <div className="flex items-center gap-3">

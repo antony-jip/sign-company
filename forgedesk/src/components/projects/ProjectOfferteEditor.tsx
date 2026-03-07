@@ -268,7 +268,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                 <select
                   value={status}
                   onChange={e => setStatus(e.target.value as Offerte['status'])}
-                  className="w-full text-sm border border-border dark:border-border rounded-md px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white h-9"
+                  className="w-full text-sm border border-border dark:border-border rounded-md px-3 py-2 bg-card text-foreground dark:text-white h-9"
                 >
                   <option value="concept">Concept</option>
                   <option value="verzonden">Verzonden</option>

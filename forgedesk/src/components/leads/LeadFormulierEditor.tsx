@@ -284,7 +284,7 @@ export function LeadFormulierEditor() {
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Preview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-xl p-6 bg-white dark:bg-foreground space-y-4">
+              <div className="border rounded-xl p-6 bg-card space-y-4">
                 <h3 className="text-lg font-bold text-foreground dark:text-white">{naam || 'Formulier titel'}</h3>
                 {beschrijving && <p className="text-sm text-muted-foreground">{beschrijving}</p>}
                 <Separator />

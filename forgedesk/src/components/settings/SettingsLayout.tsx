@@ -92,7 +92,7 @@ function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string;
             className={cn(
               'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
               isActive
-                ? 'bg-white dark:bg-foreground/70 text-foreground dark:text-white shadow-sm'
+                ? 'bg-card text-foreground dark:text-white shadow-sm'
                 : 'text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/50'
             )}
           >
@@ -1270,7 +1270,7 @@ function AanpassingenTab() {
           </div>
 
           {/* Preview */}
-          <div className="p-4 rounded-xl border border-border dark:border-border bg-white dark:bg-foreground">
+          <div className="p-4 rounded-xl border border-border dark:border-border bg-card">
             <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-2">Voorbeeld</p>
             <div className="flex items-center gap-3">
               <div
