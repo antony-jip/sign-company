@@ -450,7 +450,7 @@ export function AITextGenerator() {
 
           {!aiConfigured && (
             <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 text-center">
-              Demo modus - configureer OPENAI_API_KEY op de server voor AI-gegenereerde teksten
+              Demo modus - configureer ANTHROPIC_API_KEY op de server voor AI-gegenereerde teksten
             </p>
           )}
         </CardContent>

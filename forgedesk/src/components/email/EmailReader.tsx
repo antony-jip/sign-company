@@ -60,6 +60,9 @@ import { formatDateTime, getInitials, cn } from '@/lib/utils'
 import type { Email } from '@/types'
 import { updateEmail } from '@/services/supabaseService'
 import { toast } from 'sonner'
+import { callForgie } from '@/services/forgieService'
+import type { ForgieAction } from '@/services/forgieService'
+import { Globe } from 'lucide-react'
 
 interface EmailReaderProps {
   email: Email | null
@@ -341,6 +344,11 @@ export function EmailReader({
   // Attachment preview
   const [previewAttachment, setPreviewAttachment] = useState<number | null>(null)
 
+  // Forgie AI
+  const [forgieLoading, setForgieLoading] = useState<ForgieAction | null>(null)
+  const [forgieSummary, setForgieSummary] = useState<string | null>(null)
+  const [forgieTranslation, setForgieTranslation] = useState<string | null>(null)
+
   // Dropdowns
   const [showTemplates, setShowTemplates] = useState(false)
   const [showMergeFields, setShowMergeFields] = useState(false)
@@ -519,6 +527,33 @@ export function EmailReader({
         break
     }
   }
+
+  // Forgie AI handler
+  const handleForgie = useCallback(async (action: ForgieAction) => {
+    if (!email) return
+    setForgieLoading(action)
+    try {
+      const emailText = email.inhoud.replace(/<[^>]*>/g, '')
+      const result = await callForgie(action, emailText)
+      if (action === 'summarize') {
+        setForgieSummary(result.result)
+      } else if (action === 'translate-en') {
+        setForgieTranslation(result.result)
+      } else if (action === 'generate-reply') {
+        openReply('reply')
+        setTimeout(() => {
+          if (editorRef.current) {
+            editorRef.current.innerText = result.result
+            setEditorEmpty(false)
+          }
+        }, 150)
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Forgie is niet beschikbaar')
+    } finally {
+      setForgieLoading(null)
+    }
+  }, [email])
 
   // Open reply
   const openReply = useCallback((mode: 'reply' | 'reply-all' | 'forward') => {
@@ -864,6 +899,66 @@ export function EmailReader({
           </div>
         )
       })()}
+
+      {/* ── Forgie AI Toolbar ── */}
+      <div className="mx-6 mt-4 mb-0 flex items-center gap-2 flex-shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 text-xs rounded-lg text-blush-deep hover:text-blush-deep hover:bg-blush/20"
+          disabled={forgieLoading !== null}
+          onClick={() => handleForgie('summarize')}
+        >
+          {forgieLoading === 'summarize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          Samenvatten
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 text-xs rounded-lg text-blush-deep hover:text-blush-deep hover:bg-blush/20"
+          disabled={forgieLoading !== null}
+          onClick={() => handleForgie('translate-en')}
+        >
+          {forgieLoading === 'translate-en' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
+          Vertaal → EN
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 text-xs rounded-lg text-blush-deep hover:text-blush-deep hover:bg-blush/20"
+          disabled={forgieLoading !== null}
+          onClick={() => handleForgie('generate-reply')}
+        >
+          {forgieLoading === 'generate-reply' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
+          Beantwoord met AI
+        </Button>
+      </div>
+
+      {/* ── Forgie Summary Card ── */}
+      {forgieSummary && (
+        <div className="mx-6 mt-3 mb-0 bg-blush/20 rounded-xl p-4 flex-shrink-0 animate-fade-in">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs uppercase font-semibold text-blush-deep tracking-wide">Forgie</span>
+            <button onClick={() => setForgieSummary(null)} className="text-muted-foreground hover:text-foreground">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">{forgieSummary}</p>
+        </div>
+      )}
+
+      {/* ── Forgie Translation Card ── */}
+      {forgieTranslation && (
+        <div className="mx-6 mt-3 mb-0 bg-mist/20 rounded-xl p-4 flex-shrink-0 animate-fade-in">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs uppercase font-semibold text-mist-deep tracking-wide">Forgie — Vertaling</span>
+            <button onClick={() => setForgieTranslation(null)} className="text-muted-foreground hover:text-foreground">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{forgieTranslation}</p>
+        </div>
+      )}
 
       {/* ── Thread / Conversation View ── */}
       <ScrollArea className="flex-1">

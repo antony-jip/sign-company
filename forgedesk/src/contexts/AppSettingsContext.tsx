@@ -34,7 +34,7 @@ interface AppSettingsContextType {
   kvkNummer: string
   btwNummer: string
   logoUrl: string
-  openaiApiKey: string
+  anthropicApiKey: string
   // Factuur instellingen
   factuurPrefix: string
   factuurBetaaltermijnDagen: number
@@ -114,8 +114,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     if (data) setProfile(data)
   }, [user?.id])
 
-  // OpenAI key is now server-side only (OPENAI_API_KEY in env, not exposed to frontend)
-  const openaiApiKey = ''
+  // Anthropic key is server-side only (ANTHROPIC_API_KEY in env, not exposed to frontend)
+  const anthropicApiKey = ''
 
   const value: AppSettingsContextType = {
     settings,
@@ -146,7 +146,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     kvkNummer: profile?.kvk_nummer || '',
     btwNummer: profile?.btw_nummer || '',
     logoUrl: profile?.logo_url || '',
-    openaiApiKey,
+    anthropicApiKey,
     // Factuur instellingen
     factuurPrefix: settings.factuur_prefix || 'FAC',
     factuurBetaaltermijnDagen: settings.factuur_betaaltermijn_dagen ?? 30,

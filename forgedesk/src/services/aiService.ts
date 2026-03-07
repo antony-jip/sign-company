@@ -1,6 +1,6 @@
 import supabase, { isSupabaseConfigured } from './supabaseClient'
 
-const DEFAULT_MODEL = 'gpt-4o-mini'
+const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
 
 // ============ CONFIGURATION CHECK ============
 
@@ -61,7 +61,7 @@ export async function chatCompletion(
   systemPrompt?: string
 ): Promise<string> {
   if (!isAIConfigured()) {
-    return 'AI is momenteel niet beschikbaar. Zorg dat je bent ingelogd en dat de OpenAI API key is geconfigureerd op de server.'
+    return 'AI is momenteel niet beschikbaar. Zorg dat je bent ingelogd en dat de Anthropic API key is geconfigureerd op de server.'
   }
 
   const allMessages: ChatMessage[] = []
