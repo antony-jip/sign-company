@@ -151,7 +151,7 @@ export function ForgieChatWidget() {
     <>
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-[9999] w-[360px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-8rem)] bg-card/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div style={{ position: 'fixed' }} className="bottom-24 right-6 z-[9999] w-[360px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-8rem)] bg-card/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-card/50 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center gap-2.5">
@@ -293,9 +293,9 @@ export function ForgieChatWidget() {
             localStorage.setItem(FORGIE_INTRO_SEEN_KEY, '1')
           }
         }}
-        style={{ right: 24, bottom: 24, left: 'auto' }}
+        style={{ position: 'fixed', right: 24, bottom: 24, left: 'auto' }}
         className={cn(
-          'fixed z-[9999] rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 group',
+          'z-[9999] rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 group',
           'hover:scale-110 active:scale-95',
           isOpen ? 'w-14 h-14' : 'w-[68px] h-[68px]'
         )}
