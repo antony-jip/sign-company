@@ -294,12 +294,12 @@ const statusLabels: Record<string, string> = {
 function getStatusBadgeColor(status?: string): string {
   if (!status) return ''
   switch (status) {
-    case 'actief': case 'bezig': case 'onderweg': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
-    case 'goedgekeurd': case 'klaar': case 'betaald': case 'afgerond': return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-    case 'concept': case 'todo': case 'gepland': return 'bg-muted text-foreground/70 dark:bg-foreground/80/40 dark:text-muted-foreground/50'
-    case 'verzonden': case 'review': case 'in-review': case 'bekeken': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-    case 'afgewezen': case 'verlopen': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-    default: return 'bg-muted text-muted-foreground'
+    case 'actief': case 'bezig': case 'onderweg': return 'bg-[#E8EFF8] text-[#4A7AB5] dark:bg-[#161E28] dark:text-[#6A9AD5]'
+    case 'goedgekeurd': case 'klaar': case 'betaald': case 'afgerond': return 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]'
+    case 'concept': case 'todo': case 'gepland': return 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]'
+    case 'verzonden': case 'review': case 'in-review': case 'bekeken': return 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]'
+    case 'afgewezen': case 'verlopen': return 'bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70]'
+    default: return 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]'
   }
 }
 

@@ -51,13 +51,13 @@ function getStatusBadge(status?: string) {
   if (!status) return null
   const lower = status.toLowerCase()
   if (lower === 'akkoord') {
-    return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-[10px] px-1.5 py-0">Akkoord</Badge>
+    return <Badge className="bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80] text-[10px] px-1.5 py-0 border-0">Akkoord</Badge>
   }
   if (lower === 'in afwachting') {
-    return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] px-1.5 py-0">In afwachting</Badge>
+    return <Badge className="bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A] text-[10px] px-1.5 py-0 border-0">In afwachting</Badge>
   }
   if (lower === 'niet akkoord') {
-    return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[10px] px-1.5 py-0">Niet akkoord</Badge>
+    return <Badge className="bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70] text-[10px] px-1.5 py-0 border-0">Niet akkoord</Badge>
   }
   return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{status}</Badge>
 }
