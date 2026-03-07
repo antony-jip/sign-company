@@ -105,7 +105,7 @@ export function QuoteCreation() {
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
-  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile } = useAppSettings()
+  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2 } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -1966,6 +1966,7 @@ export function QuoteCreation() {
                 clipboardCount={clipboardCount}
                 onPasteItems={handlePasteItems}
                 onClearClipboard={handleClearClipboard}
+                toonM2={offerteToonM2}
               />
             </CardContent>
           </Card>

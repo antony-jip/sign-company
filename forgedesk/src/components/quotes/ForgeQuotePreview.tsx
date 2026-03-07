@@ -587,9 +587,13 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                               <span className="inline-flex items-center gap-1.5">
                                 <span className={`inline-block w-2 h-2 rounded-full ${isActive ? 'bg-blue-500' : 'bg-border dark:bg-muted-foreground'}`} />
                                 <span className="text-xs font-medium">{variant.label}</span>
-                                {isActive && (
+                                {isActive ? (
                                   <span className="text-[9px] font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-1 py-0.5 rounded">
-                                    geselecteerd
+                                    standaard
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-medium text-muted-foreground bg-muted px-1 py-0.5 rounded">
+                                    alternatief
                                   </span>
                                 )}
                               </span>

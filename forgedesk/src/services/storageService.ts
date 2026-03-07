@@ -3,30 +3,65 @@ import { safeSetItem } from '@/utils/localStorageUtils'
 
 const BUCKET = 'documenten'
 
-/** Max file size (in bytes) that will be stored in localStorage fallback (500KB). */
-const MAX_LOCAL_FILE_SIZE = 500 * 1024
+/** Max file size (in bytes) that will be stored in localStorage fallback (5MB). */
+const MAX_LOCAL_FILE_SIZE = 5 * 1024 * 1024
+
+/** Compress an image file to a data URL with reduced size. */
+function compressImageForStorage(file: File, maxWidth = 1200, quality = 0.7): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // Non-image files: read as-is
+    if (!file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let w = img.width
+        let h = img.height
+        if (w > maxWidth) {
+          h = Math.round((h * maxWidth) / w)
+          w = maxWidth
+        }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Canvas not supported')); return }
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = reject
+      img.src = reader.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
 
 export async function uploadFile(file: File, path: string): Promise<string> {
   if (!isSupabaseConfigured() || !supabase) {
     if (file.size > MAX_LOCAL_FILE_SIZE) {
       throw new Error(
-        `Bestand te groot voor lokale opslag (max ${Math.round(MAX_LOCAL_FILE_SIZE / 1024)}KB). Configureer Supabase voor grotere bestanden.`
+        `Bestand te groot voor lokale opslag (max ${Math.round(MAX_LOCAL_FILE_SIZE / (1024 * 1024))}MB). Configureer Supabase voor grotere bestanden.`
       )
     }
-    // Fallback: store as data URL in localStorage
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
-        stored[path] = { name: file.name, size: file.size, type: file.type, dataUrl: reader.result }
-        if (!safeSetItem('forgedesk_files', JSON.stringify(stored))) {
-          reject(new Error('Onvoldoende opslagruimte. Verwijder oude bestanden of configureer Supabase.'))
-          return
-        }
-        resolve(path)
+    // Fallback: compress images and store in localStorage
+    try {
+      const dataUrl = await compressImageForStorage(file)
+      const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
+      stored[path] = { name: file.name, size: file.size, type: file.type, dataUrl }
+      if (!safeSetItem('forgedesk_files', JSON.stringify(stored))) {
+        throw new Error('Onvoldoende opslagruimte. Verwijder oude bestanden of configureer Supabase.')
       }
-      reader.readAsDataURL(file)
-    })
+      return path
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Kon bestand niet opslaan')
+    }
   }
   const { data, error } = await supabase.storage.from(BUCKET).upload(path, file, {
     cacheControl: '3600',

@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { createProject, getKlanten } from '@/services/supabaseService'
+import { createProject, getKlanten, getMedewerkers } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Klant } from '@/types'
+import type { Klant, Medewerker } from '@/types'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, FolderKanban, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ export function ProjectCreate() {
   const paramKlantId = searchParams.get('klant_id') || ''
 
   const [klanten, setKlanten] = useState<Klant[]>([])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [loading, setLoading] = useState(false)
 
   const [naam, setNaam] = useState('')
@@ -38,18 +39,22 @@ export function ProjectCreate() {
   const [startDatum, setStartDatum] = useState(() => new Date().toISOString().split('T')[0])
   const [eindDatum, setEindDatum] = useState('')
   const [budget, setBudget] = useState('')
-  const [teamLeden, setTeamLeden] = useState('')
+  const [geselecteerdeMedewerkerIds, setGeselecteerdeMedewerkerIds] = useState<string[]>([])
 
   useEffect(() => {
-    const fetchKlanten = async () => {
+    const fetchData = async () => {
       try {
-        const data = await getKlanten()
-        setKlanten(data)
+        const [klantenData, medewerkersData] = await Promise.all([
+          getKlanten(),
+          getMedewerkers(),
+        ])
+        setKlanten(klantenData)
+        setMedewerkers(medewerkersData.filter(m => m.status === 'actief'))
       } catch (error) {
-        logger.error('Fout bij ophalen klanten:', error)
+        logger.error('Fout bij ophalen data:', error)
       }
     }
-    fetchKlanten()
+    fetchData()
   }, [])
 
   const geselecteerdeKlant = useMemo(() => {
@@ -96,10 +101,10 @@ export function ProjectCreate() {
     setLoading(true)
 
     try {
-      const teamLedenArray = teamLeden
-        .split(',')
-        .map((lid) => lid.trim())
-        .filter((lid) => lid.length > 0)
+      const teamLedenNamen = geselecteerdeMedewerkerIds.map(id => {
+        const mw = medewerkers.find(m => m.id === id)
+        return mw?.naam || ''
+      }).filter(n => n.length > 0)
 
       await createProject({
         user_id: user.id,
@@ -113,7 +118,7 @@ export function ProjectCreate() {
         budget: parseFloat(budget) || 0,
         besteed: 0,
         voortgang: 0,
-        team_leden: teamLedenArray,
+        team_leden: teamLedenNamen,
         contactpersoon_id: contactpersoonId || undefined,
         vestiging_id: vestigingId || undefined,
         vestiging_naam: vestigingId ? vestigingen.find((v) => v.id === vestigingId)?.naam : undefined,
@@ -333,12 +338,45 @@ export function ProjectCreate() {
 
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Teamleden</Label>
-              <Input
-                value={teamLeden}
-                onChange={(e) => setTeamLeden(e.target.value)}
-                placeholder="Jan, Piet, Klaas"
-                className="h-9"
-              />
+              {medewerkers.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-2">Geen medewerkers beschikbaar</p>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap gap-1.5">
+                    {geselecteerdeMedewerkerIds.map(id => {
+                      const mw = medewerkers.find(m => m.id === id)
+                      if (!mw) return null
+                      return (
+                        <span key={id} className="inline-flex items-center gap-1 bg-sage/30 text-foreground text-xs font-medium px-2 py-1 rounded-md">
+                          {mw.naam}
+                          <button
+                            type="button"
+                            onClick={() => setGeselecteerdeMedewerkerIds(prev => prev.filter(x => x !== id))}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                  <select
+                    className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value && !geselecteerdeMedewerkerIds.includes(e.target.value)) {
+                        setGeselecteerdeMedewerkerIds(prev => [...prev, e.target.value])
+                      }
+                    }}
+                  >
+                    <option value="">Medewerker toevoegen...</option>
+                    {medewerkers
+                      .filter(m => !geselecteerdeMedewerkerIds.includes(m.id))
+                      .map(m => <option key={m.id} value={m.id}>{m.naam} — {m.functie || m.rol}</option>)
+                    }
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         </div>

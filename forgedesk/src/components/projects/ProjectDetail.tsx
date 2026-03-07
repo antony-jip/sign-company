@@ -809,150 +809,134 @@ export function ProjectDetail() {
           )}
         </div>
 
-        {/* Project Hero Banner */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2C2418] via-[#3D3522] to-[#2C2418] p-6 text-white">
-          <div className="absolute inset-0">
-            <div className="absolute top-0 right-0 w-72 h-72 bg-primary/15 rounded-full blur-[80px] -translate-y-1/3 translate-x-1/4" />
-            <div className="absolute bottom-0 left-0 w-56 h-56 bg-wm-pale/10 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/4" />
+        {/* Project Header — compact */}
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blush to-sage flex items-center justify-center flex-shrink-0">
+                <Briefcase className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground leading-tight">{project.naam}</h1>
+                <p className="text-[13px] text-muted-foreground mt-1 flex items-center gap-1.5">
+                  <Users className="h-3 w-3" />
+                  {project.klant_naam || 'Onbekende klant'}
+                  {project.vestiging_naam && (
+                    <span className="text-muted-foreground/60">· {project.vestiging_naam}</span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Badge className={`${getStatusColor(project.status)} text-xs px-2.5 py-0.5`}>
+                {statusLabels[project.status] || project.status}
+              </Badge>
+              <Badge className={`${getPriorityColor(project.prioriteit)} text-xs px-2.5 py-0.5`}>
+                {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
+              </Badge>
+              <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleAiAnalysis}
+                disabled={aiAnalysisLoading}
+                className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                {aiAnalysisLoading
+                  ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  : <Sparkles className="h-3.5 w-3.5 mr-1" />
+                }
+                AI Analyse
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={openKopieDialog}
+                className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Kopiëren
+              </Button>
+            </div>
           </div>
 
-          <div className="relative z-10">
-            {/* Top row: title + actions */}
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div className="flex items-start gap-3.5">
-                <div className="h-11 w-11 rounded-xl bg-white/[0.08] backdrop-blur-sm border border-white/[0.08] flex items-center justify-center flex-shrink-0">
-                  <Briefcase className="h-5 w-5 text-white/70" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-white font-display leading-tight">{project.naam}</h1>
-                  <p className="text-[13px] text-white/50 mt-1 flex items-center gap-1.5">
-                    <Users className="h-3 w-3" />
-                    {project.klant_naam || 'Onbekende klant'}
-                    {project.vestiging_naam && (
-                      <span className="text-white/40">· {project.vestiging_naam}</span>
-                    )}
+          {/* Stats row — pastel accent cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5">
+            <div className="bg-blush/20 rounded-xl p-3 border border-blush/30">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Voortgang</span>
+              <p className="text-lg font-bold mt-0.5 text-foreground">{project.voortgang}%</p>
+              <div className="mt-1.5 h-1 bg-blush/30 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blush-deep rounded-full transition-all duration-500"
+                  style={{ width: `${project.voortgang}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-sage/20 rounded-xl p-3 border border-sage/30">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Goedkeuring</span>
+              {goedkeuringen.length > 0 ? (
+                <>
+                  <p className="text-lg font-bold mt-0.5 text-foreground">
+                    {goedkeuringen.filter(g => g.status === 'goedgekeurd').length}/{goedkeuringen.length}
+                  </p>
+                  <p className="text-[10px] mt-0.5 text-muted-foreground">
+                    {goedkeuringen.some(g => g.status === 'revisie')
+                      ? `${goedkeuringen.filter(g => g.status === 'revisie').length} revisie(s)`
+                      : 'goedgekeurd'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg font-bold mt-0.5 text-foreground">-</p>
+                  <p className="text-[10px] mt-0.5 text-muted-foreground">nog niet verstuurd</p>
+                </>
+              )}
+            </div>
+
+            <div className="bg-mist/20 rounded-xl p-3 border border-mist/30">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Deadline</span>
+              <p className={`text-lg font-bold mt-0.5 ${isOverdue ? 'text-amber-600' : 'text-foreground'}`}>
+                {!isValidDate ? '-' : isOverdue ? `${Math.abs(daysLeft)}d` : project.status === 'afgerond' ? 'Klaar' : `${daysLeft}d`}
+              </p>
+              <p className={`text-[10px] mt-0.5 ${isOverdue ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                {!isValidDate ? 'geen deadline' : isOverdue ? 'verlopen' : project.status === 'afgerond' ? 'afgerond' : 'resterend'}
+              </p>
+            </div>
+
+            <div className="bg-cream/30 rounded-xl p-3 border border-cream/40">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Taken</span>
+              <p className="text-lg font-bold mt-0.5 text-foreground">{takenKlaar}/{takenTotaal}</p>
+              <p className="text-[10px] mt-0.5 text-muted-foreground">afgerond</p>
+            </div>
+          </div>
+
+          {/* Budget waarschuwing */}
+          {(() => {
+            const bs = berekenBudgetStatus(project, projectTijdregistraties)
+            if (bs.budget <= 0 || bs.niveau === 'normaal') return null
+            return (
+              <div className={`mt-3 flex items-center gap-3 rounded-lg px-4 py-2 ${
+                bs.niveau === 'overschreden'
+                  ? 'bg-red-50 border border-red-200'
+                  : 'bg-amber-50 border border-amber-200'
+              }`}>
+                <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${
+                  bs.niveau === 'overschreden' ? 'text-red-500' : 'text-amber-500'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-foreground">
+                    {bs.niveau === 'overschreden'
+                      ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
+                      : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <Badge className={`${getStatusColor(project.status)} text-xs px-2.5 py-0.5`}>
-                  {statusLabels[project.status] || project.status}
-                </Badge>
-                <Badge className={`${getPriorityColor(project.prioriteit)} text-xs px-2.5 py-0.5`}>
-                  {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
-                </Badge>
-                <div className="w-px h-5 bg-white/10 mx-1 hidden sm:block" />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleAiAnalysis}
-                  disabled={aiAnalysisLoading}
-                  className="h-7 px-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.08]"
-                >
-                  {aiAnalysisLoading
-                    ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                    : <Sparkles className="h-3.5 w-3.5 mr-1" />
-                  }
-                  AI Analyse
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={openKopieDialog}
-                  className="h-7 px-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.08]"
-                >
-                  <Copy className="h-3.5 w-3.5 mr-1" />
-                  Kopiëren
-                </Button>
-              </div>
-            </div>
-
-            {/* Stats row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5">
-              <div className="bg-white/[0.06] rounded-xl p-3 border border-white/[0.06]">
-                <span className="text-[10px] text-white/40 uppercase tracking-wider font-medium">Voortgang</span>
-                <p className="text-lg font-bold mt-0.5">{project.voortgang}%</p>
-                <div className="mt-1.5 h-1 bg-white/[0.08] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary to-wm-pale rounded-full transition-all duration-500"
-                    style={{ width: `${project.voortgang}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="bg-white/[0.06] rounded-xl p-3 border border-white/[0.06]">
-                <span className="text-[10px] text-white/40 uppercase tracking-wider font-medium">Goedkeuring</span>
-                {goedkeuringen.length > 0 ? (
-                  <>
-                    <p className="text-lg font-bold mt-0.5">
-                      {goedkeuringen.filter(g => g.status === 'goedgekeurd').length}/{goedkeuringen.length}
-                    </p>
-                    <p className="text-[10px] mt-0.5 text-white/30">
-                      {goedkeuringen.some(g => g.status === 'revisie')
-                        ? `${goedkeuringen.filter(g => g.status === 'revisie').length} revisie(s)`
-                        : 'goedgekeurd'}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-lg font-bold mt-0.5">-</p>
-                    <p className="text-[10px] mt-0.5 text-white/30">nog niet verstuurd</p>
-                  </>
-                )}
-              </div>
-
-              <div className="bg-white/[0.06] rounded-xl p-3 border border-white/[0.06]">
-                <span className="text-[10px] text-white/40 uppercase tracking-wider font-medium">Deadline</span>
-                <p className={`text-lg font-bold mt-0.5 ${isOverdue ? 'text-amber-400' : ''}`}>
-                  {!isValidDate ? '-' : isOverdue ? `${Math.abs(daysLeft)}d` : project.status === 'afgerond' ? 'Klaar' : `${daysLeft}d`}
-                </p>
-                <p className={`text-[10px] mt-0.5 ${isOverdue ? 'text-amber-300/60' : 'text-white/30'}`}>
-                  {!isValidDate ? 'geen deadline' : isOverdue ? 'verlopen' : project.status === 'afgerond' ? 'afgerond' : 'resterend'}
-                </p>
-              </div>
-
-              <div className="bg-white/[0.06] rounded-xl p-3 border border-white/[0.06]">
-                <span className="text-[10px] text-white/40 uppercase tracking-wider font-medium">Taken</span>
-                <p className="text-lg font-bold mt-0.5">{takenKlaar}/{takenTotaal}</p>
-                <p className="text-[10px] mt-0.5 text-white/30">afgerond</p>
-              </div>
-            </div>
-
-            {/* Budget waarschuwing */}
-            {(() => {
-              const bs = berekenBudgetStatus(project, projectTijdregistraties)
-              if (bs.budget <= 0 || bs.niveau === 'normaal') return null
-              return (
-                <div className={`mt-3 flex items-center gap-3 rounded-lg px-4 py-2 ${
-                  bs.niveau === 'overschreden'
-                    ? 'bg-red-500/20 border border-red-400/20'
-                    : 'bg-amber-500/20 border border-amber-400/20'
-                }`}>
-                  <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${
-                    bs.niveau === 'overschreden' ? 'text-red-300' : 'text-amber-300'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-white">
-                      {bs.niveau === 'overschreden'
-                        ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
-                        : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
-                    </p>
-                    <p className="text-[10px] text-white/50">
-                      {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)}
-                    </p>
-                  </div>
-                  <div className="w-14 h-1 bg-white/10 rounded-full overflow-hidden flex-shrink-0">
-                    <div
-                      className={`h-full rounded-full ${
-                        bs.niveau === 'overschreden' ? 'bg-red-400' : 'bg-amber-400'
-                      }`}
-                      style={{ width: `${Math.min(bs.percentage, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
+            )
+          })()}
         </div>
       </div>
 
@@ -1443,11 +1427,51 @@ export function ProjectDetail() {
 
         {/* ────────────── Rechter Sidebar ────────────── */}
         <div className="space-y-6">
+          {/* ── Klant & Contact ── */}
+          {klant && (
+            <Card className="border-blush/40 bg-blush/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blush to-blush-deep flex items-center justify-center">
+                    <MapPin className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Klant & Contact
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Link to={`/klanten/${klant.id}`} className="text-sm font-semibold text-foreground hover:underline">
+                    {klant.bedrijfsnaam}
+                  </Link>
+                  {klant.adres && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {klant.adres}
+                      {klant.postcode && `, ${klant.postcode}`}
+                      {klant.stad && ` ${klant.stad}`}
+                    </p>
+                  )}
+                </div>
+                {klant.contactpersoon && (
+                  <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 border border-border/40">
+                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blush to-blush-deep flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
+                      {getInitials(klant.contactpersoon)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{klant.contactpersoon}</p>
+                      {klant.telefoon && <p className="text-[11px] text-muted-foreground">{klant.telefoon}</p>}
+                      {klant.email && <p className="text-[11px] text-muted-foreground truncate">{klant.email}</p>}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* ── Team ── */}
-          <Card className="border-border/80 dark:border-border/80">
+          <Card className="border-sage/40 bg-sage/5">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center">
                   <Users className="h-3.5 w-3.5 text-white" />
                 </div>
                 Team
@@ -1462,9 +1486,9 @@ export function ProjectDetail() {
                   {project.team_leden.map((lid) => (
                     <div
                       key={lid}
-                      className="flex items-center gap-2.5 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2"
+                      className="flex items-center gap-2.5 bg-background rounded-lg px-3 py-2 border border-border/40"
                     >
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-wm-pale flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
                         {getInitials(lid)}
                       </div>
                       <span className="text-sm font-medium text-foreground truncate">{lid}</span>
@@ -1472,98 +1496,6 @@ export function ProjectDetail() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* ── Projectrechten ── */}
-          <Card className="border-border/80 dark:border-border/80">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                  <Shield className="h-3.5 w-3.5 text-white" />
-                </div>
-                Rechten
-                <span className="text-xs text-muted-foreground font-normal ml-auto">{projectToewijzingen.length}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Bestaande toewijzingen */}
-              {projectToewijzingen.length > 0 && (
-                <div className="space-y-1.5">
-                  {projectToewijzingen.map((tw) => {
-                    const mw = alleMedewerkers.find(m => m.id === tw.medewerker_id)
-                    return (
-                      <div key={tw.id} className="flex items-center gap-2 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2">
-                        <div className="h-6 w-6 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
-                          {getInitials(mw?.naam || '?')}
-                        </div>
-                        <span className="text-sm font-medium text-foreground truncate flex-1">{mw?.naam || 'Onbekend'}</span>
-                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
-                          tw.rol === 'eigenaar' ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
-                          tw.rol === 'viewer' ? 'border-border bg-background text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60' :
-                          'border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                        }`}>
-                          {tw.rol}
-                        </Badge>
-                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-red-400 hover:text-red-600"
-                          onClick={async () => {
-                            try {
-                              await deleteProjectToewijzing(tw.id)
-                              setProjectToewijzingen(prev => prev.filter(t => t.id !== tw.id))
-                              toast.success('Toewijzing verwijderd')
-                            } catch { toast.error('Kon toewijzing niet verwijderen') }
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Toevoegen */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={toewijzingMedewerkerId}
-                  onChange={(e) => setToewijzingMedewerkerId(e.target.value)}
-                  className="flex-1 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-card text-foreground dark:text-white"
-                >
-                  <option value="">Medewerker...</option>
-                  {alleMedewerkers
-                    .filter(m => m.status === 'actief' && !projectToewijzingen.some(t => t.medewerker_id === m.id))
-                    .map(m => <option key={m.id} value={m.id}>{m.naam}</option>)
-                  }
-                </select>
-                <select
-                  value={toewijzingRol}
-                  onChange={(e) => setToewijzingRol(e.target.value as ProjectToewijzing['rol'])}
-                  className="w-24 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-card text-foreground dark:text-white"
-                >
-                  <option value="medewerker">Medewerker</option>
-                  <option value="eigenaar">Eigenaar</option>
-                  <option value="viewer">Viewer</option>
-                </select>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
-                  disabled={!toewijzingMedewerkerId}
-                  onClick={async () => {
-                    if (!toewijzingMedewerkerId || !user) return
-                    try {
-                      const created = await createProjectToewijzing({
-                        user_id: user.id,
-                        project_id: id!,
-                        medewerker_id: toewijzingMedewerkerId,
-                        rol: toewijzingRol,
-                      })
-                      setProjectToewijzingen(prev => [...prev, created])
-                      setToewijzingMedewerkerId('')
-                      toast.success('Medewerker toegewezen')
-                    } catch { toast.error('Kon niet toewijzen') }
-                  }}
-                >
-                  <UserPlus className="h-4 w-4" />
-                </Button>
-              </div>
             </CardContent>
           </Card>
 
