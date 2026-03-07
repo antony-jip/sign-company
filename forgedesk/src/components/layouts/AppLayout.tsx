@@ -5,6 +5,7 @@ import { Header } from './Header'
 import { HeaderNav } from './HeaderNav'
 import { TopNav } from './TopNav'
 import { MobileBottomNav } from './MobileBottomNav'
+import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +22,7 @@ export function AppLayout() {
           </div>
         </main>
         <MobileBottomNav />
+        <ForgieChatWidget />
       </div>
     )
   }
@@ -42,6 +44,7 @@ export function AppLayout() {
         </main>
         <MobileBottomNav />
       </div>
+      <ForgieChatWidget />
     </div>
   )
 }
