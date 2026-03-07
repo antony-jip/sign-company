@@ -545,6 +545,8 @@ export interface AppSettings {
   // Forgie
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;
+  // AI schrijfstijl per gebruiker
+  ai_tone_of_voice: string;
   created_at: string;
   updated_at: string;
 }

@@ -1,20 +1,72 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { AITextToolbar } from "./AITextToolbar"
 
 export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  /** Set to false to disable the AI rewrite toolbar. Defaults to true. */
+  enableAI?: boolean
+}
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, enableAI = true, onChange, value, ...props }, ref) => {
+    const internalRef = React.useRef<HTMLTextAreaElement | null>(null)
+    const combinedRef = React.useCallback(
+      (node: HTMLTextAreaElement | null) => {
+        internalRef.current = node
+        if (typeof ref === 'function') ref(node)
+        else if (ref) (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = node
+      },
+      [ref]
+    )
+
+    const handleReplace = React.useCallback(
+      (newText: string, selStart: number, selEnd: number) => {
+        const textarea = internalRef.current
+        if (!textarea) return
+
+        const currentValue = textarea.value
+        const before = currentValue.substring(0, selStart)
+        const after = currentValue.substring(selEnd)
+        const updatedValue = before + newText + after
+
+        // Update via native setter to trigger React's onChange
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          'value'
+        )?.set
+        nativeInputValueSetter?.call(textarea, updatedValue)
+        textarea.dispatchEvent(new Event('input', { bubbles: true }))
+
+        // Set cursor after inserted text
+        const newCursorPos = selStart + newText.length
+        requestAnimationFrame(() => {
+          textarea.setSelectionRange(newCursorPos, newCursorPos)
+          textarea.focus()
+        })
+      },
+      []
+    )
+
     return (
-      <textarea
-        className={cn(
-          "flex min-h-[80px] w-full rounded-[10px] border border-border/70 bg-background px-3 py-2 text-sm ring-offset-background transition-all duration-200 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 focus-visible:shadow-[0_0_0_3px_hsl(var(--primary)/0.06)] disabled:cursor-not-allowed disabled:opacity-50",
-          className
+      <div className="relative">
+        <textarea
+          className={cn(
+            "flex min-h-[80px] w-full rounded-[10px] border border-border/70 bg-background px-3 py-2 text-sm ring-offset-background transition-all duration-200 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 focus-visible:shadow-[0_0_0_3px_hsl(var(--primary)/0.06)] disabled:cursor-not-allowed disabled:opacity-50",
+            className
+          )}
+          ref={combinedRef}
+          onChange={onChange}
+          value={value}
+          {...props}
+        />
+        {enableAI && !props.disabled && (
+          <AITextToolbar
+            textareaRef={internalRef}
+            onReplace={handleReplace}
+          />
         )}
-        ref={ref}
-        {...props}
-      />
+      </div>
     )
   }
 )
