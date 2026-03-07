@@ -2,7 +2,6 @@
 
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
-import { SocialProof } from '@/components/SocialProof';
 import { Features } from '@/components/Services';
 import { HowItWorks } from '@/components/USPs';
 import { Pricing } from '@/components/Portfolio';
@@ -16,7 +15,6 @@ export default function HomePage() {
       <Header />
       <main id="main-content">
         <Hero />
-        <SocialProof />
         <Features />
         <HowItWorks />
         <Pricing />

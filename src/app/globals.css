@@ -53,14 +53,100 @@
 .stagger-5 { transition-delay: 0.5s; }
 .stagger-6 { transition-delay: 0.6s; }
 
-/* Marquee animation for social proof */
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+/* Slide from left */
+.slide-left {
+  opacity: 0;
+  transform: translateX(-60px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
 }
 
-.animate-marquee {
-  animation: marquee 30s linear infinite;
+.slide-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Slide from right */
+.slide-right {
+  opacity: 0;
+  transform: translateX(60px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.slide-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Hero card animations */
+@keyframes heroFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes heroPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes heroFadeSimple {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.hero-card-1 { animation: heroFadeSimple 0.6s ease-out 0s both; }
+.hero-card-2 { animation: heroFadeIn 0.6s ease-out 0.5s both; }
+.hero-card-3 { animation: heroPop 0.5s ease-out 1.2s both; }
+.hero-card-4 { animation: heroFadeIn 0.6s ease-out 1.8s both; }
+.hero-card-5 { animation: heroFadeIn 0.6s ease-out 2.4s both; }
+.hero-card-6 { animation: heroFadeIn 0.6s ease-out 2.0s both; }
+
+/* SVG line draw animation */
+@keyframes drawLine {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+.draw-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 3s ease-out 0.3s both;
+}
+
+/* Chain line fill */
+.chain-line-fill {
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  transition: stroke-dashoffset 2s ease-out;
+}
+
+.chain-line-fill.visible {
+  stroke-dashoffset: 0;
+}
+
+/* Bounce chevron */
+@keyframes bounceChevron {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+.animate-bounce-slow {
+  animation: bounceChevron 2s ease-in-out infinite;
 }
 
 /* Focus styles for accessibility */
@@ -71,4 +157,26 @@
 /* Skip link for accessibility */
 .skip-link {
   @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-gray-900 focus:text-white focus:px-4 focus:py-2 focus:rounded;
+}
+
+/* Mobile horizontal scroll strip */
+.hero-scroll-strip {
+  display: flex;
+  overflow-x: auto;
+  gap: 1rem;
+  padding: 1rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.hero-scroll-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Heading gradient */
+.text-gradient-forge {
+  background: linear-gradient(135deg, #F0D9D0 0%, #C49585 30%, #1A1A1A 70%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

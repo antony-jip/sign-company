@@ -3,115 +3,274 @@
 import React from 'react';
 import { useScrollAnimation } from './useScrollAnimation';
 
-const features = [
-  {
-    title: 'Offertes',
-    description: 'Maak professionele offertes in minuten. Met templates, automatische nummering en digitale ondertekening.',
-    bg: 'bg-blush-light',
-    iconColor: 'text-blush-deep',
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Projecten',
-    description: 'Beheer al je projecten op één plek. Van intake tot oplevering, met tijdregistratie en voortgang.',
-    bg: 'bg-sage-light',
-    iconColor: 'text-sage-deep',
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Werkbonnen',
-    description: 'Digitale werkbonnen die je team op locatie invult. Met foto\'s, handtekeningen en directe koppeling aan projecten.',
-    bg: 'bg-mist-light',
-    iconColor: 'text-mist-deep',
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Facturatie',
-    description: 'Factureer direct vanuit je projecten. Automatische herinneringen, BTW-berekening en koppeling met je boekhouding.',
-    bg: 'bg-cream-light',
-    iconColor: 'text-cream-deep',
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'CRM',
-    description: 'Ken je klanten. Contacthistorie, notities, bijlagen en een compleet overzicht per relatie.',
-    bg: 'bg-blush-light',
-    iconColor: 'text-blush-deep',
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'E-mail',
-    description: 'Stuur en ontvang e-mails direct vanuit FORGEdesk. Alles gekoppeld aan de juiste klant en het juiste project.',
-    bg: 'bg-sage-light',
-    iconColor: 'text-sage-deep',
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-];
-
-export const Features: React.FC = () => {
+/* ─── Feature 1: Offertes ─── */
+const OfferteShowcase: React.FC = () => {
   const ref = useScrollAnimation();
 
   return (
-    <section id="features" ref={ref} className="py-20 lg:py-32 bg-white">
+    <section id="features" ref={ref} className="py-20 lg:py-32 bg-[#F4F3F0]">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <p className="fade-up text-sm font-semibold tracking-widest uppercase text-gray-400 mb-4">
-            Alles in één platform
-          </p>
-          <h2 className="fade-up stagger-1 text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-6">
-            Alles wat je nodig hebt.
-            <br />
-            <span className="text-gray-400">Niets wat je niet nodig hebt.</span>
-          </h2>
-          <p className="fade-up stagger-2 text-lg text-gray-500 max-w-2xl mx-auto">
-            Zes krachtige modules die naadloos samenwerken. Gebouwd voor hoe creatieve bedrijven écht werken.
-          </p>
-        </div>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:gap-16">
+          {/* Text */}
+          <div className="lg:w-[40%] mb-10 lg:mb-0">
+            <h2 className="slide-left text-[32px] lg:text-[36px] font-black tracking-tight leading-tight mb-6">
+              Offertes die indruk maken
+            </h2>
+            <p className="slide-left stagger-1 text-lg text-[#6B6B6B] leading-relaxed">
+              Bouw je offerte op met regels, calculaties en materiaallijsten.
+              Je klant ziet een strakke <strong className="text-gray-900">PDF</strong> — jij ziet je <strong className="text-gray-900">marge</strong>.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={feature.title}
-              className={`fade-up stagger-${index + 1} group rounded-2xl border border-gray-100 p-8 hover:shadow-lg hover:border-gray-200 transition-all duration-300`}
-            >
-              <div className={`w-14 h-14 ${feature.bg} ${feature.iconColor} rounded-2xl flex items-center justify-center mb-5`}>
-                {feature.icon}
+          {/* Offerte preview */}
+          <div className="lg:w-[55%]">
+            <div className="slide-right bg-white rounded-2xl shadow-xl p-6 lg:p-8 border border-[#E8E6E0]">
+              {/* Header */}
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <p className="font-bold text-gray-900">Sign Company</p>
+                  <p className="text-sm text-[#A0A0A0]">Enkhuizen</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-[#A0A0A0] uppercase tracking-wider font-semibold">OFF-2026-048</p>
+                  <p className="text-sm text-[#6B6B6B]">14 maart 2026</p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-500 leading-relaxed">
-                {feature.description}
-              </p>
+
+              <p className="text-sm text-[#6B6B6B] mb-6">Klant: <span className="text-gray-900 font-medium">Bakkerij Jansen</span></p>
+
+              {/* Table */}
+              <div className="border-t border-[#E8E6E0]">
+                <div className="grid grid-cols-12 gap-2 py-3 text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold">
+                  <div className="col-span-1">#</div>
+                  <div className="col-span-5">Omschrijving</div>
+                  <div className="col-span-2 text-right">Aantal</div>
+                  <div className="col-span-2 text-right">Prijs</div>
+                  <div className="col-span-2 text-right">Totaal</div>
+                </div>
+                {[
+                  { nr: '1', desc: 'LED lichtreclame', qty: '1', price: '960,00', total: '960,00' },
+                  { nr: '2', desc: 'Montage', qty: '4u', price: '120,00', total: '480,00' },
+                  { nr: '3', desc: 'Transport', qty: '1', price: '85,00', total: '85,00' },
+                ].map((row) => (
+                  <div key={row.nr} className="grid grid-cols-12 gap-2 py-3 text-sm border-b border-[#F4F3F0]">
+                    <div className="col-span-1 text-[#A0A0A0]">{row.nr}</div>
+                    <div className="col-span-5 text-gray-900">{row.desc}</div>
+                    <div className="col-span-2 text-right text-[#6B6B6B]">{row.qty}</div>
+                    <div className="col-span-2 text-right text-[#6B6B6B]">&euro;{row.price}</div>
+                    <div className="col-span-2 text-right text-gray-900">&euro;{row.total}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Totals */}
+              <div className="mt-4 flex flex-col items-end gap-1">
+                <div className="flex justify-between w-48 text-sm">
+                  <span className="text-[#A0A0A0]">Subtotaal</span>
+                  <span className="text-gray-900">&euro;1.525,00</span>
+                </div>
+                <div className="flex justify-between w-48 text-sm">
+                  <span className="text-[#A0A0A0]">BTW 21%</span>
+                  <span className="text-gray-900">&euro;320,25</span>
+                </div>
+                <div className="flex justify-between w-48 text-lg font-bold border-t border-[#E8E6E0] pt-2 mt-1">
+                  <span className="text-[#6B6B6B]">Totaal</span>
+                  <span className="text-gray-900">&euro;1.845,25</span>
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </section>
+  );
+};
+
+/* ─── Feature 2: Planning ─── */
+const PlanningShowcase: React.FC = () => {
+  const ref = useScrollAnimation();
+
+  return (
+    <section ref={ref} className="py-20 lg:py-32 bg-white">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex flex-col-reverse lg:flex-row lg:items-center lg:gap-16">
+          {/* Planning preview */}
+          <div className="lg:w-[55%]">
+            <div className="slide-left bg-white rounded-2xl shadow-xl p-6 border border-[#E8E6E0]">
+              <div className="space-y-4">
+                {[
+                  { day: 'Ma 14', color: 'blush', title: 'Montage lichtreclame', detail: 'Bakkerij Jansen', time: '09:00 - 14:00' },
+                  { day: 'Di 15', color: 'sage', title: 'Opmeting gevel', detail: 'Matec Amsterdam', time: '10:00 - 11:30' },
+                  { day: 'Wo 16', color: 'mist', title: 'Productie', detail: 'intern', time: 'hele dag' },
+                ].map((item) => (
+                  <div key={item.day} className="flex items-stretch gap-4">
+                    <div className="w-16 flex-shrink-0 text-sm font-bold text-[#6B6B6B] pt-3">
+                      {item.day}
+                    </div>
+                    <div className={`flex-1 rounded-xl p-4 border-l-4 ${
+                      item.color === 'blush' ? 'border-l-blush bg-blush-light/50' :
+                      item.color === 'sage' ? 'border-l-sage bg-sage-light/50' :
+                      'border-l-mist bg-mist-light/50'
+                    }`}>
+                      <p className="font-bold text-gray-900 text-sm">{item.title}</p>
+                      <p className="text-xs text-[#6B6B6B]">{item.detail} &middot; {item.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Text */}
+          <div className="lg:w-[40%] mb-10 lg:mb-0">
+            <h2 className="slide-right text-[32px] lg:text-[36px] font-black tracking-tight leading-tight mb-6">
+              Planning die werkt
+            </h2>
+            <p className="slide-right stagger-1 text-lg text-[#6B6B6B] leading-relaxed">
+              Plan montages, wijs teams toe, synchroniseer met je agenda.
+              <strong className="text-gray-900"> Overzicht</strong> voor kantoor en <strong className="text-gray-900">buitendienst</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ─── Feature 3: Werkbonnen ─── */
+const WerkbonnenShowcase: React.FC = () => {
+  const ref = useScrollAnimation();
+
+  return (
+    <section ref={ref} className="py-20 lg:py-32 bg-[#F4F3F0]">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:gap-16">
+          {/* Text */}
+          <div className="lg:w-[40%] mb-10 lg:mb-0">
+            <h2 className="slide-left text-[32px] lg:text-[36px] font-black tracking-tight leading-tight mb-6">
+              Werkbonnen op locatie
+            </h2>
+            <p className="slide-left stagger-1 text-lg text-[#6B6B6B] leading-relaxed">
+              Je team vult werkbonnen in op locatie. Met uren, materiaal en <strong className="text-gray-900">digitale handtekening</strong>. Direct in het systeem.
+            </p>
+          </div>
+
+          {/* Werkbon preview */}
+          <div className="lg:w-[55%]">
+            <div className="slide-right bg-white rounded-2xl shadow-xl p-6 border border-[#E8E6E0]">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-xs text-[#A0A0A0] uppercase tracking-wider font-semibold">WB-2026-018</p>
+                  <p className="font-bold text-gray-900 mt-1">Montage lichtreclame</p>
+                  <p className="text-sm text-[#6B6B6B]">Bakkerij Jansen &middot; Hoorn</p>
+                </div>
+              </div>
+
+              <div className="border-t border-[#F4F3F0] pt-4 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#6B6B6B]">Arbeid: Joris &middot; 6u</span>
+                  <span className="text-gray-900">&euro;720</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#6B6B6B]">Materiaal: LED module</span>
+                  <span className="text-gray-900">&euro;960</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold border-t border-[#E8E6E0] pt-3 mt-3">
+                  <span>Totaal</span>
+                  <span>&euro;1.680</span>
+                </div>
+              </div>
+
+              {/* Signature */}
+              <div className="mt-6 pt-4 border-t border-[#F4F3F0]">
+                <svg className="w-40 h-10 mb-1" viewBox="0 0 160 40">
+                  <path
+                    d="M 10,30 Q 20,5 40,25 T 70,20 Q 85,15 100,25 T 140,18"
+                    fill="none"
+                    stroke="#A0A0A0"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <p className="text-xs text-[#A0A0A0]">Getekend door: K. Jansen</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ─── Feature 4: Facturatie ─── */
+const FacturatieShowcase: React.FC = () => {
+  const ref = useScrollAnimation();
+
+  return (
+    <section ref={ref} className="py-20 lg:py-32 bg-white">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex flex-col-reverse lg:flex-row lg:items-center lg:gap-16">
+          {/* Factuur preview */}
+          <div className="lg:w-[55%]">
+            <div className="slide-left relative bg-white rounded-2xl shadow-xl p-6 border border-[#E8E6E0] overflow-hidden">
+              {/* BETAALD stamp */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 pointer-events-none">
+                <span className="text-3xl font-black text-[#5A8264] opacity-20 tracking-wider">BETAALD</span>
+              </div>
+
+              <div className="relative z-10">
+                <p className="text-xs text-[#A0A0A0] uppercase tracking-wider font-semibold">F-2026-031</p>
+                <p className="font-bold text-gray-900 text-2xl mt-2 mb-4">&euro;1.845,25</p>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="inline-block bg-[#C8D5CC] text-white text-xs font-semibold px-3 py-1 rounded-full">
+                    Betaald op 18 mrt
+                  </span>
+                </div>
+
+                <div className="border-t border-[#F4F3F0] pt-4 space-y-2 text-sm text-[#6B6B6B]">
+                  <div className="flex justify-between">
+                    <span>Bakkerij Jansen</span>
+                    <span className="text-gray-900">Hoorn</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Lichtreclame voorgevel</span>
+                    <span className="text-gray-900">&euro;1.525,00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>BTW 21%</span>
+                    <span className="text-gray-900">&euro;320,25</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Text */}
+          <div className="lg:w-[40%] mb-10 lg:mb-0">
+            <h2 className="slide-right text-[32px] lg:text-[36px] font-black tracking-tight leading-tight mb-6">
+              Facturatie zonder gedoe
+            </h2>
+            <p className="slide-right stagger-1 text-lg text-[#6B6B6B] leading-relaxed">
+              Factureer direct vanuit je projecten. Automatische <strong className="text-gray-900">herinneringen</strong>,
+              BTW-berekening en altijd inzicht in je <strong className="text-gray-900">cashflow</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ─── Combined Features export ─── */
+export const Features: React.FC = () => {
+  return (
+    <>
+      <OfferteShowcase />
+      <PlanningShowcase />
+      <WerkbonnenShowcase />
+      <FacturatieShowcase />
+    </>
   );
 };
 
