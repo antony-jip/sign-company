@@ -220,10 +220,11 @@ export function EmailLayout() {
   })
 
   // ── Send email ──
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; scheduledAt?: string }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string }) => {
     const isScheduled = !!data.scheduledAt
     try {
       await sendEmailViaApi(data.to, data.subject, data.body, {
+        html: data.html,
         scheduledAt: data.scheduledAt,
       })
       const newEmail: Omit<Email, 'id' | 'created_at'> = {

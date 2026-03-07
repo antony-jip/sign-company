@@ -24,6 +24,7 @@ interface AppSettingsContextType {
   pipelineStappen: PipelineStap[]
   emailHandtekening: string
   handtekeningAfbeelding: string
+  handtekeningAfbeeldingGrootte: number
   primaireKleur: string
   secundaireKleur: string
   toonConversieRate: boolean
@@ -138,6 +139,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     pipelineStappen: settings.pipeline_stappen || [],
     emailHandtekening: settings.email_handtekening || '',
     handtekeningAfbeelding: settings.handtekening_afbeelding || '',
+    handtekeningAfbeeldingGrootte: settings.handtekening_afbeelding_grootte ?? 64,
     primaireKleur: settings.primaire_kleur || '#2563eb',
     secundaireKleur: settings.secundaire_kleur || '#7c3aed',
     toonConversieRate: settings.toon_conversie_rate ?? true,

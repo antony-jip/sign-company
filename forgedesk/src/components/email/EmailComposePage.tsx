@@ -33,7 +33,7 @@ export function EmailComposePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const quoteId = searchParams.get('quote_id') || ''
-  const { emailHandtekening, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   const [isLoading, setIsLoading] = useState(true)
@@ -107,24 +107,20 @@ export function EmailComposePage() {
           logger.error('Failed to generate PDF:', err)
         }
 
-        // Set editor content
+        // Set editor content with signature image
         setTimeout(() => {
           if (editorRef.current && !cancelled) {
             const klantNaam = fetchedKlant?.contactpersonen?.[0]?.naam || fetchedKlant?.contactpersoon || fetchedKlant?.bedrijfsnaam || ''
             const totaal = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(fetchedOfferte.totaal || 0)
-            const body = `Beste ${klantNaam},
+            const sigText = emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`
+            const sigImgHeight = handtekeningAfbeeldingGrootte ?? 64
+            const sigImgMaxWidth = Math.round(sigImgHeight * 2.5)
+            const sigImgHtml = handtekeningAfbeelding
+              ? `<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${sigImgHeight}px;max-width:${sigImgMaxWidth}px;object-fit:contain;" /><br>`
+              : ''
+            const bodyHtml = `Beste ${klantNaam},<br><br>Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor &ldquo;${fetchedOfferte.titel}&rdquo;.<br><br>Het totaalbedrag van deze offerte is ${totaal} (incl. BTW).<br><br>De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.<br><br>Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.<br><br>--<br>${sigImgHtml}${sigText.replace(/\n/g, '<br>')}`
 
-Hierbij ontvangt u onze offerte ${fetchedOfferte.nummer} voor "${fetchedOfferte.titel}".
-
-Het totaalbedrag van deze offerte is ${totaal} (incl. BTW).
-
-De offerte is geldig tot ${fetchedOfferte.geldig_tot ? new Date(fetchedOfferte.geldig_tot).toLocaleDateString('nl-NL') : '-'}. Bijgevoegd vindt u de offerte als PDF.
-
-Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.
-
-${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
-
-            editorRef.current.innerText = body
+            editorRef.current.innerHTML = bodyHtml
             setEditorEmpty(false)
           }
         }, 100)

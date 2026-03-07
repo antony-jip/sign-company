@@ -60,7 +60,7 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
-  onSend?: (data: { to: string; subject: string; body: string; scheduledAt?: string }) => void
+  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string }) => void
 }
 
 const emailTemplates: Record<string, { onderwerp: string; body: string }> = {
@@ -228,7 +228,7 @@ export function EmailCompose({
   defaultBody = '',
   onSend,
 }: EmailComposeProps) {
-  const { emailHandtekening, handtekeningAfbeelding, bedrijfsnaam } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
 
   const [to, setTo] = useState(defaultTo)
   const [cc, setCc] = useState('')
@@ -293,8 +293,10 @@ export function EmailCompose({
   const scheduleDropdownRef = useRef<HTMLDivElement>(null)
 
   // Set initial editor content when panel opens
+  const imgHeight = handtekeningAfbeeldingGrootte ?? 64
+  const imgMaxWidth = Math.round(imgHeight * 2.5)
   const sigImageHtml = handtekeningAfbeelding
-    ? `<br><img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:64px;max-width:160px;object-fit:contain;" />`
+    ? `<br><img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`
     : ''
 
   useEffect(() => {
@@ -394,12 +396,12 @@ export function EmailCompose({
       const currentHtml = editorRef.current.innerHTML
       const sigSeparator = currentHtml.indexOf('--<br>')
       const bodyPart = sigSeparator >= 0 ? currentHtml.substring(0, sigSeparator) : currentHtml
-      const newSigHtml = `--<br>${sig.inhoud.replace(/\n/g, '<br>')}`
+      const newSigHtml = `--<br>${sigImageHtml}${sig.inhoud.replace(/\n/g, '<br>')}`
       editorRef.current.innerHTML = `${bodyPart}${newSigHtml}`
       setEditorEmpty(!editorRef.current.innerText?.trim())
     }
     setShowSignatureDropdown(false)
-  }, [allSignatures])
+  }, [allSignatures, sigImageHtml])
 
   const handleSaveSignature = useCallback(() => {
     if (!editSigNaam.trim() || !editSigInhoud.trim()) return
@@ -580,7 +582,8 @@ export function EmailCompose({
     if (!to.trim() || !subject.trim()) return
 
     const body = editorRef.current?.innerText || ''
-    const sendData = { to: to.trim(), subject: subject.trim(), body, scheduledAt: scheduledAt || undefined }
+    const html = editorRef.current?.innerHTML || ''
+    const sendData = { to: to.trim(), subject: subject.trim(), body, html, scheduledAt: scheduledAt || undefined }
 
     setIsSending(true)
     try {

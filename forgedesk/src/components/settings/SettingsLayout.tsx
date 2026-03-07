@@ -53,6 +53,8 @@ import {
   ImageIcon,
   X,
   UserCircle,
+  Minus,
+  Plus,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -953,14 +955,19 @@ const EMAIL_TABS: SubTab[] = [
 function SignatureImageUpload({
   imageUrl,
   onImageChange,
+  imageSize,
+  onImageSizeChange,
   label = 'Afbeelding in handtekening',
 }: {
   imageUrl: string
   onImageChange: (url: string) => void
+  imageSize?: number
+  onImageSizeChange?: (size: number) => void
   label?: string
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const currentSize = imageSize ?? 64
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -975,16 +982,18 @@ function SignatureImageUpload({
     }
     try {
       setIsUploading(true)
-      const path = `handtekeningen/${Date.now()}_${file.name}`
+      const path = `handtekeningen/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
       await uploadFile(file, path)
       const url = await downloadFile(path)
       onImageChange(url)
       toast.success('Afbeelding geüpload')
     } catch (err) {
       logger.error('Fout bij uploaden afbeelding:', err)
-      toast.error('Kon afbeelding niet uploaden')
+      toast.error('Kon afbeelding niet uploaden. Controleer of Supabase Storage is geconfigureerd.')
     } finally {
       setIsUploading(false)
+      // Reset file input so the same file can be uploaded again
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -995,20 +1004,48 @@ function SignatureImageUpload({
         Voeg een bedrijfslogo of profielfoto toe aan de handtekening (max 2MB)
       </p>
       {imageUrl ? (
-        <div className="flex items-start gap-3">
-          <div className="relative border rounded-lg p-2 bg-white dark:bg-muted">
-            <img src={imageUrl} alt="Handtekening afbeelding" className="max-h-20 max-w-[200px] object-contain" />
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="relative border rounded-lg p-2 bg-white dark:bg-muted">
+              <img
+                src={imageUrl}
+                alt="Handtekening afbeelding"
+                style={{ maxHeight: `${currentSize}px`, maxWidth: `${Math.round(currentSize * 2.5)}px` }}
+                className="object-contain"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                <Upload className="w-3.5 h-3.5 mr-1.5" />
+                {isUploading ? 'Uploaden...' : 'Vervangen'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => onImageChange('')} className="text-destructive hover:text-destructive">
+                <X className="w-3.5 h-3.5 mr-1.5" />
+                Verwijderen
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-              <Upload className="w-3.5 h-3.5 mr-1.5" />
-              Vervangen
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onImageChange('')} className="text-destructive hover:text-destructive">
-              <X className="w-3.5 h-3.5 mr-1.5" />
-              Verwijderen
-            </Button>
-          </div>
+          {onImageSizeChange && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Afbeelding grootte</Label>
+                <span className="text-xs text-muted-foreground">{currentSize}px</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Minus className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <input
+                  type="range"
+                  min={24}
+                  max={200}
+                  step={4}
+                  value={currentSize}
+                  onChange={(e) => onImageSizeChange(Number(e.target.value))}
+                  className="w-full accent-primary"
+                />
+                <Plus className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <button
@@ -1035,19 +1072,27 @@ function SignaturePreview({
   naam,
   handtekening,
   afbeelding,
+  afbeeldingGrootte,
 }: {
   naam: string
   handtekening: string
   afbeelding: string
+  afbeeldingGrootte?: number
 }) {
   if (!handtekening && !afbeelding) return null
+  const imgSize = afbeeldingGrootte ?? 64
   return (
     <div className="space-y-2">
       <Label className="text-xs uppercase tracking-wider text-muted-foreground">Voorbeeld</Label>
       <div className="border rounded-lg p-4 bg-white dark:bg-muted/30 space-y-3">
         <div className="border-t border-muted pt-3">
           {afbeelding && (
-            <img src={afbeelding} alt="Logo" className="max-h-16 max-w-[160px] object-contain mb-2" />
+            <img
+              src={afbeelding}
+              alt="Logo"
+              style={{ maxHeight: `${imgSize}px`, maxWidth: `${Math.round(imgSize * 2.5)}px` }}
+              className="object-contain mb-2"
+            />
           )}
           <div className="text-sm whitespace-pre-line text-foreground/80">
             {handtekening || `Met vriendelijke groet,\n\n${naam}`}
@@ -1068,6 +1113,7 @@ function EmailTab() {
   const [emailHandtekening, setEmailHandtekening] = useState('')
   const [afzenderNaam, setAfzenderNaam] = useState('')
   const [handtekeningAfbeelding, setHandtekeningAfbeelding] = useState('')
+  const [afbeeldingGrootte, setAfbeeldingGrootte] = useState(64)
 
   // Team signatures (admin only)
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
@@ -1084,6 +1130,7 @@ function EmailTab() {
       setEmailHandtekening(data.email_handtekening || '')
       setAfzenderNaam(data.afzender_naam || '')
       setHandtekeningAfbeelding(data.handtekening_afbeelding || '')
+      setAfbeeldingGrootte(data.handtekening_afbeelding_grootte ?? 64)
     } catch (err) {
       logger.error('Fout bij laden e-mailinstellingen:', err)
     } finally {
@@ -1120,6 +1167,7 @@ function EmailTab() {
         email_handtekening: emailHandtekening,
         afzender_naam: afzenderNaam,
         handtekening_afbeelding: handtekeningAfbeelding,
+        handtekening_afbeelding_grootte: afbeeldingGrootte,
       })
       await refreshSettings()
       toast.success('E-mailinstellingen opgeslagen')
@@ -1238,6 +1286,8 @@ function EmailTab() {
               <SignatureImageUpload
                 imageUrl={handtekeningAfbeelding}
                 onImageChange={setHandtekeningAfbeelding}
+                imageSize={afbeeldingGrootte}
+                onImageSizeChange={setAfbeeldingGrootte}
               />
 
               <div className="space-y-2">
@@ -1258,6 +1308,7 @@ function EmailTab() {
                 naam={afzenderNaam}
                 handtekening={emailHandtekening}
                 afbeelding={handtekeningAfbeelding}
+                afbeeldingGrootte={afbeeldingGrootte}
               />
             </CardContent>
           </Card>

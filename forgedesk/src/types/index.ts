@@ -497,6 +497,7 @@ export interface AppSettings {
   // Email handtekening
   email_handtekening: string;
   handtekening_afbeelding: string;  // URL van logo/foto in handtekening
+  handtekening_afbeelding_grootte: number; // Afbeelding grootte in px (hoogte), default 64
   // Branding
   primaire_kleur: string;
   secundaire_kleur: string;
