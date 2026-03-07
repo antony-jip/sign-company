@@ -2310,7 +2310,6 @@ const ALL_SIDEBAR_ITEMS = [
   // Moet exact overeenkomen met navSections in Sidebar.tsx
   { label: 'Dashboard', section: 'Overzicht' },
   { label: 'Klanten', section: 'Verkoop' },
-  { label: 'Deals', section: 'Verkoop' },
   { label: 'Offertes', section: 'Verkoop' },
   { label: 'Facturen', section: 'Verkoop' },
   { label: 'Projecten', section: 'Productie' },

@@ -1062,15 +1062,6 @@ export function ContactSidebar({
                 <FileSignature className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                 Offerte
               </Button>
-              <Button
-                onClick={() => setView('addDeal')}
-                variant="outline"
-                className="gap-1.5 text-[12px] h-8 px-2"
-                size="sm"
-              >
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                Deal
-              </Button>
             </div>
 
             {(!contact || !contact.subscribedNewsletter) ? (
