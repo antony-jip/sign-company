@@ -57,7 +57,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { usePalette, APP_THEMES } from '@/contexts/PaletteContext'
+import { usePalette, APP_THEMES, ACCENT_PALETTES } from '@/contexts/PaletteContext'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
@@ -2334,7 +2334,7 @@ const WEERGAVE_TABS: SubTab[] = [
 function WeergaveTab() {
   const { language, setLanguage } = useLanguage()
   const { settings, updateSettings } = useAppSettings()
-  const { appThemeId, setAppThemeId } = usePalette()
+  const { appThemeId, setAppThemeId, accentId, setAccentId } = usePalette()
   const [sidebarItems, setSidebarItems] = useState<string[]>(
     settings.sidebar_items || ALL_SIDEBAR_ITEMS.map((i) => i.label)
   )
@@ -2484,6 +2484,50 @@ function WeergaveTab() {
                       <CheckCircle2 className="w-4 h-4 text-primary" />
                     </div>
                   )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Accent kleur picker */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <Palette className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Accentkleur
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Kies een accentkleur — verandert de sidebar indicator, logo en focus ring
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {ACCENT_PALETTES.map((a) => {
+              const isActive = accentId === a.id
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => {
+                    setAccentId(a.id)
+                    toast.success(`Accent "${a.naam}" geactiveerd`)
+                  }}
+                  className={cn(
+                    'relative flex items-center gap-2.5 rounded-xl border-2 px-4 py-3 transition-all duration-200',
+                    isActive
+                      ? 'border-primary bg-primary/5 shadow-md'
+                      : 'border-border hover:border-primary/40 hover:shadow-sm'
+                  )}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full flex-shrink-0"
+                    style={{ background: a.gradientStart }}
+                  />
+                  <span className={cn('text-sm font-medium', isActive ? 'text-primary' : 'text-foreground')}>
+                    {a.naam}
+                  </span>
+                  {isActive && <CheckCircle2 className="w-3.5 h-3.5 text-primary ml-1" />}
                 </button>
               )
             })}

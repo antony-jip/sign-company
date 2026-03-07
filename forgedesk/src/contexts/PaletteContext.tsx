@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 
 // ================================================================
-// APP THEMES — 4 vaste thema's, elk met eigen kleurenpalet
-// Geen aparte kleurenpicker meer — consistentie boven keuze.
+// APP THEMES — 2 thema's: Normaal (licht) en Dark
+// Accentkleuren wisselen subtiel via paletten
 // ================================================================
 
 export interface AppTheme {
@@ -15,145 +15,56 @@ export interface AppTheme {
 }
 
 export const APP_THEMES: AppTheme[] = [
-  // ────────────────────────────────────────────
-  // 1. NORMAAL — Warm neutral, white cards, pastel accents, black buttons
-  //    Exact match van de HTML mockup (#F4F3F0)
-  // ────────────────────────────────────────────
   {
     id: 'normaal',
     naam: 'Normaal',
-    beschrijving: 'Warm & neutraal — zoals de mockup',
+    beschrijving: 'Warm & neutraal',
     isDark: false,
     preview: { bg: '#F4F3F0', sidebar: '#FBFAF7', card: '#FFFFFF', accent: '#5A8264' },
-    vars: {}, // Uses CSS :root defaults from index.css
+    vars: {},
   },
-
-  // ────────────────────────────────────────────
-  // 2. DARK — Deep dark, same vibe but inverted
-  // ────────────────────────────────────────────
   {
     id: 'dark',
     naam: 'Dark',
-    beschrijving: 'Diep donker — dezelfde sfeer',
+    beschrijving: 'Diep donker',
     isDark: true,
     preview: { bg: '#141413', sidebar: '#191918', card: '#1E1E1C', accent: '#6BAF7C' },
-    vars: {}, // Uses .dark block from index.css
-  },
-
-  // ────────────────────────────────────────────
-  // 3. GLASS — Apple-style frosted glass, cool blue-grey
-  // ────────────────────────────────────────────
-  {
-    id: 'glass',
-    naam: 'Glass',
-    beschrijving: 'Apple-stijl — frosted glass & clean',
-    isDark: false,
-    preview: { bg: '#EAEDF2', sidebar: '#E0E3EC', card: '#ffffffcc', accent: '#5B7FA3' },
-    vars: {
-      '--background': '225 14% 93%',
-      '--foreground': '220 14% 10%',
-      '--card': '225 12% 98%',
-      '--card-foreground': '220 14% 10%',
-      '--popover': '225 12% 98%',
-      '--popover-foreground': '220 14% 10%',
-      '--primary': '210 30% 35%',
-      '--primary-foreground': '0 0% 100%',
-      '--secondary': '225 10% 90%',
-      '--secondary-foreground': '220 14% 10%',
-      '--muted': '225 8% 90%',
-      '--muted-foreground': '220 8% 40%',
-      '--accent': '225 12% 88%',
-      '--accent-foreground': '220 14% 10%',
-      '--border': '225 6% 86%',
-      '--input': '225 6% 86%',
-      '--ring': '210 30% 50%',
-      '--sidebar-background': '225 12% 90%',
-      '--sidebar-foreground': '220 8% 42%',
-      '--sidebar-primary': '210 30% 45%',
-      '--sidebar-primary-foreground': '0 0% 10%',
-      '--sidebar-accent': '225 12% 93%',
-      '--sidebar-accent-foreground': '0 0% 10%',
-      '--sidebar-border': '225 8% 84%',
-      '--sidebar-ring': '210 30% 50%',
-      '--wm-sidebar-bg': '225 12% 90%',
-      '--wm-sidebar-hover': '225 8% 86%',
-      '--wm-sidebar-active': '210 30% 45%',
-      '--wm-shadow-color': '225 15% 50%',
-      '--wm-glass': 'rgba(255, 255, 255, 0.50)',
-      '--wm-glass-border': 'rgba(255, 255, 255, 0.55)',
-      '--wm-hover': '210 30% 50%',
-      '--wm-light': '210 35% 65%',
-      '--wm-pale': '210 40% 90%',
-      '--wm-gradient-start': '#3D5F80',
-      '--wm-gradient-mid': '#8BAEC8',
-      '--wm-gradient-end': '#D0E4F0',
-      '--wm-glow': '0 0 40px rgba(91, 127, 163, 0.12)',
-    },
-  },
-
-  // ────────────────────────────────────────────
-  // 4. ZWART — OLED black, max contrast, bold
-  // ────────────────────────────────────────────
-  {
-    id: 'zwart',
-    naam: 'Zwart',
-    beschrijving: 'OLED zwart — stoer & bold',
-    isDark: true,
-    preview: { bg: '#000000', sidebar: '#0A0A0A', card: '#111111', accent: '#FFFFFF' },
-    vars: {
-      '--background': '0 0% 0%',
-      '--foreground': '0 0% 95%',
-      '--card': '0 0% 7%',
-      '--card-foreground': '0 0% 93%',
-      '--popover': '0 0% 7%',
-      '--popover-foreground': '0 0% 93%',
-      '--primary': '0 0% 100%',
-      '--primary-foreground': '0 0% 0%',
-      '--secondary': '0 0% 12%',
-      '--secondary-foreground': '0 0% 80%',
-      '--muted': '0 0% 12%',
-      '--muted-foreground': '0 0% 45%',
-      '--accent': '0 0% 14%',
-      '--accent-foreground': '0 0% 93%',
-      '--destructive': '0 62% 50%',
-      '--destructive-foreground': '0 0% 100%',
-      '--border': '0 0% 14%',
-      '--input': '0 0% 14%',
-      '--ring': '0 0% 60%',
-      '--sidebar-background': '0 0% 4%',
-      '--sidebar-foreground': '0 0% 50%',
-      '--sidebar-primary': '0 0% 85%',
-      '--sidebar-primary-foreground': '0 0% 5%',
-      '--sidebar-accent': '0 0% 10%',
-      '--sidebar-accent-foreground': '0 0% 90%',
-      '--sidebar-border': '0 0% 12%',
-      '--sidebar-ring': '0 0% 60%',
-      '--wm-sidebar-bg': '0 0% 4%',
-      '--wm-sidebar-hover': '0 0% 8%',
-      '--wm-sidebar-active': '0 0% 85%',
-      '--wm-shadow-color': '0 0% 0%',
-      '--wm-glass': 'rgba(0, 0, 0, 0.92)',
-      '--wm-glass-border': 'rgba(255, 255, 255, 0.08)',
-      '--wm-hover': '0 0% 70%',
-      '--wm-light': '0 0% 55%',
-      '--wm-pale': '0 0% 15%',
-      '--wm-gradient-start': '#333333',
-      '--wm-gradient-mid': '#666666',
-      '--wm-gradient-end': '#999999',
-      '--wm-glow': '0 0 40px rgba(255, 255, 255, 0.05)',
-    },
+    vars: {},
   },
 ]
 
-// Keep PALETTES export for backwards compatibility but empty
+// Accent palettes — only change subtle accent colors
+export interface AccentPalette {
+  id: string
+  naam: string
+  sidebarActive: string
+  gradientStart: string
+  gradientEnd: string
+  ring: string
+}
+
+export const ACCENT_PALETTES: AccentPalette[] = [
+  { id: 'sage', naam: 'Sage', sidebarActive: '145 22% 45%', gradientStart: '#5A8264', gradientEnd: '#C8D5CC', ring: '145 22% 45%' },
+  { id: 'terracotta', naam: 'Terracotta', sidebarActive: '15 45% 50%', gradientStart: '#B8694E', gradientEnd: '#F0D9D0', ring: '15 45% 50%' },
+  { id: 'ocean', naam: 'Ocean', sidebarActive: '210 40% 45%', gradientStart: '#4A7AB5', gradientEnd: '#CDD5DE', ring: '210 40% 45%' },
+  { id: 'amber', naam: 'Amber', sidebarActive: '38 55% 48%', gradientStart: '#B8883A', gradientEnd: '#EDE8D8', ring: '38 55% 48%' },
+  { id: 'berry', naam: 'Berry', sidebarActive: '330 40% 45%', gradientStart: '#A35B7A', gradientEnd: '#E8C8D8', ring: '330 40% 45%' },
+  { id: 'slate', naam: 'Slate', sidebarActive: '220 15% 40%', gradientStart: '#5A6370', gradientEnd: '#CDD5DE', ring: '220 15% 40%' },
+]
+
+// Keep PALETTES export for backwards compatibility
 export const PALETTES: never[] = []
 
 const THEME_STORAGE_KEY = 'forgedesk_app_theme'
+const ACCENT_STORAGE_KEY = 'forgedesk_accent'
 
 interface PaletteContextType {
   appThemeId: string
   appTheme: AppTheme
   setAppThemeId: (id: string) => void
+  accentId: string
+  accent: AccentPalette
+  setAccentId: (id: string) => void
   // Backwards-compat stubs
   paletteId: string
   palette: null
@@ -162,7 +73,6 @@ interface PaletteContextType {
 
 const PaletteContext = createContext<PaletteContextType | undefined>(undefined)
 
-// All CSS variable keys that themes may override
 const ALL_THEME_VARS = [
   '--background', '--foreground', '--card', '--card-foreground',
   '--popover', '--popover-foreground', '--primary', '--primary-foreground',
@@ -178,17 +88,11 @@ const ALL_THEME_VARS = [
   '--wm-gradient-start', '--wm-gradient-mid', '--wm-gradient-end', '--wm-glow',
 ]
 
-function applyAppTheme(theme: AppTheme) {
+function applyAppTheme(theme: AppTheme, accent: AccentPalette) {
   const root = document.documentElement
 
-  // Set data-theme for CSS overrides (e.g. glass frosted effects)
-  if (theme.id === 'normaal' || theme.id === 'dark') {
-    root.removeAttribute('data-theme')
-  } else {
-    root.setAttribute('data-theme', theme.id)
-  }
+  root.removeAttribute('data-theme')
 
-  // Set dark/light class
   if (theme.isDark) {
     root.classList.add('dark')
     root.classList.remove('light')
@@ -197,29 +101,36 @@ function applyAppTheme(theme: AppTheme) {
     root.classList.add('light')
   }
 
-  // Clear all previous theme var overrides
   for (const key of ALL_THEME_VARS) {
     root.style.removeProperty(key)
   }
 
-  // Apply theme-specific CSS vars
   for (const [key, value] of Object.entries(theme.vars)) {
     root.style.setProperty(key, value)
   }
+
+  // Apply accent palette
+  root.style.setProperty('--sidebar-primary', accent.sidebarActive)
+  root.style.setProperty('--wm-sidebar-active', accent.sidebarActive)
+  root.style.setProperty('--ring', accent.ring)
+  root.style.setProperty('--wm-gradient-start', accent.gradientStart)
+  root.style.setProperty('--wm-gradient-end', accent.gradientEnd)
 }
 
 export function PaletteProvider({ children }: { children: ReactNode }) {
   const [appThemeId, setAppThemeIdState] = useState<string>(() => {
-    // Migrate old theme keys
     const stored = localStorage.getItem(THEME_STORAGE_KEY)
-    if (stored === 'standaard') return 'normaal'
-    if (stored === 'snow') return 'glass'
-    if (stored === 'midnight' || stored === 'dusk') return 'dark'
-    if (stored === 'sand') return 'normaal'
+    if (stored === 'standaard' || stored === 'snow' || stored === 'sand' || stored === 'glass') return 'normaal'
+    if (stored === 'midnight' || stored === 'dusk' || stored === 'zwart') return 'dark'
     return stored || 'normaal'
   })
 
+  const [accentId, setAccentIdState] = useState<string>(() => {
+    return localStorage.getItem(ACCENT_STORAGE_KEY) || 'sage'
+  })
+
   const appTheme = APP_THEMES.find((t) => t.id === appThemeId) || APP_THEMES[0]
+  const accent = ACCENT_PALETTES.find((a) => a.id === accentId) || ACCENT_PALETTES[0]
 
   const setAppThemeId = useCallback((id: string) => {
     localStorage.setItem(THEME_STORAGE_KEY, id)
@@ -227,17 +138,23 @@ export function PaletteProvider({ children }: { children: ReactNode }) {
     setAppThemeIdState(id)
   }, [])
 
-  // Apply theme on mount and changes
+  const setAccentId = useCallback((id: string) => {
+    localStorage.setItem(ACCENT_STORAGE_KEY, id)
+    setAccentIdState(id)
+  }, [])
+
   useEffect(() => {
-    applyAppTheme(appTheme)
-  }, [appTheme])
+    applyAppTheme(appTheme, accent)
+  }, [appTheme, accent])
 
   return (
     <PaletteContext.Provider value={{
       appThemeId,
       appTheme,
       setAppThemeId,
-      // Backwards-compat stubs
+      accentId,
+      accent,
+      setAccentId,
       paletteId: '',
       palette: null,
       setPaletteId: () => {},
