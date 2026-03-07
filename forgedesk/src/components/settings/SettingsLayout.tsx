@@ -965,6 +965,7 @@ function SignatureImageUpload({
   onImageSizeChange?: (size: number) => void
   label?: string
 }) {
+  const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const currentSize = imageSize ?? 64
@@ -982,7 +983,9 @@ function SignatureImageUpload({
     }
     try {
       setIsUploading(true)
-      const path = `handtekeningen/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+      // Upload path must start with user_id for Supabase RLS policies
+      const userId = user?.id || 'local'
+      const path = `${userId}/handtekeningen/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
       await uploadFile(file, path)
       const url = await downloadFile(path)
       onImageChange(url)
