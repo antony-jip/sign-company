@@ -31,3 +31,4 @@ dist-ssr
 # Vite config build outputs
 vite.config.js
 vite.config.d.ts
+.vercel

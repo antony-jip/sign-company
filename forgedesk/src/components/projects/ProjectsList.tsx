@@ -257,7 +257,7 @@ export function ProjectsList() {
     const teFactureren = projecten.filter((p) => p.status === 'te-factureren').length
     const afgerond = projecten.filter((p) => p.status === 'afgerond').length
     const overdue = projecten.filter(
-      (p) => p.eind_datum && new Date(p.eind_datum) < new Date() && p.status !== 'afgerond'
+      (p) => p.eind_datum && new Date(p.eind_datum ?? "") < new Date() && p.status !== 'afgerond'
     ).length
     return { actief, teFactureren, afgerond, overdue }
   }, [projecten])
@@ -386,7 +386,7 @@ export function ProjectsList() {
                 Status: statusLabels[p.status] || p.status,
                 Prioriteit: p.prioriteit,
                 Bedrag: formatCurrency(getProjectBedrag(p.id)),
-                Startdatum: formatDate(p.start_datum),
+                Startdatum: formatDate(p.start_datum ?? ""),
               }))
               exportCSV(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows)
             }}
@@ -406,7 +406,7 @@ export function ProjectsList() {
                 Status: statusLabels[p.status] || p.status,
                 Prioriteit: p.prioriteit,
                 Bedrag: getProjectBedrag(p.id),
-                Startdatum: formatDate(p.start_datum),
+                Startdatum: formatDate(p.start_datum ?? ""),
               }))
               exportExcel(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Projecten')
             }}
@@ -497,7 +497,7 @@ export function ProjectsList() {
               {gefilterdeProjecten.map((project) => {
                 const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
                 const contactpersoon = getKlantContactpersoon(project.klant_id)
-                const isOverdue = project.eind_datum && new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
+                const isOverdue = project.eind_datum && new Date(project.eind_datum ?? "") < new Date() && project.status !== 'afgerond'
 
                 return (
                   <tr
@@ -715,7 +715,7 @@ export function ProjectsList() {
                                   'Klant;' + klantNaam,
                                   'Status;' + (statusLabels[project.status] || project.status),
                                   'Bedrag;' + formatCurrency(getProjectBedrag(project.id)),
-                                  'Start;' + formatDate(project.start_datum),
+                                  'Start;' + formatDate(project.start_datum ?? ""),
                                 ].join('\n')
                                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
                                 const url = URL.createObjectURL(blob)

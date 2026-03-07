@@ -266,7 +266,7 @@ export function TasksLayout() {
 
     activeTaken.forEach((t) => {
       if (!t.deadline) return
-      const deadline = new Date(t.deadline)
+      const deadline = new Date(t.deadline ?? "")
       deadline.setHours(0, 0, 0, 0)
       const key = deadline.toDateString()
       if (map.has(key)) {
@@ -277,8 +277,8 @@ export function TasksLayout() {
     // Sort each day: scheduled tasks by hour, then unscheduled by priority
     map.forEach((tasks) => {
       tasks.sort((a, b) => {
-        const aHour = getHourFromDeadline(a.deadline)
-        const bHour = getHourFromDeadline(b.deadline)
+        const aHour = getHourFromDeadline(a.deadline ?? "")
+        const bHour = getHourFromDeadline(b.deadline ?? "")
         // Scheduled tasks first, sorted by hour
         if (aHour !== null && bHour !== null) return aHour - bHour
         if (aHour !== null) return -1
@@ -395,7 +395,15 @@ export function TasksLayout() {
       const updated = await updateTaak(editingTaak!.id, {
         titel: formData.titel.trim(), beschrijving: formData.beschrijving.trim(),
         status: formData.status, prioriteit: formData.prioriteit,
-        toegewezen_aan: formData.toegewezen_aan.trim(), deadline: formData.deadline || undefined,
+        toegewezen_aan: formData.toegewezen_aan.trim(), deadline: (() => {
+          if (!formData.deadline) return undefined
+          // Bewaar bestaande tijd als de datum hetzelfde is
+          const existing = editingTaak?.deadline
+          if (existing && existing.includes('T') && existing.startsWith(formData.deadline)) {
+            return existing
+          }
+          return formData.deadline
+        })(),
         geschatte_tijd: formData.geschatte_tijd, bestede_tijd: formData.bestede_tijd,
         project_id: formData.project_id || undefined,
         klant_id: formData.klant_id || undefined,
@@ -814,8 +822,8 @@ function DayColumn({
   }, [resizingTaakId, resizeStartY, resizeStartHeight, onResize])
 
   // Separate scheduled and unscheduled tasks
-  const scheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline) !== null)
-  const unscheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline) === null)
+  const scheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline ?? "") !== null)
+  const unscheduledTasks = tasks.filter((t) => getHourFromDeadline(t.deadline ?? "") === null)
 
   // Compute overlap columns so tasks at the same time sit side-by-side
   const taskColumns = useMemo(() => {
@@ -967,7 +975,7 @@ function DayColumn({
 
       {/* Scheduled tasks - positioned at their time */}
       {scheduledTasks.map((taak) => {
-        const hour = getHourFromDeadline(taak.deadline)!
+        const hour = getHourFromDeadline(taak.deadline ?? "")!
         const topPx = (hour - 7) * HOUR_HEIGHT + 4
         const duration = taak.geschatte_tijd || 0
         const isResizing = resizingTaakId === taak.id
@@ -1086,7 +1094,7 @@ function TaskCard({
   const isDone = taak.status === 'klaar'
   const [justCompleted, setJustCompleted] = useState(false)
   const colors = PRIORITEIT_COLORS[taak.prioriteit]
-  const hour = getHourFromDeadline(taak.deadline)
+  const hour = getHourFromDeadline(taak.deadline ?? "")
 
   function handleToggle(e: React.MouseEvent) {
     e.stopPropagation()

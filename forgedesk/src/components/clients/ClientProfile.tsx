@@ -883,8 +883,8 @@ export function ClientProfile() {
                       {clientProjecten
                         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                         .map((project) => {
-                          const isOverdue = new Date(project.eind_datum) < new Date() && project.status !== 'afgerond'
-                          const daysLeft = Math.ceil((new Date(project.eind_datum).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                          const isOverdue = new Date(project.eind_datum ?? "") < new Date() && project.status !== 'afgerond'
+                          const daysLeft = Math.ceil((new Date(project.eind_datum ?? "").getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
 
                           return (
                             <tr
@@ -909,7 +909,7 @@ export function ClientProfile() {
                                     {project.naam}
                                   </p>
                                   <p className="text-xs text-muted-foreground mt-0.5">
-                                    {formatDate(project.start_datum)}
+                                    {formatDate(project.start_datum ?? "")}
                                   </p>
                                 </div>
                               </td>
@@ -938,7 +938,7 @@ export function ClientProfile() {
                                   'text-sm',
                                   isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-foreground'
                                 )}>
-                                  {formatDate(project.eind_datum)}
+                                  {formatDate(project.eind_datum ?? "")}
                                 </span>
                                 {project.status !== 'afgerond' && (
                                   <p className={cn(
@@ -970,8 +970,8 @@ export function ClientProfile() {
                                       { Veld: 'Budget', Waarde: formatCurrency(project.budget) },
                                       { Veld: 'Besteed', Waarde: formatCurrency(project.besteed) },
                                       { Veld: 'Voortgang', Waarde: project.voortgang + '%' },
-                                      { Veld: 'Start', Waarde: formatDate(project.start_datum) },
-                                      { Veld: 'Deadline', Waarde: formatDate(project.eind_datum) },
+                                      { Veld: 'Start', Waarde: formatDate(project.start_datum ?? "") },
+                                      { Veld: 'Deadline', Waarde: formatDate(project.eind_datum ?? "") },
                                     ]
                                     exportCSV(project.naam.replace(/\s+/g, '-').toLowerCase(), headers, rows)
                                   }}
@@ -1580,7 +1580,7 @@ export function ClientProfile() {
                       Budget: p.budget,
                       Besteed: p.besteed,
                       Voortgang: p.voortgang + '%',
-                      Deadline: formatDate(p.eind_datum),
+                      Deadline: formatDate(p.eind_datum ?? ""),
                     }))
                     exportExcel(
                       `${klant.bedrijfsnaam.replace(/\s+/g, '-').toLowerCase()}-projecten`,

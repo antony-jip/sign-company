@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORGEdesk — v7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    --bg: #EFEDE8;
+    --bg-card: #FFFFFF;
+    --bg-sidebar: #FBFAF7;
+    --fg: #1A1A1A;
+    --fg-2: #6B6B6B;
+    --fg-3: #A0A0A0;
+    --fg-4: #C8C8C8;
+    --border: #E8E6E0;
+
+    --blush: #F0D9D0;
+    --blush-deep: #C49585;
+    --sage: #C8D5CC;
+    --sage-deep: #5A8264;
+    --mist: #CDD5DE;
+    --mist-deep: #5D7A93;
+    --cream: #EDE8D8;
+    --cream-deep: #9A8E6E;
+
+    --green: #4A9960;
+    --green-bg: #E8F5EC;
+    --blue: #4A7AB5;
+    --blue-bg: #E8EFF8;
+    --red: #C45B4F;
+    --red-bg: #FAE8E6;
+    --amber: #B8883A;
+    --amber-bg: #F8F0E0;
+    --gray: #8A8A8A;
+    --gray-bg: #F0F0EE;
+
+    --radius: 16px;
+    --radius-sm: 10px;
+
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --dur: 0.25s;
+    --dur-fast: 0.15s;
+    --dur-slow: 0.4s;
+  }
+
+  .dark {
+    --bg: #141413;
+    --bg-card: #1E1E1C;
+    --bg-sidebar: #191918;
+    --fg: #E8E8E4;
+    --fg-2: #8A8A86;
+    --fg-3: #5A5A58;
+    --fg-4: #3A3A38;
+    --border: #2E2E2A;
+    --blush: #3A2822; --blush-deep: #D4A090;
+    --sage: #1E2A22; --sage-deep: #7AAF85;
+    --mist: #1E242A; --mist-deep: #7AA0C0;
+    --cream: #2A2820; --cream-deep: #C4B890;
+    --green: #6ACA80; --green-bg: #162018;
+    --blue: #6A9AD5; --blue-bg: #161E28;
+    --red: #DA7B70; --red-bg: #2A1A18;
+    --amber: #D4A85A; --amber-bg: #2A2418;
+    --gray: #8A8A86; --gray-bg: #222220;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--fg);
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  ::selection { background: var(--blush); color: var(--fg); }
+  .app { display: flex; height: 100vh; }
+
+  /* ===== SIDEBAR ===== */
+  .side {
+    width: 220px;
+    min-width: 220px;
+    background: var(--bg-sidebar);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 10px;
+    border-right: 1px solid var(--border);
+    transition: background var(--dur) var(--ease), border-color var(--dur);
+  }
+
+  .s-top {
+    padding: 4px 6px 20px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .s-mark {
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--blush), var(--mist));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--fg);
+    flex-shrink: 0;
+    transition: transform var(--dur) var(--spring);
+  }
+  .s-mark:hover { transform: scale(1.08) rotate(-3deg); }
+
+  .s-name { font-size: 15px; font-weight: 700; letter-spacing: -0.03em; }
+  .s-name span { font-weight: 400; color: var(--fg-2); }
+
+  .sg { margin-bottom: 18px; }
+  .sg-l {
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--fg-3); padding: 8px 10px 4px;
+  }
+
+  .si {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 10px; border-radius: 10px;
+    color: var(--fg-2); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all var(--dur-fast) var(--ease);
+    position: relative;
+  }
+  .si:hover { background: var(--bg); color: var(--fg); }
+  .si.on { background: var(--bg); color: var(--fg); font-weight: 600; }
+  .si.on::before {
+    content: ''; position: absolute; left: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 16px;
+    background: var(--sage-deep); border-radius: 0 3px 3px 0;
+  }
+
+  .si svg {
+    width: 16px; height: 16px; stroke-width: 1.6;
+    opacity: 0.4; flex-shrink: 0;
+    transition: opacity var(--dur-fast), transform var(--dur) var(--spring);
+  }
+  .si.on svg, .si:hover svg { opacity: 0.65; }
+  .si:hover svg { transform: scale(1.08); }
+
+  .si-c {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    color: var(--fg-3); background: var(--border);
+    padding: 1px 6px; border-radius: 5px;
+    transition: background var(--dur-fast);
+  }
+  .si:hover .si-c { background: var(--fg-4); }
+
+  .s-btm {
+    margin-top: auto; padding: 12px 6px 0;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 9px;
+    transition: border-color var(--dur);
+  }
+  .s-av {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--sage), var(--blush));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--fg);
+    transition: transform var(--dur) var(--spring);
+  }
+  .s-av:hover { transform: scale(1.1); }
+  .s-btm-n { font-size: 12.5px; font-weight: 600; }
+  .s-btm-s { font-size: 10.5px; color: var(--fg-3); }
+
+  .s-t {
+    margin-left: auto; background: none; border: 1px solid var(--border);
+    width: 28px; height: 28px; border-radius: 8px;
+    cursor: pointer; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--fg-3); transition: all var(--dur-fast);
+  }
+  .s-t:hover { background: var(--bg); color: var(--fg); transform: rotate(18deg); }
+
+  /* ===== MAIN ===== */
+  .main {
+    flex: 1; overflow-y: auto; background: var(--bg);
+    transition: background var(--dur); scroll-behavior: smooth;
+  }
+  .main::-webkit-scrollbar { width: 0; }
+  .mi { padding: 32px 40px 80px; max-width: 1050px; }
+
+  /* Page header */
+  .ph {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 28px;
+    animation: fadeUp var(--dur-slow) var(--ease) both;
+  }
+  .ph h1 {
+    font-size: 28px; font-weight: 800;
+    letter-spacing: -0.04em; line-height: 1.1;
+  }
+  .ph p { color: var(--fg-2); font-size: 13.5px; margin-top: 4px; }
+  .ph-a { display: flex; gap: 8px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* Buttons */
+  .b {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font); font-size: 13px; font-weight: 600;
+    padding: 9px 18px; border-radius: var(--radius-sm);
+    cursor: pointer; border: none; line-height: 1;
+    transition: all var(--dur-fast) var(--ease);
+  }
+  .b:active { transform: scale(0.96); }
+  .b1 { background: var(--fg); color: var(--bg-card); }
+  .b1:hover { box-shadow: 0 4px 14px rgba(26,26,26,0.15); transform: translateY(-1px); }
+  .b2 { background: var(--bg-card); color: var(--fg); border: 1px solid var(--border); }
+  .b2:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+
+  /* Alert */
+  .al {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 18px; border-radius: var(--radius);
+    font-size: 13.5px; margin-bottom: 20px;
+    background: var(--red-bg); color: var(--red); font-weight: 500;
+    animation: fadeUp var(--dur-slow) var(--ease) 0.06s both;
+    transition: background var(--dur);
+  }
+  .al strong { font-weight: 700; }
+  .al-lk {
+    margin-left: auto; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+    transition: transform var(--dur-fast);
+  }
+  .al-lk:hover { transform: translateX(3px); text-decoration: underline; }
+
+  /* Stat cards */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .st {
+    border-radius: var(--radius);
+    padding: 22px;
+    position: relative; overflow: hidden;
+    cursor: default;
+    transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--ease);
+    animation: scaleIn var(--dur-slow) var(--ease) both;
+  }
+  .st:nth-child(1) { background: var(--blush); animation-delay: 0.08s; }
+  .st:nth-child(2) { background: var(--sage); animation-delay: 0.12s; }
+  .st:nth-child(3) { background: var(--mist); animation-delay: 0.16s; }
+  .st:nth-child(4) { background: var(--cream); animation-delay: 0.20s; }
+
+  .st:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  }
+
+  .st::after {
+    content: ''; position: absolute;
+    top: -40%; right: -30%; width: 80%; height: 80%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    opacity: 0; transition: opacity var(--dur); pointer-events: none;
+  }
+  .st:hover::after { opacity: 1; }
+
+  .st-l {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--fg-2); margin-bottom: 6px;
+    position: relative; z-index: 1;
+  }
+  .st-v {
+    font-size: 32px; font-weight: 800;
+    letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+    line-height: 1; color: var(--fg);
+    position: relative; z-index: 1;
+  }
+  .st-s {
+    font-size: 12px; font-weight: 600; margin-top: 8px;
+    position: relative; z-index: 1;
+    transition: transform var(--dur-fast);
+  }
+  .st:hover .st-s { transform: translateX(2px); }
+  .st-s.up { color: var(--sage-deep); }
+  .st-s.dn { color: var(--red); }
+
+  /* Widget grid — 2 columns, clean */
+  .wg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .wc {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    animation: scaleIn var(--dur-slow) var(--ease) both;
+    transition: background var(--dur), border-color var(--dur), box-shadow var(--dur);
+  }
+  .wc:nth-child(1) { animation-delay: 0.24s; }
+  .wc:nth-child(2) { animation-delay: 0.28s; }
+  .wc:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+
+  .wc-t {
+    font-size: 14px; font-weight: 700; margin-bottom: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .wc-t a {
+    font-size: 12px; font-weight: 500; color: var(--fg-3);
+    cursor: pointer; text-decoration: none;
+    transition: color var(--dur-fast), transform var(--dur-fast);
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .wc-t a:hover { color: var(--fg-2); transform: translateX(2px); }
+
+  /* Activity */
+  .ai {
+    display: flex; gap: 10px; padding: 8px 0; align-items: flex-start;
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  .ai:hover { transform: translateX(2px); }
+  .ai + .ai { border-top: 1px solid var(--border); }
+  .ai-d {
+    width: 7px; height: 7px; border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+    transition: transform var(--dur) var(--spring);
+  }
+  .ai:hover .ai-d { transform: scale(1.5); }
+  .ai-t { font-size: 13px; line-height: 1.4; }
+  .ai-t strong { font-weight: 600; }
+  .ai-s { font-size: 11px; color: var(--fg-3); margin-top: 1px; }
+
+  /* Agenda / upcoming */
+  .up-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 0;
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  .up-item:hover { transform: translateX(2px); }
+  .up-item + .up-item { border-top: 1px solid var(--border); }
+  .up-bar {
+    width: 4px; height: 36px; border-radius: 3px; flex-shrink: 0;
+  }
+  .up-info { flex: 1; }
+  .up-t { font-size: 13px; font-weight: 600; }
+  .up-s { font-size: 11.5px; color: var(--fg-3); margin-top: 1px; }
+  .up-time {
+    font-size: 12px; font-weight: 600; color: var(--fg-2);
+    white-space: nowrap;
+  }
+
+  /* Tasks */
+  .tk {
+    display: flex; align-items: center; gap: 10px; padding: 8px 0;
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  .tk:hover { transform: translateX(2px); }
+  .tk + .tk { border-top: 1px solid var(--border); }
+  .tk-b {
+    width: 18px; height: 18px; border-radius: 6px;
+    border: 2px solid var(--fg-4); cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: transparent;
+    transition: all var(--dur-fast) var(--spring);
+  }
+  .tk-b:hover { border-color: var(--sage-deep); transform: scale(1.15); }
+  .tk-b.ck { background: var(--fg); border-color: var(--fg); color: var(--bg-card); }
+  .tk-t { flex: 1; font-size: 13px; }
+  .tk-t.x { text-decoration: line-through; color: var(--fg-3); }
+  .tk-d { font-size: 11px; color: var(--fg-3); }
+  .tk-d.u { color: var(--red); font-weight: 600; }
+
+  /* Second row of widgets */
+  .wg2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .wg2 .wc:nth-child(1) { animation-delay: 0.32s; }
+  .wg2 .wc:nth-child(2) { animation-delay: 0.36s; }
+
+  /* ===== TABLE VIEWS ===== */
+  .tw {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: scaleIn var(--dur-slow) var(--ease) 0.1s both;
+    transition: background var(--dur), border-color var(--dur);
+  }
+  .tw-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+  }
+  .pills { display: flex; gap: 3px; }
+  .pill {
+    padding: 6px 12px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 600; font-family: var(--font);
+    cursor: pointer; border: none; background: transparent;
+    color: var(--fg-3); transition: all var(--dur-fast);
+    position: relative;
+  }
+  .pill:hover { color: var(--fg-2); background: var(--bg); }
+  .pill.on { color: var(--fg); background: var(--bg); }
+  .pill.on::after {
+    content: ''; position: absolute; bottom: 2px;
+    left: 50%; transform: translateX(-50%);
+    width: 12px; height: 2px;
+    background: var(--fg); border-radius: 2px;
+  }
+
+  .tw-s {
+    padding: 7px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; font-family: var(--font);
+    background: var(--bg); color: var(--fg); width: 200px; outline: none;
+    transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+  }
+  .tw-s:focus { border-color: var(--fg-3); box-shadow: 0 0 0 3px rgba(160,160,160,0.08); }
+  .tw-s::placeholder { color: var(--fg-4); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--fg-3); text-align: left;
+    padding: 10px 18px; border-bottom: 1px solid var(--border);
+  }
+  thead th.r { text-align: right; }
+  tbody tr { cursor: pointer; transition: background var(--dur-fast); }
+  tbody tr:hover { background: var(--bg); }
+  tbody tr td:first-child { position: relative; }
+  tbody tr td:first-child::before {
+    content: ''; position: absolute; left: 0; top: 25%; bottom: 25%;
+    width: 2.5px; background: var(--blush-deep);
+    border-radius: 0 2px 2px 0; opacity: 0;
+    transform: scaleY(0.5); transition: all var(--dur-fast) var(--spring);
+  }
+  tbody tr:hover td:first-child::before { opacity: 1; transform: scaleY(1); }
+  tbody td { padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .c1 { font-weight: 600; }
+  .c2 { color: var(--fg-2); }
+  .c3 { color: var(--fg-3); font-size: 12.5px; }
+  .cr { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .bg {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    transition: transform var(--dur-fast) var(--spring);
+  }
+  tbody tr:hover .bg { transform: scale(1.04); }
+  .bg::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+  .bg-g { background: var(--gray-bg); color: var(--gray); }
+  .bg-g::before { background: var(--gray); }
+  .bg-b { background: var(--blue-bg); color: var(--blue); }
+  .bg-b::before { background: var(--blue); }
+  .bg-s { background: var(--green-bg); color: var(--green); }
+  .bg-s::before { background: var(--green); }
+  .bg-r { background: var(--red-bg); color: var(--red); }
+  .bg-r::before { background: var(--red); }
+  .bg-a { background: var(--amber-bg); color: var(--amber); }
+  .bg-a::before { background: var(--amber); }
+
+  .v { display: none; }
+  .v.on { display: block; animation: fadeUp var(--dur) var(--ease); }
+
+  .dt {
+    position: fixed; bottom: 16px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--fg); border-radius: 14px;
+    padding: 4px; display: flex; gap: 2px; z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    animation: fadeUp var(--dur-slow) var(--ease) 0.5s both;
+  }
+  .dt button {
+    padding: 7px 14px; border-radius: 10px;
+    font-size: 12px; font-weight: 600;
+    color: rgba(255,255,255,0.35); cursor: pointer;
+    border: none; background: transparent;
+    font-family: var(--font); transition: all var(--dur-fast);
+  }
+  .dt button:hover { color: rgba(255,255,255,0.6); }
+  .dt button.on { background: rgba(255,255,255,0.12); color: #fff; }
+
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--blush-deep);
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="side">
+    <div class="s-top">
+      <div class="s-mark">F</div>
+      <div class="s-name">Forge<span>desk</span></div>
+    </div>
+    <nav>
+      <div class="sg">
+        <div class="si on" onclick="go('dash')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+      </div>
+      <div class="sg">
+        <div class="sg-l">Werk</div>
+        <div class="si" onclick="go('proj')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>Projecten<span class="si-c">8</span></div>
+        <div class="si" onclick="go('off')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Offertes<span class="si-c">3</span></div>
+        <div class="si" onclick="go('fac')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Facturen</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Werkbonnen</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Planning</div>
+      </div>
+      <div class="sg">
+        <div class="sg-l">Beheer</div>
+        <div class="si" onclick="go('kl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Klanten</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Uitgaven</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Instellingen</div>
+      </div>
+    </nav>
+    <div class="s-btm">
+      <div class="s-av">A</div>
+      <div><div class="s-btm-n">Antony</div><div class="s-btm-s">Sign Company</div></div>
+      <button class="s-t" onclick="flip()">☀</button>
+    </div>
+  </aside>
+
+  <main class="main"><div class="mi">
+
+    <!-- DASHBOARD -->
+    <div class="v on" id="v-dash">
+      <div class="ph"><div><h1>Dashboard</h1><p>Vrijdag 6 maart 2026</p></div><div class="ph-a"><button class="b b2">Exporteer</button><button class="b b1">+ Nieuwe offerte</button></div></div>
+
+      <div class="al">⚠ <strong>3 facturen verlopen</strong> — €4.250 openstaand <span class="al-lk" onclick="go('fac')">Bekijk →</span></div>
+
+      <div class="stats">
+        <div class="st"><div class="st-l">Openstaand</div><div class="st-v">€12.450</div><div class="st-s up">↑ 12%</div></div>
+        <div class="st"><div class="st-l">Actieve projecten</div><div class="st-v">8</div><div class="st-s up">↑ 2 nieuw</div></div>
+        <div class="st"><div class="st-l">Offertes verstuurd</div><div class="st-v">14</div><div class="st-s dn">↓ 3</div></div>
+        <div class="st"><div class="st-l">Hit rate</div><div class="st-v">68%</div><div class="st-s up">↑ 5%</div></div>
+      </div>
+
+      <div class="wg">
+        <div class="wc">
+          <div class="wc-t">Recente activiteit <a>Alles bekijken →</a></div>
+          <div class="ai"><div class="ai-d" style="background:var(--sage-deep)"></div><div><div class="ai-t">Offerte <strong>OFF-042</strong> goedgekeurd — Abovo Media</div><div class="ai-s">2 uur geleden</div></div></div>
+          <div class="ai"><div class="ai-d" style="background:var(--mist-deep)"></div><div><div class="ai-t">Werkbon <strong>WB-018</strong> ingediend — Matec</div><div class="ai-s">4 uur geleden</div></div></div>
+          <div class="ai"><div class="ai-d" style="background:var(--cream-deep)"></div><div><div class="ai-t">Factuur <strong>F-031</strong> betaald — €3.750</div><div class="ai-s">Gisteren 16:42</div></div></div>
+          <div class="ai"><div class="ai-d" style="background:var(--blush-deep)"></div><div><div class="ai-t">Factuur <strong>F-024</strong> — 14 dagen verlopen</div><div class="ai-s">Gisteren 09:00</div></div></div>
+        </div>
+        <div class="wc">
+          <div class="wc-t">Vandaag <a>Planning →</a></div>
+          <div class="up-item">
+            <div class="up-bar" style="background:var(--sage)"></div>
+            <div class="up-info"><div class="up-t">Montage lichtreclame</div><div class="up-s">Bakkerij Jansen · Hoorn</div></div>
+            <div class="up-time">09:00</div>
+          </div>
+          <div class="up-item">
+            <div class="up-bar" style="background:var(--mist)"></div>
+            <div class="up-info"><div class="up-t">Opmeting gevelreclame</div><div class="up-s">Matec · Amsterdam</div></div>
+            <div class="up-time">13:30</div>
+          </div>
+          <div class="up-item">
+            <div class="up-bar" style="background:var(--blush)"></div>
+            <div class="up-info"><div class="up-t">Klantgesprek offerte</div><div class="up-s">Pilotstreet Events</div></div>
+            <div class="up-time">15:00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wg2">
+        <div class="wc">
+          <div class="wc-t">Taken deze week <a>Alles bekijken →</a></div>
+          <div class="tk"><div class="tk-b" onclick="tog(this)"></div><div class="tk-t">Lichtreclame opmeten — Bakkerij Jansen</div><div class="tk-d u">Vandaag</div></div>
+          <div class="tk"><div class="tk-b" onclick="tog(this)"></div><div class="tk-t">Offerte 8x lichtreclame afronden</div><div class="tk-d">Morgen</div></div>
+          <div class="tk"><div class="tk-b ck" onclick="tog(this)">✓</div><div class="tk-t x">Bestelling Probo plaatsen</div><div class="tk-d">Gedaan</div></div>
+          <div class="tk"><div class="tk-b" onclick="tog(this)"></div><div class="tk-t">Planning week 11 maken</div><div class="tk-d">Do 13 mrt</div></div>
+        </div>
+        <div class="wc">
+          <div class="wc-t">Openstaande offertes <a>Offertes →</a></div>
+          <div class="up-item">
+            <div class="up-bar" style="background:var(--cream)"></div>
+            <div class="up-info"><div class="up-t">8x LED lichtreclame</div><div class="up-s">Abovo Media · €14.200</div></div>
+            <div class="up-time" style="color:var(--fg-3)">Concept</div>
+          </div>
+          <div class="up-item">
+            <div class="up-bar" style="background:var(--amber-bg)"></div>
+            <div class="up-info"><div class="up-t">Standbouw beurs</div><div class="up-s">Pilotstreet · €6.800</div></div>
+            <div class="up-time" style="color:var(--amber)">Verstuurd</div>
+          </div>
+          <div class="up-item">
+            <div class="up-bar" style="background:var(--amber-bg)"></div>
+            <div class="up-info"><div class="up-t">Belettering + pyloon</div><div class="up-s">Autobedrijf Visser · €4.900</div></div>
+            <div class="up-time" style="color:var(--amber)">Verstuurd</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FACTUREN -->
+    <div class="v" id="v-fac">
+      <div class="ph"><div><h1>Facturen</h1><p>12 facturen · €24.680</p></div><div class="ph-a"><button class="b b2">Exporteer</button><button class="b b1">+ Nieuwe factuur</button></div></div>
+      <div class="tw"><div class="tw-bar"><div class="pills"><button class="pill on">Alle</button><button class="pill">Open (5)</button><button class="pill">Verlopen (3)</button><button class="pill">Betaald (4)</button></div><input class="tw-s" placeholder="Zoeken..."></div>
+      <table><thead><tr><th>Nummer</th><th>Klant</th><th>Project</th><th>Datum</th><th>Status</th><th class="r">Bedrag</th></tr></thead><tbody>
+        <tr><td class="c3">F-2026-038</td><td class="c1">Abovo Media</td><td class="c2">8x Lichtreclame Winkelcentrum</td><td class="c3">4 mrt</td><td><span class="bg bg-a">Verstuurd</span></td><td class="cr">€8.450</td></tr>
+        <tr><td class="c3">F-2026-037</td><td class="c1">Pilotstreet Events</td><td class="c2">Eventaankleding Jaarbeurs</td><td class="c3">1 mrt</td><td><span class="bg bg-r">Verlopen</span></td><td class="cr">€2.100</td></tr>
+        <tr><td class="c3">F-2026-036</td><td class="c1">Matec Amsterdam</td><td class="c2">Gevelreclame kantoor</td><td class="c3">25 feb</td><td><span class="bg bg-s">Betaald</span></td><td class="cr">€3.750</td></tr>
+        <tr><td class="c3">F-2026-035</td><td class="c1">SignNova Displays</td><td class="c2">LED-display showroom</td><td class="c3">22 feb</td><td><span class="bg bg-s">Betaald</span></td><td class="cr">€5.200</td></tr>
+        <tr><td class="c3">F-2026-034</td><td class="c1">Bakkerij Jansen</td><td class="c2">Lichtreclame voorgevel</td><td class="c3">18 feb</td><td><span class="bg bg-r">Verlopen</span></td><td class="cr">€1.150</td></tr>
+        <tr><td class="c3">F-2026-033</td><td class="c1">Gemeente Heemskerk</td><td class="c2">Bewegwijzering sportpark</td><td class="c3">14 feb</td><td><span class="bg bg-b">Open</span></td><td class="cr">€4.030</td></tr>
+      </tbody></table></div>
+    </div>
+
+    <!-- OFFERTES -->
+    <div class="v" id="v-off">
+      <div class="ph"><div><h1>Offertes</h1><p>6 openstaand · €32.400</p></div><div class="ph-a"><button class="b b1">+ Nieuwe offerte</button></div></div>
+      <div class="tw"><div class="tw-bar"><div class="pills"><button class="pill on">Alle</button><button class="pill">Concept</button><button class="pill">Verstuurd</button><button class="pill">Goedgekeurd</button></div><input class="tw-s" placeholder="Zoeken..."></div>
+      <table><thead><tr><th>Nummer</th><th>Klant</th><th>Omschrijving</th><th>Datum</th><th>Status</th><th class="r">Bedrag</th></tr></thead><tbody>
+        <tr><td class="c3">OFF-2026-048</td><td class="c1">Abovo Media</td><td class="c2">8x LED lichtreclame winkelcentrum</td><td class="c3">5 mrt</td><td><span class="bg bg-g">Concept</span></td><td class="cr">€14.200</td></tr>
+        <tr><td class="c3">OFF-2026-047</td><td class="c1">Pilotstreet Events</td><td class="c2">Standbouw &amp; signing beurs</td><td class="c3">3 mrt</td><td><span class="bg bg-a">Verstuurd</span></td><td class="cr">€6.800</td></tr>
+        <tr><td class="c3">OFF-2026-046</td><td class="c1">Restaurant De Hoop</td><td class="c2">Terrasschermen + menukaarten</td><td class="c3">28 feb</td><td><span class="bg bg-s">Goedgekeurd</span></td><td class="cr">€3.400</td></tr>
+        <tr><td class="c3">OFF-2026-045</td><td class="c1">Autobedrijf Visser</td><td class="c2">Showroom belettering + pyloon</td><td class="c3">24 feb</td><td><span class="bg bg-a">Verstuurd</span></td><td class="cr">€4.900</td></tr>
+      </tbody></table></div>
+    </div>
+
+    <!-- KLANTEN -->
+    <div class="v" id="v-kl">
+      <div class="ph"><div><h1>Klanten</h1><p>48 klanten</p></div><div class="ph-a"><button class="b b1">+ Nieuwe klant</button></div></div>
+      <div class="tw"><div class="tw-bar"><input class="tw-s" style="width:260px" placeholder="Zoek op naam, email of telefoon..."><div></div></div>
+      <table><thead><tr><th>Bedrijf</th><th>Contact</th><th>Email</th><th>Projecten</th><th class="r">Omzet</th></tr></thead><tbody>
+        <tr><td class="c1">Abovo Media</td><td>Robbert Wescher</td><td class="c3">robbert@abovomedia.nl</td><td>4</td><td class="cr">€34.200</td></tr>
+        <tr><td class="c1">Matec Amsterdam</td><td>Jan de Vries</td><td class="c3">amsterdam@matec.nl</td><td>2</td><td class="cr">€12.850</td></tr>
+        <tr><td class="c1">Pilotstreet Events</td><td>Louise Smit</td><td class="c3">louise.smit@pilotstreet.nl</td><td>3</td><td class="cr">€18.400</td></tr>
+        <tr><td class="c1">Bakkerij Jansen</td><td>Kees Jansen</td><td class="c3">info@bakkerijjansen.nl</td><td>1</td><td class="cr">€2.150</td></tr>
+      </tbody></table></div>
+    </div>
+
+    <!-- PROJECTEN -->
+    <div class="v" id="v-proj">
+      <div class="ph"><div><h1>Projecten</h1><p>8 actief</p></div><div class="ph-a"><button class="b b1">+ Nieuw project</button></div></div>
+      <div class="tw"><div class="tw-bar"><div class="pills"><button class="pill on">Actief (8)</button><button class="pill">Afgerond (12)</button><button class="pill">On hold (2)</button></div></div>
+      <table><thead><tr><th>Project</th><th>Klant</th><th>Status</th><th>Deadline</th><th class="r">Waarde</th></tr></thead><tbody>
+        <tr><td class="c1">8x LED Lichtreclame Winkelcentrum</td><td>Abovo Media</td><td><span class="bg bg-b">In productie</span></td><td class="c3">21 mrt</td><td class="cr">€14.200</td></tr>
+        <tr><td class="c1">Standbouw Jaarbeurs</td><td>Pilotstreet Events</td><td><span class="bg bg-a">Wacht op materiaal</span></td><td class="c3">15 mrt</td><td class="cr">€6.800</td></tr>
+        <tr><td class="c1">Gevelreclame kantoor</td><td>Matec Amsterdam</td><td><span class="bg bg-s">Montage gepland</span></td><td class="c3">12 mrt</td><td class="cr">€3.750</td></tr>
+        <tr><td class="c1">Bewegwijzering sportpark</td><td>Gemeente Heemskerk</td><td><span class="bg bg-b">In productie</span></td><td class="c3">28 mrt</td><td class="cr">€4.030</td></tr>
+      </tbody></table></div>
+    </div>
+
+  </div></main>
+</div>
+
+<div class="dt">
+  <button class="on" onclick="go('dash')">Dashboard</button>
+  <button onclick="go('fac')">Facturen</button>
+  <button onclick="go('off')">Offertes</button>
+  <button onclick="go('kl')">Klanten</button>
+  <button onclick="go('proj')">Projecten</button>
+</div>
+
+<script>
+const m={dash:0,proj:2,off:3,fac:4,kl:8};
+function go(id){
+  document.querySelectorAll('.v').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.dt button').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.si').forEach(s=>s.classList.remove('on'));
+  document.getElementById('v-'+id).classList.add('on');
+  document.querySelectorAll('.dt button').forEach(t=>{
+    const x=t.textContent.toLowerCase();
+    if((id==='dash'&&x.includes('dash'))||(id==='fac'&&x.includes('fact'))||(id==='off'&&x.includes('off'))||(id==='kl'&&x.includes('klant'))||(id==='proj'&&x.includes('proj')))t.classList.add('on');
+  });
+  const l=document.querySelectorAll('.si');
+  if(m[id]!==undefined&&l[m[id]])l[m[id]].classList.add('on');
+}
+function flip(){
+  document.documentElement.classList.toggle('dark');
+  document.querySelector('.s-t').textContent=document.documentElement.classList.contains('dark')?'☾':'☀';
+}
+function tog(el){
+  el.classList.toggle('ck');
+  el.textContent=el.classList.contains('ck')?'✓':'';
+  const t=el.nextElementSibling;
+  if(t)t.classList.toggle('x');
+}
+</script>
+</body>
+</html>

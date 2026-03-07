@@ -73,7 +73,7 @@ export function OffertePubliekPagina() {
             // Fetch items + company profile in parallel
             const [offerteItems] = await Promise.all([
               getOfferteItems(data.id).catch(() => [] as OfferteItem[]),
-              getProfile(data.user_id).then((p) => {
+              getProfile(data.user_id!).then((p) => {
                 if (!cancelled && p) setCompanyProfile(p)
               }).catch(() => {}),
             ])

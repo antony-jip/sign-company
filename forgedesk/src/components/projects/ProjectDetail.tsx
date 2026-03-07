@@ -718,7 +718,7 @@ export function ProjectDetail() {
     )
   }
 
-  const eindDatum = project.eind_datum ? new Date(project.eind_datum) : null
+  const eindDatum = project.eind_datum ? new Date(project.eind_datum ?? "") : null
   const isValidDate = eindDatum && !isNaN(eindDatum.getTime())
   const isOverdue = isValidDate && eindDatum < new Date() && project.status !== 'afgerond'
   const daysLeft = isValidDate ? Math.ceil((eindDatum.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0
@@ -2350,7 +2350,7 @@ const statusIcons: Record<string, { label: string; color: string }> = {
 }
 
 function TaakCard({ taak, onStatusChange }: { key?: React.Key; taak: Taak; onStatusChange?: (status: Taak['status']) => void }) {
-  const isOverdue = new Date(taak.deadline) < new Date() && taak.status !== 'klaar'
+  const isOverdue = new Date(taak.deadline ?? "") < new Date() && taak.status !== 'klaar'
   const isDone = taak.status === 'klaar'
 
   return (

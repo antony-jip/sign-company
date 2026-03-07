@@ -150,7 +150,7 @@ export function BetaalPagina() {
             // Mark as bekeken
             markFactuurBekeken(token).catch(() => {})
             // Load company profile for IBAN and bedrijfsnaam
-            getProfile(data.user_id).then((p) => {
+            getProfile(data.user_id!).then((p) => {
               if (!cancelled && p) setCompanyProfile(p)
             }).catch(() => {})
           } else {

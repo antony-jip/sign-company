@@ -131,7 +131,7 @@ export function ClientApprovalPage() {
         const [klantData, projectData] = await Promise.all([
           getKlant(gk.klant_id),
           getProject(gk.project_id),
-          getProfile(gk.user_id).then((p) => {
+          getProfile(gk.user_id!).then((p) => {
             if (p) setCompanyProfile(p)
           }).catch(() => {}),
         ])

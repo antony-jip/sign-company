@@ -77,7 +77,7 @@ export function AIInsightWidget() {
 
     const overdueTaken = taken.filter((t) => {
       if (t.status === 'klaar') return false
-      return new Date(t.deadline) < now
+      return new Date(t.deadline ?? "") < now
     })
     if (overdueTaken.length > 0) {
       items.push({
@@ -93,7 +93,7 @@ export function AIInsightWidget() {
 
     const nearDeadlineProjects = projecten.filter((p) => {
       if (p.status === 'afgerond') return false
-      const deadline = new Date(p.eind_datum)
+      const deadline = new Date(p.eind_datum ?? "")
       return deadline <= sevenDaysFromNow && deadline >= now
     })
     if (nearDeadlineProjects.length > 0) {

@@ -91,14 +91,24 @@ const DATE_FIELDS = [
   'start_tijd', 'eind_tijd',
 ] as const
 
+const UUID_FIELDS = [
+  'project_id', 'klant_id', 'medewerker_id', 'factuur_id',
+  'offerte_id', 'document_id', 'contact_id', 'leverancier_id',
+] as const
+
 function sanitizeDates<T extends Record<string, unknown>>(data: T): T {
-  const result = { ...data }
+  const result = { ...data } as Record<string, unknown>
   for (const field of DATE_FIELDS) {
-    if (field in result && result[field] === '') {
-      (result as Record<string, unknown>)[field] = null
+    if (field in result && (result[field] === '' || result[field] === undefined)) {
+      delete result[field]
     }
   }
-  return result
+  for (const field of UUID_FIELDS) {
+    if (field in result && result[field] === '') {
+      delete result[field]
+    }
+  }
+  return result as T
 }
 
 // ============ KLANTEN ============
@@ -164,9 +174,17 @@ export async function getKlant(id: string): Promise<Klant | null> {
 
 export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'updated_at'>): Promise<Klant> {
   if (isSupabaseConfigured() && supabase) {
+    let user_id = klant.user_id
+    if (!user_id) {
+      const { data: { user } } = await supabase.auth.getUser()
+      user_id = user?.id || ''
+    }
+    const klantInsert = { ...klant, user_id }
+    if (!Array.isArray(klantInsert.tags)) klantInsert.tags = []
+    if (!Array.isArray(klantInsert.klant_labels)) klantInsert.klant_labels = []
     const { data, error } = await supabase
       .from('klanten')
-      .insert(klant)
+      .insert(klantInsert)
       .select()
       .single()
     if (error) throw error
