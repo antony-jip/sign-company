@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Sparkles, Send, X, RotateCcw, Loader2, MessageCircle, Minus } from 'lucide-react'
+import { Sparkles, Send, X, RotateCcw, Loader2, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -16,6 +16,45 @@ const SUGGESTIE_CHIPS = [
   'Projecten in uitvoering',
 ]
 
+/** Cute fox mascot SVG for Forgie */
+function ForgieMascot({ size = 40, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      {/* Ears */}
+      <path d="M22 38L30 12L42 32Z" fill="#E8825A" />
+      <path d="M78 38L70 12L58 32Z" fill="#E8825A" />
+      <path d="M26 36L32 18L40 33Z" fill="#FDDBC9" />
+      <path d="M74 36L68 18L60 33Z" fill="#FDDBC9" />
+      {/* Head */}
+      <ellipse cx="50" cy="56" rx="30" ry="28" fill="#E8825A" />
+      {/* Face / cheeks */}
+      <ellipse cx="50" cy="62" rx="22" ry="20" fill="#FDDBC9" />
+      {/* Eyes */}
+      <ellipse cx="40" cy="52" rx="4.5" ry="5" fill="#2D1B0E" />
+      <ellipse cx="60" cy="52" rx="4.5" ry="5" fill="#2D1B0E" />
+      {/* Eye shine */}
+      <circle cx="42" cy="50" r="1.8" fill="white" />
+      <circle cx="62" cy="50" r="1.8" fill="white" />
+      {/* Nose */}
+      <ellipse cx="50" cy="60" rx="3.5" ry="2.5" fill="#2D1B0E" />
+      {/* Mouth */}
+      <path d="M46 63Q50 67 54 63" stroke="#2D1B0E" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      {/* Blush spots */}
+      <ellipse cx="35" cy="60" rx="4" ry="2.5" fill="#F4A68F" opacity="0.5" />
+      <ellipse cx="65" cy="60" rx="4" ry="2.5" fill="#F4A68F" opacity="0.5" />
+    </svg>
+  )
+}
+
+const FORGIE_INTRO_SEEN_KEY = 'forgie-intro-seen'
+
 export function ForgieChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ForgieChatMessage[]>([])
@@ -23,8 +62,20 @@ export function ForgieChatWidget() {
   const [loading, setLoading] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
+  const [showIntroBubble, setShowIntroBubble] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Show intro bubble once for new users
+  useEffect(() => {
+    if (localStorage.getItem(FORGIE_INTRO_SEEN_KEY)) return
+    const showTimer = setTimeout(() => setShowIntroBubble(true), 1500)
+    const hideTimer = setTimeout(() => {
+      setShowIntroBubble(false)
+      localStorage.setItem(FORGIE_INTRO_SEEN_KEY, '1')
+    }, 7000)
+    return () => { clearTimeout(showTimer); clearTimeout(hideTimer) }
+  }, [])
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -100,9 +151,7 @@ export function ForgieChatWidget() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-card/50 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-blush/20 rounded-lg">
-                <Sparkles className="w-4 h-4 text-blush-deep" />
-              </div>
+              <ForgieMascot size={28} />
               <div>
                 <h2 className="text-sm font-bold text-foreground">Forgie</h2>
                 <p className="text-[10px] text-muted-foreground">Je bedrijfsgeheugen</p>
@@ -136,10 +185,10 @@ export function ForgieChatWidget() {
             {/* Welcome / suggestions */}
             {messages.length === 0 && !loading && (
               <div className="space-y-4 pt-4">
-                <div className="flex gap-2.5">
-                  <Sparkles className="w-4 h-4 text-blush-deep flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-foreground">
-                    Hoi! Ik ben <strong>Forgie</strong>. Stel me een vraag over je klanten, projecten, offertes of facturen.
+                <div className="flex gap-2.5 items-start">
+                  <ForgieMascot size={32} className="flex-shrink-0" />
+                  <p className="text-sm text-foreground mt-1">
+                    Hoi! Ik ben <strong>Forgie</strong> 🦊 Stel me een vraag over je klanten, projecten, offertes of facturen.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5 pl-6">
@@ -231,25 +280,49 @@ export function ForgieChatWidget() {
         </div>
       )}
 
-      {/* Floating action button */}
+      {/* Floating action button – Forgie mascot with glass effect */}
       <button
-        onClick={() => setIsOpen(prev => !prev)}
+        onClick={() => {
+          setIsOpen(prev => !prev)
+          if (showIntroBubble) {
+            setShowIntroBubble(false)
+            localStorage.setItem(FORGIE_INTRO_SEEN_KEY, '1')
+          }
+        }}
         className={cn(
-          'fixed bottom-4 right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-xl border border-white/20',
-          isOpen
-            ? 'bg-muted/70 text-foreground hover:bg-muted/60'
-            : 'bg-blush-deep/80 text-white hover:bg-blush-deep/70'
+          'fixed bottom-5 right-5 sm:right-7 z-50 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 group',
+          'hover:scale-110 active:scale-95',
+          isOpen ? 'w-12 h-12' : 'w-16 h-16'
         )}
       >
+        {/* Glass background */}
+        <span className={cn(
+          'absolute inset-0 rounded-full backdrop-blur-xl border transition-colors duration-200',
+          isOpen
+            ? 'bg-white/60 dark:bg-white/10 border-white/40'
+            : 'bg-white/70 dark:bg-white/15 border-white/50 shadow-[0_8px_32px_rgba(232,130,90,0.25)]'
+        )} />
+
         {isOpen ? (
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5 text-foreground relative z-10" />
         ) : (
-          <>
-            <MessageCircle className="w-6 h-6" />
+          <span className="relative z-10 flex items-center justify-center">
+            <ForgieMascot size={44} className="drop-shadow-sm transition-transform duration-200 group-hover:rotate-6" />
             {hasUnread && (
-              <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse" />
             )}
-          </>
+            {/* One-time intro speech bubble for new users */}
+            {showIntroBubble && !isOpen && (
+              <span className="absolute -top-14 -left-28 bg-white dark:bg-card backdrop-blur-sm text-xs text-foreground font-medium px-3 py-2 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 whitespace-nowrap pointer-events-none border border-orange-200/50 dark:border-orange-400/20">
+                Hoi! Ik ben <strong>Forgie</strong>, je AI-assistent 🦊
+                <span className="absolute -bottom-1.5 right-8 w-3 h-3 bg-white dark:bg-card border-b border-r border-orange-200/50 dark:border-orange-400/20 rotate-45" />
+              </span>
+            )}
+            {/* Hover hint */}
+            <span className="absolute -top-8 right-0 bg-white/90 dark:bg-card/90 backdrop-blur-sm text-[10px] text-foreground font-medium px-2 py-1 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none border border-white/30">
+              Vraag het Forgie! 🦊
+            </span>
+          </span>
         )}
       </button>
     </>
