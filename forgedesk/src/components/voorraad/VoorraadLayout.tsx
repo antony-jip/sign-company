@@ -350,7 +350,7 @@ export function VoorraadLayout() {
             <Button variant="outline" size="sm" onClick={() => openEditArtikel(selectedArtikel)} className="gap-1">
               <Edit2 className="h-3.5 w-3.5" /> Bewerken
             </Button>
-            <Button size="sm" onClick={openMutatieDialog} className="gap-1 bg-gradient-to-r from-accent to-primary">
+            <Button size="sm" onClick={openMutatieDialog} className="gap-1">
               <ArrowDownUp className="h-3.5 w-3.5" /> Nieuwe mutatie
             </Button>
           </div>
@@ -470,7 +470,7 @@ export function VoorraadLayout() {
         </div>
         <Button
           onClick={openNewArtikel}
-          className="gap-2 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 shadow-lg shadow-primary/25 border-0"
+          className="gap-2"
           size="sm"
         >
           <Plus className="h-4 w-4" /> Nieuw artikel

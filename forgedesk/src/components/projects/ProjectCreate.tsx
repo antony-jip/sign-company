@@ -354,7 +354,7 @@ export function ProjectCreate() {
           >
             Annuleren
           </Button>
-          <Button type="submit" size="sm" disabled={loading} className="bg-gradient-to-r from-accent to-primary border-0">
+          <Button type="submit" size="sm" disabled={loading} className="">
             <Save className="h-3.5 w-3.5 mr-1.5" />
             {loading ? 'Opslaan...' : 'Project aanmaken'}
           </Button>

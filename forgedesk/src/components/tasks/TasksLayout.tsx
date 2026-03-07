@@ -693,9 +693,9 @@ export function TasksLayout() {
         <button
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
-            'flex items-center justify-center w-14 h-14 rounded-full shadow-lg shadow-primary/20 transition-all duration-200',
-            'bg-primary hover:bg-wm-hover text-white hover:shadow-xl hover:shadow-primary/30 hover:scale-105',
-            fabOpen && 'rotate-45 bg-accent'
+            'flex items-center justify-center w-14 h-14 rounded-full shadow-sm transition-all duration-200',
+            'bg-foreground text-background hover:opacity-90 hover:shadow-md hover:scale-105',
+            fabOpen && 'rotate-45'
           )}
         >
           <Plus className="w-6 h-6" />
@@ -1357,7 +1357,7 @@ function EditTaskDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Annuleren</Button>
-          <Button onClick={onSave} disabled={isSaving} className="bg-primary hover:bg-wm-hover">
+          <Button onClick={onSave} disabled={isSaving}>
             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Opslaan
           </Button>
         </DialogFooter>

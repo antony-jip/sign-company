@@ -694,7 +694,7 @@ export function CalendarLayout() {
         </div>
         <Button
           onClick={() => openNewDialog()}
-          className="gap-2 bg-gradient-to-r from-accent to-primary border-0"
+          className="gap-2"
         >
           <Plus className="w-4 h-4" />
           Taak inplannen
@@ -1388,7 +1388,7 @@ export function CalendarLayout() {
             <Button
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-gradient-to-r from-accent to-primary border-0"
+              className=""
             >
               {isSaving ? (
                 <>

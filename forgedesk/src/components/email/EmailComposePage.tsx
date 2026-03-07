@@ -235,7 +235,7 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
           <Button
             onClick={handleSend}
             disabled={!to.trim() || !subject.trim() || isSending}
-            className="bg-gradient-to-r from-accent to-primary border-0 gap-2"
+            className="gap-2"
           >
             <Send className="h-4 w-4" />
             {isSending ? 'Verzenden...' : 'Verstuur email'}

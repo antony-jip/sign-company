@@ -300,7 +300,7 @@ export function ProjectsList() {
             </p>
           </div>
         </div>
-        <Button asChild size="sm" className="bg-gradient-to-r from-accent to-primary border-0 flex-shrink-0">
+        <Button asChild size="sm" className="flex-shrink-0">
           <Link to="/projecten/nieuw">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             <span className="hidden sm:inline">Nieuw project</span>

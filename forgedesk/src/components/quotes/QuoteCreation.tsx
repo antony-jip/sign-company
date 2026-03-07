@@ -1798,7 +1798,7 @@ export function QuoteCreation() {
 
           {/* Start button */}
           <div className="flex justify-end">
-            <Button onClick={handleStartEditing} disabled={!canStartEditing} className="bg-gradient-to-r from-accent to-primary border-0 px-8" size="lg">
+            <Button onClick={handleStartEditing} disabled={!canStartEditing} className="px-8" size="lg">
               Items toevoegen
               <FileText className="h-4 w-4 ml-2" />
             </Button>
@@ -1855,7 +1855,7 @@ export function QuoteCreation() {
               <Save className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{isSaving ? 'Opslaan...' : 'Opslaan'}</span>
             </Button>
-            <Button size="sm" onClick={handleVerstuurOfferte} disabled={isSaving} className="bg-gradient-to-r from-accent to-primary border-0 gap-1.5">
+            <Button size="sm" onClick={handleVerstuurOfferte} disabled={isSaving} className="gap-1.5">
               <Send className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Verstuur</span>
             </Button>
@@ -2097,7 +2097,7 @@ export function QuoteCreation() {
 
                   <div className="flex items-center justify-between pt-2">
                     <Button variant="outline" onClick={() => setShowEmailCompose(false)}>Annuleren</Button>
-                    <Button onClick={handleSendEmailInline} disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail} className="bg-gradient-to-r from-accent to-primary border-0 gap-2">
+                    <Button onClick={handleSendEmailInline} disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail} className="gap-2">
                       <Send className="h-4 w-4" />{isSendingEmail ? 'Verzenden...' : emailScheduled ? 'Inplannen' : 'Verstuur email'}
                     </Button>
                   </div>

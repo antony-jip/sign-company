@@ -523,7 +523,7 @@ export function OfferteDetail() {
                 </Button>
               )}
               {!offerte.geconverteerd_naar_factuur_id ? (
-                <Button size="sm" onClick={handleMaakFactuur} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button size="sm" onClick={handleMaakFactuur}>
                   <Receipt className="h-4 w-4 mr-1" />
                   Maak factuur
                 </Button>

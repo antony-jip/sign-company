@@ -443,7 +443,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
           <Button
             onClick={handleSave}
             disabled={isSaving || isLoading}
-            className="bg-gradient-to-r from-accent to-primary border-0"
+            className=""
           >
             <Save className="h-4 w-4 mr-1" />
             {isSaving ? 'Opslaan...' : 'Opslaan'}
