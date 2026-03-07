@@ -5,13 +5,12 @@ import {
   Mail, Calendar, PiggyBank, Settings,
   Receipt, BarChart3, Wrench, UsersRound,
   CheckSquare, Briefcase, Files, Newspaper,
-  Calculator, Sun, Moon, LogOut, User,
+  Calculator, LogOut, User,
   ChevronDown, MoreHorizontal, Menu, X,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -49,7 +48,6 @@ const moreNavItems: NavItem[] = [
 
 export function TopNav() {
   const { user, logout } = useAuth()
-  const { theme, toggleTheme } = useTheme()
   const { language, setLanguage } = useLanguage()
   const { settings } = useAppSettings()
   const { setLayoutMode } = useSidebar()
@@ -218,16 +216,6 @@ export function TopNav() {
               title={language === 'nl' ? 'Switch to English' : 'Wissel naar Nederlands'}
             >
               <span className="text-[10px] font-bold">{language.toUpperCase()}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60"
-              onClick={toggleTheme}
-              title={theme === 'light' ? 'Donkere modus' : 'Lichte modus'}
-            >
-              {theme === 'light' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
             </Button>
 
             <NotificatieCenter />

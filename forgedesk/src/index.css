@@ -887,12 +887,12 @@ textarea:focus {
 }
 
 /* ================================================================
-   SNOW THEME — Apple-style frosted glass & vibrancy
-   Requires data-theme="snow" on <html>
+   GLASS THEME — Apple-style frosted glass & vibrancy
+   Requires data-theme="glass" on <html>
    ================================================================ */
 
 /* Background: subtle cool gradient with larger, softer orbs */
-[data-theme="snow"] .wm-mesh-gradient {
+[data-theme="glass"] .wm-mesh-gradient {
   background:
     radial-gradient(ellipse at 20% 80%, rgba(120, 120, 200, 0.06) 0, transparent 50%),
     radial-gradient(ellipse at 80% 20%, rgba(100, 160, 220, 0.05) 0, transparent 50%),
@@ -901,12 +901,12 @@ textarea:focus {
 }
 
 /* Noise: softer for Snow */
-[data-theme="snow"] .wm-mesh-gradient::before {
+[data-theme="glass"] .wm-mesh-gradient::before {
   opacity: 0.12;
 }
 
 /* Sidebar: frosted translucent panel */
-[data-theme="snow"] .wm-sidebar {
+[data-theme="glass"] .wm-sidebar {
   background: rgba(232, 232, 238, 0.55);
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
@@ -914,7 +914,7 @@ textarea:focus {
 }
 
 /* Header: frosted glass bar */
-[data-theme="snow"] .wm-glass {
+[data-theme="glass"] .wm-glass {
   background: rgba(255, 255, 255, 0.50);
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
@@ -922,7 +922,7 @@ textarea:focus {
 }
 
 /* Cards: frosted glass panels with translucent white */
-[data-theme="snow"] [class*="rounded-xl"][class*="border"][class*="bg-card"] {
+[data-theme="glass"] [class*="rounded-xl"][class*="border"][class*="bg-card"] {
   background: rgba(255, 255, 255, 0.55) !important;
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -932,7 +932,7 @@ textarea:focus {
     0 1px 2px rgba(0, 0, 0, 0.02),
     inset 0 1px 0 rgba(255, 255, 255, 0.50);
 }
-[data-theme="snow"] [class*="rounded-xl"][class*="border"][class*="bg-card"]:hover {
+[data-theme="glass"] [class*="rounded-xl"][class*="border"][class*="bg-card"]:hover {
   background: rgba(255, 255, 255, 0.70) !important;
   border-color: rgba(255, 255, 255, 0.75);
   box-shadow:
@@ -942,8 +942,8 @@ textarea:focus {
 }
 
 /* Stat cards + regular wm-card: glass treatment */
-[data-theme="snow"] .wm-card,
-[data-theme="snow"] .wm-stat-card {
+[data-theme="glass"] .wm-card,
+[data-theme="glass"] .wm-stat-card {
   background: rgba(255, 255, 255, 0.50);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -952,8 +952,8 @@ textarea:focus {
     0 1px 3px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.50);
 }
-[data-theme="snow"] .wm-card:hover,
-[data-theme="snow"] .wm-stat-card:hover {
+[data-theme="glass"] .wm-card:hover,
+[data-theme="glass"] .wm-stat-card:hover {
   background: rgba(255, 255, 255, 0.70);
   border-color: rgba(255, 255, 255, 0.75);
   box-shadow:
@@ -963,7 +963,7 @@ textarea:focus {
 }
 
 /* Dialogs: frosted glass modal — target the [role="dialog"] element directly */
-[data-theme="snow"] [role="dialog"] {
+[data-theme="glass"] [role="dialog"] {
   background: rgba(255, 255, 255, 0.88) !important;
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
@@ -975,26 +975,26 @@ textarea:focus {
 }
 
 /* Dialog inner sections: keep backgrounds clean */
-[data-theme="snow"] [role="dialog"] .bg-muted,
-[data-theme="snow"] [role="dialog"] .bg-muted\/50,
-[data-theme="snow"] [role="dialog"] [class*="bg-muted"] {
+[data-theme="glass"] [role="dialog"] .bg-muted,
+[data-theme="glass"] [role="dialog"] .bg-muted\/50,
+[data-theme="glass"] [role="dialog"] [class*="bg-muted"] {
   background: rgba(235, 235, 240, 0.50) !important;
 }
 
 /* Dialog footer area: subtle separator without harsh bg */
-[data-theme="snow"] [role="dialog"] > div:last-child {
+[data-theme="glass"] [role="dialog"] > div:last-child {
   border-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Dialog overlay: lighter for Snow */
-[data-theme="snow"] [data-state][class*="fixed"][class*="inset-0"] {
+[data-theme="glass"] [data-state][class*="fixed"][class*="inset-0"] {
   background: rgba(200, 200, 210, 0.35) !important;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
 /* Popovers & dropdown menus: glass panels */
-[data-theme="snow"] [data-radix-popper-content-wrapper] > div {
+[data-theme="glass"] [data-radix-popper-content-wrapper] > div {
   background: rgba(255, 255, 255, 0.88) !important;
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
@@ -1006,7 +1006,7 @@ textarea:focus {
 }
 
 /* Select dropdowns: portal-rendered, needs its own selector */
-[data-theme="snow"] [data-radix-select-content] {
+[data-theme="glass"] [data-radix-select-content] {
   background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
@@ -1018,47 +1018,47 @@ textarea:focus {
 }
 
 /* Input fields: subtle translucent */
-[data-theme="snow"] input,
-[data-theme="snow"] textarea,
-[data-theme="snow"] [role="combobox"] {
+[data-theme="glass"] input,
+[data-theme="glass"] textarea,
+[data-theme="glass"] [role="combobox"] {
   background: rgba(255, 255, 255, 0.40);
   border-color: rgba(0, 0, 0, 0.06);
 }
-[data-theme="snow"] input:focus,
-[data-theme="snow"] textarea:focus {
+[data-theme="glass"] input:focus,
+[data-theme="glass"] textarea:focus {
   background: rgba(255, 255, 255, 0.65);
   border-color: hsl(var(--primary) / 0.30);
   box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
 }
 
 /* Sidebar active item: glass highlight */
-[data-theme="snow"] .wm-sidebar-item.active {
+[data-theme="glass"] .wm-sidebar-item.active {
   background: rgba(255, 255, 255, 0.55);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.50);
 }
 
 /* Table header: glass instead of gradient */
-[data-theme="snow"] .wm-table thead {
+[data-theme="glass"] .wm-table thead {
   background: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
 /* Table rows: translucent hover */
-[data-theme="snow"] tbody tr:hover {
+[data-theme="glass"] tbody tr:hover {
   background: rgba(255, 255, 255, 0.40);
 }
 
 /* Scrollbar: cooler tint for Snow */
-[data-theme="snow"] ::-webkit-scrollbar-thumb {
+[data-theme="glass"] ::-webkit-scrollbar-thumb {
   background: rgba(120, 120, 160, 0.15);
 }
-[data-theme="snow"] ::-webkit-scrollbar-thumb:hover {
+[data-theme="glass"] ::-webkit-scrollbar-thumb:hover {
   background: rgba(120, 120, 160, 0.30);
 }
 
 /* Welcome banner: frosted glass */
-[data-theme="snow"] .wm-welcome-banner {
+[data-theme="glass"] .wm-welcome-banner {
   background: rgba(255, 255, 255, 0.40);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
@@ -1066,20 +1066,167 @@ textarea:focus {
 }
 
 /* Hardcoded Tailwind gray/blue adaption for Snow glass */
-[data-theme="snow"] .border-dashed {
+[data-theme="glass"] .border-dashed {
   border-color: rgba(0, 0, 0, 0.10);
 }
-[data-theme="snow"] .border-gray-300,
-[data-theme="snow"] .border-gray-200 {
+[data-theme="glass"] .border-gray-300,
+[data-theme="glass"] .border-gray-200 {
   border-color: rgba(0, 0, 0, 0.08);
 }
-[data-theme="snow"] .bg-gray-50,
-[data-theme="snow"] .bg-gray-100 {
+[data-theme="glass"] .bg-gray-50,
+[data-theme="glass"] .bg-gray-100 {
   background: rgba(235, 235, 240, 0.50);
 }
-[data-theme="snow"] .text-gray-400,
-[data-theme="snow"] .text-gray-500 {
+[data-theme="glass"] .text-gray-400,
+[data-theme="glass"] .text-gray-500 {
   color: hsl(var(--muted-foreground));
+}
+
+/* ================================================================
+   ZWART THEME — OLED black, maximum contrast, bold
+   Requires data-theme="zwart" on <html>
+   ================================================================ */
+
+/* Background: pure black mesh gradient */
+[data-theme="zwart"] .wm-mesh-gradient {
+  background: #000000;
+}
+[data-theme="zwart"] .wm-mesh-gradient::before {
+  opacity: 0;
+}
+
+/* Sidebar: near-black */
+[data-theme="zwart"] .wm-sidebar {
+  background: #0A0A0A;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Header: solid black glass */
+[data-theme="zwart"] .wm-glass {
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Cards: subtle dark surface */
+[data-theme="zwart"] [class*="rounded-xl"][class*="border"][class*="bg-card"] {
+  background: #111111 !important;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+[data-theme="zwart"] [class*="rounded-xl"][class*="border"][class*="bg-card"]:hover {
+  background: #161616 !important;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* Stat/wm cards */
+[data-theme="zwart"] .wm-card,
+[data-theme="zwart"] .wm-stat-card {
+  background: #111111;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+[data-theme="zwart"] .wm-card:hover,
+[data-theme="zwart"] .wm-stat-card:hover {
+  background: #161616;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* Dialogs */
+[data-theme="zwart"] [role="dialog"] {
+  background: #0A0A0A !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="zwart"] [role="dialog"] .bg-muted,
+[data-theme="zwart"] [role="dialog"] .bg-muted\/50,
+[data-theme="zwart"] [role="dialog"] [class*="bg-muted"] {
+  background: #111111 !important;
+}
+
+/* Popovers & dropdowns */
+[data-theme="zwart"] [data-radix-popper-content-wrapper] > div {
+  background: #0A0A0A !important;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="zwart"] [data-radix-select-content] {
+  background: #0A0A0A !important;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* Inputs */
+[data-theme="zwart"] input,
+[data-theme="zwart"] textarea,
+[data-theme="zwart"] [role="combobox"] {
+  background: #0A0A0A;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+[data-theme="zwart"] input:focus,
+[data-theme="zwart"] textarea:focus {
+  background: #111111;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Sidebar active */
+[data-theme="zwart"] .wm-sidebar-item.active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Table */
+[data-theme="zwart"] .wm-table thead {
+  background: #0A0A0A;
+}
+[data-theme="zwart"] tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Scrollbar */
+[data-theme="zwart"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+[data-theme="zwart"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Welcome banner */
+[data-theme="zwart"] .wm-welcome-banner {
+  background: #0A0A0A;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Selection */
+[data-theme="zwart"] ::selection {
+  background: rgba(255, 255, 255, 0.20);
+  color: #FFFFFF;
+}
+
+/* Focus ring */
+[data-theme="zwart"] *:focus-visible {
+  box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 255, 255, 0.4);
+}
+
+/* Hardcoded grays */
+[data-theme="zwart"] .border-dashed {
+  border-color: rgba(255, 255, 255, 0.10);
+}
+[data-theme="zwart"] .border-gray-300,
+[data-theme="zwart"] .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="zwart"] .bg-gray-50,
+[data-theme="zwart"] .bg-gray-100 {
+  background: #111111;
+}
+[data-theme="zwart"] .text-gray-400,
+[data-theme="zwart"] .text-gray-500 {
+  color: rgba(255, 255, 255, 0.45);
 }
 
 /* ================================================================
