@@ -235,7 +235,7 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
           <Button
             onClick={handleSend}
             disabled={!to.trim() || !subject.trim() || isSending}
-            className="bg-gradient-to-r from-accent to-primary border-0 gap-2"
+            className="gap-2"
           >
             <Send className="h-4 w-4" />
             {isSending ? 'Verzenden...' : 'Verstuur email'}
@@ -244,7 +244,7 @@ ${emailHandtekening || `Met vriendelijke groet,\n${bedrijfsnaam || ''}`}`
       </div>
 
       {/* Email form */}
-      <div className="rounded-2xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm">
+      <div className="rounded-2xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
         <div className="p-6 space-y-4">
           {/* To */}
           <div className="flex items-center gap-3">

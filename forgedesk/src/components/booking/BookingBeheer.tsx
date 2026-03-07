@@ -302,7 +302,7 @@ export function BookingBeheer() {
               <select
                 value={slotForm.dag_van_week}
                 onChange={(e) => setSlotForm(p => ({ ...p, dag_van_week: Number(e.target.value) }))}
-                className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
+                className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-card text-foreground dark:text-white"
               >
                 {DAGEN.map((dag, i) => (
                   <option key={i} value={i}>{dag}</option>

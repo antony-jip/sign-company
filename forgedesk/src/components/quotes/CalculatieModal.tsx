@@ -293,7 +293,7 @@ export function CalculatieModal({
                 Template laden
               </Button>
               {showTemplates && (
-                <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-foreground border border-border dark:border-border rounded-lg shadow-lg p-2 min-w-[250px]">
+                <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border dark:border-border rounded-lg shadow-lg p-2 min-w-[250px]">
                   <p className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/60 px-2 py-1">
                     Kies een template:
                   </p>
@@ -482,7 +482,7 @@ export function CalculatieModal({
                       key={regel.id}
                       className={`border-b border-border dark:border-border ${
                         index % 2 === 0
-                          ? 'bg-white dark:bg-foreground'
+                          ? 'bg-card'
                           : 'bg-background/50 dark:bg-foreground/80/20'
                       } hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors`}
                     >

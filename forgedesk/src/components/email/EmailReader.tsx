@@ -976,7 +976,7 @@ export function EmailReader({
                                         <X className="w-3.5 h-3.5" />
                                       </button>
                                     </div>
-                                    <div className="flex items-center justify-center h-32 bg-white dark:bg-foreground rounded border">
+                                    <div className="flex items-center justify-center h-32 bg-card rounded border">
                                       <div className="text-center text-muted-foreground">
                                         <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
                                         <p className="text-xs">PDF voorbeeld</p>

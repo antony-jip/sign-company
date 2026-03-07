@@ -972,7 +972,7 @@ export function ProjectDetail() {
                 {projectOffertes.length > 0 ? (
                   <div className="mt-3 space-y-2">
                     {projectOffertes.filter(o => o.status !== 'gefactureerd').map((offerte) => (
-                      <div key={offerte.id} className="flex items-center justify-between bg-white dark:bg-foreground/80 rounded-lg px-3 py-2 border border-indigo-200 dark:border-indigo-800">
+                      <div key={offerte.id} className="flex items-center justify-between bg-card rounded-lg px-3 py-2 border border-indigo-200 dark:border-indigo-800">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-sm font-medium truncate">{offerte.titel}</span>
                           <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
@@ -1104,7 +1104,7 @@ export function ProjectDetail() {
                 variant={takenWeergave === 'board' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setTakenWeergave('board')}
-                className={takenWeergave === 'board' ? 'bg-gradient-to-r from-accent to-primary border-0' : ''}
+                className=""
               >
                 <LayoutGrid className="mr-1.5 h-4 w-4" />
                 Board
@@ -1113,7 +1113,7 @@ export function ProjectDetail() {
                 variant={takenWeergave === 'tabel' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setTakenWeergave('tabel')}
-                className={takenWeergave === 'tabel' ? 'bg-gradient-to-r from-accent to-primary border-0' : ''}
+                className=""
               >
                 <List className="mr-1.5 h-4 w-4" />
                 Tabel
@@ -1140,7 +1140,7 @@ export function ProjectDetail() {
               }
             }}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-gradient-to-r from-accent to-primary border-0">
+                <Button size="sm" className="">
                   <Plus className="mr-1.5 h-4 w-4" />
                   Nieuwe Taak
                 </Button>
@@ -1224,7 +1224,7 @@ export function ProjectDetail() {
                   </Button>
                   <Button
                     disabled={!nieuweTaakTitel.trim()}
-                    className="bg-gradient-to-r from-accent to-primary border-0"
+                    className=""
                     onClick={async () => {
                       try {
                         await createTaak({
@@ -1527,7 +1527,7 @@ export function ProjectDetail() {
                 <select
                   value={toewijzingMedewerkerId}
                   onChange={(e) => setToewijzingMedewerkerId(e.target.value)}
-                  className="flex-1 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
+                  className="flex-1 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-card text-foreground dark:text-white"
                 >
                   <option value="">Medewerker...</option>
                   {alleMedewerkers
@@ -1538,7 +1538,7 @@ export function ProjectDetail() {
                 <select
                   value={toewijzingRol}
                   onChange={(e) => setToewijzingRol(e.target.value as ProjectToewijzing['rol'])}
-                  className="w-24 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
+                  className="w-24 text-xs border border-border dark:border-border rounded-lg px-2 py-1.5 bg-card text-foreground dark:text-white"
                 >
                   <option value="medewerker">Medewerker</option>
                   <option value="eigenaar">Eigenaar</option>
@@ -1905,7 +1905,7 @@ export function ProjectDetail() {
                 </Button>
                 <Button
                   disabled={isEmailVerzenden || !emailOnderwerp.trim()}
-                  className="bg-gradient-to-r from-accent to-primary border-0"
+                  className=""
                   onClick={async () => {
                     setIsEmailVerzenden(true)
                     try {
@@ -2094,7 +2094,7 @@ export function ProjectDetail() {
             <Button
               onClick={handleAiAnalysis}
               disabled={aiAnalysisLoading}
-              className="bg-gradient-to-r from-accent to-primary border-0"
+              className=""
             >
               {aiAnalysisLoading
                 ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
@@ -2199,7 +2199,7 @@ export function ProjectDetail() {
                 <select
                   value={selectedOfferteId}
                   onChange={e => setSelectedOfferteId(e.target.value)}
-                  className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
+                  className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-card text-foreground dark:text-white"
                 >
                   <option value="">Geen offerte bijvoegen</option>
                   {projectOffertes.map(o => (
@@ -2245,7 +2245,7 @@ export function ProjectDetail() {
             </Button>
             <Button
               disabled={isVersturen || selectedDocIds.length === 0 || !verstuurOnderwerp.trim()}
-              className="bg-gradient-to-r from-accent to-primary border-0"
+              className=""
               onClick={handleVerstuurNaarKlant}
             >
               <Send className="mr-1.5 h-4 w-4" />
@@ -2284,7 +2284,7 @@ export function ProjectDetail() {
               <select
                 value={kopieKlantId}
                 onChange={(e) => setKopieKlantId(e.target.value)}
-                className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-white dark:bg-foreground/80 text-foreground dark:text-white"
+                className="w-full text-sm border border-border dark:border-border rounded-lg px-3 py-2 bg-card text-foreground dark:text-white"
               >
                 <option value="">Zelfde klant behouden</option>
                 {alleKlanten.map((k) => (
@@ -2313,7 +2313,7 @@ export function ProjectDetail() {
             <Button variant="outline" onClick={() => setKopieDialogOpen(false)}>Annuleren</Button>
             <Button
               disabled={kopieBezig || !kopieNaam.trim()}
-              className="bg-gradient-to-r from-accent to-primary border-0"
+              className=""
               onClick={handleKopieerProject}
             >
               {kopieBezig ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Copy className="h-4 w-4 mr-1.5" />}

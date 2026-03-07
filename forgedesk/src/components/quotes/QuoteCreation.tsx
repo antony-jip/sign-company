@@ -1787,7 +1787,7 @@ export function QuoteCreation() {
               <p className="text-sm text-muted-foreground mb-3">Elk item is een complete prijsberekening. Je kunt later altijd items toevoegen of verwijderen.</p>
               <div className="flex items-center gap-2">
                 {ITEM_COUNT_OPTIONS.map((count) => (
-                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-12 w-12 rounded-xl text-lg font-bold transition-all border-2', itemCount === count ? 'border-primary bg-gradient-to-br from-accent to-primary text-white shadow-md scale-110' : 'border-border dark:border-border bg-white dark:bg-foreground text-foreground hover:border-border')}>
+                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-12 w-12 rounded-xl text-lg font-bold transition-all border-2', itemCount === count ? 'border-primary bg-gradient-to-br from-accent to-primary text-white shadow-md scale-110' : 'border-border dark:border-border bg-card text-foreground hover:border-border')}>
                     {count}
                   </button>
                 ))}
@@ -1798,7 +1798,7 @@ export function QuoteCreation() {
 
           {/* Start button */}
           <div className="flex justify-end">
-            <Button onClick={handleStartEditing} disabled={!canStartEditing} className="bg-gradient-to-r from-accent to-primary border-0 px-8" size="lg">
+            <Button onClick={handleStartEditing} disabled={!canStartEditing} className="px-8" size="lg">
               Items toevoegen
               <FileText className="h-4 w-4 ml-2" />
             </Button>
@@ -1855,7 +1855,7 @@ export function QuoteCreation() {
               <Save className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{isSaving ? 'Opslaan...' : 'Opslaan'}</span>
             </Button>
-            <Button size="sm" onClick={handleVerstuurOfferte} disabled={isSaving} className="bg-gradient-to-r from-accent to-primary border-0 gap-1.5">
+            <Button size="sm" onClick={handleVerstuurOfferte} disabled={isSaving} className="gap-1.5">
               <Send className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Verstuur</span>
             </Button>
@@ -1869,7 +1869,7 @@ export function QuoteCreation() {
                 {showActionsMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowActionsMenu(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-foreground rounded-lg border border-border dark:border-border shadow-lg py-1 w-48">
+                    <div className="absolute right-0 top-full mt-1 z-50 bg-card rounded-lg border border-border dark:border-border shadow-lg py-1 w-48">
                       <button onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-foreground/80 flex items-center gap-2 disabled:opacity-50">
                         <Copy className="h-3.5 w-3.5" />{isDuplicating ? 'Dupliceren...' : 'Dupliceer offerte'}
                       </button>
@@ -2097,7 +2097,7 @@ export function QuoteCreation() {
 
                   <div className="flex items-center justify-between pt-2">
                     <Button variant="outline" onClick={() => setShowEmailCompose(false)}>Annuleren</Button>
-                    <Button onClick={handleSendEmailInline} disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail} className="bg-gradient-to-r from-accent to-primary border-0 gap-2">
+                    <Button onClick={handleSendEmailInline} disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail} className="gap-2">
                       <Send className="h-4 w-4" />{isSendingEmail ? 'Verzenden...' : emailScheduled ? 'Inplannen' : 'Verstuur email'}
                     </Button>
                   </div>
@@ -2117,7 +2117,7 @@ export function QuoteCreation() {
             {/* ── Mobile collapse toggle ── */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="lg:hidden w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border dark:border-border bg-white dark:bg-foreground"
+              className="lg:hidden w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border dark:border-border bg-card"
             >
               <span className="text-sm font-semibold">Klant & Samenvatting</span>
               <div className="flex items-center gap-2">
@@ -2129,7 +2129,7 @@ export function QuoteCreation() {
             <div className={cn('space-y-4', sidebarCollapsed && 'hidden lg:block')}>
               {/* ── KLANTGEGEVENS CARD ── */}
               {selectedKlant ? (
-                <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm">
+                <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
                   <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2 px-4 py-3 bg-background/80 dark:bg-foreground/80/50 border-b border-border dark:border-border hover:bg-muted dark:hover:bg-foreground/80 transition-colors">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-sm">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
@@ -2193,7 +2193,7 @@ export function QuoteCreation() {
 
               {/* ── FACTUREREN WORKFLOW CARD ── */}
               {isEditMode && (offerteStatus === 'goedgekeurd' || offerteStatus === 'gefactureerd' || geconverteerdNaarFactuurId) && (
-                <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm">
+                <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
                   {geconverteerdNaarFactuurId ? (
                     <>
                       {/* Already invoiced */}
@@ -2286,7 +2286,7 @@ export function QuoteCreation() {
               )}
 
               {/* ── SAMENVATTING CARD ── */}
-              <div className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm">
+              <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
                 {/* Totaal header */}
                 <div className="bg-mist dark:bg-mist/15 p-4">
                   <p className="text-[10px] uppercase tracking-wider text-foreground/70 font-medium">Totaal incl BTW</p>

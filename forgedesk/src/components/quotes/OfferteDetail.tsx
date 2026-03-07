@@ -460,7 +460,7 @@ export function OfferteDetail() {
               </Badge>
             </button>
             {statusOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-foreground/80 border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+              <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
                 {STATUS_OPTIONS.map((opt) => (
                   <button
                     key={opt.key}
@@ -523,7 +523,7 @@ export function OfferteDetail() {
                 </Button>
               )}
               {!offerte.geconverteerd_naar_factuur_id ? (
-                <Button size="sm" onClick={handleMaakFactuur} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button size="sm" onClick={handleMaakFactuur}>
                   <Receipt className="h-4 w-4 mr-1" />
                   Maak factuur
                 </Button>

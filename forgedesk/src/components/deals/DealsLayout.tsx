@@ -298,7 +298,7 @@ export function DealsLayout() {
               <List className="h-3.5 w-3.5" /> Tabel
             </Button>
           </div>
-          <Button onClick={() => setNewDealOpen(true)} className="gap-2 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 shadow-lg shadow-primary/25 border-0" size="sm">
+          <Button onClick={() => setNewDealOpen(true)} className="gap-2" size="sm">
             <Plus className="h-4 w-4" /> Nieuwe deal
           </Button>
         </div>

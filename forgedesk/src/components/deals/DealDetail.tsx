@@ -280,10 +280,10 @@ export function DealDetail() {
               <Button variant="outline" size="sm" onClick={handleToggleHold} className="gap-1">
                 <Pause className="h-3.5 w-3.5" /> On-hold
               </Button>
-              <Button size="sm" className="gap-1 bg-red-500 hover:bg-red-600 text-white" onClick={() => { setVerlorenReden(''); setLostDialogOpen(true) }}>
+              <Button variant="destructive" size="sm" className="gap-1" onClick={() => { setVerlorenReden(''); setLostDialogOpen(true) }}>
                 <XCircle className="h-3.5 w-3.5" /> Verloren
               </Button>
-              <Button size="sm" className="gap-1 bg-emerald-500 hover:bg-emerald-600 text-white" onClick={() => { setWerkelijkeWaarde(deal.verwachte_waarde); setWonDialogOpen(true) }}>
+              <Button size="sm" className="gap-1" onClick={() => { setWerkelijkeWaarde(deal.verwachte_waarde); setWonDialogOpen(true) }}>
                 <Trophy className="h-3.5 w-3.5" /> Gewonnen
               </Button>
             </>
@@ -521,7 +521,7 @@ export function DealDetail() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWonDialogOpen(false)}>Annuleren</Button>
-            <Button className="bg-emerald-500 hover:bg-emerald-600" onClick={handleMarkWon}>Bevestig gewonnen</Button>
+            <Button onClick={handleMarkWon}>Bevestig gewonnen</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

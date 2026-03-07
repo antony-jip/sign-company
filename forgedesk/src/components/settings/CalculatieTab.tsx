@@ -214,7 +214,7 @@ export function CalculatieTab() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                 isActive
-                  ? 'bg-white dark:bg-foreground/70 text-foreground dark:text-white shadow-sm'
+                  ? 'bg-card text-foreground dark:text-white shadow-sm'
                   : 'text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/50'
               )}
             >
@@ -1780,7 +1780,7 @@ function OfferteTemplatesSubSection({
                     {tplRegels.map((regel, idx) => (
                       <div
                         key={idx}
-                        className="bg-white dark:bg-foreground rounded-xl border border-border dark:border-border p-3 space-y-2"
+                        className="bg-card rounded-xl border border-border dark:border-border p-3 space-y-2"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">

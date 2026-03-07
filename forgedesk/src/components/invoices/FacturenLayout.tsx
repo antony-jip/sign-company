@@ -1246,7 +1246,7 @@ export function FacturenLayout() {
           </Button>
           <Button
             onClick={() => navigate('/facturen/nieuw')}
-            className="gap-2 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 shadow-lg shadow-primary/25 border-0"
+            className="gap-2"
             size="sm"
           >
             <Plus className="h-4 w-4" />
@@ -2221,7 +2221,7 @@ export function FacturenLayout() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreditnotaDialogOpen(false)} disabled={isSaving}>Annuleren</Button>
-            <Button onClick={handleCreateCreditnota} disabled={isSaving} className="bg-red-600 hover:bg-red-700 text-white">
+            <Button variant="destructive" onClick={handleCreateCreditnota} disabled={isSaving}>
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <X className="h-4 w-4 mr-1" />}
               Creditnota aanmaken
             </Button>
@@ -2414,7 +2414,7 @@ export function FacturenLayout() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setHerinneringDialogOpen(false)}>Annuleren</Button>
-            <Button onClick={handleVerstuurHerinnering} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={handleVerstuurHerinnering}>
               <Bell className="h-4 w-4 mr-1" /> Verstuur
             </Button>
           </DialogFooter>

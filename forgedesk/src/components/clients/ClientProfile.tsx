@@ -541,7 +541,7 @@ export function ClientProfile() {
           {/* Toevoegen dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="bg-gradient-to-r from-accent to-primary hover:from-accent hover:to-wm-hover shadow-lg shadow-primary/25 border-0">
+              <Button>
                 Toevoegen
                 <ChevronDown className="w-4 h-4 ml-1" />
               </Button>

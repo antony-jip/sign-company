@@ -217,7 +217,7 @@ export function LeadInzendingenLayout() {
           )}
           <DialogFooter>
             {selectedInzending && selectedInzending.status !== 'verwerkt' && (
-              <Button onClick={() => handleMarkVerwerkt(selectedInzending)} className="gap-1 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90">
+              <Button onClick={() => handleMarkVerwerkt(selectedInzending)} className="gap-1">
                 <CheckCircle className="h-4 w-4" /> Markeer verwerkt
               </Button>
             )}

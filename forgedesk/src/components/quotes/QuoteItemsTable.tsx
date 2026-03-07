@@ -269,7 +269,7 @@ function AutocompleteInput({
         className={className}
       />
       {showSuggestions && filtered.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-foreground border border-border dark:border-border rounded-lg shadow-lg max-h-48 overflow-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-card border border-border dark:border-border rounded-lg shadow-lg max-h-48 overflow-auto">
           {filtered.map((s, i) => (
             <button
               key={s.beschrijving}
@@ -518,7 +518,7 @@ export function QuoteItemsTable({
         return (
           <div
             key={item.id}
-            className="rounded-xl border border-border dark:border-border bg-white dark:bg-foreground overflow-hidden shadow-sm"
+            className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm"
           >
             {/* ──── HEADER: nummer + item naam + optioneel badge + totaal + acties ──── */}
             <div className={cn(
@@ -1032,7 +1032,7 @@ export function QuoteItemsTable({
                               'rounded-lg border p-3 transition-all',
                               isActive
                                 ? 'border-primary/50 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 ring-1 ring-primary/20'
-                                : 'border-border dark:border-border bg-white dark:bg-foreground'
+                                : 'border-border dark:border-border bg-card'
                             )}
                           >
                             {/* Variant header: label + active toggle + remove */}
