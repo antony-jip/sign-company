@@ -8,7 +8,7 @@ import {
   ClipboardCheck, ShoppingCart, Warehouse,
   Briefcase, UserPlus, Files, Newspaper,
   Upload, Bot, Calculator, TrendingUp, PackageCheck,
-  CalendarCheck,
+  CalendarCheck, Sparkles,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -61,6 +61,7 @@ const navSections: NavSection[] = [
     section: 'Communicatie',
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
+      { label: 'Forgie', icon: Sparkles, path: '/forgie' },
       { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
     ],
   },

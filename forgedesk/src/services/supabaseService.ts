@@ -1666,7 +1666,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
       'Klanten', 'Deals', 'Offertes', 'Facturen',
       'Projecten', 'Taken', 'Montage', 'Werkbonnen', 'Nacalculatie',
       'Planning', 'Tijdregistratie', 'Booking',
-      'Email', 'Nieuwsbrieven', 'Lead Capture',
+      'Email', 'Forgie', 'Nieuwsbrieven', 'Lead Capture',
       'Financieel', 'Uitgaven', 'Leveranciers', 'Forecast',
       'Documenten', 'Voorraad', 'Bestelbonnen', 'Leveringsbonnen',
       'Rapportages', 'Team', 'Importeren', 'AI Assistent', 'Instellingen',
@@ -1692,6 +1692,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     offerte_intro_tekst: '',
     offerte_outro_tekst: '',
     afzender_naam: '',
+    forgie_bedrijfscontext: '',
     created_at: now(),
     updated_at: now(),
   }
