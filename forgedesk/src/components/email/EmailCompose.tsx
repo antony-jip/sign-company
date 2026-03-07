@@ -44,12 +44,14 @@ import {
   Minus,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { generateEmailDraft } from '@/services/aiService'
 import { getKlanten } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { cn, getInitials } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import type { Klant } from '@/types'
+import { callForgie, getForgieUsage } from '@/services/forgieService'
+import type { ForgieAction } from '@/services/forgieService'
+import { Loader2, Globe } from 'lucide-react'
 
 interface EmailComposeProps {
   open: boolean
@@ -280,6 +282,13 @@ export function EmailCompose({
   const [showMergeFields, setShowMergeFields] = useState(false)
   const mergeFieldRef = useRef<HTMLDivElement>(null)
 
+  // Forgie AI
+  const [showForgieMenu, setShowForgieMenu] = useState(false)
+  const [forgieLoading, setForgieLoading] = useState(false)
+  const [forgieOriginalText, setForgieOriginalText] = useState<string | null>(null)
+  const [forgieUsage, setForgieUsage] = useState<{ usage: number; limiet: number } | null>(null)
+  const forgieMenuRef = useRef<HTMLDivElement>(null)
+
   const scheduleDropdownRef = useRef<HTMLDivElement>(null)
 
   // Set initial editor content when panel opens
@@ -346,7 +355,7 @@ export function EmailCompose({
 
   // Close dropdowns on outside click
   useEffect(() => {
-    if (!showScheduleDropdown && !showMergeFields && !showSuggestions && !showSignatureDropdown) return
+    if (!showScheduleDropdown && !showMergeFields && !showSuggestions && !showSignatureDropdown && !showForgieMenu) return
     function handleClickOutside(e: MouseEvent) {
       if (showScheduleDropdown && scheduleDropdownRef.current && !scheduleDropdownRef.current.contains(e.target as Node)) {
         setShowScheduleDropdown(false)
@@ -360,10 +369,13 @@ export function EmailCompose({
       if (showSignatureDropdown && signatureRef.current && !signatureRef.current.contains(e.target as Node)) {
         setShowSignatureDropdown(false)
       }
+      if (showForgieMenu && forgieMenuRef.current && !forgieMenuRef.current.contains(e.target as Node)) {
+        setShowForgieMenu(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showScheduleDropdown, showMergeFields, showSuggestions, showSignatureDropdown])
+  }, [showScheduleDropdown, showMergeFields, showSuggestions, showSignatureDropdown, showForgieMenu])
 
   const handleSelectContact = useCallback((klant: Klant) => {
     const email = klant.contactpersonen?.[0]?.email || ''
@@ -518,19 +530,48 @@ export function EmailCompose({
     }
   }
 
-  const handleAiGenerate = async () => {
+  const handleForgieAction = async (action: ForgieAction) => {
+    const currentText = editorRef.current?.innerText || ''
+    if (!currentText.trim() && action !== 'write-followup') {
+      toast.error('Schrijf eerst tekst voordat Forgie het kan herschrijven')
+      return
+    }
+    setForgieLoading(true)
+    setShowForgieMenu(false)
+    setForgieOriginalText(currentText)
     try {
-      const draft = await generateEmailDraft({
-        onderwerp: subject || undefined,
-        doel: subject || 'zakelijke email',
-      })
+      const result = await callForgie(action, currentText)
       if (editorRef.current) {
-        editorRef.current.innerText = draft
+        editorRef.current.innerText = result.result
         setEditorEmpty(false)
       }
-      toast.success('AI tekst gegenereerd')
+      toast('Forgie heeft de tekst herschreven', {
+        action: {
+          label: 'Ongedaan maken',
+          onClick: () => {
+            if (editorRef.current && forgieOriginalText) {
+              editorRef.current.innerText = forgieOriginalText
+              setEditorEmpty(!forgieOriginalText.trim())
+            }
+          },
+        },
+      })
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'AI generatie mislukt')
+      toast.error(err instanceof Error ? err.message : 'Forgie is niet beschikbaar')
+    } finally {
+      setForgieLoading(false)
+    }
+  }
+
+  const handleForgieMenuOpen = async () => {
+    setShowForgieMenu(!showForgieMenu)
+    if (!showForgieMenu) {
+      try {
+        const usage = await getForgieUsage()
+        setForgieUsage(usage)
+      } catch {
+        // Usage ophalen is niet-kritiek
+      }
     }
   }
 
@@ -646,15 +687,45 @@ export function EmailCompose({
           {defaultTo ? (defaultSubject?.startsWith('Re:') ? 'Beantwoorden' : defaultSubject?.startsWith('Fwd:') ? 'Doorsturen' : 'Nieuwe email') : 'Nieuwe email'}
         </h2>
         <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 gap-1.5 text-xs text-accent hover:text-accent hover:bg-wm-pale/20 dark:hover:bg-primary/20"
-            onClick={handleAiGenerate}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            AI Genereren
-          </Button>
+          <div className="relative" ref={forgieMenuRef}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 text-xs text-blush-deep hover:text-blush-deep hover:bg-blush/20"
+              onClick={handleForgieMenuOpen}
+              disabled={forgieLoading}
+            >
+              {forgieLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              Forgie
+              <ChevronDown className="w-3 h-3" />
+            </Button>
+            {showForgieMenu && (
+              <div className="absolute right-0 top-full mt-1 w-56 bg-card border rounded-xl shadow-lg py-1 z-50">
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('rewrite-professional')}>
+                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Herschrijf professioneler
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('rewrite-shorter')}>
+                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Maak korter
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('formalize')}>
+                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Formaliseer
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('write-followup')}>
+                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Schrijf follow-up
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('translate-en')}>
+                  <Globe className="w-3.5 h-3.5 text-blush-deep" /> Vertaal naar Engels
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('translate-nl')}>
+                  <Globe className="w-3.5 h-3.5 text-blush-deep" /> Vertaal naar Nederlands
+                </button>
+                <div className="border-t my-1" />
+                <div className="px-3 py-2 text-xs text-muted-foreground">
+                  Gebruikt: €{forgieUsage ? forgieUsage.usage.toFixed(2) : '...'} / €{forgieUsage ? forgieUsage.limiet.toFixed(2) : '5.00'}
+                </div>
+              </div>
+            )}
+          </div>
           <Button
             variant="ghost"
             size="icon"

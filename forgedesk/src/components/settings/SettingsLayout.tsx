@@ -1797,8 +1797,8 @@ function IntegratiesTab() {
   const [subTab, setSubTab] = useState('koppelingen')
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
   const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
-  // OpenAI key is now server-side only (configured via OPENAI_API_KEY env var on Vercel)
-  const openaiConfigured = supabaseConnected
+  // Anthropic key is server-side only (configured via ANTHROPIC_API_KEY env var on Vercel)
+  const anthropicConfigured = supabaseConnected
 
   const [emailConnected, setEmailConnected] = useState(false)
   const [emailAddress, setEmailAddress] = useState<string | null>(null)
@@ -1845,13 +1845,13 @@ function IntegratiesTab() {
       details: emailConnected && emailAddress ? `Account: ${emailAddress}` : undefined,
     },
     {
-      id: 'openai',
-      name: 'OpenAI',
-      description: 'AI-functionaliteit voor tekst generatie en analyse',
-      connected: openaiConfigured,
+      id: 'anthropic',
+      name: 'Anthropic (Forgie)',
+      description: 'AI-functionaliteit aangedreven door Claude',
+      connected: anthropicConfigured,
       icon: (
-        <div className="w-10 h-10 bg-wm-pale/30 dark:bg-accent/30 rounded-lg flex items-center justify-center">
-          <span className="text-accent dark:text-wm-light font-bold text-sm">AI</span>
+        <div className="w-10 h-10 bg-blush/30 dark:bg-blush-deep/30 rounded-lg flex items-center justify-center">
+          <span className="text-blush-deep font-bold text-sm">AI</span>
         </div>
       ),
     },
@@ -1914,10 +1914,10 @@ function IntegratiesTab() {
                   </p>
                 )}
 
-                {/* OpenAI - server-side configured */}
-                {integration.id === 'openai' && (
+                {/* Anthropic - server-side configured */}
+                {integration.id === 'anthropic' && (
                   <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mt-2">
-                    De OpenAI API key wordt veilig op de server geconfigureerd (OPENAI_API_KEY environment variable).
+                    De Anthropic API key wordt veilig op de server geconfigureerd (ANTHROPIC_API_KEY environment variable). Forgie gebruikt Claude voor AI-functies.
                   </p>
                 )}
 

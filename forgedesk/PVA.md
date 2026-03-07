@@ -34,7 +34,7 @@
 | Instellingen -> Dashboard | Follow-up widget respecteert weergave-instellingen |
 | Instellingen -> Valuta | formatCurrency accepteert nu dynamische valuta |
 | Beveiliging tab | Wachtwoord wijzigen werkt nu (Supabase + demo modus) |
-| Integraties tab | OpenAI API key wordt opgeslagen in localStorage |
+| Integraties tab | Anthropic API key wordt veilig server-side geconfigureerd |
 
 ---
 
@@ -71,10 +71,10 @@
 |   | - Gmail API activeren | | |
 |   | - Redirect URI instellen | | |
 |   | - Client ID + Secret invullen in `.env` | | |
-| 7 | **OpenAI API key aanschaffen** | AI-functionaliteit (tekst generatie, analyse) | 15 min |
-|   | - Ga naar [platform.openai.com](https://platform.openai.com) | | |
+| 7 | **Anthropic API key aanschaffen** | AI-functionaliteit via Forgie (tekst generatie, analyse) | 15 min |
+|   | - Ga naar [console.anthropic.com](https://console.anthropic.com) | | |
 |   | - Maak een API key aan | | |
-|   | - Vul in bij Instellingen -> Integraties | | |
+|   | - Voeg toe als ANTHROPIC_API_KEY environment variable op Vercel | | |
 | 8 | **SMTP server voor email verzending** | Daadwerkelijk emails versturen | 30 min |
 |   | - Kies provider: SendGrid, Mailgun, of eigen SMTP | | |
 |   | - Configureer als Supabase Edge Function of aparte backend | | |
@@ -116,7 +116,8 @@ Browser (React + Vite)
     |   |-- supabaseService.ts (CRUD operaties)
     |   |-- authService.ts (login/registratie)
     |   |-- pdfService.ts (PDF generatie)
-    |   |-- aiService.ts (OpenAI integratie)
+    |   |-- aiService.ts (Anthropic Claude integratie)
+    |   |-- forgieService.ts (Forgie AI email functies)
     |   |-- storageService.ts (bestanden)
     |
     v
@@ -138,8 +139,8 @@ Maak een bestand `forgedesk/.env` aan met:
 VITE_SUPABASE_URL=https://jouw-project.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGci...
 
-# OpenAI (SERVER-SIDE ONLY - GEEN VITE_ prefix!)
-OPENAI_API_KEY=sk-...
+# Anthropic (SERVER-SIDE ONLY - GEEN VITE_ prefix!)
+ANTHROPIC_API_KEY=sk-ant-...
 
 # Gmail (OPTIONEEL - voor email integratie)
 VITE_GMAIL_CLIENT_ID=...
@@ -160,7 +161,7 @@ VITE_GMAIL_CLIENT_SECRET=...
 ### Fase 2: Communicatie (Week 2)
 - [ ] Gmail OAuth2 koppeling
 - [ ] SMTP voor email verzending
-- [ ] OpenAI API key
+- [ ] Anthropic API key (voor Forgie)
 - [ ] Test: email versturen, AI chat, templates
 
 ### Fase 3: Uitbreiding (Week 3-4)

@@ -103,13 +103,13 @@ CREATE POLICY "Public read access" ON offerte_templates FOR SELECT USING (true);
 
 ---
 
-## STAP 3: OPENAI API KEY (Optioneel)
+## STAP 3: ANTHROPIC API KEY (Optioneel)
 
-**Alleen nodig voor AI features**
+**Alleen nodig voor Forgie AI features**
 
-1. Ga naar https://platform.openai.com/api-keys
+1. Ga naar https://console.anthropic.com/settings/keys
 2. Maak een API key aan
-3. Voeg toe aan `.env`: `OPENAI_API_KEY=sk-jouw-key-hier`
+3. Voeg toe aan `.env`: `ANTHROPIC_API_KEY=sk-ant-jouw-key-hier`
 4. LET OP: GEEN `VITE_` prefix! Alleen server-side
 
 ---
@@ -179,7 +179,7 @@ Als er fouten zijn: kopieer de output en vraag Claude Code om ze te fixen.
 4. Stel Environment Variables in:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-   - `OPENAI_API_KEY` (optioneel)
+   - `ANTHROPIC_API_KEY` (optioneel, voor Forgie AI)
 5. Deploy
 
 ### Na deployment:
@@ -196,7 +196,7 @@ Als er fouten zijn: kopieer de output en vraag Claude Code om ze te fixen.
 | Alle code-fixes | GEDAAN | - |
 | Supabase credentials | TE DOEN | KRITIEK |
 | RLS policies activeren | TE DOEN | KRITIEK |
-| OpenAI API key | TE DOEN | Optioneel |
+| Anthropic API key | TE DOEN | Optioneel |
 | Build verificatie (npm) | TE DOEN | Hoog |
 | Handmatig testen | TE DOEN | Hoog |
 | Deployment | TE DOEN | Na testen |
