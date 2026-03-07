@@ -33,10 +33,23 @@ import {
   MoreHorizontal,
   CheckCircle2,
   Download,
+  Settings,
+  GripVertical,
+  Trash2,
+  Save,
 } from 'lucide-react'
-import { getOffertes, updateOfferte } from '@/services/supabaseService'
+import { Switch } from '@/components/ui/switch'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { getOffertes, updateOfferte, updateAppSettings } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Offerte } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
+import type { Offerte, PipelineStap } from '@/types'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import {
   DropdownMenu,
@@ -208,7 +221,8 @@ function relativeDate(dateStr: string): string {
 
 export function QuotesPipeline() {
   const navigate = useNavigate()
-  const { pipelineStappen, toonConversieRate, toonDagenOpen, toonFollowUpIndicatoren, valuta } = useAppSettings()
+  const { user } = useAuth()
+  const { pipelineStappen, toonConversieRate, toonDagenOpen, toonFollowUpIndicatoren, valuta, refreshSettings } = useAppSettings()
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -219,6 +233,54 @@ export function QuotesPipeline() {
   const [sortOption, setSortOption] = useState<SortOption>('newest')
   const [showClosed, setShowClosed] = useState(false)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+
+  // Pipeline settings panel
+  const [showPipelineSettings, setShowPipelineSettings] = useState(false)
+  const [editStappen, setEditStappen] = useState<PipelineStap[]>([])
+  const [isSavingPipeline, setIsSavingPipeline] = useState(false)
+
+  useEffect(() => {
+    if (pipelineStappen) setEditStappen([...pipelineStappen])
+  }, [pipelineStappen])
+
+  const handleAddPipelineStap = () => {
+    setEditStappen([...editStappen, {
+      key: `custom_${Date.now()}`,
+      label: 'Nieuwe stap',
+      kleur: 'blue',
+      volgorde: editStappen.length,
+      actief: true,
+    }])
+  }
+
+  const handleRemovePipelineStap = (index: number) => {
+    const stap = editStappen[index]
+    if (['concept', 'goedgekeurd', 'afgewezen'].includes(stap.key)) {
+      toast.error('Deze standaard stap kan niet worden verwijderd')
+      return
+    }
+    setEditStappen(editStappen.filter((_, i) => i !== index))
+  }
+
+  const handleUpdatePipelineStap = (index: number, updates: Partial<PipelineStap>) => {
+    setEditStappen(editStappen.map((stap, i) => (i === index ? { ...stap, ...updates } : stap)))
+  }
+
+  const handleSavePipeline = async () => {
+    if (!user?.id) return
+    try {
+      setIsSavingPipeline(true)
+      await updateAppSettings(user.id, { pipeline_stappen: editStappen })
+      await refreshSettings()
+      toast.success('Pipeline opgeslagen')
+      setShowPipelineSettings(false)
+    } catch (err) {
+      logger.error('Fout bij opslaan pipeline:', err)
+      toast.error('Kon pipeline niet opslaan')
+    } finally {
+      setIsSavingPipeline(false)
+    }
+  }
 
   const STATUS_COLUMNS = useMemo(() => {
     if (pipelineStappen && pipelineStappen.length > 0) {
@@ -655,6 +717,16 @@ export function QuotesPipeline() {
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
             </div>
+            <button
+              onClick={() => setShowPipelineSettings(!showPipelineSettings)}
+              className={cn(
+                'p-1.5 rounded transition-colors mr-1',
+                showPipelineSettings ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'
+              )}
+              title="Pipeline instellingen"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
             <Button
               variant="ghost"
               size="sm"
@@ -725,6 +797,86 @@ export function QuotesPipeline() {
           })}
         </div>
       </div>
+
+      {/* Pipeline Settings Panel */}
+      {showPipelineSettings && (
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Pipeline Stappen
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {editStappen.map((stap, index) => (
+              <div
+                key={stap.key}
+                className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 border border-border"
+              >
+                <GripVertical className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{
+                    backgroundColor:
+                      stap.kleur === 'gray' ? '#9ca3af' :
+                      stap.kleur === 'blue' ? '#3b82f6' :
+                      stap.kleur === 'purple' ? '#8b5cf6' :
+                      stap.kleur === 'green' ? '#22c55e' :
+                      stap.kleur === 'red' ? '#ef4444' :
+                      stap.kleur === 'orange' ? '#f97316' :
+                      stap.kleur === 'teal' ? '#14b8a6' :
+                      '#6b7280'
+                  }}
+                />
+                <Input
+                  value={stap.label}
+                  onChange={(e) => handleUpdatePipelineStap(index, { label: e.target.value })}
+                  className="flex-1 h-8"
+                />
+                <Select
+                  value={stap.kleur}
+                  onValueChange={(v) => handleUpdatePipelineStap(index, { kleur: v })}
+                >
+                  <SelectTrigger className="w-28 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gray">Grijs</SelectItem>
+                    <SelectItem value="blue">Blauw</SelectItem>
+                    <SelectItem value="purple">Paars</SelectItem>
+                    <SelectItem value="green">Groen</SelectItem>
+                    <SelectItem value="red">Rood</SelectItem>
+                    <SelectItem value="orange">Oranje</SelectItem>
+                    <SelectItem value="teal">Teal</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Switch
+                  checked={stap.actief}
+                  onCheckedChange={(checked) => handleUpdatePipelineStap(index, { actief: checked })}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemovePipelineStap(index)}
+                  className="h-8 w-8 p-0 text-muted-foreground/60 hover:text-red-500"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+            <div className="flex items-center gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={handleAddPipelineStap} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Stap Toevoegen
+              </Button>
+              <Button size="sm" onClick={handleSavePipeline} disabled={isSavingPipeline} className="gap-2 ml-auto">
+                <Save className="w-4 h-4" />
+                {isSavingPipeline ? 'Opslaan...' : 'Opslaan'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Pipeline (Kanban) View */}
       {viewMode === 'pipeline' && (
