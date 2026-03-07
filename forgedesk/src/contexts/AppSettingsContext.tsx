@@ -43,6 +43,8 @@ interface AppSettingsContextType {
   factuurOutroTekst: string
   // Offerte layout
   offerteToonM2: boolean
+  // Forgie
+  forgieEnabled: boolean
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined)
@@ -155,6 +157,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     factuurOutroTekst: settings.factuur_outro_tekst || '',
     // Offerte layout
     offerteToonM2: settings.offerte_toon_m2 ?? true,
+    // Forgie
+    forgieEnabled: settings.forgie_enabled ?? true,
   }
 
   return (

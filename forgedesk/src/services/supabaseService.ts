@@ -1692,6 +1692,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     offerte_intro_tekst: '',
     offerte_outro_tekst: '',
     afzender_naam: '',
+    forgie_enabled: true,
     forgie_bedrijfscontext: '',
     created_at: now(),
     updated_at: now(),
