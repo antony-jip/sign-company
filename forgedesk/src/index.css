@@ -325,6 +325,14 @@ tbody tr:hover {
   }
 }
 
+/* Badge hover in table rows — subtle scale */
+tbody tr:hover .inline-flex {
+  transition: transform 0.15s ease;
+}
+tbody tr:hover [class*="rounded-full"][class*="text-[12"] {
+  transform: scale(1.04);
+}
+
 /* ================================================================
    ANIMATIONS — Smooth, refined, purpose-driven
    ================================================================ */
