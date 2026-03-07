@@ -1,65 +1,142 @@
 'use client';
 
-import React from 'react';
-import { useScrollAnimation } from './useScrollAnimation';
+import React, { useEffect, useRef, useState } from 'react';
 
 const steps = [
   {
-    number: '01',
-    title: 'Account aanmaken',
-    description: 'Maak je account aan in 30 seconden. Geen creditcard nodig, geen verplichtingen.',
-    bg: 'bg-blush-light',
-    accent: 'text-blush-deep',
+    label: 'Klant aanmaken',
+    color: 'bg-blush',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+      </svg>
+    ),
   },
   {
-    number: '02',
-    title: 'Data importeren',
-    description: 'Importeer je klanten, producten en prijslijsten. Of begin helemaal vers.',
-    bg: 'bg-sage-light',
-    accent: 'text-sage-deep',
+    label: 'Offerte versturen',
+    color: 'bg-sage',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+      </svg>
+    ),
   },
   {
-    number: '03',
-    title: 'Direct aan de slag',
-    description: 'Maak je eerste offerte, start een project en ontdek hoe snel alles gaat.',
-    bg: 'bg-mist-light',
-    accent: 'text-mist-deep',
+    label: 'Project plannen',
+    color: 'bg-mist',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Factuur incasseren',
+    color: 'bg-cream',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+      </svg>
+    ),
   },
 ];
 
 export const HowItWorks: React.FC = () => {
-  const ref = useScrollAnimation();
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <section id="over-ons" ref={ref} className="py-20 lg:py-32 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <p className="fade-up text-sm font-semibold tracking-widest uppercase text-gray-400 mb-4">
-            Zo simpel is het
-          </p>
-          <h2 className="fade-up stagger-1 text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-            In drie stappen live.
-          </h2>
+    <section ref={sectionRef} className="py-20 lg:py-32 bg-[#F4F3F0]">
+      <div className="max-w-5xl mx-auto px-6">
+        <h2 className="text-[36px] lg:text-[40px] font-black tracking-tight text-center mb-16">
+          Van idee tot factuur
+        </h2>
+
+        {/* Desktop: horizontal chain */}
+        <div className="hidden md:block relative">
+          {/* SVG connection line */}
+          <svg className="absolute top-10 left-[12%] right-[12%] h-4 w-[76%] overflow-visible" preserveAspectRatio="none">
+            {/* Background line */}
+            <line x1="0" y1="8" x2="100%" y2="8" stroke="#E8E6E0" strokeWidth="2" />
+            {/* Animated fill line with gradient */}
+            <defs>
+              <linearGradient id="chainGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#F0D9D0" />
+                <stop offset="33%" stopColor="#C8D5CC" />
+                <stop offset="66%" stopColor="#CDD5DE" />
+                <stop offset="100%" stopColor="#EDE8D8" />
+              </linearGradient>
+            </defs>
+            <line
+              x1="0" y1="8" x2="100%" y2="8"
+              stroke="url(#chainGradient)"
+              strokeWidth="3"
+              className={`chain-line-fill ${isVisible ? 'visible' : ''}`}
+            />
+          </svg>
+
+          <div className="grid grid-cols-4 gap-8 relative z-10">
+            {steps.map((step, i) => (
+              <div
+                key={step.label}
+                className="flex flex-col items-center text-center"
+                style={{
+                  opacity: isVisible ? 1 : 0,
+                  transform: isVisible ? 'scale(1)' : 'scale(0)',
+                  transition: `all 0.5s ease-out ${0.3 + i * 0.4}s`,
+                }}
+              >
+                <div className={`w-20 h-20 ${step.color} rounded-2xl flex items-center justify-center text-white mb-4 shadow-sm`}>
+                  {step.icon}
+                </div>
+                <p className="text-sm font-semibold text-gray-900">{step.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          {/* Connecting line (desktop only) */}
-          <div className="hidden md:block absolute top-7 left-[20%] right-[20%] h-0.5 bg-gray-200" />
-
-          {steps.map((step, index) => (
-            <div key={step.number} className={`fade-up stagger-${index + 1} text-center relative`}>
-              <div className={`w-14 h-14 ${step.bg} ${step.accent} rounded-full flex items-center justify-center mx-auto mb-6 text-lg font-bold relative z-10`}>
-                {step.number}
+        {/* Mobile: vertical chain */}
+        <div className="md:hidden space-y-6">
+          {steps.map((step, i) => (
+            <div key={step.label} className="flex items-center gap-4">
+              <div className={`w-14 h-14 ${step.color} rounded-xl flex items-center justify-center text-white flex-shrink-0 shadow-sm`}>
+                {step.icon}
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">
-                {step.title}
-              </h3>
-              <p className="text-gray-500 max-w-xs mx-auto leading-relaxed">
-                {step.description}
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="font-semibold text-gray-900">{step.label}</p>
+                {i < steps.length - 1 && (
+                  <svg className="w-4 h-4 text-[#E8E6E0]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </div>
             </div>
           ))}
         </div>
+
+        <p className="text-center text-[#6B6B6B] mt-12 text-lg">
+          In 30 minuten je eerste offerte. Geen implementatie. Geen consultant.
+        </p>
       </div>
     </section>
   );

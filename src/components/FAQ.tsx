@@ -8,19 +8,19 @@ const testimonials = [
     quote: 'Sinds we FORGEdesk gebruiken, zijn we 30% sneller met offertes. Klanten krijgen binnen een uur een professionele offerte in hun inbox.',
     name: 'Mark de Vries',
     role: 'Eigenaar, DeVries Signing',
-    bg: 'bg-blush-light',
+    bg: 'bg-blush/20',
   },
   {
     quote: 'Eindelijk software die snapt hoe een creatief bedrijf werkt. Geen overbodige functies, gewoon precies wat je nodig hebt.',
     name: 'Lisa Bakker',
     role: 'Directeur, Studio Bakker',
-    bg: 'bg-sage-light',
+    bg: 'bg-sage/20',
   },
   {
     quote: 'De werkbonnen-functie is een game-changer. Onze monteurs vullen alles in op locatie en het staat direct in het systeem.',
     name: 'Tom Hendriks',
     role: 'Projectleider, Hendriks Reclame',
-    bg: 'bg-mist-light',
+    bg: 'bg-mist/20',
   },
 ];
 
@@ -28,14 +28,11 @@ export const Testimonials: React.FC = () => {
   const ref = useScrollAnimation();
 
   return (
-    <section ref={ref} className="py-20 lg:py-32 bg-gray-50">
+    <section ref={ref} className="py-20 lg:py-32 bg-[#F4F3F0]">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <p className="fade-up text-sm font-semibold tracking-widest uppercase text-gray-400 mb-4">
+          <h2 className="fade-up text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
             Wat gebruikers zeggen
-          </p>
-          <h2 className="fade-up stagger-1 text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-            Gemaakt met liefde. Gebruikt met plezier.
           </h2>
         </div>
 
@@ -46,15 +43,15 @@ export const Testimonials: React.FC = () => {
               className={`fade-up stagger-${index + 1} ${t.bg} rounded-2xl p-8`}
             >
               {/* Quote icon */}
-              <svg className="w-8 h-8 text-gray-300 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10H14.017zM0 21v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151C7.563 6.068 6 8.789 6 11h4v10H0z" />
+              <svg className="w-8 h-8 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
               </svg>
               <p className="text-gray-700 leading-relaxed mb-6 text-base">
                 &ldquo;{t.quote}&rdquo;
               </p>
               <div>
                 <p className="font-bold text-gray-900">{t.name}</p>
-                <p className="text-sm text-gray-500">{t.role}</p>
+                <p className="text-sm text-[#6B6B6B]">{t.role}</p>
               </div>
             </div>
           ))}

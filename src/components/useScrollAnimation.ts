@@ -21,7 +21,7 @@ export function useScrollAnimation() {
       { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
     );
 
-    const targets = el.querySelectorAll('.fade-up, .fade-in');
+    const targets = el.querySelectorAll('.fade-up, .fade-in, .slide-left, .slide-right');
     targets.forEach((t) => observer.observe(t));
 
     return () => observer.disconnect();
