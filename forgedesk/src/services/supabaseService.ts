@@ -1672,6 +1672,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     melding_nieuwe_offerte: true,
     melding_status_wijziging: true,
     email_handtekening: '',
+    handtekening_afbeelding: '',
     primaire_kleur: '#2563eb',
     secundaire_kleur: '#7c3aed',
     toon_conversie_rate: true,
