@@ -154,8 +154,8 @@
 
   /* Selection color */
   ::selection {
-    background: #F0D9D0;
-    color: #1A1A1A;
+    background: hsl(var(--primary) / 0.15);
+    color: hsl(var(--foreground));
   }
 }
 
@@ -193,7 +193,7 @@ table tbody tr td:first-child::before {
   top: 25%;
   bottom: 25%;
   width: 2.5px;
-  background: #C49585;
+  background: hsl(var(--primary) / 0.5);
   border-radius: 0 2px 2px 0;
   opacity: 0;
   transform: scaleY(0.5);
@@ -204,10 +204,10 @@ table tbody tr:hover td:first-child::before {
   transform: scaleY(1);
 }
 
-/* Focus visible: blush ring */
+/* Focus visible: themed ring */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--background, #EFEDE8), 0 0 0 4px #C49585;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.4);
   border-radius: 6px;
 }
 
@@ -274,6 +274,60 @@ table tbody tr:hover td:first-child::before {
   }
   .empty-state-description {
     @apply text-[13px] text-muted-foreground max-w-[280px] mb-5;
+  }
+}
+
+/* ================================================================
+   STATUS BADGES — Theme-aware, work on all 4 themes
+   Uses CSS variables so dark/glass/zwart auto-adapt
+   ================================================================ */
+@layer components {
+  /* Success: betaald, afgerond, actief */
+  .badge-success {
+    @apply text-emerald-700 dark:text-emerald-300;
+    background: hsl(152 60% 52% / 0.12);
+    border: 1px solid hsl(152 60% 52% / 0.20);
+  }
+
+  /* Warning: verlopen, in afwachting, on-hold */
+  .badge-warning {
+    @apply text-amber-700 dark:text-amber-300;
+    background: hsl(38 92% 50% / 0.12);
+    border: 1px solid hsl(38 92% 50% / 0.20);
+  }
+
+  /* Danger: overdue, verloren, geannuleerd */
+  .badge-danger {
+    @apply text-red-700 dark:text-red-300;
+    background: hsl(var(--destructive) / 0.12);
+    border: 1px solid hsl(var(--destructive) / 0.20);
+  }
+
+  /* Info: verzonden, gepland, concept */
+  .badge-info {
+    @apply text-blue-700 dark:text-blue-300;
+    background: hsl(217 91% 60% / 0.12);
+    border: 1px solid hsl(217 91% 60% / 0.20);
+  }
+
+  /* Neutral: concept, draft, onbekend */
+  .badge-neutral {
+    @apply text-foreground/70;
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+  }
+
+  /* Purple: gecrediteerd, speciaal */
+  .badge-purple {
+    @apply text-purple-700 dark:text-purple-300;
+    background: hsl(271 76% 53% / 0.12);
+    border: 1px solid hsl(271 76% 53% / 0.20);
+  }
+
+  /* Shared badge base styling */
+  .badge-success, .badge-warning, .badge-danger,
+  .badge-info, .badge-neutral, .badge-purple {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-semibold;
   }
 }
 
@@ -682,7 +736,7 @@ tbody tr:hover [class*="rounded-full"][class*="text-[12"] {
   right: 6px;
   width: 8px;
   height: 8px;
-  background: linear-gradient(135deg, #c4553a, #e07a4a);
+  background: hsl(var(--destructive));
   border-radius: 50%;
   border: 2px solid hsl(var(--background));
 }
@@ -693,7 +747,7 @@ tbody tr:hover [class*="rounded-full"][class*="text-[12"] {
   right: 4px;
   width: 12px;
   height: 12px;
-  background: #c4553a;
+  background: hsl(var(--destructive));
   border-radius: 50%;
   opacity: 0;
   animation: subtlePulse 2s ease-in-out infinite;
@@ -1201,17 +1255,6 @@ textarea:focus {
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-/* Selection */
-[data-theme="zwart"] ::selection {
-  background: rgba(255, 255, 255, 0.20);
-  color: #FFFFFF;
-}
-
-/* Focus ring */
-[data-theme="zwart"] *:focus-visible {
-  box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 255, 255, 0.4);
-}
-
 /* Hardcoded grays */
 [data-theme="zwart"] .border-dashed {
   border-color: rgba(255, 255, 255, 0.10);
@@ -1227,6 +1270,119 @@ textarea:focus {
 [data-theme="zwart"] .text-gray-400,
 [data-theme="zwart"] .text-gray-500 {
   color: rgba(255, 255, 255, 0.45);
+}
+
+/* ================================================================
+   DARK-MODE BADGE OVERRIDES
+   Tailwind's hardcoded bg-emerald-100, bg-blue-50, etc. break on
+   dark themes. These overrides make them dark-aware globally, so
+   we don't need to touch 30+ component files individually.
+   ================================================================ */
+
+/* Emerald/green badges — success, betaald, afgerond */
+.dark .bg-emerald-50, .dark .bg-emerald-100, .dark .bg-green-50, .dark .bg-green-100 {
+  background: hsl(152 60% 40% / 0.15) !important;
+}
+.dark .text-emerald-700, .dark .text-emerald-800, .dark .text-green-700, .dark .text-green-800 {
+  color: hsl(152 60% 65%) !important;
+}
+.dark .border-emerald-200, .dark .border-emerald-300, .dark .border-green-200, .dark .border-green-300 {
+  border-color: hsl(152 60% 40% / 0.25) !important;
+}
+
+/* Blue badges — verzonden, gepland, info */
+.dark .bg-blue-50, .dark .bg-blue-100 {
+  background: hsl(217 91% 50% / 0.15) !important;
+}
+.dark .text-blue-700, .dark .text-blue-800 {
+  color: hsl(217 80% 70%) !important;
+}
+.dark .border-blue-200, .dark .border-blue-300 {
+  border-color: hsl(217 91% 50% / 0.25) !important;
+}
+
+/* Red badges — overdue, verloren, geannuleerd */
+.dark .bg-red-50, .dark .bg-red-100 {
+  background: hsl(0 72% 50% / 0.15) !important;
+}
+.dark .text-red-700, .dark .text-red-800 {
+  color: hsl(0 72% 70%) !important;
+}
+.dark .border-red-200, .dark .border-red-300 {
+  border-color: hsl(0 72% 50% / 0.25) !important;
+}
+
+/* Amber/orange badges — warning, in afwachting */
+.dark .bg-amber-50, .dark .bg-amber-100, .dark .bg-orange-50, .dark .bg-orange-100 {
+  background: hsl(38 92% 50% / 0.15) !important;
+}
+.dark .text-amber-700, .dark .text-amber-800, .dark .text-orange-700, .dark .text-orange-800 {
+  color: hsl(38 80% 65%) !important;
+}
+.dark .border-amber-200, .dark .border-amber-300, .dark .border-orange-200, .dark .border-orange-300 {
+  border-color: hsl(38 92% 50% / 0.25) !important;
+}
+
+/* Purple badges — gecrediteerd, speciaal */
+.dark .bg-purple-50, .dark .bg-purple-100 {
+  background: hsl(271 76% 53% / 0.15) !important;
+}
+.dark .text-purple-700, .dark .text-purple-800 {
+  color: hsl(271 70% 72%) !important;
+}
+.dark .border-purple-200, .dark .border-purple-300 {
+  border-color: hsl(271 76% 53% / 0.25) !important;
+}
+
+/* Sky/cyan badges — info variant */
+.dark .bg-sky-50, .dark .bg-sky-100, .dark .bg-cyan-50, .dark .bg-cyan-100 {
+  background: hsl(199 89% 48% / 0.15) !important;
+}
+.dark .text-sky-700, .dark .text-sky-800 {
+  color: hsl(199 80% 68%) !important;
+}
+.dark .border-sky-200, .dark .border-sky-300 {
+  border-color: hsl(199 89% 48% / 0.25) !important;
+}
+
+/* Indigo badges */
+.dark .bg-indigo-50, .dark .bg-indigo-100 {
+  background: hsl(239 84% 67% / 0.15) !important;
+}
+.dark .text-indigo-700, .dark .text-indigo-800 {
+  color: hsl(239 74% 72%) !important;
+}
+
+/* Yellow badges */
+.dark .bg-yellow-50, .dark .bg-yellow-100 {
+  background: hsl(48 96% 53% / 0.15) !important;
+}
+.dark .text-yellow-700, .dark .text-yellow-800 {
+  color: hsl(48 90% 65%) !important;
+}
+
+/* Teal badges */
+.dark .bg-teal-50, .dark .bg-teal-100 {
+  background: hsl(172 66% 50% / 0.15) !important;
+}
+.dark .text-teal-700, .dark .text-teal-800 {
+  color: hsl(172 60% 65%) !important;
+}
+
+/* Gray backgrounds in dark mode */
+.dark .bg-gray-50, .dark .bg-gray-100 {
+  background: hsl(var(--muted)) !important;
+}
+.dark .bg-slate-50, .dark .bg-slate-100 {
+  background: hsl(var(--muted)) !important;
+}
+.dark .text-gray-600, .dark .text-slate-600 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+/* bg-white overrides in dark mode */
+.dark .bg-white {
+  background: hsl(var(--card)) !important;
 }
 
 /* ================================================================
