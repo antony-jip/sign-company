@@ -60,6 +60,7 @@ import { LeadFormulierEditor } from '@/components/leads/LeadFormulierEditor'
 import { LeadFormulierPubliek } from '@/components/leads/LeadFormulierPubliek'
 import { LeadInzendingenLayout } from '@/components/leads/LeadInzendingenLayout'
 import { ForecastLayout } from '@/components/forecast/ForecastLayout'
+import { ForgieChatPage } from '@/components/forgie/ForgieChatPage'
 import { useDataInit } from '@/hooks/useDataInit'
 
 function AppContent() {
@@ -129,6 +130,7 @@ function AppContent() {
         <Route path="nieuwsbrieven" element={<NewsletterBuilder />} />
         <Route path="importeren" element={<DataImportLayout />} />
         <Route path="ai" element={<FORGEdeskAIChat />} />
+        <Route path="forgie" element={<ForgieChatPage />} />
         <Route path="werkbonnen" element={<WerkbonnenLayout />} />
         <Route path="werkbonnen/:id" element={<WerkbonDetail />} />
         <Route path="bestelbonnen" element={<BestelbonnenLayout />} />

@@ -542,6 +542,8 @@ export interface AppSettings {
   offerte_outro_tekst: string;
   // Email
   afzender_naam: string;
+  // Forgie
+  forgie_bedrijfscontext: string;
   created_at: string;
   updated_at: string;
 }
