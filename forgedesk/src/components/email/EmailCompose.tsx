@@ -225,7 +225,7 @@ export function EmailCompose({
   defaultBody = '',
   onSend,
 }: EmailComposeProps) {
-  const { emailHandtekening, bedrijfsnaam } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, bedrijfsnaam } = useAppSettings()
 
   const [to, setTo] = useState(defaultTo)
   const [cc, setCc] = useState('')
@@ -283,6 +283,10 @@ export function EmailCompose({
   const scheduleDropdownRef = useRef<HTMLDivElement>(null)
 
   // Set initial editor content when panel opens
+  const sigImageHtml = handtekeningAfbeelding
+    ? `<br><img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:64px;max-width:160px;object-fit:contain;" />`
+    : ''
+
   useEffect(() => {
     if (open && editorRef.current) {
       const timer = setTimeout(() => {
@@ -290,19 +294,19 @@ export function EmailCompose({
         if (defaultBody) {
           editorRef.current.innerHTML = defaultBody.replace(/\n/g, '<br>')
         } else {
-          // Use selected signature
+          // Use selected signature with optional image
           const sig = allSignatures.find(s => s.id === selectedSignature)
           if (sig) {
-            editorRef.current.innerHTML = `<br><br>--<br>${sig.inhoud.replace(/\n/g, '<br>')}`
+            editorRef.current.innerHTML = `<br><br>--<br>${sigImageHtml}${sig.inhoud.replace(/\n/g, '<br>')}`
           } else if (emailHandtekening) {
-            editorRef.current.innerHTML = `<br><br>--<br>${emailHandtekening.replace(/\n/g, '<br>')}`
+            editorRef.current.innerHTML = `<br><br>--<br>${sigImageHtml}${emailHandtekening.replace(/\n/g, '<br>')}`
           }
         }
         setEditorEmpty(!editorRef.current.innerText?.trim())
       }, 50)
       return () => clearTimeout(timer)
     }
-  }, [open, defaultBody, emailHandtekening, selectedSignature, allSignatures])
+  }, [open, defaultBody, emailHandtekening, selectedSignature, allSignatures, sigImageHtml])
 
   // Sync state when defaults change (reply/forward)
   useEffect(() => {

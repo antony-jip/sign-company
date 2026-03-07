@@ -50,17 +50,21 @@ import {
   ArrowRight,
   Monitor,
   PanelLeft,
+  ImageIcon,
+  X,
+  UserCircle,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { usePalette, APP_THEMES, ACCENT_PALETTES } from '@/contexts/PaletteContext'
 import { useSidebar } from '@/contexts/SidebarContext'
-import { getProfile, updateProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
+import { getProfile, updateProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
 import { useNavigate } from 'react-router-dom'
-import type { AppSettings } from '@/types'
+import type { AppSettings, Medewerker } from '@/types'
+import { uploadFile, downloadFile } from '@/services/storageService'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
@@ -152,7 +156,6 @@ const settingsTabs = [
   { id: 'huisstijl', label: 'Huisstijl', icon: Palette, description: 'Document styling en briefpapier' },
   { id: 'calculatie', label: 'Calculatie', icon: Calculator, description: 'Producten, marges en eenheden' },
   { id: 'email', label: 'Email', icon: Mail, description: 'Handtekening, afzender en SMTP' },
-  { id: 'meldingen', label: 'Meldingen', icon: Bell, description: 'E-mail en pushnotificaties' },
   { id: 'integraties', label: 'Integraties', icon: Puzzle, description: 'Koppelingen met externe diensten' },
   { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
   { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
@@ -166,7 +169,6 @@ function renderTabContent(tabId: string) {
     case 'huisstijl': return <HuisstijlTab />
     case 'calculatie': return <CalculatieTab />
     case 'email': return <EmailTab />
-    case 'meldingen': return <MeldingenTab />
     case 'integraties': return <IntegratiesTab />
     case 'beveiliging': return <BeveiligingTab />
     case 'weergave': return <WeergaveTab />
@@ -940,18 +942,135 @@ function DocumentenTab() {
 
 const EMAIL_TABS: SubTab[] = [
   { id: 'handtekening', label: 'Handtekening', icon: FileText },
+  { id: 'teamleden', label: 'Team Handtekeningen', icon: Users },
   { id: 'verbinding', label: 'Verbinding', icon: Server },
 ]
 
+function SignatureImageUpload({
+  imageUrl,
+  onImageChange,
+  label = 'Afbeelding in handtekening',
+}: {
+  imageUrl: string
+  onImageChange: (url: string) => void
+  label?: string
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = useState(false)
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecteer een afbeelding (PNG, JPG, SVG)')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Afbeelding mag maximaal 2MB zijn')
+      return
+    }
+    try {
+      setIsUploading(true)
+      const path = `handtekeningen/${Date.now()}_${file.name}`
+      await uploadFile(file, path)
+      const url = await downloadFile(path)
+      onImageChange(url)
+      toast.success('Afbeelding geüpload')
+    } catch (err) {
+      logger.error('Fout bij uploaden afbeelding:', err)
+      toast.error('Kon afbeelding niet uploaden')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
+        Voeg een bedrijfslogo of profielfoto toe aan de handtekening (max 2MB)
+      </p>
+      {imageUrl ? (
+        <div className="flex items-start gap-3">
+          <div className="relative border rounded-lg p-2 bg-white dark:bg-muted">
+            <img src={imageUrl} alt="Handtekening afbeelding" className="max-h-20 max-w-[200px] object-contain" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+              <Upload className="w-3.5 h-3.5 mr-1.5" />
+              Vervangen
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onImageChange('')} className="text-destructive hover:text-destructive">
+              <X className="w-3.5 h-3.5 mr-1.5" />
+              Verwijderen
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="flex items-center gap-3 w-full p-4 border-2 border-dashed rounded-lg hover:border-primary/50 hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          <div className="p-2 bg-muted rounded-lg">
+            <ImageIcon className="w-5 h-5 text-muted-foreground" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-medium">{isUploading ? 'Uploaden...' : 'Afbeelding toevoegen'}</p>
+            <p className="text-xs text-muted-foreground">PNG, JPG of SVG — bijv. bedrijfslogo of foto</p>
+          </div>
+        </button>
+      )}
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+    </div>
+  )
+}
+
+function SignaturePreview({
+  naam,
+  handtekening,
+  afbeelding,
+}: {
+  naam: string
+  handtekening: string
+  afbeelding: string
+}) {
+  if (!handtekening && !afbeelding) return null
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs uppercase tracking-wider text-muted-foreground">Voorbeeld</Label>
+      <div className="border rounded-lg p-4 bg-white dark:bg-muted/30 space-y-3">
+        <div className="border-t border-muted pt-3">
+          {afbeelding && (
+            <img src={afbeelding} alt="Logo" className="max-h-16 max-w-[160px] object-contain mb-2" />
+          )}
+          <div className="text-sm whitespace-pre-line text-foreground/80">
+            {handtekening || `Met vriendelijke groet,\n\n${naam}`}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function EmailTab() {
   const { user } = useAuth()
-  const { refreshSettings } = useAppSettings()
+  const { refreshSettings, profile } = useAppSettings()
   const [subTab, setSubTab] = useState('handtekening')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
   const [emailHandtekening, setEmailHandtekening] = useState('')
   const [afzenderNaam, setAfzenderNaam] = useState('')
+  const [handtekeningAfbeelding, setHandtekeningAfbeelding] = useState('')
+
+  // Team signatures (admin only)
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+  const [teamLoading, setTeamLoading] = useState(false)
+  const [savingMwId, setSavingMwId] = useState<string | null>(null)
+  const [teamEdits, setTeamEdits] = useState<Record<string, { handtekening: string; afbeelding: string }>>({})
+  const isAdmin = profile?.app_rol === 'admin' || true // fallback: toon altijd voor nu
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
@@ -960,6 +1079,7 @@ function EmailTab() {
       const data = await getAppSettings(user.id)
       setEmailHandtekening(data.email_handtekening || '')
       setAfzenderNaam(data.afzender_naam || '')
+      setHandtekeningAfbeelding(data.handtekening_afbeelding || '')
     } catch (err) {
       logger.error('Fout bij laden e-mailinstellingen:', err)
     } finally {
@@ -967,9 +1087,26 @@ function EmailTab() {
     }
   }, [user])
 
-  useEffect(() => {
-    loadSettings()
-  }, [loadSettings])
+  const loadTeam = useCallback(async () => {
+    try {
+      setTeamLoading(true)
+      const data = await getMedewerkers()
+      setMedewerkers(data.filter(m => m.status === 'actief'))
+      // Init edits
+      const edits: Record<string, { handtekening: string; afbeelding: string }> = {}
+      data.forEach(m => {
+        edits[m.id] = { handtekening: m.email_handtekening || '', afbeelding: m.handtekening_afbeelding || '' }
+      })
+      setTeamEdits(edits)
+    } catch (err) {
+      logger.error('Fout bij laden teamleden:', err)
+    } finally {
+      setTeamLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadSettings() }, [loadSettings])
+  useEffect(() => { if (subTab === 'teamleden') loadTeam() }, [subTab, loadTeam])
 
   const handleSave = async () => {
     if (!user?.id) return
@@ -978,12 +1115,62 @@ function EmailTab() {
       await updateAppSettings(user.id, {
         email_handtekening: emailHandtekening,
         afzender_naam: afzenderNaam,
+        handtekening_afbeelding: handtekeningAfbeelding,
       })
       await refreshSettings()
       toast.success('E-mailinstellingen opgeslagen')
     } catch (err) {
       logger.error('Fout bij opslaan e-mailinstellingen:', err)
       toast.error('Kon e-mailinstellingen niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSaveTeamMember = async (mw: Medewerker) => {
+    const edits = teamEdits[mw.id]
+    if (!edits) return
+    try {
+      setSavingMwId(mw.id)
+      await updateMedewerker(mw.id, {
+        email_handtekening: edits.handtekening,
+        handtekening_afbeelding: edits.afbeelding,
+      })
+      toast.success(`Handtekening van ${mw.naam} opgeslagen`)
+    } catch (err) {
+      logger.error('Fout bij opslaan teamlid handtekening:', err)
+      toast.error(`Kon handtekening van ${mw.naam} niet opslaan`)
+    } finally {
+      setSavingMwId(null)
+    }
+  }
+
+  const handleApplyToAll = async () => {
+    if (!emailHandtekening && !handtekeningAfbeelding) {
+      toast.error('Stel eerst je eigen handtekening in')
+      return
+    }
+    const count = medewerkers.length
+    if (count === 0) {
+      toast.error('Geen actieve teamleden gevonden')
+      return
+    }
+    try {
+      setIsSaving(true)
+      for (const mw of medewerkers) {
+        // Personaliseer: vervang eigen naam door teamlid naam
+        const personalised = emailHandtekening
+          .replace(afzenderNaam || '', mw.naam)
+        await updateMedewerker(mw.id, {
+          email_handtekening: personalised,
+          handtekening_afbeelding: handtekeningAfbeelding,
+        })
+      }
+      await loadTeam()
+      toast.success(`Handtekening toegepast op ${count} teamleden`)
+    } catch (err) {
+      logger.error('Fout bij toepassen op team:', err)
+      toast.error('Kon handtekening niet op alle teamleden toepassen')
     } finally {
       setIsSaving(false)
     }
@@ -1030,7 +1217,7 @@ function EmailTab() {
               </CardTitle>
               <CardDescription>Wordt automatisch toegevoegd aan uitgaande e-mails</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="afzender-naam">Standaard afzendernaam</Label>
                 <Input
@@ -1043,8 +1230,14 @@ function EmailTab() {
                   De naam die ontvangers zien als afzender
                 </p>
               </div>
+
+              <SignatureImageUpload
+                imageUrl={handtekeningAfbeelding}
+                onImageChange={setHandtekeningAfbeelding}
+              />
+
               <div className="space-y-2">
-                <Label htmlFor="email-handtekening">Handtekening</Label>
+                <Label htmlFor="email-handtekening">Handtekening tekst</Label>
                 <Textarea
                   id="email-handtekening"
                   value={emailHandtekening}
@@ -1056,9 +1249,124 @@ function EmailTab() {
                   Naam, functie, telefoonnummer en bedrijfsgegevens
                 </p>
               </div>
+
+              <SignaturePreview
+                naam={afzenderNaam}
+                handtekening={emailHandtekening}
+                afbeelding={handtekeningAfbeelding}
+              />
             </CardContent>
           </Card>
           {saveButton}
+        </div>
+      )}
+
+      {subTab === 'teamleden' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Team Handtekeningen
+              </CardTitle>
+              <CardDescription>
+                Beheer de e-mail handtekeningen van alle teamleden vanuit één plek
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isAdmin && medewerkers.length > 0 && (
+                <div className="flex items-center justify-between p-3 mb-6 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-primary" />
+                    <span className="text-sm">Pas jouw handtekening toe op alle teamleden (met naam gepersonaliseerd)</span>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleApplyToAll} disabled={isSaving}>
+                    {isSaving ? 'Toepassen...' : 'Toepassen op iedereen'}
+                  </Button>
+                </div>
+              )}
+
+              {teamLoading ? (
+                <p className="text-center text-muted-foreground py-8">Teamleden laden...</p>
+              ) : medewerkers.length === 0 ? (
+                <div className="text-center py-8 space-y-2">
+                  <Users className="w-8 h-8 mx-auto text-muted-foreground/40" />
+                  <p className="text-muted-foreground">Geen actieve teamleden gevonden</p>
+                  <p className="text-xs text-muted-foreground/60">Voeg teamleden toe via Teamleden in het menu</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {medewerkers.map((mw) => {
+                    const edits = teamEdits[mw.id] || { handtekening: '', afbeelding: '' }
+                    return (
+                      <Card key={mw.id} className="border-muted">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-4">
+                            {/* Avatar / info */}
+                            <div className="flex-shrink-0">
+                              {mw.avatar_url ? (
+                                <img src={mw.avatar_url} alt={mw.naam} className="w-10 h-10 rounded-full object-cover" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                                  <UserCircle className="w-5 h-5 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-3">
+                              <div>
+                                <p className="font-medium text-sm">{mw.naam}</p>
+                                <p className="text-xs text-muted-foreground">{mw.functie || mw.rol} — {mw.email}</p>
+                              </div>
+
+                              <SignatureImageUpload
+                                imageUrl={edits.afbeelding}
+                                onImageChange={(url) => setTeamEdits(prev => ({
+                                  ...prev,
+                                  [mw.id]: { ...prev[mw.id], afbeelding: url },
+                                }))}
+                                label="Handtekening afbeelding"
+                              />
+
+                              <div className="space-y-1">
+                                <Label className="text-xs">Handtekening tekst</Label>
+                                <Textarea
+                                  value={edits.handtekening}
+                                  onChange={(e) => setTeamEdits(prev => ({
+                                    ...prev,
+                                    [mw.id]: { ...prev[mw.id], handtekening: e.target.value },
+                                  }))}
+                                  placeholder={`Met vriendelijke groet,\n\n${mw.naam}\n${mw.functie || ''}`}
+                                  rows={4}
+                                />
+                              </div>
+
+                              <SignaturePreview
+                                naam={mw.naam}
+                                handtekening={edits.handtekening}
+                                afbeelding={edits.afbeelding}
+                              />
+
+                              <div className="flex justify-end">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveTeamMember(mw)}
+                                  disabled={savingMwId === mw.id}
+                                  className="gap-1.5"
+                                >
+                                  <Save className="w-3.5 h-3.5" />
+                                  {savingMwId === mw.id ? 'Opslaan...' : 'Opslaan'}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -1088,174 +1396,6 @@ function EmailTab() {
           <EmailSettingsInline onSaved={checkEmailStatus} />
         </div>
       )}
-    </>
-  )
-}
-
-// ============ MELDINGEN TAB ============
-
-const MELDINGEN_TABS: SubTab[] = [
-  { id: 'voorkeuren', label: 'Voorkeuren', icon: Bell },
-]
-
-function MeldingenTab() {
-  const { user } = useAuth()
-  const { refreshSettings } = useAppSettings()
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-
-  const [subTab, setSubTab] = useState('voorkeuren')
-  const [meldingFollowUp, setMeldingFollowUp] = useState(true)
-  const [meldingVerlopen, setMeldingVerlopen] = useState(true)
-  const [meldingNieuweOfferte, setMeldingNieuweOfferte] = useState(true)
-  const [meldingStatusWijziging, setMeldingStatusWijziging] = useState(true)
-
-  const loadSettings = useCallback(async () => {
-    if (!user?.id) return
-    try {
-      setIsLoading(true)
-      const data = await getAppSettings(user.id)
-      setMeldingFollowUp(data.melding_follow_up)
-      setMeldingVerlopen(data.melding_verlopen)
-      setMeldingNieuweOfferte(data.melding_nieuwe_offerte)
-      setMeldingStatusWijziging(data.melding_status_wijziging)
-    } catch (err) {
-      logger.error('Fout bij laden meldingen:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [user])
-
-  useEffect(() => {
-    loadSettings()
-  }, [loadSettings])
-
-  const handleSave = async () => {
-    if (!user?.id) return
-    try {
-      setIsSaving(true)
-      await updateAppSettings(user.id, {
-        melding_follow_up: meldingFollowUp,
-        melding_verlopen: meldingVerlopen,
-        melding_nieuwe_offerte: meldingNieuweOfferte,
-        melding_status_wijziging: meldingStatusWijziging,
-      })
-      await refreshSettings()
-      toast.success('Meldingsinstellingen opgeslagen')
-    } catch (err) {
-      logger.error('Fout bij opslaan meldingen:', err)
-      toast.error('Kon meldingsinstellingen niet opslaan')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-12 text-center text-muted-foreground dark:text-muted-foreground/60">
-          Meldingsinstellingen laden...
-        </CardContent>
-      </Card>
-    )
-  }
-
-  return (
-    <>
-      <SubTabNav tabs={MELDINGEN_TABS} active={subTab} onChange={setSubTab} />
-      <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="w-5 h-5" />
-            Melding Voorkeuren
-          </CardTitle>
-          <CardDescription>
-            Configureer welke meldingen u wilt ontvangen
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Follow-up herinneringen */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Bell className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground dark:text-white">
-                  Follow-up Herinneringen
-                </p>
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                  Ontvang meldingen wanneer een follow-up is gepland of achterstallig
-                </p>
-              </div>
-            </div>
-            <Switch checked={meldingFollowUp} onCheckedChange={setMeldingFollowUp} />
-          </div>
-
-          {/* Verlopen offertes */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground dark:text-white">
-                  Verlopen Offertes
-                </p>
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                  Waarschuwing wanneer offertes hun geldigheidsdatum naderen of overschrijden
-                </p>
-              </div>
-            </div>
-            <Switch checked={meldingVerlopen} onCheckedChange={setMeldingVerlopen} />
-          </div>
-
-          {/* Nieuwe offerte bevestiging */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground dark:text-white">
-                  Nieuwe Offerte Bevestiging
-                </p>
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                  Bevestiging wanneer een nieuwe offerte is aangemaakt
-                </p>
-              </div>
-            </div>
-            <Switch checked={meldingNieuweOfferte} onCheckedChange={setMeldingNieuweOfferte} />
-          </div>
-
-          {/* Status wijzigingen */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-wm-pale/20 dark:bg-accent/20 border border-primary/30 dark:border-primary/20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-wm-pale/30 dark:bg-accent/30 flex items-center justify-center">
-                <Settings className="w-5 h-5 text-accent dark:text-wm-light" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground dark:text-white">
-                  Status Wijzigingen
-                </p>
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                  Melding wanneer een offerte van status verandert (bijv. bekeken, goedgekeurd)
-                </p>
-              </div>
-            </div>
-            <Switch checked={meldingStatusWijziging} onCheckedChange={setMeldingStatusWijziging} />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-          <Save className="w-4 h-4" />
-          {isSaving ? 'Opslaan...' : 'Meldingen Opslaan'}
-        </Button>
-      </div>
-      </div>
     </>
   )
 }

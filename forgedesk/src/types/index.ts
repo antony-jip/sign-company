@@ -496,6 +496,7 @@ export interface AppSettings {
   melding_status_wijziging: boolean;
   // Email handtekening
   email_handtekening: string;
+  handtekening_afbeelding: string;  // URL van logo/foto in handtekening
   // Branding
   primaire_kleur: string;
   secundaire_kleur: string;
@@ -835,6 +836,9 @@ export interface Medewerker {
   vaardigheden: string[];
   start_datum: string;
   notities: string;
+  // Email handtekening per medewerker
+  email_handtekening?: string;
+  handtekening_afbeelding?: string;
   created_at: string;
   updated_at: string;
 }

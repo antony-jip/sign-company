@@ -23,6 +23,7 @@ interface AppSettingsContextType {
   followUpDagen: number
   pipelineStappen: PipelineStap[]
   emailHandtekening: string
+  handtekeningAfbeelding: string
   primaireKleur: string
   secundaireKleur: string
   toonConversieRate: boolean
@@ -134,6 +135,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     followUpDagen: settings.follow_up_dagen ?? 7,
     pipelineStappen: settings.pipeline_stappen || [],
     emailHandtekening: settings.email_handtekening || '',
+    handtekeningAfbeelding: settings.handtekening_afbeelding || '',
     primaireKleur: settings.primaire_kleur || '#2563eb',
     secundaireKleur: settings.secundaire_kleur || '#7c3aed',
     toonConversieRate: settings.toon_conversie_rate ?? true,
