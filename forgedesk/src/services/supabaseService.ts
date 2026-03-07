@@ -1694,6 +1694,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     afzender_naam: '',
     forgie_enabled: true,
     forgie_bedrijfscontext: '',
+    ai_tone_of_voice: '',
     created_at: now(),
     updated_at: now(),
   }

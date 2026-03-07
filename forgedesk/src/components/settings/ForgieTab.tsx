@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Upload, Trash2, Save, FileText, Loader2, CheckCircle2, Bot } from 'lucide-react'
+import { Upload, Trash2, Save, FileText, Loader2, CheckCircle2, Bot, Pen } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
@@ -43,7 +43,9 @@ export function ForgieTab() {
   const { user } = useAuth()
   const { settings, updateSettings } = useAppSettings()
   const [bedrijfscontext, setBedrijfscontext] = useState(settings.forgie_bedrijfscontext || '')
+  const [toneOfVoice, setToneOfVoice] = useState(settings.ai_tone_of_voice || '')
   const [saving, setSaving] = useState(false)
+  const [savingTone, setSavingTone] = useState(false)
   const [imports, setImports] = useState<ForgieImport[]>([])
   const [loadingImports, setLoadingImports] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -53,6 +55,10 @@ export function ForgieTab() {
   useEffect(() => {
     setBedrijfscontext(settings.forgie_bedrijfscontext || '')
   }, [settings.forgie_bedrijfscontext])
+
+  useEffect(() => {
+    setToneOfVoice(settings.ai_tone_of_voice || '')
+  }, [settings.ai_tone_of_voice])
 
   useEffect(() => {
     loadImports()
@@ -81,6 +87,18 @@ export function ForgieTab() {
       setSaving(false)
     }
   }, [bedrijfscontext, updateSettings, settings])
+
+  const handleSaveTone = useCallback(async () => {
+    setSavingTone(true)
+    try {
+      await updateSettings({ ai_tone_of_voice: toneOfVoice })
+      toast.success('Schrijfstijl opgeslagen')
+    } catch {
+      toast.error('Opslaan mislukt')
+    } finally {
+      setSavingTone(false)
+    }
+  }, [toneOfVoice, updateSettings])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -192,6 +210,43 @@ export function ForgieTab() {
               className="gap-1.5"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Opslaan
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tone of Voice */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Pen className="w-4 h-4 text-muted-foreground" />
+            Schrijfstijl / Tone of Voice
+          </CardTitle>
+          <CardDescription>
+            Beschrijf je schrijfstijl. De AI past dit toe bij het herschrijven van teksten. Je kunt ook een voorbeeld-tekst plakken zodat de AI je stijl leert.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Textarea
+            value={toneOfVoice}
+            onChange={e => setToneOfVoice(e.target.value.slice(0, 1000))}
+            placeholder="Bijv: Ik schrijf zakelijk maar toegankelijk. Ik gebruik 'u' voor klanten. Korte zinnen, geen jargon. Altijd positief en oplossingsgericht. Of plak hier een voorbeeld-email die je stijl goed weergeeft."
+            rows={5}
+            className="resize-none"
+            enableAI={false}
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {toneOfVoice.length}/1000 tekens
+            </span>
+            <Button
+              size="sm"
+              onClick={handleSaveTone}
+              disabled={savingTone}
+              className="gap-1.5"
+            >
+              {savingTone ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Opslaan
             </Button>
           </div>
