@@ -8,10 +8,10 @@ import { formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  concept: { label: 'Concept', color: 'text-muted-foreground' },
-  verzonden: { label: 'Verstuurd', color: 'text-[#B8883A]' },
-  bekeken: { label: 'Bekeken', color: 'text-[#4A7AB5]' },
-  goedgekeurd: { label: 'Goedgekeurd', color: 'text-[#4A9960]' },
+  concept: { label: 'Concept', color: 'text-[var(--color-cream-text)]' },
+  verzonden: { label: 'Verstuurd', color: 'text-[var(--color-mist-text)]' },
+  bekeken: { label: 'Bekeken', color: 'text-[var(--color-cream-text)]' },
+  goedgekeurd: { label: 'Goedgekeurd', color: 'text-[var(--color-sage-text)]' },
 }
 
 export function OpenstaandeOffertesWidget() {
@@ -59,10 +59,10 @@ export function OpenstaandeOffertesWidget() {
             {offertes.map((offerte, idx) => {
               const statusInfo = STATUS_LABELS[offerte.status] || { label: offerte.status, color: 'text-muted-foreground' }
               const barColors: Record<string, string> = {
-                concept: 'bg-cream',
-                verzonden: 'bg-[#F8F0E0]',
-                bekeken: 'bg-mist',
-                goedgekeurd: 'bg-sage',
+                concept: 'bg-[var(--color-cream)]',
+                verzonden: 'bg-[var(--color-mist)]',
+                bekeken: 'bg-[var(--color-cream)]',
+                goedgekeurd: 'bg-[var(--color-sage)]',
               }
               return (
                 <div

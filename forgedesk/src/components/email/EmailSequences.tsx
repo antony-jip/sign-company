@@ -41,9 +41,9 @@ function generateId(): string {
 
 function getStatusColor(status: EmailSequence['status']) {
   switch (status) {
-    case 'actief': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
-    case 'gepauzeerd': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
-    case 'concept': return 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
+    case 'actief': return 'badge-sage'
+    case 'gepauzeerd': return 'badge-blush'
+    case 'concept': return 'badge-cream'
   }
 }
 

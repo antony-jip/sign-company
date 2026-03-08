@@ -39,55 +39,14 @@ export function truncate(str: string, length: number): string {
   return str.length > length ? str.slice(0, length - 3) + '...' : str
 }
 
-export function getStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    // Green — goedgekeurd/betaald/afgerond
-    actief: 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]',
-    betaald: 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]',
-    goedgekeurd: 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]',
-    afgerond: 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]',
-    klaar: 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]',
-    definitief: 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]',
-    gecrediteerd: 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]',
-
-    // Gray — concept/inactief
-    concept: 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]',
-    inactief: 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]',
-    todo: 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]',
-    gearchiveerd: 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]',
-
-    // Blue — open/actief
-    open: 'bg-[#E8EFF8] text-[#4A7AB5] dark:bg-[#161E28] dark:text-[#6A9AD5]',
-    bezig: 'bg-[#E8EFF8] text-[#4A7AB5] dark:bg-[#161E28] dark:text-[#6A9AD5]',
-    gepland: 'bg-[#E8EFF8] text-[#4A7AB5] dark:bg-[#161E28] dark:text-[#6A9AD5]',
-    ingediend: 'bg-[#E8EFF8] text-[#4A7AB5] dark:bg-[#161E28] dark:text-[#6A9AD5]',
-
-    // Amber — verstuurd/bekeken
-    verzonden: 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-    verstuurd: 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-    bekeken: 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-    'in-review': 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-    review: 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-    prospect: 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-    'te-factureren': 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-    gefactureerd: 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-
-    // Red — verlopen/afgewezen
-    afgewezen: 'bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70]',
-    geweigerd: 'bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70]',
-    'on-hold': 'bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70]',
-    vervallen: 'bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70]',
-    verlopen: 'bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70]',
-  }
-  return colors[status] || 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]'
-}
+export { getStatusBadgeClass as getStatusColor, getStatusLabel, getRowAccentClass } from '@/utils/statusColors'
 
 export function getPriorityColor(priority: string): string {
   const colors: Record<string, string> = {
-    laag: 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]',
-    medium: 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-    hoog: 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]',
-    kritiek: 'bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70]',
+    laag: 'badge-sage',
+    medium: 'badge-cream',
+    hoog: 'badge-blush',
+    kritiek: 'badge-coral',
   }
-  return colors[priority] || 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]'
+  return colors[priority] || 'badge-cream'
 }

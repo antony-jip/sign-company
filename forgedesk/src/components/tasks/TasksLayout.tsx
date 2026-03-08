@@ -57,21 +57,21 @@ type TaakPrioriteit = Taak['prioriteit']
 const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 2, laag: 1 }
 
 const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; accent: string }> = {
-  kritiek: { border: 'border-l-red-500', bg: 'bg-red-50/80 dark:bg-red-950/20', accent: 'text-red-600' },
-  hoog: { border: 'border-l-orange-500', bg: 'bg-orange-50/80 dark:bg-orange-950/20', accent: 'text-orange-600' },
-  medium: { border: 'border-l-sky-500', bg: 'bg-sky-50/80 dark:bg-sky-950/20', accent: 'text-sky-600' },
-  laag: { border: 'border-l-slate-300', bg: 'bg-slate-50/80 dark:bg-slate-800/20', accent: 'text-slate-500' },
+  kritiek: { border: 'border-l-[var(--color-coral-border)]', bg: 'bg-[var(--color-coral)]/60', accent: 'text-[var(--color-coral-text)]' },
+  hoog: { border: 'border-l-[var(--color-blush-border)]', bg: 'bg-[var(--color-blush)]/60', accent: 'text-[var(--color-blush-text)]' },
+  medium: { border: 'border-l-[var(--color-mist-border)]', bg: 'bg-[var(--color-mist)]/60', accent: 'text-[var(--color-mist-text)]' },
+  laag: { border: 'border-l-[var(--color-cream-border)]', bg: 'bg-[var(--color-cream)]/60', accent: 'text-[var(--color-cream-text)]' },
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'text-red-500', hoog: 'text-orange-500', medium: 'text-yellow-500', laag: 'text-muted-foreground/30',
+  kritiek: 'text-[var(--color-coral-text)]', hoog: 'text-[var(--color-blush-text)]', medium: 'text-[var(--color-cream-text)]', laag: 'text-muted-foreground/30',
 }
 
 const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'border-red-400 hover:border-red-500',
-  hoog: 'border-orange-400 hover:border-orange-500',
-  medium: 'border-slate-300 hover:border-sky-400 dark:border-slate-600',
-  laag: 'border-slate-200 hover:border-slate-400 dark:border-slate-700',
+  kritiek: 'border-[var(--color-coral-border)] hover:border-[var(--color-coral-text)]',
+  hoog: 'border-[var(--color-blush-border)] hover:border-[var(--color-blush-text)]',
+  medium: 'border-[var(--color-mist-border)] hover:border-[var(--color-mist-text)]',
+  laag: 'border-[var(--color-cream-border)] hover:border-[var(--color-cream-text)]',
 }
 
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']

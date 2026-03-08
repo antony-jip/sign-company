@@ -23,9 +23,9 @@ import {
 type FilterStatus = 'alle' | Leveringsbon['status']
 
 const STATUS_CONFIG: Record<Leveringsbon['status'], { label: string; color: string; dot: string }> = {
-  concept: { label: 'Concept', color: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400', dot: 'bg-stone-400' },
-  geleverd: { label: 'Geleverd', color: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400', dot: 'bg-sky-500' },
-  getekend: { label: 'Getekend', color: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light', dot: 'bg-primary' },
+  concept: { label: 'Concept', color: 'badge-cream', dot: 'bg-[var(--color-cream-text)]' },
+  geleverd: { label: 'Geleverd', color: 'badge-mist', dot: 'bg-[var(--color-mist-text)]' },
+  getekend: { label: 'Getekend', color: 'badge-sage', dot: 'bg-[var(--color-sage-text)]' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [

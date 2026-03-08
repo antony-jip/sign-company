@@ -28,15 +28,15 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 // ============ CONSTANTS ============
 
 const KLEUR_TO_STYLE: Record<string, { color: string; accent: string; headerBg: string }> = {
-  gray: { color: 'from-slate-500/10 to-slate-500/5', accent: 'bg-slate-400', headerBg: 'bg-slate-50/80 dark:bg-slate-800/50' },
-  blue: { color: 'from-blue-500/10 to-blue-500/5', accent: 'bg-blue-400', headerBg: 'bg-blue-50/80 dark:bg-blue-900/30' },
-  purple: { color: 'from-purple-500/10 to-purple-500/5', accent: 'bg-purple-400', headerBg: 'bg-purple-50/80 dark:bg-purple-900/30' },
-  green: { color: 'from-emerald-500/10 to-emerald-500/5', accent: 'bg-emerald-400', headerBg: 'bg-emerald-50/80 dark:bg-emerald-900/30' },
-  orange: { color: 'from-orange-500/10 to-orange-500/5', accent: 'bg-orange-400', headerBg: 'bg-orange-50/80 dark:bg-orange-900/30' },
-  red: { color: 'from-red-500/10 to-red-500/5', accent: 'bg-red-400', headerBg: 'bg-red-50/80 dark:bg-red-900/30' },
-  yellow: { color: 'from-yellow-500/10 to-yellow-500/5', accent: 'bg-yellow-400', headerBg: 'bg-yellow-50/80 dark:bg-yellow-900/30' },
-  teal: { color: 'from-teal-500/10 to-teal-500/5', accent: 'bg-teal-400', headerBg: 'bg-teal-50/80 dark:bg-teal-900/30' },
-  indigo: { color: 'from-indigo-500/10 to-indigo-500/5', accent: 'bg-indigo-400', headerBg: 'bg-indigo-50/80 dark:bg-indigo-900/30' },
+  gray: { color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
+  blue: { color: 'from-[var(--color-mist)]/30 to-[var(--color-mist)]/10', accent: 'bg-[var(--color-mist-text)]', headerBg: 'bg-[var(--color-mist)]/60' },
+  purple: { color: 'from-[var(--color-lavender)]/30 to-[var(--color-lavender)]/10', accent: 'bg-[var(--color-lavender-text)]', headerBg: 'bg-[var(--color-lavender)]/60' },
+  green: { color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
+  orange: { color: 'from-[var(--color-blush)]/30 to-[var(--color-blush)]/10', accent: 'bg-[var(--color-blush-text)]', headerBg: 'bg-[var(--color-blush)]/60' },
+  red: { color: 'from-[var(--color-coral)]/30 to-[var(--color-coral)]/10', accent: 'bg-[var(--color-coral-text)]', headerBg: 'bg-[var(--color-coral)]/60' },
+  yellow: { color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
+  teal: { color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
+  indigo: { color: 'from-[var(--color-mist)]/30 to-[var(--color-mist)]/10', accent: 'bg-[var(--color-mist-text)]', headerBg: 'bg-[var(--color-mist)]/60' },
 }
 
 const BRON_LABELS: Record<string, string> = {

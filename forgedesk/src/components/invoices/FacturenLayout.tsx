@@ -116,41 +116,41 @@ interface FactuurFormData {
 const STATUS_CONFIG: Record<FactuurStatus, { label: string; color: string; border: string; dot: string }> = {
   concept: {
     label: 'Concept',
-    color: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400',
-    border: 'border-l-stone-400',
-    dot: 'bg-stone-400',
+    color: 'badge-cream',
+    border: 'border-l-[var(--color-cream-border)]',
+    dot: 'bg-[var(--color-cream-text)]',
   },
   verzonden: {
     label: 'Verzonden',
-    color: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
-    border: 'border-l-sky-500',
-    dot: 'bg-sky-500',
+    color: 'badge-mist',
+    border: 'border-l-[var(--color-mist-border)]',
+    dot: 'bg-[var(--color-mist-text)]',
   },
   betaald: {
     label: 'Betaald',
-    color: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light',
-    border: 'border-l-primary',
-    dot: 'bg-primary',
+    color: 'badge-sage',
+    border: 'border-l-[var(--color-sage-border)]',
+    dot: 'bg-[var(--color-sage-text)]',
   },
   vervallen: {
     label: 'Vervallen',
-    color: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400',
-    border: 'border-l-red-500',
-    dot: 'bg-red-500',
+    color: 'badge-coral',
+    border: 'border-l-[var(--color-coral-border)]',
+    dot: 'bg-[var(--color-coral-text)]',
   },
   gecrediteerd: {
     label: 'Gecrediteerd',
-    color: 'bg-wm-pale/20 text-accent dark:bg-accent/15 dark:text-wm-pale',
-    border: 'border-l-accent',
-    dot: 'bg-accent',
+    color: 'badge-lavender',
+    border: 'border-l-[var(--color-lavender-border)]',
+    dot: 'bg-[var(--color-lavender-text)]',
   },
 }
 
 const TYPE_CONFIG: Record<FactuurType, { label: string; prefix: string; color: string }> = {
   standaard: { label: 'Factuur', prefix: 'FAC', color: '' },
-  voorschot: { label: 'Voorschot', prefix: 'VS', color: 'bg-violet-50/80 text-violet-700 dark:bg-violet-900/25 dark:text-violet-400' },
-  creditnota: { label: 'Creditnota', prefix: 'CN', color: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400' },
-  eindafrekening: { label: 'Eindafrekening', prefix: 'EA', color: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light' },
+  voorschot: { label: 'Voorschot', prefix: 'VS', color: 'badge-lavender' },
+  creditnota: { label: 'Creditnota', prefix: 'CN', color: 'badge-coral' },
+  eindafrekening: { label: 'Eindafrekening', prefix: 'EA', color: 'badge-sage' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [

@@ -68,36 +68,36 @@ const statusLabels: Record<string, string> = {
 
 function getStatusDotColor(status: string): string {
   switch (status) {
-    case 'actief': return 'bg-primary'
-    case 'gepland': return 'bg-sky-500'
-    case 'in-review': return 'bg-amber-500'
-    case 'afgerond': return 'bg-accent'
-    case 'on-hold': return 'bg-orange-500'
-    case 'te-factureren': return 'bg-violet-500'
-    default: return 'bg-stone-400'
+    case 'actief': return 'bg-[var(--color-sage-text)]'
+    case 'gepland': return 'bg-[var(--color-mist-text)]'
+    case 'in-review': return 'bg-[var(--color-cream-text)]'
+    case 'afgerond': return 'bg-[var(--color-sage-text)]'
+    case 'on-hold': return 'bg-[var(--color-blush-text)]'
+    case 'te-factureren': return 'bg-[var(--color-lavender-text)]'
+    default: return 'bg-[var(--color-cream-text)]'
   }
 }
 
 function getStatusBorderColor(status: string): string {
   switch (status) {
-    case 'actief': return 'border-l-primary'
-    case 'gepland': return 'border-l-sky-500'
-    case 'in-review': return 'border-l-amber-500'
-    case 'afgerond': return 'border-l-accent'
-    case 'on-hold': return 'border-l-orange-500'
-    case 'te-factureren': return 'border-l-violet-500'
-    default: return 'border-l-stone-400'
+    case 'actief': return 'border-l-[var(--color-sage-border)]'
+    case 'gepland': return 'border-l-[var(--color-mist-border)]'
+    case 'in-review': return 'border-l-[var(--color-cream-border)]'
+    case 'afgerond': return 'border-l-[var(--color-sage-border)]'
+    case 'on-hold': return 'border-l-[var(--color-blush-border)]'
+    case 'te-factureren': return 'border-l-[var(--color-lavender-border)]'
+    default: return 'border-l-[var(--color-cream-border)]'
   }
 }
 
 function getStatusCellBg(status: string): string {
   switch (status) {
-    case 'actief': return 'bg-wm-pale/15 dark:bg-primary/10'
-    case 'gepland': return 'bg-sky-50/50 dark:bg-sky-950/20'
-    case 'in-review': return 'bg-amber-50/50 dark:bg-amber-950/20'
-    case 'afgerond': return 'bg-wm-pale/10 dark:bg-accent/10'
-    case 'on-hold': return 'bg-orange-50/50 dark:bg-orange-950/20'
-    case 'te-factureren': return 'bg-violet-50/50 dark:bg-violet-950/20'
+    case 'actief': return 'bg-[var(--color-sage)]/50'
+    case 'gepland': return 'bg-[var(--color-mist)]/50'
+    case 'in-review': return 'bg-[var(--color-cream)]/50'
+    case 'afgerond': return 'bg-[var(--color-sage)]/50'
+    case 'on-hold': return 'bg-[var(--color-blush)]/50'
+    case 'te-factureren': return 'bg-[var(--color-lavender)]/50'
     default: return 'bg-muted/30 dark:bg-muted/20'
   }
 }

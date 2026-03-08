@@ -389,15 +389,6 @@ table tbody tr:hover td:first-child::before {
   .dark .badge-purple { background: rgba(122, 90, 181, 0.15); color: #A07ACC; }
   .dark .badge-purple::before { background: #A07ACC; }
 
-  /* ================================================================
-     PASTEL STATUS BADGES — Via CSS variables for consistency
-     ================================================================ */
-  .badge-blush   { background: var(--color-blush); color: var(--color-blush-text); border: 1px solid var(--color-blush-border); }
-  .badge-sage    { background: var(--color-sage); color: var(--color-sage-text); border: 1px solid var(--color-sage-border); }
-  .badge-mist    { background: var(--color-mist); color: var(--color-mist-text); border: 1px solid var(--color-mist-border); }
-  .badge-cream   { background: var(--color-cream); color: var(--color-cream-text); border: 1px solid var(--color-cream-border); }
-  .badge-coral   { background: var(--color-coral); color: var(--color-coral-text); border: 1px solid var(--color-coral-border); }
-  .badge-lavender{ background: var(--color-lavender); color: var(--color-lavender-text); border: 1px solid var(--color-lavender-border); }
 }
 
 /* Input pastel focus style */
@@ -1618,3 +1609,14 @@ html {
 .signature-animate .signature-path {
   animation: draw-signature 1.5s ease forwards;
 }
+
+/* ================================================================
+   PASTEL STATUS BADGES — Outside @layer for highest CSS precedence
+   These override Tailwind utilities to ensure consistent status colors
+   ================================================================ */
+.badge-blush   { background: var(--color-blush) !important; color: var(--color-blush-text) !important; border: 1px solid var(--color-blush-border) !important; }
+.badge-sage    { background: var(--color-sage) !important; color: var(--color-sage-text) !important; border: 1px solid var(--color-sage-border) !important; }
+.badge-mist    { background: var(--color-mist) !important; color: var(--color-mist-text) !important; border: 1px solid var(--color-mist-border) !important; }
+.badge-cream   { background: var(--color-cream) !important; color: var(--color-cream-text) !important; border: 1px solid var(--color-cream-border) !important; }
+.badge-coral   { background: var(--color-coral) !important; color: var(--color-coral-text) !important; border: 1px solid var(--color-coral-border) !important; }
+.badge-lavender{ background: var(--color-lavender) !important; color: var(--color-lavender-text) !important; border: 1px solid var(--color-lavender-border) !important; }

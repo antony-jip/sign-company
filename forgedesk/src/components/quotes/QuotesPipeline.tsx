@@ -68,43 +68,43 @@ type PriorityFilter = 'alle' | 'laag' | 'medium' | 'hoog' | 'urgent'
 type StatusFilter = 'alle' | 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd'
 
 const DEFAULT_STATUS_COLUMNS = [
-  { key: 'concept', label: 'Concept', color: 'from-slate-500/10 to-slate-500/5', accent: 'bg-slate-400 dark:bg-slate-500', headerBg: 'bg-slate-50/80 dark:bg-slate-800/50' },
-  { key: 'verzonden', label: 'Verstuurd', color: 'from-blue-500/10 to-blue-500/5', accent: 'bg-blue-400 dark:bg-blue-500', headerBg: 'bg-blue-50/80 dark:bg-blue-900/30' },
-  { key: 'bekeken', label: 'Bekeken', color: 'from-primary/10 to-primary/5', accent: 'bg-primary dark:bg-primary', headerBg: 'bg-wm-pale/30 dark:bg-accent/20' },
-  { key: 'goedgekeurd', label: 'Akkoord', color: 'from-emerald-500/10 to-emerald-500/5', accent: 'bg-emerald-400 dark:bg-emerald-500', headerBg: 'bg-emerald-50/80 dark:bg-emerald-900/30' },
-  { key: 'gefactureerd', label: 'Gefactureerd', color: 'from-teal-500/10 to-teal-500/5', accent: 'bg-teal-400 dark:bg-teal-500', headerBg: 'bg-teal-50/80 dark:bg-teal-900/30' },
+  { key: 'concept', label: 'Concept', color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
+  { key: 'verzonden', label: 'Verstuurd', color: 'from-[var(--color-mist)]/30 to-[var(--color-mist)]/10', accent: 'bg-[var(--color-mist-text)]', headerBg: 'bg-[var(--color-mist)]/60' },
+  { key: 'bekeken', label: 'Bekeken', color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
+  { key: 'goedgekeurd', label: 'Akkoord', color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
+  { key: 'gefactureerd', label: 'Gefactureerd', color: 'from-[var(--color-lavender)]/30 to-[var(--color-lavender)]/10', accent: 'bg-[var(--color-lavender-text)]', headerBg: 'bg-[var(--color-lavender)]/60' },
 ]
 
 const CLOSED_STATUS_COLUMNS = [
-  { key: 'afgewezen', label: 'Afgewezen', color: 'from-red-500/10 to-red-500/5', accent: 'bg-red-400 dark:bg-red-500', headerBg: 'bg-red-50/80 dark:bg-red-900/30' },
-  { key: 'verlopen', label: 'Verlopen', color: 'from-orange-500/10 to-orange-500/5', accent: 'bg-orange-400 dark:bg-orange-500', headerBg: 'bg-orange-50/80 dark:bg-orange-900/30' },
+  { key: 'afgewezen', label: 'Afgewezen', color: 'from-[var(--color-coral)]/30 to-[var(--color-coral)]/10', accent: 'bg-[var(--color-coral-text)]', headerBg: 'bg-[var(--color-coral)]/60' },
+  { key: 'verlopen', label: 'Verlopen', color: 'from-[var(--color-blush)]/30 to-[var(--color-blush)]/10', accent: 'bg-[var(--color-blush-text)]', headerBg: 'bg-[var(--color-blush)]/60' },
 ]
 
 const KLEUR_TO_STYLE: Record<string, { color: string; accent: string; headerBg: string }> = {
-  gray: { color: 'from-slate-500/10 to-slate-500/5', accent: 'bg-slate-400 dark:bg-slate-500', headerBg: 'bg-slate-50/80 dark:bg-slate-800/50' },
-  blue: { color: 'from-blue-500/10 to-blue-500/5', accent: 'bg-blue-400 dark:bg-blue-500', headerBg: 'bg-blue-50/80 dark:bg-blue-900/30' },
-  purple: { color: 'from-primary/10 to-primary/5', accent: 'bg-primary dark:bg-primary', headerBg: 'bg-wm-pale/30 dark:bg-accent/20' },
-  green: { color: 'from-emerald-500/10 to-emerald-500/5', accent: 'bg-emerald-400 dark:bg-emerald-500', headerBg: 'bg-emerald-50/80 dark:bg-emerald-900/30' },
-  red: { color: 'from-red-500/10 to-red-500/5', accent: 'bg-red-400 dark:bg-red-500', headerBg: 'bg-red-50/80 dark:bg-red-900/30' },
-  orange: { color: 'from-orange-500/10 to-orange-500/5', accent: 'bg-orange-400 dark:bg-orange-500', headerBg: 'bg-orange-50/80 dark:bg-orange-900/30' },
-  teal: { color: 'from-teal-500/10 to-teal-500/5', accent: 'bg-teal-400 dark:bg-teal-500', headerBg: 'bg-teal-50/80 dark:bg-teal-900/30' },
+  gray: { color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
+  blue: { color: 'from-[var(--color-mist)]/30 to-[var(--color-mist)]/10', accent: 'bg-[var(--color-mist-text)]', headerBg: 'bg-[var(--color-mist)]/60' },
+  purple: { color: 'from-[var(--color-lavender)]/30 to-[var(--color-lavender)]/10', accent: 'bg-[var(--color-lavender-text)]', headerBg: 'bg-[var(--color-lavender)]/60' },
+  green: { color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
+  red: { color: 'from-[var(--color-coral)]/30 to-[var(--color-coral)]/10', accent: 'bg-[var(--color-coral-text)]', headerBg: 'bg-[var(--color-coral)]/60' },
+  orange: { color: 'from-[var(--color-blush)]/30 to-[var(--color-blush)]/10', accent: 'bg-[var(--color-blush-text)]', headerBg: 'bg-[var(--color-blush)]/60' },
+  teal: { color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  laag: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light',
-  medium: 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400',
-  hoog: 'bg-orange-50/80 text-orange-700 dark:bg-orange-900/25 dark:text-orange-400',
-  urgent: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400',
+  laag: 'badge-sage',
+  medium: 'badge-cream',
+  hoog: 'badge-blush',
+  urgent: 'badge-coral',
 }
 
 const STATUS_BADGE_COLORS: Record<string, string> = {
-  concept: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400',
-  verzonden: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
-  bekeken: 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400',
-  goedgekeurd: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light',
-  afgewezen: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400',
-  verlopen: 'bg-orange-50/80 text-orange-700 dark:bg-orange-900/25 dark:text-orange-400',
-  gefactureerd: 'bg-violet-50/80 text-violet-700 dark:bg-violet-900/25 dark:text-violet-400',
+  concept: 'badge-cream',
+  verzonden: 'badge-mist',
+  bekeken: 'badge-cream',
+  goedgekeurd: 'badge-sage',
+  afgewezen: 'badge-coral',
+  verlopen: 'badge-blush',
+  gefactureerd: 'badge-lavender',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -130,39 +130,39 @@ const statusOpties = [
 
 function getOfferteStatusDotColor(status: string): string {
   switch (status) {
-    case 'concept': return 'bg-stone-400'
-    case 'verzonden': return 'bg-sky-500'
-    case 'bekeken': return 'bg-amber-500'
-    case 'goedgekeurd': return 'bg-primary'
-    case 'afgewezen': return 'bg-red-500'
-    case 'verlopen': return 'bg-orange-500'
-    case 'gefactureerd': return 'bg-violet-500'
-    default: return 'bg-stone-400'
+    case 'concept': return 'bg-[var(--color-cream-text)]'
+    case 'verzonden': return 'bg-[var(--color-mist-text)]'
+    case 'bekeken': return 'bg-[var(--color-cream-text)]'
+    case 'goedgekeurd': return 'bg-[var(--color-sage-text)]'
+    case 'afgewezen': return 'bg-[var(--color-coral-text)]'
+    case 'verlopen': return 'bg-[var(--color-blush-text)]'
+    case 'gefactureerd': return 'bg-[var(--color-lavender-text)]'
+    default: return 'bg-[var(--color-cream-text)]'
   }
 }
 
 function getOfferteStatusBorderColor(status: string): string {
   switch (status) {
-    case 'concept': return 'border-l-stone-400'
-    case 'verzonden': return 'border-l-sky-500'
-    case 'bekeken': return 'border-l-amber-500'
-    case 'goedgekeurd': return 'border-l-primary'
-    case 'afgewezen': return 'border-l-red-500'
-    case 'verlopen': return 'border-l-orange-500'
-    case 'gefactureerd': return 'border-l-violet-500'
-    default: return 'border-l-stone-400'
+    case 'concept': return 'border-l-[var(--color-cream-border)]'
+    case 'verzonden': return 'border-l-[var(--color-mist-border)]'
+    case 'bekeken': return 'border-l-[var(--color-cream-border)]'
+    case 'goedgekeurd': return 'border-l-[var(--color-sage-border)]'
+    case 'afgewezen': return 'border-l-[var(--color-coral-border)]'
+    case 'verlopen': return 'border-l-[var(--color-blush-border)]'
+    case 'gefactureerd': return 'border-l-[var(--color-lavender-border)]'
+    default: return 'border-l-[var(--color-cream-border)]'
   }
 }
 
 function getOfferteStatusCellBg(status: string): string {
   switch (status) {
-    case 'concept': return 'bg-stone-50/50 dark:bg-stone-950/20'
-    case 'verzonden': return 'bg-sky-50/50 dark:bg-sky-950/20'
-    case 'bekeken': return 'bg-amber-50/50 dark:bg-amber-950/20'
-    case 'goedgekeurd': return 'bg-wm-pale/15 dark:bg-primary/10'
-    case 'afgewezen': return 'bg-red-50/50 dark:bg-red-950/20'
-    case 'verlopen': return 'bg-orange-50/50 dark:bg-orange-950/20'
-    case 'gefactureerd': return 'bg-violet-50/50 dark:bg-violet-950/20'
+    case 'concept': return 'bg-[var(--color-cream)]/50'
+    case 'verzonden': return 'bg-[var(--color-mist)]/50'
+    case 'bekeken': return 'bg-[var(--color-cream)]/50'
+    case 'goedgekeurd': return 'bg-[var(--color-sage)]/50'
+    case 'afgewezen': return 'bg-[var(--color-coral)]/50'
+    case 'verlopen': return 'bg-[var(--color-blush)]/50'
+    case 'gefactureerd': return 'bg-[var(--color-lavender)]/50'
     default: return 'bg-muted/30 dark:bg-muted/20'
   }
 }

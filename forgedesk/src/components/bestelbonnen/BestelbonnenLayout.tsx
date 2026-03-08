@@ -25,11 +25,11 @@ import { round2 } from '@/utils/budgetUtils'
 type FilterStatus = 'alle' | Bestelbon['status']
 
 const STATUS_CONFIG: Record<Bestelbon['status'], { label: string; color: string; dot: string }> = {
-  concept: { label: 'Concept', color: 'bg-stone-100/80 text-stone-600 dark:bg-stone-800/50 dark:text-stone-400', dot: 'bg-stone-400' },
-  besteld: { label: 'Besteld', color: 'bg-sky-50/80 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400', dot: 'bg-sky-500' },
-  deels_ontvangen: { label: 'Deels ontvangen', color: 'bg-amber-50/80 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400', dot: 'bg-amber-500' },
-  ontvangen: { label: 'Ontvangen', color: 'bg-wm-pale/25 text-accent dark:bg-accent/20 dark:text-wm-light', dot: 'bg-primary' },
-  geannuleerd: { label: 'Geannuleerd', color: 'bg-red-50/80 text-red-700 dark:bg-red-900/25 dark:text-red-400', dot: 'bg-red-500' },
+  concept: { label: 'Concept', color: 'badge-cream', dot: 'bg-[var(--color-cream-text)]' },
+  besteld: { label: 'Besteld', color: 'badge-mist', dot: 'bg-[var(--color-mist-text)]' },
+  deels_ontvangen: { label: 'Deels ontvangen', color: 'badge-cream', dot: 'bg-[var(--color-cream-text)]' },
+  ontvangen: { label: 'Ontvangen', color: 'badge-sage', dot: 'bg-[var(--color-sage-text)]' },
+  geannuleerd: { label: 'Geannuleerd', color: 'badge-coral', dot: 'bg-[var(--color-coral-text)]' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
