@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import {
   Palette, Upload, X, Image as ImageIcon, Sparkles,
   Loader2, Download, Save, RefreshCw, Trash2, Eye, Link2, Filter,
+  Send, Bot, Plus, Maximize2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -24,17 +25,41 @@ import { VisualisatieLightbox } from './VisualisatieLightbox'
 
 type GeneratieStatus = 'idle' | 'claude' | 'genereren' | 'klaar' | 'fout'
 
+interface ChatBericht {
+  id: string
+  rol: 'user' | 'assistant' | 'systeem'
+  tekst: string
+  afbeelding_url?: string
+  generatie_tijd_ms?: number
+  prompt_gebruikt?: string
+  fal_request_id?: string
+  timestamp: Date
+}
+
+const RATIO_OPTIES = [
+  { label: '1:1', value: '1:1', desc: 'Vierkant' },
+  { label: '4:3', value: '4:3', desc: 'Landschap' },
+  { label: '16:9', value: '16:9', desc: 'Breed' },
+  { label: '3:4', value: '3:4', desc: 'Portret' },
+  { label: '9:16', value: '9:16', desc: 'Story' },
+  { label: '3:2', value: '3:2', desc: 'Foto' },
+  { label: '21:9', value: '21:9', desc: 'Ultra breed' },
+]
+
 export function VisualizerLayout() {
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
+  const chatEndRef = useRef<HTMLDivElement>(null)
+  const chatInputRef = useRef<HTMLTextAreaElement>(null)
 
   // ── Form state ──
-  const [gebouwFoto, setGebouwFoto] = useState<string | null>(null)
-  const [gebouwFotoNaam, setGebouwFotoNaam] = useState('')
+  const [foto, setFoto] = useState<string | null>(null)
+  const [fotoNaam, setFotoNaam] = useState('')
   const [logoFoto, setLogoFoto] = useState<string | null>(null)
   const [logoFotoNaam, setLogoFotoNaam] = useState('')
   const [beschrijving, setBeschrijving] = useState('')
+  const [ratio, setRatio] = useState('4:3')
   const [selectedProject, setSelectedProject] = useState('')
   const [selectedOfferte, setSelectedOfferte] = useState('')
 
@@ -47,6 +72,11 @@ export function VisualizerLayout() {
     prompt_gebruikt: string
   } | null>(null)
   const [creditSaldo, setCreditSaldo] = useState(0)
+
+  // ── Chat state ──
+  const [chatBerichten, setChatBerichten] = useState<ChatBericht[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [inChatModus, setInChatModus] = useState(false)
 
   // ── Library state ──
   const [visualisaties, setVisualisaties] = useState<SigningVisualisatie[]>([])
@@ -78,7 +108,6 @@ export function VisualizerLayout() {
     getOffertes().then(setOffertes).catch(() => {})
   }, [user?.id, ladenBibliotheek])
 
-  // Filter offertes by selected project
   const filteredOffertes = selectedProject
     ? offertes.filter(o => o.project_id === selectedProject)
     : offertes
@@ -104,7 +133,7 @@ export function VisualizerLayout() {
     })
   }, [])
 
-  const processFile = useCallback(async (file: File, type: 'gebouw' | 'logo') => {
+  const processFile = useCallback(async (file: File, type: 'foto' | 'logo') => {
     if (file.size > 10 * 1024 * 1024) { toast.error('Max 10MB'); return }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       toast.error('Alleen JPG, PNG en WEBP'); return
@@ -112,27 +141,46 @@ export function VisualizerLayout() {
     const reader = new FileReader()
     reader.onload = async () => {
       const raw = reader.result as string
-      const resized = await resizeImage(raw, type === 'gebouw' ? 1200 : 800, 0.8)
-      if (type === 'gebouw') { setGebouwFoto(resized); setGebouwFotoNaam(file.name) }
+      const resized = await resizeImage(raw, type === 'foto' ? 1200 : 800, 0.8)
+      if (type === 'foto') { setFoto(resized); setFotoNaam(file.name) }
       else { setLogoFoto(resized); setLogoFotoNaam(file.name) }
     }
     reader.readAsDataURL(file)
   }, [resizeImage])
 
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, type: 'gebouw' | 'logo') => {
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, type: 'foto' | 'logo') => {
     const file = e.target.files?.[0]
     if (file) processFile(file, type)
   }, [processFile])
 
-  const handleDrop = useCallback((e: React.DragEvent, type: 'gebouw' | 'logo') => {
+  const handleDrop = useCallback((e: React.DragEvent, type: 'foto' | 'logo') => {
     e.preventDefault()
     const file = e.dataTransfer.files?.[0]
     if (file) processFile(file, type)
   }, [processFile])
 
-  // ── Generate ──
+  // ── Auto-scroll chat ──
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatBerichten])
+
+  // ── Focus chat input when entering chat mode ──
+  useEffect(() => {
+    if (inChatModus && generatieStatus === 'klaar') {
+      setTimeout(() => chatInputRef.current?.focus(), 200)
+    }
+  }, [inChatModus, generatieStatus])
+
+  // ── Build chat history for API ──
+  const buildChatGeschiedenis = useCallback(() => {
+    return chatBerichten
+      .filter(b => b.rol !== 'systeem')
+      .map(b => ({ rol: b.rol as 'user' | 'assistant', tekst: b.tekst }))
+  }, [chatBerichten])
+
+  // ── Generate (eerste keer) ──
   const handleGenereer = useCallback(async () => {
-    if (!user?.id || !gebouwFoto || !beschrijving.trim()) return
+    if (!user?.id || !foto || !beschrijving.trim()) return
     if (creditSaldo <= 0) {
       toast.error('Geen credits meer')
       return
@@ -142,14 +190,25 @@ export function VisualizerLayout() {
       const newCredits = await gebruikCredit(user.id, '')
       setCreditSaldo(newCredits.saldo)
       setGeneratieStatus('claude')
+      setInChatModus(true)
+
+      // Start chat met het eerste bericht
+      setChatBerichten([{
+        id: crypto.randomUUID(),
+        rol: 'user',
+        tekst: beschrijving.trim(),
+        afbeelding_url: foto,
+        timestamp: new Date(),
+      }])
 
       const response = await fetch('/api/generate-signing-mockup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          gebouw_foto_base64: gebouwFoto,
+          gebouw_foto_base64: foto,
           logo_base64: logoFoto || undefined,
           beschrijving: beschrijving.trim(),
+          ratio,
         }),
       })
 
@@ -163,16 +222,106 @@ export function VisualizerLayout() {
       const data = await response.json()
       setResultaat(data)
       setGeneratieStatus('klaar')
-      toast.success('Mockup gegenereerd!')
+
+      setChatBerichten(prev => [...prev, {
+        id: crypto.randomUUID(),
+        rol: 'assistant',
+        tekst: 'Hier is je visualisatie! Typ hieronder als je iets wilt aanpassen.',
+        afbeelding_url: data.url,
+        generatie_tijd_ms: data.generatie_tijd_ms,
+        prompt_gebruikt: data.prompt_gebruikt,
+        fal_request_id: data.fal_request_id,
+        timestamp: new Date(),
+      }])
     } catch (error: unknown) {
       setGeneratieStatus('fout')
-      toast.error(`Mislukt: ${error instanceof Error ? error.message : 'Onbekende fout'}`)
+      setChatBerichten(prev => [...prev, {
+        id: crypto.randomUUID(),
+        rol: 'systeem',
+        tekst: `Generatie mislukt: ${error instanceof Error ? error.message : 'Onbekende fout'}`,
+        timestamp: new Date(),
+      }])
     }
-  }, [user?.id, gebouwFoto, logoFoto, beschrijving, creditSaldo])
+  }, [user?.id, foto, logoFoto, beschrijving, ratio, creditSaldo])
 
-  // ── Save result ──
+  // ── Chat verfijning ──
+  const handleChatVerfijning = useCallback(async () => {
+    if (!user?.id || !chatInput.trim() || !foto) return
+    if (creditSaldo <= 0) {
+      toast.error('Geen credits meer')
+      return
+    }
+
+    const tekst = chatInput.trim()
+    setChatInput('')
+
+    setChatBerichten(prev => [...prev, {
+      id: crypto.randomUUID(),
+      rol: 'user',
+      tekst,
+      timestamp: new Date(),
+    }])
+
+    try {
+      const newCredits = await gebruikCredit(user.id, '')
+      setCreditSaldo(newCredits.saldo)
+      setGeneratieStatus('claude')
+
+      const response = await fetch('/api/generate-signing-mockup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gebouw_foto_base64: foto,
+          logo_base64: logoFoto || undefined,
+          beschrijving: tekst,
+          ratio,
+          chat_geschiedenis: buildChatGeschiedenis(),
+        }),
+      })
+
+      setGeneratieStatus('genereren')
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Aanpassing mislukt')
+      }
+
+      const data = await response.json()
+      setResultaat(data)
+      setGeneratieStatus('klaar')
+
+      setChatBerichten(prev => [...prev, {
+        id: crypto.randomUUID(),
+        rol: 'assistant',
+        tekst: 'Aangepast! Nog iets veranderen?',
+        afbeelding_url: data.url,
+        generatie_tijd_ms: data.generatie_tijd_ms,
+        prompt_gebruikt: data.prompt_gebruikt,
+        fal_request_id: data.fal_request_id,
+        timestamp: new Date(),
+      }])
+    } catch (error: unknown) {
+      setGeneratieStatus('fout')
+      setChatBerichten(prev => [...prev, {
+        id: crypto.randomUUID(),
+        rol: 'systeem',
+        tekst: `Aanpassing mislukt: ${error instanceof Error ? error.message : 'Onbekende fout'}. Probeer het opnieuw.`,
+        timestamp: new Date(),
+      }])
+    }
+  }, [user?.id, chatInput, foto, logoFoto, ratio, creditSaldo, buildChatGeschiedenis])
+
+  // ── Handle Enter in chat ──
+  const handleChatKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleChatVerfijning()
+    }
+  }, [handleChatVerfijning])
+
+  // ── Save result (pas koppelen aan project bij opslaan) ──
   const handleOpslaan = useCallback(async () => {
-    if (!user?.id || !resultaat || !gebouwFoto) return
+    if (!user?.id || !resultaat || !foto) return
     try {
       const project = projecten.find(p => p.id === selectedProject)
       await createSigningVisualisatie({
@@ -180,7 +329,7 @@ export function VisualizerLayout() {
         offerte_id: selectedOfferte || undefined,
         project_id: selectedProject || undefined,
         klant_id: project?.klant_id || undefined,
-        gebouw_foto_url: gebouwFoto,
+        gebouw_foto_url: foto,
         logo_url: logoFoto || undefined,
         prompt_gebruikt: resultaat.prompt_gebruikt,
         aangepaste_prompt: beschrijving,
@@ -196,26 +345,34 @@ export function VisualizerLayout() {
         generatie_tijd_ms: resultaat.generatie_tijd_ms,
       })
       toast.success('Opgeslagen in bibliotheek!')
-      // Reset form
-      setResultaat(null)
-      setGeneratieStatus('idle')
-      setGebouwFoto(null)
-      setGebouwFotoNaam('')
-      setLogoFoto(null)
-      setLogoFotoNaam('')
-      setBeschrijving('')
-      setSelectedProject('')
-      setSelectedOfferte('')
+      handleNieuweSessie()
       ladenBibliotheek()
     } catch {
       toast.error('Opslaan mislukt')
     }
-  }, [user?.id, resultaat, gebouwFoto, logoFoto, beschrijving, selectedProject, selectedOfferte, projecten, ladenBibliotheek])
+  }, [user?.id, resultaat, foto, logoFoto, beschrijving, selectedProject, selectedOfferte, projecten, ladenBibliotheek])
+
+  // ── Nieuwe sessie ──
+  const handleNieuweSessie = useCallback(() => {
+    setResultaat(null)
+    setGeneratieStatus('idle')
+    setFoto(null)
+    setFotoNaam('')
+    setLogoFoto(null)
+    setLogoFotoNaam('')
+    setBeschrijving('')
+    setRatio('4:3')
+    setSelectedProject('')
+    setSelectedOfferte('')
+    setChatBerichten([])
+    setChatInput('')
+    setInChatModus(false)
+  }, [])
 
   const handleDownload = useCallback((url: string, id: string) => {
     const a = document.createElement('a')
     a.href = url
-    a.download = `signing-mockup-${id.slice(0, 8)}.png`
+    a.download = `visualizer-mockup-${id.slice(0, 8)}.png`
     a.target = '_blank'
     a.click()
   }, [])
@@ -234,12 +391,14 @@ export function VisualizerLayout() {
 
   const isGenerating = ['claude', 'genereren'].includes(generatieStatus)
 
-  // ── Filter library ──
   const gefilterd = visualisaties.filter(v => {
     if (filterKoppeling === 'gekoppeld' && !v.project_id && !v.offerte_id) return false
     if (filterKoppeling === 'los' && (v.project_id || v.offerte_id)) return false
     return true
   })
+
+  // Bereken totaal gebruikte credits in deze sessie
+  const sessieCredits = chatBerichten.filter(b => b.rol === 'assistant' && b.afbeelding_url).length
 
   return (
     <div className="space-y-8">
@@ -253,7 +412,7 @@ export function VisualizerLayout() {
             Signing Visualizer
           </h1>
           <p className="text-sm text-muted-foreground">
-            Upload een foto, beschrijf wat je wilt — AI doet de rest
+            Upload een foto of ontwerp, beschrijf het gewenste resultaat — AI doet de rest
           </p>
         </div>
         <div className="ml-auto text-sm text-muted-foreground">
@@ -261,123 +420,278 @@ export function VisualizerLayout() {
         </div>
       </div>
 
-      {/* ═══ Inline Generator ═══ */}
-      <div className="border rounded-xl bg-card p-6">
-        {generatieStatus === 'klaar' && resultaat ? (
-          /* ── Result view ── */
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Origineel</Label>
-                <div className="rounded-lg overflow-hidden border bg-muted aspect-[4/3]">
-                  {gebouwFoto && <img src={gebouwFoto} alt="Origineel" className="w-full h-full object-cover" />}
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">AI Mockup</Label>
-                <div className="rounded-lg overflow-hidden border bg-muted aspect-[4/3]">
-                  <img src={resultaat.url} alt="Mockup" className="w-full h-full object-cover" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>1 credit gebruikt</span>
-              <span>|</span>
-              <span>{(resultaat.generatie_tijd_ms / 1000).toFixed(1)}s</span>
-            </div>
-
-            {/* Link to project/offerte before saving */}
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-              <Link2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <select
-                value={selectedProject}
-                onChange={(e) => { setSelectedProject(e.target.value); setSelectedOfferte('') }}
-                className="text-sm bg-background border rounded-md px-2 py-1.5 flex-1"
-              >
-                <option value="">Geen project</option>
-                {projecten.map(p => (
-                  <option key={p.id} value={p.id}>{p.naam} — {p.klant_naam}</option>
-                ))}
-              </select>
-              <select
-                value={selectedOfferte}
-                onChange={(e) => setSelectedOfferte(e.target.value)}
-                className="text-sm bg-background border rounded-md px-2 py-1.5 flex-1"
-              >
-                <option value="">Geen offerte</option>
-                {filteredOffertes.map(o => (
-                  <option key={o.id} value={o.id}>{o.nummer || o.titel} — {o.klant_naam}</option>
-                ))}
-              </select>
-            </div>
-
-            <details className="text-xs">
-              <summary className="text-muted-foreground cursor-pointer hover:text-foreground">
-                AI prompt bekijken
-              </summary>
-              <pre className="mt-2 p-3 bg-muted rounded-lg whitespace-pre-wrap font-mono text-muted-foreground text-xs">
-                {resultaat.prompt_gebruikt}
-              </pre>
-            </details>
-
+      {/* ═══ Chat modus: volledige chat-interface ═══ */}
+      {inChatModus ? (
+        <div className="border rounded-xl bg-card overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
+          {/* Chat header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
             <div className="flex items-center gap-2">
-              <Button onClick={handleOpslaan} className="gap-2">
-                <Save className="h-4 w-4" /> Opslaan in bibliotheek
-              </Button>
-              <Button variant="outline" onClick={() => { setResultaat(null); setGeneratieStatus('idle') }} className="gap-2">
-                <RefreshCw className="h-4 w-4" /> Opnieuw
-              </Button>
-              <Button variant="outline" onClick={() => handleDownload(resultaat.url, 'new')} className="gap-2">
-                <Download className="h-4 w-4" /> Download
-              </Button>
-              <Button variant="ghost" onClick={() => { setResultaat(null); setGeneratieStatus('idle') }} className="gap-2 ml-auto">
-                <Trash2 className="h-4 w-4" /> Weggooien
+              <Bot className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Visualizer Chat</span>
+              {sessieCredits > 0 && (
+                <Badge variant="secondary" className="text-[10px]">
+                  {sessieCredits} credit{sessieCredits !== 1 ? 's' : ''} gebruikt
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {resultaat && (
+                <>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5"
+                    onClick={() => handleDownload(resultaat.url, resultaat.fal_request_id)}>
+                    <Download className="h-3 w-3" /> Download
+                  </Button>
+                  <Button size="sm" variant="default" className="h-7 text-xs gap-1.5"
+                    onClick={() => {/* trigger save panel */ document.getElementById('save-panel')?.scrollIntoView({ behavior: 'smooth' })}}>
+                    <Save className="h-3 w-3" /> Opslaan
+                  </Button>
+                </>
+              )}
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5"
+                onClick={handleNieuweSessie}>
+                <Plus className="h-3 w-3" /> Nieuw
               </Button>
             </div>
           </div>
-        ) : (
-          /* ── Generator form ── */
-          <div className="grid grid-cols-[1fr_1fr_1.2fr] gap-6">
-            {/* Col 1: Gebouwfoto */}
+
+          {/* Chat berichten */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            {chatBerichten.map((bericht) => (
+              <div
+                key={bericht.id}
+                className={cn(
+                  'flex gap-3 max-w-[85%]',
+                  bericht.rol === 'user' ? 'ml-auto flex-row-reverse' : '',
+                  bericht.rol === 'systeem' ? 'mx-auto max-w-none justify-center' : '',
+                )}
+              >
+                {/* Avatar */}
+                {bericht.rol !== 'systeem' && (
+                  <div className={cn(
+                    'flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs',
+                    bericht.rol === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground',
+                  )}>
+                    {bericht.rol === 'user' ? 'JIJ' : <Bot className="h-3.5 w-3.5" />}
+                  </div>
+                )}
+
+                {/* Bericht content */}
+                <div className={cn(
+                  'space-y-2',
+                  bericht.rol === 'systeem' ? 'text-center' : '',
+                )}>
+                  {/* Systeem berichten */}
+                  {bericht.rol === 'systeem' && (
+                    <div className="text-xs text-orange-500 bg-orange-500/10 rounded-lg px-3 py-2">
+                      {bericht.tekst}
+                    </div>
+                  )}
+
+                  {/* Tekst */}
+                  {bericht.rol !== 'systeem' && (
+                    <div className={cn(
+                      'rounded-2xl px-4 py-2.5 text-sm',
+                      bericht.rol === 'user'
+                        ? 'bg-primary text-primary-foreground rounded-br-md'
+                        : 'bg-muted text-foreground rounded-bl-md',
+                    )}>
+                      {bericht.tekst}
+                    </div>
+                  )}
+
+                  {/* Afbeelding */}
+                  {bericht.afbeelding_url && (
+                    <div className={cn(
+                      'rounded-xl overflow-hidden border shadow-sm cursor-pointer hover:shadow-md transition-shadow',
+                      bericht.rol === 'user' ? 'max-w-[300px]' : 'max-w-[500px]',
+                    )}
+                      onClick={() => {
+                        if (bericht.rol === 'assistant' && bericht.afbeelding_url) {
+                          window.open(bericht.afbeelding_url, '_blank')
+                        }
+                      }}
+                    >
+                      <img
+                        src={bericht.afbeelding_url}
+                        alt={bericht.rol === 'user' ? 'Upload' : 'AI Resultaat'}
+                        className="w-full h-auto"
+                      />
+                    </div>
+                  )}
+
+                  {/* Metadata */}
+                  {bericht.generatie_tijd_ms && (
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <span>{(bericht.generatie_tijd_ms / 1000).toFixed(1)}s</span>
+                      <span>·</span>
+                      <span>1 credit</span>
+                      {bericht.prompt_gebruikt && (
+                        <>
+                          <span>·</span>
+                          <button
+                            className="hover:text-foreground transition-colors underline underline-offset-2"
+                            onClick={() => {
+                              toast.info(bericht.prompt_gebruikt || '', { duration: 10000 })
+                            }}
+                          >
+                            prompt bekijken
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tijdstip */}
+                  {bericht.rol !== 'systeem' && (
+                    <div className="text-[10px] text-muted-foreground/60">
+                      {bericht.timestamp.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Typing indicator */}
+            {isGenerating && (
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                  <Bot className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    {generatieStatus === 'claude' ? 'Analyseren...' : 'Genereren...'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Opslaan panel (onder chat, boven input) */}
+          {resultaat && generatieStatus === 'klaar' && (
+            <div id="save-panel" className="px-4 py-3 border-t bg-muted/20">
+              <div className="flex items-center gap-3">
+                <Link2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <select
+                  value={selectedProject}
+                  onChange={(e) => { setSelectedProject(e.target.value); setSelectedOfferte('') }}
+                  className="text-xs bg-background border rounded-md px-2 py-1.5 flex-1"
+                >
+                  <option value="">Geen project</option>
+                  {projecten.map(p => (
+                    <option key={p.id} value={p.id}>{p.naam} — {p.klant_naam}</option>
+                  ))}
+                </select>
+                {selectedProject && (
+                  <select
+                    value={selectedOfferte}
+                    onChange={(e) => setSelectedOfferte(e.target.value)}
+                    className="text-xs bg-background border rounded-md px-2 py-1.5 flex-1"
+                  >
+                    <option value="">Geen offerte</option>
+                    {filteredOffertes.map(o => (
+                      <option key={o.id} value={o.id}>{o.nummer || o.titel}</option>
+                    ))}
+                  </select>
+                )}
+                <Button size="sm" onClick={handleOpslaan} className="gap-1.5 text-xs h-7">
+                  <Save className="h-3 w-3" /> Opslaan in bibliotheek
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Chat input */}
+          <div className="px-4 py-3 border-t bg-card">
+            <div className="flex items-end gap-2">
+              <Textarea
+                ref={chatInputRef}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleChatKeyDown}
+                placeholder="Beschrijf wat je wilt aanpassen... (Enter = verzenden)"
+                className="text-sm min-h-[40px] max-h-[120px] resize-none"
+                rows={1}
+                disabled={isGenerating}
+              />
+              <Button
+                onClick={handleChatVerfijning}
+                disabled={!chatInput.trim() || isGenerating || creditSaldo <= 0}
+                size="sm"
+                className="h-10 w-10 p-0 flex-shrink-0"
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <div className="flex items-center justify-between mt-1.5">
+              <p className="text-[10px] text-muted-foreground">
+                Elke aanpassing kost 1 credit · Shift+Enter voor nieuwe regel
+              </p>
+              <span className={cn(
+                'text-[10px] font-medium',
+                creditSaldo < 5 ? 'text-orange-500' : 'text-muted-foreground',
+              )}>
+                {creditSaldo} credits over
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ═══ Generator form (start scherm) ═══ */
+        <div className="border rounded-xl bg-card p-6">
+          <div className="grid grid-cols-[1fr_1fr_1.5fr] gap-6">
+            {/* Col 1: Referentiefoto */}
             <div>
               <Label className="text-sm font-medium mb-2 block">
-                Foto van het gebouw
+                Foto / ontwerp
               </Label>
-              {gebouwFoto ? (
+              <p className="text-xs text-muted-foreground mb-2">
+                Gebouw, voertuig, schets of bestaand ontwerp
+              </p>
+              {foto ? (
                 <div className="relative rounded-lg overflow-hidden border bg-muted">
-                  <img src={gebouwFoto} alt="Gebouw" className="w-full aspect-[4/3] object-cover" />
+                  <img src={foto} alt="Upload" className="w-full aspect-[4/3] object-cover" />
                   <Button variant="destructive" size="sm" className="absolute top-2 right-2"
-                    onClick={() => { setGebouwFoto(null); setGebouwFotoNaam('') }}>
+                    onClick={() => { setFoto(null); setFotoNaam('') }}>
                     <X className="h-3 w-3" />
                   </Button>
                   <span className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                    {gebouwFotoNaam}
+                    {fotoNaam}
                   </span>
                 </div>
               ) : (
                 <div
-                  className="border-2 border-dashed rounded-lg aspect-[4/3] flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                  className="border-2 border-dashed rounded-lg aspect-[4/3] flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all"
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => handleDrop(e, 'gebouw')}
+                  onDrop={(e) => handleDrop(e, 'foto')}
                 >
                   <Upload className="h-8 w-8 text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground text-center px-4">
-                    Sleep foto hierheen of <span className="text-primary font-medium">klik</span>
+                    Sleep hierheen of <span className="text-primary font-medium">klik</span>
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Rechte foto, goede belichting</p>
                 </div>
               )}
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
-                onChange={(e) => handleFileUpload(e, 'gebouw')} />
+                onChange={(e) => handleFileUpload(e, 'foto')} />
             </div>
 
-            {/* Col 2: Logo */}
+            {/* Col 2: Logo (optioneel) */}
             <div>
               <Label className="text-sm font-medium mb-2 block">
-                Logo <span className="text-muted-foreground font-normal">(optioneel)</span>
+                Logo / artwork <span className="text-muted-foreground font-normal">(optioneel)</span>
               </Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                PNG met transparante achtergrond werkt het best
+              </p>
               {logoFoto ? (
                 <div className="relative rounded-lg overflow-hidden border bg-muted aspect-[4/3] flex items-center justify-center">
                   <img src={logoFoto} alt="Logo" className="max-h-full max-w-full object-contain p-4" />
@@ -388,14 +702,14 @@ export function VisualizerLayout() {
                 </div>
               ) : (
                 <div
-                  className="border-2 border-dashed rounded-lg aspect-[4/3] flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                  className="border-2 border-dashed rounded-lg aspect-[4/3] flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all"
                   onClick={() => logoInputRef.current?.click()}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => handleDrop(e, 'logo')}
                 >
                   <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground text-center px-4">
-                    PNG met transparante achtergrond
+                    Logo of artwork toevoegen
                   </p>
                 </div>
               )}
@@ -403,7 +717,7 @@ export function VisualizerLayout() {
                 onChange={(e) => handleFileUpload(e, 'logo')} />
             </div>
 
-            {/* Col 3: Description + Generate */}
+            {/* Col 3: Beschrijving + Ratio + Generate */}
             <div className="flex flex-col">
               <Label className="text-sm font-medium mb-2 block">
                 Wat wil je zien?
@@ -411,61 +725,56 @@ export function VisualizerLayout() {
               <Textarea
                 value={beschrijving}
                 onChange={(e) => setBeschrijving(e.target.value)}
-                placeholder='bijv. "LED doosletters boven de deur, warmwit, modern" of "Neon bord in het raam"'
-                className="text-sm flex-1 min-h-[120px]"
+                placeholder='bijv. "LED doosletters boven de deur, warmwit" of "Maak dit ontwerp fotorealistisch op een echte bus" of "Gevelreclame met neon letters"'
+                className="text-sm flex-1 min-h-[100px]"
               />
-              <p className="text-xs text-muted-foreground mt-1.5 mb-3">
-                Claude AI analyseert je foto en maakt de perfecte mockup
-              </p>
 
-              {/* Optional: link to project */}
-              <div className="flex gap-2 mb-3">
-                <select
-                  value={selectedProject}
-                  onChange={(e) => { setSelectedProject(e.target.value); setSelectedOfferte('') }}
-                  className="text-xs bg-background border rounded-md px-2 py-1.5 flex-1 text-muted-foreground"
-                >
-                  <option value="">Koppel aan project...</option>
-                  {projecten.map(p => (
-                    <option key={p.id} value={p.id}>{p.naam}</option>
+              {/* Ratio selector */}
+              <div className="mt-3 mb-3">
+                <Label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                  <Maximize2 className="h-3 w-3" /> Beeldverhouding
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {RATIO_OPTIES.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setRatio(opt.value)}
+                      className={cn(
+                        'px-2.5 py-1 rounded-md text-xs font-medium transition-all',
+                        ratio === opt.value
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                      )}
+                      title={opt.desc}
+                    >
+                      {opt.label}
+                    </button>
                   ))}
-                </select>
-                {selectedProject && (
-                  <select
-                    value={selectedOfferte}
-                    onChange={(e) => setSelectedOfferte(e.target.value)}
-                    className="text-xs bg-background border rounded-md px-2 py-1.5 flex-1 text-muted-foreground"
-                  >
-                    <option value="">Koppel aan offerte...</option>
-                    {filteredOffertes.map(o => (
-                      <option key={o.id} value={o.id}>{o.nummer || o.titel}</option>
-                    ))}
-                  </select>
-                )}
+                </div>
               </div>
 
               <Button
                 onClick={handleGenereer}
-                disabled={!gebouwFoto || !beschrijving.trim() || isGenerating || creditSaldo <= 0}
+                disabled={!foto || !beschrijving.trim() || isGenerating || creditSaldo <= 0}
                 className="gap-2 w-full"
                 size="lg"
               >
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {generatieStatus === 'claude' ? "Claude analyseert foto's..." : 'Mockup genereren...'}
+                    {generatieStatus === 'claude' ? 'Analyseren...' : 'Genereren...'}
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4" />
-                    Genereer Mockup — 1 credit
+                    Genereer Visualisatie — 1 credit
                   </>
                 )}
               </Button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ═══ Library ═══ */}
       <div>
@@ -494,7 +803,7 @@ export function VisualizerLayout() {
         ) : gefilterd.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             {visualisaties.length === 0
-              ? 'Nog geen mockups — genereer je eerste hierboven'
+              ? 'Nog geen visualisaties — genereer je eerste hierboven'
               : 'Geen resultaten voor dit filter'}
           </div>
         ) : (
