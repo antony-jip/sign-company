@@ -83,6 +83,31 @@
     --wm-shadow-color: 0 0% 50%;
     --wm-glow: 0 0 40px rgba(90, 130, 100, 0.15);
     --wm-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+
+    /* FORGEdesk Pastel Status Palette */
+    --color-blush: #F9E8E8;
+    --color-blush-text: #C0514A;
+    --color-blush-border: #F0C8C8;
+
+    --color-sage: #E8F2EC;
+    --color-sage-text: #3A7D52;
+    --color-sage-border: #C2DFCC;
+
+    --color-mist: #E8EEF9;
+    --color-mist-text: #3A5A9A;
+    --color-mist-border: #C2D0EE;
+
+    --color-cream: #F5F2E8;
+    --color-cream-text: #8A7A4A;
+    --color-cream-border: #E0D8C0;
+
+    --color-coral: #FDE8E4;
+    --color-coral-text: #C0451A;
+    --color-coral-border: #F5C4B8;
+
+    --color-lavender: #EEE8F9;
+    --color-lavender-text: #6A4A9A;
+    --color-lavender-border: #D8C8EE;
   }
 
   .dark {
@@ -117,6 +142,31 @@
     --wm-glass: rgba(20, 20, 18, 0.85);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
     --wm-glow: 0 0 40px rgba(90, 130, 100, 0.08);
+
+    /* Pastel palette — dark mode */
+    --color-blush: rgba(192, 81, 74, 0.15);
+    --color-blush-text: #DA8B85;
+    --color-blush-border: rgba(192, 81, 74, 0.25);
+
+    --color-sage: rgba(58, 125, 82, 0.15);
+    --color-sage-text: #7AAF85;
+    --color-sage-border: rgba(58, 125, 82, 0.25);
+
+    --color-mist: rgba(58, 90, 154, 0.15);
+    --color-mist-text: #7AA4CC;
+    --color-mist-border: rgba(58, 90, 154, 0.25);
+
+    --color-cream: rgba(138, 122, 74, 0.15);
+    --color-cream-text: #B8A86A;
+    --color-cream-border: rgba(138, 122, 74, 0.25);
+
+    --color-coral: rgba(192, 69, 26, 0.15);
+    --color-coral-text: #DA7B50;
+    --color-coral-border: rgba(192, 69, 26, 0.25);
+
+    --color-lavender: rgba(106, 74, 154, 0.15);
+    --color-lavender-text: #A07ACC;
+    --color-lavender-border: rgba(106, 74, 154, 0.25);
   }
 }
 
@@ -338,6 +388,23 @@ table tbody tr:hover td:first-child::before {
   .badge-purple::before { background: #7A5AB5; }
   .dark .badge-purple { background: rgba(122, 90, 181, 0.15); color: #A07ACC; }
   .dark .badge-purple::before { background: #A07ACC; }
+
+  /* ================================================================
+     PASTEL STATUS BADGES — Via CSS variables for consistency
+     ================================================================ */
+  .badge-blush   { background: var(--color-blush); color: var(--color-blush-text); border: 1px solid var(--color-blush-border); }
+  .badge-sage    { background: var(--color-sage); color: var(--color-sage-text); border: 1px solid var(--color-sage-border); }
+  .badge-mist    { background: var(--color-mist); color: var(--color-mist-text); border: 1px solid var(--color-mist-border); }
+  .badge-cream   { background: var(--color-cream); color: var(--color-cream-text); border: 1px solid var(--color-cream-border); }
+  .badge-coral   { background: var(--color-coral); color: var(--color-coral-text); border: 1px solid var(--color-coral-border); }
+  .badge-lavender{ background: var(--color-lavender); color: var(--color-lavender-text); border: 1px solid var(--color-lavender-border); }
+}
+
+/* Input pastel focus style */
+.input-pastel:focus {
+  outline: none;
+  border-color: var(--color-mist-border);
+  box-shadow: 0 0 0 3px var(--color-mist);
 }
 
 /* ================================================================
