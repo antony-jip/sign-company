@@ -1297,7 +1297,7 @@ export function QuotesPipeline() {
                     return (
                       <tr
                         key={offerte.id}
-                        className="border-b border-border/50 last:border-0 hover:bg-muted/30 cursor-pointer transition-colors group"
+                        className={`border-b border-border/50 last:border-0 hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2 ${getOfferteStatusBorderColor(offerte.status)}`}
                         onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })}
                       >
                         {/* Status */}

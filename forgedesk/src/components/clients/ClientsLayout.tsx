@@ -34,6 +34,7 @@ import {
   X,
 } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
+import { getRowAccentClass } from '@/utils/statusColors'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
 import type { Klant, Project } from '@/types'
@@ -596,8 +597,9 @@ export function ClientsLayout() {
                   <tr
                     key={klant.id}
                     className={cn(
-                      "hover:bg-muted/30 cursor-pointer transition-colors group",
-                      selectedIds.has(klant.id) && "bg-primary/5"
+                      "hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2",
+                      selectedIds.has(klant.id) && "bg-primary/5",
+                      getRowAccentClass(klant.status)
                     )}
                     onClick={() => navigate(`/klanten/${klant.id}`)}
                   >

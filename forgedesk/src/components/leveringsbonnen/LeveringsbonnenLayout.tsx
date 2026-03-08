@@ -17,6 +17,7 @@ import type { Leveringsbon, Klant, Project } from '@/types'
 import {
   getLeveringsbonnen, deleteLeveringsbon, getKlanten, getProjecten,
 } from '@/services/supabaseService'
+import { getRowAccentClass } from '@/utils/statusColors'
 
 // ============ TYPES ============
 
@@ -224,7 +225,7 @@ export function LeveringsbonnenLayout() {
                 {gefilterd.map((lb) => {
                   const cfg = STATUS_CONFIG[lb.status]
                   return (
-                    <tr key={lb.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate(`/leveringsbonnen/${lb.id}`)}>
+                    <tr key={lb.id} className={`group hover:bg-[#F4F3F0]/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigate(`/leveringsbonnen/${lb.id}`)}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-teal-600 dark:text-teal-400">{lb.leveringsbon_nummer}</span>
                       </td>

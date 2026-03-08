@@ -502,7 +502,7 @@ export function ProjectsList() {
                 return (
                   <tr
                     key={project.id}
-                    className="border-b border-border/50 last:border-0 hover:bg-muted/30 cursor-pointer transition-colors group"
+                    className={`border-b border-border/50 last:border-0 hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2 ${getStatusBorderColor(project.status)}`}
                     onClick={() => window.location.href = `/projecten/${project.id}`}
                   >
                     {/* Status */}

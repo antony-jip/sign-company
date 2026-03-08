@@ -19,6 +19,7 @@ import {
   getBestelbonRegels,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
+import { getRowAccentClass } from '@/utils/statusColors'
 
 // ============ TYPES ============
 
@@ -243,7 +244,7 @@ export function BestelbonnenLayout() {
                 {gefilterd.map((bst) => {
                   const cfg = STATUS_CONFIG[bst.status]
                   return (
-                    <tr key={bst.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate(`/bestelbonnen/${bst.id}`)}>
+                    <tr key={bst.id} className={`group hover:bg-[#F4F3F0]/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigate(`/bestelbonnen/${bst.id}`)}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-orange-600 dark:text-orange-400">{bst.bestelbon_nummer}</span>
                       </td>

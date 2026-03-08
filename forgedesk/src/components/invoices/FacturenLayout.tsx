@@ -1471,9 +1471,9 @@ export function FacturenLayout() {
                   <tr
                     key={factuur.id}
                     className={cn(
-                      'group hover:bg-muted/30 transition-colors',
-                      'border-l-4',
-                      isOverdue ? 'border-l-red-500' : config.border
+                      'group hover:bg-[#F4F3F0]/60 transition-colors',
+                      'border-l-2',
+                      isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border
                     )}
                   >
                     <td className="w-1" />
