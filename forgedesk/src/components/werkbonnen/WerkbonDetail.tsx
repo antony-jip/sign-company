@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import {
   ArrowLeft, Save, Send, FileText, Receipt, Plus, Trash2,
@@ -72,6 +73,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 export function WerkbonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { setDirty } = useTabDirtyState()
   const { user } = useAuth()
   const { profile, primaireKleur, standaardBtw, factuurPrefix, factuurBetaaltermijnDagen } = useAppSettings()
   const documentStyle = useDocumentStyle()
@@ -232,6 +234,7 @@ export function WerkbonDetail() {
         await updateWerkbon(werkbonId, data)
         toast.success('Werkbon opgeslagen')
       }
+      setDirty(false)
     } catch (err) {
       toast.error('Fout bij opslaan werkbon')
     } finally {

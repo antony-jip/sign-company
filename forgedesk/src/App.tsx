@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { PaletteProvider } from '@/contexts/PaletteContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
+import { TabsProvider } from '@/contexts/TabsContext'
 import { AppSettingsProvider } from '@/contexts/AppSettingsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
@@ -162,10 +163,12 @@ function App() {
             <AuthProvider>
               <AppSettingsProvider>
                 <SidebarProvider>
-                  <ErrorBoundary>
-                    <Toaster position="top-right" richColors />
-                    <AppContent />
-                  </ErrorBoundary>
+                  <TabsProvider>
+                    <ErrorBoundary>
+                      <Toaster position="top-right" richColors />
+                      <AppContent />
+                    </ErrorBoundary>
+                  </TabsProvider>
                 </SidebarProvider>
               </AppSettingsProvider>
             </AuthProvider>

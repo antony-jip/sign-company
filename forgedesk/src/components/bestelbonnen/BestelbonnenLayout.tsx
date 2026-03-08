@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
 import {
   Plus, Search, ShoppingCart, Trash2, Eye,
@@ -46,6 +47,7 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 
 export function BestelbonnenLayout() {
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
   const [bestelbonnen, setBestelbonnen] = useState<Bestelbon[]>([])
   const [leveranciers, setLeveranciers] = useState<Leverancier[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -244,7 +246,7 @@ export function BestelbonnenLayout() {
                 {gefilterd.map((bst) => {
                   const cfg = STATUS_CONFIG[bst.status]
                   return (
-                    <tr key={bst.id} className={`group hover:bg-[#F4F3F0]/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigate(`/bestelbonnen/${bst.id}`)}>
+                    <tr key={bst.id} className={`group hover:bg-[#F4F3F0]/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` })}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-orange-600 dark:text-orange-400">{bst.bestelbon_nummer}</span>
                       </td>
@@ -259,7 +261,7 @@ export function BestelbonnenLayout() {
                       <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(bedragen[bst.id] || 0)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigate(`/bestelbonnen/${bst.id}`) }}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` }) }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); setDeleteTarget(bst); setDeleteDialogOpen(true) }}>

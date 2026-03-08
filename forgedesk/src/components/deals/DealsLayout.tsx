@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
 import {
   Plus, Search, Briefcase, Trash2, Eye, Loader2,
@@ -55,6 +56,7 @@ type ViewMode = 'kanban' | 'tabel'
 
 export function DealsLayout() {
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
   const { pipelineStappen } = useAppSettings()
 
   const [deals, setDeals] = useState<Deal[]>([])
@@ -240,7 +242,7 @@ export function DealsLayout() {
       setNewKlantId('')
       setNewWaarde(0)
       toast.success('Deal aangemaakt')
-      navigate(`/deals/${created.id}`)
+      navigateWithTab({ path: `/deals/${created.id}`, label: created.titel || 'Deal', id: `/deals/${created.id}` })
     } catch {
       toast.error('Fout bij aanmaken')
     } finally {
@@ -384,7 +386,7 @@ export function DealsLayout() {
                         key={deal.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, deal.id)}
-                        onClick={() => navigate(`/deals/${deal.id}`)}
+                        onClick={() => navigateWithTab({ path: `/deals/${deal.id}`, label: deal.titel || 'Deal', id: `/deals/${deal.id}` })}
                         className="bg-card/80 rounded-xl border p-3 space-y-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
@@ -443,7 +445,7 @@ export function DealsLayout() {
                 </thead>
                 <tbody className="divide-y divide-border/50">
                   {gefilterd.map((deal) => (
-                    <tr key={deal.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate(`/deals/${deal.id}`)}>
+                    <tr key={deal.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigateWithTab({ path: `/deals/${deal.id}`, label: deal.titel || 'Deal', id: `/deals/${deal.id}` })}>
                       <td className="px-4 py-3 text-sm font-semibold text-foreground">{deal.titel}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getKlantNaam(deal.klant_id)}</td>
                       <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(deal.verwachte_waarde)}</td>
@@ -462,7 +464,7 @@ export function DealsLayout() {
                       <td className="px-4 py-3 text-sm text-muted-foreground max-w-[200px] truncate">{deal.volgende_actie || '-'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigate(`/deals/${deal.id}`) }}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/deals/${deal.id}`, label: deal.titel || 'Deal', id: `/deals/${deal.id}` }) }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={(e) => { e.stopPropagation(); setDeleteTarget(deal); setDeleteDialogOpen(true) }}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
 import {
   Plus, Search, ClipboardCheck, Trash2, Eye, FileText,
@@ -31,6 +32,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 export function WerkbonnenLayout() {
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
   const [werkbonnen, setWerkbonnen] = useState<Werkbon[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -252,7 +254,7 @@ export function WerkbonnenLayout() {
                   const cfg = STATUS_CONFIG[wb.status] || STATUS_CONFIG.concept
                   return (
                     <tr key={wb.id} className="group hover:bg-muted/30 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/werkbonnen/${wb.id}`)}>
+                      onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
                       <td className="px-4 py-3 font-mono text-sm font-medium">{wb.werkbon_nummer}</td>
                       <td className="px-4 py-3 text-sm">{getKlantNaam(wb.klant_id)}</td>
                       <td className="px-4 py-3 text-sm hidden md:table-cell">{getProjectNaam(wb.project_id)}</td>
@@ -268,7 +270,7 @@ export function WerkbonnenLayout() {
                       <td className="px-4 py-3 text-right hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-8 w-8"
-                            onClick={() => navigate(`/werkbonnen/${wb.id}`)}>
+                            onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"

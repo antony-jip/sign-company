@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -50,6 +51,7 @@ type SortDir = 'asc' | 'desc'
 
 export function ClientsLayout() {
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
@@ -250,7 +252,7 @@ export function ClientsLayout() {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/klanten/${klant.id}`) }}>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` }) }}>
             <Eye className="w-3.5 h-3.5 mr-2" />
             Bekijken
           </DropdownMenuItem>
@@ -601,7 +603,7 @@ export function ClientsLayout() {
                       selectedIds.has(klant.id) && "bg-primary/5",
                       getRowAccentClass(klant.status)
                     )}
-                    onClick={() => navigate(`/klanten/${klant.id}`)}
+                    onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
                   >
                     <td className="w-10 px-3 py-3">
                       <Checkbox

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
+import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
@@ -181,6 +182,7 @@ function getGoedkeuringStatusColor(status: string) {
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { setDirty } = useTabDirtyState()
   const location = useLocation()
   const { user } = useAuth()
   const { offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
@@ -314,6 +316,7 @@ export function ProjectDetail() {
       setProjectMontages(prev => [...prev, newMontage])
       setMontageDialogOpen(false)
       toast.success('Montage ingepland')
+      setDirty(false)
     } catch {
       toast.error('Kon montage niet inplannen')
     } finally {
@@ -328,6 +331,7 @@ export function ProjectDetail() {
       const updated = await updateProject(id, { beschrijving: briefingText })
       setProject(updated)
       toast.success('Briefing opgeslagen')
+      setDirty(false)
       setBriefingOpen(false)
     } catch (err) {
       logger.error('Fout bij opslaan briefing:', err)

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import {
   Plus,
   Search,
@@ -103,6 +104,7 @@ function getStatusCellBg(status: string): string {
 }
 
 export function ProjectsList() {
+  const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
   const [projecten, setProjecten] = useState<Project[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -503,7 +505,7 @@ export function ProjectsList() {
                   <tr
                     key={project.id}
                     className={`border-b border-border/50 last:border-0 hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2 ${getStatusBorderColor(project.status)}`}
-                    onClick={() => window.location.href = `/projecten/${project.id}`}
+                    onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
                     {/* Status */}
                     <td className="py-0 px-0">

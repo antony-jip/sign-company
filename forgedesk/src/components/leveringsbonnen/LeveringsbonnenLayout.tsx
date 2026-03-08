@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
 import {
   Plus, Search, PackageCheck, Trash2, Eye,
@@ -40,6 +41,7 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 
 export function LeveringsbonnenLayout() {
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
   const [leveringsbonnen, setLeveringsbonnen] = useState<Leveringsbon[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -225,7 +227,7 @@ export function LeveringsbonnenLayout() {
                 {gefilterd.map((lb) => {
                   const cfg = STATUS_CONFIG[lb.status]
                   return (
-                    <tr key={lb.id} className={`group hover:bg-[#F4F3F0]/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigate(`/leveringsbonnen/${lb.id}`)}>
+                    <tr key={lb.id} className={`group hover:bg-[#F4F3F0]/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigateWithTab({ path: `/leveringsbonnen/${lb.id}`, label: lb.leveringsbon_nummer || 'Leveringsbon', id: `/leveringsbonnen/${lb.id}` })}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-teal-600 dark:text-teal-400">{lb.leveringsbon_nummer}</span>
                       </td>
@@ -240,7 +242,7 @@ export function LeveringsbonnenLayout() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigate(`/leveringsbonnen/${lb.id}`) }}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/leveringsbonnen/${lb.id}`, label: lb.leveringsbon_nummer || 'Leveringsbon', id: `/leveringsbonnen/${lb.id}` }) }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); setDeleteTarget(lb); setDeleteDialogOpen(true) }}>

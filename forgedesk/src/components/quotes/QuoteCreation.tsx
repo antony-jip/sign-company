@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate, useSearchParams, useParams, useLocation } from 'react-router-dom'
+import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -102,6 +103,7 @@ function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { numme
 export function QuoteCreation() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { setDirty } = useTabDirtyState()
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
@@ -895,6 +897,7 @@ export function QuoteCreation() {
       }
 
       hasUnsavedChangesRef.current = false
+      setDirty(false)
       setAutoSaveStatus('saved')
       // Reset indicator after 3 seconds
       setTimeout(() => setAutoSaveStatus('idle'), 3000)
@@ -917,6 +920,7 @@ export function QuoteCreation() {
     if (!selectedKlantId || !offerteTitel.trim() || items.length === 0) return
 
     hasUnsavedChangesRef.current = true
+    setDirty(true)
 
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     autoSaveTimerRef.current = setTimeout(() => {

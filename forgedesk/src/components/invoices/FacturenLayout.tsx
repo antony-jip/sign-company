@@ -78,6 +78,7 @@ import { generateFactuurPDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
@@ -244,6 +245,7 @@ function isThisMonth(dateStr: string): boolean {
 
 export function FacturenLayout() {
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
   // App settings (bedrijfsprofiel for PDF generation)
   const { profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
@@ -1582,7 +1584,7 @@ export function FacturenLayout() {
                             <Eye className="h-4 w-4 mr-2" />
                             Bekijken
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => navigate(`/facturen/${factuur.id}/bewerken`)}>
+                          <DropdownMenuItem onClick={() => navigateWithTab({ path: `/facturen/${factuur.id}/bewerken`, label: factuur.nummer || 'Factuur', id: `/facturen/${factuur.id}` })}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Bewerken
                           </DropdownMenuItem>
@@ -1840,7 +1842,7 @@ export function FacturenLayout() {
               variant="outline"
               size="sm"
               onClick={() => {
-                if (viewingFactuur) navigate(`/facturen/${viewingFactuur.id}/bewerken`)
+                if (viewingFactuur) navigateWithTab({ path: `/facturen/${viewingFactuur.id}/bewerken`, label: viewingFactuur.nummer || 'Factuur', id: `/facturen/${viewingFactuur.id}` })
               }}
               className="gap-1"
             >

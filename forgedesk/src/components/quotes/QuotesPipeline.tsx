@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -221,6 +222,7 @@ function relativeDate(dateStr: string): string {
 
 export function QuotesPipeline() {
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
   const { pipelineStappen, toonConversieRate, toonDagenOpen, toonFollowUpIndicatoren, valuta, refreshSettings } = useAppSettings()
   const [offertes, setOffertes] = useState<Offerte[]>([])
@@ -988,7 +990,7 @@ export function QuotesPipeline() {
                         <div
                           draggable
                           onDragStart={(e) => handleDragStart(e, offerte.id)}
-                          onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })}
+                          onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                           className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/60 p-3 space-y-2.5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer active:cursor-grabbing"
                         >
                           {/* Top row: nummer + indicators */}
@@ -1298,7 +1300,7 @@ export function QuotesPipeline() {
                       <tr
                         key={offerte.id}
                         className={`border-b border-border/50 last:border-0 hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2 ${getOfferteStatusBorderColor(offerte.status)}`}
-                        onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })}
+                        onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                       >
                         {/* Status */}
                         <td className="py-0 px-0">
@@ -1425,7 +1427,7 @@ export function QuotesPipeline() {
                                 <DropdownMenuItem
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: '/offertes' } })
+                                    navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })
                                   }}
                                 >
                                   Bewerken

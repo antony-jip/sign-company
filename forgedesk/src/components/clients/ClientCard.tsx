@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -40,6 +41,7 @@ interface ClientCardProps {
 
 export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, onToggleSelect }: ClientCardProps) {
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
 
   return (
     <Card
@@ -47,7 +49,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
         "cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 group",
         selected && "ring-2 ring-primary border-primary/30"
       )}
-      onClick={() => navigate(`/klanten/${klant.id}`)}
+      onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
@@ -119,7 +121,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/klanten/${klant.id}`) }}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` }) }}>
                   <Eye className="w-3.5 h-3.5 mr-2" />
                   Bekijken
                 </DropdownMenuItem>
