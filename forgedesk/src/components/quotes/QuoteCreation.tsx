@@ -1962,6 +1962,7 @@ export function QuoteCreation() {
                 onAddItem={handleAddItem}
                 onUpdateItem={handleUpdateItem}
                 onRemoveItem={handleRemoveItem}
+                userId={user?.id}
                 onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
                 onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
                 suggesties={omschrijvingSuggesties}

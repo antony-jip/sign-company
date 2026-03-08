@@ -101,6 +101,7 @@ interface QuoteItemsTableProps {
   onAddItem: () => void
   onUpdateItem: (id: string, field: keyof QuoteLineItem, value: QuoteLineItem[keyof QuoteLineItem]) => void
   onRemoveItem: (id: string) => void
+  userId?: string
   onUpdateItemWithCalculatie?: (
     id: string,
     data: {
@@ -187,9 +188,11 @@ function compressImage(file: File, maxWidth: number = 1200, quality: number = 0.
 }
 
 // ── Upload bijlage to storage and return stored path ──
-async function uploadBijlage(file: File, itemId: string): Promise<{ url: string; type: string; naam: string }> {
+// Path must start with userId for Supabase RLS policy: auth.uid() = foldername[1]
+async function uploadBijlage(file: File, itemId: string, userId?: string): Promise<{ url: string; type: string; naam: string }> {
   const ext = file.name.split('.').pop() || 'jpg'
-  const storagePath = `offerte-bijlagen/${itemId}/${Date.now()}.${ext}`
+  const prefix = userId || 'local'
+  const storagePath = `${prefix}/offerte-bijlagen/${itemId}/${Date.now()}.${ext}`
 
   if (file.type === 'application/pdf') {
     await uploadFile(file, storagePath)
@@ -253,8 +256,9 @@ function BijlageDropZone({
 
   return (
     <div
-      className="px-4 py-2 border-b border-border dark:border-border"
+      className="px-4 py-2 border-b border-border dark:border-border outline-none"
       onPaste={onPaste}
+      tabIndex={0}
     >
       <div className="flex items-center gap-2">
         <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
@@ -446,6 +450,7 @@ export function QuoteItemsTable({
   onAddItem,
   onUpdateItem,
   onRemoveItem,
+  userId,
   onUpdateItemWithCalculatie,
   onUpdateItemWithVariantCalculatie,
   suggesties = [],
@@ -857,7 +862,7 @@ export function QuoteItemsTable({
                     }
                     setUploadingItemId(item.id)
                     try {
-                      const result = await uploadBijlage(file, item.id)
+                      const result = await uploadBijlage(file, item.id, userId)
                       onUpdateItem(item.id, 'bijlage_url', result.url)
                       onUpdateItem(item.id, 'bijlage_type', result.type as 'image/jpeg')
                       onUpdateItem(item.id, 'bijlage_naam', result.naam)
@@ -877,7 +882,7 @@ export function QuoteItemsTable({
                         if (!file) return
                         setUploadingItemId(item.id)
                         try {
-                          const result = await uploadBijlage(file, item.id)
+                          const result = await uploadBijlage(file, item.id, userId)
                           onUpdateItem(item.id, 'bijlage_url', result.url)
                           onUpdateItem(item.id, 'bijlage_type', result.type as 'image/jpeg')
                           onUpdateItem(item.id, 'bijlage_naam', result.naam)
@@ -897,7 +902,7 @@ export function QuoteItemsTable({
                     }
                     setUploadingItemId(item.id)
                     try {
-                      const result = await uploadBijlage(file, item.id)
+                      const result = await uploadBijlage(file, item.id, userId)
                       onUpdateItem(item.id, 'bijlage_url', result.url)
                       onUpdateItem(item.id, 'bijlage_type', result.type as 'image/jpeg')
                       onUpdateItem(item.id, 'bijlage_naam', result.naam)
