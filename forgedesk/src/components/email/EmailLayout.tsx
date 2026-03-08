@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,10 +17,11 @@ import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
 import { ContactSidebar } from './ContactSidebar'
-import { EmailTracking } from './EmailTracking'
-import { EmailSequences } from './EmailSequences'
-import { EmailAnalytics } from './EmailAnalytics'
-import { GedeeldeInboxLayout } from './GedeeldeInboxLayout'
+// Lazy load heavy tab components (only loaded when user clicks the tab)
+const EmailTracking = lazy(() => import('./EmailTracking').then(m => ({ default: m.EmailTracking })))
+const EmailSequences = lazy(() => import('./EmailSequences').then(m => ({ default: m.EmailSequences })))
+const EmailAnalytics = lazy(() => import('./EmailAnalytics').then(m => ({ default: m.EmailAnalytics })))
+const GedeeldeInboxLayout = lazy(() => import('./GedeeldeInboxLayout').then(m => ({ default: m.GedeeldeInboxLayout })))
 import { EmailListItem } from './EmailListItem'
 import type { AddCustomerData, QuickProjectData, QuickTaskData, QuickDealData } from './ContactSidebar'
 import { extractEmailAddress } from '@/utils/emailUtils'
@@ -95,31 +96,39 @@ export function EmailLayout() {
     setEmails,
   })
 
-  // ── Contact lookup ──
+  // ── Contact lookup (pre-built Map for O(1) lookups) ──
+  const contactMap = useMemo(() => {
+    const map = new Map<string, EmailContact>()
+    for (const klant of klanten) {
+      const addEntry = (email: string, cp?: { naam?: string; telefoon?: string }) => {
+        const clean = email.toLowerCase()
+        if (!clean || map.has(clean)) return
+        map.set(clean, {
+          name: cp?.naam || klant.contactpersoon || klant.bedrijfsnaam || clean,
+          email: clean,
+          company: klant.bedrijfsnaam,
+          phone: cp?.telefoon || klant.telefoon,
+          isCustomer: true,
+          subscribedNewsletter: false,
+          tags: klant.tags || [],
+          notes: klant.notities,
+        })
+      }
+      if (klant.email) addEntry(klant.email)
+      if (klant.contactpersonen) {
+        for (const cp of klant.contactpersonen) {
+          if (cp.email) addEntry(cp.email, cp)
+        }
+      }
+    }
+    return map
+  }, [klanten])
+
   const findContactByEmail = useCallback((emailAddr: string): EmailContact | null => {
     const clean = extractEmailAddress(emailAddr).toLowerCase()
     if (!clean) return null
-
-    const klant = klanten.find((k) => {
-      if (k.email?.toLowerCase() === clean) return true
-      if (k.contactpersonen?.some((cp: { email?: string }) => cp.email?.toLowerCase() === clean)) return true
-      return false
-    })
-    if (!klant) return null
-
-    const matchedCP = klant.contactpersonen?.find((cp: { email?: string; naam?: string; telefoon?: string }) => cp.email?.toLowerCase() === clean)
-
-    return {
-      name: matchedCP?.naam || klant.contactpersoon || klant.bedrijfsnaam || clean,
-      email: clean,
-      company: klant.bedrijfsnaam,
-      phone: matchedCP?.telefoon || klant.telefoon,
-      isCustomer: true,
-      subscribedNewsletter: false,
-      tags: klant.tags || [],
-      notes: klant.notities,
-    }
-  }, [klanten])
+    return contactMap.get(clean) || null
+  }, [contactMap])
 
   const currentContact = useMemo<EmailContact | null>(() => {
     if (viewMode === 'reading' && selectedEmail) return findContactByEmail(selectedEmail.van)
@@ -453,13 +462,21 @@ export function EmailLayout() {
 
       {/* ── Tab Content ── */}
       {activeTab === 'gedeelde-inbox' ? (
-        <GedeeldeInboxLayout />
+        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></Card>}>
+          <GedeeldeInboxLayout />
+        </Suspense>
       ) : activeTab === 'tracking' ? (
-        <EmailTracking emails={emails} />
+        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></Card>}>
+          <EmailTracking emails={emails} />
+        </Suspense>
       ) : activeTab === 'sequences' ? (
-        <EmailSequences />
+        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></Card>}>
+          <EmailSequences />
+        </Suspense>
       ) : activeTab === 'analytics' ? (
-        <EmailAnalytics emails={emails} />
+        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></Card>}>
+          <EmailAnalytics emails={emails} />
+        </Suspense>
       ) : isLoading ? (
         <Card className="flex-1 flex overflow-hidden">
           <div className="flex-1 flex flex-col">

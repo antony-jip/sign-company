@@ -40,36 +40,77 @@ export function useEmailData() {
     updated_at: msg.date,
   }), [user?.id])
 
+  // SessionStorage cache for instant display while IMAP loads
+  const getCachedEmails = useCallback((folder: string): Email[] | null => {
+    try {
+      const cached = sessionStorage.getItem(`forgedesk_emails_${folder}`)
+      if (!cached) return null
+      const { emails: cachedEmails, timestamp } = JSON.parse(cached)
+      // Cache valid for 5 minutes
+      if (Date.now() - timestamp > 5 * 60 * 1000) return null
+      return cachedEmails
+    } catch { return null }
+  }, [])
+
+  const setCachedEmails = useCallback((folder: string, emailData: Email[]) => {
+    try {
+      sessionStorage.setItem(`forgedesk_emails_${folder}`, JSON.stringify({
+        emails: emailData,
+        timestamp: Date.now(),
+      }))
+    } catch { /* storage full, ignore */ }
+  }, [])
+
   const loadEmails = useCallback(async (folder?: string) => {
     const imapFolder = folder || 'INBOX'
     try {
-      const result = await fetchEmailsFromIMAP(imapFolder, 50, 0)
+      const result = await fetchEmailsFromIMAP(imapFolder, 20, 0)
       setImapTotal(result.total)
       setUseIMAP(true)
-      return result.emails.map((msg) => imapToEmail(msg, imapFolder))
+      const emailData = result.emails.map((msg) => imapToEmail(msg, imapFolder))
+      setCachedEmails(imapFolder, emailData)
+      return emailData
     } catch {
       setUseIMAP(false)
       return await getEmails().catch(() => [])
     }
-  }, [imapToEmail])
+  }, [imapToEmail, setCachedEmails])
 
-  // Initial load
+  // Initial load: show cached emails instantly, then refresh from IMAP
   useEffect(() => {
     let cancelled = false
-    setIsLoading(true)
-    Promise.all([
-      loadEmails(),
-      getKlanten().catch(() => []),
-    ])
-      .then(([emailData, klantData]) => {
+
+    // Show cached emails immediately (no loading spinner)
+    const cached = getCachedEmails('INBOX')
+    if (cached && cached.length > 0) {
+      setEmails(cached)
+      setIsLoading(false)
+      // Refresh in background
+      Promise.all([
+        loadEmails(),
+        getKlanten().catch(() => []),
+      ]).then(([emailData, klantData]) => {
         if (!cancelled) {
           setEmails(emailData)
           setKlanten(klantData)
         }
       })
-      .finally(() => { if (!cancelled) setIsLoading(false) })
+    } else {
+      setIsLoading(true)
+      Promise.all([
+        loadEmails(),
+        getKlanten().catch(() => []),
+      ])
+        .then(([emailData, klantData]) => {
+          if (!cancelled) {
+            setEmails(emailData)
+            setKlanten(klantData)
+          }
+        })
+        .finally(() => { if (!cancelled) setIsLoading(false) })
+    }
     return () => { cancelled = true }
-  }, [loadEmails])
+  }, [loadEmails, getCachedEmails])
 
   // Unsnooze timer
   useEffect(() => {

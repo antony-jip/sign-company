@@ -30,6 +30,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       secure: imap_port === 993,
       auth: { user: gmail_address, pass: app_password },
       logger: false,
+      emitLogs: false,
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
     })
 
     await client.connect()
