@@ -10,12 +10,19 @@ import { useTabs } from '@/contexts/TabsContext'
  * - Cmd/Ctrl + 9: Switch to last tab
  */
 export function useTabShortcuts() {
-  const { tabs, activeTabId, setActiveTab, closeTab } = useTabs()
+  const { tabs, activeTabId, setActiveTab, closeTab, newTab } = useTabs()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey
       if (!mod) return
+
+      // Cmd+T – new tab
+      if (e.key === 't') {
+        e.preventDefault()
+        newTab()
+        return
+      }
 
       // Cmd+W – close active tab
       if (e.key === 'w' && activeTabId) {
@@ -59,5 +66,5 @@ export function useTabShortcuts() {
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [tabs, activeTabId, setActiveTab, closeTab])
+  }, [tabs, activeTabId, setActiveTab, closeTab, newTab])
 }
