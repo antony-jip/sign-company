@@ -1294,12 +1294,12 @@ export function FacturenLayout() {
           </p>
         </div>
 
-        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-red-200/40 dark:border-red-800/30 bg-gradient-to-br from-red-50/60 to-card dark:from-red-950/20 dark:to-card p-4">
+        <div className="wm-stat-card relative overflow-hidden rounded-2xl p-4" style={{ border: '1px solid var(--color-coral-border)', background: 'linear-gradient(to bottom right, var(--color-coral), var(--color-coral))' }}>
           <div className="flex items-center gap-2 mb-2">
-            <div className="wm-stat-icon p-1.5 rounded-lg bg-red-100/80 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-              <AlertTriangle className="h-4 w-4" />
+            <div className="wm-stat-icon p-1.5 rounded-lg" style={{ background: 'color-mix(in srgb, var(--color-coral-border) 60%, transparent)' }}>
+              <AlertTriangle className="h-4 w-4" style={{ color: 'var(--color-coral-text)' }} />
             </div>
-            <span className="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide">
+            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-coral-text)' }}>
               Vervallen facturen
             </span>
           </div>
@@ -1311,7 +1311,8 @@ export function FacturenLayout() {
           </p>
           {verlopenCount > 0 && (
             <button
-              className="text-xs text-red-600 dark:text-red-400 hover:underline mt-1"
+              className="text-xs hover:underline mt-1"
+              style={{ color: 'var(--color-coral-text)' }}
               onClick={() => setFilterStatus('verlopen')}
             >
               Toon verlopen →
@@ -1319,12 +1320,12 @@ export function FacturenLayout() {
           )}
         </div>
 
-        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-amber-200/40 dark:border-amber-800/30 bg-gradient-to-br from-amber-50/60 to-card dark:from-amber-950/20 dark:to-card p-4">
+        <div className="wm-stat-card relative overflow-hidden rounded-2xl p-4" style={{ border: '1px solid var(--color-cream-border)', background: 'var(--color-cream)' }}>
           <div className="flex items-center gap-2 mb-2">
-            <div className="wm-stat-icon p-1.5 rounded-lg bg-amber-100/80 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
-              <Clock className="h-4 w-4" />
+            <div className="wm-stat-icon p-1.5 rounded-lg" style={{ background: 'color-mix(in srgb, var(--color-cream-border) 60%, transparent)' }}>
+              <Clock className="h-4 w-4" style={{ color: 'var(--color-cream-text)' }} />
             </div>
-            <span className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-cream-text)' }}>
               Gem. betaaltermijn
             </span>
           </div>

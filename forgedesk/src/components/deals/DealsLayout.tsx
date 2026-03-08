@@ -322,8 +322,8 @@ export function DealsLayout() {
           <p className="text-lg font-bold text-accent dark:text-wm-light mt-1">{formatCurrency(kpis.gewonnenMaand)}</p>
         </Card>
         <Card className="p-3">
-          <p className="text-[10px] font-semibold uppercase text-red-500 tracking-wide">Verloren (maand)</p>
-          <p className="text-lg font-bold text-red-500 mt-1">{formatCurrency(kpis.verlorenMaand)}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-coral-text)' }}>Verloren (maand)</p>
+          <p className="text-lg font-bold mt-1" style={{ color: 'var(--color-coral-text)' }}>{formatCurrency(kpis.verlorenMaand)}</p>
         </Card>
       </div>
 
@@ -394,9 +394,9 @@ export function DealsLayout() {
                           {deal.kans_percentage !== undefined && (
                             <span className={cn(
                               'text-[10px] font-bold px-1.5 py-0.5 rounded',
-                              (deal.kans_percentage || 0) >= 70 ? 'bg-wm-pale/25 text-accent' :
-                              (deal.kans_percentage || 0) >= 30 ? 'bg-amber-50/80 text-amber-700' :
-                              'bg-red-50/80 text-red-700'
+                              (deal.kans_percentage || 0) >= 70 ? 'bg-[var(--color-sage)] text-[var(--color-sage-text)]' :
+                              (deal.kans_percentage || 0) >= 30 ? 'bg-[var(--color-cream)] text-[var(--color-cream-text)]' :
+                              'bg-[var(--color-coral)] text-[var(--color-coral-text)]'
                             )}>{deal.kans_percentage}%</span>
                           )}
                         </div>
@@ -455,9 +455,9 @@ export function DealsLayout() {
                       <td className="px-4 py-3">
                         <span className={cn(
                           'text-xs font-bold px-1.5 py-0.5 rounded',
-                          (deal.kans_percentage || 0) >= 70 ? 'bg-wm-pale/25 text-accent' :
-                          (deal.kans_percentage || 0) >= 30 ? 'bg-amber-50/80 text-amber-700' :
-                          'bg-red-50/80 text-red-700'
+                          (deal.kans_percentage || 0) >= 70 ? 'bg-[var(--color-sage)] text-[var(--color-sage-text)]' :
+                          (deal.kans_percentage || 0) >= 30 ? 'bg-[var(--color-cream)] text-[var(--color-cream-text)]' :
+                          'bg-[var(--color-coral)] text-[var(--color-coral-text)]'
                         )}>{deal.kans_percentage || 0}%</span>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getMedewerkerNaam(deal.medewerker_id)}</td>

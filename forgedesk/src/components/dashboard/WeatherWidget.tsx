@@ -159,9 +159,9 @@ export function WeatherWidget() {
 
   const workCondition = isGoodWorkWeather(current.weatherCode, current.windSpeed)
   const conditionColors = {
-    goed: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20',
-    matig: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20',
-    slecht: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
+    goed: 'text-[var(--color-sage-text)] bg-[var(--color-sage)]',
+    matig: 'text-[var(--color-cream-text)] bg-[var(--color-cream)]',
+    slecht: 'text-[var(--color-coral-text)] bg-[var(--color-coral)]',
   }
   const conditionLabels = {
     goed: 'Goed werkweer',

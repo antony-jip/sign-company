@@ -314,25 +314,25 @@ export function ProjectsList() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-3 flex-wrap">
         {stats.actief > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-primary/15 border border-primary/20 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
             <TrendingUp className="w-3 h-3" />
             {stats.actief} actief
           </div>
         )}
         {stats.teFactureren > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700 dark:text-violet-400 bg-violet-50/80 dark:bg-violet-900/20 border border-violet-200/50 dark:border-violet-800/30 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
             <Receipt className="w-3 h-3" />
             {stats.teFactureren} te factureren
           </div>
         )}
         {stats.overdue > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
             <AlertTriangle className="w-3 h-3" />
             {stats.overdue} verlopen
           </div>
         )}
         {stats.afgerond > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-accent dark:text-wm-light bg-wm-pale/15 dark:bg-accent/15 border border-primary/15 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
             <CheckCircle2 className="w-3 h-3" />
             {stats.afgerond} afgerond
           </div>

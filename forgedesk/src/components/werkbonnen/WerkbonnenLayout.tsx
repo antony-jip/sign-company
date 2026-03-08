@@ -24,10 +24,10 @@ import { round2 } from '@/utils/budgetUtils'
 type FilterStatus = 'alle' | 'concept' | 'ingediend' | 'goedgekeurd' | 'gefactureerd'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  concept: { label: 'Concept', color: 'text-stone-600 dark:text-stone-400', bg: 'bg-stone-100/80 dark:bg-stone-800/50' },
-  ingediend: { label: 'Ingediend', color: 'text-sky-700 dark:text-sky-400', bg: 'bg-sky-50/80 dark:bg-sky-900/30' },
-  goedgekeurd: { label: 'Goedgekeurd', color: 'text-accent dark:text-wm-light', bg: 'bg-wm-pale/25 dark:bg-accent/20' },
-  gefactureerd: { label: 'Gefactureerd', color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50/80 dark:bg-violet-900/25' },
+  concept: { label: 'Concept', color: 'text-[var(--color-cream-text)]', bg: 'bg-[var(--color-cream)]' },
+  ingediend: { label: 'Ingediend', color: 'text-[var(--color-mist-text)]', bg: 'bg-[var(--color-mist)]' },
+  goedgekeurd: { label: 'Goedgekeurd', color: 'text-[var(--color-sage-text)]', bg: 'bg-[var(--color-sage)]' },
+  gefactureerd: { label: 'Gefactureerd', color: 'text-[var(--color-lavender-text)]', bg: 'bg-[var(--color-lavender)]' },
 }
 
 export function WerkbonnenLayout() {
