@@ -33,16 +33,32 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
   return new Blob([new Uint8Array(byteNumbers)], { type: mimeType })
 }
 
-// Ratio presets → pixel sizes voor fal.ai
-const RATIO_SIZES: Record<string, { width: number; height: number }> = {
-  '1:1':   { width: 2048, height: 2048 },
-  '4:3':   { width: 2048, height: 1536 },
-  '3:4':   { width: 1536, height: 2048 },
-  '16:9':  { width: 2048, height: 1152 },
-  '9:16':  { width: 1152, height: 2048 },
-  '3:2':   { width: 2048, height: 1365 },
-  '2:3':   { width: 1365, height: 2048 },
-  '21:9':  { width: 2048, height: 878 },
+// Resolution multipliers
+const RESOLUTIE_BASES: Record<string, number> = {
+  '1K': 1024,
+  '2K': 2048,
+  '4K': 4096,
+}
+
+// Ratio presets → returns pixel sizes based on resolution
+function getRatioSize(ratio: string, resolutie: string): { width: number; height: number } {
+  const base = RESOLUTIE_BASES[resolutie] || 2048
+  const ratios: Record<string, [number, number]> = {
+    '1:1':  [1, 1],
+    '4:3':  [4, 3],
+    '3:4':  [3, 4],
+    '16:9': [16, 9],
+    '9:16': [9, 16],
+    '3:2':  [3, 2],
+    '2:3':  [2, 3],
+    '21:9': [21, 9],
+  }
+  const [rw, rh] = ratios[ratio] || [1, 1]
+  const maxDim = base
+  if (rw >= rh) {
+    return { width: maxDim, height: Math.round(maxDim * rh / rw) }
+  }
+  return { width: Math.round(maxDim * rw / rh), height: maxDim }
 }
 
 interface ChatMessage {
@@ -156,12 +172,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       logo_base64,
       beschrijving,
       ratio,
+      resolutie,
       chat_geschiedenis,
     } = req.body as {
       gebouw_foto_base64: string
       logo_base64?: string
       beschrijving: string
       ratio?: string
+      resolutie?: string
       chat_geschiedenis?: ChatMessage[]
     }
 
@@ -211,8 +229,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       imageUrls.push(logoUrl)
     }
 
-    // Step 3: Determine image size from ratio
-    const imageSize = RATIO_SIZES[ratio || ''] || RATIO_SIZES['1:1']
+    // Step 3: Determine image size from ratio + resolution
+    const imageSize = getRatioSize(ratio || '1:1', resolutie || '2K')
 
     // Step 4: Generate mockup with fal.ai
     const result = await fal.subscribe('fal-ai/nano-banana-2/edit', {
