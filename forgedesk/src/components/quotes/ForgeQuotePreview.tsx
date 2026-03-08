@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -7,7 +7,8 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
-import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Pencil, Download, ChevronRight } from 'lucide-react'
+import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Pencil, Download, ChevronRight, Image as ImageIcon, Paperclip } from 'lucide-react'
+import { downloadFile } from '@/services/storageService'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import type { PrijsVariant } from './QuoteItemsTable'
 import { logger } from '../../utils/logger'
@@ -20,6 +21,9 @@ interface PreviewItem {
   korting_percentage: number
   prijs_varianten?: PrijsVariant[]
   actieve_variant_id?: string
+  bijlage_url?: string
+  bijlage_type?: string
+  bijlage_naam?: string
 }
 
 interface ForgeQuotePreviewProps {
@@ -128,6 +132,9 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       korting_percentage: i.korting_percentage,
       prijs_varianten: i.prijs_varianten,
       actieve_variant_id: i.actieve_variant_id,
+      bijlage_url: i.bijlage_url,
+      bijlage_type: i.bijlage_type,
+      bijlage_naam: i.bijlage_naam,
     }))
     klant = fetchedKlant
   }
@@ -266,6 +273,36 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   }
 
   const items = itemsData || []
+
+  // Resolve bijlage storage paths to displayable URLs
+  const [bijlageUrls, setBijlageUrls] = useState<Record<number, string>>({})
+  const bijlageItems = useMemo(() =>
+    items.map((item, idx) => ({ idx, url: item.bijlage_url, type: item.bijlage_type })).filter(i => i.url),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items.map(i => i.bijlage_url).join(',')]
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    async function resolve() {
+      const urls: Record<number, string> = {}
+      for (const { idx, url } of bijlageItems) {
+        if (!url) continue
+        if (url.startsWith('data:') || url.startsWith('http')) {
+          urls[idx] = url
+        } else {
+          try {
+            const resolved = await downloadFile(url)
+            if (!cancelled) urls[idx] = resolved
+          } catch { /* skip */ }
+        }
+      }
+      if (!cancelled) setBijlageUrls(urls)
+    }
+    if (bijlageItems.length > 0) resolve()
+    else setBijlageUrls({})
+    return () => { cancelled = true }
+  }, [bijlageItems])
 
   // Calculate totals
   const subtotaal = items.reduce((sum, item) => sum + calculateLineTotaal(item), 0)
@@ -658,6 +695,49 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             </tbody>
           </table>
         </div>
+
+        {/* Bijlagen per item */}
+        {Object.keys(bijlageUrls).length > 0 && (
+          <div className="mx-10 mb-6 space-y-4">
+            <h4 className="text-sm font-semibold text-foreground/70 dark:text-muted-foreground/50 uppercase tracking-wider flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Bijlagen
+            </h4>
+            {items.map((item, index) => {
+              const url = bijlageUrls[index]
+              if (!url) return null
+              const isPdf = item.bijlage_type === 'application/pdf'
+              return (
+                <div key={index} className="border border-border dark:border-border rounded-lg overflow-hidden">
+                  <div className="px-4 py-2 bg-background/50 dark:bg-foreground/80/30 border-b border-border dark:border-border flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">{index + 1}.</span>
+                    <span className="text-sm font-medium text-foreground dark:text-white">{item.beschrijving}</span>
+                    {item.bijlage_naam && (
+                      <span className="ml-auto text-xs text-muted-foreground">{item.bijlage_naam}</span>
+                    )}
+                  </div>
+                  <div className="p-4 flex items-center justify-center bg-white dark:bg-foreground/80">
+                    {isPdf ? (
+                      <div className="flex items-center gap-3 py-4">
+                        <Paperclip className="h-6 w-6 text-rose-500" />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{item.bijlage_naam || 'Document.pdf'}</p>
+                          <p className="text-xs text-muted-foreground">PDF bijlage</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={url}
+                        alt={item.beschrijving || 'Bijlage'}
+                        className="max-h-[400px] max-w-full object-contain rounded"
+                      />
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {/* Totals */}
         <div className="mx-10 mb-8 flex justify-end">

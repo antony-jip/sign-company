@@ -16,6 +16,7 @@ import { labelToAutofillField } from '@/utils/autofillUtils'
 import type { CalculatieRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
+import { createDocument } from '@/services/supabaseService'
 
 // ============================================================
 // OFFERTE ITEMS
@@ -126,6 +127,8 @@ interface QuoteItemsTableProps {
   onPasteItems?: () => void
   onClearClipboard?: () => void
   toonM2?: boolean
+  projectId?: string
+  klantId?: string
 }
 
 function calculateLineTotaal(item: QuoteLineItem): number {
@@ -206,6 +209,37 @@ async function uploadBijlage(file: File, itemId: string, userId?: string): Promi
   const compressedFile = new File([blob], file.name, { type: 'image/jpeg' })
   await uploadFile(compressedFile, storagePath)
   return { url: storagePath, type: 'image/jpeg', naam: file.name }
+}
+
+// ── Save bijlage also as project photo ──
+async function saveBijlageToProject(
+  storagePath: string,
+  fileName: string,
+  fileType: string,
+  fileSize: number,
+  projectId: string,
+  klantId: string | undefined,
+  userId: string,
+  itemBeschrijving: string
+) {
+  try {
+    await createDocument({
+      user_id: userId,
+      project_id: projectId,
+      klant_id: klantId || null,
+      naam: fileName,
+      type: fileType,
+      grootte: fileSize,
+      map: 'Offerte bijlagen',
+      storage_path: storagePath,
+      status: 'definitief',
+      tags: ['foto', 'offerte-bijlage'],
+      gedeeld_met: [],
+      beschrijving: itemBeschrijving ? `Bijlage bij: ${itemBeschrijving}` : '',
+    })
+  } catch {
+    // Non-critical: don't block the bijlage upload itself
+  }
 }
 
 // ── Hook to resolve storage path to displayable URL ──
@@ -502,6 +536,8 @@ export function QuoteItemsTable({
   onPasteItems,
   onClearClipboard,
   toonM2 = true,
+  projectId,
+  klantId,
 }: QuoteItemsTableProps) {
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
@@ -908,6 +944,9 @@ export function QuoteItemsTable({
                       onUpdateItem(item.id, 'bijlage_url', result.url)
                       onUpdateItem(item.id, 'bijlage_type', result.type as 'image/jpeg')
                       onUpdateItem(item.id, 'bijlage_naam', result.naam)
+                      if (projectId && userId) {
+                        saveBijlageToProject(result.url, result.naam, result.type, file.size, projectId, klantId, userId, item.beschrijving)
+                      }
                     } catch (err) {
                       alert('Upload mislukt: ' + (err instanceof Error ? err.message : 'Onbekende fout'))
                     } finally {
@@ -928,6 +967,9 @@ export function QuoteItemsTable({
                           onUpdateItem(item.id, 'bijlage_url', result.url)
                           onUpdateItem(item.id, 'bijlage_type', result.type as 'image/jpeg')
                           onUpdateItem(item.id, 'bijlage_naam', result.naam)
+                          if (projectId && userId) {
+                            saveBijlageToProject(result.url, result.naam, result.type, file.size, projectId, klantId, userId, item.beschrijving)
+                          }
                         } catch (err) {
                           alert('Plakken mislukt: ' + (err instanceof Error ? err.message : 'Onbekende fout'))
                         } finally {
@@ -948,6 +990,9 @@ export function QuoteItemsTable({
                       onUpdateItem(item.id, 'bijlage_url', result.url)
                       onUpdateItem(item.id, 'bijlage_type', result.type as 'image/jpeg')
                       onUpdateItem(item.id, 'bijlage_naam', result.naam)
+                      if (projectId && userId) {
+                        saveBijlageToProject(result.url, result.naam, result.type, file.size, projectId, klantId, userId, item.beschrijving)
+                      }
                     } catch (err) {
                       alert('Upload mislukt: ' + (err instanceof Error ? err.message : 'Onbekende fout'))
                     } finally {

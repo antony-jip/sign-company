@@ -1972,6 +1972,8 @@ export function QuoteCreation() {
                 onPasteItems={handlePasteItems}
                 onClearClipboard={handleClearClipboard}
                 toonM2={offerteToonM2}
+                projectId={selectedProjectId || undefined}
+                klantId={selectedKlantId || undefined}
               />
             </CardContent>
           </Card>
