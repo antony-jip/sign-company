@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Palette, TrendingUp, Clock, Coins } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { getVisualizerStats } from '@/services/supabaseService'
-import { round2 } from '@/utils/budgetUtils'
+import { getVisualizerStats, getVisualizerCredits } from '@/services/supabaseService'
 import type { VisualizerStats } from '@/types'
 
 interface VisualizerKostenDashboardProps {
@@ -13,6 +12,7 @@ interface VisualizerKostenDashboardProps {
 export function VisualizerKostenDashboard({ compact = false }: VisualizerKostenDashboardProps) {
   const { user } = useAuth()
   const [stats, setStats] = useState<VisualizerStats | null>(null)
+  const [creditSaldo, setCreditSaldo] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -20,8 +20,14 @@ export function VisualizerKostenDashboard({ compact = false }: VisualizerKostenD
     let cancelled = false
     async function load() {
       try {
-        const s = await getVisualizerStats(user!.id)
-        if (!cancelled) setStats(s)
+        const [s, credits] = await Promise.all([
+          getVisualizerStats(user!.id),
+          getVisualizerCredits(user!.id),
+        ])
+        if (!cancelled) {
+          setStats(s)
+          setCreditSaldo(credits.saldo)
+        }
       } catch { /* ignore */ }
       if (!cancelled) setIsLoading(false)
     }
@@ -50,7 +56,7 @@ export function VisualizerKostenDashboard({ compact = false }: VisualizerKostenD
           <span className="font-medium text-foreground">{stats.gegenereerd_deze_maand}</span> deze maand
         </span>
         <span className="text-muted-foreground">
-          €<span className="font-medium text-foreground">{round2(stats.kosten_deze_maand_eur)}</span> kosten
+          <span className="font-medium text-foreground">{creditSaldo}</span> credits over
         </span>
       </div>
     )
@@ -73,7 +79,7 @@ export function VisualizerKostenDashboard({ compact = false }: VisualizerKostenD
             <div>
               <p className="text-xs text-muted-foreground">Deze maand</p>
               <p className="text-sm font-medium">
-                {stats.gegenereerd_deze_maand} mockups — €{round2(stats.kosten_deze_maand_eur)}
+                {stats.gegenereerd_deze_maand} mockups — {stats.gegenereerd_deze_maand} credits
               </p>
             </div>
           </div>
@@ -83,8 +89,8 @@ export function VisualizerKostenDashboard({ compact = false }: VisualizerKostenD
               <Coins className="h-3.5 w-3.5 text-green-500" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Doorberekend</p>
-              <p className="text-sm font-medium">€{round2(stats.totaal_doorberekend_eur)}</p>
+              <p className="text-xs text-muted-foreground">Credits saldo</p>
+              <p className="text-sm font-medium">{creditSaldo} credits</p>
             </div>
           </div>
 
@@ -93,9 +99,9 @@ export function VisualizerKostenDashboard({ compact = false }: VisualizerKostenD
               <Palette className="h-3.5 w-3.5 text-purple-500" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Totaal ooit</p>
+              <p className="text-xs text-muted-foreground">Totaal gebruikt</p>
               <p className="text-sm font-medium">
-                {stats.totaal_gegenereerd} mockups — €{round2(stats.totaal_kosten_eur)}
+                {stats.totaal_gegenereerd} mockups — {stats.totaal_gegenereerd} credits
               </p>
             </div>
           </div>

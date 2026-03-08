@@ -788,6 +788,18 @@ export function useDataInit() {
       seedIfEmpty('forgedesk_montage_afspraken', demoMontageAfspraken)
       seedIfEmpty('forgedesk_facturen', demoFacturen)
       seedIfEmpty('forgedesk_factuur_items', demoFactuurItems)
+
+      // Seed demo credits voor visualizer
+      const creditsKey = 'forgedesk_visualizer_credits_demo-user'
+      if (!localStorage.getItem(creditsKey)) {
+        safeSetItem(creditsKey, JSON.stringify({
+          user_id: 'demo-user',
+          saldo: 25,
+          totaal_gekocht: 25,
+          totaal_gebruikt: 0,
+          laatst_bijgewerkt: new Date().toISOString(),
+        }))
+      }
     } catch (e) {
       console.warn('localStorage init failed:', e)
     }

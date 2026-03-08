@@ -7,7 +7,6 @@ import {
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
-import { round2 } from '@/utils/budgetUtils'
 import { SIGNING_TYPE_LABELS } from '@/utils/visualizerDefaults'
 import {
   getSigningVisualisaties,
@@ -106,7 +105,7 @@ export function VisualizerLayout() {
           </div>
           {stats && (
             <p className="text-xs text-muted-foreground mt-2 ml-14">
-              {stats.totaal_gegenereerd} mockups gegenereerd | €{round2(stats.totaal_kosten_eur)} API-kosten | €{round2(stats.totaal_doorberekend_eur)} doorberekend
+              {stats.totaal_gegenereerd} mockups gegenereerd | {stats.totaal_gegenereerd} credits gebruikt
             </p>
           )}
         </div>
@@ -206,7 +205,7 @@ export function VisualizerLayout() {
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{new Date(v.created_at).toLocaleDateString('nl-NL')}</span>
-                  <span>€{round2(v.api_kosten_eur)}</span>
+                  <span>1 credit</span>
                 </div>
               </div>
 

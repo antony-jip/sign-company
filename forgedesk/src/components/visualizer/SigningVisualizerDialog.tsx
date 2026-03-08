@@ -374,21 +374,9 @@ export function SigningVisualizerDialog({
           </div>
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>Kosten: €{round2(resultaat.api_kosten_usd * instellingen.usd_eur_wisselkoers)}</span>
+            <span>1 credit gebruikt</span>
             <span>|</span>
             <span>Generatietijd: {(resultaat.generatie_tijd_ms / 1000).toFixed(1)}s</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={doorberekenen}
-                onChange={(e) => setDoorberekenen(e.target.checked)}
-                className="rounded"
-              />
-              Doorberekenen aan klant (€{doorberekendBedrag} excl. BTW)
-            </label>
           </div>
 
           <div className="flex items-center gap-2 pt-2">
@@ -644,9 +632,7 @@ export function SigningVisualizerDialog({
             <div className="mb-3">
               <Label className="text-xs text-muted-foreground mb-1 block">Resolutie output</Label>
               <div className="flex gap-2">
-                {(['1K', '2K', '4K'] as const).map((res) => {
-                  const kosten = round2((KOSTEN_PER_RESOLUTIE_USD[res] || 0) * instellingen.usd_eur_wisselkoers)
-                  return (
+                {(['1K', '2K', '4K'] as const).map((res) => (
                     <button
                       key={res}
                       onClick={() => setResolutie(res)}
@@ -658,10 +644,8 @@ export function SigningVisualizerDialog({
                       )}
                     >
                       {res} {res === '2K' && <span className="text-muted-foreground">(aanbevolen)</span>}
-                      <span className="block text-muted-foreground">€{kosten}</span>
                     </button>
-                  )
-                })}
+                  ))}
               </div>
             </div>
 
@@ -718,13 +702,10 @@ export function SigningVisualizerDialog({
         <div className="border-t pt-4 mt-2 space-y-3">
           <div className="flex items-center justify-between text-sm">
             <div className="text-muted-foreground">
-              Kosten: <span className="font-medium text-foreground">€{kostenEur}</span> (excl. BTW)
-              {doorberekenen && (
-                <span className="ml-1">— doorberekend: €{doorberekendBedrag}</span>
-              )}
+              Kosten: <span className="font-medium text-foreground">1 credit</span> per mockup
             </div>
             <div className="text-xs text-muted-foreground">
-              Credits: <span className={cn('font-medium', creditSaldo < 5 ? 'text-orange-500' : 'text-foreground')}>{creditSaldo}</span>
+              Saldo: <span className={cn('font-medium', creditSaldo < 5 ? 'text-orange-500' : 'text-foreground')}>{creditSaldo} credits</span>
             </div>
           </div>
 
