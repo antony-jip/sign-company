@@ -114,6 +114,7 @@ import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, MontageAfspraak } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
+import { getStatusBadgeClass } from '@/utils/statusColors'
 import { logger } from '../../utils/logger'
 
 const statusLabels: Record<string, string> = {
@@ -810,6 +811,7 @@ export function ProjectDetail() {
         </div>
 
         {/* Project Header — compact */}
+        <div className={`h-1 w-full rounded-t-lg ${getStatusBadgeClass(project.status)}`} style={{ border: 'none' }} />
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex items-start gap-3.5">

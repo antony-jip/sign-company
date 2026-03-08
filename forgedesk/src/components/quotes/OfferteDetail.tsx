@@ -12,6 +12,7 @@ import {
 } from '@/services/supabaseService'
 import type { Offerte, OfferteItem, Klant, OfferteActiviteit } from '@/types'
 import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
+import { getStatusBadgeClass } from '@/utils/statusColors'
 import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -581,14 +582,19 @@ export function OfferteDetail() {
         </div>
       </div>
 
+      {/* Status color strip */}
+      <div className={`h-1 w-full rounded-t-lg ${getStatusBadgeClass(offerte.status)}`} style={{ border: 'none' }} />
+
       {/* Client + Details grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Klant info */}
         <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <Building2 className="h-3.5 w-3.5" />
-            Klant
-          </h3>
+          <div className="section-header-pastel">
+            <h3 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5" />
+              Klant
+            </h3>
+          </div>
           {klant ? (
             <div className="space-y-1.5">
               <p className="font-semibold text-foreground">{klant.bedrijfsnaam}</p>
@@ -623,10 +629,12 @@ export function OfferteDetail() {
 
         {/* Details */}
         <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <Calendar className="h-3.5 w-3.5" />
-            Details
-          </h3>
+          <div className="section-header-pastel">
+            <h3 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+              <Calendar className="h-3.5 w-3.5" />
+              Details
+            </h3>
+          </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Aangemaakt</span>
@@ -694,9 +702,11 @@ export function OfferteDetail() {
       {/* Intro tekst */}
       {(isEditing || offerte.intro_tekst) && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Intro tekst
-          </h3>
+          <div className="section-header-pastel">
+            <h3 className="text-xs font-semibold uppercase tracking-wider">
+              Intro tekst
+            </h3>
+          </div>
           {isEditing ? (
             <Textarea
               value={editIntro}
@@ -798,9 +808,11 @@ export function OfferteDetail() {
       {/* Outro tekst */}
       {(isEditing || offerte.outro_tekst) && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Outro tekst
-          </h3>
+          <div className="section-header-pastel">
+            <h3 className="text-xs font-semibold uppercase tracking-wider">
+              Outro tekst
+            </h3>
+          </div>
           {isEditing ? (
             <Textarea
               value={editOutro}
@@ -817,9 +829,11 @@ export function OfferteDetail() {
       {/* Notities (edit mode) */}
       {isEditing && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Notities
-          </h3>
+          <div className="section-header-pastel">
+            <h3 className="text-xs font-semibold uppercase tracking-wider">
+              Notities
+            </h3>
+          </div>
           <Textarea
             value={editNotities}
             onChange={(e) => setEditNotities(e.target.value)}
@@ -832,18 +846,22 @@ export function OfferteDetail() {
       {/* Notities (view mode) */}
       {!isEditing && offerte.notities && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Notities
-          </h3>
+          <div className="section-header-pastel">
+            <h3 className="text-xs font-semibold uppercase tracking-wider">
+              Notities
+            </h3>
+          </div>
           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offerte.notities}</p>
         </div>
       )}
 
       {/* Activiteit log */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Activiteit
-        </h3>
+        <div className="section-header-pastel">
+          <h3 className="text-xs font-semibold uppercase tracking-wider">
+            Activiteit
+          </h3>
+        </div>
         {activiteiten.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nog geen activiteit geregistreerd</p>
         ) : (
