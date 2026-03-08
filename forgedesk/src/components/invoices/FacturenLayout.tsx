@@ -1483,7 +1483,7 @@ export function FacturenLayout() {
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setViewingFactuur(factuur)}
-                          className="text-sm font-mono font-semibold text-accent dark:text-wm-light hover:text-primary hover:underline transition-colors"
+                          className="text-sm font-mono font-semibold text-foreground hover:text-primary hover:underline transition-colors"
                         >
                           {factuur.nummer}
                         </button>

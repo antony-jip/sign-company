@@ -1353,7 +1353,7 @@ export function QuotesPipeline() {
                               <Link
                                 to={`/offertes/${offerte.id}/bewerken`}
                                 state={{ from: '/offertes' }}
-                                className="text-sm font-medium text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
+                                className="text-sm font-medium text-foreground hover:text-primary transition-colors block truncate"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {offerte.nummer} — {offerte.titel}

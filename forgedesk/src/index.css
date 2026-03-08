@@ -49,8 +49,8 @@
     --muted-foreground: 0 0% 42%;      /* #6B6B6B */
 
     /* Accent */
-    --accent: 40 14% 95%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 145 22% 45%;              /* #5A8264 sage — zichtbaar als tekst */
+    --accent-foreground: 0 0% 100%;
 
     /* Borders */
     --border: 36 12% 90%;              /* #E8E6E0 */
@@ -124,8 +124,8 @@
     --secondary-foreground: 40 4% 54%;
     --muted: 40 8% 18%;
     --muted-foreground: 40 4% 36%;
-    --accent: 40 8% 18%;
-    --accent-foreground: 40 6% 90%;
+    --accent: 145 22% 55%;              /* sage-light — zichtbaar als tekst in dark mode */
+    --accent-foreground: 0 0% 10%;
     --border: 40 8% 18%;
     --input: 40 8% 18%;
     --destructive: 5 58% 65%;
