@@ -20,6 +20,7 @@ import {
   getProjecten,
   getOffertes,
 } from '@/services/supabaseService'
+import { uploadFile } from '@/services/storageService'
 import type { SigningVisualisatie, Project, Offerte } from '@/types'
 import { VisualisatieLightbox } from './VisualisatieLightbox'
 import { CreditsPakketDialog } from './CreditsPakketDialog'
@@ -343,18 +344,49 @@ export function VisualizerLayout() {
     }
   }, [handleChatVerfijning])
 
+  // ── Helper: convert base64 data URL to File ──
+  const base64ToFile = useCallback((dataUrl: string, filename: string): File => {
+    const [header, base64] = dataUrl.split(',')
+    const mime = header.match(/:(.*?);/)?.[1] || 'image/png'
+    const bytes = atob(base64)
+    const arr = new Uint8Array(bytes.length)
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i)
+    return new File([arr], filename, { type: mime })
+  }, [])
+
   // ── Save result ──
   const handleOpslaan = useCallback(async () => {
     if (!user?.id || !resultaat || !foto) return
     try {
+      // Upload base64 foto's naar storage i.p.v. direct in DB
+      const ts = Date.now()
+      let gebouwFotoUrl = foto
+      let logoUrl = logoFoto || undefined
+
+      // Upload gebouw foto als het base64 is
+      if (foto.startsWith('data:')) {
+        const gebouwFile = base64ToFile(foto, `gebouw-${ts}.jpg`)
+        const path = `${user.id}/visualizer/${ts}-gebouw.jpg`
+        await uploadFile(gebouwFile, path)
+        gebouwFotoUrl = path
+      }
+
+      // Upload logo als het base64 is
+      if (logoFoto && logoFoto.startsWith('data:')) {
+        const logoFile = base64ToFile(logoFoto, `logo-${ts}.png`)
+        const path = `${user.id}/visualizer/${ts}-logo.png`
+        await uploadFile(logoFile, path)
+        logoUrl = path
+      }
+
       const project = projecten.find(p => p.id === selectedProject)
       await createSigningVisualisatie({
         user_id: user.id,
         offerte_id: selectedOfferte || undefined,
         project_id: selectedProject || undefined,
         klant_id: project?.klant_id || undefined,
-        gebouw_foto_url: foto,
-        logo_url: logoFoto || undefined,
+        gebouw_foto_url: gebouwFotoUrl,
+        logo_url: logoUrl,
         prompt_gebruikt: resultaat.prompt_gebruikt,
         aangepaste_prompt: beschrijving,
         signing_type: 'led_verlicht',
@@ -371,10 +403,11 @@ export function VisualizerLayout() {
       toast.success('Opgeslagen in bibliotheek!')
       handleNieuweSessie()
       ladenBibliotheek()
-    } catch {
-      toast.error('Opslaan mislukt')
+    } catch (err) {
+      console.error('Opslaan mislukt:', err)
+      toast.error(`Opslaan mislukt: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
     }
-  }, [user?.id, resultaat, foto, logoFoto, beschrijving, selectedProject, selectedOfferte, projecten, ladenBibliotheek])
+  }, [user?.id, resultaat, foto, logoFoto, beschrijving, selectedProject, selectedOfferte, projecten, ladenBibliotheek, base64ToFile])
 
   const handleNieuweSessie = useCallback(() => {
     setResultaat(null)
