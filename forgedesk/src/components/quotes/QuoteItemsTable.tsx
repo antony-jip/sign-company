@@ -16,7 +16,8 @@ import { labelToAutofillField } from '@/utils/autofillUtils'
 import type { CalculatieRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
-import { createDocument } from '@/services/supabaseService'
+import { createDocument, getSigningVisualisatiesByOfferte } from '@/services/supabaseService'
+import type { SigningVisualisatie } from '@/types'
 
 // ============================================================
 // OFFERTE ITEMS
@@ -129,6 +130,7 @@ interface QuoteItemsTableProps {
   toonM2?: boolean
   projectId?: string
   klantId?: string
+  offerteId?: string
 }
 
 function calculateLineTotaal(item: QuoteLineItem): number {
@@ -274,6 +276,8 @@ function BijlageDropZone({
   onPaste,
   onFileSelect,
   onRemove,
+  visualisaties = [],
+  onSelectVisualisatie,
 }: {
   item: QuoteLineItem
   isDragOver: boolean
@@ -284,6 +288,8 @@ function BijlageDropZone({
   onPaste: (e: React.ClipboardEvent) => void
   onFileSelect: (file: File) => void
   onRemove: () => void
+  visualisaties?: SigningVisualisatie[]
+  onSelectVisualisatie?: (v: SigningVisualisatie) => void
 }) {
   const resolvedUrl = useBijlageUrl(item.bijlage_url)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -401,6 +407,36 @@ function BijlageDropZone({
               e.target.value = ''
             }}
           />
+        </div>
+      )}
+
+      {/* ── Gegenereerde visualisaties van deze offerte ── */}
+      {visualisaties.length > 0 && (
+        <div className="mt-3">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            Gegenereerde voorbeelden
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {visualisaties.map((v) => (
+              <div
+                key={v.id}
+                onClick={() => onSelectVisualisatie?.(v)}
+                className="relative group cursor-pointer rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-md transition-all w-[120px] flex-shrink-0"
+                title="Klik om als tekening te gebruiken"
+              >
+                <img
+                  src={v.resultaat_url}
+                  alt="Visualisatie voorbeeld"
+                  className="w-full h-[80px] object-cover"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                  <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 px-2 py-1 rounded">
+                    Gebruiken
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -538,6 +574,7 @@ export function QuoteItemsTable({
   toonM2 = true,
   projectId,
   klantId,
+  offerteId,
 }: QuoteItemsTableProps) {
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
@@ -548,6 +585,16 @@ export function QuoteItemsTable({
   // Bijlage upload state
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null)
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null)
+  // Visualisaties voor deze offerte (voor in de tekening/bijlage sectie)
+  const [visualisaties, setVisualisaties] = useState<SigningVisualisatie[]>([])
+  useEffect(() => {
+    if (!offerteId) return
+    let cancelled = false
+    getSigningVisualisatiesByOfferte(offerteId).then(items => {
+      if (!cancelled) setVisualisaties(items)
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [offerteId])
 
   const activeItem = items.find((i) => i.id === activeItemId)
   const activeVariant = activeItem?.prijs_varianten?.find(v => v.id === activeVariantId)
@@ -1007,6 +1054,12 @@ export function QuoteItemsTable({
                     onUpdateItem(item.id, 'bijlage_url', '')
                     onUpdateItem(item.id, 'bijlage_type', '' as 'image/jpeg')
                     onUpdateItem(item.id, 'bijlage_naam', '')
+                  }}
+                  visualisaties={visualisaties}
+                  onSelectVisualisatie={(v) => {
+                    onUpdateItem(item.id, 'bijlage_url', v.resultaat_url)
+                    onUpdateItem(item.id, 'bijlage_type', 'image/jpeg')
+                    onUpdateItem(item.id, 'bijlage_naam', `visualisatie-${v.id.slice(0, 8)}.png`)
                   }}
                 />
 

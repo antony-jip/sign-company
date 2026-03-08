@@ -1974,6 +1974,7 @@ export function QuoteCreation() {
                 toonM2={offerteToonM2}
                 projectId={selectedProjectId || undefined}
                 klantId={selectedKlantId || undefined}
+                offerteId={editOfferteId || autoSaveIdRef.current || undefined}
               />
             </CardContent>
           </Card>
