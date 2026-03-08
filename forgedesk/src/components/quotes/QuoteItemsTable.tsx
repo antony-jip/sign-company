@@ -253,46 +253,69 @@ function BijlageDropZone({
 }) {
   const resolvedUrl = useBijlageUrl(item.bijlage_url)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [expanded, setExpanded] = useState(false)
 
   return (
     <div
-      className="px-4 py-2 border-b border-border dark:border-border outline-none"
+      className="px-4 py-3 border-b border-border dark:border-border outline-none"
       onPaste={onPaste}
       tabIndex={0}
     >
-      <div className="flex items-center gap-2">
-        <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+      <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center justify-center h-5 w-5 rounded bg-violet-100 dark:bg-violet-900/30">
+          <ImageIcon className="h-3 w-3 text-violet-500 dark:text-violet-400" />
+        </div>
         <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tekening / Bijlage</span>
         {item.bijlage_naam && (
-          <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[150px]">{item.bijlage_naam}</span>
+          <span className="ml-auto text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-full truncate max-w-[200px]">
+            {item.bijlage_naam}
+          </span>
         )}
       </div>
 
       {isUploading ? (
-        <div className="mt-2 h-20 rounded-lg border-2 border-dashed border-accent/50 bg-accent/5 flex items-center justify-center gap-2">
-          <div className="h-4 w-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-muted-foreground">Uploaden...</span>
+        <div className="rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 flex items-center justify-center gap-3 py-8">
+          <div className="h-5 w-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-violet-600 dark:text-violet-400 font-medium">Bezig met uploaden...</span>
         </div>
       ) : item.bijlage_url && resolvedUrl ? (
-        <div className="mt-2 relative inline-block group">
+        <div className="relative group rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
           {item.bijlage_type === 'application/pdf' ? (
-            <div className="h-20 w-28 rounded-lg border border-border dark:border-border bg-background dark:bg-foreground/80 flex flex-col items-center justify-center text-muted-foreground">
-              <Paperclip className="h-6 w-6 mb-1" />
-              <span className="text-[10px] truncate max-w-[90px]">{item.bijlage_naam || 'PDF'}</span>
+            <div className="flex items-center gap-3 p-4">
+              <div className="h-12 w-12 rounded-lg bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 flex items-center justify-center flex-shrink-0">
+                <Paperclip className="h-5 w-5 text-rose-500 dark:text-rose-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{item.bijlage_naam || 'Document.pdf'}</p>
+                <p className="text-[11px] text-muted-foreground">PDF document</p>
+              </div>
             </div>
           ) : (
-            <img
-              src={resolvedUrl}
-              alt={item.beschrijving || 'Item bijlage'}
-              className="h-20 w-auto rounded-lg border border-border dark:border-border object-cover"
-            />
+            <div className="relative">
+              <img
+                src={resolvedUrl}
+                alt={item.beschrijving || 'Item bijlage'}
+                onClick={() => setExpanded(!expanded)}
+                className={cn(
+                  'w-full rounded-xl object-contain cursor-pointer transition-all duration-200',
+                  expanded ? 'max-h-[500px]' : 'max-h-[180px]'
+                )}
+              />
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="absolute bottom-2 right-2 text-[10px] font-medium px-2 py-1 rounded-md bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 transition-colors"
+              >
+                {expanded ? 'Kleiner' : 'Groter'}
+              </button>
+            </div>
           )}
+          {/* Delete button */}
           <button
             onClick={onRemove}
-            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+            className="absolute top-2 right-2 h-7 w-7 rounded-lg bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-red-500 hover:border-red-300 dark:hover:border-red-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm backdrop-blur-sm"
             title="Bijlage verwijderen"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       ) : (
@@ -301,19 +324,38 @@ function BijlageDropZone({
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           className={cn(
-            'mt-1.5 rounded-lg border-2 border-dashed transition-all cursor-pointer',
-            'flex flex-col items-center justify-center gap-1 py-4',
+            'rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer',
+            'flex flex-col items-center justify-center gap-2 py-6',
             isDragOver
-              ? 'border-accent bg-accent/10 scale-[1.01]'
-              : 'border-border/50 hover:border-accent/40 hover:bg-accent/5'
+              ? 'border-violet-400 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/40 dark:to-indigo-950/40 scale-[1.01] shadow-sm'
+              : 'border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-gradient-to-br hover:from-violet-50/50 hover:to-indigo-50/50 dark:hover:from-violet-950/20 dark:hover:to-indigo-950/20'
           )}
           onClick={() => fileInputRef.current?.click()}
         >
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Upload className="h-4 w-4" />
-            <span className="text-xs">Sleep afbeelding hierheen, plak (Ctrl+V), of klik om te uploaden</span>
+          <div className={cn(
+            'h-10 w-10 rounded-full flex items-center justify-center transition-colors',
+            isDragOver
+              ? 'bg-violet-100 dark:bg-violet-900/40'
+              : 'bg-slate-100 dark:bg-slate-800'
+          )}>
+            <Upload className={cn(
+              'h-4.5 w-4.5 transition-colors',
+              isDragOver
+                ? 'text-violet-500 dark:text-violet-400'
+                : 'text-slate-400 dark:text-slate-500'
+            )} />
           </div>
-          <span className="text-[10px] text-muted-foreground/60">JPG, PNG of PDF — max 10MB</span>
+          <div className="text-center">
+            <p className={cn(
+              'text-xs font-medium transition-colors',
+              isDragOver
+                ? 'text-violet-600 dark:text-violet-400'
+                : 'text-slate-500 dark:text-slate-400'
+            )}>
+              {isDragOver ? 'Laat los om te uploaden' : 'Sleep, plak of klik om te uploaden'}
+            </p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG of PDF — max 10MB</p>
+          </div>
           <input
             ref={fileInputRef}
             type="file"
