@@ -113,6 +113,7 @@ import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
+import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, MontageAfspraak } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
@@ -1621,6 +1622,13 @@ export function ProjectDetail() {
             </CardContent>
           </Card>
 
+
+          {/* ── Signing Visualisaties ── */}
+          <Card className="border-border/80 dark:border-border/80">
+            <CardContent className="pt-5">
+              <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
+            </CardContent>
+          </Card>
 
           {/* ── Offertes ── */}
           <Card className="border-border/80 dark:border-border/80">

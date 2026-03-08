@@ -51,6 +51,12 @@ import type {
   InternEmailNotitie,
   DocumentStyle,
   OfferteVersie,
+  SigningVisualisatie,
+  VisualizerInstellingen,
+  VisualizerApiLog,
+  VisualizerStats,
+  VisualizerCredits,
+  CreditTransactie,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -4057,4 +4063,351 @@ export async function createVoorschotfactuur(
     contactpersoon_id: origineel.contactpersoon_id,
   } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
   return voorschot
+}
+
+// ============================================================
+// SIGNING VISUALIZER
+// ============================================================
+
+import { DEFAULT_VISUALIZER_INSTELLINGEN, berekenDoorberekendBedrag } from '@/utils/visualizerDefaults'
+
+// --- Visualisaties CRUD ---
+
+export async function getSigningVisualisaties(user_id: string): Promise<SigningVisualisatie[]> {
+  assertId(user_id, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('signing_visualisaties')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const all = getLocalData<SigningVisualisatie>(`signing_visualisaties_${user_id}`)
+  return all.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+}
+
+export async function getSigningVisualisatiesByOfferte(offerte_id: string): Promise<SigningVisualisatie[]> {
+  assertId(offerte_id, 'offerte_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('signing_visualisaties')
+      .select('*')
+      .eq('offerte_id', offerte_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  // localStorage fallback: search across all user data
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('forgedesk_signing_visualisaties_'))
+  const results: SigningVisualisatie[] = []
+  for (const key of keys) {
+    const items: SigningVisualisatie[] = JSON.parse(localStorage.getItem(key) || '[]')
+    results.push(...items.filter(v => v.offerte_id === offerte_id))
+  }
+  return results.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+}
+
+export async function getSigningVisualisatiesByProject(project_id: string): Promise<SigningVisualisatie[]> {
+  assertId(project_id, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('signing_visualisaties')
+      .select('*')
+      .eq('project_id', project_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('forgedesk_signing_visualisaties_'))
+  const results: SigningVisualisatie[] = []
+  for (const key of keys) {
+    const items: SigningVisualisatie[] = JSON.parse(localStorage.getItem(key) || '[]')
+    results.push(...items.filter(v => v.project_id === project_id))
+  }
+  return results.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+}
+
+export async function getSigningVisualisatiesByKlant(klant_id: string): Promise<SigningVisualisatie[]> {
+  assertId(klant_id, 'klant_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('signing_visualisaties')
+      .select('*')
+      .eq('klant_id', klant_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('forgedesk_signing_visualisaties_'))
+  const results: SigningVisualisatie[] = []
+  for (const key of keys) {
+    const items: SigningVisualisatie[] = JSON.parse(localStorage.getItem(key) || '[]')
+    results.push(...items.filter(v => v.klant_id === klant_id))
+  }
+  return results.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+}
+
+export async function createSigningVisualisatie(
+  data: Omit<SigningVisualisatie, 'id' | 'created_at'>
+): Promise<SigningVisualisatie> {
+  assertId(data.user_id, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data: row, error } = await supabase
+      .from('signing_visualisaties')
+      .insert(data)
+      .select()
+      .single()
+    if (error) throw error
+    return row
+  }
+  const items = getLocalData<SigningVisualisatie>(`signing_visualisaties_${data.user_id}`)
+  const newItem: SigningVisualisatie = {
+    ...data,
+    id: generateId(),
+    created_at: now(),
+  }
+  items.push(newItem)
+  setLocalData(`signing_visualisaties_${data.user_id}`, items)
+  return newItem
+}
+
+export async function updateSigningVisualisatie(
+  id: string,
+  data: Partial<SigningVisualisatie>
+): Promise<SigningVisualisatie> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data: row, error } = await supabase
+      .from('signing_visualisaties')
+      .update({ ...data, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return row
+  }
+  // localStorage: need user_id to find the right key
+  const user_id = data.user_id
+  if (!user_id) throw new Error('user_id is vereist voor localStorage update')
+  const items = getLocalData<SigningVisualisatie>(`signing_visualisaties_${user_id}`)
+  const idx = items.findIndex(v => v.id === id)
+  if (idx === -1) throw new Error('Visualisatie niet gevonden')
+  items[idx] = { ...items[idx], ...data, updated_at: now() }
+  setLocalData(`signing_visualisaties_${user_id}`, items)
+  return items[idx]
+}
+
+export async function deleteSigningVisualisatie(id: string, user_id: string): Promise<void> {
+  assertId(id)
+  assertId(user_id, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase
+      .from('signing_visualisaties')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user_id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<SigningVisualisatie>(`signing_visualisaties_${user_id}`)
+  const filtered = items.filter(v => v.id !== id)
+  setLocalData(`signing_visualisaties_${user_id}`, filtered)
+}
+
+// --- Visualizer Instellingen ---
+
+export async function getVisualizerInstellingen(user_id: string): Promise<VisualizerInstellingen> {
+  assertId(user_id, 'user_id')
+  const key = `forgedesk_visualizer_instellingen_${user_id}`
+  try {
+    const stored = localStorage.getItem(key)
+    if (stored) {
+      const parsed = JSON.parse(stored) as Partial<VisualizerInstellingen>
+      return { ...DEFAULT_VISUALIZER_INSTELLINGEN, ...parsed }
+    }
+  } catch { /* ignore */ }
+  return { ...DEFAULT_VISUALIZER_INSTELLINGEN }
+}
+
+export async function saveVisualizerInstellingen(
+  user_id: string,
+  instellingen: Partial<VisualizerInstellingen>
+): Promise<VisualizerInstellingen> {
+  assertId(user_id, 'user_id')
+  const key = `forgedesk_visualizer_instellingen_${user_id}`
+  const current = await getVisualizerInstellingen(user_id)
+  const updated = { ...current, ...instellingen }
+  if (!safeSetItem(key, JSON.stringify(updated))) {
+    throw new Error('localStorage quota exceeded voor visualizer instellingen')
+  }
+  return updated
+}
+
+// --- API Log ---
+
+export async function logVisualizerActie(
+  data: Omit<VisualizerApiLog, 'id' | 'created_at'>
+): Promise<void> {
+  assertId(data.user_id, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase
+      .from('visualizer_api_log')
+      .insert(data)
+    if (error) throw error
+    return
+  }
+  const key = `forgedesk_visualizer_log_${data.user_id}`
+  const items: VisualizerApiLog[] = JSON.parse(localStorage.getItem(key) || '[]')
+  items.push({ ...data, id: generateId(), created_at: now() })
+  safeSetItem(key, JSON.stringify(items))
+}
+
+export async function getVisualizerLog(user_id: string): Promise<VisualizerApiLog[]> {
+  assertId(user_id, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('visualizer_api_log')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const key = `forgedesk_visualizer_log_${user_id}`
+  const items: VisualizerApiLog[] = JSON.parse(localStorage.getItem(key) || '[]')
+  return items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+}
+
+// --- Statistieken ---
+
+export async function getVisualizerStats(user_id: string): Promise<VisualizerStats> {
+  assertId(user_id, 'user_id')
+  const visualisaties = await getSigningVisualisaties(user_id)
+  const klaar = visualisaties.filter(v => v.status === 'klaar')
+
+  const nuMaand = new Date().getMonth()
+  const nuJaar = new Date().getFullYear()
+  const dezeMaand = klaar.filter(v => {
+    const d = new Date(v.created_at)
+    return d.getMonth() === nuMaand && d.getFullYear() === nuJaar
+  })
+
+  const totaal_kosten_eur = round2(klaar.reduce((s, v) => s + (v.api_kosten_eur || 0), 0))
+  const totaal_doorberekend_eur = round2(
+    klaar.filter(v => v.doorberekend_aan_klant).reduce((s, v) => s + (v.api_kosten_eur || 0), 0)
+  )
+  const kosten_deze_maand_eur = round2(dezeMaand.reduce((s, v) => s + (v.api_kosten_eur || 0), 0))
+
+  const generatietijden = klaar.filter(v => v.generatie_tijd_ms).map(v => v.generatie_tijd_ms || 0)
+  const gemiddelde_generatietijd_ms = generatietijden.length > 0
+    ? Math.round(generatietijden.reduce((s, t) => s + t, 0) / generatietijden.length)
+    : 0
+
+  return {
+    totaal_gegenereerd: klaar.length,
+    totaal_kosten_eur,
+    totaal_doorberekend_eur,
+    gegenereerd_deze_maand: dezeMaand.length,
+    kosten_deze_maand_eur,
+    gemiddelde_generatietijd_ms,
+  }
+}
+
+// --- Credits Systeem ---
+
+export async function getVisualizerCredits(user_id: string): Promise<VisualizerCredits> {
+  assertId(user_id, 'user_id')
+  const key = `forgedesk_visualizer_credits_${user_id}`
+  try {
+    const stored = localStorage.getItem(key)
+    if (stored) return JSON.parse(stored) as VisualizerCredits
+  } catch { /* ignore */ }
+  return {
+    user_id,
+    saldo: 0,
+    totaal_gekocht: 0,
+    totaal_gebruikt: 0,
+    laatst_bijgewerkt: now(),
+  }
+}
+
+async function saveVisualizerCredits(credits: VisualizerCredits): Promise<void> {
+  const key = `forgedesk_visualizer_credits_${credits.user_id}`
+  safeSetItem(key, JSON.stringify({ ...credits, laatst_bijgewerkt: now() }))
+}
+
+export async function gebruikCredit(user_id: string, visualisatie_id: string): Promise<VisualizerCredits> {
+  assertId(user_id, 'user_id')
+  const credits = await getVisualizerCredits(user_id)
+  if (credits.saldo <= 0) throw new Error('Geen credits beschikbaar')
+  credits.saldo -= 1
+  credits.totaal_gebruikt += 1
+  await saveVisualizerCredits(credits)
+  await logCreditTransactie({
+    user_id,
+    type: 'gebruik',
+    aantal: -1,
+    saldo_na: credits.saldo,
+    beschrijving: 'Credit gebruikt voor visualisatie',
+    visualisatie_id,
+  })
+  return credits
+}
+
+export async function voegCreditsToe(
+  user_id: string,
+  aantal: number,
+  beschrijving: string
+): Promise<VisualizerCredits> {
+  assertId(user_id, 'user_id')
+  const credits = await getVisualizerCredits(user_id)
+  credits.saldo += aantal
+  credits.totaal_gekocht += aantal
+  await saveVisualizerCredits(credits)
+  await logCreditTransactie({
+    user_id,
+    type: 'aankoop',
+    aantal,
+    saldo_na: credits.saldo,
+    beschrijving,
+  })
+  return credits
+}
+
+export async function handmatigCreditsToewijzen(
+  user_id: string,
+  aantal: number,
+  beschrijving: string
+): Promise<VisualizerCredits> {
+  assertId(user_id, 'user_id')
+  const credits = await getVisualizerCredits(user_id)
+  credits.saldo += aantal
+  if (aantal > 0) credits.totaal_gekocht += aantal
+  await saveVisualizerCredits(credits)
+  await logCreditTransactie({
+    user_id,
+    type: 'handmatig_toegevoegd',
+    aantal,
+    saldo_na: credits.saldo,
+    beschrijving,
+  })
+  return credits
+}
+
+async function logCreditTransactie(
+  data: Omit<CreditTransactie, 'id' | 'created_at'>
+): Promise<void> {
+  const key = `forgedesk_credit_transacties_${data.user_id}`
+  const items: CreditTransactie[] = JSON.parse(localStorage.getItem(key) || '[]')
+  items.push({ ...data, id: generateId(), created_at: now() })
+  safeSetItem(key, JSON.stringify(items))
+}
+
+export async function getCreditTransacties(user_id: string): Promise<CreditTransactie[]> {
+  assertId(user_id, 'user_id')
+  const key = `forgedesk_credit_transacties_${user_id}`
+  const items: CreditTransactie[] = JSON.parse(localStorage.getItem(key) || '[]')
+  return items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
 }

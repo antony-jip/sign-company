@@ -8,7 +8,7 @@ import {
   ClipboardCheck, ShoppingCart, Warehouse,
   Briefcase, UserPlus, Files, Newspaper,
   Upload, Bot, Calculator, TrendingUp, PackageCheck,
-  CalendarCheck, Sparkles,
+  CalendarCheck, Sparkles, Wand2,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -49,6 +49,7 @@ const navSections: NavSection[] = [
       { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
       { label: 'Taken', icon: CheckSquare, path: '/taken' },
       { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
+      { label: 'Visualizer', icon: Wand2, path: '/visualizer' },
     ],
   },
   {

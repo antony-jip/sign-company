@@ -48,6 +48,7 @@ import {
   Receipt,
 } from 'lucide-react'
 import { logger } from '../../utils/logger'
+import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 
 const STATUS_LABELS: Record<string, string> = {
   concept: 'Concept',
@@ -885,6 +886,11 @@ export function OfferteDetail() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Signing Visualisaties */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <VisualisatieGallery offerte_id={offerte.id} klant_id={offerte.klant_id} />
       </div>
 
       {/* Send Dialog */}

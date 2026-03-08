@@ -9,6 +9,7 @@ import { TodayPlanningWidget } from './TodayPlanningWidget'
 import { WeatherWidget } from './WeatherWidget'
 import { PriorityTasks } from './PriorityTasks'
 import { MontagePlanningWidget } from './MontagePlanningWidget'
+import { VisualizerDashboardWidget } from './VisualizerDashboardWidget'
 import { AlertTriangle } from 'lucide-react'
 import { getFacturen } from '@/services/supabaseService'
 import type { Factuur } from '@/types'
@@ -129,6 +130,9 @@ export function FORGEdeskDashboard() {
         <PriorityTasks />
         <OpenstaandeOffertesWidget />
       </div>
+
+      {/* Visualizer stats */}
+      <VisualizerDashboardWidget />
 
       {/* Weather */}
       <WeatherWidget />

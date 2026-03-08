@@ -1338,6 +1338,10 @@ export type DocumentTemplateId = 'klassiek' | 'modern' | 'minimaal' | 'industrie
 export type LogoPositie = 'links' | 'rechts' | 'midden';
 export type BriefpapierModus = 'geen' | 'achtergrond' | 'alleen_eerste_pagina';
 
+// ============ SIGNING VISUALIZER ============
+
+export * from './visualizer'
+
 export interface DocumentStyle {
   id: string;
   user_id?: string;

@@ -73,7 +73,8 @@ import { logger } from '../../utils/logger'
 import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
-import { Sparkles } from 'lucide-react'
+import { VisualizerTab } from './VisualizerTab'
+import { Sparkles, Wand2 } from 'lucide-react'
 
 // Shared sub-tab navigation component
 interface SubTab {
@@ -164,6 +165,7 @@ const settingsTabs = [
   { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
   { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
   { id: 'forgie', label: 'Forgie', icon: Sparkles, description: 'AI assistent en data import' },
+  { id: 'visualizer', label: 'AI Visualizer', icon: Wand2, description: 'Signing mockup generator' },
 ] as const
 
 function renderTabContent(tabId: string) {
@@ -178,6 +180,7 @@ function renderTabContent(tabId: string) {
     case 'beveiliging': return <BeveiligingTab />
     case 'weergave': return <WeergaveTab />
     case 'forgie': return <ForgieTab />
+    case 'visualizer': return <VisualizerTab />
     default: return null
   }
 }

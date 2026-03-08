@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto } from '@/types'
+import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -1539,4 +1539,86 @@ export function generateWerkbonPDF(
   addFooter(doc, bedrijfsProfiel, docStyle)
 
   return doc
+}
+
+// ============ VISUALISATIE PAGINA IN OFFERTE PDF ============
+
+const SIGNING_TYPE_LABELS_PDF: Record<string, string> = {
+  led_verlicht: 'LED Verlicht',
+  neon: 'Neon',
+  dag_onverlicht: 'Dag (onverlicht)',
+  dag_nacht: 'Dag/Nacht',
+}
+
+export function addVisualisatiePaginasToPdf(
+  doc: jsPDF,
+  visualisaties: SigningVisualisatie[],
+  bedrijfsProfiel: PdfBedrijfsProfiel,
+  docStyle?: DocumentStyle | null
+): void {
+  if (!visualisaties || visualisaties.length === 0) return
+
+  const margins = getMargins(docStyle)
+  const headingFont = getHeadingFont(docStyle)
+  const bodyFont = getBodyFont(docStyle)
+  const baseFontSize = getBaseFontSize(docStyle)
+  const brand = getBrandColor(bedrijfsProfiel, docStyle)
+  const textColor = getTextColor(docStyle)
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+
+  for (const vis of visualisaties) {
+    doc.addPage()
+    addBriefpapierBackground(doc, docStyle || null, doc.getNumberOfPages())
+
+    let y = margins.top + 5
+
+    // Title
+    doc.setFontSize(baseFontSize + 4)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+    doc.text('Signing Visualisatie', margins.left, y)
+    y += 8
+
+    // Subtitle
+    doc.setFontSize(baseFontSize)
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
+    const typeLabel = SIGNING_TYPE_LABELS_PDF[vis.signing_type] || vis.signing_type
+    doc.text(`Type: ${typeLabel} | Kleur: ${vis.kleur_instelling} | Datum: ${formatDate(vis.created_at)}`, margins.left, y)
+    y += 10
+
+    // Try to add the generated mockup image
+    const imgMaxWidth = pageWidth - margins.left - margins.right
+    const imgMaxHeight = pageHeight - y - margins.bottom - 10
+
+    try {
+      if (vis.resultaat_url.startsWith('data:')) {
+        const format = vis.resultaat_url.includes('image/png') ? 'PNG' : 'JPEG'
+        const aspectRatio = 16 / 10
+        let imgW = imgMaxWidth
+        let imgH = imgW / aspectRatio
+        if (imgH > imgMaxHeight) {
+          imgH = imgMaxHeight
+          imgW = imgH * aspectRatio
+        }
+        const imgX = margins.left + (imgMaxWidth - imgW) / 2
+        doc.addImage(vis.resultaat_url, format, imgX, y, imgW, imgH, undefined, 'MEDIUM')
+      } else {
+        // For remote URLs, show placeholder text
+        doc.setDrawColor(200, 200, 200)
+        doc.setLineWidth(0.3)
+        const placeholderH = Math.min(imgMaxHeight, 120)
+        doc.rect(margins.left, y, imgMaxWidth, placeholderH)
+        doc.setFontSize(baseFontSize - 1)
+        doc.setFont(bodyFont, 'italic')
+        doc.setTextColor(150, 150, 150)
+        doc.text('Mockup afbeelding — zie digitale versie voor hoge kwaliteit', margins.left + imgMaxWidth / 2, y + placeholderH / 2, { align: 'center' })
+      }
+    } catch {
+      doc.setFontSize(baseFontSize - 1)
+      doc.setTextColor(150, 150, 150)
+      doc.text('Afbeelding niet beschikbaar in PDF', margins.left, y)
+    }
+  }
 }
