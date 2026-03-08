@@ -47,7 +47,8 @@
     "mailparser": "^3.6.6",
     "nodemailer": "^6.9.8",
     "zod": "^3.22.4",
-    "@fal-ai/client": "^1.2.0"
+    "@fal-ai/client": "^1.2.0",
+    "@anthropic-ai/sdk": "^0.39.0"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.5",

@@ -1,20 +1,25 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import Anthropic from '@anthropic-ai/sdk'
 import { fal } from '@fal-ai/client'
 
 const FAL_API_KEY = process.env.FAL_AI_API_KEY || ''
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
-const KOSTEN_PER_RESOLUTIE_USD: Record<string, number> = {
-  '1K': 0.08,
-  '2K': 0.12,
-  '4K': 0.16,
+function getMimeType(base64Header: string): 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' {
+  if (base64Header.includes('image/png')) return 'image/png'
+  if (base64Header.includes('image/webp')) return 'image/webp'
+  if (base64Header.includes('image/gif')) return 'image/gif'
+  return 'image/jpeg'
 }
 
-const RESOLUTIE_MAP: Record<string, { width: number; height: number }> = {
-  '1K': { width: 1024, height: 1024 },
-  '2K': { width: 2048, height: 2048 },
-  '4K': { width: 4096, height: 4096 },
+function extractBase64Data(input: string): { data: string; mimeType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' } {
+  if (input.startsWith('data:')) {
+    const [header, data] = input.split(',')
+    return { data, mimeType: getMimeType(header) }
+  }
+  return { data: input, mimeType: 'image/jpeg' }
 }
 
 function base64ToBlob(base64: string, mimeType: string): Blob {
@@ -26,23 +31,67 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
   return new Blob([new Uint8Array(byteNumbers)], { type: mimeType })
 }
 
-function getMimeType(base64Header: string): string {
-  if (base64Header.includes('image/png')) return 'image/png'
-  if (base64Header.includes('image/webp')) return 'image/webp'
-  if (base64Header.includes('image/jpeg') || base64Header.includes('image/jpg')) return 'image/jpeg'
-  return 'image/jpeg'
-}
+// Step 1: Claude analyzes photos + user description → creates optimized fal.ai prompt
+async function generatePromptWithClaude(
+  gebouwBase64: string,
+  gebouwMime: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
+  logoBase64: string | null,
+  logoMime: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' | null,
+  beschrijving: string,
+): Promise<string> {
+  const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY })
 
-function extractBase64Data(input: string): { data: string; mimeType: string } {
-  if (input.startsWith('data:')) {
-    const [header, data] = input.split(',')
-    return { data, mimeType: getMimeType(header) }
+  const imageContent: Anthropic.ImageBlockParam[] = [
+    {
+      type: 'image',
+      source: { type: 'base64', media_type: gebouwMime, data: gebouwBase64 },
+    },
+  ]
+
+  if (logoBase64 && logoMime) {
+    imageContent.push({
+      type: 'image',
+      source: { type: 'base64', media_type: logoMime, data: logoBase64 },
+    })
   }
-  return { data: input, mimeType: 'image/jpeg' }
-}
 
-function validateImageType(mimeType: string): boolean {
-  return ['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1024,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          ...imageContent,
+          {
+            type: 'text',
+            text: `Je bent een expert signing/reclame specialist. Je helpt een reclamemaker een AI-mockup te genereren.
+
+${logoBase64 ? 'De eerste foto is het gebouw/pand waar de signing op moet komen. De tweede foto is het logo/artwork dat geplaatst moet worden.' : 'De foto is het gebouw/pand waar de signing op moet komen.'}
+
+De klant wil dit: "${beschrijving}"
+
+Analyseer de foto('s) en maak een gedetailleerde prompt voor een AI image editor (fal.ai Nano Banana 2) die de signing realistisch op het gebouw plaatst.
+
+Regels voor je prompt:
+- Schrijf in het Engels (de AI werkt het best in Engels)
+- Beschrijf EXACT waar op het gebouw de signing moet komen (boven de deur, op de gevel, etc.)
+- Beschrijf het type signing (LED doosletters, neon, freesletters, lichtbak, etc.)
+- Beschrijf de kleur, materiaal en stijl
+- Zorg dat de belichting matched met de foto
+- Het resultaat moet eruitzien als een professionele architectuurvisualisatie
+- Houd het gebouw 100% intact, alleen de signing toevoegen
+- Als er een logo is, beschrijf hoe het logo wordt weergegeven
+
+Geef ALLEEN de prompt terug, geen uitleg of andere tekst.`,
+          },
+        ],
+      },
+    ],
+  })
+
+  const textBlock = response.content.find((b) => b.type === 'text')
+  return textBlock?.text || ''
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -56,81 +105,93 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
+    if (!ANTHROPIC_API_KEY) {
+      return res.status(500).json({
+        error: 'ANTHROPIC_API_KEY niet geconfigureerd. Voeg ANTHROPIC_API_KEY toe aan Vercel Environment Variables.',
+      })
+    }
+
     fal.config({ credentials: FAL_API_KEY })
 
-    const { gebouw_foto_base64, logo_base64, prompt, resolutie = '2K' } = req.body as {
+    const { gebouw_foto_base64, logo_base64, beschrijving } = req.body as {
       gebouw_foto_base64: string
       logo_base64?: string
-      prompt: string
-      resolutie: '1K' | '2K' | '4K'
+      beschrijving: string
     }
 
-    if (!gebouw_foto_base64 || !prompt) {
-      return res.status(400).json({ error: 'gebouw_foto_base64 en prompt zijn verplicht' })
+    if (!gebouw_foto_base64 || !beschrijving) {
+      return res.status(400).json({ error: 'Foto en beschrijving zijn verplicht' })
     }
 
-    // Validate & extract base64 data
+    // Extract base64 data
     const gebouwData = extractBase64Data(gebouw_foto_base64)
-    if (!validateImageType(gebouwData.mimeType)) {
-      return res.status(400).json({ error: 'Ongeldig bestandstype. Alleen JPG, PNG en WEBP zijn toegestaan.' })
-    }
-
-    // Check file size
     const gebouwBlob = base64ToBlob(gebouwData.data, gebouwData.mimeType)
     if (gebouwBlob.size > MAX_FILE_SIZE) {
-      return res.status(400).json({ error: 'Bestandsgrootte overschrijdt 10MB limiet.' })
+      return res.status(400).json({ error: 'Foto is groter dan 10MB' })
+    }
+
+    let logoData: { data: string; mimeType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' } | null = null
+    if (logo_base64) {
+      logoData = extractBase64Data(logo_base64)
+      const logoBlob = base64ToBlob(logoData.data, logoData.mimeType)
+      if (logoBlob.size > MAX_FILE_SIZE) {
+        return res.status(400).json({ error: 'Logo is groter dan 10MB' })
+      }
     }
 
     const startTime = Date.now()
 
-    // Upload images to fal storage
-    const gebouwUrl = await fal.storage.upload(gebouwBlob)
+    // Step 1: Claude generates optimized prompt
+    const optimizedPrompt = await generatePromptWithClaude(
+      gebouwData.data,
+      gebouwData.mimeType,
+      logoData?.data || null,
+      logoData?.mimeType || null,
+      beschrijving,
+    )
 
+    if (!optimizedPrompt) {
+      return res.status(502).json({ error: 'Claude kon geen prompt genereren' })
+    }
+
+    // Step 2: Upload images to fal storage
+    const gebouwUrl = await fal.storage.upload(gebouwBlob)
     const imageUrls = [gebouwUrl]
 
-    if (logo_base64) {
-      const logoData = extractBase64Data(logo_base64)
-      if (!validateImageType(logoData.mimeType)) {
-        return res.status(400).json({ error: 'Ongeldig logo bestandstype. Alleen JPG, PNG en WEBP zijn toegestaan.' })
-      }
+    if (logo_base64 && logoData) {
       const logoBlob = base64ToBlob(logoData.data, logoData.mimeType)
-      if (logoBlob.size > MAX_FILE_SIZE) {
-        return res.status(400).json({ error: 'Logo bestandsgrootte overschrijdt 10MB limiet.' })
-      }
       const logoUrl = await fal.storage.upload(logoBlob)
       imageUrls.push(logoUrl)
     }
 
-    const imageSize = RESOLUTIE_MAP[resolutie] || RESOLUTIE_MAP['2K']
-
-    // Generate via fal.ai
+    // Step 3: Generate mockup with fal.ai
     const result = await fal.subscribe('fal-ai/nano-banana-2/edit', {
       input: {
-        prompt,
+        prompt: optimizedPrompt,
         image_urls: imageUrls,
-        image_size: imageSize,
+        image_size: { width: 2048, height: 2048 },
       },
       logs: true,
     })
 
     const generatieTijdMs = Date.now() - startTime
-    const apiKostenUsd = KOSTEN_PER_RESOLUTIE_USD[resolutie] || KOSTEN_PER_RESOLUTIE_USD['2K']
 
-    // Extract result URL from response
+    // Extract result URL
     const outputImages = result.data.images as Array<{ url: string }> | undefined
     const resultaatUrl = outputImages?.[0]?.url
       || (result.data.image as { url: string } | undefined)?.url
       || ''
 
     if (!resultaatUrl) {
-      return res.status(502).json({ error: 'Geen resultaat ontvangen van fal.ai API' })
+      return res.status(502).json({ error: 'Geen resultaat ontvangen van fal.ai' })
     }
 
     return res.status(200).json({
-      resultaat_url: resultaatUrl,
+      url: resultaatUrl,
       fal_request_id: result.requestId,
       generatie_tijd_ms: generatieTijdMs,
-      api_kosten_usd: apiKostenUsd,
+      api_kosten_usd: 0.12,
+      prompt_gebruikt: optimizedPrompt,
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
