@@ -77,39 +77,54 @@ export function SigningVisualizerDialog({
     getVisualizerCredits(user.id).then(c => setCreditSaldo(c.saldo)).catch(() => {})
   }, [user?.id, isOpen])
 
-  // File handling
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, type: 'gebouw' | 'logo') => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // Resize image to stay under Vercel's 4.5MB request limit
+  const resizeImage = useCallback((dataUrl: string, maxWidth: number, quality: number): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new window.Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let { width, height } = img
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width)
+          width = maxWidth
+        }
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.src = dataUrl
+    })
+  }, [])
+
+  const processFile = useCallback(async (file: File, type: 'gebouw' | 'logo') => {
     if (file.size > 10 * 1024 * 1024) { toast.error('Max 10MB'); return }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       toast.error('Alleen JPG, PNG en WEBP'); return
     }
     const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      if (type === 'gebouw') { setGebouwFoto(result); setGebouwFotoNaam(file.name) }
-      else { setLogoFoto(result); setLogoFotoNaam(file.name) }
+    reader.onload = async () => {
+      const raw = reader.result as string
+      // Resize: gebouw max 1200px, logo max 800px — keeps payload under Vercel limit
+      const resized = await resizeImage(raw, type === 'gebouw' ? 1200 : 800, 0.8)
+      if (type === 'gebouw') { setGebouwFoto(resized); setGebouwFotoNaam(file.name) }
+      else { setLogoFoto(resized); setLogoFotoNaam(file.name) }
     }
     reader.readAsDataURL(file)
-  }, [])
+  }, [resizeImage])
+
+  // File handling
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, type: 'gebouw' | 'logo') => {
+    const file = e.target.files?.[0]
+    if (file) processFile(file, type)
+  }, [processFile])
 
   const handleDrop = useCallback((e: React.DragEvent, type: 'gebouw' | 'logo') => {
     e.preventDefault()
     const file = e.dataTransfer.files?.[0]
-    if (!file) return
-    if (file.size > 10 * 1024 * 1024) { toast.error('Max 10MB'); return }
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Alleen JPG, PNG en WEBP'); return
-    }
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      if (type === 'gebouw') { setGebouwFoto(result); setGebouwFotoNaam(file.name) }
-      else { setLogoFoto(result); setLogoFotoNaam(file.name) }
-    }
-    reader.readAsDataURL(file)
-  }, [])
+    if (file) processFile(file, type)
+  }, [processFile])
 
   // Generate mockup
   const handleGenereer = useCallback(async () => {
