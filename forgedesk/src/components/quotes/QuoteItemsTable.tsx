@@ -8,13 +8,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard, Upload, Image as ImageIcon } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import { AutofillInput } from './AutofillInput'
 import { labelToAutofillField } from '@/utils/autofillUtils'
 import type { CalculatieRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
+import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 
 // ============================================================
 // OFFERTE ITEMS
@@ -185,6 +186,147 @@ function compressImage(file: File, maxWidth: number = 1200, quality: number = 0.
   })
 }
 
+// ── Upload bijlage to storage and return stored path ──
+async function uploadBijlage(file: File, itemId: string): Promise<{ url: string; type: string; naam: string }> {
+  const ext = file.name.split('.').pop() || 'jpg'
+  const storagePath = `offerte-bijlagen/${itemId}/${Date.now()}.${ext}`
+
+  if (file.type === 'application/pdf') {
+    await uploadFile(file, storagePath)
+    return { url: storagePath, type: file.type, naam: file.name }
+  }
+
+  // Compress image before uploading
+  const compressedDataUrl = await compressImage(file)
+  const response = await fetch(compressedDataUrl)
+  const blob = await response.blob()
+  const compressedFile = new File([blob], file.name, { type: 'image/jpeg' })
+  await uploadFile(compressedFile, storagePath)
+  return { url: storagePath, type: 'image/jpeg', naam: file.name }
+}
+
+// ── Hook to resolve storage path to displayable URL ──
+function useBijlageUrl(storagePath?: string): string {
+  const [url, setUrl] = useState('')
+  useEffect(() => {
+    if (!storagePath) { setUrl(''); return }
+    // If it's already a data URL or http URL, use directly
+    if (storagePath.startsWith('data:') || storagePath.startsWith('http')) {
+      setUrl(storagePath)
+      return
+    }
+    let cancelled = false
+    downloadFile(storagePath).then(resolved => {
+      if (!cancelled) setUrl(resolved)
+    }).catch(() => {
+      if (!cancelled) setUrl('')
+    })
+    return () => { cancelled = true }
+  }, [storagePath])
+  return url
+}
+
+// ── BijlageDropZone component ──
+function BijlageDropZone({
+  item,
+  isDragOver,
+  isUploading,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onPaste,
+  onFileSelect,
+  onRemove,
+}: {
+  item: QuoteLineItem
+  isDragOver: boolean
+  isUploading: boolean
+  onDragOver: (e: React.DragEvent) => void
+  onDragLeave: () => void
+  onDrop: (e: React.DragEvent) => void
+  onPaste: (e: React.ClipboardEvent) => void
+  onFileSelect: (file: File) => void
+  onRemove: () => void
+}) {
+  const resolvedUrl = useBijlageUrl(item.bijlage_url)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  return (
+    <div
+      className="px-4 py-2 border-b border-border dark:border-border"
+      onPaste={onPaste}
+    >
+      <div className="flex items-center gap-2">
+        <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tekening / Bijlage</span>
+        {item.bijlage_naam && (
+          <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[150px]">{item.bijlage_naam}</span>
+        )}
+      </div>
+
+      {isUploading ? (
+        <div className="mt-2 h-20 rounded-lg border-2 border-dashed border-accent/50 bg-accent/5 flex items-center justify-center gap-2">
+          <div className="h-4 w-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-muted-foreground">Uploaden...</span>
+        </div>
+      ) : item.bijlage_url && resolvedUrl ? (
+        <div className="mt-2 relative inline-block group">
+          {item.bijlage_type === 'application/pdf' ? (
+            <div className="h-20 w-28 rounded-lg border border-border dark:border-border bg-background dark:bg-foreground/80 flex flex-col items-center justify-center text-muted-foreground">
+              <Paperclip className="h-6 w-6 mb-1" />
+              <span className="text-[10px] truncate max-w-[90px]">{item.bijlage_naam || 'PDF'}</span>
+            </div>
+          ) : (
+            <img
+              src={resolvedUrl}
+              alt={item.beschrijving || 'Item bijlage'}
+              className="h-20 w-auto rounded-lg border border-border dark:border-border object-cover"
+            />
+          )}
+          <button
+            onClick={onRemove}
+            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+            title="Bijlage verwijderen"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <div
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+          className={cn(
+            'mt-1.5 rounded-lg border-2 border-dashed transition-all cursor-pointer',
+            'flex flex-col items-center justify-center gap-1 py-4',
+            isDragOver
+              ? 'border-accent bg-accent/10 scale-[1.01]'
+              : 'border-border/50 hover:border-accent/40 hover:bg-accent/5'
+          )}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Upload className="h-4 w-4" />
+            <span className="text-xs">Sleep afbeelding hierheen, plak (Ctrl+V), of klik om te uploaden</span>
+          </div>
+          <span className="text-[10px] text-muted-foreground/60">JPG, PNG of PDF — max 10MB</span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,application/pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) onFileSelect(file)
+              e.target.value = ''
+            }}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
 function getMargeColor(pct: number): { text: string; bg: string; bar: string } {
   if (pct >= 65) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500' }
   if (pct >= 50) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', bar: 'bg-amber-500' }
@@ -320,6 +462,9 @@ export function QuoteItemsTable({
   const [activeVariantId, setActiveVariantId] = useState<string | null>(null)
   // Collapsed state per item
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set())
+  // Bijlage upload state
+  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null)
+  const [uploadingItemId, setUploadingItemId] = useState<string | null>(null)
 
   const activeItem = items.find((i) => i.id === activeItemId)
   const activeVariant = activeItem?.prijs_varianten?.find(v => v.id === activeVariantId)
@@ -690,84 +835,88 @@ export function QuoteItemsTable({
                 </div>
 
                 {/* ── TEKENING / BIJLAGE per item ── */}
-                <div className="px-4 py-2 border-b border-border dark:border-border">
-                  <div className="flex items-center gap-2">
-                    <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tekening / Bijlage</span>
-                    {item.bijlage_naam && (
-                      <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[150px]">{item.bijlage_naam}</span>
-                    )}
-                  </div>
-
-                  {item.bijlage_url ? (
-                    <div className="mt-2 relative inline-block group">
-                      {item.bijlage_type === 'application/pdf' ? (
-                        <div className="h-20 w-28 rounded-lg border border-border dark:border-border bg-background dark:bg-foreground/80 flex flex-col items-center justify-center text-muted-foreground">
-                          <Paperclip className="h-6 w-6 mb-1" />
-                          <span className="text-[10px] truncate max-w-[90px]">{item.bijlage_naam || 'PDF'}</span>
-                        </div>
-                      ) : (
-                        <img
-                          src={item.bijlage_url}
-                          alt={item.beschrijving || 'Item bijlage'}
-                          className="h-20 w-auto rounded-lg border border-border dark:border-border object-cover"
-                        />
-                      )}
-                      <button
-                        onClick={() => {
-                          onUpdateItem(item.id, 'bijlage_url', '')
-                          onUpdateItem(item.id, 'bijlage_type', '' as 'image/jpeg')
-                          onUpdateItem(item.id, 'bijlage_naam', '')
-                        }}
-                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                        title="Bijlage verwijderen"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors cursor-pointer">
-                      <Plus className="h-3 w-3" />
-                      Tekening/foto toevoegen
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,application/pdf"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0]
-                          if (!file) return
-                          if (file.size > 5 * 1024 * 1024) {
-                            alert('Bestand is te groot (max 5MB)')
-                            e.target.value = ''
-                            return
-                          }
-                          try {
-                            if (file.type === 'application/pdf') {
-                              // PDF: read as-is (no compression)
-                              const reader = new FileReader()
-                              reader.onload = (ev) => {
-                                const base64 = ev.target?.result as string
-                                onUpdateItem(item.id, 'bijlage_url', base64)
-                                onUpdateItem(item.id, 'bijlage_type', file.type as 'image/jpeg' | 'image/png' | 'application/pdf')
-                                onUpdateItem(item.id, 'bijlage_naam', file.name)
-                              }
-                              reader.readAsDataURL(file)
-                            } else {
-                              // Image: compress to prevent oversized base64
-                              const compressed = await compressImage(file)
-                              onUpdateItem(item.id, 'bijlage_url', compressed)
-                              onUpdateItem(item.id, 'bijlage_type', 'image/jpeg' as const)
-                              onUpdateItem(item.id, 'bijlage_naam', file.name)
-                            }
-                          } catch {
-                            // Silent fail
-                          }
-                          e.target.value = ''
-                        }}
-                      />
-                    </label>
-                  )}
-                </div>
+                <BijlageDropZone
+                  item={item}
+                  isDragOver={dragOverItemId === item.id}
+                  isUploading={uploadingItemId === item.id}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverItemId(item.id) }}
+                  onDragLeave={() => setDragOverItemId(null)}
+                  onDrop={async (e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOverItemId(null)
+                    const file = e.dataTransfer.files?.[0]
+                    if (!file) return
+                    if (!file.type.match(/^(image\/(jpeg|png)|application\/pdf)$/)) {
+                      alert('Alleen JPG, PNG of PDF bestanden')
+                      return
+                    }
+                    if (file.size > 10 * 1024 * 1024) {
+                      alert('Bestand is te groot (max 10MB)')
+                      return
+                    }
+                    setUploadingItemId(item.id)
+                    try {
+                      const result = await uploadBijlage(file, item.id)
+                      onUpdateItem(item.id, 'bijlage_url', result.url)
+                      onUpdateItem(item.id, 'bijlage_type', result.type as 'image/jpeg')
+                      onUpdateItem(item.id, 'bijlage_naam', result.naam)
+                    } catch (err) {
+                      alert('Upload mislukt: ' + (err instanceof Error ? err.message : 'Onbekende fout'))
+                    } finally {
+                      setUploadingItemId(null)
+                    }
+                  }}
+                  onPaste={async (e) => {
+                    const items_clipboard = e.clipboardData?.items
+                    if (!items_clipboard) return
+                    for (const clipItem of Array.from(items_clipboard)) {
+                      if (clipItem.type.startsWith('image/')) {
+                        e.preventDefault()
+                        const file = clipItem.getAsFile()
+                        if (!file) return
+                        setUploadingItemId(item.id)
+                        try {
+                          const result = await uploadBijlage(file, item.id)
+                          onUpdateItem(item.id, 'bijlage_url', result.url)
+                          onUpdateItem(item.id, 'bijlage_type', result.type as 'image/jpeg')
+                          onUpdateItem(item.id, 'bijlage_naam', result.naam)
+                        } catch (err) {
+                          alert('Plakken mislukt: ' + (err instanceof Error ? err.message : 'Onbekende fout'))
+                        } finally {
+                          setUploadingItemId(null)
+                        }
+                        return
+                      }
+                    }
+                  }}
+                  onFileSelect={async (file) => {
+                    if (file.size > 10 * 1024 * 1024) {
+                      alert('Bestand is te groot (max 10MB)')
+                      return
+                    }
+                    setUploadingItemId(item.id)
+                    try {
+                      const result = await uploadBijlage(file, item.id)
+                      onUpdateItem(item.id, 'bijlage_url', result.url)
+                      onUpdateItem(item.id, 'bijlage_type', result.type as 'image/jpeg')
+                      onUpdateItem(item.id, 'bijlage_naam', result.naam)
+                    } catch (err) {
+                      alert('Upload mislukt: ' + (err instanceof Error ? err.message : 'Onbekende fout'))
+                    } finally {
+                      setUploadingItemId(null)
+                    }
+                  }}
+                  onRemove={async () => {
+                    // Delete from storage if it's a storage path (not a data URL or http URL)
+                    if (item.bijlage_url && !item.bijlage_url.startsWith('data:') && !item.bijlage_url.startsWith('http')) {
+                      try { await deleteFile(item.bijlage_url) } catch { /* silent */ }
+                    }
+                    onUpdateItem(item.id, 'bijlage_url', '')
+                    onUpdateItem(item.id, 'bijlage_type', '' as 'image/jpeg')
+                    onUpdateItem(item.id, 'bijlage_naam', '')
+                  }}
+                />
 
                 {/* ── FIX 15: Interne notitie ── */}
                 <div className="px-4 py-2 border-b border-border dark:border-border">
