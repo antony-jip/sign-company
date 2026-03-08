@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
-  Coins, Star, Zap, Crown, ExternalLink, Mail,
+  Coins, Star, Zap, Crown, CreditCard, Loader2, Shield,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -30,30 +30,78 @@ const PAKKET_ICONS: Record<string, React.ElementType> = {
   enterprise: Crown,
 }
 
+const PAKKET_KLEUREN: Record<string, { bg: string; border: string; icon: string; badge: string }> = {
+  starter: {
+    bg: 'bg-mist/10',
+    border: 'border-mist/60 hover:border-mist',
+    icon: 'text-mist-deep',
+    badge: 'bg-mist/20 text-mist-deep',
+  },
+  professional: {
+    bg: 'bg-blush/10',
+    border: 'border-blush/60 hover:border-blush',
+    icon: 'text-blush-deep',
+    badge: 'bg-blush text-white',
+  },
+  enterprise: {
+    bg: 'bg-sage/10',
+    border: 'border-sage/60 hover:border-sage',
+    icon: 'text-sage-deep',
+    badge: 'bg-sage/20 text-sage-deep',
+  },
+}
+
+const API_BASE = import.meta.env.PROD
+  ? ''
+  : (import.meta.env.VITE_API_URL || '')
+
 export function CreditsPakketDialog({
   isOpen,
   onClose,
   onCreditsToegevoegd,
-  supportEmail = 'info@forgedesk.nl',
 }: CreditsPakketDialogProps) {
   const { user } = useAuth()
   const [geselecteerdPakket, setGeselecteerdPakket] = useState<CreditsPakket | null>(null)
-  const [verzonden, setVerzonden] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleBetaalverzoek = useCallback(async (pakket: CreditsPakket, methode: 'whatsapp' | 'email') => {
-    if (!user?.id) return
-
-    const bericht = `Hallo, ik wil graag het ${pakket.naam} pakket bestellen (${pakket.credits} credits, €${pakket.prijs_eur}).`
-
-    if (methode === 'whatsapp') {
-      window.open(`https://wa.me/?text=${encodeURIComponent(bericht)}`, '_blank')
-    } else {
-      window.open(`mailto:${supportEmail}?subject=Credits bestelling - ${pakket.naam}&body=${encodeURIComponent(bericht)}`, '_blank')
+  const handleStripeCheckout = useCallback(async (pakket: CreditsPakket) => {
+    if (!user?.id) {
+      toast.error('Je moet ingelogd zijn om credits te kopen')
+      return
     }
 
-    setVerzonden(true)
-    toast.success(`Betaalverzoek verstuurd via ${methode === 'whatsapp' ? 'WhatsApp' : 'e-mail'}`)
-  }, [user?.id, supportEmail])
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${API_BASE}/api/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pakket_id: pakket.id,
+          user_id: user.id,
+          user_email: user.email,
+          success_url: `${window.location.origin}/visualizer?betaling=succes`,
+          cancel_url: `${window.location.origin}/visualizer?betaling=geannuleerd`,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Checkout sessie aanmaken mislukt')
+      }
+
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('Geen checkout URL ontvangen')
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Onbekende fout'
+      toast.error(`Betaling starten mislukt: ${msg}`)
+      setIsLoading(false)
+    }
+  }, [user?.id, user?.email])
 
   // For demo/dev: add credits directly
   const handleDemoCredits = useCallback(async (pakket: CreditsPakket) => {
@@ -70,86 +118,101 @@ export function CreditsPakketDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Coins className="h-5 w-5" /> Credits aanschaffen
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <div className="p-2 rounded-lg bg-blush/20">
+              <Coins className="h-5 w-5 text-blush-deep" />
+            </div>
+            Credits aanschaffen
           </DialogTitle>
         </DialogHeader>
 
         <p className="text-sm text-muted-foreground">
-          Elke visualisatie kost 1 credit. Kies een pakket om door te gaan.
+          Elke visualisatie kost 1 credit (4K kost 2 credits). Kies een pakket:
         </p>
 
-        <div className="grid grid-cols-3 gap-3 mt-2">
+        <div className="space-y-3 mt-1">
           {CREDITS_PAKKETTEN.map((pakket) => {
             const Icon = PAKKET_ICONS[pakket.id] || Coins
+            const kleuren = PAKKET_KLEUREN[pakket.id] || PAKKET_KLEUREN.starter
             const isSelected = geselecteerdPakket?.id === pakket.id
+
             return (
               <button
                 key={pakket.id}
                 onClick={() => setGeselecteerdPakket(pakket)}
                 className={cn(
-                  'relative flex flex-col items-center p-4 rounded-xl border-2 transition-all text-center',
+                  'relative flex items-center w-full p-4 rounded-xl border-2 transition-all text-left gap-4',
                   isSelected
-                    ? 'border-primary bg-primary/5 shadow-md'
-                    : 'border-border hover:border-primary/40'
+                    ? `${kleuren.bg} border-current shadow-md ring-2 ring-offset-2 ${kleuren.icon} ring-current/20`
+                    : `border-border/50 ${kleuren.border}`
                 )}
               >
                 {pakket.populair && (
-                  <Badge className="absolute -top-2 text-xs bg-primary text-primary-foreground">
+                  <Badge className={cn('absolute -top-2 right-3 text-xs', kleuren.badge)}>
                     Meest gekozen
                   </Badge>
                 )}
-                <Icon className={cn('h-6 w-6 mb-2', isSelected ? 'text-primary' : 'text-muted-foreground')} />
-                <span className="font-semibold text-sm">{pakket.naam}</span>
-                <span className="text-2xl font-bold mt-1">{pakket.credits}</span>
-                <span className="text-xs text-muted-foreground">credits</span>
-                <span className="text-lg font-semibold mt-2">€{pakket.prijs_eur}</span>
-                <span className="text-xs text-muted-foreground">
-                  €{pakket.prijs_per_credit_eur}/credit
-                </span>
-                <p className="text-xs text-muted-foreground mt-2">{pakket.beschrijving}</p>
+
+                <div className={cn('p-2.5 rounded-lg shrink-0', kleuren.bg)}>
+                  <Icon className={cn('h-5 w-5', kleuren.icon)} />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{pakket.naam}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {pakket.credits} credits
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{pakket.beschrijving}</p>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <div className="text-lg font-bold">€{pakket.prijs_eur.toFixed(2).replace('.', ',')}</div>
+                  <div className="text-xs text-muted-foreground">
+                    €{pakket.prijs_per_credit_eur.toFixed(2).replace('.', ',')}/credit
+                  </div>
+                </div>
               </button>
             )
           })}
         </div>
 
-        {geselecteerdPakket && !verzonden && (
-          <div className="mt-4 space-y-2">
-            <p className="text-sm font-medium">
-              Betaalverzoek versturen voor {geselecteerdPakket.naam} (€{geselecteerdPakket.prijs_eur}):
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="gap-2 flex-1"
-                onClick={() => handleBetaalverzoek(geselecteerdPakket, 'whatsapp')}
-              >
-                <ExternalLink className="h-4 w-4" /> WhatsApp
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-2 flex-1"
-                onClick={() => handleBetaalverzoek(geselecteerdPakket, 'email')}
-              >
-                <Mail className="h-4 w-4" /> E-mail
-              </Button>
-            </div>
+        {geselecteerdPakket && (
+          <div className="mt-4 space-y-3">
             <Button
-              variant="secondary"
-              size="sm"
-              className="w-full text-xs"
-              onClick={() => handleDemoCredits(geselecteerdPakket)}
+              className="w-full gap-2 bg-sage-deep hover:bg-sage-deep/90 text-white h-12 text-base font-medium"
+              onClick={() => handleStripeCheckout(geselecteerdPakket)}
+              disabled={isLoading}
             >
-              Demo: credits direct toevoegen (ontwikkelmodus)
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CreditCard className="h-4 w-4" />
+              )}
+              {isLoading
+                ? 'Doorsturen naar betaling...'
+                : `Afrekenen — €${geselecteerdPakket.prijs_eur.toFixed(2).replace('.', ',')}`
+              }
             </Button>
-          </div>
-        )}
 
-        {verzonden && (
-          <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg text-sm text-green-700 dark:text-green-300">
-            Betaalverzoek is verstuurd. Na bevestiging van betaling worden je credits automatisch toegevoegd.
+            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <Shield className="h-3 w-3" />
+              Veilig betalen via Stripe — iDEAL & creditcard
+            </div>
+
+            {import.meta.env.DEV && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs text-muted-foreground"
+                onClick={() => handleDemoCredits(geselecteerdPakket)}
+              >
+                🛠 Dev: credits direct toevoegen
+              </Button>
+            )}
           </div>
         )}
       </DialogContent>

@@ -22,6 +22,7 @@ import {
 } from '@/services/supabaseService'
 import type { SigningVisualisatie, Project, Offerte } from '@/types'
 import { VisualisatieLightbox } from './VisualisatieLightbox'
+import { CreditsPakketDialog } from './CreditsPakketDialog'
 
 type GeneratieStatus = 'idle' | 'claude' | 'genereren' | 'klaar' | 'fout'
 
@@ -86,6 +87,7 @@ export function VisualizerLayout() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [filterKoppeling, setFilterKoppeling] = useState<'alle' | 'gekoppeld' | 'los'>('alle')
+  const [showCreditsPakket, setShowCreditsPakket] = useState(false)
 
   // ── Data for linking ──
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -108,6 +110,21 @@ export function VisualizerLayout() {
     getVisualizerCredits(user.id).then(c => setCreditSaldo(c.saldo)).catch(() => {})
     getProjecten().then(setProjecten).catch(() => {})
     getOffertes().then(setOffertes).catch(() => {})
+
+    // Handle Stripe payment return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('betaling') === 'succes') {
+      toast.success('Betaling geslaagd! Credits worden bijgeschreven.')
+      // Refresh credits after short delay (webhook needs time to process)
+      setTimeout(() => {
+        getVisualizerCredits(user.id).then(c => setCreditSaldo(c.saldo)).catch(() => {})
+      }, 2000)
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname)
+    } else if (params.get('betaling') === 'geannuleerd') {
+      toast.info('Betaling geannuleerd')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
   }, [user?.id, ladenBibliotheek])
 
   const filteredOffertes = selectedProject
@@ -187,7 +204,8 @@ export function VisualizerLayout() {
   const handleGenereer = useCallback(async () => {
     if (!user?.id || !foto || !beschrijving.trim()) return
     if (creditSaldo <= 0) {
-      toast.error('Geen credits meer')
+      toast.error('Geen credits meer — koop credits bij')
+      setShowCreditsPakket(true)
       return
     }
 
@@ -253,7 +271,8 @@ export function VisualizerLayout() {
   const handleChatVerfijning = useCallback(async () => {
     if (!user?.id || !chatInput.trim() || !foto) return
     if (creditSaldo <= 0) {
-      toast.error('Geen credits meer')
+      toast.error('Geen credits meer — koop credits bij')
+      setShowCreditsPakket(true)
       return
     }
 
@@ -660,13 +679,18 @@ export function VisualizerLayout() {
             Upload een foto of ontwerp, beschrijf het gewenste resultaat — AI doet de rest
           </p>
         </div>
-        <div className="ml-auto">
-          <span className={cn(
-            'text-sm font-medium px-3 py-1.5 rounded-full',
-            creditSaldo < 5 ? 'bg-blush/20 text-blush-deep' : 'bg-sage/20 text-sage-deep',
-          )}>
-            {creditSaldo} credits
-          </span>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setShowCreditsPakket(true)}
+            className={cn(
+              'text-sm font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer',
+              creditSaldo < 5
+                ? 'bg-blush/20 text-blush-deep hover:bg-blush/30'
+                : 'bg-sage/20 text-sage-deep hover:bg-sage/30',
+            )}
+          >
+            {creditSaldo} credits {creditSaldo < 5 ? '— bijkopen' : ''}
+          </button>
         </div>
       </div>
 
@@ -934,6 +958,13 @@ export function VisualizerLayout() {
           onClose={() => setLightboxIndex(null)}
         />
       )}
+
+      {/* Credits Pakket Dialog */}
+      <CreditsPakketDialog
+        isOpen={showCreditsPakket}
+        onClose={() => setShowCreditsPakket(false)}
+        onCreditsToegevoegd={(nieuwSaldo) => setCreditSaldo(nieuwSaldo)}
+      />
     </div>
   )
 }
