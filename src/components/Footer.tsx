@@ -3,8 +3,8 @@ import React from 'react';
 const footerLinks = {
   product: [
     { name: 'Features', href: '#features' },
+    { name: 'AI Tools', href: '#ai-tools' },
     { name: 'Pricing', href: '#pricing' },
-    { name: 'Updates', href: '#' },
     { name: 'Roadmap', href: '#' },
   ],
   bedrijf: [
@@ -25,67 +25,57 @@ export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 text-white border-t border-gray-800">
+    <footer className="bg-gradient-to-b from-gray-900 to-gray-950 text-white border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
-          {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <span className="text-xl font-bold tracking-tight">
               FORGE<span className="font-light">desk</span>
             </span>
             <p className="text-gray-500 mt-3 text-sm leading-relaxed max-w-xs">
-              Dé alles-in-één bedrijfssoftware voor creatieve bedrijven. Gebouwd in Nederland.
+              De alles-in-een bedrijfssoftware voor creatieve bedrijven. Met AI-tools. Gebouwd in Nederland.
             </p>
+            <div className="flex gap-2 mt-4">
+              <span className="pastel-pill bg-lavender/20 text-lavender-light border border-lavender/20">AI-Powered</span>
+            </div>
           </div>
 
-          {/* Product */}
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">Product</h4>
             <ul className="space-y-2.5">
               {footerLinks.product.map((item) => (
                 <li key={item.name}>
-                  <a href={item.href} className="text-sm text-gray-500 hover:text-white transition-colors">
-                    {item.name}
-                  </a>
+                  <a href={item.href} className="text-sm text-gray-500 hover:text-white transition-colors">{item.name}</a>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Bedrijf */}
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">Bedrijf</h4>
             <ul className="space-y-2.5">
               {footerLinks.bedrijf.map((item) => (
                 <li key={item.name}>
-                  <a href={item.href} className="text-sm text-gray-500 hover:text-white transition-colors">
-                    {item.name}
-                  </a>
+                  <a href={item.href} className="text-sm text-gray-500 hover:text-white transition-colors">{item.name}</a>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Support */}
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">Support</h4>
             <ul className="space-y-2.5">
               {footerLinks.support.map((item) => (
                 <li key={item.name}>
-                  <a href={item.href} className="text-sm text-gray-500 hover:text-white transition-colors">
-                    {item.name}
-                  </a>
+                  <a href={item.href} className="text-sm text-gray-500 hover:text-white transition-colors">{item.name}</a>
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        {/* Bottom bar */}
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-600">
-            &copy; {currentYear} FORGEdesk. Alle rechten voorbehouden.
-          </p>
+          <p className="text-sm text-gray-600">&copy; {currentYear} FORGEdesk. Alle rechten voorbehouden.</p>
           <div className="flex items-center gap-4">
             <a href="#" className="text-gray-600 hover:text-white transition-colors" aria-label="LinkedIn">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

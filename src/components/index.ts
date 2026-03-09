@@ -7,3 +7,6 @@ export { CTASection } from './CTA';
 export { SocialProof } from './SocialProof';
 export { Header } from './Header';
 export { Footer } from './Footer';
+export { AIToolsShowcase } from './AIToolsShowcase';
+export { InteractiveModules } from './InteractiveModules';
+export { AppLoginExperience } from './AppLoginExperience';
