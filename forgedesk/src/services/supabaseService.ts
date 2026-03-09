@@ -4315,45 +4315,111 @@ export async function getVisualizerStats(user_id: string): Promise<VisualizerSta
   }
 }
 
-// --- Credits Systeem ---
+// --- Credits Systeem (Supabase-backed) ---
+
+const DEMO_CREDITS = 10 // Nieuwe gebruikers krijgen 10 gratis credits
 
 export async function getVisualizerCredits(user_id: string): Promise<VisualizerCredits> {
   assertId(user_id, 'user_id')
+
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('visualizer_credits')
+      .select('*')
+      .eq('user_id', user_id)
+      .single()
+
+    if (data && !error) {
+      return {
+        user_id: data.user_id,
+        saldo: data.saldo,
+        totaal_gekocht: data.totaal_gekocht,
+        totaal_gebruikt: data.totaal_gebruikt,
+        laatst_bijgewerkt: data.laatst_bijgewerkt,
+      }
+    }
+
+    // Nieuwe gebruiker → maak record aan met demo credits
+    if (error?.code === 'PGRST116') {
+      const { data: newRecord } = await supabase
+        .from('visualizer_credits')
+        .insert({
+          user_id,
+          saldo: DEMO_CREDITS,
+          totaal_gekocht: DEMO_CREDITS,
+          totaal_gebruikt: 0,
+        })
+        .select()
+        .single()
+
+      if (newRecord) {
+        // Log de demo credits transactie
+        await supabase.from('credit_transacties').insert({
+          user_id,
+          type: 'handmatig_toegevoegd',
+          aantal: DEMO_CREDITS,
+          saldo_na: DEMO_CREDITS,
+          beschrijving: 'Welkomstcredits — probeer de Visualizer en Forgie gratis uit',
+        })
+
+        return {
+          user_id,
+          saldo: DEMO_CREDITS,
+          totaal_gekocht: DEMO_CREDITS,
+          totaal_gebruikt: 0,
+          laatst_bijgewerkt: newRecord.laatst_bijgewerkt || now(),
+        }
+      }
+    }
+  }
+
+  // Fallback: localStorage (voor lokale dev zonder Supabase)
   const key = `forgedesk_visualizer_credits_${user_id}`
   try {
     const stored = localStorage.getItem(key)
     if (stored) return JSON.parse(stored) as VisualizerCredits
   } catch { /* ignore */ }
-  return {
-    user_id,
-    saldo: 0,
-    totaal_gekocht: 0,
-    totaal_gebruikt: 0,
-    laatst_bijgewerkt: now(),
-  }
+  return { user_id, saldo: 0, totaal_gekocht: 0, totaal_gebruikt: 0, laatst_bijgewerkt: now() }
 }
 
-async function saveVisualizerCredits(credits: VisualizerCredits): Promise<void> {
-  const key = `forgedesk_visualizer_credits_${credits.user_id}`
-  safeSetItem(key, JSON.stringify({ ...credits, laatst_bijgewerkt: now() }))
-}
-
-export async function gebruikCredit(user_id: string, visualisatie_id: string): Promise<VisualizerCredits> {
+export async function gebruikCredit(user_id: string, visualisatie_id: string, aantal: number = 1): Promise<VisualizerCredits> {
   assertId(user_id, 'user_id')
   const credits = await getVisualizerCredits(user_id)
-  if (credits.saldo <= 0) throw new Error('Geen credits beschikbaar')
-  credits.saldo -= 1
-  credits.totaal_gebruikt += 1
-  await saveVisualizerCredits(credits)
-  await logCreditTransactie({
-    user_id,
-    type: 'gebruik',
-    aantal: -1,
-    saldo_na: credits.saldo,
-    beschrijving: 'Credit gebruikt voor visualisatie',
-    visualisatie_id,
-  })
-  return credits
+
+  if (credits.saldo < aantal) {
+    throw new Error(`Onvoldoende credits — je hebt ${credits.saldo} credits, maar deze actie kost ${aantal}`)
+  }
+
+  const nieuwSaldo = credits.saldo - aantal
+  const nieuwGebruikt = credits.totaal_gebruikt + aantal
+
+  if (isSupabaseConfigured() && supabase) {
+    await supabase
+      .from('visualizer_credits')
+      .update({
+        saldo: nieuwSaldo,
+        totaal_gebruikt: nieuwGebruikt,
+        laatst_bijgewerkt: now(),
+      })
+      .eq('user_id', user_id)
+
+    await supabase.from('credit_transacties').insert({
+      user_id,
+      type: 'gebruik',
+      aantal: -aantal,
+      saldo_na: nieuwSaldo,
+      beschrijving: aantal > 1 ? `${aantal} credits gebruikt (4K visualisatie)` : 'Credit gebruikt voor visualisatie',
+      visualisatie_id: visualisatie_id || null,
+    })
+  } else {
+    // localStorage fallback
+    const key = `forgedesk_visualizer_credits_${user_id}`
+    const updated = { ...credits, saldo: nieuwSaldo, totaal_gebruikt: nieuwGebruikt, laatst_bijgewerkt: now() }
+    safeSetItem(key, JSON.stringify(updated))
+    await logCreditTransactieLocal({ user_id, type: 'gebruik', aantal: -aantal, saldo_na: nieuwSaldo, beschrijving: 'Credit gebruikt voor visualisatie', visualisatie_id })
+  }
+
+  return { ...credits, saldo: nieuwSaldo, totaal_gebruikt: nieuwGebruikt, laatst_bijgewerkt: now() }
 }
 
 export async function voegCreditsToe(
@@ -4363,17 +4429,34 @@ export async function voegCreditsToe(
 ): Promise<VisualizerCredits> {
   assertId(user_id, 'user_id')
   const credits = await getVisualizerCredits(user_id)
-  credits.saldo += aantal
-  credits.totaal_gekocht += aantal
-  await saveVisualizerCredits(credits)
-  await logCreditTransactie({
-    user_id,
-    type: 'aankoop',
-    aantal,
-    saldo_na: credits.saldo,
-    beschrijving,
-  })
-  return credits
+  const nieuwSaldo = credits.saldo + aantal
+  const nieuwGekocht = credits.totaal_gekocht + aantal
+
+  if (isSupabaseConfigured() && supabase) {
+    await supabase
+      .from('visualizer_credits')
+      .update({
+        saldo: nieuwSaldo,
+        totaal_gekocht: nieuwGekocht,
+        laatst_bijgewerkt: now(),
+      })
+      .eq('user_id', user_id)
+
+    await supabase.from('credit_transacties').insert({
+      user_id,
+      type: 'aankoop',
+      aantal,
+      saldo_na: nieuwSaldo,
+      beschrijving,
+    })
+  } else {
+    const key = `forgedesk_visualizer_credits_${user_id}`
+    const updated = { ...credits, saldo: nieuwSaldo, totaal_gekocht: nieuwGekocht, laatst_bijgewerkt: now() }
+    safeSetItem(key, JSON.stringify(updated))
+    await logCreditTransactieLocal({ user_id, type: 'aankoop', aantal, saldo_na: nieuwSaldo, beschrijving })
+  }
+
+  return { ...credits, saldo: nieuwSaldo, totaal_gekocht: nieuwGekocht, laatst_bijgewerkt: now() }
 }
 
 export async function handmatigCreditsToewijzen(
@@ -4383,20 +4466,38 @@ export async function handmatigCreditsToewijzen(
 ): Promise<VisualizerCredits> {
   assertId(user_id, 'user_id')
   const credits = await getVisualizerCredits(user_id)
-  credits.saldo += aantal
-  if (aantal > 0) credits.totaal_gekocht += aantal
-  await saveVisualizerCredits(credits)
-  await logCreditTransactie({
-    user_id,
-    type: 'handmatig_toegevoegd',
-    aantal,
-    saldo_na: credits.saldo,
-    beschrijving,
-  })
-  return credits
+  const nieuwSaldo = credits.saldo + aantal
+  const nieuwGekocht = aantal > 0 ? credits.totaal_gekocht + aantal : credits.totaal_gekocht
+
+  if (isSupabaseConfigured() && supabase) {
+    await supabase
+      .from('visualizer_credits')
+      .update({
+        saldo: nieuwSaldo,
+        totaal_gekocht: nieuwGekocht,
+        laatst_bijgewerkt: now(),
+      })
+      .eq('user_id', user_id)
+
+    await supabase.from('credit_transacties').insert({
+      user_id,
+      type: 'handmatig_toegevoegd',
+      aantal,
+      saldo_na: nieuwSaldo,
+      beschrijving,
+    })
+  } else {
+    const key = `forgedesk_visualizer_credits_${user_id}`
+    const updated = { ...credits, saldo: nieuwSaldo, totaal_gekocht: nieuwGekocht, laatst_bijgewerkt: now() }
+    safeSetItem(key, JSON.stringify(updated))
+    await logCreditTransactieLocal({ user_id, type: 'handmatig_toegevoegd', aantal, saldo_na: nieuwSaldo, beschrijving })
+  }
+
+  return { ...credits, saldo: nieuwSaldo, totaal_gekocht: nieuwGekocht, laatst_bijgewerkt: now() }
 }
 
-async function logCreditTransactie(
+// localStorage fallback voor lokale dev
+async function logCreditTransactieLocal(
   data: Omit<CreditTransactie, 'id' | 'created_at'>
 ): Promise<void> {
   const key = `forgedesk_credit_transacties_${data.user_id}`
@@ -4407,7 +4508,42 @@ async function logCreditTransactie(
 
 export async function getCreditTransacties(user_id: string): Promise<CreditTransactie[]> {
   assertId(user_id, 'user_id')
+
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('credit_transacties')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (!error && data) return data as CreditTransactie[]
+  }
+
+  // localStorage fallback
   const key = `forgedesk_credit_transacties_${user_id}`
   const items: CreditTransactie[] = JSON.parse(localStorage.getItem(key) || '[]')
   return items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+}
+
+// Forgie AI maandelijks gebruik ophalen
+export async function getForgieGebruik(user_id: string): Promise<{ geschatte_kosten: number; aantal_calls: number; limiet: number }> {
+  assertId(user_id, 'user_id')
+  const limiet = 5.0 // €5 per maand
+
+  if (isSupabaseConfigured() && supabase) {
+    const maand = new Date().toISOString().slice(0, 7) // YYYY-MM
+    const { data } = await supabase
+      .from('ai_usage')
+      .select('geschatte_kosten, aantal_calls')
+      .eq('user_id', user_id)
+      .eq('maand', maand)
+      .single()
+    return {
+      geschatte_kosten: data?.geschatte_kosten ?? 0,
+      aantal_calls: data?.aantal_calls ?? 0,
+      limiet,
+    }
+  }
+
+  return { geschatte_kosten: 0, aantal_calls: 0, limiet }
 }

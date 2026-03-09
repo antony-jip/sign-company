@@ -14,12 +14,12 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   getSigningVisualisaties,
   getVisualizerCredits,
-  gebruikCredit,
   createSigningVisualisatie,
   deleteSigningVisualisatie,
   getProjecten,
   getOffertes,
 } from '@/services/supabaseService'
+import supabase from '@/services/supabaseClient'
 import { uploadFile } from '@/services/storageService'
 import type { SigningVisualisatie, Project, Offerte } from '@/types'
 import { VisualisatieLightbox } from './VisualisatieLightbox'
@@ -202,6 +202,18 @@ export function VisualizerLayout() {
       .map(b => ({ rol: b.rol as 'user' | 'assistant', tekst: b.tekst }))
   }, [chatBerichten])
 
+  // Auth headers voor server-side credit check
+  const getAuthHeaders = useCallback(async (): Promise<Record<string, string>> => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (supabase) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+    }
+    return headers
+  }, [])
+
   // ── Generate (eerste keer) ──
   const handleGenereer = useCallback(async () => {
     if (!user?.id || !foto || !beschrijving.trim()) return
@@ -212,8 +224,6 @@ export function VisualizerLayout() {
     }
 
     try {
-      const newCredits = await gebruikCredit(user.id, '')
-      setCreditSaldo(newCredits.saldo)
       setGeneratieStatus('claude')
       setInChatModus(true)
 
@@ -225,9 +235,10 @@ export function VisualizerLayout() {
         timestamp: new Date(),
       }])
 
+      const headers = await getAuthHeaders()
       const response = await fetch('/api/generate-signing-mockup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           gebouw_foto_base64: foto,
           logo_base64: logoFoto || undefined,
@@ -248,6 +259,9 @@ export function VisualizerLayout() {
       setResultaat(data)
       setGeneratieStatus('klaar')
 
+      // Credits saldo verversen (server heeft afgeschreven)
+      getVisualizerCredits(user.id).then(c => setCreditSaldo(c.saldo)).catch(() => {})
+
       setChatBerichten(prev => [...prev, {
         id: crypto.randomUUID(),
         rol: 'assistant',
@@ -267,7 +281,7 @@ export function VisualizerLayout() {
         timestamp: new Date(),
       }])
     }
-  }, [user?.id, foto, logoFoto, beschrijving, ratio, creditSaldo])
+  }, [user?.id, foto, logoFoto, beschrijving, ratio, creditSaldo, getAuthHeaders])
 
   // ── Chat verfijning ──
   const handleChatVerfijning = useCallback(async () => {
@@ -289,13 +303,12 @@ export function VisualizerLayout() {
     }])
 
     try {
-      const newCredits = await gebruikCredit(user.id, '')
-      setCreditSaldo(newCredits.saldo)
       setGeneratieStatus('claude')
 
+      const headers = await getAuthHeaders()
       const response = await fetch('/api/generate-signing-mockup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           gebouw_foto_base64: foto,
           logo_base64: logoFoto || undefined,
@@ -317,6 +330,9 @@ export function VisualizerLayout() {
       setResultaat(data)
       setGeneratieStatus('klaar')
 
+      // Credits saldo verversen
+      getVisualizerCredits(user.id).then(c => setCreditSaldo(c.saldo)).catch(() => {})
+
       setChatBerichten(prev => [...prev, {
         id: crypto.randomUUID(),
         rol: 'assistant',
@@ -336,7 +352,7 @@ export function VisualizerLayout() {
         timestamp: new Date(),
       }])
     }
-  }, [user?.id, chatInput, foto, logoFoto, ratio, creditSaldo, buildChatGeschiedenis])
+  }, [user?.id, chatInput, foto, logoFoto, ratio, creditSaldo, buildChatGeschiedenis, getAuthHeaders])
 
   const handleChatKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

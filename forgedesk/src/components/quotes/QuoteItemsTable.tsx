@@ -294,32 +294,43 @@ function BijlageDropZone({
   const resolvedUrl = useBijlageUrl(item.bijlage_url)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [expanded, setExpanded] = useState(false)
+  const hasBijlage = !!(item.bijlage_url && resolvedUrl)
+  const hasContent = hasBijlage || visualisaties.length > 0
+  const [sectionOpen, setSectionOpen] = useState(hasBijlage)
 
   return (
     <div
-      className="px-4 py-3 border-b border-border dark:border-border outline-none"
+      className="px-4 py-2 border-b border-border dark:border-border outline-none"
       onPaste={onPaste}
       tabIndex={0}
     >
-      <div className="flex items-center gap-2 mb-2">
+      <button
+        type="button"
+        onClick={() => setSectionOpen(!sectionOpen)}
+        className="flex items-center gap-2 w-full text-left"
+      >
         <div className="flex items-center justify-center h-5 w-5 rounded bg-violet-100 dark:bg-violet-900/30">
           <ImageIcon className="h-3 w-3 text-violet-500 dark:text-violet-400" />
         </div>
         <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tekening / Bijlage</span>
-        {item.bijlage_naam && (
-          <span className="ml-auto text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-full truncate max-w-[200px]">
-            {item.bijlage_naam}
+        {!sectionOpen && hasContent && (
+          <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-full">
+            {hasBijlage ? item.bijlage_naam || '1 bestand' : `${visualisaties.length} voorbeeld${visualisaties.length > 1 ? 'en' : ''}`}
           </span>
         )}
-      </div>
+        <ChevronDown className={cn(
+          'h-3.5 w-3.5 ml-auto text-muted-foreground transition-transform duration-200',
+          sectionOpen && 'rotate-180'
+        )} />
+      </button>
 
-      {isUploading ? (
-        <div className="rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 flex items-center justify-center gap-3 py-8">
-          <div className="h-5 w-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-violet-600 dark:text-violet-400 font-medium">Bezig met uploaden...</span>
+      {!sectionOpen ? null : isUploading ? (
+        <div className="mt-2 rounded-lg border-2 border-dashed border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 flex items-center justify-center gap-2 py-4">
+          <div className="h-4 w-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-violet-600 dark:text-violet-400 font-medium">Uploaden...</span>
         </div>
       ) : item.bijlage_url && resolvedUrl ? (
-        <div className="relative group rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
+        <div className="mt-2 relative group rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
           {item.bijlage_type === 'application/pdf' ? (
             <div className="flex items-center gap-3 p-4">
               <div className="h-12 w-12 rounded-lg bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 flex items-center justify-center flex-shrink-0">
@@ -337,8 +348,8 @@ function BijlageDropZone({
                 alt={item.beschrijving || 'Item bijlage'}
                 onClick={() => setExpanded(!expanded)}
                 className={cn(
-                  'w-full rounded-xl object-contain cursor-pointer transition-all duration-200',
-                  expanded ? 'max-h-[500px]' : 'max-h-[180px]'
+                  'w-full rounded-lg object-contain cursor-pointer transition-all duration-200',
+                  expanded ? 'max-h-[400px]' : 'max-h-[120px]'
                 )}
               />
               <button
@@ -364,8 +375,8 @@ function BijlageDropZone({
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           className={cn(
-            'rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer',
-            'flex flex-col items-center justify-center gap-2 py-6',
+            'mt-2 rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer',
+            'flex flex-col items-center justify-center gap-1.5 py-3',
             isDragOver
               ? 'border-violet-400 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/40 dark:to-indigo-950/40 scale-[1.01] shadow-sm'
               : 'border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-gradient-to-br hover:from-violet-50/50 hover:to-indigo-50/50 dark:hover:from-violet-950/20 dark:hover:to-indigo-950/20'
@@ -373,13 +384,13 @@ function BijlageDropZone({
           onClick={() => fileInputRef.current?.click()}
         >
           <div className={cn(
-            'h-10 w-10 rounded-full flex items-center justify-center transition-colors',
+            'h-7 w-7 rounded-full flex items-center justify-center transition-colors',
             isDragOver
               ? 'bg-violet-100 dark:bg-violet-900/40'
               : 'bg-slate-100 dark:bg-slate-800'
           )}>
             <Upload className={cn(
-              'h-4.5 w-4.5 transition-colors',
+              'h-3.5 w-3.5 transition-colors',
               isDragOver
                 ? 'text-violet-500 dark:text-violet-400'
                 : 'text-slate-400 dark:text-slate-500'
@@ -412,22 +423,22 @@ function BijlageDropZone({
 
       {/* ── Gegenereerde visualisaties van deze offerte ── */}
       {visualisaties.length > 0 && (
-        <div className="mt-3">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+        <div className="mt-2">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
             Gegenereerde voorbeelden
           </p>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
             {visualisaties.map((v) => (
               <div
                 key={v.id}
                 onClick={() => onSelectVisualisatie?.(v)}
-                className="relative group cursor-pointer rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-md transition-all w-[120px] flex-shrink-0"
+                className="relative group cursor-pointer rounded-md overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-md transition-all w-[80px] flex-shrink-0"
                 title="Klik om als tekening te gebruiken"
               >
                 <img
                   src={v.resultaat_url}
                   alt="Visualisatie voorbeeld"
-                  className="w-full h-[80px] object-cover"
+                  className="w-full h-[56px] object-cover"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                   <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 px-2 py-1 rounded">
