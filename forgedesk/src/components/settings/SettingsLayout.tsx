@@ -2249,6 +2249,7 @@ const ALL_SIDEBAR_ITEMS = [
   { label: 'Taken', section: 'Productie' },
   { label: 'Montage', section: 'Productie' },
   { label: 'Werkbonnen', section: 'Productie' },
+  { label: 'Visualizer', section: 'Productie' },
   { label: 'Nacalculatie', section: 'Productie' },
   { label: 'Planning', section: 'Planning' },
   { label: 'Email', section: 'Communicatie' },
