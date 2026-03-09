@@ -41,8 +41,7 @@ import {
   getPriorityColor,
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
-import { getProjecten, getKlanten, getOffertes, updateProject, createDocument } from '@/services/supabaseService'
-import { uploadFile } from '@/services/storageService'
+import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant, Offerte } from '@/types'
 import { toast } from 'sonner'
@@ -126,25 +125,14 @@ export function ProjectsList() {
     let uploaded = 0
     for (const file of images) {
       try {
-        const storagePath = `projects/${photoUploadProjectId}/fotos/${Date.now()}_${file.name}`
-        await uploadFile(file, storagePath)
-        await createDocument({
-          user_id: user.id,
-          project_id: photoUploadProjectId,
-          klant_id: photoUploadKlantId,
-          naam: file.name,
-          type: file.type,
-          grootte: file.size,
-          map: "Situatiefoto's",
-          storage_path: storagePath,
-          status: 'definitief',
-          tags: ['foto', 'situatie'],
-          gedeeld_met: [],
-          beschrijving: '',
-        })
+        await createProjectFoto(
+          { user_id: user.id, project_id: photoUploadProjectId, omschrijving: file.name, type: 'situatie' },
+          file,
+        )
         uploaded++
       } catch (err) {
         logger.error(`Fout bij uploaden ${file.name}:`, err)
+        toast.error(`Upload mislukt: ${file.name}`)
       }
     }
     if (uploaded > 0) {

@@ -57,6 +57,7 @@ import type {
   VisualizerStats,
   VisualizerCredits,
   CreditTransactie,
+  ProjectFoto,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -3791,6 +3792,106 @@ export async function getMontageAfsprakenByKlant(klantId: string): Promise<Monta
     return data || []
   }
   return getLocalData<MontageAfspraak>('montage_afspraken').filter((a) => a.klant_id === klantId)
+}
+
+// ============ PROJECT FOTO'S ============
+
+const PHOTO_BUCKET = 'project-fotos'
+
+export async function getProjectFotos(projectId: string): Promise<ProjectFoto[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('project_fotos')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<ProjectFoto>('project_fotos').filter((f) => f.project_id === projectId)
+}
+
+export async function createProjectFoto(
+  foto: { user_id: string; project_id: string; omschrijving: string; type?: string },
+  file: File,
+): Promise<ProjectFoto> {
+  assertId(foto.user_id, 'user_id')
+  assertId(foto.project_id, 'project_id')
+  const storagePath = `${foto.project_id}/${Date.now()}_${file.name}`
+
+  let url: string
+
+  if (isSupabaseConfigured() && supabase) {
+    const { error: uploadError } = await supabase.storage
+      .from(PHOTO_BUCKET)
+      .upload(storagePath, file, { cacheControl: '3600', upsert: false })
+    if (uploadError) throw uploadError
+    const { data: urlData } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(storagePath)
+    url = urlData.publicUrl
+
+    const { data, error } = await supabase
+      .from('project_fotos')
+      .insert({
+        user_id: foto.user_id,
+        project_id: foto.project_id,
+        url,
+        omschrijving: foto.omschrijving,
+        type: foto.type || 'situatie',
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+
+  // localStorage fallback: store base64
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+  url = dataUrl
+
+  const record: ProjectFoto = {
+    id: crypto.randomUUID(),
+    user_id: foto.user_id,
+    project_id: foto.project_id,
+    url,
+    omschrijving: foto.omschrijving,
+    type: foto.type || 'situatie',
+    created_at: now(),
+  }
+  const all = getLocalData<ProjectFoto>('project_fotos')
+  all.push(record)
+  setLocalData('project_fotos', all)
+  return record
+}
+
+export async function deleteProjectFoto(id: string): Promise<void> {
+  assertId(id, 'id')
+  if (isSupabaseConfigured() && supabase) {
+    // Get the foto record to find the storage path
+    const { data: foto } = await supabase.from('project_fotos').select('url').eq('id', id).single()
+    if (foto?.url) {
+      // Try to extract storage path from URL and delete from storage
+      try {
+        const urlObj = new URL(foto.url)
+        const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/project-fotos\/(.+)/)
+        if (pathMatch) {
+          await supabase.storage.from(PHOTO_BUCKET).remove([pathMatch[1]])
+        }
+      } catch {
+        // Storage cleanup is best-effort
+      }
+    }
+    const { error } = await supabase.from('project_fotos').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const all = getLocalData<ProjectFoto>('project_fotos')
+  setLocalData('project_fotos', all.filter((f) => f.id !== id))
 }
 
 // ============ NUMMER GENERATOREN (GECENTRALISEERD) ============

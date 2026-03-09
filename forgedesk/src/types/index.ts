@@ -888,6 +888,18 @@ export interface MontageAfspraak {
   updated_at: string;
 }
 
+// ============ PROJECT FOTO'S ============
+
+export interface ProjectFoto {
+  id: string;
+  user_id: string;
+  project_id: string;
+  url: string;
+  omschrijving: string;
+  type: string;
+  created_at: string;
+}
+
 // ============ VERLOF & BESCHIKBAARHEID (Feature 3) ============
 
 export interface Verlof {
