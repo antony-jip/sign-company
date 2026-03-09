@@ -1754,7 +1754,16 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
     const { error } = await supabase
       .from('app_settings')
       .upsert(merged, { onConflict: 'user_id' })
-    if (error) throw error
+    if (error) {
+      console.error('[updateAppSettings] Supabase upsert failed:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        sentFields: Object.keys(merged),
+      })
+      throw error
+    }
     return merged as AppSettings
   }
 
