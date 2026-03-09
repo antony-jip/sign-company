@@ -1181,11 +1181,8 @@ export async function getProfile(userId: string): Promise<Profile | null> {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
-    if (error) {
-      if (error.code === 'PGRST116') return null // not found
-      throw error
-    }
+      .maybeSingle()
+    if (error) throw error
     return data
   }
   const profiles = getLocalData<Profile>('profiles')
@@ -1732,12 +1729,9 @@ export async function getAppSettings(userId: string): Promise<AppSettings> {
       .from('app_settings')
       .select('*')
       .eq('user_id', userId)
-      .single()
-    if (error) {
-      if (error.code === 'PGRST116') return getDefaultAppSettings(userId)
-      throw error
-    }
-    return data
+      .maybeSingle()
+    if (error) throw error
+    return data || getDefaultAppSettings(userId)
   }
   const settings = getLocalData<AppSettings>('app_settings')
   const found = settings.find((s) => s.user_id === userId)
@@ -1749,29 +1743,18 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
   if (isSupabaseConfigured() && supabase) {
     const { data: existing } = await supabase
       .from('app_settings')
-      .select('id')
+      .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
-    if (existing) {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .update({ ...updates, updated_at: now() })
-        .eq('user_id', userId)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    } else {
-      const defaults = getDefaultAppSettings(userId)
-      const { data, error } = await supabase
-        .from('app_settings')
-        .insert({ ...defaults, ...updates })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    }
+    const defaults = getDefaultAppSettings(userId)
+    const merged = { ...(existing || defaults), ...updates, user_id: userId, updated_at: now() }
+
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert(merged, { onConflict: 'user_id' })
+    if (error) throw error
+    return merged as AppSettings
   }
 
   const settings = getLocalData<AppSettings>('app_settings')
@@ -1793,28 +1776,19 @@ export async function updateProfile(userId: string, updates: Partial<Profile>): 
   if (isSupabaseConfigured() && supabase) {
     const { data: existing } = await supabase
       .from('profiles')
-      .select('id')
+      .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
-    if (existing) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ ...updates, updated_at: now() })
-        .eq('id', userId)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    } else {
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({ id: userId, ...updates, created_at: now(), updated_at: now() })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    }
+    const merged = existing
+      ? { ...existing, ...updates, updated_at: now() }
+      : { id: userId, ...updates, created_at: now(), updated_at: now() }
+
+    const { error } = await supabase
+      .from('profiles')
+      .upsert(merged, { onConflict: 'id' })
+    if (error) throw error
+    return merged as Profile
   }
   const profiles = getLocalData<Profile>('profiles')
   const index = profiles.findIndex((p) => p.id === userId)
