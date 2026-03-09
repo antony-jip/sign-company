@@ -6,6 +6,7 @@ import {
   TrendingDown, TrendingUp,
   Minus, Plus, ChevronRight,
   Phone, MessageCircle,
+  Sparkles, Image, Send, MessageSquare, Brain, Database,
 } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════
@@ -170,6 +171,8 @@ const PRICING_FEATURES = [
   'Rapportages',
   'Email integratie',
   'Voorraad & bestelbonnen',
+  'AI Signing Visualizer',
+  'Forgie AI-assistent',
 ]
 
 const MARQUEE_ITEMS = [
@@ -1239,6 +1242,240 @@ function MarqueeStrip() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// AI SIGNING VISUALIZER
+// ═══════════════════════════════════════════════════════════
+
+function VisualizerSection() {
+  const revealRef = useScrollReveal()
+
+  return (
+    <section className="bg-white py-24" ref={revealRef}>
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center">
+          <div className="reveal-up inline-flex items-center gap-2 bg-mist text-[#4A6E8A] rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
+            <Sparkles className="w-4 h-4" />
+            Uniek in de branche
+          </div>
+          <h2 className="reveal-up reveal-delay-1 text-[36px] md:text-[44px] font-black text-[#0A0A0A]">
+            Signing Visualizer
+          </h2>
+          <p className="reveal-up reveal-delay-2 text-[18px] text-[#555] max-w-2xl mx-auto mt-4">
+            Laat je klant zien hoe hun signing eruitziet — nog vóórdat je begint
+            met produceren. Upload een foto, beschrijf wat je wilt, en AI genereert
+            een fotorealistische mockup in seconden.
+          </p>
+        </div>
+
+        {/* How it works - 3 steps */}
+        <div className="reveal-up reveal-delay-3 grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
+          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center">
+            <div className="w-12 h-12 bg-blush rounded-xl flex items-center justify-center mx-auto">
+              <Image className="w-6 h-6 text-[#B8806A]" />
+            </div>
+            <h3 className="font-bold text-[#0A0A0A] mt-4">1. Upload een foto</h3>
+            <p className="text-sm text-[#555] mt-2">
+              Van een gebouw, voertuig, pui of schets. Voeg optioneel een logo toe
+              (PNG met transparante achtergrond werkt het best).
+            </p>
+          </div>
+          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center">
+            <div className="w-12 h-12 bg-sage rounded-xl flex items-center justify-center mx-auto">
+              <MessageSquare className="w-6 h-6 text-[#4E7A58]" />
+            </div>
+            <h3 className="font-bold text-[#0A0A0A] mt-4">2. Beschrijf het resultaat</h3>
+            <p className="text-sm text-[#555] mt-2">
+              Bijvoorbeeld: &quot;LED doosletters boven de deur, warmwit&quot; of
+              &quot;Neonlogo op de gevel&quot;. AI begrijpt precies wat je bedoelt.
+            </p>
+          </div>
+          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center">
+            <div className="w-12 h-12 bg-mist rounded-xl flex items-center justify-center mx-auto">
+              <Send className="w-6 h-6 text-[#4A6E8A]" />
+            </div>
+            <h3 className="font-bold text-[#0A0A0A] mt-4">3. Verstuur naar je klant</h3>
+            <p className="text-sm text-[#555] mt-2">
+              Koppel de visualisatie direct aan een offerte en verstuur het als
+              professionele presentatie. Je klant ziet meteen het eindresultaat.
+            </p>
+          </div>
+        </div>
+
+        {/* Tech & unique value */}
+        <div className="reveal-up reveal-delay-4 bg-[#F7F6F3] rounded-3xl p-8 md:p-10 mt-12">
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="flex-1">
+              <h3 className="text-[22px] font-bold text-[#0A0A0A]">
+                Hoe werkt het onder de motorkap?
+              </h3>
+              <p className="text-[#555] mt-3 leading-relaxed">
+                De Signing Visualizer gebruikt <strong>Nano Banana 2</strong> — een
+                gespecialiseerd AI-model voor beeldbewerking — om je foto&apos;s om te
+                zetten naar fotorealistische mockups. Claude Sonnet analyseert eerst je
+                foto en beschrijving, en stuurt vervolgens een geoptimaliseerde prompt
+                naar het Nano Banana model. Het resultaat: een mockup die eruitziet alsof
+                de signing er al hangt.
+              </p>
+              <div className="flex flex-wrap gap-3 mt-5">
+                <span className="bg-white border border-[#E8E5DE] rounded-full px-3 py-1 text-xs font-semibold text-[#555]">
+                  Nano Banana 2 model
+                </span>
+                <span className="bg-white border border-[#E8E5DE] rounded-full px-3 py-1 text-xs font-semibold text-[#555]">
+                  4 signingtypes
+                </span>
+                <span className="bg-white border border-[#E8E5DE] rounded-full px-3 py-1 text-xs font-semibold text-[#555]">
+                  Tot 4K resolutie
+                </span>
+                <span className="bg-white border border-[#E8E5DE] rounded-full px-3 py-1 text-xs font-semibold text-[#555]">
+                  Chat-verfijning
+                </span>
+              </div>
+            </div>
+            <div className="md:w-[280px] shrink-0">
+              <div className="bg-white rounded-2xl border border-[#E8E5DE] p-5 shadow-sm">
+                <div className="text-xs font-bold text-[#999] uppercase tracking-wider">
+                  Signing types
+                </div>
+                <div className="mt-3 space-y-2">
+                  {['LED Verlicht', 'Neon', 'Dag Onverlicht', 'Dag/Nacht'].map((type) => (
+                    <div key={type} className="flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 text-[#4E7A58]" />
+                      <span className="text-sm text-[#0A0A0A]">{type}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-[#E8E5DE] mt-4 pt-4">
+                  <div className="text-xs text-[#999]">Koppel aan offerte</div>
+                  <div className="text-sm font-bold text-[#4E7A58] mt-1">
+                    Direct meesturen
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="reveal-up reveal-delay-5 text-center text-[#999] text-sm mt-6">
+          Geen enkel ander bedrijfsvoeringspakket biedt AI-visualisaties voor de
+          signbranche. Dit is exclusief in FORGEdesk.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// FORGIE AI ASSISTANT
+// ═══════════════════════════════════════════════════════════
+
+function ForgieSection() {
+  const revealRef = useScrollReveal()
+
+  const exampleQuestions = [
+    'Wat is mijn omzet deze maand?',
+    'Welke offertes staan er open?',
+    'Hoeveel klanten heb ik?',
+    'Openstaande facturen',
+    'Projecten in uitvoering',
+    'Schrijf een follow-up mail',
+  ]
+
+  return (
+    <section className="bg-[#F7F6F3] py-24" ref={revealRef}>
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
+          {/* Left: explanation */}
+          <div className="lg:w-[55%]">
+            <div className="reveal-up inline-flex items-center gap-2 bg-sage text-[#4E7A58] rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
+              <Brain className="w-4 h-4" />
+              AI-assistent
+            </div>
+            <h2 className="reveal-up reveal-delay-1 text-[36px] md:text-[44px] font-black text-[#0A0A0A]">
+              Maak kennis met Forgie.
+            </h2>
+            <p className="reveal-up reveal-delay-2 text-[18px] text-[#555] mt-4 leading-relaxed">
+              Forgie is je persoonlijke AI-assistent die alles weet over jouw bedrijf.
+              Stel gewoon een vraag in het Nederlands — over klanten, offertes, facturen,
+              projecten of omzet — en Forgie geeft direct antwoord op basis van jouw
+              eigen data.
+            </p>
+            <p className="reveal-up reveal-delay-3 text-[16px] text-[#555] mt-4 leading-relaxed">
+              Nieuw met AI? Geen zorgen. Forgie werkt net als een chat: typ je vraag en
+              krijg een helder antwoord. Geen technische kennis nodig. Forgie kan ook
+              e-mails herschrijven, vertalen, samenvatten en professioneler maken.
+            </p>
+
+            <div className="reveal-up reveal-delay-4 mt-6 flex flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-sm text-[#555]">
+                <Database className="w-4 h-4 text-[#4E7A58]" />
+                <span>Werkt met jouw bedrijfsdata</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-[#555]">
+                <Shield className="w-4 h-4 text-[#4E7A58]" />
+                <span>Veilig en privé</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-[#555]">
+                <Zap className="w-4 h-4 text-[#4E7A58]" />
+                <span>Powered by Claude Sonnet</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: chat mockup */}
+          <div className="reveal-scale reveal-delay-3 lg:w-[45%]">
+            <div className="bg-white rounded-3xl shadow-xl border border-[#E8E5DE] overflow-hidden">
+              {/* Chat header */}
+              <div className="px-5 py-4 border-b border-[#E8E5DE] bg-[#FAFAF8] flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center">
+                  <span className="text-sm">🦊</span>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-[#0A0A0A]">Forgie</div>
+                  <div className="text-xs text-[#999]">Je bedrijfsgeheugen</div>
+                </div>
+              </div>
+
+              {/* Chat messages */}
+              <div className="p-5 space-y-4">
+                <div className="flex justify-end">
+                  <div className="bg-[#0A0A0A] text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm max-w-[80%]">
+                    Wat is mijn omzet deze maand?
+                  </div>
+                </div>
+                <div className="flex justify-start">
+                  <div className="bg-[#F7F6F3] text-[#0A0A0A] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm max-w-[85%]">
+                    Je omzet in maart 2026 is <strong>€ 24.850</strong>. Dat is 12% meer
+                    dan vorige maand. Je hebt 8 facturen verstuurd, waarvan er 3
+                    nog openstaan (€ 7.200).
+                  </div>
+                </div>
+              </div>
+
+              {/* Suggestion chips */}
+              <div className="px-5 pb-4">
+                <div className="flex flex-wrap gap-2">
+                  {exampleQuestions.slice(0, 3).map((q) => (
+                    <span
+                      key={q}
+                      className="bg-[#F7F6F3] border border-[#E8E5DE] rounded-full px-3 py-1.5 text-xs text-[#555] font-medium"
+                    >
+                      {q}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-center text-xs text-[#999] mt-4">
+              Stel Forgie elke vraag — van omzet tot openstaande werkbonnen.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
 // PRICING
 // ═══════════════════════════════════════════════════════════
 
@@ -1598,6 +1835,8 @@ export default function LandingPage() {
       <FlowSection />
       <MargeSpotlight />
       <MarqueeStrip />
+      <VisualizerSection />
+      <ForgieSection />
       <PricingSection />
       <TestimonialsSection />
       <CTAFooter />
