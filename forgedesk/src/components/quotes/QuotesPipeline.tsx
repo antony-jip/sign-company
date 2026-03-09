@@ -106,6 +106,7 @@ const STATUS_BADGE_COLORS: Record<string, string> = {
   afgewezen: 'badge-coral',
   verlopen: 'badge-blush',
   gefactureerd: 'badge-lavender',
+  wijziging_gevraagd: 'badge-blush',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -116,6 +117,7 @@ const STATUS_LABELS: Record<string, string> = {
   afgewezen: 'Afgewezen',
   verlopen: 'Verlopen',
   gefactureerd: 'Gefactureerd',
+  wijziging_gevraagd: 'Wijziging gevraagd',
 }
 
 const statusOpties = [
@@ -127,6 +129,7 @@ const statusOpties = [
   { value: 'gefactureerd', label: 'Gefactureerd' },
   { value: 'afgewezen', label: 'Afgewezen' },
   { value: 'verlopen', label: 'Verlopen' },
+  { value: 'wijziging_gevraagd', label: 'Wijziging gevraagd' },
 ]
 
 function getOfferteStatusDotColor(status: string): string {
@@ -138,6 +141,7 @@ function getOfferteStatusDotColor(status: string): string {
     case 'afgewezen': return 'bg-[var(--color-coral-text)]'
     case 'verlopen': return 'bg-[var(--color-blush-text)]'
     case 'gefactureerd': return 'bg-[var(--color-lavender-text)]'
+    case 'wijziging_gevraagd': return 'bg-[var(--color-blush-text)]'
     default: return 'bg-[var(--color-cream-text)]'
   }
 }
@@ -151,6 +155,7 @@ function getOfferteStatusBorderColor(status: string): string {
     case 'afgewezen': return 'border-l-[var(--color-coral-border)]'
     case 'verlopen': return 'border-l-[var(--color-blush-border)]'
     case 'gefactureerd': return 'border-l-[var(--color-lavender-border)]'
+    case 'wijziging_gevraagd': return 'border-l-[var(--color-blush-border)]'
     default: return 'border-l-[var(--color-cream-border)]'
   }
 }
@@ -164,6 +169,7 @@ function getOfferteStatusCellBg(status: string): string {
     case 'afgewezen': return 'bg-[var(--color-coral)]/50'
     case 'verlopen': return 'bg-[var(--color-blush)]/50'
     case 'gefactureerd': return 'bg-[var(--color-lavender)]/50'
+    case 'wijziging_gevraagd': return 'bg-[var(--color-blush)]/50'
     default: return 'bg-muted/30 dark:bg-muted/20'
   }
 }
@@ -1014,7 +1020,17 @@ export function QuotesPipeline() {
                                 <Bell className="h-3.5 w-3.5 text-primary" />
                               )}
                               {offerte.bekeken_door_klant && (
-                                <span title={`Bekeken door klant${offerte.aantal_keer_bekeken ? ` (${offerte.aantal_keer_bekeken}x)` : ''}`}><Eye className="h-3.5 w-3.5 text-emerald-500" /></span>
+                                <span className="inline-flex items-center gap-0.5" title={`Bekeken door klant${offerte.aantal_keer_bekeken ? ` (${offerte.aantal_keer_bekeken}x)` : ''}`}>
+                                  <Eye className="h-3.5 w-3.5 text-emerald-500" />
+                                  {offerte.aantal_keer_bekeken && offerte.aantal_keer_bekeken > 1 && (
+                                    <span className="text-[10px] text-emerald-600 font-medium">{offerte.aantal_keer_bekeken}x</span>
+                                  )}
+                                </span>
+                              )}
+                              {offerte.geaccepteerd_door && (
+                                <span className="text-[10px] text-emerald-600 font-medium truncate max-w-[80px]" title={`Geaccepteerd door ${offerte.geaccepteerd_door}`}>
+                                  ✓ {offerte.geaccepteerd_door}
+                                </span>
                               )}
                             </div>
                           </div>

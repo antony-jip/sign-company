@@ -188,7 +188,7 @@ export interface Offerte {
   project_id?: string;
   nummer: string;
   titel: string;
-  status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd';
+  status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd' | 'wijziging_gevraagd';
   subtotaal: number;
   btw_bedrag: number;
   totaal: number;
@@ -221,6 +221,13 @@ export interface Offerte {
   outro_tekst?: string;
   // Contactpersoon koppeling
   contactpersoon_id?: string;
+  // Klant acceptatie
+  geaccepteerd_door?: string;
+  geaccepteerd_op?: string;
+  wijziging_opmerking?: string;
+  wijziging_ingediend_op?: string;
+  publieke_link_geopend_op?: string;
+  publieke_link_views?: number;
   // Activiteit log
   activiteiten?: OfferteActiviteit[];
   // Versie tracking (FIX 12)
@@ -239,7 +246,7 @@ export interface Offerte {
 
 export interface OfferteActiviteit {
   datum: string;
-  type: 'aangemaakt' | 'bewerkt' | 'verstuurd' | 'bekeken' | 'akkoord' | 'afgewezen' | 'gefactureerd';
+  type: 'aangemaakt' | 'bewerkt' | 'verstuurd' | 'bekeken' | 'akkoord' | 'afgewezen' | 'gefactureerd' | 'wijziging_gevraagd';
   beschrijving: string;
   medewerker?: string;
 }
@@ -859,7 +866,7 @@ export interface Medewerker {
 export interface Notificatie {
   id: string;
   user_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen';
   titel: string;
   bericht: string;
   link?: string;
