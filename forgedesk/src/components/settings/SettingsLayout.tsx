@@ -1914,9 +1914,6 @@ function IntegratiesTab() {
   // Anthropic key is server-side only (configured via ANTHROPIC_API_KEY env var on Vercel)
   const anthropicConfigured = supabaseConnected
 
-  const [emailConnected, setEmailConnected] = useState(false)
-  const [emailAddress, setEmailAddress] = useState<string | null>(null)
-
   // Mollie state
   const [mollieEnabled, setMollieEnabled] = useState(false)
   const [mollieApiKey, setMollieApiKey] = useState('')
@@ -1946,22 +1943,6 @@ function IntegratiesTab() {
     }
   }
 
-  // Check email connection status on mount and after save
-  const checkEmailStatus = useCallback(() => {
-    const localSettings = getLocalEmailSettings()
-    if (localSettings && localSettings.gmail_address && localSettings.app_password) {
-      setEmailConnected(true)
-      setEmailAddress(localSettings.gmail_address)
-    } else {
-      setEmailConnected(false)
-      setEmailAddress(null)
-    }
-  }, [])
-
-  useEffect(() => {
-    checkEmailStatus()
-  }, [checkEmailStatus])
-
   const integrations = [
     {
       id: 'supabase',
@@ -1974,18 +1955,6 @@ function IntegratiesTab() {
         </div>
       ),
       details: supabaseConnected ? `URL: ${supabaseUrl.substring(0, 30)}...` : 'Demo modus actief - data wordt lokaal opgeslagen',
-    },
-    {
-      id: 'gmail',
-      name: 'Gmail / SMTP',
-      description: 'E-mail verzenden via SMTP',
-      connected: emailConnected,
-      icon: (
-        <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-          <span className="text-red-700 dark:text-red-400 font-bold text-sm">GM</span>
-        </div>
-      ),
-      details: emailConnected && emailAddress ? `Account: ${emailAddress}` : undefined,
     },
     {
       id: 'anthropic',
@@ -2009,18 +1978,6 @@ function IntegratiesTab() {
         </div>
       ),
       details: 'Optioneel — zonder API key worden demogegevens gebruikt',
-    },
-    {
-      id: 'mollie',
-      name: 'Mollie',
-      description: 'Online betalingen via iDEAL, creditcard, Bancontact en meer',
-      connected: mollieLoaded && mollieEnabled && !!mollieApiKey,
-      icon: (
-        <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-          <CreditCard className="w-5 h-5 text-orange-700 dark:text-orange-400" />
-        </div>
-      ),
-      details: mollieEnabled && mollieApiKey ? `API key: ${mollieApiKey.substring(0, 8)}...` : undefined,
     },
   ]
 
@@ -2076,16 +2033,11 @@ function IntegratiesTab() {
                   </p>
                 )}
 
-                {/* Gmail/Email setup info - instellingen staan hieronder inline */}
               </div>
             </div>
           </CardContent>
         </Card>
       ))}
-
-      <EmailSettingsInline
-        onSaved={checkEmailStatus}
-      />
 
       {/* ── Mollie Instellingen ── */}
       <Card>
