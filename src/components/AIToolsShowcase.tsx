@@ -578,6 +578,98 @@ export const AIToolsShowcase: React.FC = () => {
             {activeTab === 'visualiser' && <SigningVisualiserDemo />}
           </div>
         </div>
+
+        {/* Additional AI Features Grid */}
+        <div className="mt-16 lg:mt-24">
+          <div className="text-center mb-10">
+            <h3 className="fade-up text-2xl lg:text-3xl font-black tracking-tight mb-3">
+              En nog veel meer <span className="text-gradient-ai">AI-functies</span>
+            </h3>
+            <p className="fade-up stagger-1 text-gray-500 max-w-xl mx-auto">
+              Forgie zit overal in FORGEdesk verweven. Deze slimme functies besparen je dagelijks tijd.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* AI Insight Widget */}
+            <div className="fade-up stagger-1 group bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-lavender/20 hover:border-lavender/40 hover:shadow-lg transition-all">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-lavender to-lavender-vivid flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+              </div>
+              <h4 className="font-bold text-gray-900 mb-2">Slimme Inzichten</h4>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Proactieve meldingen op je dashboard: verlopen offertes, achterstallige taken, deadlines en budget-alerts. AI denkt met je mee.
+              </p>
+            </div>
+
+            {/* Klant AI Chat */}
+            <div className="fade-up stagger-2 group bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-sage/20 hover:border-sage/40 hover:shadow-lg transition-all">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sage to-sage-vivid flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                </svg>
+              </div>
+              <h4 className="font-bold text-gray-900 mb-2">Klant AI-analyse</h4>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Stel vragen over elke klant: omzet, projecthistorie, openstaande offertes en facturen. Per klant een eigen AI-chat.
+              </p>
+            </div>
+
+            {/* AI Tekst Generator */}
+            <div className="fade-up stagger-3 group bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-mist/20 hover:border-mist/40 hover:shadow-lg transition-all">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-mist to-mist-vivid flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+              </div>
+              <h4 className="font-bold text-gray-900 mb-2">Tekst Generator</h4>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Genereer complete e-mails, offerteteksten, project-updates, notulen en social media posts. Kies een toon en klaar.
+              </p>
+            </div>
+
+            {/* Email AI */}
+            <div className="fade-up stagger-1 group bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-lavender/20 hover:border-lavender/40 hover:shadow-lg transition-all">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-lavender-vivid to-lavender-deep flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+              </div>
+              <h4 className="font-bold text-gray-900 mb-2">Slimme E-mail</h4>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Herschrijf e-mails professioneler, genereer follow-ups, maak samenvattingen of vertaal direct naar Engels en terug.
+              </p>
+            </div>
+
+            {/* AI Text Toolbar */}
+            <div className="fade-up stagger-2 group bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-sage/20 hover:border-sage/40 hover:shadow-lg transition-all">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sage-vivid to-sage-deep flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+              </div>
+              <h4 className="font-bold text-gray-900 mb-2">Inline AI-toolbar</h4>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Selecteer tekst en een slimme toolbar verschijnt: herschrijf beknopt, uitgebreid, formeel, informeel of met humor. 9 acties met &eacute;&eacute;n klik.
+              </p>
+            </div>
+
+            {/* AI Vertalen */}
+            <div className="fade-up stagger-3 group bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-mist/20 hover:border-mist/40 hover:shadow-lg transition-all">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-mist-vivid to-mist-deep flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
+                </svg>
+              </div>
+              <h4 className="font-bold text-gray-900 mb-2">Direct Vertalen</h4>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Vertaal teksten, e-mails en offertes direct van Nederlands naar Engels en andersom. Ideaal voor internationale klanten.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
