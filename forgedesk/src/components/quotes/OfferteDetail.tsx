@@ -259,7 +259,7 @@ export function OfferteDetail() {
       const sendCp = offerte.contactpersoon_id
         ? klant?.contactpersonen?.find(c => c.id === offerte.contactpersoon_id)
         : null
-      const { subject, html } = offerteVerzendTemplate({
+      const { subject, html, text } = offerteVerzendTemplate({
         klantNaam: sendCp?.naam || klant?.contactpersoon || klant?.bedrijfsnaam || '',
         offerteNummer: offerte.nummer,
         offerteTitel: offerte.titel,
@@ -273,7 +273,7 @@ export function OfferteDetail() {
       })
 
       try {
-        await sendEmail(sendTo, sendSubject || subject, '', { html })
+        await sendEmail(sendTo, sendSubject || subject, text, { html })
       } catch {
         // Email sending failed (SMTP not configured), continue with status update
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Status is wel bijgewerkt.')
