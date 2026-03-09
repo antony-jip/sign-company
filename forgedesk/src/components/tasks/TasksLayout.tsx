@@ -44,11 +44,12 @@ import {
   Check,
   MapPin,
   User2,
+  Wrench,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
-import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten } from '@/services/supabaseService'
-import type { Taak, Project, Klant } from '@/types'
+import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
+import type { Taak, Project, Klant, MontageAfspraak } from '@/types'
 import { logger } from '../../utils/logger'
 
 type TaakStatus = Taak['status']
@@ -139,6 +140,8 @@ export function TasksLayout() {
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
+  const [montageAfspraken, setMontageAfspraken] = useState<MontageAfspraak[]>([])
+  const [showMontage, setShowMontage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
 
@@ -182,11 +185,12 @@ export function TasksLayout() {
     async function loadData() {
       setIsLoading(true)
       try {
-        const [takenData, projectenData, klantenData] = await Promise.all([getTaken(), getProjecten(), getKlanten()])
+        const [takenData, projectenData, klantenData, montageData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken()])
         if (!cancelled) {
           setTaken(takenData)
           setProjecten(projectenData)
           setKlanten(klantenData)
+          setMontageAfspraken(montageData)
         }
       } catch (error) {
         logger.error('Fout bij laden:', error)
@@ -290,6 +294,27 @@ export function TasksLayout() {
 
     return map
   }, [taken, weekDays, showCompleted, taskFilter])
+
+  // Montage afspraken grouped by day key
+  const montageByDay = useMemo(() => {
+    const map = new Map<string, MontageAfspraak[]>()
+    if (!showMontage) return map
+    weekDays.forEach((d) => map.set(d.toDateString(), []))
+    montageAfspraken.forEach((a) => {
+      if (!a.datum) return
+      const datum = new Date(a.datum)
+      datum.setHours(0, 0, 0, 0)
+      const key = datum.toDateString()
+      if (map.has(key)) {
+        map.get(key)!.push(a)
+      }
+    })
+    // Sort by start_tijd
+    map.forEach((items) => {
+      items.sort((a, b) => (a.start_tijd || '').localeCompare(b.start_tijd || ''))
+    })
+    return map
+  }, [montageAfspraken, weekDays, showMontage])
 
   // Week range label
   const weekLabel = useMemo(() => {
@@ -531,6 +556,18 @@ export function TasksLayout() {
             >
               {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
             </button>
+            <button
+              onClick={() => setShowMontage(!showMontage)}
+              className={cn(
+                'text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 whitespace-nowrap flex-shrink-0 flex items-center gap-1.5',
+                showMontage
+                  ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400 shadow-sm'
+                  : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
+              )}
+            >
+              <Wrench className="w-3 h-3" />
+              {showMontage ? 'Montage zichtbaar' : 'Toon montage'}
+            </button>
           </div>
         </div>
 
@@ -625,6 +662,7 @@ export function TasksLayout() {
                   onQuickAdd={(title) => handleDayQuickAdd(day, title)}
                   onQuickAddAtTime={(hour, title) => handleDayHourQuickAdd(day, hour, title)}
                   onResize={handleResizeTask}
+                  montageAfspraken={montageByDay.get(day.toDateString()) || []}
                 />
               )
             })}
@@ -744,6 +782,7 @@ function DayColumn({
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
   onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
+  montageAfspraken = [],
 }: {
   day: Date
   dayIndex: number
@@ -765,6 +804,7 @@ function DayColumn({
   onQuickAdd: (title: string) => void
   onQuickAddAtTime: (hour: number, title: string) => void
   onResize: (taakId: string, newDurationHours: number) => void
+  montageAfspraken?: MontageAfspraak[]
 }) {
   const [addTitle, setAddTitle] = useState('')
   const [isAdding, setIsAdding] = useState(false)
@@ -1016,6 +1056,66 @@ function DayColumn({
               onDelete={() => onDelete(taak)}
               onResizeStart={(e) => handleResizeStart(e, taak.id, baseHeightPx || HOUR_HEIGHT)}
             />
+          </div>
+        )
+      })}
+
+      {/* Montage afspraken - positioned at their time */}
+      {montageAfspraken.map((afspraak) => {
+        const startHour = afspraak.start_tijd ? parseInt(afspraak.start_tijd.split(':')[0], 10) : null
+        const endHour = afspraak.eind_tijd ? parseInt(afspraak.eind_tijd.split(':')[0], 10) : null
+        if (startHour === null || startHour < 7 || startHour > 19) return null
+        const topPx = (startHour - 7) * HOUR_HEIGHT + 4
+        const duration = endHour !== null && endHour > startHour ? endHour - startHour : 1
+        const heightPx = duration * HOUR_HEIGHT - 6
+
+        const STATUS_LABELS: Record<string, string> = {
+          gepland: 'Gepland', onderweg: 'Onderweg', bezig: 'Bezig', afgerond: 'Afgerond', uitgesteld: 'Uitgesteld',
+        }
+
+        return (
+          <div
+            key={`montage-${afspraak.id}`}
+            className="absolute z-10"
+            style={{
+              top: topPx,
+              right: 4,
+              width: 'calc(35% - 4px)',
+              height: heightPx,
+            }}
+          >
+            <div className={cn(
+              'h-full rounded-lg border-l-[3px] border-orange-400 bg-orange-50 dark:bg-orange-950/30 px-2 py-1.5 overflow-hidden cursor-default',
+              'hover:shadow-md transition-shadow duration-150',
+            )}>
+              <div className="flex items-center gap-1 mb-0.5">
+                <Wrench className="w-3 h-3 text-orange-500 flex-shrink-0" />
+                <span className="text-[11px] font-semibold text-orange-700 dark:text-orange-300 truncate">
+                  {afspraak.titel}
+                </span>
+              </div>
+              <div className="text-[10px] text-orange-600/70 dark:text-orange-400/70 truncate">
+                {afspraak.start_tijd?.slice(0, 5)} – {afspraak.eind_tijd?.slice(0, 5)}
+              </div>
+              {afspraak.locatie && (
+                <div className="text-[10px] text-orange-600/50 dark:text-orange-400/50 truncate flex items-center gap-0.5 mt-0.5">
+                  <MapPin className="w-2.5 h-2.5" />
+                  {afspraak.locatie}
+                </div>
+              )}
+              {heightPx > 60 && (
+                <div className="mt-1">
+                  <span className={cn(
+                    'text-[9px] font-medium px-1.5 py-0.5 rounded-full',
+                    afspraak.status === 'afgerond' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                    afspraak.status === 'bezig' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                    'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                  )}>
+                    {STATUS_LABELS[afspraak.status] || afspraak.status}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )
       })}
