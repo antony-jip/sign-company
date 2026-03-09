@@ -11,6 +11,7 @@ export function getStatusBadgeClass(status: string): string {
     'goedgekeurd':  'badge-sage',
     'afgewezen':    'badge-coral',
     'verlopen':     'badge-blush',
+    'wijziging_gevraagd': 'badge-blush',
 
     // Facturen
     'open':         'badge-mist',
@@ -73,6 +74,7 @@ export function getStatusLabel(status: string): string {
     'goedgekeurd':   'Goedgekeurd',
     'afgewezen':     'Afgewezen',
     'verlopen':      'Verlopen',
+    'wijziging_gevraagd': 'Wijziging gevraagd',
     'open':          'Open',
     'betaald':       'Betaald',
     'te-laat':       'Te laat',
@@ -138,6 +140,7 @@ export function getRowAccentClass(status: string): string {
     'geannuleerd': 'border-l-[var(--color-coral-border)]',
     'on-hold':     'border-l-[var(--color-blush-border)]',
     'gepauzeerd':  'border-l-[var(--color-blush-border)]',
+    'wijziging_gevraagd': 'border-l-[var(--color-blush-border)]',
     'gefactureerd':'border-l-[var(--color-lavender-border)]',
     'gecrediteerd':'border-l-[var(--color-lavender-border)]',
     'te-factureren':'border-l-[var(--color-lavender-border)]',

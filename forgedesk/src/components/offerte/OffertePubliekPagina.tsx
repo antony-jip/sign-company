@@ -1,34 +1,92 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   FileText,
   Loader2,
   AlertTriangle,
   CheckCircle2,
   Calendar,
-  Building2,
-  ThumbsUp,
-  ThumbsDown,
-  MessageSquare,
+  Download,
+  Clock,
+  Shield,
+  Edit3,
+  X,
 } from 'lucide-react'
-import {
-  getOfferteByPubliekToken,
-  updateOfferteTracking,
-  respondOpOfferte,
-  getOfferteItems,
-  getProfile,
-} from '@/services/supabaseService'
-import type { Offerte, OfferteItem, Profile } from '@/types'
 import { toast, Toaster } from 'sonner'
+
+// ============ TYPES ============
+
+interface PubliekOfferte {
+  id: string
+  nummer: string
+  titel: string
+  status: string
+  subtotaal: number
+  btw_bedrag: number
+  totaal: number
+  geldig_tot: string
+  notities?: string
+  voorwaarden?: string
+  intro_tekst?: string
+  outro_tekst?: string
+  klant_naam?: string
+  created_at: string
+  geaccepteerd_door?: string
+  geaccepteerd_op?: string
+  wijziging_opmerking?: string
+  wijziging_ingediend_op?: string
+  afrondingskorting_excl_btw?: number
+  aangepast_totaal?: number
+}
+
+interface PubliekItem {
+  id: string
+  beschrijving: string
+  aantal: number
+  eenheidsprijs: number
+  btw_percentage: number
+  korting_percentage: number
+  totaal: number
+  volgorde: number
+  soort?: 'prijs' | 'tekst'
+  is_optioneel?: boolean
+  foto_url?: string
+  foto_op_offerte?: boolean
+}
+
+interface Bedrijf {
+  bedrijfsnaam?: string
+  bedrijfs_adres?: string
+  bedrijfs_telefoon?: string
+  bedrijfs_email?: string
+  bedrijfs_website?: string
+  kvk_nummer?: string
+  btw_nummer?: string
+  iban?: string
+  logo_url?: string
+}
+
+interface Klant {
+  bedrijfsnaam?: string
+  contactpersoon?: string
+  email?: string
+  adres?: string
+  postcode?: string
+  stad?: string
+}
 
 // ============ HELPERS ============
 
+function round2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100
+}
+
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount)
+  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(amount))
 }
 
 function formatDate(dateString: string): string {
@@ -40,22 +98,76 @@ function formatDate(dateString: string): string {
   })
 }
 
+function formatDateTime(dateString: string): string {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString('nl-NL', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function dagenTotVerlopen(geldigTot: string): number {
+  if (!geldigTot) return Infinity
+  const vandaag = new Date()
+  vandaag.setHours(0, 0, 0, 0)
+  const eind = new Date(geldigTot)
+  eind.setHours(0, 0, 0, 0)
+  return Math.ceil((eind.getTime() - vandaag.getTime()) / (1000 * 60 * 60 * 24))
+}
+
+// BTW groepering
+function groepeerBtw(items: PubliekItem[]): { percentage: number; basis: number; btw: number }[] {
+  const map = new Map<number, { basis: number; btw: number }>()
+  for (const item of items) {
+    if (item.soort === 'tekst') continue
+    const pct = item.btw_percentage
+    const korting = item.korting_percentage || 0
+    const regelExcl = round2(item.aantal * item.eenheidsprijs * (1 - korting / 100))
+    const regelBtw = round2(regelExcl * pct / 100)
+    const existing = map.get(pct) || { basis: 0, btw: 0 }
+    existing.basis += regelExcl
+    existing.btw += regelBtw
+    map.set(pct, existing)
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([percentage, vals]) => ({ percentage, basis: round2(vals.basis), btw: round2(vals.btw) }))
+}
+
 // ============ COMPONENT ============
 
 export function OffertePubliekPagina() {
   const { token } = useParams<{ token: string }>()
-  const [offerte, setOfferte] = useState<Offerte | null>(null)
-  const [items, setItems] = useState<OfferteItem[]>([])
-  const [companyProfile, setCompanyProfile] = useState<Profile | null>(null)
+  const [offerte, setOfferte] = useState<PubliekOfferte | null>(null)
+  const [items, setItems] = useState<PubliekItem[]>([])
+  const [bedrijf, setBedrijf] = useState<Bedrijf | null>(null)
+  const [klant, setKlant] = useState<Klant | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [reactie, setReactie] = useState<'goedgekeurd' | 'afgewezen' | 'vraag' | null>(null)
-  const [vraagTekst, setVraagTekst] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [fadeIn, setFadeIn] = useState(false)
+
+  // Modals
+  const [showAcceptModal, setShowAcceptModal] = useState(false)
+  const [showWijzigingModal, setShowWijzigingModal] = useState(false)
+
+  // Accept form
+  const [acceptNaam, setAcceptNaam] = useState('')
+  const [acceptAkkoord, setAcceptAkkoord] = useState(false)
+  const [acceptLoading, setAcceptLoading] = useState(false)
+
+  // Wijziging form
+  const [wijzigingNaam, setWijzigingNaam] = useState('')
+  const [wijzigingOpmerking, setWijzigingOpmerking] = useState('')
+  const [wijzigingLoading, setWijzigingLoading] = useState(false)
+
+  // Confetti / success
+  const [showSuccess, setShowSuccess] = useState(false)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
-    let cancelled = false
     async function load() {
       if (!token) {
         setNotFound(true)
@@ -63,343 +175,681 @@ export function OffertePubliekPagina() {
         return
       }
       try {
-        // Track the view
-        await updateOfferteTracking(token).catch(() => {})
-
-        const data = await getOfferteByPubliekToken(token)
-        if (!cancelled) {
-          if (data) {
-            setOfferte(data)
-            // Fetch items + company profile in parallel
-            const [offerteItems] = await Promise.all([
-              getOfferteItems(data.id).catch(() => [] as OfferteItem[]),
-              getProfile(data.user_id!).then((p) => {
-                if (!cancelled && p) setCompanyProfile(p)
-              }).catch(() => {}),
-            ])
-            if (!cancelled) setItems(offerteItems)
-          } else {
-            setNotFound(true)
-          }
+        const resp = await fetch(`/api/offerte-publiek?token=${encodeURIComponent(token)}`)
+        if (!resp.ok) {
+          setNotFound(true)
+          setIsLoading(false)
+          return
         }
+        const data = await resp.json()
+        setOfferte(data.offerte)
+        setItems(data.items || [])
+        setBedrijf(data.bedrijf)
+        setKlant(data.klant)
       } catch {
-        if (!cancelled) setNotFound(true)
+        setNotFound(true)
       } finally {
-        if (!cancelled) setIsLoading(false)
+        setIsLoading(false)
+        // Trigger fade-in
+        requestAnimationFrame(() => setFadeIn(true))
       }
     }
     load()
-    return () => { cancelled = true }
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+    }
   }, [token])
 
-  const handleReactie = useCallback(async (type: 'goedgekeurd' | 'afgewezen' | 'vraag') => {
-    if (!token) return
-    if (type === 'vraag' && !vraagTekst.trim()) {
-      toast.error('Stel uw vraag voordat u verstuurt')
-      return
-    }
-
-    setIsSubmitting(true)
+  // Accepteren
+  const handleAccepteren = useCallback(async () => {
+    if (!token || acceptNaam.trim().length < 2 || !acceptAkkoord) return
+    setAcceptLoading(true)
     try {
-      await respondOpOfferte(token, { type, bericht: type === 'vraag' ? vraagTekst.trim() : undefined })
-      setSubmitted(true)
-      setReactie(type)
-      toast.success(
-        type === 'goedgekeurd'
-          ? 'Offerte goedgekeurd! Het bedrijf is op de hoogte gesteld.'
-          : type === 'afgewezen'
-          ? 'Uw reactie is vastgelegd.'
-          : 'Uw vraag is verstuurd!'
-      )
+      const resp = await fetch('/api/offerte-accepteren', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, naam: acceptNaam.trim() }),
+      })
+      const data = await resp.json()
+      if (!resp.ok) {
+        toast.error(data.error || 'Er ging iets mis')
+        return
+      }
+      // Succes
+      setShowAcceptModal(false)
+      setOfferte((prev: PubliekOfferte | null) => prev ? {
+        ...prev,
+        status: 'goedgekeurd',
+        geaccepteerd_door: acceptNaam.trim(),
+        geaccepteerd_op: new Date().toISOString(),
+      } : prev)
+      setShowSuccess(true)
+      successTimerRef.current = setTimeout(() => setShowSuccess(false), 4000)
     } catch {
       toast.error('Er ging iets mis. Probeer het opnieuw.')
     } finally {
-      setIsSubmitting(false)
+      setAcceptLoading(false)
     }
-  }, [token, vraagTekst])
+  }, [token, acceptNaam, acceptAkkoord])
 
-  // Loading
+  // Wijziging aanvragen
+  const handleWijziging = useCallback(async () => {
+    if (!token || wijzigingOpmerking.trim().length < 10) return
+    setWijzigingLoading(true)
+    try {
+      const resp = await fetch('/api/offerte-wijziging', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, naam: wijzigingNaam.trim() || undefined, opmerking: wijzigingOpmerking.trim() }),
+      })
+      const data = await resp.json()
+      if (!resp.ok) {
+        toast.error(data.error || 'Er ging iets mis')
+        return
+      }
+      setShowWijzigingModal(false)
+      setOfferte((prev: PubliekOfferte | null) => prev ? {
+        ...prev,
+        status: 'wijziging_gevraagd',
+        wijziging_opmerking: wijzigingOpmerking.trim(),
+        wijziging_ingediend_op: new Date().toISOString(),
+      } : prev)
+      toast.success('Wijziging aanvraag verstuurd!')
+    } catch {
+      toast.error('Er ging iets mis. Probeer het opnieuw.')
+    } finally {
+      setWijzigingLoading(false)
+    }
+  }, [token, wijzigingNaam, wijzigingOpmerking])
+
+  // PDF download (client-side with jsPDF)
+  const handleDownloadPDF = useCallback(async () => {
+    if (!offerte) return
+    try {
+      const { jsPDF } = await import('jspdf')
+      const doc = new jsPDF('p', 'mm', 'a4')
+      const pageW = 210
+      let y = 20
+
+      // Bedrijfsnaam
+      doc.setFontSize(18)
+      doc.setFont('helvetica', 'bold')
+      doc.text(bedrijf?.bedrijfsnaam || 'Offerte', 14, y)
+      y += 10
+
+      // Offerte info
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Offerte: ${offerte.nummer}`, 14, y)
+      doc.text(`Datum: ${formatDate(offerte.created_at)}`, pageW - 14, y, { align: 'right' })
+      y += 5
+      if (offerte.geldig_tot) {
+        doc.text(`Geldig tot: ${formatDate(offerte.geldig_tot)}`, 14, y)
+        y += 5
+      }
+
+      // Klant
+      if (klant) {
+        y += 3
+        doc.setFont('helvetica', 'bold')
+        doc.text('Aan:', 14, y)
+        doc.setFont('helvetica', 'normal')
+        y += 5
+        if (klant.bedrijfsnaam) { doc.text(klant.bedrijfsnaam, 14, y); y += 4 }
+        if (klant.contactpersoon) { doc.text(`t.a.v. ${klant.contactpersoon}`, 14, y); y += 4 }
+        if (klant.adres) { doc.text(klant.adres, 14, y); y += 4 }
+        if (klant.postcode || klant.stad) { doc.text(`${klant.postcode || ''} ${klant.stad || ''}`.trim(), 14, y); y += 4 }
+      }
+
+      // Intro
+      if (offerte.intro_tekst) {
+        y += 4
+        doc.setFontSize(9)
+        const introLines = doc.splitTextToSize(offerte.intro_tekst, pageW - 28)
+        doc.text(introLines, 14, y)
+        y += introLines.length * 4 + 2
+      }
+
+      // Items tabel
+      y += 4
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Omschrijving', 14, y)
+      doc.text('Aantal', 110, y, { align: 'right' })
+      doc.text('Prijs', 140, y, { align: 'right' })
+      doc.text('BTW', 160, y, { align: 'right' })
+      doc.text('Totaal', pageW - 14, y, { align: 'right' })
+      y += 2
+      doc.setDrawColor(200, 200, 200)
+      doc.line(14, y, pageW - 14, y)
+      y += 4
+
+      doc.setFont('helvetica', 'normal')
+      for (const item of items) {
+        if (y > 270) { doc.addPage(); y = 20 }
+        const lines = doc.splitTextToSize(item.beschrijving, 90)
+        doc.text(lines, 14, y)
+        if (item.soort !== 'tekst') {
+          doc.text(String(item.aantal), 110, y, { align: 'right' })
+          doc.text(formatCurrency(item.eenheidsprijs), 140, y, { align: 'right' })
+          doc.text(`${item.btw_percentage}%`, 160, y, { align: 'right' })
+          doc.text(formatCurrency(item.totaal), pageW - 14, y, { align: 'right' })
+        }
+        y += lines.length * 4 + 2
+      }
+
+      // Totalen
+      y += 4
+      doc.line(120, y, pageW - 14, y)
+      y += 5
+      doc.text('Subtotaal', 120, y)
+      doc.text(formatCurrency(offerte.subtotaal), pageW - 14, y, { align: 'right' })
+      y += 5
+      doc.text('BTW', 120, y)
+      doc.text(formatCurrency(offerte.btw_bedrag), pageW - 14, y, { align: 'right' })
+      y += 2
+      doc.line(120, y, pageW - 14, y)
+      y += 5
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.text('Totaal incl. BTW', 120, y)
+      doc.text(formatCurrency(offerte.aangepast_totaal ?? offerte.totaal), pageW - 14, y, { align: 'right' })
+
+      // Outro
+      if (offerte.outro_tekst) {
+        y += 10
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9)
+        const outroLines = doc.splitTextToSize(offerte.outro_tekst, pageW - 28)
+        doc.text(outroLines, 14, y)
+      }
+
+      doc.save(`Offerte-${offerte.nummer}.pdf`)
+    } catch {
+      toast.error('PDF downloaden mislukt')
+    }
+  }, [offerte, items, bedrijf, klant])
+
+  // ============ LOADING STATE ============
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8f9fa]">
         <Toaster position="top-center" richColors />
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-muted-foreground">Offerte laden...</p>
+        <div className="max-w-[720px] mx-auto p-4 md:p-8 space-y-6">
+          <div className="flex flex-col items-center gap-4 pt-8">
+            <Skeleton className="h-14 w-32 rounded-lg" />
+            <Skeleton className="h-6 w-48" />
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <div className="space-y-3 pt-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex justify-between">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))}
+            </div>
+            <Skeleton className="h-12 w-full mt-4" />
+          </div>
         </div>
       </div>
     )
   }
 
-  // Not found
+  // ============ NOT FOUND ============
   if (notFound || !offerte) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
         <Toaster position="top-center" richColors />
-        <Card className="max-w-md w-full">
-          <CardContent className="flex flex-col items-center gap-4 py-12">
-            <AlertTriangle className="h-12 w-12 text-amber-500" />
-            <h2 className="text-xl font-semibold text-foreground/80">Offerte niet gevonden</h2>
-            <p className="text-sm text-muted-foreground text-center">
-              Deze link is ongeldig of verlopen. Neem contact op met het bedrijf.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-2xl shadow-sm border max-w-md w-full p-8 text-center space-y-4">
+          <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+            <AlertTriangle className="h-8 w-8 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-800">Offerte niet gevonden</h2>
+          <p className="text-sm text-gray-500">
+            Deze offerte link is niet geldig of verlopen. Neem contact op met het bedrijf voor een nieuwe offerte.
+          </p>
+        </div>
       </div>
     )
   }
 
+  // ============ DERIVED STATE ============
   const isVerlopen = offerte.geldig_tot && offerte.geldig_tot < new Date().toISOString().split('T')[0]
-  const isAfgerond = offerte.status === 'goedgekeurd' || offerte.status === 'afgewezen'
+  const isGeaccepteerd = offerte.status === 'goedgekeurd'
+  const isAfgewezen = offerte.status === 'afgewezen'
+  const isGefactureerd = offerte.status === 'gefactureerd'
+  const isWijzigingGevraagd = offerte.status === 'wijziging_gevraagd'
+  const kanActie = !isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd
+  const dagenOver = dagenTotVerlopen(offerte.geldig_tot)
+  const btwGroepen = groepeerBtw(items)
+  const totaalBedrag = offerte.aangepast_totaal ?? offerte.totaal
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+    <div className={`min-h-screen bg-[#f8f9fa] transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
       <Toaster position="top-center" richColors />
-      <div className="max-w-3xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          {companyProfile?.logo_url ? (
-            <img
-              src={companyProfile.logo_url}
-              alt={companyProfile.bedrijfsnaam || 'Bedrijfslogo'}
-              className="h-14 mx-auto object-contain"
-            />
-          ) : (
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-blue-600 shadow-lg">
-              <FileText className="h-7 w-7 text-white" />
-            </div>
-          )}
-          {companyProfile?.bedrijfsnaam && (
-            <p className="text-sm font-medium text-muted-foreground">{companyProfile.bedrijfsnaam}</p>
-          )}
-          <h1 className="text-2xl font-bold text-foreground">Offerte bekijken</h1>
-          <p className="text-sm text-muted-foreground">{offerte.nummer}</p>
-        </div>
 
-        {/* Status */}
-        {isVerlopen && (
-          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-            <div>
-              <p className="font-medium text-amber-800">Deze offerte is verlopen</p>
-              <p className="text-sm text-amber-600">Geldig tot {formatDate(offerte.geldig_tot)}</p>
+      {/* Success confetti overlay */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 mx-4 max-w-sm w-full text-center space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="mx-auto w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle2 className="h-10 w-10 text-green-600" />
             </div>
-          </div>
-        )}
-
-        {isAfgerond && (
-          <div className={`flex items-center gap-3 rounded-xl p-4 border ${
-            offerte.status === 'goedgekeurd'
-              ? 'bg-emerald-50 border-emerald-200'
-              : 'bg-red-50 border-red-200'
-          }`}>
-            {offerte.status === 'goedgekeurd' ? (
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-            ) : (
-              <ThumbsDown className="h-5 w-5 text-red-600 shrink-0" />
-            )}
-            <p className={`font-medium ${
-              offerte.status === 'goedgekeurd' ? 'text-emerald-800' : 'text-red-800'
-            }`}>
-              Deze offerte is {offerte.status === 'goedgekeurd' ? 'goedgekeurd' : 'afgewezen'}
+            <h3 className="text-xl font-bold text-gray-900">Offerte geaccepteerd!</h3>
+            <p className="text-sm text-gray-500">
+              Bedankt voor uw vertrouwen. We nemen snel contact met u op.
             </p>
           </div>
+        </div>
+      )}
+
+      <div className="max-w-[720px] mx-auto p-4 md:p-8 space-y-6 pb-32 md:pb-8">
+
+        {/* ── Header: Logo + Bedrijfsnaam ── */}
+        <div className="text-center space-y-3 pt-4 md:pt-8">
+          {bedrijf?.logo_url ? (
+            <img
+              src={bedrijf.logo_url}
+              alt={bedrijf.bedrijfsnaam || 'Bedrijfslogo'}
+              className="h-16 md:h-20 mx-auto object-contain drop-shadow-sm"
+            />
+          ) : (
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg">
+              <FileText className="h-8 w-8 text-white" />
+            </div>
+          )}
+        </div>
+
+        {/* ── Status banners ── */}
+        {isVerlopen && (
+          <div className="bg-gray-100 border border-gray-200 rounded-xl p-4 flex items-start gap-3">
+            <Clock className="h-5 w-5 text-gray-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-gray-700">Deze offerte is verlopen op {formatDate(offerte.geldig_tot)}</p>
+              <p className="text-sm text-gray-500 mt-1">Neem contact op voor een nieuwe offerte.</p>
+            </div>
+          </div>
         )}
 
-        {/* Offerte details */}
-        <Card>
-          <CardContent className="p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">{offerte.titel}</h2>
+        {isGeaccepteerd && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-green-800">
+                Deze offerte is geaccepteerd op {formatDateTime(offerte.geaccepteerd_op || '')}
+                {offerte.geaccepteerd_door ? ` door ${offerte.geaccepteerd_door}` : ''}
+              </p>
+              <p className="text-sm text-green-600 mt-1">Bedankt voor uw vertrouwen. We nemen snel contact met u op.</p>
+            </div>
+          </div>
+        )}
 
-            <Separator />
+        {isWijzigingGevraagd && (
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3">
+            <Edit3 className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-orange-800">
+                Wijziging aangevraagd op {formatDateTime(offerte.wijziging_ingediend_op || '')}
+              </p>
+              <p className="text-sm text-orange-600 mt-1">We bekijken uw verzoek en komen bij u terug.</p>
+            </div>
+          </div>
+        )}
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Building2 className="h-4 w-4" />
-                <span>Klant</span>
+        {/* ── Main card ── */}
+        <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+
+          {/* Offerte header */}
+          <div className="p-6 md:p-8 border-b border-gray-100">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="space-y-1">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">{offerte.titel || `Offerte ${offerte.nummer}`}</h1>
+                <p className="text-sm text-gray-500">Offerte {offerte.nummer}</p>
               </div>
-              <div className="font-medium text-foreground">{offerte.klant_naam || '-'}</div>
-
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>Datum</span>
+              <div className="text-right space-y-1">
+                <p className="text-3xl md:text-4xl font-bold text-gray-900">{formatCurrency(totaalBedrag)}</p>
+                <p className="text-xs text-gray-400">incl. BTW</p>
               </div>
-              <div className="font-medium text-foreground">{formatDate(offerte.created_at)}</div>
+            </div>
 
+            {/* Meta info */}
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Datum</p>
+                <p className="font-medium text-gray-700">{formatDate(offerte.created_at)}</p>
+              </div>
               {offerte.geldig_tot && (
-                <>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>Geldig tot</span>
-                  </div>
-                  <div className="font-medium text-foreground">{formatDate(offerte.geldig_tot)}</div>
-                </>
+                <div>
+                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Geldig tot</p>
+                  <p className={`font-medium ${!isVerlopen && dagenOver <= 7 ? 'text-red-600' : 'text-gray-700'}`}>
+                    {formatDate(offerte.geldig_tot)}
+                    {!isVerlopen && dagenOver <= 7 && dagenOver > 0 && (
+                      <span className="text-xs ml-1">({dagenOver} {dagenOver === 1 ? 'dag' : 'dagen'} resterend)</span>
+                    )}
+                  </p>
+                </div>
+              )}
+              {(klant?.bedrijfsnaam || offerte.klant_naam) && (
+                <div>
+                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Klant</p>
+                  <p className="font-medium text-gray-700">{klant?.bedrijfsnaam || offerte.klant_naam}</p>
+                  {klant?.contactpersoon && <p className="text-xs text-gray-500">t.a.v. {klant.contactpersoon}</p>}
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Items tabel */}
-        {items.length > 0 && (
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-sm font-semibold text-foreground/70 uppercase tracking-wide mb-4">Regels</h3>
-              <div className="overflow-x-auto">
+          {/* Intro tekst */}
+          {offerte.intro_tekst && (
+            <div className="px-6 md:px-8 py-4 border-b border-gray-100">
+              <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{offerte.intro_tekst}</p>
+            </div>
+          )}
+
+          {/* Items tabel */}
+          {items.length > 0 && (
+            <div className="px-6 md:px-8 py-6">
+              <div className="overflow-x-auto -mx-2">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b text-left text-xs text-muted-foreground uppercase tracking-wide">
-                      <th className="pb-2 pr-4">Omschrijving</th>
-                      <th className="pb-2 pr-4 text-right">Aantal</th>
-                      <th className="pb-2 pr-4 text-right">Prijs</th>
-                      <th className="pb-2 pr-4 text-right">BTW</th>
-                      <th className="pb-2 text-right">Totaal</th>
+                    <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
+                      <th className="pb-3 pr-4 pl-2 font-medium">Omschrijving</th>
+                      <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap">Aantal</th>
+                      <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap hidden md:table-cell">Eenheid</th>
+                      <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap">Prijs excl.</th>
+                      <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap hidden md:table-cell">BTW</th>
+                      <th className="pb-3 pl-4 text-right font-medium whitespace-nowrap">Totaal</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
-                    {items.map((item) => (
-                      <tr key={item.id}>
-                        <td className="py-2 pr-4">{item.beschrijving}</td>
-                        <td className="py-2 pr-4 text-right">{item.aantal}</td>
-                        <td className="py-2 pr-4 text-right">{formatCurrency(item.eenheidsprijs)}</td>
-                        <td className="py-2 pr-4 text-right">{item.btw_percentage}%</td>
-                        <td className="py-2 text-right font-medium">{formatCurrency(item.totaal)}</td>
+                  <tbody>
+                    {items.map((item: PubliekItem) => (
+                      <tr key={item.id} className="border-b border-gray-50 last:border-0">
+                        <td className="py-3 pr-4 pl-2">
+                          <span className="text-gray-800">{item.beschrijving}</span>
+                          {item.is_optioneel && (
+                            <span className="ml-2 text-[10px] uppercase tracking-wide bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Optioneel</span>
+                          )}
+                        </td>
+                        {item.soort === 'tekst' ? (
+                          <td colSpan={5} />
+                        ) : (
+                          <>
+                            <td className="py-3 pr-4 text-right text-gray-600 tabular-nums">{item.aantal}</td>
+                            <td className="py-3 pr-4 text-right text-gray-500 hidden md:table-cell">stuk</td>
+                            <td className="py-3 pr-4 text-right text-gray-600 tabular-nums">{formatCurrency(item.eenheidsprijs)}</td>
+                            <td className="py-3 pr-4 text-right text-gray-500 hidden md:table-cell">{item.btw_percentage}%</td>
+                            <td className="py-3 pl-4 text-right font-semibold text-gray-900 tabular-nums">{formatCurrency(item.totaal)}</td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
 
-              <Separator className="my-4" />
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Subtotaal</span>
-                  <span>{formatCurrency(offerte.subtotaal)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>BTW</span>
-                  <span>{formatCurrency(offerte.btw_bedrag)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between items-center">
-                  <span className="text-base font-bold text-foreground">Totaal</span>
-                  <span className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(offerte.totaal)}
-                  </span>
-                </div>
+          {/* Totalen sectie */}
+          <div className="bg-gray-50/50 border-t border-gray-100 px-6 md:px-8 py-6">
+            <div className="max-w-xs ml-auto space-y-2">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Subtotaal</span>
+                <span className="tabular-nums">{formatCurrency(offerte.subtotaal)}</span>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Notities / Voorwaarden */}
-        {(offerte.notities || offerte.voorwaarden) && (
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              {offerte.notities && (
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Opmerkingen</h3>
-                  <p className="text-sm text-foreground/70 whitespace-pre-line">{offerte.notities}</p>
+              {btwGroepen.map((g) => (
+                <div key={g.percentage} className="flex justify-between text-sm text-gray-500">
+                  <span>BTW {g.percentage}% over {formatCurrency(g.basis)}</span>
+                  <span className="tabular-nums">{formatCurrency(g.btw)}</span>
+                </div>
+              ))}
+              {offerte.afrondingskorting_excl_btw != null && offerte.afrondingskorting_excl_btw !== 0 && (
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span>Afrondingskorting</span>
+                  <span className="tabular-nums">-{formatCurrency(Math.abs(offerte.afrondingskorting_excl_btw))}</span>
                 </div>
               )}
-              {offerte.voorwaarden && (
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Voorwaarden</h3>
-                  <p className="text-sm text-muted-foreground whitespace-pre-line">{offerte.voorwaarden}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
+                <span className="text-base font-bold text-gray-900">Totaal incl. BTW</span>
+                <span className="text-2xl md:text-3xl font-bold text-gray-900 tabular-nums">
+                  {formatCurrency(totaalBedrag)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Outro tekst */}
+          {offerte.outro_tekst && (
+            <div className="px-6 md:px-8 py-4 border-t border-gray-100">
+              <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{offerte.outro_tekst}</p>
+            </div>
+          )}
+
+          {/* Voorwaarden */}
+          {offerte.voorwaarden && (
+            <div className="px-6 md:px-8 py-4 border-t border-gray-100 bg-gray-50/30">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-2 font-medium">Voorwaarden</p>
+              <p className="text-xs text-gray-500 whitespace-pre-line leading-relaxed">{offerte.voorwaarden}</p>
+            </div>
+          )}
+        </div>
+
+        {/* ── PDF Download ── */}
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={handleDownloadPDF}
+            className="gap-2 text-gray-600 hover:text-gray-900"
+          >
+            <Download className="h-4 w-4" />
+            Download PDF
+          </Button>
+        </div>
+
+        {/* ── Action buttons (desktop) ── */}
+        {kanActie && (
+          <div className="hidden md:flex gap-3">
+            <Button
+              onClick={() => setShowAcceptModal(true)}
+              className="flex-1 h-14 text-base font-semibold bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-sm"
+            >
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+              Offerte accepteren
+            </Button>
+            <Button
+              onClick={() => setShowWijzigingModal(true)}
+              variant="outline"
+              className="flex-1 h-14 text-base font-semibold rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
+            >
+              <Edit3 className="h-5 w-5 mr-2" />
+              Wijziging aanvragen
+            </Button>
+          </div>
         )}
 
-        {/* Reactie sectie */}
-        {!isAfgerond && !isVerlopen && !submitted && (
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Uw reactie</h3>
-              <p className="text-sm text-muted-foreground">
-                Wat vindt u van deze offerte? U kunt direct goedkeuren, afwijzen, of een vraag stellen.
-              </p>
-
-              {reactie === 'vraag' ? (
-                <div className="space-y-3">
-                  <Label>Uw vraag of opmerking</Label>
-                  <textarea
-                    value={vraagTekst}
-                    onChange={(e) => setVraagTekst(e.target.value)}
-                    className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[100px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Typ hier uw vraag of opmerking..."
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleReactie('vraag')}
-                      disabled={isSubmitting}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4 mr-2" />}
-                      Verstuur vraag
-                    </Button>
-                    <Button variant="outline" onClick={() => setReactie(null)}>
-                      Annuleren
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    onClick={() => handleReactie('goedgekeurd')}
-                    disabled={isSubmitting}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-12"
-                  >
-                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ThumbsUp className="h-5 w-5 mr-2" />}
-                    Goedkeuren
-                  </Button>
-                  <Button
-                    onClick={() => handleReactie('afgewezen')}
-                    disabled={isSubmitting}
-                    variant="outline"
-                    className="flex-1 h-12 text-red-600 border-red-200 hover:bg-red-50"
-                  >
-                    <ThumbsDown className="h-5 w-5 mr-2" />
-                    Afwijzen
-                  </Button>
-                  <Button
-                    onClick={() => setReactie('vraag')}
-                    disabled={isSubmitting}
-                    variant="outline"
-                    className="flex-1 h-12"
-                  >
-                    <MessageSquare className="h-5 w-5 mr-2" />
-                    Vraag stellen
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Verlopen disabled buttons */}
+        {isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd && (
+          <div className="hidden md:flex gap-3">
+            <div className="flex-1 h-14 flex items-center justify-center text-sm text-gray-400 bg-gray-100 rounded-xl cursor-not-allowed" title="Deze offerte is niet meer geldig">
+              Offerte accepteren
+            </div>
+            <div className="flex-1 h-14 flex items-center justify-center text-sm text-gray-400 bg-gray-100 rounded-xl cursor-not-allowed" title="Deze offerte is niet meer geldig">
+              Wijziging aanvragen
+            </div>
+          </div>
         )}
 
-        {/* Success message */}
-        {submitted && (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-4 py-8">
-              <CheckCircle2 className="h-12 w-12 text-emerald-500" />
-              <h3 className="text-lg font-semibold text-foreground">Bedankt voor uw reactie!</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                {reactie === 'goedgekeurd'
-                  ? 'De offerte is goedgekeurd. Het bedrijf neemt contact met u op over de volgende stappen.'
-                  : reactie === 'afgewezen'
-                  ? 'Uw reactie is vastgelegd. Het bedrijf kan contact met u opnemen.'
-                  : 'Uw vraag is verstuurd. Het bedrijf neemt zo snel mogelijk contact met u op.'}
-              </p>
-            </CardContent>
-          </Card>
+        {/* Veilig tekst */}
+        {kanActie && (
+          <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+            <Shield className="h-3 w-3" />
+            Veilig en versleuteld
+          </p>
         )}
 
-        {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground/60 pb-8">
-          Offerte {offerte.nummer}{companyProfile?.bedrijfsnaam ? ` \u00b7 ${companyProfile.bedrijfsnaam}` : ''}
-        </p>
+        {/* ── Footer ── */}
+        <div className="text-center text-xs text-gray-400 pb-4 space-y-1">
+          <p>{bedrijf?.bedrijfsnaam}{bedrijf?.kvk_nummer ? ` · KvK ${bedrijf.kvk_nummer}` : ''}</p>
+          {bedrijf?.bedrijfs_adres && <p>{bedrijf.bedrijfs_adres}</p>}
+          {bedrijf?.bedrijfs_telefoon && <p>{bedrijf.bedrijfs_telefoon}</p>}
+        </div>
       </div>
+
+      {/* ── Sticky mobile action bar ── */}
+      {kanActie && (
+        <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-gray-200 p-4 flex gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-40">
+          <Button
+            onClick={() => setShowAcceptModal(true)}
+            className="flex-1 h-12 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white rounded-xl"
+          >
+            <CheckCircle2 className="h-4 w-4 mr-1.5" />
+            Accepteren
+          </Button>
+          <Button
+            onClick={() => setShowWijzigingModal(true)}
+            variant="outline"
+            className="flex-1 h-12 text-sm font-semibold rounded-xl border-orange-200 text-orange-700"
+          >
+            <Edit3 className="h-4 w-4 mr-1.5" />
+            Wijziging
+          </Button>
+        </div>
+      )}
+
+      {/* ── Accept Modal ── */}
+      {showAcceptModal && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 animate-in fade-in duration-200" onClick={() => setShowAcceptModal(false)}>
+          <div
+            className="bg-white w-full md:max-w-md md:rounded-2xl rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto"
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <div className="p-6 space-y-5">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900">Offerte accepteren</h3>
+                <button onClick={() => setShowAcceptModal(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Samenvatting */}
+              <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Offerte {offerte.nummer}</p>
+                  <p className="text-xs text-gray-400">{offerte.titel}</p>
+                </div>
+                <p className="text-xl font-bold text-gray-900">{formatCurrency(totaalBedrag)}</p>
+              </div>
+
+              {/* Tekst */}
+              <p className="text-sm text-gray-600">
+                Door uw naam in te vullen en op Bevestigen te klikken, gaat u akkoord met deze offerte
+                {bedrijf?.bedrijfsnaam ? ` van ${bedrijf.bedrijfsnaam}` : ''}.
+              </p>
+
+              {/* Naam input */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Uw volledige naam *</label>
+                <Input
+                  value={acceptNaam}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAcceptNaam(e.target.value)}
+                  placeholder="Vul uw volledige naam in"
+                  className="h-12"
+                  autoFocus
+                />
+              </div>
+
+              {/* Checkbox */}
+              <label className="flex items-start gap-3 cursor-pointer">
+                <Checkbox
+                  checked={acceptAkkoord}
+                  onCheckedChange={(checked: boolean) => setAcceptAkkoord(checked === true)}
+                  className="mt-0.5"
+                />
+                <span className="text-sm text-gray-600">Ik ga akkoord met deze offerte</span>
+              </label>
+
+              {/* Bevestig knop */}
+              <Button
+                onClick={handleAccepteren}
+                disabled={acceptLoading || acceptNaam.trim().length < 2 || !acceptAkkoord}
+                className="w-full h-12 text-base font-semibold bg-green-600 hover:bg-green-700 text-white rounded-xl disabled:opacity-40"
+              >
+                {acceptLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 mr-2" />
+                    Bevestigen
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Wijziging Modal ── */}
+      {showWijzigingModal && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 animate-in fade-in duration-200" onClick={() => setShowWijzigingModal(false)}>
+          <div
+            className="bg-white w-full md:max-w-md md:rounded-2xl rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto"
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <div className="p-6 space-y-5">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900">Wijziging aanvragen</h3>
+                <button onClick={() => setShowWijzigingModal(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Textarea */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Wat wilt u aangepast hebben? *</label>
+                <textarea
+                  value={wijzigingOpmerking}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setWijzigingOpmerking(e.target.value)}
+                  placeholder="Beschrijf uw gewenste wijziging (minimaal 10 tekens)..."
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm min-h-[120px] focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
+                  autoFocus
+                />
+                <p className="text-xs text-gray-400">{wijzigingOpmerking.length}/10 tekens minimum</p>
+              </div>
+
+              {/* Naam */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Uw naam <span className="text-gray-400">(optioneel)</span></label>
+                <Input
+                  value={wijzigingNaam}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWijzigingNaam(e.target.value)}
+                  placeholder="Uw naam"
+                  className="h-12"
+                />
+              </div>
+
+              {/* Verstuur */}
+              <Button
+                onClick={handleWijziging}
+                disabled={wijzigingLoading || wijzigingOpmerking.trim().length < 10}
+                className="w-full h-12 text-base font-semibold bg-orange-600 hover:bg-orange-700 text-white rounded-xl disabled:opacity-40"
+              >
+                {wijzigingLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <Edit3 className="h-5 w-5 mr-2" />
+                    Verstuur opmerking
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
