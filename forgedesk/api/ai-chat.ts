@@ -193,7 +193,26 @@ async function getRelevantContext(userId: string, question: string): Promise<Con
     })
   }
 
-  // Zoek ALTIJD ook in geïmporteerde CSV data
+  // Laad ALTIJD alle geïmporteerde CSV data als context
+  const { data: allCsvData } = await supabase
+    .from('ai_imported_data')
+    .select('data, bestandsnaam')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(100)
+
+  if (allCsvData?.length) {
+    // Groepeer per bestandsnaam voor overzichtelijkheid
+    const grouped: Record<string, unknown[]> = {}
+    for (const row of allCsvData) {
+      const key = row.bestandsnaam || 'onbekend'
+      if (!grouped[key]) grouped[key] = []
+      grouped[key].push(row.data)
+    }
+    context.push({ type: 'geimporteerde_csv_data', bestanden: grouped })
+  }
+
+  // Zoek ook specifiek op zoekwoorden voor extra relevantie
   const searchWords = question.split(' ').filter(w => w.length > 3).join(' & ')
   if (searchWords) {
     const { data: csvResults } = await supabase
@@ -204,7 +223,7 @@ async function getRelevantContext(userId: string, question: string): Promise<Con
       .limit(15)
 
     if (csvResults?.length) {
-      context.push({ type: 'historie_import', data: csvResults.map(r => r.data) })
+      context.push({ type: 'csv_zoekresultaten', data: csvResults.map(r => r.data) })
     }
   }
 
@@ -357,9 +376,11 @@ REGELS:
 - Antwoord kort en bondig in het Nederlands
 - Gebruik concrete getallen, namen en datums uit de data
 - Als je het antwoord niet weet op basis van de beschikbare data, zeg dat eerlijk
-- Als data uit een CSV import komt, vermeld dat het historische data betreft
+- Kijk ALTIJD ook in de geïmporteerde CSV data (type: geimporteerde_csv_data) — dit bevat historische klant-, project- en facturatiegegevens
+- Als data uit een CSV import komt, vermeld dat het historische/geïmporteerde data betreft
 - Geef bedragen altijd in euro's met twee decimalen
-- Bij opsommingen: maximaal 10 items, daarna "en nog X meer"`
+- Bij opsommingen: maximaal 10 items, daarna "en nog X meer"
+- Gebruik **dikgedrukt** voor belangrijke getallen en namen`
 
     // Build messages with conversation history
     const messages: Array<{ role: string; content: string }> = []

@@ -9,6 +9,7 @@ import {
   type ForgieChatMessage,
 } from '@/services/forgieChatService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
 
 const SUGGESTIE_CHIPS = [
   'Wat staat er open?',
@@ -229,7 +230,7 @@ export function ForgieChatWidget() {
                       : 'bg-background border text-foreground'
                   )}
                 >
-                  {msg.content}
+                  {msg.role === 'forgie' ? renderForgieMarkdown(msg.content) : msg.content}
                 </div>
               </div>
             ))}
