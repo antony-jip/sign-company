@@ -1,11 +1,21 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Anthropic from '@anthropic-ai/sdk'
 import { fal } from '@fal-ai/client'
+import { createClient } from '@supabase/supabase-js'
 
 const FAL_API_KEY = process.env.FAL_AI_API_KEY || ''
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
+// Credits per resolutie
+const CREDITS_PER_RESOLUTIE: Record<string, number> = {
+  '1K': 1,
+  '2K': 1,
+  '4K': 2,
+}
 
 type MimeType = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
 
@@ -64,6 +74,89 @@ function getRatioSize(ratio: string, resolutie: string): { width: number; height
 interface ChatMessage {
   rol: 'user' | 'assistant'
   tekst: string
+}
+
+// ============ SERVER-SIDE CREDIT CHECK ============
+
+async function verifyUserAndCredits(
+  req: VercelRequest,
+  resolutie: string
+): Promise<{ userId: string; creditsNodig: number } | { error: string; status: number }> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    // Geen Supabase = geen credit enforcement (lokale dev)
+    return { userId: 'local', creditsNodig: 0 }
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+  // Verifieer gebruiker via auth token
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { error: 'Niet geautoriseerd', status: 401 }
+  }
+
+  const token = authHeader.split(' ')[1]
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+  if (authError || !user) {
+    return { error: 'Ongeldige sessie', status: 401 }
+  }
+
+  const creditsNodig = CREDITS_PER_RESOLUTIE[resolutie] || 1
+
+  // Check saldo
+  const { data: credits } = await supabase
+    .from('visualizer_credits')
+    .select('saldo')
+    .eq('user_id', user.id)
+    .single()
+
+  const huidigSaldo = credits?.saldo ?? 0
+
+  if (huidigSaldo < creditsNodig) {
+    return {
+      error: `Onvoldoende credits — je hebt ${huidigSaldo} credit${huidigSaldo !== 1 ? 's' : ''}, maar ${resolutie} kost ${creditsNodig} credit${creditsNodig !== 1 ? 's' : ''}. Koop meer credits via Instellingen.`,
+      status: 402,
+    }
+  }
+
+  return { userId: user.id, creditsNodig }
+}
+
+async function deductCredits(userId: string, creditsNodig: number, resolutie: string): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || userId === 'local') return
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+  // Atomisch saldo verlagen
+  const { data: credits } = await supabase
+    .from('visualizer_credits')
+    .select('saldo, totaal_gebruikt')
+    .eq('user_id', userId)
+    .single()
+
+  if (!credits) return
+
+  const nieuwSaldo = credits.saldo - creditsNodig
+  if (nieuwSaldo < 0) return // Extra veiligheid
+
+  await supabase
+    .from('visualizer_credits')
+    .update({
+      saldo: nieuwSaldo,
+      totaal_gebruikt: credits.totaal_gebruikt + creditsNodig,
+      laatst_bijgewerkt: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
+
+  await supabase.from('credit_transacties').insert({
+    user_id: userId,
+    type: 'gebruik',
+    aantal: -creditsNodig,
+    saldo_na: nieuwSaldo,
+    beschrijving: creditsNodig > 1
+      ? `${creditsNodig} credits gebruikt (${resolutie} visualisatie)`
+      : 'Credit gebruikt voor visualisatie',
+  })
 }
 
 // Claude analyzes photos + description → creates optimized fal.ai prompt
@@ -187,6 +280,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Foto en beschrijving zijn verplicht' })
     }
 
+    const effectieveResolutie = resolutie || '2K'
+
+    // Server-side credit check VOOR de API call
+    const creditCheck = await verifyUserAndCredits(req, effectieveResolutie)
+    if ('error' in creditCheck) {
+      return res.status(creditCheck.status).json({ error: creditCheck.error })
+    }
+
     // Extract base64 data
     const fotoData = extractBase64Data(gebouw_foto_base64)
     const fotoBlob = base64ToBlob(fotoData.data, fotoData.mimeType)
@@ -230,7 +331,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Step 3: Determine image size from ratio + resolution
-    const imageSize = getRatioSize(ratio || '1:1', resolutie || '2K')
+    const imageSize = getRatioSize(ratio || '1:1', effectieveResolutie)
 
     // Step 4: Generate mockup with fal.ai
     const result = await fal.subscribe('fal-ai/nano-banana-2/edit', {
@@ -254,12 +355,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: 'Geen resultaat ontvangen van fal.ai' })
     }
 
+    // Credits AFSCHRIJVEN na succesvolle generatie (niet ervoor!)
+    await deductCredits(creditCheck.userId, creditCheck.creditsNodig, effectieveResolutie)
+
     return res.status(200).json({
       url: resultaatUrl,
       fal_request_id: result.requestId,
       generatie_tijd_ms: generatieTijdMs,
       api_kosten_usd: 0.12,
       prompt_gebruikt: optimizedPrompt,
+      credits_gebruikt: creditCheck.creditsNodig,
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
