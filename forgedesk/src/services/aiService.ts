@@ -1,6 +1,6 @@
 import supabase, { isSupabaseConfigured } from './supabaseClient'
 
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
+const DEFAULT_MODEL = 'claude-sonnet-4-6'
 
 // ============ CONFIGURATION CHECK ============
 

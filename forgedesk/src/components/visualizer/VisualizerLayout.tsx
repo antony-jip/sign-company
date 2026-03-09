@@ -73,6 +73,7 @@ export function VisualizerLayout() {
     fal_request_id: string
     generatie_tijd_ms: number
     prompt_gebruikt: string
+    api_kosten_usd?: number
   } | null>(null)
   const [creditSaldo, setCreditSaldo] = useState(0)
 
@@ -391,10 +392,10 @@ export function VisualizerLayout() {
         aangepaste_prompt: beschrijving,
         signing_type: 'led_verlicht',
         kleur_instelling: 'auto',
-        resolutie: '2K',
+        resolutie: resolutie as '1K' | '2K' | '4K',
         resultaat_url: resultaat.url,
         status: 'klaar',
-        api_kosten_eur: 0.11,
+        api_kosten_eur: resultaat.api_kosten_usd ?? 0.12,
         wisselkoers_gebruikt: 0.92,
         doorberekend_aan_klant: false,
         fal_request_id: resultaat.fal_request_id,
