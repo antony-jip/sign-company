@@ -158,29 +158,17 @@ const DEFAULT_SIGNATURES: Signature[] = [
   {
     id: 'zakelijk',
     naam: 'Zakelijk',
-    inhoud: `Met vriendelijke groet,
-
-[mijn_naam]
-[bedrijf]
-[telefoon]`,
+    inhoud: 'Met vriendelijke groet,',
   },
   {
     id: 'informeel',
     naam: 'Informeel',
-    inhoud: `Groeten,
-
-[mijn_naam]`,
+    inhoud: 'Groeten,',
   },
   {
     id: 'offerte',
     naam: 'Offerte',
-    inhoud: `Met vriendelijke groet,
-
-[mijn_naam]
-[bedrijf]
-[telefoon]
-
-P.S. Heeft u vragen over deze offerte? Bel ons gerust!`,
+    inhoud: 'Met vriendelijke groet,',
   },
 ]
 
@@ -299,26 +287,34 @@ export function EmailCompose({
     ? `<br><img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`
     : ''
 
+  // Build signature HTML block (image only, or image + text from selected signature)
+  const buildSignatureHtml = useCallback(() => {
+    const sig = allSignatures.find(s => s.id === selectedSignature)
+    const sigText = sig ? sig.inhoud.replace(/\n/g, '<br>') : ''
+    // Only include image if available; text signature is secondary
+    if (sigImageHtml || sigText) {
+      return `<br><br>--<br>${sigImageHtml}${sigText ? `<br>${sigText}` : ''}`
+    }
+    return ''
+  }, [allSignatures, selectedSignature, sigImageHtml])
+
   useEffect(() => {
     if (open && editorRef.current) {
       const timer = setTimeout(() => {
         if (!editorRef.current) return
+        const sigHtml = buildSignatureHtml()
         if (defaultBody) {
-          editorRef.current.innerHTML = defaultBody.replace(/\n/g, '<br>')
+          // Reply/forward: insert signature before the quoted text
+          editorRef.current.innerHTML = `<br>${sigHtml}${defaultBody.replace(/\n/g, '<br>')}`
         } else {
-          // Use selected signature with optional image
-          const sig = allSignatures.find(s => s.id === selectedSignature)
-          if (sig) {
-            editorRef.current.innerHTML = `<br><br>--<br>${sigImageHtml}${sig.inhoud.replace(/\n/g, '<br>')}`
-          } else if (emailHandtekening) {
-            editorRef.current.innerHTML = `<br><br>--<br>${sigImageHtml}${emailHandtekening.replace(/\n/g, '<br>')}`
-          }
+          // New email: just signature
+          editorRef.current.innerHTML = sigHtml || ''
         }
         setEditorEmpty(!editorRef.current.innerText?.trim())
       }, 50)
       return () => clearTimeout(timer)
     }
-  }, [open, defaultBody, emailHandtekening, selectedSignature, allSignatures, sigImageHtml])
+  }, [open, defaultBody, buildSignatureHtml])
 
   // Sync state when defaults change (reply/forward)
   useEffect(() => {
@@ -391,13 +387,18 @@ export function EmailCompose({
   const handleSignatureChange = useCallback((sigId: string) => {
     setSelectedSignature(sigId)
     const sig = allSignatures.find(s => s.id === sigId)
-    if (sig && editorRef.current) {
-      // Remove old signature (everything after --\n) and add new one
+    if (editorRef.current) {
       const currentHtml = editorRef.current.innerHTML
       const sigSeparator = currentHtml.indexOf('--<br>')
       const bodyPart = sigSeparator >= 0 ? currentHtml.substring(0, sigSeparator) : currentHtml
-      const newSigHtml = `--<br>${sigImageHtml}${sig.inhoud.replace(/\n/g, '<br>')}`
-      editorRef.current.innerHTML = `${bodyPart}${newSigHtml}`
+      if (sig) {
+        const sigText = sig.inhoud.replace(/\n/g, '<br>')
+        const newSigHtml = `--<br>${sigImageHtml}${sigText ? `<br>${sigText}` : ''}`
+        editorRef.current.innerHTML = `${bodyPart}${newSigHtml}`
+      } else {
+        // 'none' selected — remove signature
+        editorRef.current.innerHTML = bodyPart
+      }
       setEditorEmpty(!editorRef.current.innerText?.trim())
     }
     setShowSignatureDropdown(false)
@@ -481,9 +482,8 @@ export function EmailCompose({
     if (value !== 'none' && emailTemplates[value] && editorRef.current) {
       const tmpl = emailTemplates[value]
       if (tmpl.onderwerp && !subject) setSubject(tmpl.onderwerp)
-      const signature = emailHandtekening ? `\n\n--\n${emailHandtekening}` : ''
-      const fullBody = tmpl.body + signature
-      editorRef.current.innerHTML = fullBody.replace(/\n/g, '<br>')
+      const sigHtml = buildSignatureHtml()
+      editorRef.current.innerHTML = tmpl.body.replace(/\n/g, '<br>') + sigHtml
       setEditorEmpty(false)
     }
   }

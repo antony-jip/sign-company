@@ -543,6 +543,7 @@ export interface AppSettings {
   offerte_outro_tekst: string;
   // Email
   afzender_naam: string;
+  email_fetch_limit: number;
   // Forgie
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;

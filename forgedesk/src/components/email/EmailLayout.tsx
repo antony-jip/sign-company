@@ -77,8 +77,9 @@ export function EmailLayout() {
   // ── Hooks ──
   const {
     emails, setEmails, klanten, setKlanten,
-    isLoading, isRefreshing, useIMAP, isLoadingBody,
-    handleRefresh, handleFolderLoad, loadEmailBody, user,
+    isLoading, isRefreshing, useIMAP, imapTotal, isLoadingBody,
+    isLoadingMore, handleRefresh, handleFolderLoad, loadEmailBody,
+    loadMoreEmails, user,
   } = useEmailData()
 
   const emailActions = useEmailActions({
@@ -519,9 +520,9 @@ export function EmailLayout() {
            ═══════════════════════════════════════════════════════════════ */
         <Card className="flex-1 flex overflow-hidden">
 
-          {/* ═══ Column 1: Folder Sidebar (desktop only) ═══ */}
+          {/* ═══ Column 1: Folder Sidebar (desktop only, sticky) ═══ */}
           <div className={cn(
-            'border-r flex-shrink-0 flex flex-col bg-muted/20 dark:bg-muted/10',
+            'border-r flex-shrink-0 flex flex-col bg-muted/20 dark:bg-muted/10 sticky top-0 self-start h-full overflow-y-auto',
             // Always visible on md+ screens, hidden on mobile
             'hidden md:flex w-[200px]'
           )}>
@@ -568,7 +569,7 @@ export function EmailLayout() {
             </nav>
 
             {/* Label section */}
-            <div className="border-t px-3 py-3">
+            <div className="border-t px-3 py-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Tag className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Labels</span>
@@ -866,6 +867,24 @@ export function EmailLayout() {
                       />
                     )
                   })}
+                  {/* Meer laden knop */}
+                  {useIMAP && emails.length < imapTotal && (
+                    <div className="p-3 text-center border-t">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => loadMoreEmails(selectedFolder)}
+                        disabled={isLoadingMore}
+                        className="gap-2 text-muted-foreground"
+                      >
+                        {isLoadingMore ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Laden...</>
+                        ) : (
+                          <>Meer laden ({emails.length} van {imapTotal})</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </ScrollArea>
@@ -901,9 +920,9 @@ export function EmailLayout() {
                 ) : null}
               </div>
 
-              {/* CRM Sidebar */}
+              {/* CRM Sidebar (sticky) */}
               {showSidebar && (
-                <div className="border-l hidden xl:block">
+                <div className="border-l hidden xl:block sticky top-0 self-start h-full overflow-y-auto">
                   <ContactSidebar
                     contact={currentContact}
                     senderName={currentSenderName}
