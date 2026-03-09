@@ -7,6 +7,7 @@ import {
   Minus, Plus, ChevronRight,
   Phone, MessageCircle,
   Sparkles, Image, Send, MessageSquare, Brain, Database,
+  Wand2, Mail, FileText, BarChart3, Eye,
 } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════
@@ -140,6 +141,10 @@ const COLORS = {
   'mist-d': '#4A6E8A',
   cream: '#E2DCCB',
   'cream-d': '#8A7E60',
+  lavender: '#D5CCE6',
+  'lavender-d': '#6B5B8A',
+  peach: '#F5D5C8',
+  'peach-d': '#C4735A',
 }
 
 const TYPEWRITER_PHRASES = [
@@ -176,16 +181,16 @@ const PRICING_FEATURES = [
 ]
 
 const MARQUEE_ITEMS = [
-  { label: 'Signbedrijven', color: 'bg-blush text-[#B8806A]' },
-  { label: 'Interieurbouwers', color: 'bg-sage text-[#4E7A58]' },
-  { label: 'Reclamemakers', color: 'bg-mist text-[#4A6E8A]' },
-  { label: 'Standbouwers', color: 'bg-cream text-[#8A7E60]' },
-  { label: 'Schilders', color: 'bg-blush text-[#B8806A]' },
-  { label: 'Installateurs', color: 'bg-sage text-[#4E7A58]' },
-  { label: 'Drukkerijen', color: 'bg-mist text-[#4A6E8A]' },
-  { label: 'Wrappers', color: 'bg-cream text-[#8A7E60]' },
-  { label: 'Productiebedrijven', color: 'bg-blush text-[#B8806A]' },
-  { label: 'Meubelmakers', color: 'bg-sage text-[#4E7A58]' },
+  { label: 'Signbedrijven', color: 'bg-blush text-[#B8806A] border border-[#B8806A]/20' },
+  { label: 'Interieurbouwers', color: 'bg-sage text-[#4E7A58] border border-[#4E7A58]/20' },
+  { label: 'Reclamemakers', color: 'bg-mist text-[#4A6E8A] border border-[#4A6E8A]/20' },
+  { label: 'Standbouwers', color: 'bg-cream text-[#8A7E60] border border-[#8A7E60]/20' },
+  { label: 'Schilders', color: 'bg-lavender text-[#6B5B8A] border border-[#6B5B8A]/20' },
+  { label: 'Installateurs', color: 'bg-peach text-[#C4735A] border border-[#C4735A]/20' },
+  { label: 'Drukkerijen', color: 'bg-mist text-[#4A6E8A] border border-[#4A6E8A]/20' },
+  { label: 'Wrappers', color: 'bg-blush text-[#B8806A] border border-[#B8806A]/20' },
+  { label: 'Productiebedrijven', color: 'bg-sage text-[#4E7A58] border border-[#4E7A58]/20' },
+  { label: 'Meubelmakers', color: 'bg-cream text-[#8A7E60] border border-[#8A7E60]/20' },
 ]
 
 // ═══════════════════════════════════════════════════════════
@@ -235,6 +240,13 @@ function Navbar() {
               className="nav-link-hover text-sm font-medium text-[#555] hover:text-[#0A0A0A] transition-colors"
             >
               Features
+            </button>
+            <button
+              onClick={() => scrollTo('ai-tools')}
+              className="nav-link-hover text-sm font-medium text-[#555] hover:text-[#0A0A0A] transition-colors flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#6B5B8A]" />
+              AI Tools
             </button>
             <button
               onClick={() => scrollTo('hoe-het-werkt')}
@@ -403,25 +415,31 @@ function Hero() {
 
   return (
     <section className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden" ref={revealRef}>
-      {/* Mesh gradient background */}
+      {/* Mesh gradient background with floating orbs */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: `
-            radial-gradient(ellipse 60% 50% at 80% 20%, rgba(237,207,196,0.2), transparent),
-            radial-gradient(ellipse 40% 40% at 70% 60%, rgba(188,202,214,0.15), transparent),
-            radial-gradient(ellipse 50% 50% at 90% 40%, rgba(226,220,203,0.15), transparent)
+            radial-gradient(ellipse 60% 50% at 80% 20%, rgba(237,207,196,0.25), transparent),
+            radial-gradient(ellipse 40% 40% at 20% 70%, rgba(213,204,230,0.2), transparent),
+            radial-gradient(ellipse 50% 50% at 90% 40%, rgba(188,202,214,0.2), transparent)
           `,
         }}
       />
+      {/* Floating gradient orbs */}
+      <div className="absolute top-20 right-[15%] w-64 h-64 rounded-full opacity-20 animate-pulse-soft pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${COLORS.lavender}, transparent 70%)` }} />
+      <div className="absolute bottom-10 left-[10%] w-48 h-48 rounded-full opacity-15 animate-pulse-soft pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${COLORS.peach}, transparent 70%)`, animationDelay: '1.5s' }} />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-0">
           {/* Left — Text */}
           <div className="lg:w-1/2">
             {/* Badge */}
-            <div className="reveal-up inline-block bg-blush text-[#B8806A] rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
-              Een prijs, alles erin — 49/maand
+            <div className="reveal-up inline-flex items-center gap-2 bg-lavender/60 text-[#6B5B8A] rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border border-lavender">
+              <Sparkles className="w-3.5 h-3.5" />
+              Nu met AI-tools — Visualizer & Forgie
             </div>
 
             {/* Heading */}
@@ -459,18 +477,19 @@ function Hero() {
             <div className="reveal-up reveal-delay-4 mt-10 flex flex-col sm:flex-row items-start gap-4">
               <Link
                 to="/register"
-                className="bg-[#0A0A0A] text-white px-10 py-5 rounded-[14px] text-[17px] font-bold hover:bg-[#1a1a1a] transition-colors w-full sm:w-auto text-center"
+                className="bg-[#0A0A0A] text-white px-10 py-5 rounded-[14px] text-[17px] font-bold hover:bg-[#1a1a1a] transition-all hover:shadow-lg hover:shadow-black/10 w-full sm:w-auto text-center"
               >
                 Start 30 dagen gratis
               </Link>
               <button
                 onClick={() => {
-                  const el = document.getElementById('hoe-het-werkt')
+                  const el = document.getElementById('ai-tools')
                   if (el) el.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="text-[#0A0A0A] font-semibold underline decoration-[#E8E5DE] underline-offset-4 hover:decoration-[#0A0A0A] transition-colors py-5"
+                className="flex items-center gap-2 text-[#6B5B8A] font-semibold hover:text-[#0A0A0A] transition-colors py-5"
               >
-                Bekijk hoe het werkt
+                <Wand2 className="w-4 h-4" />
+                Ontdek AI-tools
               </button>
             </div>
 
@@ -488,9 +507,21 @@ function Hero() {
             </div>
           </div>
 
-          {/* Right — Floating cards */}
-          <div className="lg:w-1/2 reveal-scale reveal-delay-2">
+          {/* Right — Floating cards + AI card */}
+          <div className="lg:w-1/2 reveal-scale reveal-delay-2 relative">
             <FloatingCards scrollY={scrollY} />
+            {/* AI-powered mini card */}
+            <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-lavender/50 p-4 max-w-[200px] animate-float-slow"
+              style={{ animationDelay: '3s' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 rounded-full bg-lavender flex items-center justify-center">
+                  <Brain className="w-3.5 h-3.5 text-[#6B5B8A]" />
+                </div>
+                <span className="text-xs font-bold text-[#6B5B8A]">Forgie AI</span>
+              </div>
+              <p className="text-xs text-[#555]">Omzet maart: <span className="font-bold text-[#0A0A0A]">€24.850</span></p>
+              <p className="text-[10px] text-[#4E7A58] mt-1">+12% vs vorige maand</p>
+            </div>
           </div>
         </div>
       </div>
@@ -1247,12 +1278,50 @@ function MarqueeStrip() {
 
 function VisualizerSection() {
   const revealRef = useScrollReveal()
+  const [activeType, setActiveType] = useState(0)
+
+  const signingTypes = [
+    {
+      name: 'LED Doosletters',
+      desc: 'Verlichte 3D letters met LED achterverlichting',
+      color: 'blush',
+      colorDeep: '#B8806A',
+      effect: 'Warmwit licht, halo-effect op gevel',
+    },
+    {
+      name: 'Neon',
+      desc: 'Klassieke of moderne flex-neon signing',
+      color: 'lavender',
+      colorDeep: '#6B5B8A',
+      effect: 'Gloeiend neoneffect, zichtbaar dag & nacht',
+    },
+    {
+      name: 'Freesletters',
+      desc: 'Strak uitgesneden letters, onverlicht',
+      color: 'mist',
+      colorDeep: '#4A6E8A',
+      effect: 'Aluminium of RVS, professionele uitstraling',
+    },
+    {
+      name: 'Gevelreclame',
+      desc: 'Full-color prints op dibond of acrylaat',
+      color: 'sage',
+      colorDeep: '#4E7A58',
+      effect: 'Fotokwaliteit, weerbestendig',
+    },
+  ]
+
+  const current = signingTypes[activeType]
 
   return (
-    <section className="bg-white py-24" ref={revealRef}>
-      <div className="max-w-6xl mx-auto px-6">
+    <section id="ai-tools" className="bg-white py-24 relative overflow-hidden" ref={revealRef}>
+      {/* Subtle background orb */}
+      <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-10 pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${COLORS.mist}, transparent 70%)` }} />
+
+      <div className="max-w-6xl mx-auto px-6 relative z-10">
         <div className="text-center">
-          <div className="reveal-up inline-flex items-center gap-2 bg-mist text-[#4A6E8A] rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
+          <div className="reveal-up inline-flex items-center gap-2 bg-mist/60 text-[#4A6E8A] rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border border-mist">
             <Sparkles className="w-4 h-4" />
             Uniek in de branche
           </div>
@@ -1266,9 +1335,101 @@ function VisualizerSection() {
           </p>
         </div>
 
+        {/* Interactive visualizer demo */}
+        <div className="reveal-up reveal-delay-3 mt-16">
+          <div className="bg-[#F7F6F3] rounded-3xl p-6 md:p-10 border border-[#E8E5DE]">
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Left: mock gevel preview */}
+              <div className="lg:w-[60%]">
+                <div className="relative bg-gradient-to-b from-[#87CEEB] via-[#B0C4DE] to-[#D4CFC4] rounded-2xl overflow-hidden aspect-[16/10]">
+                  {/* Building facade mock */}
+                  <div className="absolute bottom-0 left-0 right-0 h-[70%] bg-[#E8E0D0] border-t-4 border-[#C4B8A4]">
+                    {/* Windows */}
+                    <div className="flex justify-center gap-6 mt-8">
+                      <div className="w-16 h-20 bg-[#8FAABD] rounded-t-lg border-2 border-[#C4B8A4]" />
+                      <div className="w-20 h-24 bg-[#6A8FA8] rounded-t-lg border-2 border-[#C4B8A4]" />
+                      <div className="w-16 h-20 bg-[#8FAABD] rounded-t-lg border-2 border-[#C4B8A4]" />
+                    </div>
+                    {/* Door */}
+                    <div className="flex justify-center mt-4">
+                      <div className="w-14 h-20 bg-[#6B5B4B] rounded-t-lg border-2 border-[#C4B8A4]" />
+                    </div>
+                  </div>
+
+                  {/* Signing text on building */}
+                  <div className="absolute top-[22%] left-0 right-0 text-center">
+                    <div
+                      className="inline-block text-2xl md:text-3xl font-black tracking-wider px-6 py-2 transition-all duration-500"
+                      style={{
+                        color: current.colorDeep,
+                        textShadow: activeType === 0
+                          ? `0 0 20px ${current.colorDeep}40, 0 0 40px ${current.colorDeep}20`
+                          : activeType === 1
+                          ? `0 0 15px ${current.colorDeep}, 0 0 30px ${current.colorDeep}80, 0 0 60px ${current.colorDeep}40`
+                          : 'none',
+                      }}
+                    >
+                      BAKKERIJ JANSEN
+                    </div>
+                  </div>
+
+                  {/* Type label */}
+                  <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 text-xs font-bold" style={{ color: current.colorDeep }}>
+                    {current.name}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: controls */}
+              <div className="lg:w-[40%]">
+                <h3 className="text-lg font-bold text-[#0A0A0A] mb-1">Kies een signingtype</h3>
+                <p className="text-sm text-[#999] mb-5">Klik om het resultaat te zien op de gevel</p>
+
+                <div className="space-y-3">
+                  {signingTypes.map((type, i) => (
+                    <button
+                      key={type.name}
+                      onClick={() => setActiveType(i)}
+                      className={`w-full text-left rounded-xl p-4 transition-all duration-300 border ${
+                        i === activeType
+                          ? `bg-${type.color}/30 border-[${type.colorDeep}]/30 shadow-sm`
+                          : 'bg-white border-[#E8E5DE] hover:border-[#ccc]'
+                      }`}
+                      style={i === activeType ? {
+                        backgroundColor: `${type.colorDeep}10`,
+                        borderColor: `${type.colorDeep}30`,
+                      } : {}}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-bold text-[#0A0A0A]">{type.name}</div>
+                          <div className="text-xs text-[#555] mt-0.5">{type.desc}</div>
+                        </div>
+                        {i === activeType && (
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: type.colorDeep }}>
+                            <Check className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      {i === activeType && (
+                        <div className="mt-2 pt-2 border-t border-[#E8E5DE]">
+                          <div className="flex items-center gap-1.5 text-xs" style={{ color: type.colorDeep }}>
+                            <Eye className="w-3 h-3" />
+                            {type.effect}
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* How it works - 3 steps */}
-        <div className="reveal-up reveal-delay-3 grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
-          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center">
+        <div className="reveal-up reveal-delay-4 grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center border border-[#E8E5DE] hover:border-blush/50 hover:shadow-sm transition-all">
             <div className="w-12 h-12 bg-blush rounded-xl flex items-center justify-center mx-auto">
               <Image className="w-6 h-6 text-[#B8806A]" />
             </div>
@@ -1278,7 +1439,7 @@ function VisualizerSection() {
               (PNG met transparante achtergrond werkt het best).
             </p>
           </div>
-          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center">
+          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center border border-[#E8E5DE] hover:border-sage/50 hover:shadow-sm transition-all">
             <div className="w-12 h-12 bg-sage rounded-xl flex items-center justify-center mx-auto">
               <MessageSquare className="w-6 h-6 text-[#4E7A58]" />
             </div>
@@ -1288,7 +1449,7 @@ function VisualizerSection() {
               &quot;Neonlogo op de gevel&quot;. AI begrijpt precies wat je bedoelt.
             </p>
           </div>
-          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center">
+          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center border border-[#E8E5DE] hover:border-mist/50 hover:shadow-sm transition-all">
             <div className="w-12 h-12 bg-mist rounded-xl flex items-center justify-center mx-auto">
               <Send className="w-6 h-6 text-[#4A6E8A]" />
             </div>
@@ -1300,58 +1461,13 @@ function VisualizerSection() {
           </div>
         </div>
 
-        {/* Tech & unique value */}
-        <div className="reveal-up reveal-delay-4 bg-[#F7F6F3] rounded-3xl p-8 md:p-10 mt-12">
-          <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div className="flex-1">
-              <h3 className="text-[22px] font-bold text-[#0A0A0A]">
-                Hoe werkt het onder de motorkap?
-              </h3>
-              <p className="text-[#555] mt-3 leading-relaxed">
-                De Signing Visualizer gebruikt <strong>Nano Banana 2</strong> — een
-                gespecialiseerd AI-model voor beeldbewerking — om je foto&apos;s om te
-                zetten naar fotorealistische mockups. Claude Sonnet analyseert eerst je
-                foto en beschrijving, en stuurt vervolgens een geoptimaliseerde prompt
-                naar het Nano Banana model. Het resultaat: een mockup die eruitziet alsof
-                de signing er al hangt.
-              </p>
-              <div className="flex flex-wrap gap-3 mt-5">
-                <span className="bg-white border border-[#E8E5DE] rounded-full px-3 py-1 text-xs font-semibold text-[#555]">
-                  Nano Banana 2 model
-                </span>
-                <span className="bg-white border border-[#E8E5DE] rounded-full px-3 py-1 text-xs font-semibold text-[#555]">
-                  4 signingtypes
-                </span>
-                <span className="bg-white border border-[#E8E5DE] rounded-full px-3 py-1 text-xs font-semibold text-[#555]">
-                  Tot 4K resolutie
-                </span>
-                <span className="bg-white border border-[#E8E5DE] rounded-full px-3 py-1 text-xs font-semibold text-[#555]">
-                  Chat-verfijning
-                </span>
-              </div>
-            </div>
-            <div className="md:w-[280px] shrink-0">
-              <div className="bg-white rounded-2xl border border-[#E8E5DE] p-5 shadow-sm">
-                <div className="text-xs font-bold text-[#999] uppercase tracking-wider">
-                  Signing types
-                </div>
-                <div className="mt-3 space-y-2">
-                  {['LED Verlicht', 'Neon', 'Dag Onverlicht', 'Dag/Nacht'].map((type) => (
-                    <div key={type} className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-[#4E7A58]" />
-                      <span className="text-sm text-[#0A0A0A]">{type}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t border-[#E8E5DE] mt-4 pt-4">
-                  <div className="text-xs text-[#999]">Koppel aan offerte</div>
-                  <div className="text-sm font-bold text-[#4E7A58] mt-1">
-                    Direct meesturen
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Tech tags */}
+        <div className="reveal-up reveal-delay-5 flex flex-wrap justify-center gap-3 mt-10">
+          {['Nano Banana 2 model', '4 signingtypes', 'Tot 4K resolutie', 'Chat-verfijning', 'Koppel aan offerte'].map((tag) => (
+            <span key={tag} className="bg-white border border-[#E8E5DE] rounded-full px-4 py-1.5 text-xs font-semibold text-[#555]">
+              {tag}
+            </span>
+          ))}
         </div>
 
         <p className="reveal-up reveal-delay-5 text-center text-[#999] text-sm mt-6">
@@ -1369,15 +1485,38 @@ function VisualizerSection() {
 
 function ForgieSection() {
   const revealRef = useScrollReveal()
+  const [activeChat, setActiveChat] = useState(0)
+  const [isTyping, setIsTyping] = useState(false)
+  const [showAnswer, setShowAnswer] = useState(true)
 
-  const exampleQuestions = [
-    'Wat is mijn omzet deze maand?',
-    'Welke offertes staan er open?',
-    'Hoeveel klanten heb ik?',
-    'Openstaande facturen',
-    'Projecten in uitvoering',
-    'Schrijf een follow-up mail',
+  const conversations = [
+    {
+      question: 'Wat is mijn omzet deze maand?',
+      answer: 'Je omzet in maart 2026 is **€ 24.850**. Dat is 12% meer dan vorige maand. Je hebt 8 facturen verstuurd, waarvan er 3 nog openstaan (€ 7.200).',
+      icon: <BarChart3 className="w-3.5 h-3.5" />,
+    },
+    {
+      question: 'Welke offertes staan er open?',
+      answer: 'Je hebt **5 openstaande offertes** met een totale waarde van **€ 18.340**. De oudste is van 2 weken geleden (Bakkerij Jansen, €2.087). Wil je dat ik een follow-up mail opstel?',
+      icon: <FileText className="w-3.5 h-3.5" />,
+    },
+    {
+      question: 'Schrijf een follow-up mail voor Bakkerij Jansen',
+      answer: 'Hier is een concept:\n\nBeste heer Jansen,\n\nGraag herinner ik u aan onze offerte OFF-2026-048 voor de LED lichtreclame. Heeft u nog vragen? Ik help u graag verder.\n\nMet vriendelijke groet',
+      icon: <Mail className="w-3.5 h-3.5" />,
+    },
   ]
+
+  const switchChat = useCallback((idx: number) => {
+    if (idx === activeChat) return
+    setShowAnswer(false)
+    setIsTyping(true)
+    setActiveChat(idx)
+    setTimeout(() => {
+      setIsTyping(false)
+      setShowAnswer(true)
+    }, 1200)
+  }, [activeChat])
 
   return (
     <section className="bg-[#F7F6F3] py-24" ref={revealRef}>
@@ -1385,7 +1524,7 @@ function ForgieSection() {
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
           {/* Left: explanation */}
           <div className="lg:w-[55%]">
-            <div className="reveal-up inline-flex items-center gap-2 bg-sage text-[#4E7A58] rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
+            <div className="reveal-up inline-flex items-center gap-2 bg-sage text-[#4E7A58] rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border border-sage-deep/20">
               <Brain className="w-4 h-4" />
               AI-assistent
             </div>
@@ -1404,70 +1543,88 @@ function ForgieSection() {
               e-mails herschrijven, vertalen, samenvatten en professioneler maken.
             </p>
 
-            <div className="reveal-up reveal-delay-4 mt-6 flex flex-wrap gap-3">
-              <div className="flex items-center gap-2 text-sm text-[#555]">
-                <Database className="w-4 h-4 text-[#4E7A58]" />
-                <span>Werkt met jouw bedrijfsdata</span>
+            <div className="reveal-up reveal-delay-4 mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="flex items-center gap-2 text-sm text-[#555] bg-white rounded-xl px-3 py-2.5 border border-[#E8E5DE]">
+                <Database className="w-4 h-4 text-[#4E7A58] shrink-0" />
+                <span>Jouw bedrijfsdata</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-[#555]">
-                <Shield className="w-4 h-4 text-[#4E7A58]" />
+              <div className="flex items-center gap-2 text-sm text-[#555] bg-white rounded-xl px-3 py-2.5 border border-[#E8E5DE]">
+                <Shield className="w-4 h-4 text-[#4E7A58] shrink-0" />
                 <span>Veilig en privé</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-[#555]">
-                <Zap className="w-4 h-4 text-[#4E7A58]" />
-                <span>Powered by Claude Sonnet</span>
+              <div className="flex items-center gap-2 text-sm text-[#555] bg-white rounded-xl px-3 py-2.5 border border-[#E8E5DE]">
+                <Zap className="w-4 h-4 text-[#4E7A58] shrink-0" />
+                <span>Claude Sonnet</span>
               </div>
             </div>
           </div>
 
-          {/* Right: chat mockup */}
+          {/* Right: interactive chat mockup */}
           <div className="reveal-scale reveal-delay-3 lg:w-[45%]">
             <div className="bg-white rounded-3xl shadow-xl border border-[#E8E5DE] overflow-hidden">
               {/* Chat header */}
-              <div className="px-5 py-4 border-b border-[#E8E5DE] bg-[#FAFAF8] flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center">
-                  <span className="text-sm">🦊</span>
+              <div className="px-5 py-4 border-b border-[#E8E5DE] bg-[#FAFAF8] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center">
+                    <span className="text-sm">🦊</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[#0A0A0A]">Forgie</div>
+                    <div className="text-xs text-[#4E7A58]">Online — je bedrijfsgeheugen</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-bold text-[#0A0A0A]">Forgie</div>
-                  <div className="text-xs text-[#999]">Je bedrijfsgeheugen</div>
-                </div>
+                <div className="w-2 h-2 rounded-full bg-[#4E7A58] animate-pulse" />
               </div>
 
               {/* Chat messages */}
-              <div className="p-5 space-y-4">
+              <div className="p-5 space-y-4 min-h-[220px]">
                 <div className="flex justify-end">
                   <div className="bg-[#0A0A0A] text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm max-w-[80%]">
-                    Wat is mijn omzet deze maand?
+                    {conversations[activeChat].question}
                   </div>
                 </div>
-                <div className="flex justify-start">
-                  <div className="bg-[#F7F6F3] text-[#0A0A0A] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm max-w-[85%]">
-                    Je omzet in maart 2026 is <strong>€ 24.850</strong>. Dat is 12% meer
-                    dan vorige maand. Je hebt 8 facturen verstuurd, waarvan er 3
-                    nog openstaan (€ 7.200).
+                {isTyping ? (
+                  <div className="flex justify-start">
+                    <div className="bg-[#F7F6F3] rounded-2xl rounded-bl-md px-4 py-3">
+                      <div className="flex gap-1.5">
+                        <div className="w-2 h-2 bg-[#999] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-[#999] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-[#999] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : showAnswer ? (
+                  <div className="flex justify-start">
+                    <div className="bg-[#F7F6F3] text-[#0A0A0A] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm max-w-[85%] leading-relaxed whitespace-pre-line">
+                      {conversations[activeChat].answer.split('**').map((part, i) =>
+                        i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+                      )}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
-              {/* Suggestion chips */}
-              <div className="px-5 pb-4">
+              {/* Suggestion chips — clickable */}
+              <div className="px-5 pb-4 border-t border-[#E8E5DE] pt-3">
+                <div className="text-[10px] text-[#999] uppercase tracking-wider mb-2 font-semibold">Probeer een vraag</div>
                 <div className="flex flex-wrap gap-2">
-                  {exampleQuestions.slice(0, 3).map((q) => (
-                    <span
-                      key={q}
-                      className="bg-[#F7F6F3] border border-[#E8E5DE] rounded-full px-3 py-1.5 text-xs text-[#555] font-medium"
+                  {conversations.map((conv, i) => (
+                    <button
+                      key={i}
+                      onClick={() => switchChat(i)}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                        i === activeChat
+                          ? 'bg-sage text-[#4E7A58] border border-[#4E7A58]/20'
+                          : 'bg-[#F7F6F3] border border-[#E8E5DE] text-[#555] hover:border-sage-deep/30 hover:bg-sage/30'
+                      }`}
                     >
-                      {q}
-                    </span>
+                      {conv.icon}
+                      {conv.question.length > 30 ? conv.question.slice(0, 30) + '...' : conv.question}
+                    </button>
                   ))}
                 </div>
               </div>
             </div>
-
-            <p className="text-center text-xs text-[#999] mt-4">
-              Stel Forgie elke vraag — van omzet tot openstaande werkbonnen.
-            </p>
           </div>
         </div>
       </div>
@@ -1505,6 +1662,10 @@ function PricingSection() {
           <p className="reveal-up reveal-delay-2 text-xl text-[#555] mt-4">
             Per bedrijf. Onbeperkt medewerkers. Alle features.
           </p>
+          <div className="reveal-up reveal-delay-2 inline-flex items-center gap-2 bg-lavender/40 text-[#6B5B8A] rounded-full px-4 py-1.5 text-sm font-semibold mt-4 border border-lavender">
+            <Sparkles className="w-3.5 h-3.5" />
+            Inclusief AI-tools
+          </div>
         </div>
 
         {/* Feature checklist */}
@@ -1626,35 +1787,46 @@ function TestimonialsSection() {
         </h2>
 
         {/* Main testimonial */}
-        <div className="reveal-up reveal-delay-1 bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-[#E8E5DE] mt-12">
-          <blockquote className="text-[20px] md:text-[24px] font-medium leading-relaxed text-[#0A0A0A]">
-            "Ik stond bij een klant en kon in 10 seconden laten zien hoeveel uur
+        <div className="reveal-up reveal-delay-1 bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-[#E8E5DE] mt-12 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 pointer-events-none"
+            style={{ background: `radial-gradient(circle, ${COLORS.blush}, transparent 70%)` }} />
+          <blockquote className="text-[20px] md:text-[24px] font-medium leading-relaxed text-[#0A0A0A] relative z-10">
+            &ldquo;Ik stond bij een klant en kon in 10 seconden laten zien hoeveel uur
             ik had berekend per lichtreclame. Met mijn vorige tool moest ik 8
-            losse calculaties openen."
+            losse calculaties openen.&rdquo;
           </blockquote>
-          <div className="mt-6 text-sm text-[#555]">
+          <div className="mt-6 text-sm text-[#555] relative z-10">
             — Antony B. - Sign Company, Enkhuizen
           </div>
         </div>
 
-        {/* Two smaller */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <div className="reveal-up reveal-delay-2 bg-blush rounded-2xl p-8">
-            <blockquote className="text-[16px] font-medium leading-relaxed text-[#0A0A0A]">
-              "Eindelijk een tool die begrijpt hoe wij werken. Geen overbodige
-              features, geen enterprise onzin. Gewoon wat je nodig hebt."
+        {/* Three testimonials */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <div className="reveal-up reveal-delay-2 bg-gradient-to-br from-blush to-blush/60 rounded-2xl p-8 border border-blush-deep/10">
+            <blockquote className="text-[15px] font-medium leading-relaxed text-[#0A0A0A]">
+              &ldquo;Eindelijk een tool die begrijpt hoe wij werken. Geen overbodige
+              features, geen enterprise onzin.&rdquo;
             </blockquote>
-            <div className="mt-4 text-sm text-[#B8806A]">
-              — Marco V. - Interieurbouwer, Amsterdam
+            <div className="mt-4 text-sm text-[#B8806A] font-semibold">
+              — Marco V. - Interieurbouwer
             </div>
           </div>
-          <div className="reveal-up reveal-delay-3 bg-sage rounded-2xl p-8">
-            <blockquote className="text-[16px] font-medium leading-relaxed text-[#0A0A0A]">
-              "De margeberekening bespaart me uren per week. Ik zie direct wat ik
-              overhoud. Geen spreadsheet meer nodig."
+          <div className="reveal-up reveal-delay-3 bg-gradient-to-br from-sage to-sage/60 rounded-2xl p-8 border border-sage-deep/10">
+            <blockquote className="text-[15px] font-medium leading-relaxed text-[#0A0A0A]">
+              &ldquo;De margeberekening bespaart me uren per week. Ik zie direct wat ik
+              overhoud.&rdquo;
             </blockquote>
-            <div className="mt-4 text-sm text-[#4E7A58]">
-              — Sandra K. - Reclamemakers, Utrecht
+            <div className="mt-4 text-sm text-[#4E7A58] font-semibold">
+              — Sandra K. - Reclamemakers
+            </div>
+          </div>
+          <div className="reveal-up reveal-delay-4 bg-gradient-to-br from-lavender to-lavender/60 rounded-2xl p-8 border border-[#6B5B8A]/10">
+            <blockquote className="text-[15px] font-medium leading-relaxed text-[#0A0A0A]">
+              &ldquo;Forgie AI is briljant. Ik vraag gewoon: welke offertes staan open?
+              En krijg direct een helder overzicht.&rdquo;
+            </blockquote>
+            <div className="mt-4 text-sm text-[#6B5B8A] font-semibold">
+              — Pieter D. - Signbedrijf
             </div>
           </div>
         </div>
@@ -1673,15 +1845,30 @@ function CTAFooter() {
   return (
     <footer ref={revealRef}>
       {/* CTA */}
-      <div className="bg-[#0A0A0A] rounded-t-3xl py-24 text-center text-white">
-        <div className="max-w-3xl mx-auto px-6">
+      <div className="bg-[#0A0A0A] rounded-t-3xl py-24 text-center text-white relative overflow-hidden">
+        {/* Pastel orbs on dark background */}
+        <div className="absolute top-10 left-[10%] w-48 h-48 rounded-full opacity-10 animate-pulse-soft pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${COLORS.blush}, transparent 70%)` }} />
+        <div className="absolute bottom-10 right-[15%] w-64 h-64 rounded-full opacity-10 animate-pulse-soft pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${COLORS.lavender}, transparent 70%)`, animationDelay: '1.5s' }} />
+        <div className="absolute top-[40%] right-[40%] w-32 h-32 rounded-full opacity-8 animate-pulse-soft pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${COLORS.sage}, transparent 70%)`, animationDelay: '3s' }} />
+
+        <div className="max-w-3xl mx-auto px-6 relative z-10">
+          <div className="reveal-up inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white/70 rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border border-white/10">
+            <Sparkles className="w-3.5 h-3.5" />
+            Met AI-tools ingebouwd
+          </div>
           <h2 className="reveal-up text-[36px] md:text-[44px] font-black">
             Klaar om te beginnen?
           </h2>
+          <p className="reveal-up reveal-delay-1 text-white/50 mt-3 text-lg">
+            30 dagen gratis. Geen creditcard. Direct aan de slag.
+          </p>
           <div className="reveal-up reveal-delay-1 mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/register"
-              className="bg-white text-[#0A0A0A] px-10 py-5 rounded-[14px] text-[17px] font-bold hover:bg-gray-100 transition-colors w-full sm:w-auto"
+              className="bg-white text-[#0A0A0A] px-10 py-5 rounded-[14px] text-[17px] font-bold hover:bg-gray-100 transition-all hover:shadow-lg hover:shadow-white/10 w-full sm:w-auto"
             >
               Start 30 dagen gratis
             </Link>
@@ -1694,6 +1881,14 @@ function CTAFooter() {
               <MessageCircle className="w-5 h-5" />
               WhatsApp
             </a>
+          </div>
+          {/* Feature tags */}
+          <div className="reveal-up reveal-delay-2 flex flex-wrap justify-center gap-3 mt-8">
+            {['Offertes', 'Planning', 'Werkbonnen', 'Facturen', 'AI Visualizer', 'Forgie AI'].map((tag) => (
+              <span key={tag} className="bg-white/5 border border-white/10 rounded-full px-3 py-1 text-xs text-white/40">
+                {tag}
+              </span>
+            ))}
           </div>
           <p className="reveal-up reveal-delay-2 text-sm text-white/50 mt-6">
             30 dagen gratis - Geen creditcard - Direct starten
@@ -1723,6 +1918,10 @@ function CTAFooter() {
               <p className="text-sm text-white/40">
                 Door vakmensen, voor vakmensen.
               </p>
+              <div className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-3 py-1 text-[10px] text-white/40 mt-2">
+                <Sparkles className="w-2.5 h-2.5" />
+                AI-Powered
+              </div>
               <p className="text-xs text-white/30 mt-1">
                 Gebouwd in Enkhuizen
               </p>

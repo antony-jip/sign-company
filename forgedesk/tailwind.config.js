@@ -72,6 +72,14 @@ export default {
           DEFAULT: '#E2DCCB',
           deep: '#8A7E60',
         },
+        lavender: {
+          DEFAULT: '#D5CCE6',
+          deep: '#6B5B8A',
+        },
+        peach: {
+          DEFAULT: '#F5D5C8',
+          deep: '#C4735A',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -95,6 +103,14 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-50%)" },
         },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "0.4" },
+          "50%": { opacity: "0.8" },
+        },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -103,6 +119,8 @@ export default {
         "float-slow": "float 6s ease-in-out infinite",
         "float-fast": "float 4s ease-in-out infinite",
         "marquee": "marquee 30s linear infinite",
+        "pulse-soft": "pulse-soft 3s ease-in-out infinite",
+        "shimmer": "shimmer 3s ease-in-out infinite",
       },
     },
   },
