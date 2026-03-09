@@ -107,7 +107,7 @@ export function QuoteCreation() {
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
-  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2 } = useAppSettings()
+  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, emailHandtekening } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -1340,7 +1340,13 @@ export function QuoteCreation() {
 
       if (status === 'verzonden' && selectedKlant?.email) {
         try {
-          const { subject, html } = offerteVerzendTemplate({
+          // Haal opgeslagen offerte op voor publiek_token
+          const savedOfferte = await getOfferte(savedOfferteId).catch(() => null)
+          const bekijkUrl = savedOfferte?.publiek_token
+            ? `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
+            : undefined
+
+          const { subject, html, text } = offerteVerzendTemplate({
             klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
             offerteNummer,
             offerteTitel,
@@ -1348,9 +1354,11 @@ export function QuoteCreation() {
             geldigTot,
             bedrijfsnaam,
             primaireKleur,
+            handtekening: emailHandtekening || undefined,
             logoUrl: profile?.logo_url || undefined,
+            bekijkUrl,
           })
-          await sendEmail(selectedKlant.email, subject, '', { html })
+          await sendEmail(selectedKlant.email, subject, text, { html })
         } catch (emailErr) {
           logger.error('Email verzenden mislukt:', emailErr)
           toast.error('Offerte opgeslagen maar email niet verzonden')
@@ -1518,7 +1526,28 @@ export function QuoteCreation() {
         quoteId = editOfferteId || autoSaveIdRef.current
       }
 
-      await sendEmail(emailTo.trim(), emailSubject.trim(), emailBody, { html: emailBody.replace(/\n/g, '<br>') })
+      // Haal offerte op voor publiek_token
+      const savedQuoteId = editOfferteId || autoSaveIdRef.current
+      const savedOfferte = savedQuoteId ? await getOfferte(savedQuoteId).catch(() => null) : null
+      const bekijkUrl = savedOfferte?.publiek_token
+        ? `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
+        : undefined
+
+      const klantNaam = selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || ''
+      const { html: templateHtml, text: templateText } = offerteVerzendTemplate({
+        klantNaam,
+        offerteNummer,
+        offerteTitel,
+        totaalBedrag: formatCurrency(round2(subtotaal + btwBedrag)),
+        geldigTot,
+        bedrijfsnaam,
+        primaireKleur,
+        handtekening: emailHandtekening || undefined,
+        logoUrl: profile?.logo_url || undefined,
+        bekijkUrl,
+      })
+
+      await sendEmail(emailTo.trim(), emailSubject.trim(), templateText, { html: templateHtml })
       if (quoteId) {
         await updateOfferte(quoteId, {
           status: 'verzonden',
