@@ -42,6 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (cc) mailOptions.cc = cc
     if (html) mailOptions.html = html
 
+    console.log('[send-email] html present:', !!html, 'html length:', html?.length || 0)
+
     await transporter.sendMail(mailOptions)
 
     return res.status(200).json({ success: true, message: 'Email verzonden' })
