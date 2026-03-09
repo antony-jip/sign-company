@@ -3,6 +3,7 @@ export interface EmailContact {
   email: string
   company?: string
   phone?: string
+  klantId?: string
   isCustomer: boolean
   subscribedNewsletter: boolean
   tags: string[]

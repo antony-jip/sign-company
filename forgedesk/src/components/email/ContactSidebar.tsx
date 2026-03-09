@@ -88,6 +88,15 @@ export interface QuickTaskData {
   beschrijving: string
 }
 
+export interface ContactEmail {
+  id: string
+  onderwerp: string
+  datum: string
+  map: string
+  van: string
+  aan: string
+}
+
 interface ContactSidebarProps {
   contact: EmailContact | null
   senderName: string
@@ -95,6 +104,7 @@ interface ContactSidebarProps {
   senderCompany?: string
   emailSubject?: string
   participants?: ConversationParticipant[]
+  contactEmails?: ContactEmail[]
   onAddCustomer: (email: string, data?: AddCustomerData) => void
   onSubscribeNewsletter: (email: string) => void
   onCreateProject?: (data: QuickProjectData) => void
@@ -807,6 +817,7 @@ export function ContactSidebar({
   senderCompany,
   emailSubject,
   participants = [],
+  contactEmails = [],
   onAddCustomer,
   onSubscribeNewsletter,
   onCreateProject,
@@ -1155,6 +1166,42 @@ export function ContactSidebar({
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {contactEmails.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Mail className="w-3 h-3 text-primary" />
+                    </span>
+                    Communicatie ({contactEmails.length})
+                  </h4>
+                  <div className="space-y-1.5">
+                    {contactEmails.slice(0, 10).map((em) => (
+                      <div key={em.id} className="bg-background rounded-lg border p-2">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          {em.map === 'verzonden' ? (
+                            <ArrowRight className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                          ) : (
+                            <Mail className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                          )}
+                          <span className="text-[10px] text-muted-foreground">
+                            {em.map === 'verzonden' ? 'Verzonden' : 'Ontvangen'}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground ml-auto">
+                            {new Date(em.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-foreground truncate">{em.onderwerp}</p>
+                      </div>
+                    ))}
+                    {contactEmails.length > 10 && (
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        +{contactEmails.length - 10} meer
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
