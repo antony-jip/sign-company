@@ -44,6 +44,8 @@ interface AppSettingsContextType {
   factuurOutroTekst: string
   // Offerte layout
   offerteToonM2: boolean
+  // Email
+  emailFetchLimit: number
   // Forgie
   forgieEnabled: boolean
 }
@@ -159,6 +161,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     factuurOutroTekst: settings.factuur_outro_tekst || '',
     // Offerte layout
     offerteToonM2: settings.offerte_toon_m2 ?? true,
+    // Email
+    emailFetchLimit: settings.email_fetch_limit ?? 200,
     // Forgie
     forgieEnabled: settings.forgie_enabled ?? true,
   }

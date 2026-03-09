@@ -1714,6 +1714,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     offerte_intro_tekst: '',
     offerte_outro_tekst: '',
     afzender_naam: '',
+    email_fetch_limit: 200,
     forgie_enabled: true,
     forgie_bedrijfscontext: '',
     ai_tone_of_voice: '',

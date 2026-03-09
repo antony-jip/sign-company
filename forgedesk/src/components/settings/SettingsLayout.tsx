@@ -950,6 +950,7 @@ const EMAIL_TABS: SubTab[] = [
   { id: 'handtekening', label: 'Handtekening', icon: FileText },
   { id: 'teamleden', label: 'Team Handtekeningen', icon: Users },
   { id: 'verbinding', label: 'Verbinding', icon: Server },
+  { id: 'algemeen', label: 'Algemeen', icon: Mail },
 ]
 
 function SignatureImageUpload({
@@ -1108,7 +1109,7 @@ function SignaturePreview({
 
 function EmailTab() {
   const { user } = useAuth()
-  const { refreshSettings, profile } = useAppSettings()
+  const { refreshSettings, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
   const [subTab, setSubTab] = useState('handtekening')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -1117,6 +1118,7 @@ function EmailTab() {
   const [afzenderNaam, setAfzenderNaam] = useState('')
   const [handtekeningAfbeelding, setHandtekeningAfbeelding] = useState('')
   const [afbeeldingGrootte, setAfbeeldingGrootte] = useState(64)
+  const [emailFetchLimit, setEmailFetchLimit] = useState(currentFetchLimit || 200)
 
   // Team signatures (admin only)
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
@@ -1453,6 +1455,58 @@ function EmailTab() {
           </Card>
           <EmailSettingsInline onSaved={checkEmailStatus} />
         </div>
+      )}
+
+      {subTab === 'algemeen' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              E-mail Voorkeuren
+            </CardTitle>
+            <CardDescription>Aantal emails dat bij opstarten wordt geladen</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label>Aantal mails bij opstarten</Label>
+              <Select
+                value={String(emailFetchLimit)}
+                onValueChange={(val) => setEmailFetchLimit(Number(val))}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="200">200</SelectItem>
+                  <SelectItem value="500">500</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Meer emails laden kan trager zijn bij een grote inbox.</p>
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={async () => {
+                  if (!user?.id) return
+                  try {
+                    setIsSaving(true)
+                    await updateAppSettings(user.id, { email_fetch_limit: emailFetchLimit })
+                    await refreshSettings()
+                    toast.success('E-mail voorkeuren opgeslagen')
+                  } catch {
+                    toast.error('Kon voorkeuren niet opslaan')
+                  } finally {
+                    setIsSaving(false)
+                  }
+                }}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Opslaan...' : 'Opslaan'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </>
   )
