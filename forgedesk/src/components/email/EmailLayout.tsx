@@ -109,6 +109,7 @@ export function EmailLayout() {
           email: clean,
           company: klant.bedrijfsnaam,
           phone: cp?.telefoon || klant.telefoon,
+          klantId: klant.id,
           isCustomer: true,
           subscribedNewsletter: false,
           tags: klant.tags || [],
@@ -148,6 +149,20 @@ export function EmailLayout() {
     if (viewMode === 'composing' && composeDefaults.to) return composeDefaults.to
     return ''
   }, [viewMode, selectedEmail, composeDefaults.to])
+
+  // ── Emails for this contact (sent + received) ──
+  const contactEmails = useMemo(() => {
+    const addr = currentSenderEmail?.toLowerCase()
+    if (!addr) return []
+    return emails
+      .filter((e) => {
+        const from = extractSenderEmail(e.van).toLowerCase()
+        const to = extractSenderEmail(e.aan).toLowerCase()
+        return from === addr || to === addr
+      })
+      .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+      .map((e) => ({ id: e.id, onderwerp: e.onderwerp, datum: e.datum, map: e.map, van: e.van, aan: e.aan }))
+  }, [emails, currentSenderEmail])
 
   // ── Email selection handler ──
   const handleSelectEmail = useCallback(async (email: Email) => {
@@ -325,12 +340,14 @@ export function EmailLayout() {
   }, [])
 
   const handleCreateTaskFromEmail = useCallback(async (email: Email, description: string) => {
+    const matchedContact = findContactByEmail(email.van)
     try {
       await createTaak({
         user_id: user?.id || '',
         project_id: '',
+        klant_id: matchedContact?.klantId || recentlyCreatedKlantId || '',
         titel: description,
-        beschrijving: `Aangemaakt vanuit email: "${email.onderwerp}"\nVan: ${email.van}\nDatum: ${email.datum}`,
+        beschrijving: `Aangemaakt vanuit email: "${email.onderwerp}"\nVan: ${email.van}\nDatum: ${email.datum}\nEmail ID: ${email.id}`,
         status: 'todo',
         prioriteit: 'medium',
         toegewezen_aan: '',
@@ -342,7 +359,7 @@ export function EmailLayout() {
       logger.error('Taak aanmaken mislukt:', err)
       toast.error('Kon taak niet aanmaken')
     }
-  }, [user])
+  }, [user, findContactByEmail, recentlyCreatedKlantId])
 
   // Clear recently created klant when switching emails
   useEffect(() => {
@@ -398,12 +415,14 @@ export function EmailLayout() {
   }, [user?.id, recentlyCreatedKlantId])
 
   const handleQuickTaskFromEmail = useCallback(async (data: { titel: string; beschrijving: string }) => {
+    const matchedContact = selectedEmail ? findContactByEmail(selectedEmail.van) : null
     try {
       await createTaak({
         user_id: user?.id || '',
         project_id: '',
+        klant_id: matchedContact?.klantId || recentlyCreatedKlantId || '',
         titel: data.titel,
-        beschrijving: data.beschrijving + (selectedEmail ? `\n\nVanuit email: "${selectedEmail.onderwerp}"` : ''),
+        beschrijving: data.beschrijving + (selectedEmail ? `\n\nVanuit email: "${selectedEmail.onderwerp}"\nEmail ID: ${selectedEmail.id}` : ''),
         status: 'todo',
         prioriteit: 'medium',
         toegewezen_aan: '',
@@ -416,7 +435,7 @@ export function EmailLayout() {
       logger.error('Taak aanmaken mislukt:', err)
       toast.error('Kon taak niet aanmaken')
     }
-  }, [user?.id, selectedEmail])
+  }, [user?.id, selectedEmail, findContactByEmail, recentlyCreatedKlantId])
 
   const handleNavigateToOfferte = useCallback((_klantId?: string) => {
     window.location.hash = '#/offertes/nieuw'
@@ -929,6 +948,7 @@ export function EmailLayout() {
                     senderEmail={currentSenderEmail}
                     senderCompany={currentContact?.company}
                     emailSubject={selectedEmail?.onderwerp}
+                    contactEmails={contactEmails}
                     onAddCustomer={handleAddCustomer}
                     onSubscribeNewsletter={handleSubscribeNewsletter}
                     onCreateProject={handleCreateProjectFromEmail}
