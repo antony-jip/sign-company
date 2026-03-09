@@ -52,7 +52,7 @@ import { logger } from '../../utils/logger'
 import type { Klant } from '@/types'
 import { callForgie, getForgieUsage } from '@/services/forgieService'
 import type { ForgieAction } from '@/services/forgieService'
-import { Loader2, Globe } from 'lucide-react'
+import { Loader2, Globe, RefreshCw } from 'lucide-react'
 
 interface EmailComposeProps {
   open: boolean
@@ -276,6 +276,8 @@ export function EmailCompose({
   const [forgieLoading, setForgieLoading] = useState(false)
   const [forgieOriginalText, setForgieOriginalText] = useState<string | null>(null)
   const [forgieUsage, setForgieUsage] = useState<{ usage: number; limiet: number } | null>(null)
+  const [forgieSuggestion, setForgieSuggestion] = useState<string | null>(null)
+  const [forgieLastAction, setForgieLastAction] = useState<ForgieAction | null>(null)
   const forgieMenuRef = useRef<HTMLDivElement>(null)
 
   const scheduleDropdownRef = useRef<HTMLDivElement>(null)
@@ -541,29 +543,37 @@ export function EmailCompose({
     }
     setForgieLoading(true)
     setShowForgieMenu(false)
+    setForgieLastAction(action)
     setForgieOriginalText(currentText)
     try {
       const result = await callForgie(action, currentText)
-      if (editorRef.current) {
-        editorRef.current.innerText = result.result
-        setEditorEmpty(false)
-      }
-      toast('Forgie heeft de tekst herschreven', {
-        action: {
-          label: 'Ongedaan maken',
-          onClick: () => {
-            if (editorRef.current && forgieOriginalText) {
-              editorRef.current.innerText = forgieOriginalText
-              setEditorEmpty(!forgieOriginalText.trim())
-            }
-          },
-        },
-      })
+      setForgieSuggestion(result.result)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Forgie is niet beschikbaar')
     } finally {
       setForgieLoading(false)
     }
+  }
+
+  const handleForgieApply = () => {
+    if (editorRef.current && forgieSuggestion) {
+      editorRef.current.innerText = forgieSuggestion
+      setEditorEmpty(false)
+    }
+    setForgieSuggestion(null)
+    setForgieLastAction(null)
+  }
+
+  const handleForgieRetry = () => {
+    if (forgieLastAction) {
+      setForgieSuggestion(null)
+      handleForgieAction(forgieLastAction)
+    }
+  }
+
+  const handleForgieDismiss = () => {
+    setForgieSuggestion(null)
+    setForgieLastAction(null)
   }
 
   const handleForgieMenuOpen = async () => {
@@ -663,7 +673,7 @@ export function EmailCompose({
   return (
     <div
       className={cn(
-        'flex flex-col',
+        'relative flex flex-col',
         isFullscreen
           ? 'fixed inset-0 z-50 bg-background'
           : 'h-full'
@@ -1223,6 +1233,54 @@ export function EmailCompose({
           </div>
         </div>
       </div>
+
+      {/* ── AI Suggestie Popup ── */}
+      {forgieSuggestion && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px] rounded-2xl">
+          <div
+            className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl flex flex-col"
+            style={{ minWidth: 420, minHeight: 200, maxHeight: '60vh', width: '80%', maxWidth: 600 }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blush-deep" />
+                <span className="text-sm font-semibold text-foreground">AI Suggestie</span>
+              </div>
+              <button
+                onClick={handleForgieDismiss}
+                className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content — scrollbaar */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                {forgieSuggestion}
+              </p>
+            </div>
+
+            {/* Sticky footer knoppen */}
+            <div className="flex items-center gap-2 px-5 py-3.5 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
+              <Button size="sm" className="gap-1.5" onClick={handleForgieApply}>
+                Toepassen
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleForgieRetry} disabled={forgieLoading}>
+                {forgieLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                Opnieuw
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+                setForgieSuggestion(null)
+                setShowForgieMenu(true)
+              }}>
+                Ander
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
