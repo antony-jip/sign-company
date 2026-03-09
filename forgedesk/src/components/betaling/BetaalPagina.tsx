@@ -13,7 +13,7 @@ import {
   Calendar,
   Building2,
 } from 'lucide-react'
-import { getFactuurByBetaalToken, markFactuurBekeken, getProfile } from '@/services/supabaseService'
+import { getFactuurByBetaalToken, markFactuurBekeken, getProfile, getAppSettings } from '@/services/supabaseService'
 import type { Factuur, Profile } from '@/types'
 
 // ============ EPC QR CODE GENERATOR (inline, no external lib) ============
@@ -133,6 +133,8 @@ export function BetaalPagina() {
   const [isLoading, setIsLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [mollieEnabled, setMollieEnabled] = useState(false)
+  const [mollieLoading, setMollieLoading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -153,6 +155,12 @@ export function BetaalPagina() {
             getProfile(data.user_id!).then((p) => {
               if (!cancelled && p) setCompanyProfile(p)
             }).catch(() => {})
+            // Check of Mollie ingeschakeld is voor deze gebruiker
+            if (data.user_id) {
+              getAppSettings(data.user_id).then((s) => {
+                if (!cancelled) setMollieEnabled(s.mollie_enabled ?? false)
+              }).catch(() => {})
+            }
           } else {
             setNotFound(true)
           }
@@ -166,6 +174,33 @@ export function BetaalPagina() {
     load()
     return () => { cancelled = true }
   }, [token])
+
+  const handleMolliePay = async () => {
+    if (!factuur) return
+    setMollieLoading(true)
+    try {
+      const openBedrag = Math.max(0, factuur.totaal - factuur.betaald_bedrag)
+      const response = await fetch('/api/mollie-create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          factuur_id: factuur.id,
+          bedrag: openBedrag,
+          omschrijving: `Factuur ${factuur.nummer}`,
+          redirect_url: `${window.location.origin}/betaald?factuur_id=${factuur.id}`,
+          user_id: factuur.user_id,
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Betaling aanmaken mislukt')
+      if (data.payment_url) {
+        window.location.href = data.payment_url
+      }
+    } catch {
+      // Fallback: toon bankgegevens als Mollie niet werkt
+      setMollieLoading(false)
+    }
+  }
 
   const handleCopyIban = useCallback((iban: string) => {
     navigator.clipboard.writeText(iban.replace(/\s/g, '')).then(() => {
@@ -343,11 +378,37 @@ export function BetaalPagina() {
           </CardContent>
         </Card>
 
-        {/* Betaalinformatie + QR */}
+        {/* Mollie online betaling */}
+        {!isBetaald && mollieEnabled && (
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardContent className="p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">Direct online betalen</h3>
+              <p className="text-sm text-muted-foreground">
+                Betaal veilig via iDEAL, creditcard, Bancontact of andere betaalmethoden.
+              </p>
+              <Button
+                onClick={handleMolliePay}
+                disabled={mollieLoading}
+                className="w-full h-12 text-base font-semibold gap-2"
+                size="lg"
+              >
+                {mollieLoading ? (
+                  <><Loader2 className="h-5 w-5 animate-spin" /> Doorsturen naar betaalpagina...</>
+                ) : (
+                  <>Betaal nu — {formatCurrency(Math.max(0, factuur.totaal - factuur.betaald_bedrag))}</>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Betaalinformatie + QR (IBAN / bankoverschrijving) */}
         {!isBetaald && (
           <Card>
             <CardContent className="p-6 space-y-6">
-              <h3 className="text-lg font-semibold text-foreground">Betaalinformatie</h3>
+              <h3 className="text-lg font-semibold text-foreground">
+                {mollieEnabled ? 'Of betaal via bankoverschrijving' : 'Betaalinformatie'}
+              </h3>
 
               <div className="flex flex-col md:flex-row gap-6">
                 {/* QR Code */}

@@ -1908,6 +1908,7 @@ const INTEGRATIES_TABS: SubTab[] = [
 
 function IntegratiesTab() {
   const [subTab, setSubTab] = useState('koppelingen')
+  const { user } = useAuth()
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
   const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
   // Anthropic key is server-side only (configured via ANTHROPIC_API_KEY env var on Vercel)
@@ -1915,6 +1916,35 @@ function IntegratiesTab() {
 
   const [emailConnected, setEmailConnected] = useState(false)
   const [emailAddress, setEmailAddress] = useState<string | null>(null)
+
+  // Mollie state
+  const [mollieEnabled, setMollieEnabled] = useState(false)
+  const [mollieApiKey, setMollieApiKey] = useState('')
+  const [mollieSaving, setMollieSaving] = useState(false)
+  const [mollieLoaded, setMollieLoaded] = useState(false)
+
+  useEffect(() => {
+    if (!user?.id) return
+    getAppSettings(user.id).then((s) => {
+      setMollieEnabled(s.mollie_enabled ?? false)
+      setMollieApiKey(s.mollie_api_key ?? '')
+      setMollieLoaded(true)
+    }).catch(() => {})
+  }, [user?.id])
+
+  const handleMollieSave = async () => {
+    if (!user?.id) return
+    setMollieSaving(true)
+    try {
+      await updateAppSettings(user.id, { mollie_enabled: mollieEnabled, mollie_api_key: mollieApiKey })
+      toast.success('Mollie instellingen opgeslagen')
+    } catch (err) {
+      logger.error('Fout bij opslaan Mollie instellingen:', err)
+      toast.error('Kon Mollie instellingen niet opslaan')
+    } finally {
+      setMollieSaving(false)
+    }
+  }
 
   // Check email connection status on mount and after save
   const checkEmailStatus = useCallback(() => {
@@ -1980,6 +2010,18 @@ function IntegratiesTab() {
       ),
       details: 'Optioneel — zonder API key worden demogegevens gebruikt',
     },
+    {
+      id: 'mollie',
+      name: 'Mollie',
+      description: 'Online betalingen via iDEAL, creditcard, Bancontact en meer',
+      connected: mollieLoaded && mollieEnabled && !!mollieApiKey,
+      icon: (
+        <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+          <CreditCard className="w-5 h-5 text-orange-700 dark:text-orange-400" />
+        </div>
+      ),
+      details: mollieEnabled && mollieApiKey ? `API key: ${mollieApiKey.substring(0, 8)}...` : undefined,
+    },
   ]
 
   return (
@@ -2044,6 +2086,69 @@ function IntegratiesTab() {
       <EmailSettingsInline
         onSaved={checkEmailStatus}
       />
+
+      {/* ── Mollie Instellingen ── */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <CreditCard className="w-5 h-5 text-orange-700 dark:text-orange-400" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">Mollie Betalingen</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Vul je Mollie API key in. Klanten kunnen dan direct betalen via de betaalpagina.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="mollie-enabled" className="text-sm font-medium">
+                  Mollie betalingen inschakelen
+                </Label>
+                <Switch
+                  id="mollie-enabled"
+                  checked={mollieEnabled}
+                  onCheckedChange={setMollieEnabled}
+                />
+              </div>
+
+              {mollieEnabled && (
+                <div className="space-y-2">
+                  <Label htmlFor="mollie-api-key" className="text-sm font-medium">
+                    Mollie API key
+                  </Label>
+                  <Input
+                    id="mollie-api-key"
+                    type="password"
+                    value={mollieApiKey}
+                    onChange={(e) => setMollieApiKey(e.target.value)}
+                    placeholder="live_... of test_..."
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Je vindt je API key in het{' '}
+                    <a
+                      href="https://my.mollie.com/dashboard/developers/api-keys"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline inline-flex items-center gap-0.5"
+                    >
+                      Mollie Dashboard <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button onClick={handleMollieSave} disabled={mollieSaving} size="sm">
+                  {mollieSaving ? 'Opslaan...' : 'Opslaan'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
     </>
   )

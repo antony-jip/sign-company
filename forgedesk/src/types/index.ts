@@ -549,6 +549,9 @@ export interface AppSettings {
   forgie_bedrijfscontext: string;
   // AI schrijfstijl per gebruiker
   ai_tone_of_voice: string;
+  // Mollie betaalintegratie
+  mollie_api_key?: string;
+  mollie_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -774,6 +777,7 @@ export interface Factuur {
   betaal_token?: string;
   betaal_link?: string;
   betaal_methode?: 'handmatig' | 'link' | 'qr';
+  mollie_payment_id?: string;
   online_bekeken?: boolean;
   online_bekeken_op?: string;
   // Teksten
@@ -886,6 +890,18 @@ export interface MontageAfspraak {
   notities: string;
   created_at: string;
   updated_at: string;
+}
+
+// ============ PROJECT FOTO'S ============
+
+export interface ProjectFoto {
+  id: string;
+  user_id: string;
+  project_id: string;
+  url: string;
+  omschrijving: string;
+  type: string;
+  created_at: string;
 }
 
 // ============ VERLOF & BESCHIKBAARHEID (Feature 3) ============

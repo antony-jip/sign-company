@@ -479,6 +479,50 @@ export function EmailCompose({
     setAttachments(prev => prev.filter((_, i) => i !== index))
   }, [])
 
+  // Drag & drop for attachments
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length > 0) {
+      setAttachments((prev) => [...prev, ...files])
+      toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} toegevoegd`)
+    }
+  }, [])
+
+  // Ref to latest handleSend so the keyboard effect doesn't go stale
+  const handleSendRef = useRef<() => void>(() => {})
+
+  // Ctrl+Enter to send
+  useEffect(() => {
+    if (!open) return
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        handleSendRef.current()
+      }
+      if (e.key === 'Escape' && isFullscreen) {
+        e.preventDefault()
+        setIsFullscreen(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, isFullscreen])
+
   const handleTemplateChange = (value: string) => {
     setTemplate(value)
     if (value !== 'none' && emailTemplates[value] && editorRef.current) {
@@ -605,47 +649,7 @@ export function EmailCompose({
       setIsSending(false)
     }
   }
-
-  // Ctrl+Enter to send
-  useEffect(() => {
-    if (!open) return
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault()
-        handleSend()
-      }
-      if (e.key === 'Escape' && isFullscreen) {
-        e.preventDefault()
-        setIsFullscreen(false)
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, isFullscreen])
-
-  // Drag & drop for attachments
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) {
-      setAttachments((prev) => [...prev, ...files])
-      toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} toegevoegd`)
-    }
-  }, [])
+  handleSendRef.current = handleSend
 
   const resetAndClose = () => {
     setTo(defaultTo)
