@@ -1719,6 +1719,8 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     forgie_enabled: true,
     forgie_bedrijfscontext: '',
     ai_tone_of_voice: '',
+    mollie_api_key: '',
+    mollie_enabled: false,
     created_at: now(),
     updated_at: now(),
   }
