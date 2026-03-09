@@ -2099,7 +2099,27 @@ export function QuoteCreation() {
 
                   <Separator />
 
-                  <Textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={8} className="resize-y" placeholder="Schrijf uw bericht hier..." />
+                  <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <Mail className="h-3.5 w-3.5" />
+                      Email preview — HTML template
+                    </div>
+                    <div className="text-sm text-foreground/80 space-y-2">
+                      <p>Beste {selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || 'klant'},</p>
+                      <p>Hierbij ontvangt u onze offerte <strong>{offerteNummer}</strong> voor <strong>{offerteTitel}</strong>.</p>
+                      <div className="bg-card rounded border border-border p-3 text-xs space-y-1">
+                        <p><strong>Totaalbedrag:</strong> {formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                        <p><strong>Geldig tot:</strong> {geldigTot ? new Date(geldigTot).toLocaleDateString('nl-NL') : '-'}</p>
+                      </div>
+                      <div className="flex items-center gap-2 py-1">
+                        <span className="inline-block px-4 py-2 rounded-md text-xs font-semibold text-white" style={{ backgroundColor: primaireKleur || '#2941aa' }}>
+                          Offerte bekijken →
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Heeft u vragen? Neem gerust contact op.</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground/60">De klant ontvangt een professionele HTML email met uw bedrijfslogo, huisstijlkleur en een directe link naar de offerte.</p>
+                  </div>
 
                   <Separator />
 
