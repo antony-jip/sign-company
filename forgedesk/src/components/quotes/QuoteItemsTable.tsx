@@ -232,10 +232,10 @@ async function saveBijlageToProject(
       naam: fileName,
       type: fileType,
       grootte: fileSize,
-      map: 'Offerte bijlagen',
+      map: "Situatiefoto's",
       storage_path: storagePath,
       status: 'definitief',
-      tags: ['foto', 'offerte-bijlage'],
+      tags: ['foto', 'situatie', 'offerte-bijlage'],
       gedeeld_met: [],
       beschrijving: itemBeschrijving ? `Bijlage bij: ${itemBeschrijving}` : '',
     })
