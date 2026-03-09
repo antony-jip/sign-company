@@ -1494,7 +1494,8 @@ function EmailTab() {
                     await updateAppSettings(user.id, { email_fetch_limit: emailFetchLimit })
                     await refreshSettings()
                     toast.success('E-mail voorkeuren opgeslagen')
-                  } catch {
+                  } catch (err) {
+                    console.error('[SettingsLayout] Email voorkeuren opslaan mislukt:', err)
                     toast.error('Kon voorkeuren niet opslaan')
                   } finally {
                     setIsSaving(false)
