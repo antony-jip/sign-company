@@ -34,10 +34,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=no_credentials`)
     }
 
-    // 2. Wissel code in voor tokens
+    // 2. Wissel code in voor tokens (Basic auth header is verplicht bij Exact Online)
+    const credentials = Buffer.from(`${settings.exact_online_client_id}:${settings.exact_online_client_secret}`).toString('base64')
     const tokenResponse = await fetch(EXACT_TOKEN_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${credentials}`,
+      },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code,
