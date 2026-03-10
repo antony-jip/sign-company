@@ -91,7 +91,7 @@ export async function sendEmail(
   to: string,
   subject: string,
   body: string,
-  options?: { cc?: string; html?: string; scheduledAt?: string }
+  options?: { cc?: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }
 ): Promise<{ success: boolean; message: string }> {
   const credentials = getLocalEmailCredentials()
 
@@ -107,6 +107,7 @@ export async function sendEmail(
       body,
       cc: options?.cc,
       html: options?.html,
+      attachments: options?.attachments,
     }),
   })
 
