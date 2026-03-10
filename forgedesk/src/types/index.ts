@@ -1376,6 +1376,7 @@ export interface InkoopOfferte {
   user_id: string;
   leverancier_naam: string;
   project_id?: string;
+  offerte_id?: string;
   bestand_url?: string;
   datum: string;
   totaal: number;

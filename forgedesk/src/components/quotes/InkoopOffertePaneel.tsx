@@ -21,6 +21,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   getInkoopOffertes,
+  getInkoopOffertesByOfferte,
   createInkoopOfferte,
   createInkoopRegel,
   deleteInkoopOfferte,
@@ -52,11 +53,12 @@ interface GeanalyseerdeRegel {
 
 interface InkoopOffertePaneelProps {
   userId: string
+  offerteId?: string
   onRegelToevoegen: (regel: InkoopRegel) => void
   onRegelAlsPrijsvariant?: (regel: InkoopRegel, leverancier: string) => void
 }
 
-export function InkoopOffertePaneel({ userId, onRegelToevoegen, onRegelAlsPrijsvariant }: InkoopOffertePaneelProps) {
+export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onRegelAlsPrijsvariant }: InkoopOffertePaneelProps) {
   const { session } = useAuth()
 
   // Opgeslagen offertes
@@ -93,15 +95,17 @@ export function InkoopOffertePaneel({ userId, onRegelToevoegen, onRegelAlsPrijsv
     return namen.filter(n => n.toLowerCase().includes(leverancierNaam.toLowerCase()))
   }, [offertes, leverancierNaam])
 
-  // Laad offertes
+  // Laad offertes (gefilterd op offerte als offerteId meegegeven)
   const loadOffertes = useCallback(async () => {
     try {
-      const data = await getInkoopOffertes(userId)
+      const data = offerteId
+        ? await getInkoopOffertesByOfferte(offerteId)
+        : await getInkoopOffertes(userId)
       setOffertes(data)
     } catch (err) {
       logger.error('Inkoop offertes laden mislukt:', err)
     }
-  }, [userId])
+  }, [userId, offerteId])
 
   // Laad bij mount
   useEffect(() => {
@@ -214,6 +218,7 @@ export function InkoopOffertePaneel({ userId, onRegelToevoegen, onRegelAlsPrijsv
         leverancier_naam: leverancierNaam.trim(),
         datum: new Date().toISOString().split('T')[0],
         totaal,
+        ...(offerteId ? { offerte_id: offerteId } : {}),
       })
 
       await Promise.all(geanalyseerdeRegels.map((regel) =>

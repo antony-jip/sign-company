@@ -2114,37 +2114,6 @@ export function QuoteCreation() {
             </CardContent>
           </Card>
 
-          {/* ── Inkoopoffertes (collapsible) ── */}
-          {user?.id && (
-            <Card>
-              <CardHeader className="pb-0 cursor-pointer" onClick={() => setInkoopPaneelOpen(!inkoopPaneelOpen)}>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center"><ShoppingCart className="h-3.5 w-3.5 text-white" /></div>
-                    Inkoopoffertes
-                    <span className="text-xs text-muted-foreground font-normal ml-1">leveranciersprijzen</span>
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs gap-1.5 h-7"
-                  >
-                    {inkoopPaneelOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </CardHeader>
-              {inkoopPaneelOpen && (
-                <CardContent className="pt-4">
-                  <InkoopOffertePaneel
-                    userId={user.id}
-                    onRegelToevoegen={handleInkoopRegelToevoegen}
-                    onRegelAlsPrijsvariant={handleInkoopRegelAlsPrijsvariant}
-                  />
-                </CardContent>
-              )}
-            </Card>
-          )}
-
           {/* ── Items ── */}
           <Card>
             <CardHeader className="pb-3">
@@ -2744,6 +2713,35 @@ export function QuoteCreation() {
                   </div>
                 </div>
               </div>
+
+              {/* ── INKOOPOFFERTES CARD ── */}
+              {user?.id && (
+                <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
+                  <button
+                    onClick={() => setInkoopPaneelOpen(!inkoopPaneelOpen)}
+                    className="w-full flex items-center gap-2 px-4 py-3 bg-background/80 dark:bg-foreground/80/50 border-b border-border dark:border-border hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center flex-shrink-0">
+                      <ShoppingCart className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-semibold text-foreground">Inkoopoffertes</p>
+                      <p className="text-[11px] text-muted-foreground">Leveranciersprijzen</p>
+                    </div>
+                    {inkoopPaneelOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+                  </button>
+                  {inkoopPaneelOpen && (
+                    <div className="p-4">
+                      <InkoopOffertePaneel
+                        userId={user.id}
+                        offerteId={editOfferteId || autoSaveIdRef.current || undefined}
+                        onRegelToevoegen={handleInkoopRegelToevoegen}
+                        onRegelAlsPrijsvariant={handleInkoopRegelAlsPrijsvariant}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>{/* end RIGHT SIDEBAR */}
