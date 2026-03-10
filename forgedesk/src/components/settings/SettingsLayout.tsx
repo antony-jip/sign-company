@@ -1911,6 +1911,7 @@ const INTEGRATIES_TABS: SubTab[] = [
 function IntegratiesTab() {
   const [subTab, setSubTab] = useState('koppelingen')
   const { user } = useAuth()
+  const { refreshSettings } = useAppSettings()
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
   const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
   // Anthropic key is server-side only (configured via ANTHROPIC_API_KEY env var on Vercel)
@@ -2397,6 +2398,7 @@ function IntegratiesTab() {
                               probo_api_key: proboApiKey,
                               probo_enabled: true,
                             })
+                            await refreshSettings()
                           }
                           const { default: supabase } = await import('@/services/supabaseClient')
                           const { data: { session: authSession } } = await supabase.auth.getSession()
@@ -2452,6 +2454,7 @@ function IntegratiesTab() {
                         probo_api_key: proboApiKey,
                         probo_enabled: proboEnabled,
                       })
+                      await refreshSettings()
                       toast.success('Probo instellingen opgeslagen')
                     } catch (err) {
                       logger.error('Fout bij opslaan Probo instellingen:', err)
