@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowUp, Check, Menu, X,
+  ArrowUp, ArrowRight, Check, Menu, X,
   Shield, Zap, Users,
-  TrendingDown, TrendingUp,
-  Minus, Plus, ChevronRight,
+  Minus, Plus, ChevronDown,
   Phone, MessageCircle,
-  Sparkles, Image, Send, MessageSquare, Brain, Database,
-  Wand2, Mail, FileText, BarChart3, Eye,
+  Sparkles, Send, Brain, Database,
+  FileText, BarChart3, Calendar, ClipboardCheck,
+  Layers, Clock, Mail, PenTool,
 } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════
@@ -40,46 +40,6 @@ function useScrollY() {
   return scrollY
 }
 
-function useTypewriter(phrases: string[], typingSpeed = 50, pauseMs = 2500) {
-  const [text, setText] = useState('')
-  const [phraseIndex, setPhraseIndex] = useState(0)
-  const [charIndex, setCharIndex] = useState(0)
-  const [isDeleting, setIsDeleting] = useState(false)
-
-  useEffect(() => {
-    const current = phrases[phraseIndex]
-    if (!current) return
-
-    if (!isDeleting && charIndex < current.length) {
-      const t = setTimeout(() => {
-        setText(current.slice(0, charIndex + 1))
-        setCharIndex((c: number) => c + 1)
-      }, typingSpeed)
-      return () => clearTimeout(t)
-    }
-
-    if (!isDeleting && charIndex === current.length) {
-      const t = setTimeout(() => setIsDeleting(true), pauseMs)
-      return () => clearTimeout(t)
-    }
-
-    if (isDeleting && charIndex > 0) {
-      const t = setTimeout(() => {
-        setText(current.slice(0, charIndex - 1))
-        setCharIndex((c: number) => c - 1)
-      }, 30)
-      return () => clearTimeout(t)
-    }
-
-    if (isDeleting && charIndex === 0) {
-      setIsDeleting(false)
-      setPhraseIndex((i: number) => (i + 1) % phrases.length)
-    }
-  }, [charIndex, isDeleting, phraseIndex, phrases, typingSpeed, pauseMs])
-
-  return text
-}
-
 function useCountUp(end: number, duration = 2000, trigger = false) {
   const [value, setValue] = useState(0)
   const started = useRef(false)
@@ -102,24 +62,22 @@ function useCountUp(end: number, duration = 2000, trigger = false) {
   return value
 }
 
-function useScrollReveal() {
+function useFadeUp() {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const children = el.querySelectorAll(
-      '.reveal-up, .reveal-left, .reveal-right, .reveal-scale'
-    )
+    const children = el.querySelectorAll('.lf-fade-up')
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('revealed')
+            entry.target.classList.add('is-visible')
           }
         })
       },
-      { threshold: 0.15 }
+      { threshold: 0.1 }
     )
     children.forEach((c: Element) => obs.observe(c))
     return () => obs.disconnect()
@@ -133,35 +91,15 @@ function useScrollReveal() {
 // ═══════════════════════════════════════════════════════════
 
 const COLORS = {
-  blush: '#EDCFC4',
-  'blush-d': '#B8806A',
-  sage: '#B8CCBE',
-  'sage-d': '#4E7A58',
-  mist: '#BCCAD6',
-  'mist-d': '#4A6E8A',
-  cream: '#E2DCCB',
-  'cream-d': '#8A7E60',
-  lavender: '#D5CCE6',
-  'lavender-d': '#6B5B8A',
-  peach: '#F5D5C8',
-  'peach-d': '#C4735A',
+  bg: '#FAFAF8',
+  fg: '#1a1a1a',
+  coral: '#E8866A',
+  sage: '#7EB5A6',
+  gold: '#C4A882',
+  purple: '#9B8EC4',
+  blue: '#8BAFD4',
+  border: '#E8E5DE',
 }
-
-const TYPEWRITER_PHRASES = [
-  'Van eerste schets tot laatste factuur.',
-  'Van offerte tot werkbon in een klik.',
-  'Van planning tot betaling zonder gedoe.',
-]
-
-const STEP_COLORS = [
-  { bg: 'bg-blush', text: 'text-blush-deep', border: 'border-t-[#B8806A]' },
-  { bg: 'bg-sage', text: 'text-sage-deep', border: 'border-t-[#4E7A58]' },
-  { bg: 'bg-mist', text: 'text-mist-deep', border: 'border-t-[#4A6E8A]' },
-  { bg: 'bg-cream', text: 'text-cream-deep', border: 'border-t-[#8A7E60]' },
-  { bg: 'bg-blush', text: 'text-blush-deep', border: 'border-t-[#B8806A]' },
-]
-
-const STEP_LABELS = ['Klant', 'Offerte', 'Planning', 'Werkbon', 'Factuur']
 
 const PRICING_FEATURES = [
   'Onbeperkt medewerkers',
@@ -180,21 +118,35 @@ const PRICING_FEATURES = [
   'Forgie AI-assistent',
 ]
 
-const MARQUEE_ITEMS = [
-  { label: 'Signbedrijven', color: 'bg-blush text-[#B8806A] border border-[#B8806A]/20' },
-  { label: 'Interieurbouwers', color: 'bg-sage text-[#4E7A58] border border-[#4E7A58]/20' },
-  { label: 'Reclamemakers', color: 'bg-mist text-[#4A6E8A] border border-[#4A6E8A]/20' },
-  { label: 'Standbouwers', color: 'bg-cream text-[#8A7E60] border border-[#8A7E60]/20' },
-  { label: 'Schilders', color: 'bg-lavender text-[#6B5B8A] border border-[#6B5B8A]/20' },
-  { label: 'Installateurs', color: 'bg-peach text-[#C4735A] border border-[#C4735A]/20' },
-  { label: 'Drukkerijen', color: 'bg-mist text-[#4A6E8A] border border-[#4A6E8A]/20' },
-  { label: 'Wrappers', color: 'bg-blush text-[#B8806A] border border-[#B8806A]/20' },
-  { label: 'Productiebedrijven', color: 'bg-sage text-[#4E7A58] border border-[#4E7A58]/20' },
-  { label: 'Meubelmakers', color: 'bg-cream text-[#8A7E60] border border-[#8A7E60]/20' },
+const FAQ_ITEMS = [
+  {
+    q: 'Is FORGEdesk geschikt voor mijn branche?',
+    a: 'FORGEdesk is gebouwd voor de creatieve maakbranche — signbedrijven, interieurbouwers, reclamemakers, standbouwers, schilders, installateurs en meer. Als je iets maakt met je handen en offertes, werkbonnen en facturen nodig hebt, past FORGEdesk perfect.',
+  },
+  {
+    q: 'Wat kost FORGEdesk na de proefperiode?',
+    a: 'FORGEdesk kost €49 per maand per bedrijf. Geen kosten per gebruiker — je kunt onbeperkt medewerkers toevoegen. Alle features zijn inbegrepen, inclusief AI-tools.',
+  },
+  {
+    q: 'Kan ik mijn data importeren?',
+    a: 'Ja, je kunt klanten, producten en prijslijsten importeren via CSV. Ons team helpt je gratis met de migratie vanuit je huidige systeem.',
+  },
+  {
+    q: 'Hoe werkt de AI Signing Visualizer?',
+    a: 'Upload een foto van een gevel, voertuig of pui. Beschrijf wat je wilt (bijv. "LED doosletters boven de deur") en onze AI genereert een fotorealistische mockup. Je kunt deze direct aan een offerte koppelen en naar je klant sturen.',
+  },
+  {
+    q: 'Is mijn data veilig?',
+    a: 'Absoluut. FORGEdesk draait op Supabase met enterprise-grade beveiliging. Je data wordt versleuteld opgeslagen en er worden dagelijks backups gemaakt. We delen nooit data met derden.',
+  },
+  {
+    q: 'Kan ik FORGEdesk op mijn telefoon gebruiken?',
+    a: 'Ja. FORGEdesk werkt volledig in de browser en is geoptimaliseerd voor mobiel. Je monteurs kunnen werkbonnen invullen, foto\'s toevoegen en klanten laten tekenen — allemaal op hun telefoon.',
+  },
 ]
 
 // ═══════════════════════════════════════════════════════════
-// NAVBAR
+// NAVBAR — Glassmorphism
 // ═══════════════════════════════════════════════════════════
 
 function Navbar() {
@@ -211,68 +163,57 @@ function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           scrolled
-            ? 'bg-white/80 backdrop-blur-xl border-b border-[#E8E5DE] shadow-sm'
+            ? 'lf-glass-nav bg-[#FAFAF8]/70 border-b border-[#E8E5DE]/60 shadow-sm'
             : 'bg-transparent'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-[72px] flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-white text-sm"
+              className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-sm"
               style={{
-                background: `linear-gradient(135deg, ${COLORS.blush}, ${COLORS.mist})`,
+                background: `linear-gradient(135deg, ${COLORS.coral}, ${COLORS.sage})`,
               }}
             >
               F
             </div>
-            <span className="font-black text-[#0A0A0A] text-lg tracking-tight">
+            <span className="font-black text-[#1a1a1a] text-lg tracking-tight">
               FORGEdesk
             </span>
           </div>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
-            <button
-              onClick={() => scrollTo('features')}
-              className="nav-link-hover text-sm font-medium text-[#555] hover:text-[#0A0A0A] transition-colors"
-            >
-              Features
-            </button>
-            <button
-              onClick={() => scrollTo('ai-tools')}
-              className="nav-link-hover text-sm font-medium text-[#555] hover:text-[#0A0A0A] transition-colors flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#6B5B8A]" />
-              AI Tools
-            </button>
-            <button
-              onClick={() => scrollTo('hoe-het-werkt')}
-              className="nav-link-hover text-sm font-medium text-[#555] hover:text-[#0A0A0A] transition-colors"
-            >
-              Hoe het werkt
-            </button>
-            <button
-              onClick={() => scrollTo('prijzen')}
-              className="nav-link-hover text-sm font-medium text-[#555] hover:text-[#0A0A0A] transition-colors"
-            >
-              Prijzen
-            </button>
+            {[
+              { label: 'Features', id: 'features' },
+              { label: 'Hoe het werkt', id: 'hoe-het-werkt' },
+              { label: 'Prijzen', id: 'prijzen' },
+              { label: 'FAQ', id: 'faq' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                className="text-sm font-medium text-[#777] hover:text-[#1a1a1a] transition-colors duration-300"
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
             <Link
               to="/login"
-              className="text-sm font-medium text-[#555] hover:text-[#0A0A0A] transition-colors"
+              className="text-sm font-medium text-[#777] hover:text-[#1a1a1a] transition-colors"
             >
               Inloggen
             </Link>
             <Link
               to="/register"
-              className="bg-[#0A0A0A] text-white rounded-[12px] px-5 py-2.5 text-sm font-bold hover:bg-[#1a1a1a] transition-colors"
+              className="bg-[#1a1a1a] text-white rounded-full px-6 py-2.5 text-sm font-semibold hover:bg-[#333] transition-all duration-300 hover:shadow-lg hover:shadow-black/10"
             >
               Gratis proberen
             </Link>
@@ -285,9 +226,9 @@ function Navbar() {
             aria-label="Menu"
           >
             {mobileOpen ? (
-              <X className="w-6 h-6 text-[#0A0A0A]" />
+              <X className="w-6 h-6 text-[#1a1a1a]" />
             ) : (
-              <Menu className="w-6 h-6 text-[#0A0A0A]" />
+              <Menu className="w-6 h-6 text-[#1a1a1a]" />
             )}
           </button>
         </div>
@@ -295,33 +236,38 @@ function Navbar() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-8">
+        <div className="fixed inset-0 z-40 bg-[#FAFAF8] flex flex-col items-center justify-center gap-8">
           <button
-            className="absolute top-4 right-6 p-2"
+            className="absolute top-5 right-6 p-2"
             onClick={() => setMobileOpen(false)}
             aria-label="Sluiten"
           >
             <X className="w-6 h-6" />
           </button>
-          {['features', 'hoe-het-werkt', 'prijzen'].map((id) => (
+          {[
+            { label: 'Features', id: 'features' },
+            { label: 'Hoe het werkt', id: 'hoe-het-werkt' },
+            { label: 'Prijzen', id: 'prijzen' },
+            { label: 'FAQ', id: 'faq' },
+          ].map((item) => (
             <button
-              key={id}
-              onClick={() => scrollTo(id)}
-              className="text-2xl font-bold text-[#0A0A0A] capitalize"
+              key={item.id}
+              onClick={() => scrollTo(item.id)}
+              className="text-2xl font-semibold text-[#1a1a1a]"
             >
-              {id === 'hoe-het-werkt' ? 'Hoe het werkt' : id.charAt(0).toUpperCase() + id.slice(1)}
+              {item.label}
             </button>
           ))}
           <Link
             to="/login"
-            className="text-xl font-medium text-[#555]"
+            className="text-xl font-medium text-[#777]"
             onClick={() => setMobileOpen(false)}
           >
             Inloggen
           </Link>
           <Link
             to="/register"
-            className="bg-[#0A0A0A] text-white rounded-[14px] px-10 py-4 text-lg font-bold"
+            className="bg-[#1a1a1a] text-white rounded-full px-10 py-4 text-lg font-semibold"
             onClick={() => setMobileOpen(false)}
           >
             Gratis proberen
@@ -333,74 +279,59 @@ function Navbar() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// HERO
+// HERO — Gradient orbs + floating cards + massive whitespace
 // ═══════════════════════════════════════════════════════════
 
 function FloatingCards({ scrollY }: { scrollY: number }) {
   const cards = [
     {
-      title: 'Offerte OFF-2026-048',
+      title: 'Offerte OFF-048',
       sub: 'Bakkerij Jansen',
-      amount: '2.087,25',
-      color: '#B8806A',
-      top: '5%',
-      right: '5%',
+      amount: '€ 2.087',
+      accent: COLORS.coral,
+      top: '8%',
+      right: '8%',
       speed: 0.03,
-      delay: '0s',
     },
     {
       title: 'Planning',
-      sub: 'Ma 14 mrt - Montage',
-      amount: '09:00 - 14:00',
-      color: '#4E7A58',
-      top: '25%',
-      right: '25%',
+      sub: 'Ma 14 mrt — Montage',
+      amount: '09:00 – 14:00',
+      accent: COLORS.sage,
+      top: '30%',
+      right: '55%',
       speed: 0.05,
-      delay: '1s',
     },
     {
       title: 'Werkbon WB-018',
       sub: 'Getekend door klant',
-      amount: '1.765,00',
-      color: '#4A6E8A',
-      top: '50%',
-      right: '10%',
+      amount: '€ 1.765',
+      accent: COLORS.blue,
+      top: '55%',
+      right: '12%',
       speed: 0.02,
-      delay: '2s',
-    },
-    {
-      title: 'Factuur F-031',
-      sub: 'Betaald',
-      amount: '2.087,25',
-      color: '#8A7E60',
-      top: '15%',
-      right: '45%',
-      speed: 0.04,
-      delay: '0.5s',
     },
   ]
 
   return (
-    <div className="relative w-full h-[400px] md:h-[500px]">
+    <div className="relative w-full h-[350px] md:h-[420px]">
       {cards.map((card, i) => (
         <div
           key={i}
-          className="absolute bg-white rounded-2xl shadow-lg border border-[#E8E5DE] p-4 w-[200px] md:w-[220px]"
+          className="lf-float-card absolute bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-[#E8E5DE]/80 p-5 w-[200px]"
           style={{
             top: card.top,
             right: card.right,
-            borderTop: `3px solid ${card.color}`,
+            borderLeft: `3px solid ${card.accent}`,
             transform: `translateY(${scrollY * card.speed * (i % 2 === 0 ? -1 : 1)}px)`,
-            animation: `float ${4 + i}s ease-in-out infinite`,
-            animationDelay: card.delay,
+            animation: `float ${5 + i}s ease-in-out infinite`,
+            animationDelay: `${i * 0.8}s`,
           }}
         >
-          <div className="text-xs font-bold text-[#0A0A0A] truncate">
-            {card.title}
-          </div>
-          <div className="text-xs text-[#999] mt-1">{card.sub}</div>
-          <div className="text-sm font-bold text-[#0A0A0A] mt-2">
-            {card.amount.startsWith('0') ? card.amount : `\u20AC${card.amount}`}
+          <div className="text-xs font-bold text-[#1a1a1a]">{card.title}</div>
+          <div className="text-[11px] text-[#999] mt-1">{card.sub}</div>
+          <div className="text-sm font-bold text-[#1a1a1a] mt-2 font-outfit">
+            {card.amount}
           </div>
         </div>
       ))}
@@ -410,91 +341,70 @@ function FloatingCards({ scrollY }: { scrollY: number }) {
 
 function Hero() {
   const scrollY = useScrollY()
-  const typewriterText = useTypewriter(TYPEWRITER_PHRASES)
-  const revealRef = useScrollReveal()
+  const fadeRef = useFadeUp()
 
   return (
-    <section className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden" ref={revealRef}>
-      {/* Mesh gradient background with floating orbs */}
+    <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 overflow-hidden bg-[#FAFAF8]" ref={fadeRef}>
+      {/* Gradient orbs */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `
-            radial-gradient(ellipse 60% 50% at 80% 20%, rgba(237,207,196,0.25), transparent),
-            radial-gradient(ellipse 40% 40% at 20% 70%, rgba(213,204,230,0.2), transparent),
-            radial-gradient(ellipse 50% 50% at 90% 40%, rgba(188,202,214,0.2), transparent)
-          `,
-        }}
+        className="lf-orb absolute -top-20 right-[10%] w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${COLORS.coral}20, transparent 70%)` }}
       />
-      {/* Floating gradient orbs */}
-      <div className="absolute top-20 right-[15%] w-64 h-64 rounded-full opacity-20 animate-pulse-soft pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${COLORS.lavender}, transparent 70%)` }} />
-      <div className="absolute bottom-10 left-[10%] w-48 h-48 rounded-full opacity-15 animate-pulse-soft pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${COLORS.peach}, transparent 70%)`, animationDelay: '1.5s' }} />
+      <div
+        className="lf-orb-slow absolute bottom-0 left-[5%] w-[400px] h-[400px] rounded-full pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${COLORS.purple}18, transparent 70%)` }}
+      />
+      <div
+        className="lf-orb absolute top-[40%] left-[50%] w-[300px] h-[300px] rounded-full pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${COLORS.sage}15, transparent 70%)`, animationDelay: '4s' }}
+      />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-0">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 relative z-10">
+        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-8">
           {/* Left — Text */}
-          <div className="lg:w-1/2">
+          <div className="lg:w-[55%]">
             {/* Badge */}
-            <div className="reveal-up inline-flex items-center gap-2 bg-lavender/60 text-[#6B5B8A] rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border border-lavender">
-              <Sparkles className="w-3.5 h-3.5" />
-              Nu met AI-tools — Visualizer & Forgie
+            <div className="lf-fade-up inline-flex items-center gap-2 bg-white border border-[#E8E5DE] rounded-full px-4 py-2 text-sm font-medium text-[#777] mb-8 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-[#9B8EC4]" />
+              Nu met AI-tools ingebouwd
             </div>
 
             {/* Heading */}
-            <h1 className="reveal-up reveal-delay-1 text-[36px] md:text-[62px] leading-[1.05] font-extrabold text-[#0A0A0A]">
-              <span
-                className="font-black"
-                style={{
-                  background: `linear-gradient(135deg, ${COLORS['blush-d']}, ${COLORS['sage-d']})`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                Smeed
-              </span>{' '}
-              je bedrijf tot een geoliede machine.
+            <h1 className="lf-fade-up lf-delay-1 text-[40px] md:text-[64px] lg:text-[72px] leading-[1.02] font-extrabold text-[#1a1a1a] tracking-tight">
+              Jouw hele bedrijf.{' '}
+              <span className="lf-serif-accent font-normal" style={{ color: COLORS.coral }}>
+                Één app.
+              </span>
             </h1>
 
             {/* Sub */}
-            <p className="reveal-up reveal-delay-2 text-[17px] md:text-[19px] text-[#555] max-w-[480px] mt-6 leading-relaxed">
-              Voor iedereen die iets maakt met zijn handen en geen gedoe wil in
-              de backoffice.{' '}
-              <span className="text-[#0A0A0A] font-semibold">
-                Offertes, projecten, werkbonnen, facturen
-              </span>{' '}
-              — alles in een app.
+            <p className="lf-fade-up lf-delay-2 text-[17px] md:text-[19px] text-[#777] max-w-[520px] mt-8 leading-relaxed">
+              Offertes, werkbonnen, planning, facturen — alles wat je nodig hebt als{' '}
+              <span className="text-[#1a1a1a] font-semibold">creatief maakbedrijf</span>. Zonder gedoe, zonder dubbel werk.
             </p>
 
-            {/* Typewriter */}
-            <div className="reveal-up reveal-delay-3 mt-3 text-[17px] text-[#B8806A] font-medium h-7">
-              {typewriterText}
-              <span className="cursor-blink">|</span>
-            </div>
-
             {/* CTA */}
-            <div className="reveal-up reveal-delay-4 mt-10 flex flex-col sm:flex-row items-start gap-4">
+            <div className="lf-fade-up lf-delay-3 mt-10 flex flex-col sm:flex-row items-start gap-4">
               <Link
                 to="/register"
-                className="bg-[#0A0A0A] text-white px-10 py-5 rounded-[14px] text-[17px] font-bold hover:bg-[#1a1a1a] transition-all hover:shadow-lg hover:shadow-black/10 w-full sm:w-auto text-center"
+                className="group bg-[#1a1a1a] text-white px-8 py-4 rounded-full text-[16px] font-semibold hover:bg-[#333] transition-all duration-300 hover:shadow-xl hover:shadow-black/10 flex items-center gap-2"
               >
-                Start 30 dagen gratis
+                Start gratis
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <button
                 onClick={() => {
-                  const el = document.getElementById('ai-tools')
+                  const el = document.getElementById('hoe-het-werkt')
                   if (el) el.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="flex items-center gap-2 text-[#6B5B8A] font-semibold hover:text-[#0A0A0A] transition-colors py-5"
+                className="text-[#777] font-medium hover:text-[#1a1a1a] transition-colors py-4 text-[16px]"
               >
-                <Wand2 className="w-4 h-4" />
-                Ontdek AI-tools
+                Bekijk hoe het werkt
               </button>
             </div>
 
             {/* Trust */}
-            <div className="reveal-up reveal-delay-5 mt-8 flex flex-wrap gap-6 text-[13px] text-[#999]">
+            <div className="lf-fade-up lf-delay-4 mt-10 flex flex-wrap gap-6 text-[13px] text-[#aaa]">
               <span className="flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5" /> Direct aan de slag
               </span>
@@ -507,21 +417,9 @@ function Hero() {
             </div>
           </div>
 
-          {/* Right — Floating cards + AI card */}
-          <div className="lg:w-1/2 reveal-scale reveal-delay-2 relative">
+          {/* Right — Floating cards */}
+          <div className="lg:w-[45%] lf-fade-up lf-delay-2">
             <FloatingCards scrollY={scrollY} />
-            {/* AI-powered mini card */}
-            <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-lavender/50 p-4 max-w-[200px] animate-float-slow"
-              style={{ animationDelay: '3s' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 rounded-full bg-lavender flex items-center justify-center">
-                  <Brain className="w-3.5 h-3.5 text-[#6B5B8A]" />
-                </div>
-                <span className="text-xs font-bold text-[#6B5B8A]">Forgie AI</span>
-              </div>
-              <p className="text-xs text-[#555]">Omzet maart: <span className="font-bold text-[#0A0A0A]">€24.850</span></p>
-              <p className="text-[10px] text-[#4E7A58] mt-1">+12% vs vorige maand</p>
-            </div>
           </div>
         </div>
       </div>
@@ -530,961 +428,215 @@ function Hero() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// WAT IS FORGE
+// THREE ICONS — Glow circles
 // ═══════════════════════════════════════════════════════════
 
-function ForgeExplainer() {
-  const revealRef = useScrollReveal()
+function ThreeIcons() {
+  const fadeRef = useFadeUp()
 
-  return (
-    <section className="bg-[#F7F6F3] py-20" ref={revealRef}>
-      <div className="max-w-2xl mx-auto px-6 text-center">
-        <h2 className="reveal-up text-[36px] md:text-[40px] font-black tracking-tight">
-          <span
-            style={{
-              background: `linear-gradient(135deg, ${COLORS['blush-d']}, ${COLORS['sage-d']})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            FORGE
-          </span>
-        </h2>
-        <p className="reveal-up reveal-delay-1 text-[18px] text-[#555] mt-2 italic">
-          To forge: smeden, bouwen, vormgeven.
-        </p>
-        <p className="reveal-up reveal-delay-2 text-[18px] text-[#555] mt-4 font-medium">
-          Jij smeedt lichtreclames, interieurs, stands. Wij smeden je
-          bedrijfsvoering.
-        </p>
-        <div className="reveal-up reveal-delay-3 border-t border-[#E8E5DE] max-w-[200px] mx-auto mt-8" />
-      </div>
-    </section>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════
-// DE FLOW — Interactive Walkthrough
-// ═══════════════════════════════════════════════════════════
-
-function StepKlant() {
-  return (
-    <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-      <div className="lg:w-[40%] order-2 lg:order-1">
-        <h3 className="text-[28px] md:text-[32px] font-black text-[#0A0A0A]">
-          Klant aanmaken
-        </h3>
-        <p className="text-[#555] mt-4 text-[16px] leading-relaxed">
-          Nieuwe klant belt. In 30 seconden staat alles erin — naam, bedrijf,
-          contactgegevens, notities.
-        </p>
-      </div>
-      <div className="lg:w-[55%] order-1 lg:order-2">
-        <div className="bg-white rounded-2xl shadow-xl p-6 border border-[#E8E5DE]">
-          <div className="text-sm font-bold text-[#0A0A0A] mb-4">
-            Nieuwe klant
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: 'Bedrijf', value: 'Bakkerij Jansen' },
-              { label: 'Naam', value: 'Kees Jansen' },
-              { label: 'Email', value: 'kees@bakkerijjansen.nl' },
-              { label: 'Telefoon', value: '0228 351 960' },
-            ].map((field) => (
-              <div key={field.label}>
-                <label className="text-xs text-[#999] block mb-1">
-                  {field.label}
-                </label>
-                <div className="border border-[#E8E5DE] rounded-xl px-3 py-2.5 text-sm text-[#0A0A0A] bg-[#FAFAF8] hover:ring-2 hover:ring-blush/50 transition-all">
-                  {field.value}
-                </div>
-              </div>
-            ))}
-            <div className="mt-4">
-              <span className="inline-block bg-blush text-[#B8806A] rounded-full px-3 py-1 text-xs font-semibold">
-                3 projecten - 12.400 omzet
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function StepOfferte() {
-  return (
-    <div className="flex flex-col lg:flex-row items-start gap-8 lg:gap-12">
-      {/* Left: offerte table + marge panel */}
-      <div className="lg:w-[60%] order-1 lg:order-1">
-        <div className="bg-white rounded-2xl shadow-xl border border-[#E8E5DE] overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-[#E8E5DE] bg-[#FAFAF8]">
-            <div className="text-sm font-bold text-[#0A0A0A]">
-              OFF-2026-048 - Bakkerij Jansen
-            </div>
-            <span className="text-xs bg-cream text-[#8A7E60] rounded-full px-2.5 py-0.5 font-semibold">
-              Concept
-            </span>
-          </div>
-
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm" style={{ display: 'table' }}>
-              <thead>
-                <tr className="border-b border-[#E8E5DE] text-[#999] text-xs">
-                  <th className="text-left px-4 py-2 font-medium">#</th>
-                  <th className="text-left px-4 py-2 font-medium">
-                    Omschrijving
-                  </th>
-                  <th className="text-right px-4 py-2 font-medium">Aantal</th>
-                  <th className="text-left px-4 py-2 font-medium">Eenheid</th>
-                  <th className="text-right px-4 py-2 font-medium">Prijs</th>
-                  <th className="text-right px-4 py-2 font-medium">Totaal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  {
-                    n: 1,
-                    desc: 'LED lichtreclame',
-                    qty: 1,
-                    unit: 'stuk',
-                    price: 960,
-                    total: 960,
-                  },
-                  {
-                    n: 2,
-                    desc: 'Montage',
-                    qty: 5,
-                    unit: 'uur',
-                    price: 85,
-                    total: 425,
-                  },
-                  {
-                    n: 3,
-                    desc: 'Voorbereiding',
-                    qty: 4,
-                    unit: 'uur',
-                    price: 85,
-                    total: 340,
-                  },
-                ].map((row) => (
-                  <tr
-                    key={row.n}
-                    className="border-b border-[#E8E5DE] hover:bg-mist/20 transition-colors"
-                  >
-                    <td className="px-4 py-2.5 text-[#999]">{row.n}</td>
-                    <td className="px-4 py-2.5 font-medium text-[#0A0A0A]">
-                      {row.desc}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">{row.qty}</td>
-                    <td className="px-4 py-2.5 text-[#999]">{row.unit}</td>
-                    <td className="px-4 py-2.5 text-right">
-                      {formatCurrency(row.price)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-medium">
-                      {formatCurrency(row.total)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Totals */}
-          <div className="px-5 py-3 border-t border-[#E8E5DE] bg-[#FAFAF8]">
-            <div className="flex justify-end gap-8 text-sm">
-              <div className="text-[#999]">
-                Subtotaal:{' '}
-                <span className="text-[#0A0A0A] font-medium">
-                  {formatCurrency(1725)}
-                </span>
-              </div>
-              <div className="text-[#999]">
-                BTW 21%:{' '}
-                <span className="text-[#0A0A0A] font-medium">
-                  {formatCurrency(362.25)}
-                </span>
-              </div>
-              <div className="font-bold text-[#0A0A0A]">
-                Totaal: {formatCurrency(2087.25)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Marge panel below table */}
-        <div className="bg-white rounded-2xl shadow-xl border border-[#E8E5DE] p-5 mt-4">
-          <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-3">
-            Marge overzicht
-          </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-red-50 rounded-xl p-3">
-              <div className="text-xs text-[#999]">Inkoop</div>
-              <div className="text-sm font-bold text-red-500">
-                {formatCurrency(915)}
-              </div>
-            </div>
-            <div className="bg-[#F7F6F3] rounded-xl p-3">
-              <div className="text-xs text-[#999]">Verkoop</div>
-              <div className="text-sm font-bold text-[#0A0A0A]">
-                {formatCurrency(1725)}
-              </div>
-            </div>
-            <div className="bg-sage/20 rounded-xl p-3">
-              <div className="text-xs text-[#999]">Winst</div>
-              <div className="text-sm font-bold text-[#4E7A58]">
-                {formatCurrency(810)}
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <span className="text-xs font-bold text-[#0A0A0A]">
-              MARGE: 47.0%
-            </span>
-            <div className="flex-1 h-2 bg-blush/30 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-[#B8806A]"
-                style={{ width: '47%' }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right: text */}
-      <div className="lg:w-[35%] order-2 lg:order-2 lg:pt-8">
-        <h3 className="text-[28px] md:text-[32px] font-black text-[#0A0A0A]">
-          Altijd overzicht over je marge
-        </h3>
-        <p className="text-[#555] mt-4 text-[16px] leading-relaxed">
-          Terwijl je je offerte bouwt, zie je{' '}
-          <span className="text-[#0A0A0A] font-semibold">real-time</span> je
-          inkoop, verkoop, winst en marge per regel. Geen verrassingen achteraf.
-          Je weet{' '}
-          <span className="text-[#0A0A0A] font-semibold">
-            precies wat je overhoudt
-          </span>
-          .
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function StepPlanning() {
-  const planningItems = [
+  const items = [
     {
-      day: 'Ma 14',
-      color: 'bg-blush',
-      task: 'Montage lichtreclame',
-      client: 'Bakkerij Jansen',
-      time: '09:00-14:00',
+      icon: <FileText className="w-7 h-7" />,
+      color: COLORS.coral,
+      title: 'Offertes & facturen',
+      desc: 'Bouw offertes met real-time margeberekening. Eén klik van werkbon naar factuur.',
     },
     {
-      day: 'Di 15',
-      color: 'bg-sage',
-      task: 'Opmeting gevel',
-      client: 'Matec Amsterdam',
-      time: '10:00-11:30',
+      icon: <Calendar className="w-7 h-7" />,
+      color: COLORS.sage,
+      title: 'Planning & werkbonnen',
+      desc: 'Plan montages, wijs teams toe, laat klanten tekenen op locatie.',
     },
     {
-      day: 'Wo 16',
-      color: 'bg-mist',
-      task: 'Productie intern',
-      client: '',
-      time: 'hele dag',
-    },
-    {
-      day: 'Do 17',
-      color: 'bg-cream',
-      task: 'Montage gevelletters',
-      client: 'Advocatenkantoor Bos',
-      time: '08:00-16:00',
+      icon: <Brain className="w-7 h-7" />,
+      color: COLORS.purple,
+      title: 'AI-tools ingebouwd',
+      desc: 'Signing Visualizer voor mockups. Forgie AI als je persoonlijke assistent.',
     },
   ]
 
   return (
-    <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-      <div className="lg:w-[40%] order-2 lg:order-1">
-        <h3 className="text-[28px] md:text-[32px] font-black text-[#0A0A0A]">
-          Plan het werk. Zie het overzicht.
-        </h3>
-        <p className="text-[#555] mt-4 text-[16px] leading-relaxed">
-          Sleep montages op de tijdlijn, wijs teams toe, synchroniseer met
-          Google Calendar. Overzicht voor kantoor en buitendienst.
-        </p>
-      </div>
-      <div className="lg:w-[55%] order-1 lg:order-2">
-        <div className="bg-white rounded-2xl shadow-xl p-6 border border-[#E8E5DE]">
-          <div className="text-sm font-bold text-[#0A0A0A] mb-4">
-            Weekoverzicht
-          </div>
-          <div className="space-y-3">
-            {planningItems.map((item) => (
-              <div
-                key={item.day}
-                className="flex items-center gap-3 group cursor-default"
-              >
-                <div className="text-xs font-bold text-[#999] w-12 shrink-0">
-                  {item.day}
-                </div>
-                <div
-                  className={`flex-1 ${item.color} rounded-xl px-4 py-3 group-hover:translate-x-1 transition-transform`}
-                >
-                  <div className="text-sm font-semibold text-[#0A0A0A]">
-                    {item.task}
-                    {item.client && (
-                      <span className="text-[#555] font-normal">
-                        {' '}
-                        - {item.client}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-[#999] mt-0.5">{item.time}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function StepWerkbon() {
-  const [inView, setInView] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) setInView(true)
-      },
-      { threshold: 0.3 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-
-  return (
-    <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-      <div className="lg:w-[55%] order-1 lg:order-1" ref={ref}>
-        <div className="bg-white rounded-2xl shadow-xl p-6 border border-[#E8E5DE]">
-          <div className="text-sm font-bold text-[#0A0A0A]">WB-2026-018</div>
-          <div className="text-xs text-[#999] mt-1">
-            Montage lichtreclame - Bakkerij Jansen - Hoorn
-          </div>
-
-          <div className="mt-4 space-y-2">
-            {[
-              { desc: 'Arbeid: Joris', detail: '6u', amount: 720 },
-              { desc: 'Materiaal: LED module', detail: '1x', amount: 960 },
-              { desc: 'Transport', detail: '', amount: 85 },
-            ].map((line) => (
-              <div
-                key={line.desc}
-                className="flex justify-between items-center text-sm border-b border-[#E8E5DE] pb-2"
-              >
-                <span className="text-[#0A0A0A]">
-                  {line.desc}
-                  {line.detail && (
-                    <span className="text-[#999] ml-1">{line.detail}</span>
-                  )}
-                </span>
-                <span className="font-medium">{formatCurrency(line.amount)}</span>
-              </div>
-            ))}
-            <div className="flex justify-between items-center text-sm font-bold pt-1">
-              <span>Totaal</span>
-              <span>{formatCurrency(1765)}</span>
-            </div>
-          </div>
-
-          {/* Signature */}
-          <div className="mt-6 pt-4 border-t border-[#E8E5DE]">
-            <svg
-              viewBox="0 0 300 60"
-              className={`w-48 h-12 ${inView ? 'signature-animate' : ''}`}
-            >
-              <path
-                d="M20,40 C40,10 60,50 80,30 C100,10 120,45 140,35 C160,25 180,50 200,30 C220,10 240,45 260,35"
-                fill="none"
-                stroke="#0A0A0A"
-                strokeWidth="2"
-                className="signature-path"
-              />
-            </svg>
-            <div className="text-xs text-[#999] mt-1">
-              Getekend: K. Jansen - 14 mrt 2026
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="lg:w-[40%] order-2 lg:order-2">
-        <h3 className="text-[28px] md:text-[32px] font-black text-[#0A0A0A]">
-          Digitaal. Op locatie. Klaar.
-        </h3>
-        <p className="text-[#555] mt-4 text-[16px] leading-relaxed">
-          Monteur vult werkbon in op zijn telefoon. Foto's erbij, uren noteren,
-          klant tekent ter plekke. Alles digitaal. Alles gekoppeld aan het
-          project.
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function StepFactuur() {
-  return (
-    <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-      <div className="lg:w-[40%] order-2 lg:order-1">
-        <h3 className="text-[28px] md:text-[32px] font-black text-[#0A0A0A]">
-          Van werkbon naar factuur. Een klik.
-        </h3>
-        <p className="text-[#555] mt-4 text-[16px] leading-relaxed">
-          De werkbon is goedgekeurd? Een klik en de factuur staat klaar. Alle
-          regels, uren en materialen worden overgenomen. Nul dubbel werk.
-        </p>
-      </div>
-      <div className="lg:w-[55%] order-1 lg:order-2">
-        <div className="bg-white rounded-2xl shadow-xl p-6 border border-[#E8E5DE] relative overflow-hidden">
-          <div className="text-sm font-bold text-[#0A0A0A]">
-            F-2026-031 - Bakkerij Jansen
-          </div>
-
-          <div className="mt-4 text-[36px] font-black text-[#0A0A0A]">
-            {formatCurrency(2087.25)}
-          </div>
-
-          {/* BETAALD stamp */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#4E7A58] text-4xl font-black -rotate-12 opacity-20 select-none pointer-events-none">
-            BETAALD
-          </div>
-
-          <div className="mt-3">
-            <span className="inline-block bg-sage text-[#4E7A58] rounded-full px-3 py-1 text-xs font-semibold">
-              Betaald op 18 mrt 2026
+    <section id="features" className="lf-section bg-[#FAFAF8] py-24 md:py-36" ref={fadeRef}>
+      <div className="max-w-6xl mx-auto px-6 lg:px-10">
+        <div className="text-center mb-16 md:mb-20">
+          <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
+            Alles-in-één platform
+          </p>
+          <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight leading-tight">
+            Gebouwd voor wie{' '}
+            <span className="lf-serif-accent font-normal" style={{ color: COLORS.sage }}>
+              iets maakt
             </span>
-          </div>
-
-          <div className="mt-4 text-xs text-[#999]">
-            Automatisch aangemaakt vanuit werkbon WB-2026-018
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FlowSection() {
-  const [activeStep, setActiveStep] = useState(0)
-  const [fadeState, setFadeState] = useState<'in' | 'out'>('in')
-  const revealRef = useScrollReveal()
-
-  const switchStep = useCallback(
-    (idx: number) => {
-      if (idx === activeStep) return
-      setFadeState('out')
-      setTimeout(() => {
-        setActiveStep(idx)
-        setFadeState('in')
-      }, 150)
-    },
-    [activeStep]
-  )
-
-  const stepComponents = [
-    <StepKlant key="klant" />,
-    <StepOfferte key="offerte" />,
-    <StepPlanning key="planning" />,
-    <StepWerkbon key="werkbon" />,
-    <StepFactuur key="factuur" />,
-  ]
-
-  return (
-    <section id="hoe-het-werkt" className="py-24 bg-white" ref={revealRef}>
-      <div className="max-w-7xl mx-auto px-6">
-        <h2 className="reveal-up text-[36px] md:text-[44px] font-black text-center text-[#0A0A0A]">
-          Zo werkt het. Van A tot Z.
-        </h2>
-        <p className="reveal-up reveal-delay-1 text-[#555] text-center mt-3 text-lg">
-          Klik op een stap om te zien hoe FORGEdesk eruitziet.
-        </p>
-
-        {/* Steps bar */}
-        <div className="reveal-up reveal-delay-2 mt-12 flex flex-wrap justify-center items-center gap-2 md:gap-0">
-          {STEP_LABELS.map((label, i) => (
-            <React.Fragment key={label}>
-              {i > 0 && (
-                <div className="hidden md:block w-8 h-0.5 bg-[#E8E5DE] relative">
-                  <div
-                    className="absolute inset-0 bg-[#0A0A0A] transition-transform duration-500 origin-left"
-                    style={{
-                      transform: `scaleX(${i <= activeStep ? 1 : 0})`,
-                    }}
-                  />
-                </div>
-              )}
-              <button
-                onClick={() => switchStep(i)}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  i === activeStep
-                    ? `${STEP_COLORS[i].bg} ${STEP_COLORS[i].text} font-bold`
-                    : 'bg-transparent text-[#999] border border-[#E8E5DE] hover:border-[#ccc]'
-                }`}
-              >
-                {i + 1}. {label}
-              </button>
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* Content area */}
-        <div
-          className="mt-12 min-h-[400px] md:min-h-[500px] transition-all duration-300"
-          style={{
-            opacity: fadeState === 'in' ? 1 : 0,
-            transform:
-              fadeState === 'in' ? 'translateY(0)' : 'translateY(10px)',
-          }}
-        >
-          {stepComponents[activeStep]}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════
-// MARGE CALCULATOR SPOTLIGHT
-// ═══════════════════════════════════════════════════════════
-
-function MargeSpotlight() {
-  const [montageUren, setMontageUren] = useState(5)
-  const [voorbereidingUren, setVoorbereidingUren] = useState(4)
-  const revealRef = useScrollReveal()
-
-  const inkoop = 915
-  const verkoop =
-    960 + montageUren * 85 + voorbereidingUren * 85
-  const btw = verkoop * 0.21
-  const totaal = verkoop + btw
-  const winst = verkoop - inkoop
-  const marge = verkoop > 0 ? Math.round((winst / verkoop) * 1000) / 10 : 0
-  const totalUren = montageUren + voorbereidingUren
-
-  const margeColor =
-    marge >= 40 ? '#4E7A58' : marge >= 25 ? '#8A7E60' : '#dc2626'
-  const barColor =
-    marge >= 40
-      ? 'bg-[#4E7A58]'
-      : marge >= 25
-      ? 'bg-[#8A7E60]'
-      : 'bg-red-500'
-
-  return (
-    <section id="features" className="bg-[#F7F6F3] py-24" ref={revealRef}>
-      <div className="max-w-7xl mx-auto px-6">
-        <h2 className="reveal-up text-[36px] md:text-[40px] font-black text-center text-[#0A0A0A]">
-          De gamechanger: altijd je marge in beeld.
-        </h2>
-        <p className="reveal-up reveal-delay-1 text-center text-[#555] max-w-2xl mx-auto mt-4 text-lg">
-          Terwijl je een offerte bouwt, berekent FORGEdesk real-time je inkoop,
-          verkoop en marge. Regel voor regel. Geen spreadsheet nodig.
-        </p>
-
-        <div className="reveal-scale reveal-delay-2 bg-white rounded-3xl shadow-xl p-6 md:p-10 border border-[#E8E5DE] max-w-md mx-auto mt-12">
-          {/* Total */}
-          <div className="text-xs font-bold text-[#999] uppercase tracking-wider">
-            Totaal incl BTW
-          </div>
-          <div className="text-[32px] md:text-[36px] font-black text-[#0A0A0A] mt-1">
-            {formatCurrency(totaal)}
-          </div>
-
-          {/* Subtotaal / BTW */}
-          <div className="flex gap-3 mt-4">
-            <div className="flex-1 bg-[#F7F6F3] rounded-xl p-3 text-center">
-              <div className="text-xs text-[#999]">Subtotaal</div>
-              <div className="text-sm font-bold text-[#0A0A0A]">
-                {formatCurrency(verkoop)}
-              </div>
-            </div>
-            <div className="flex-1 bg-[#F7F6F3] rounded-xl p-3 text-center">
-              <div className="text-xs text-[#999]">BTW</div>
-              <div className="text-sm font-bold text-[#0A0A0A]">
-                {formatCurrency(btw)}
-              </div>
-            </div>
-          </div>
-
-          {/* Inkoop / Verkoop / Winst */}
-          <div className="mt-6 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="flex items-center gap-2 text-sm text-[#999]">
-                <TrendingDown className="w-4 h-4 text-red-500" /> Inkoop
-              </span>
-              <span className="text-sm font-bold text-red-500">
-                {formatCurrency(inkoop)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="flex items-center gap-2 text-sm text-[#999]">
-                <TrendingUp className="w-4 h-4" /> Verkoop
-              </span>
-              <span className="text-sm font-bold text-[#0A0A0A]">
-                {formatCurrency(verkoop)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-[#0A0A0A]">Winst</span>
-              <span
-                className="text-sm font-bold"
-                style={{ color: margeColor }}
-              >
-                {formatCurrency(winst)}
-              </span>
-            </div>
-          </div>
-
-          {/* Marge bar */}
-          <div className="mt-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-[#999] uppercase tracking-wider">
-                Marge
-              </span>
-              <span
-                className="text-lg font-black"
-                style={{ color: margeColor }}
-              >
-                {marge.toFixed(1)}%
-              </span>
-            </div>
-            <div className="h-3 bg-blush/30 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                style={{ width: `${Math.min(marge, 100)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Per item */}
-          <div className="mt-5 text-xs text-[#999]">
-            <span className="font-medium text-[#0A0A0A]">Per item:</span>{' '}
-            Lichtreclame 1 — {marge.toFixed(1)}%
-          </div>
-
-          {/* Uren — interactive */}
-          <div className="mt-6 pt-4 border-t border-[#E8E5DE]">
-            <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-3">
-              Uren
-            </div>
-            <div className="space-y-2">
-              <UrenRow
-                label="Montage"
-                value={montageUren}
-                onChange={setMontageUren}
-              />
-              <UrenRow
-                label="Voorbereiding"
-                value={voorbereidingUren}
-                onChange={setVoorbereidingUren}
-              />
-            </div>
-            <div className="flex justify-between items-center mt-3 pt-2 border-t border-[#E8E5DE]">
-              <span className="text-sm font-medium text-[#0A0A0A]">
-                Totaal uren
-              </span>
-              <span className="text-sm font-bold text-[#0A0A0A]">
-                {totalUren} uur
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function UrenRow({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: number
-  onChange: (v: number) => void
-}) {
-  return (
-    <div className="flex justify-between items-center">
-      <span className="text-sm text-[#555]">{label}</span>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-7 h-7 rounded-lg border border-[#E8E5DE] flex items-center justify-center hover:bg-[#F7F6F3] transition-colors"
-          aria-label={`${label} minus`}
-        >
-          <Minus className="w-3 h-3" />
-        </button>
-        <span className="text-sm font-bold w-8 text-center">{value} uur</span>
-        <button
-          onClick={() => onChange(value + 1)}
-          className="w-7 h-7 rounded-lg border border-[#E8E5DE] flex items-center justify-center hover:bg-[#F7F6F3] transition-colors"
-          aria-label={`${label} plus`}
-        >
-          <Plus className="w-3 h-3" />
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════
-// MARQUEE STRIP
-// ═══════════════════════════════════════════════════════════
-
-function MarqueeStrip() {
-  const revealRef = useScrollReveal()
-  const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
-
-  return (
-    <section className="bg-white py-10 overflow-hidden" ref={revealRef}>
-      <p className="reveal-up text-center text-sm font-semibold text-[#999] uppercase tracking-wider mb-6">
-        Gebouwd voor de creatieve maakbranche
-      </p>
-      <div className="relative">
-        <div className="flex gap-4 animate-marquee w-max">
-          {items.map((item, i) => (
-            <span
-              key={i}
-              className={`inline-block ${item.color} rounded-full px-5 py-2 text-sm font-semibold whitespace-nowrap`}
-            >
-              {item.label}
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════
-// AI SIGNING VISUALIZER
-// ═══════════════════════════════════════════════════════════
-
-function VisualizerSection() {
-  const revealRef = useScrollReveal()
-  const [activeType, setActiveType] = useState(0)
-
-  const signingTypes = [
-    {
-      name: 'LED Doosletters',
-      desc: 'Verlichte 3D letters met LED achterverlichting',
-      color: 'blush',
-      colorDeep: '#B8806A',
-      effect: 'Warmwit licht, halo-effect op gevel',
-    },
-    {
-      name: 'Neon',
-      desc: 'Klassieke of moderne flex-neon signing',
-      color: 'lavender',
-      colorDeep: '#6B5B8A',
-      effect: 'Gloeiend neoneffect, zichtbaar dag & nacht',
-    },
-    {
-      name: 'Freesletters',
-      desc: 'Strak uitgesneden letters, onverlicht',
-      color: 'mist',
-      colorDeep: '#4A6E8A',
-      effect: 'Aluminium of RVS, professionele uitstraling',
-    },
-    {
-      name: 'Gevelreclame',
-      desc: 'Full-color prints op dibond of acrylaat',
-      color: 'sage',
-      colorDeep: '#4E7A58',
-      effect: 'Fotokwaliteit, weerbestendig',
-    },
-  ]
-
-  const current = signingTypes[activeType]
-
-  return (
-    <section id="ai-tools" className="bg-white py-24 relative overflow-hidden" ref={revealRef}>
-      {/* Subtle background orb */}
-      <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-10 pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${COLORS.mist}, transparent 70%)` }} />
-
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
-        <div className="text-center">
-          <div className="reveal-up inline-flex items-center gap-2 bg-mist/60 text-[#4A6E8A] rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border border-mist">
-            <Sparkles className="w-4 h-4" />
-            Uniek in de branche
-          </div>
-          <h2 className="reveal-up reveal-delay-1 text-[36px] md:text-[44px] font-black text-[#0A0A0A]">
-            Signing Visualizer
           </h2>
-          <p className="reveal-up reveal-delay-2 text-[18px] text-[#555] max-w-2xl mx-auto mt-4">
-            Laat je klant zien hoe hun signing eruitziet — nog vóórdat je begint
-            met produceren. Upload een foto, beschrijf wat je wilt, en AI genereert
-            een fotorealistische mockup in seconden.
+          <p className="lf-fade-up lf-delay-2 text-[17px] text-[#777] max-w-xl mx-auto mt-5">
+            Signbedrijven, interieurbouwers, reclamemakers — FORGEdesk begrijpt jouw werkproces.
           </p>
         </div>
 
-        {/* Interactive visualizer demo */}
-        <div className="reveal-up reveal-delay-3 mt-16">
-          <div className="bg-[#F7F6F3] rounded-3xl p-6 md:p-10 border border-[#E8E5DE]">
-            <div className="flex flex-col lg:flex-row gap-8">
-              {/* Left: mock gevel preview */}
-              <div className="lg:w-[60%]">
-                <div className="relative bg-gradient-to-b from-[#87CEEB] via-[#B0C4DE] to-[#D4CFC4] rounded-2xl overflow-hidden aspect-[16/10]">
-                  {/* Building facade mock */}
-                  <div className="absolute bottom-0 left-0 right-0 h-[70%] bg-[#E8E0D0] border-t-4 border-[#C4B8A4]">
-                    {/* Windows */}
-                    <div className="flex justify-center gap-6 mt-8">
-                      <div className="w-16 h-20 bg-[#8FAABD] rounded-t-lg border-2 border-[#C4B8A4]" />
-                      <div className="w-20 h-24 bg-[#6A8FA8] rounded-t-lg border-2 border-[#C4B8A4]" />
-                      <div className="w-16 h-20 bg-[#8FAABD] rounded-t-lg border-2 border-[#C4B8A4]" />
-                    </div>
-                    {/* Door */}
-                    <div className="flex justify-center mt-4">
-                      <div className="w-14 h-20 bg-[#6B5B4B] rounded-t-lg border-2 border-[#C4B8A4]" />
-                    </div>
-                  </div>
-
-                  {/* Signing text on building */}
-                  <div className="absolute top-[22%] left-0 right-0 text-center">
-                    <div
-                      className="inline-block text-2xl md:text-3xl font-black tracking-wider px-6 py-2 transition-all duration-500"
-                      style={{
-                        color: current.colorDeep,
-                        textShadow: activeType === 0
-                          ? `0 0 20px ${current.colorDeep}40, 0 0 40px ${current.colorDeep}20`
-                          : activeType === 1
-                          ? `0 0 15px ${current.colorDeep}, 0 0 30px ${current.colorDeep}80, 0 0 60px ${current.colorDeep}40`
-                          : 'none',
-                      }}
-                    >
-                      BAKKERIJ JANSEN
-                    </div>
-                  </div>
-
-                  {/* Type label */}
-                  <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 text-xs font-bold" style={{ color: current.colorDeep }}>
-                    {current.name}
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
+          {items.map((item, i) => (
+            <div
+              key={i}
+              className={`lf-fade-up lf-delay-${i + 1} text-center md:text-left`}
+            >
+              {/* Glow icon */}
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 relative" style={{ color: item.color }}>
+                <div className="absolute inset-0 rounded-2xl opacity-15" style={{ backgroundColor: item.color }} />
+                <div className="absolute -inset-3 rounded-3xl opacity-8 blur-xl" style={{ backgroundColor: item.color }} />
+                <div className="relative z-10" style={{ color: item.color }}>
+                  {item.icon}
                 </div>
               </div>
-
-              {/* Right: controls */}
-              <div className="lg:w-[40%]">
-                <h3 className="text-lg font-bold text-[#0A0A0A] mb-1">Kies een signingtype</h3>
-                <p className="text-sm text-[#999] mb-5">Klik om het resultaat te zien op de gevel</p>
-
-                <div className="space-y-3">
-                  {signingTypes.map((type, i) => (
-                    <button
-                      key={type.name}
-                      onClick={() => setActiveType(i)}
-                      className={`w-full text-left rounded-xl p-4 transition-all duration-300 border ${
-                        i === activeType
-                          ? `bg-${type.color}/30 border-[${type.colorDeep}]/30 shadow-sm`
-                          : 'bg-white border-[#E8E5DE] hover:border-[#ccc]'
-                      }`}
-                      style={i === activeType ? {
-                        backgroundColor: `${type.colorDeep}10`,
-                        borderColor: `${type.colorDeep}30`,
-                      } : {}}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-bold text-[#0A0A0A]">{type.name}</div>
-                          <div className="text-xs text-[#555] mt-0.5">{type.desc}</div>
-                        </div>
-                        {i === activeType && (
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: type.colorDeep }}>
-                            <Check className="w-3.5 h-3.5 text-white" />
-                          </div>
-                        )}
-                      </div>
-                      {i === activeType && (
-                        <div className="mt-2 pt-2 border-t border-[#E8E5DE]">
-                          <div className="flex items-center gap-1.5 text-xs" style={{ color: type.colorDeep }}>
-                            <Eye className="w-3 h-3" />
-                            {type.effect}
-                          </div>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <h3 className="text-xl font-bold text-[#1a1a1a] mb-3">{item.title}</h3>
+              <p className="text-[15px] text-[#777] leading-relaxed">{item.desc}</p>
             </div>
-          </div>
-        </div>
-
-        {/* How it works - 3 steps */}
-        <div className="reveal-up reveal-delay-4 grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center border border-[#E8E5DE] hover:border-blush/50 hover:shadow-sm transition-all">
-            <div className="w-12 h-12 bg-blush rounded-xl flex items-center justify-center mx-auto">
-              <Image className="w-6 h-6 text-[#B8806A]" />
-            </div>
-            <h3 className="font-bold text-[#0A0A0A] mt-4">1. Upload een foto</h3>
-            <p className="text-sm text-[#555] mt-2">
-              Van een gebouw, voertuig, pui of schets. Voeg optioneel een logo toe
-              (PNG met transparante achtergrond werkt het best).
-            </p>
-          </div>
-          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center border border-[#E8E5DE] hover:border-sage/50 hover:shadow-sm transition-all">
-            <div className="w-12 h-12 bg-sage rounded-xl flex items-center justify-center mx-auto">
-              <MessageSquare className="w-6 h-6 text-[#4E7A58]" />
-            </div>
-            <h3 className="font-bold text-[#0A0A0A] mt-4">2. Beschrijf het resultaat</h3>
-            <p className="text-sm text-[#555] mt-2">
-              Bijvoorbeeld: &quot;LED doosletters boven de deur, warmwit&quot; of
-              &quot;Neonlogo op de gevel&quot;. AI begrijpt precies wat je bedoelt.
-            </p>
-          </div>
-          <div className="bg-[#F7F6F3] rounded-2xl p-6 text-center border border-[#E8E5DE] hover:border-mist/50 hover:shadow-sm transition-all">
-            <div className="w-12 h-12 bg-mist rounded-xl flex items-center justify-center mx-auto">
-              <Send className="w-6 h-6 text-[#4A6E8A]" />
-            </div>
-            <h3 className="font-bold text-[#0A0A0A] mt-4">3. Verstuur naar je klant</h3>
-            <p className="text-sm text-[#555] mt-2">
-              Koppel de visualisatie direct aan een offerte en verstuur het als
-              professionele presentatie. Je klant ziet meteen het eindresultaat.
-            </p>
-          </div>
-        </div>
-
-        {/* Tech tags */}
-        <div className="reveal-up reveal-delay-5 flex flex-wrap justify-center gap-3 mt-10">
-          {['Nano Banana 2 model', '4 signingtypes', 'Tot 4K resolutie', 'Chat-verfijning', 'Koppel aan offerte'].map((tag) => (
-            <span key={tag} className="bg-white border border-[#E8E5DE] rounded-full px-4 py-1.5 text-xs font-semibold text-[#555]">
-              {tag}
-            </span>
           ))}
         </div>
-
-        <p className="reveal-up reveal-delay-5 text-center text-[#999] text-sm mt-6">
-          Geen enkel ander bedrijfsvoeringspakket biedt AI-visualisaties voor de
-          signbranche. Dit is exclusief in FORGEdesk.
-        </p>
       </div>
     </section>
   )
 }
 
 // ═══════════════════════════════════════════════════════════
-// FORGIE AI ASSISTANT
+// HOE HET WERKT — Tabs + numbered steps
+// ═══════════════════════════════════════════════════════════
+
+const BOSS_STEPS = [
+  {
+    num: '01',
+    title: 'Klant aanmaken',
+    desc: 'Nieuwe klant belt? In 30 seconden staat alles erin — bedrijf, contactgegevens, notities.',
+    icon: <Users className="w-5 h-5" />,
+    color: COLORS.coral,
+  },
+  {
+    num: '02',
+    title: 'Offerte met margeberekening',
+    desc: 'Bouw je offerte regel voor regel. Zie real-time je inkoop, verkoop en marge. Geen verrassingen.',
+    icon: <FileText className="w-5 h-5" />,
+    color: COLORS.sage,
+  },
+  {
+    num: '03',
+    title: 'Planning inrichten',
+    desc: 'Sleep montages op de tijdlijn, wijs teams toe. Overzicht voor kantoor en buitendienst.',
+    icon: <Calendar className="w-5 h-5" />,
+    color: COLORS.blue,
+  },
+  {
+    num: '04',
+    title: 'Factuur versturen',
+    desc: 'Werkbon goedgekeurd? Eén klik en de factuur staat klaar. Alle regels worden overgenomen.',
+    icon: <BarChart3 className="w-5 h-5" />,
+    color: COLORS.gold,
+  },
+]
+
+const MONTEUR_STEPS = [
+  {
+    num: '01',
+    title: 'Planning ontvangen',
+    desc: 'Je ziet meteen wat er vandaag op de planning staat. Adres, tijdstip, projectdetails.',
+    icon: <Clock className="w-5 h-5" />,
+    color: COLORS.coral,
+  },
+  {
+    num: '02',
+    title: 'Werkbon invullen',
+    desc: 'Op locatie uren noteren, materialen bijhouden, foto\'s toevoegen. Alles digitaal.',
+    icon: <ClipboardCheck className="w-5 h-5" />,
+    color: COLORS.sage,
+  },
+  {
+    num: '03',
+    title: 'Klant laten tekenen',
+    desc: 'Klant tekent ter plekke op je telefoon. Werkbon is direct compleet en gekoppeld aan het project.',
+    icon: <PenTool className="w-5 h-5" />,
+    color: COLORS.blue,
+  },
+  {
+    num: '04',
+    title: 'Klaar. Alles gesynct.',
+    desc: 'Kantoor ziet real-time wat er op locatie is gedaan. Nul dubbel werk, nul papier.',
+    icon: <Layers className="w-5 h-5" />,
+    color: COLORS.gold,
+  },
+]
+
+function HowItWorksSection() {
+  const [activeTab, setActiveTab] = useState(0)
+  const fadeRef = useFadeUp()
+  const steps = activeTab === 0 ? BOSS_STEPS : MONTEUR_STEPS
+
+  return (
+    <section id="hoe-het-werkt" className="lf-section bg-white py-24 md:py-36" ref={fadeRef}>
+      <div className="max-w-6xl mx-auto px-6 lg:px-10">
+        <div className="text-center mb-14 md:mb-20">
+          <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
+            Hoe het werkt
+          </p>
+          <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight">
+            Van A tot Z.{' '}
+            <span className="lf-serif-accent font-normal" style={{ color: COLORS.coral }}>
+              Zonder gedoe.
+            </span>
+          </h2>
+        </div>
+
+        {/* Tabs */}
+        <div className="lf-fade-up lf-delay-2 flex justify-center mb-14">
+          <div className="inline-flex bg-[#F4F3F0] rounded-full p-1.5">
+            {['Voor de baas', 'Voor de monteur'].map((label, i) => (
+              <button
+                key={label}
+                onClick={() => setActiveTab(i)}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  activeTab === i
+                    ? 'bg-white text-[#1a1a1a] shadow-sm'
+                    : 'text-[#999] hover:text-[#555]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div className="relative">
+          {/* SVG connection line (desktop) */}
+          <svg className="hidden md:block absolute top-[52px] left-[calc(12.5%+28px)] w-[calc(75%-56px)] h-1 pointer-events-none" preserveAspectRatio="none">
+            <line x1="0" y1="0" x2="100%" y2="0" stroke={COLORS.border} strokeWidth="2" strokeDasharray="6 4" />
+          </svg>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-6">
+            {steps.map((step, i) => (
+              <div key={`${activeTab}-${i}`} className="lf-fade-up text-center" style={{ transitionDelay: `${(i + 3) * 0.1}s` }}>
+                {/* Number circle */}
+                <div className="relative inline-flex items-center justify-center w-14 h-14 rounded-full border-2 bg-white z-10 mb-5" style={{ borderColor: step.color }}>
+                  <span className="text-sm font-bold font-outfit" style={{ color: step.color }}>{step.num}</span>
+                </div>
+                {/* Icon */}
+                <div className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: `${step.color}15`, color: step.color }}>
+                  {step.icon}
+                </div>
+                <h3 className="text-lg font-bold text-[#1a1a1a] mb-2">{step.title}</h3>
+                <p className="text-sm text-[#777] leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// FORGIE AI — Chat mockup
 // ═══════════════════════════════════════════════════════════
 
 function ForgieSection() {
-  const revealRef = useScrollReveal()
+  const fadeRef = useFadeUp()
   const [activeChat, setActiveChat] = useState(0)
   const [isTyping, setIsTyping] = useState(false)
   const [showAnswer, setShowAnswer] = useState(true)
@@ -1519,83 +671,79 @@ function ForgieSection() {
   }, [activeChat])
 
   return (
-    <section className="bg-[#F7F6F3] py-24" ref={revealRef}>
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
+    <section className="lf-section bg-[#FAFAF8] py-24 md:py-36" ref={fadeRef}>
+      <div className="max-w-6xl mx-auto px-6 lg:px-10">
+        <div className="flex flex-col lg:flex-row gap-16 items-center">
           {/* Left: explanation */}
-          <div className="lg:w-[55%]">
-            <div className="reveal-up inline-flex items-center gap-2 bg-sage text-[#4E7A58] rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border border-sage-deep/20">
-              <Brain className="w-4 h-4" />
+          <div className="lg:w-[50%]">
+            <p className="lf-fade-up text-sm font-semibold text-[#9B8EC4] uppercase tracking-widest mb-4">
               AI-assistent
-            </div>
-            <h2 className="reveal-up reveal-delay-1 text-[36px] md:text-[44px] font-black text-[#0A0A0A]">
-              Maak kennis met Forgie.
-            </h2>
-            <p className="reveal-up reveal-delay-2 text-[18px] text-[#555] mt-4 leading-relaxed">
-              Forgie is je persoonlijke AI-assistent die alles weet over jouw bedrijf.
-              Stel gewoon een vraag in het Nederlands — over klanten, offertes, facturen,
-              projecten of omzet — en Forgie geeft direct antwoord op basis van jouw
-              eigen data.
             </p>
-            <p className="reveal-up reveal-delay-3 text-[16px] text-[#555] mt-4 leading-relaxed">
-              Nieuw met AI? Geen zorgen. Forgie werkt net als een chat: typ je vraag en
-              krijg een helder antwoord. Geen technische kennis nodig. Forgie kan ook
-              e-mails herschrijven, vertalen, samenvatten en professioneler maken.
+            <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight leading-tight">
+              Maak kennis met{' '}
+              <span className="lf-serif-accent font-normal" style={{ color: COLORS.purple }}>
+                Forgie
+              </span>
+            </h2>
+            <p className="lf-fade-up lf-delay-2 text-[17px] text-[#777] mt-6 leading-relaxed">
+              Forgie is je persoonlijke AI-assistent die alles weet over jouw bedrijf.
+              Stel een vraag over klanten, offertes, facturen of omzet — en krijg direct antwoord.
+            </p>
+            <p className="lf-fade-up lf-delay-3 text-[15px] text-[#999] mt-4 leading-relaxed">
+              Forgie kan ook e-mails opstellen, vertalen en samenvatten. Geen technische kennis nodig.
             </p>
 
-            <div className="reveal-up reveal-delay-4 mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="flex items-center gap-2 text-sm text-[#555] bg-white rounded-xl px-3 py-2.5 border border-[#E8E5DE]">
-                <Database className="w-4 h-4 text-[#4E7A58] shrink-0" />
-                <span>Jouw bedrijfsdata</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-[#555] bg-white rounded-xl px-3 py-2.5 border border-[#E8E5DE]">
-                <Shield className="w-4 h-4 text-[#4E7A58] shrink-0" />
-                <span>Veilig en privé</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-[#555] bg-white rounded-xl px-3 py-2.5 border border-[#E8E5DE]">
-                <Zap className="w-4 h-4 text-[#4E7A58] shrink-0" />
-                <span>Claude Sonnet</span>
-              </div>
+            <div className="lf-fade-up lf-delay-4 mt-8 flex flex-wrap gap-3">
+              {[
+                { icon: <Database className="w-4 h-4" />, label: 'Jouw data' },
+                { icon: <Shield className="w-4 h-4" />, label: 'Veilig & privé' },
+                { icon: <Zap className="w-4 h-4" />, label: 'Claude Sonnet' },
+              ].map((tag) => (
+                <div key={tag.label} className="flex items-center gap-2 text-sm text-[#777] bg-white rounded-full px-4 py-2 border border-[#E8E5DE]">
+                  <span className="text-[#7EB5A6]">{tag.icon}</span>
+                  {tag.label}
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Right: interactive chat mockup */}
-          <div className="reveal-scale reveal-delay-3 lg:w-[45%]">
+          {/* Right: chat mockup */}
+          <div className="lf-fade-up lf-delay-3 lg:w-[50%] w-full">
             <div className="bg-white rounded-3xl shadow-xl border border-[#E8E5DE] overflow-hidden">
               {/* Chat header */}
-              <div className="px-5 py-4 border-b border-[#E8E5DE] bg-[#FAFAF8] flex items-center justify-between">
+              <div className="px-6 py-4 border-b border-[#E8E5DE] bg-[#FAFAF8] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center">
-                    <span className="text-sm">🦊</span>
+                  <div className="w-9 h-9 rounded-full bg-[#9B8EC4]/15 flex items-center justify-center">
+                    <span className="text-base">🦊</span>
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-[#0A0A0A]">Forgie</div>
-                    <div className="text-xs text-[#4E7A58]">Online — je bedrijfsgeheugen</div>
+                    <div className="text-sm font-bold text-[#1a1a1a]">Forgie</div>
+                    <div className="text-xs text-[#7EB5A6]">Online</div>
                   </div>
                 </div>
-                <div className="w-2 h-2 rounded-full bg-[#4E7A58] animate-pulse" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#7EB5A6] animate-pulse" />
               </div>
 
               {/* Chat messages */}
-              <div className="p-5 space-y-4 min-h-[220px]">
+              <div className="p-6 space-y-4 min-h-[200px]">
                 <div className="flex justify-end">
-                  <div className="bg-[#0A0A0A] text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm max-w-[80%]">
+                  <div className="bg-[#1a1a1a] text-white rounded-2xl rounded-br-md px-4 py-3 text-sm max-w-[80%]">
                     {conversations[activeChat].question}
                   </div>
                 </div>
                 {isTyping ? (
                   <div className="flex justify-start">
-                    <div className="bg-[#F7F6F3] rounded-2xl rounded-bl-md px-4 py-3">
+                    <div className="bg-[#F4F3F0] rounded-2xl rounded-bl-md px-5 py-3">
                       <div className="flex gap-1.5">
-                        <div className="w-2 h-2 bg-[#999] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-2 h-2 bg-[#999] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-2 h-2 bg-[#999] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <div className="w-2 h-2 bg-[#bbb] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-[#bbb] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-[#bbb] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
                     </div>
                   </div>
                 ) : showAnswer ? (
                   <div className="flex justify-start">
-                    <div className="bg-[#F7F6F3] text-[#0A0A0A] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm max-w-[85%] leading-relaxed whitespace-pre-line">
+                    <div className="bg-[#F4F3F0] text-[#1a1a1a] rounded-2xl rounded-bl-md px-4 py-3 text-sm max-w-[85%] leading-relaxed whitespace-pre-line">
                       {conversations[activeChat].answer.split('**').map((part, i) =>
                         i % 2 === 1 ? <strong key={i}>{part}</strong> : part
                       )}
@@ -1604,22 +752,22 @@ function ForgieSection() {
                 ) : null}
               </div>
 
-              {/* Suggestion chips — clickable */}
-              <div className="px-5 pb-4 border-t border-[#E8E5DE] pt-3">
-                <div className="text-[10px] text-[#999] uppercase tracking-wider mb-2 font-semibold">Probeer een vraag</div>
+              {/* Suggestion chips */}
+              <div className="px-6 pb-5 border-t border-[#E8E5DE] pt-4">
+                <div className="text-[10px] text-[#bbb] uppercase tracking-widest mb-2.5 font-semibold">Probeer een vraag</div>
                 <div className="flex flex-wrap gap-2">
                   {conversations.map((conv, i) => (
                     <button
                       key={i}
                       onClick={() => switchChat(i)}
-                      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                      className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-300 ${
                         i === activeChat
-                          ? 'bg-sage text-[#4E7A58] border border-[#4E7A58]/20'
-                          : 'bg-[#F7F6F3] border border-[#E8E5DE] text-[#555] hover:border-sage-deep/30 hover:bg-sage/30'
+                          ? 'bg-[#9B8EC4]/15 text-[#9B8EC4] border border-[#9B8EC4]/25'
+                          : 'bg-[#F4F3F0] border border-[#E8E5DE] text-[#777] hover:border-[#9B8EC4]/30'
                       }`}
                     >
                       {conv.icon}
-                      {conv.question.length > 30 ? conv.question.slice(0, 30) + '...' : conv.question}
+                      {conv.question.length > 28 ? conv.question.slice(0, 28) + '…' : conv.question}
                     </button>
                   ))}
                 </div>
@@ -1633,202 +781,178 @@ function ForgieSection() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// PRICING
+// STATS — Dark section
 // ═══════════════════════════════════════════════════════════
 
-function PricingSection() {
-  const { ref: priceRef, isVisible: priceVisible } = useInView(0.3)
-  const priceValue = useCountUp(49, 1500, priceVisible)
-  const [employees, setEmployees] = useState(5)
-  const revealRef = useScrollReveal()
-
-  const teamleader = employees * 37.5
-  const gripp = employees <= 5 ? 249 : employees <= 10 ? 399 : 599
-  const simplicate = employees <= 5 ? 199 : employees <= 10 ? 349 : 499
-  const forge = 49
-  const maxSaving = Math.max(teamleader, gripp, simplicate) - forge
+function StatsSection() {
+  const fadeRef = useFadeUp()
+  const { ref: countRef, isVisible: countVisible } = useInView(0.3)
+  const stat1 = useCountUp(49, 1500, countVisible)
+  const stat2 = useCountUp(14, 1500, countVisible)
+  const stat3 = useCountUp(30, 1500, countVisible)
 
   return (
-    <section id="prijzen" className="bg-white py-24" ref={revealRef}>
-      <div className="max-w-4xl mx-auto px-6 text-center">
-        {/* Price counter */}
-        <div ref={priceRef}>
-          <div className="text-[80px] md:text-[120px] font-black text-[#0A0A0A] leading-none reveal-up">
-            <span>{priceValue}</span>
-          </div>
-          <div className="reveal-up reveal-delay-1 text-[24px] text-[#999] -mt-2">
-            /maand
-          </div>
-          <p className="reveal-up reveal-delay-2 text-xl text-[#555] mt-4">
-            Per bedrijf. Onbeperkt medewerkers. Alle features.
-          </p>
-          <div className="reveal-up reveal-delay-2 inline-flex items-center gap-2 bg-lavender/40 text-[#6B5B8A] rounded-full px-4 py-1.5 text-sm font-semibold mt-4 border border-lavender">
-            <Sparkles className="w-3.5 h-3.5" />
-            Inclusief AI-tools
-          </div>
-        </div>
+    <section className="bg-[#1a1a1a] py-20 md:py-28 relative overflow-hidden" ref={fadeRef}>
+      {/* Subtle orbs on dark bg */}
+      <div className="lf-orb absolute top-0 left-[10%] w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${COLORS.coral}10, transparent 70%)` }} />
+      <div className="lf-orb-slow absolute bottom-0 right-[15%] w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${COLORS.purple}08, transparent 70%)` }} />
 
-        {/* Feature checklist */}
-        <div className="reveal-up reveal-delay-3 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 mt-12 max-w-xl mx-auto text-left">
-          {PRICING_FEATURES.map((feature) => (
-            <div key={feature} className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[#4E7A58] shrink-0" />
-              <span className="text-sm text-[#555]">{feature}</span>
+      <div className="max-w-6xl mx-auto px-6 lg:px-10 relative z-10" ref={countRef}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 text-center">
+          <div className="lf-fade-up">
+            <div className="text-[56px] md:text-[72px] font-extrabold text-white leading-none font-outfit">
+              €{stat1}
             </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <div className="reveal-up reveal-delay-4 mt-10">
-          <Link
-            to="/register"
-            className="inline-block bg-[#0A0A0A] text-white px-10 py-5 rounded-[14px] text-[17px] font-bold hover:bg-[#1a1a1a] transition-colors"
-          >
-            Start 30 dagen gratis
-          </Link>
-          <p className="text-sm text-[#999] mt-3">Geen creditcard nodig</p>
-        </div>
-
-        {/* Comparison slider */}
-        <div className="reveal-up reveal-delay-5 mt-16 bg-[#F7F6F3] rounded-3xl p-6 md:p-10">
-          <h3 className="text-lg font-bold text-[#0A0A0A]">
-            Hoeveel medewerkers heb je?
-          </h3>
-          <div className="mt-4 flex items-center gap-4">
-            <span className="text-sm text-[#999]">1</span>
-            <input
-              type="range"
-              min={1}
-              max={20}
-              value={employees}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmployees(parseInt(e.target.value))}
-              className="flex-1 accent-[#0A0A0A] h-2"
-            />
-            <span className="text-sm text-[#999]">20</span>
+            <div className="text-white/40 text-sm mt-2 font-medium">per maand — alles inbegrepen</div>
           </div>
-          <p className="text-sm text-[#555] mt-2">
-            {employees} medewerker{employees > 1 ? 's' : ''}
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
-            <ComparisonCard
-              name="Teamleader"
-              price={teamleader}
-              isWinner={false}
-            />
-            <ComparisonCard name="Gripp" price={gripp} isWinner={false} />
-            <ComparisonCard
-              name="Simplicate"
-              price={simplicate}
-              isWinner={false}
-            />
-            <ComparisonCard
-              name="FORGEdesk"
-              price={forge}
-              isWinner={true}
-            />
+          <div className="lf-fade-up lf-delay-1">
+            <div className="text-[56px] md:text-[72px] font-extrabold text-white leading-none font-outfit">
+              {stat2}
+            </div>
+            <div className="text-white/40 text-sm mt-2 font-medium">features — van offerte tot factuur</div>
           </div>
-
-          {maxSaving > 0 && (
-            <p className="mt-6 text-[#4E7A58] font-bold text-lg">
-              Bespaar tot {formatCurrency(maxSaving)}/maand
-            </p>
-          )}
+          <div className="lf-fade-up lf-delay-2">
+            <div className="text-[56px] md:text-[72px] font-extrabold text-white leading-none font-outfit">
+              {stat3}
+            </div>
+            <div className="text-white/40 text-sm mt-2 font-medium">dagen gratis proberen</div>
+          </div>
         </div>
       </div>
     </section>
   )
 }
 
-function ComparisonCard({
-  name,
-  price,
-  isWinner,
-}: {
-  name: string
-  price: number
-  isWinner: boolean
-}) {
+// ═══════════════════════════════════════════════════════════
+// PRICING — Single plan, €49/maand
+// ═══════════════════════════════════════════════════════════
+
+function PricingSection() {
+  const fadeRef = useFadeUp()
+  const { ref: priceRef, isVisible: priceVisible } = useInView(0.3)
+  const priceValue = useCountUp(49, 1500, priceVisible)
+
   return (
-    <div
-      className={`rounded-2xl p-4 text-center ${
-        isWinner
-          ? 'bg-sage text-[#4E7A58] ring-2 ring-[#4E7A58]'
-          : 'bg-white border border-[#E8E5DE]'
-      }`}
-    >
-      <div className={`text-sm font-medium ${isWinner ? 'font-bold' : 'text-[#999]'}`}>
-        {name}
+    <section id="prijzen" className="lf-section bg-[#FAFAF8] py-24 md:py-36" ref={fadeRef}>
+      <div className="max-w-4xl mx-auto px-6 lg:px-10 text-center">
+        <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
+          Eenvoudige prijzen
+        </p>
+        <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight">
+          Eén prijs.{' '}
+          <span className="lf-serif-accent font-normal" style={{ color: COLORS.coral }}>
+            Alles erin.
+          </span>
+        </h2>
+
+        {/* Pricing card */}
+        <div className="lf-fade-up lf-delay-2 mt-14 bg-white rounded-3xl border border-[#E8E5DE] p-8 md:p-12 shadow-sm max-w-lg mx-auto" ref={priceRef}>
+          {/* Price */}
+          <div className="flex items-baseline justify-center gap-2">
+            <span className="text-[72px] md:text-[96px] font-extrabold text-[#1a1a1a] leading-none lf-price-number">
+              €{priceValue}
+            </span>
+            <span className="text-[20px] text-[#999] font-medium">/maand</span>
+          </div>
+          <p className="text-[#777] text-base mt-2">
+            Per bedrijf. Onbeperkt medewerkers.
+          </p>
+
+          {/* Divider */}
+          <div className="border-t border-[#E8E5DE] my-8" />
+
+          {/* Features */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-left">
+            {PRICING_FEATURES.map((feature) => (
+              <div key={feature} className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-[#7EB5A6] shrink-0" />
+                <span className="text-sm text-[#555]">{feature}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="mt-10">
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 bg-[#1a1a1a] text-white px-8 py-4 rounded-full text-[16px] font-semibold hover:bg-[#333] transition-all duration-300 hover:shadow-xl hover:shadow-black/10"
+            >
+              Start 30 dagen gratis
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <p className="text-sm text-[#bbb] mt-3">Geen creditcard nodig</p>
+          </div>
+        </div>
+
+        {/* AI badge */}
+        <div className="lf-fade-up lf-delay-3 mt-6 inline-flex items-center gap-2 text-sm text-[#9B8EC4] font-medium">
+          <Sparkles className="w-4 h-4" />
+          Inclusief AI Signing Visualizer & Forgie AI
+        </div>
       </div>
-      <div
-        className={`text-2xl font-black mt-1 ${
-          isWinner ? 'text-[#4E7A58]' : 'text-[#0A0A0A]'
-        }`}
-      >
-        {formatCurrency(price)}
-      </div>
-      <div className="text-xs text-[#999] mt-0.5">/maand</div>
-    </div>
+    </section>
   )
 }
 
 // ═══════════════════════════════════════════════════════════
-// TESTIMONIALS
+// FAQ — Accordion
 // ═══════════════════════════════════════════════════════════
 
-function TestimonialsSection() {
-  const revealRef = useScrollReveal()
+function FAQItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void }) {
+  return (
+    <div className="border-b border-[#E8E5DE]">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between py-6 text-left group"
+      >
+        <span className="text-[16px] md:text-[17px] font-semibold text-[#1a1a1a] pr-8 group-hover:text-[#E8866A] transition-colors">
+          {item.q}
+        </span>
+        <ChevronDown
+          className={`w-5 h-5 text-[#999] shrink-0 transition-transform duration-300 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+      <div className={`lf-accordion-content ${isOpen ? 'is-open' : ''}`}>
+        <div className="lf-accordion-inner">
+          <p className="text-[15px] text-[#777] leading-relaxed pb-6">
+            {item.a}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FAQSection() {
+  const [openIndex, setOpenIndex] = useState(0)
+  const fadeRef = useFadeUp()
 
   return (
-    <section className="bg-[#F7F6F3] py-24" ref={revealRef}>
-      <div className="max-w-5xl mx-auto px-6">
-        <h2 className="reveal-up text-[36px] md:text-[40px] font-black text-center text-[#0A0A0A]">
-          Wat vakmensen zeggen.
-        </h2>
-
-        {/* Main testimonial */}
-        <div className="reveal-up reveal-delay-1 bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-[#E8E5DE] mt-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 pointer-events-none"
-            style={{ background: `radial-gradient(circle, ${COLORS.blush}, transparent 70%)` }} />
-          <blockquote className="text-[20px] md:text-[24px] font-medium leading-relaxed text-[#0A0A0A] relative z-10">
-            &ldquo;Ik stond bij een klant en kon in 10 seconden laten zien hoeveel uur
-            ik had berekend per lichtreclame. Met mijn vorige tool moest ik 8
-            losse calculaties openen.&rdquo;
-          </blockquote>
-          <div className="mt-6 text-sm text-[#555] relative z-10">
-            — Antony B. - Sign Company, Enkhuizen
-          </div>
+    <section id="faq" className="lf-section bg-white py-24 md:py-36" ref={fadeRef}>
+      <div className="max-w-3xl mx-auto px-6 lg:px-10">
+        <div className="text-center mb-14">
+          <p className="lf-fade-up text-sm font-semibold text-[#C4A882] uppercase tracking-widest mb-4">
+            FAQ
+          </p>
+          <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight">
+            Veelgestelde{' '}
+            <span className="lf-serif-accent font-normal" style={{ color: COLORS.sage }}>
+              vragen
+            </span>
+          </h2>
         </div>
 
-        {/* Three testimonials */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          <div className="reveal-up reveal-delay-2 bg-gradient-to-br from-blush to-blush/60 rounded-2xl p-8 border border-blush-deep/10">
-            <blockquote className="text-[15px] font-medium leading-relaxed text-[#0A0A0A]">
-              &ldquo;Eindelijk een tool die begrijpt hoe wij werken. Geen overbodige
-              features, geen enterprise onzin.&rdquo;
-            </blockquote>
-            <div className="mt-4 text-sm text-[#B8806A] font-semibold">
-              — Marco V. - Interieurbouwer
-            </div>
-          </div>
-          <div className="reveal-up reveal-delay-3 bg-gradient-to-br from-sage to-sage/60 rounded-2xl p-8 border border-sage-deep/10">
-            <blockquote className="text-[15px] font-medium leading-relaxed text-[#0A0A0A]">
-              &ldquo;De margeberekening bespaart me uren per week. Ik zie direct wat ik
-              overhoud.&rdquo;
-            </blockquote>
-            <div className="mt-4 text-sm text-[#4E7A58] font-semibold">
-              — Sandra K. - Reclamemakers
-            </div>
-          </div>
-          <div className="reveal-up reveal-delay-4 bg-gradient-to-br from-lavender to-lavender/60 rounded-2xl p-8 border border-[#6B5B8A]/10">
-            <blockquote className="text-[15px] font-medium leading-relaxed text-[#0A0A0A]">
-              &ldquo;Forgie AI is briljant. Ik vraag gewoon: welke offertes staan open?
-              En krijg direct een helder overzicht.&rdquo;
-            </blockquote>
-            <div className="mt-4 text-sm text-[#6B5B8A] font-semibold">
-              — Pieter D. - Signbedrijf
-            </div>
-          </div>
+        <div className="lf-fade-up lf-delay-2">
+          {FAQ_ITEMS.map((item, i) => (
+            <FAQItem
+              key={i}
+              item={item}
+              isOpen={openIndex === i}
+              onToggle={() => setOpenIndex(openIndex === i ? -1 : i)}
+            />
+          ))}
         </div>
       </div>
     </section>
@@ -1840,118 +964,96 @@ function TestimonialsSection() {
 // ═══════════════════════════════════════════════════════════
 
 function CTAFooter() {
-  const revealRef = useScrollReveal()
+  const fadeRef = useFadeUp()
 
   return (
-    <footer ref={revealRef}>
+    <footer ref={fadeRef}>
       {/* CTA */}
-      <div className="bg-[#0A0A0A] rounded-t-3xl py-24 text-center text-white relative overflow-hidden">
-        {/* Pastel orbs on dark background */}
-        <div className="absolute top-10 left-[10%] w-48 h-48 rounded-full opacity-10 animate-pulse-soft pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${COLORS.blush}, transparent 70%)` }} />
-        <div className="absolute bottom-10 right-[15%] w-64 h-64 rounded-full opacity-10 animate-pulse-soft pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${COLORS.lavender}, transparent 70%)`, animationDelay: '1.5s' }} />
-        <div className="absolute top-[40%] right-[40%] w-32 h-32 rounded-full opacity-8 animate-pulse-soft pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${COLORS.sage}, transparent 70%)`, animationDelay: '3s' }} />
+      <div className="bg-[#1a1a1a] py-24 md:py-32 text-center text-white relative overflow-hidden">
+        {/* Gradient orbs on dark */}
+        <div className="lf-orb absolute top-10 left-[10%] w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${COLORS.coral}12, transparent 70%)` }} />
+        <div className="lf-orb-slow absolute bottom-10 right-[15%] w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${COLORS.purple}10, transparent 70%)` }} />
 
-        <div className="max-w-3xl mx-auto px-6 relative z-10">
-          <div className="reveal-up inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white/70 rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border border-white/10">
-            <Sparkles className="w-3.5 h-3.5" />
-            Met AI-tools ingebouwd
-          </div>
-          <h2 className="reveal-up text-[36px] md:text-[44px] font-black">
-            Klaar om te beginnen?
+        <div className="max-w-3xl mx-auto px-6 lg:px-10 relative z-10">
+          <h2 className="lf-fade-up text-[36px] md:text-[52px] font-extrabold tracking-tight">
+            Klaar om te{' '}
+            <span className="lf-serif-accent font-normal" style={{ color: COLORS.coral }}>
+              beginnen?
+            </span>
           </h2>
-          <p className="reveal-up reveal-delay-1 text-white/50 mt-3 text-lg">
+          <p className="lf-fade-up lf-delay-1 text-white/50 mt-4 text-lg">
             30 dagen gratis. Geen creditcard. Direct aan de slag.
           </p>
-          <div className="reveal-up reveal-delay-1 mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="lf-fade-up lf-delay-2 mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/register"
-              className="bg-white text-[#0A0A0A] px-10 py-5 rounded-[14px] text-[17px] font-bold hover:bg-gray-100 transition-all hover:shadow-lg hover:shadow-white/10 w-full sm:w-auto"
+              className="group bg-white text-[#1a1a1a] px-8 py-4 rounded-full text-[16px] font-semibold hover:bg-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-white/10 flex items-center gap-2"
             >
-              Start 30 dagen gratis
+              Start gratis
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <a
               href="https://wa.me/31612345678"
               target="_blank"
               rel="noopener noreferrer"
-              className="border border-white/30 text-white px-10 py-5 rounded-[14px] text-[17px] font-bold hover:bg-white/10 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
+              className="border border-white/20 text-white px-8 py-4 rounded-full text-[16px] font-semibold hover:bg-white/10 transition-all duration-300 flex items-center gap-2"
             >
               <MessageCircle className="w-5 h-5" />
               WhatsApp
             </a>
           </div>
-          {/* Feature tags */}
-          <div className="reveal-up reveal-delay-2 flex flex-wrap justify-center gap-3 mt-8">
+          <div className="lf-fade-up lf-delay-3 flex flex-wrap justify-center gap-3 mt-10">
             {['Offertes', 'Planning', 'Werkbonnen', 'Facturen', 'AI Visualizer', 'Forgie AI'].map((tag) => (
-              <span key={tag} className="bg-white/5 border border-white/10 rounded-full px-3 py-1 text-xs text-white/40">
+              <span key={tag} className="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs text-white/40 font-medium">
                 {tag}
               </span>
             ))}
           </div>
-          <p className="reveal-up reveal-delay-2 text-sm text-white/50 mt-6">
-            30 dagen gratis - Geen creditcard - Direct starten
-          </p>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="bg-[#0A0A0A] border-t border-white/10 py-16">
-        <div className="max-w-7xl mx-auto px-6">
+      <div className="bg-[#141414] py-16">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
             {/* Brand */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2.5 mb-4">
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-white text-xs"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-sm"
                   style={{
-                    background: `linear-gradient(135deg, ${COLORS.blush}, ${COLORS.mist})`,
+                    background: `linear-gradient(135deg, ${COLORS.coral}, ${COLORS.sage})`,
                   }}
                 >
                   F
                 </div>
-                <span className="font-black text-white text-lg">
-                  FORGEdesk
-                </span>
+                <span className="font-black text-white text-lg">FORGEdesk</span>
               </div>
-              <p className="text-sm text-white/40">
+              <p className="text-sm text-white/40 leading-relaxed">
                 Door vakmensen, voor vakmensen.
               </p>
-              <div className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-3 py-1 text-[10px] text-white/40 mt-2">
-                <Sparkles className="w-2.5 h-2.5" />
-                AI-Powered
-              </div>
-              <p className="text-xs text-white/30 mt-1">
-                Gebouwd in Enkhuizen
-              </p>
+              <p className="text-xs text-white/25 mt-2">Gebouwd in Enkhuizen</p>
             </div>
 
             {/* Product */}
             <div>
-              <h4 className="font-bold text-white text-sm mb-3">Product</h4>
-              <ul className="space-y-2">
-                {['Features', 'Prijzen', 'Integraties', 'Updates'].map(
-                  (item) => (
-                    <li key={item}>
-                      <span className="text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer">
-                        {item}
-                      </span>
-                    </li>
-                  )
-                )}
+              <h4 className="font-semibold text-white text-sm mb-4">Product</h4>
+              <ul className="space-y-2.5">
+                {['Features', 'Prijzen', 'AI Tools', 'Updates'].map((item) => (
+                  <li key={item}>
+                    <span className="text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer">{item}</span>
+                  </li>
+                ))}
               </ul>
             </div>
 
             {/* Bedrijf */}
             <div>
-              <h4 className="font-bold text-white text-sm mb-3">Bedrijf</h4>
-              <ul className="space-y-2">
-                {['Over ons', 'Blog', 'Contact', 'Partners'].map((item) => (
+              <h4 className="font-semibold text-white text-sm mb-4">Bedrijf</h4>
+              <ul className="space-y-2.5">
+                {['Over ons', 'Contact', 'Partners'].map((item) => (
                   <li key={item}>
-                    <span className="text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer">
-                      {item}
-                    </span>
+                    <span className="text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -1959,24 +1061,20 @@ function CTAFooter() {
 
             {/* Support */}
             <div>
-              <h4 className="font-bold text-white text-sm mb-3">Support</h4>
-              <ul className="space-y-2">
-                {['Helpcentrum', 'Documentatie', 'Status', 'Privacy'].map(
-                  (item) => (
-                    <li key={item}>
-                      <span className="text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer">
-                        {item}
-                      </span>
-                    </li>
-                  )
-                )}
+              <h4 className="font-semibold text-white text-sm mb-4">Support</h4>
+              <ul className="space-y-2.5">
+                {['Helpcentrum', 'Documentatie', 'Privacy'].map((item) => (
+                  <li key={item}>
+                    <span className="text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer">{item}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-white/10 mt-10 pt-6">
-            <p className="text-xs text-white/30 text-center">
-              2026 FORGEdesk. Alle rechten voorbehouden.
+          <div className="border-t border-white/10 mt-12 pt-6">
+            <p className="text-xs text-white/25 text-center">
+              © 2026 FORGEdesk. Alle rechten voorbehouden.
             </p>
           </div>
         </div>
@@ -1996,7 +1094,7 @@ function BackToTop() {
   return (
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      className={`fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full bg-[#0A0A0A] text-white shadow-lg flex items-center justify-center transition-all duration-300 hover:bg-[#1a1a1a] ${
+      className={`fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full bg-[#1a1a1a] text-white shadow-lg flex items-center justify-center transition-all duration-300 hover:bg-[#333] ${
         visible
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-4 pointer-events-none'
@@ -2009,35 +1107,20 @@ function BackToTop() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('nl-NL', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
-}
-
-// ═══════════════════════════════════════════════════════════
 // MAIN LANDING PAGE
 // ═══════════════════════════════════════════════════════════
 
 export default function LandingPage() {
   return (
-    <div className="landing-noise bg-white font-sans antialiased">
+    <div className="landing-noise bg-[#FAFAF8] font-sans antialiased">
       <Navbar />
       <Hero />
-      <ForgeExplainer />
-      <FlowSection />
-      <MargeSpotlight />
-      <MarqueeStrip />
-      <VisualizerSection />
+      <ThreeIcons />
+      <HowItWorksSection />
       <ForgieSection />
+      <StatsSection />
       <PricingSection />
-      <TestimonialsSection />
+      <FAQSection />
       <CTAFooter />
       <BackToTop />
     </div>
