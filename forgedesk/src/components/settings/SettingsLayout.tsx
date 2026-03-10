@@ -2409,8 +2409,15 @@ function IntegratiesTab() {
                             },
                           })
                           if (!response.ok) {
-                            const err = await response.json() as { error?: string }
-                            throw new Error(err.error || `Fout ${response.status}`)
+                            const text = await response.text()
+                            let errorMsg = `Fout ${response.status}`
+                            try {
+                              const err = JSON.parse(text) as { error?: string }
+                              errorMsg = err.error || errorMsg
+                            } catch {
+                              errorMsg = text.slice(0, 100) || errorMsg
+                            }
+                            throw new Error(errorMsg)
                           }
                           const data = await response.json() as { products: unknown[] }
                           setProboTestResult({
