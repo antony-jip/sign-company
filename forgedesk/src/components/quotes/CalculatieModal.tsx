@@ -37,12 +37,16 @@ import {
   BookTemplate,
   Save,
   Settings,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getCalculatieProducten, getCalculatieTemplates } from '@/services/supabaseService'
-import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate } from '@/types'
+import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate, ProboOptie } from '@/types'
+import { ProboProductPicker } from './ProboProductPicker'
+import type { ProboPickerResult } from './ProboProductPicker'
 import { logger } from '../../utils/logger'
 
 // ============================================================
@@ -118,6 +122,10 @@ export function CalculatieModal({
   const [producten, setProducten] = useState<CalculatieProduct[]>([])
   const [templates, setTemplates] = useState<CalculatieTemplate[]>([])
   const [showTemplates, setShowTemplates] = useState(false)
+  const [proboActiveRegelId, setProboActiveRegelId] = useState<string | null>(null)
+  const [proboRefreshingId, setProboRefreshingId] = useState<string | null>(null)
+
+  const proboEnabled = settings.probo_enabled === true
 
   // Laden bij openen
   useEffect(() => {
@@ -185,6 +193,64 @@ export function CalculatieModal({
       btw_percentage: product.btw_percentage,
     })
   }, [updateRegel])
+
+  // ---- Probo product kiezen ----
+
+  const vulRegelMetProbo = useCallback((regelId: string, result: ProboPickerResult) => {
+    updateRegel(regelId, {
+      product_naam: result.omschrijving || result.product_naam,
+      categorie: 'Materiaal',
+      inkoop_prijs: result.inkoop_excl,
+      verkoop_prijs: berekenVerkoopVanInkoop(result.inkoop_excl, standaardMarge),
+      marge_percentage: standaardMarge,
+      probo_product_code: result.product_code,
+      probo_customer_code: result.customer_code,
+      probo_opties: result.opties,
+      probo_inkoop_excl: result.inkoop_excl,
+      probo_datum_ophaal: new Date().toISOString(),
+    })
+    setProboActiveRegelId(null)
+  }, [updateRegel, standaardMarge])
+
+  const refreshProboPrice = useCallback(async (regel: CalculatieRegel) => {
+    if (!regel.probo_product_code || proboRefreshingId) return
+    setProboRefreshingId(regel.id)
+    try {
+      const { default: supabase } = await import('@/services/supabaseClient')
+      const { data: { session: authSession } } = await supabase.auth.getSession()
+      if (!authSession?.access_token) throw new Error('Niet ingelogd')
+
+      const options: ProboOptie[] = regel.probo_opties || []
+      const response = await fetch('/api/probo-price', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authSession.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product_code: regel.probo_product_code,
+          customer_code: regel.probo_customer_code,
+          options,
+        }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json() as { error?: string }
+        throw new Error(err.error || `Fout ${response.status}`)
+      }
+
+      const data = await response.json() as { inkoop_excl: number }
+      updateRegel(regel.id, {
+        inkoop_prijs: round2(data.inkoop_excl),
+        probo_inkoop_excl: round2(data.inkoop_excl),
+        probo_datum_ophaal: new Date().toISOString(),
+      })
+    } catch (err) {
+      logger.error('Probo prijs verversen mislukt:', err)
+    } finally {
+      setProboRefreshingId(null)
+    }
+  }, [proboRefreshingId, updateRegel])
 
   // ---- Template laden ----
 
@@ -353,10 +419,17 @@ export function CalculatieModal({
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Kies een product per regel via het dropdown menu in de "Product" kolom</p>
+                  <p>Kies een product per regel via het dropdown menu in de &quot;Product&quot; kolom</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+
+          {proboEnabled && (
+            <Badge variant="outline" className="gap-1 text-xs bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+              <span className="font-bold">P</span>
+              Probo actief
+            </Badge>
           )}
         </div>
 
@@ -478,8 +551,8 @@ export function CalculatieModal({
                   const isWinst = regelTotaal > regelInkoop
 
                   return (
+                    <React.Fragment key={regel.id}>
                     <tr
-                      key={regel.id}
                       className={`border-b border-border dark:border-border ${
                         index % 2 === 0
                           ? 'bg-card'
@@ -524,12 +597,67 @@ export function CalculatieModal({
                               </SelectContent>
                             </Select>
                           ) : null}
+                          {/* Probo button */}
+                          {proboEnabled && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => setProboActiveRegelId(
+                                      proboActiveRegelId === regel.id ? null : regel.id
+                                    )}
+                                    className={`flex-shrink-0 h-8 w-8 flex items-center justify-center rounded text-xs font-bold transition-colors ${
+                                      proboActiveRegelId === regel.id
+                                        ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
+                                        : regel.probo_product_code
+                                          ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-500'
+                                          : 'text-muted-foreground/60 hover:bg-muted hover:text-foreground'
+                                    }`}
+                                  >
+                                    P
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{regel.probo_product_code ? 'Probo product wijzigen' : 'Probo product zoeken'}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {/* Probo refresh */}
+                          {regel.probo_product_code && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => refreshProboPrice(regel)}
+                                    disabled={proboRefreshingId === regel.id}
+                                    className="flex-shrink-0 h-7 w-7 flex items-center justify-center rounded text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
+                                  >
+                                    {proboRefreshingId === regel.id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <RefreshCw className="h-3 w-3" />
+                                    )}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Probo prijs verversen</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                           <Input
                             value={regel.product_naam}
                             onChange={(e) => updateRegel(regel.id, { product_naam: e.target.value })}
                             placeholder="Productnaam..."
                             className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 text-sm flex-1"
                           />
+                          {/* Probo badge */}
+                          {regel.probo_product_code && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 flex-shrink-0 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+                              Probo
+                            </Badge>
+                          )}
                         </div>
                       </td>
 
@@ -657,6 +785,20 @@ export function CalculatieModal({
                         </Button>
                       </td>
                     </tr>
+                    {/* Probo picker row */}
+                    {proboActiveRegelId === regel.id && proboEnabled && (
+                      <tr className="border-b border-emerald-200 dark:border-emerald-800">
+                        <td colSpan={10} className="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-950/10">
+                          <div className="max-w-md">
+                            <ProboProductPicker
+                              onSelect={(result) => vulRegelMetProbo(regel.id, result)}
+                              onCancel={() => setProboActiveRegelId(null)}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                   )
                 })}
               </tbody>
