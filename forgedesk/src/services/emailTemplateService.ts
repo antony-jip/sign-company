@@ -215,7 +215,15 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
   const subject = `Offerte ${data.offerteNummer} - ${data.offerteTitel}`
 
   const buttonHtml = data.bekijkUrl
-    ? renderButton('Offerte bekijken', data.bekijkUrl, kleur)
+    ? renderButton('Bekijk, accepteer of reageer op deze offerte \u2192', data.bekijkUrl, kleur)
+    : ''
+
+  const acceptLinkHtml = data.bekijkUrl
+    ? `<p style="margin: 16px 0 0 0; text-align: center;">
+        <a href="${escapeHtml(data.bekijkUrl)}" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: ${kleur}; text-decoration: underline;">
+          \u2713 Offerte accepteren of wijzigingen aanvragen
+        </a>
+      </p>`
     : ''
 
   const bodyHtml = `
@@ -233,6 +241,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
       </tr>
     </table>
     ${buttonHtml}
+    ${acceptLinkHtml}
     <p style="margin: 16px 0 0 0;">
       Heeft u vragen over deze offerte? Neem gerust contact met ons op. Wij helpen u graag verder.
     </p>
@@ -249,7 +258,7 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
     `Totaalbedrag: ${data.totaalBedrag}`,
     `Geldig tot: ${data.geldigTot}`,
     '',
-    data.bekijkUrl ? `Bekijk de offerte: ${data.bekijkUrl}` : '',
+    data.bekijkUrl ? `Bekijk, accepteer of reageer op deze offerte: ${data.bekijkUrl}` : '',
     '',
     'Heeft u vragen over deze offerte? Neem gerust contact met ons op. Wij helpen u graag verder.',
     '',
