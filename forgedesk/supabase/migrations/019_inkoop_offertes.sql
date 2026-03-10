@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS inkoop_offertes (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   leverancier_naam text NOT NULL,
-  project_id uuid REFERENCES projects(id) ON DELETE SET NULL,
+  project_id uuid REFERENCES projecten(id) ON DELETE SET NULL,
   bestand_url text,
   datum date NOT NULL DEFAULT CURRENT_DATE,
   totaal numeric(12,2) NOT NULL DEFAULT 0,
