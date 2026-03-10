@@ -188,7 +188,7 @@ export interface Offerte {
   project_id?: string;
   nummer: string;
   titel: string;
-  status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd';
+  status: 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd' | 'wijziging_gevraagd';
   subtotaal: number;
   btw_bedrag: number;
   totaal: number;
@@ -221,6 +221,13 @@ export interface Offerte {
   outro_tekst?: string;
   // Contactpersoon koppeling
   contactpersoon_id?: string;
+  // Klant acceptatie
+  geaccepteerd_door?: string;
+  geaccepteerd_op?: string;
+  wijziging_opmerking?: string;
+  wijziging_ingediend_op?: string;
+  publieke_link_geopend_op?: string;
+  publieke_link_views?: number;
   // Activiteit log
   activiteiten?: OfferteActiviteit[];
   // Versie tracking (FIX 12)
@@ -239,7 +246,7 @@ export interface Offerte {
 
 export interface OfferteActiviteit {
   datum: string;
-  type: 'aangemaakt' | 'bewerkt' | 'verstuurd' | 'bekeken' | 'akkoord' | 'afgewezen' | 'gefactureerd';
+  type: 'aangemaakt' | 'bewerkt' | 'verstuurd' | 'bekeken' | 'akkoord' | 'afgewezen' | 'gefactureerd' | 'wijziging_gevraagd';
   beschrijving: string;
   medewerker?: string;
 }
@@ -543,11 +550,25 @@ export interface AppSettings {
   offerte_outro_tekst: string;
   // Email
   afzender_naam: string;
+  email_fetch_limit: number;
   // Forgie
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;
   // AI schrijfstijl per gebruiker
   ai_tone_of_voice: string;
+  // Mollie betaalintegratie
+  mollie_api_key?: string;
+  mollie_enabled?: boolean;
+  // Exact Online integratie
+  exact_online_client_id?: string;
+  exact_online_client_secret?: string;
+  exact_online_connected?: boolean;
+  exact_administratie_id?: string;
+  exact_verkoopboek?: string;
+  exact_grootboek?: string;
+  exact_btw_hoog?: string;
+  exact_btw_laag?: string;
+  exact_btw_nul?: string;
   created_at: string;
   updated_at: string;
 }
@@ -773,6 +794,7 @@ export interface Factuur {
   betaal_token?: string;
   betaal_link?: string;
   betaal_methode?: 'handmatig' | 'link' | 'qr';
+  mollie_payment_id?: string;
   online_bekeken?: boolean;
   online_bekeken_op?: string;
   // Teksten
@@ -780,6 +802,9 @@ export interface Factuur {
   outro_tekst?: string;
   // Contactpersoon
   contactpersoon_id?: string;
+  // Exact Online sync
+  exact_entry_id?: string;
+  exact_synced_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -854,7 +879,7 @@ export interface Medewerker {
 export interface Notificatie {
   id: string;
   user_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen';
   titel: string;
   bericht: string;
   link?: string;
@@ -885,6 +910,18 @@ export interface MontageAfspraak {
   notities: string;
   created_at: string;
   updated_at: string;
+}
+
+// ============ PROJECT FOTO'S ============
+
+export interface ProjectFoto {
+  id: string;
+  user_id: string;
+  project_id: string;
+  url: string;
+  omschrijving: string;
+  type: string;
+  created_at: string;
 }
 
 // ============ VERLOF & BESCHIKBAARHEID (Feature 3) ============

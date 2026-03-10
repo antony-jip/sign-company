@@ -46,6 +46,7 @@ import {
   X,
   ChevronDown,
   Receipt,
+  Eye,
 } from 'lucide-react'
 import { logger } from '../../utils/logger'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
@@ -58,6 +59,7 @@ const STATUS_LABELS: Record<string, string> = {
   afgewezen: 'Afgewezen',
   verlopen: 'Verlopen',
   gefactureerd: 'Gefactureerd',
+  wijziging_gevraagd: 'Wijziging gevraagd',
 }
 
 const STATUS_OPTIONS: Array<{ key: Offerte['status']; label: string }> = [
@@ -68,6 +70,7 @@ const STATUS_OPTIONS: Array<{ key: Offerte['status']; label: string }> = [
   { key: 'afgewezen', label: 'Afgewezen' },
   { key: 'verlopen', label: 'Verlopen' },
   { key: 'gefactureerd', label: 'Gefactureerd' },
+  { key: 'wijziging_gevraagd', label: 'Wijziging gevraagd' },
 ]
 
 const ACTIVITEIT_ICONS: Record<string, string> = {
@@ -78,6 +81,7 @@ const ACTIVITEIT_ICONS: Record<string, string> = {
   akkoord: '✅',
   afgewezen: '❌',
   gefactureerd: '💰',
+  wijziging_gevraagd: '💬',
 }
 
 function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; korting_percentage: number }) {
@@ -255,7 +259,7 @@ export function OfferteDetail() {
       const sendCp = offerte.contactpersoon_id
         ? klant?.contactpersonen?.find(c => c.id === offerte.contactpersoon_id)
         : null
-      const { subject, html } = offerteVerzendTemplate({
+      const { subject, html, text } = offerteVerzendTemplate({
         klantNaam: sendCp?.naam || klant?.contactpersoon || klant?.bedrijfsnaam || '',
         offerteNummer: offerte.nummer,
         offerteTitel: offerte.titel,
@@ -269,7 +273,7 @@ export function OfferteDetail() {
       })
 
       try {
-        await sendEmail(sendTo, sendSubject || subject, '', { html })
+        await sendEmail(sendTo, sendSubject || subject, text, { html })
       } catch {
         // Email sending failed (SMTP not configured), continue with status update
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Status is wel bijgewerkt.')
@@ -683,6 +687,57 @@ export function OfferteDetail() {
             )}
           </div>
         </div>
+
+        {/* Klant activiteit */}
+        {(offerte.eerste_bekeken_op || offerte.geaccepteerd_door || offerte.wijziging_opmerking) && (
+          <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+            <div className="section-header-pastel">
+              <h3 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+                <Eye className="h-3.5 w-3.5" />
+                Klant activiteit
+              </h3>
+            </div>
+            <div className="space-y-2">
+              {offerte.eerste_bekeken_op && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Eerste keer geopend</span>
+                  <span className="font-medium text-foreground">{formatDateTime(offerte.eerste_bekeken_op)}</span>
+                </div>
+              )}
+              {offerte.aantal_keer_bekeken != null && offerte.aantal_keer_bekeken > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Aantal keer bekeken</span>
+                  <span className="font-medium text-foreground">{offerte.aantal_keer_bekeken}x</span>
+                </div>
+              )}
+              {offerte.geaccepteerd_door && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Geaccepteerd door</span>
+                    <span className="font-medium text-emerald-600">{offerte.geaccepteerd_door}</span>
+                  </div>
+                  {offerte.geaccepteerd_op && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Geaccepteerd op</span>
+                      <span className="font-medium text-foreground">{formatDateTime(offerte.geaccepteerd_op)}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              {offerte.wijziging_opmerking && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Wijziging aangevraagd</span>
+                    <span className="font-medium text-orange-600">{offerte.wijziging_ingediend_op ? formatDateTime(offerte.wijziging_ingediend_op) : 'Ja'}</span>
+                  </div>
+                  <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3 text-sm text-orange-800 dark:text-orange-300 italic">
+                    &ldquo;{offerte.wijziging_opmerking}&rdquo;
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Titel */}
@@ -930,6 +985,38 @@ export function OfferteDetail() {
               <FileText className="h-4 w-4 flex-shrink-0" />
               <span>Bijlage: {offerte.nummer}.pdf (wordt automatisch gegenereerd)</span>
             </div>
+            {offerte.publiek_token && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Publieke link</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    readOnly
+                    value={`${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`}
+                    className="text-xs font-mono bg-muted/30"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const url = `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
+                      navigator.clipboard.writeText(url)
+                      toast.success('Link gekopieerd')
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      window.open(`/offerte-bekijken/${offerte.publiek_token}`, '_blank')
+                    }}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSendDialog(false)} disabled={isSending}>

@@ -92,6 +92,8 @@ import {
   updateOfferte,
   createDocument,
   deleteDocument,
+  getProjectFotos,
+  createProjectFoto,
   createTekeningGoedkeuring,
   getTekeningGoedkeuringen,
   getKlant,
@@ -114,7 +116,7 @@ import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, MontageAfspraak } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, MontageAfspraak, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { logger } from '../../utils/logger'
@@ -244,6 +246,7 @@ export function ProjectDetail() {
   const [alleMedewerkers, setAlleMedewerkers] = useState<Medewerker[]>([])
   const [projectToewijzingen, setProjectToewijzingen] = useState<ProjectToewijzing[]>([])
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
+  const [projectFotos, setProjectFotos] = useState<ProjectFoto[]>([])
   const [projectMontages, setProjectMontages] = useState<MontageAfspraak[]>([])
   const [montageDialogOpen, setMontageDialogOpen] = useState(false)
   const [montageTitel, setMontageTitel] = useState('')
@@ -471,6 +474,16 @@ export function ProjectDetail() {
     }
   }, [id])
 
+  const fetchProjectFotos = useCallback(async () => {
+    if (!id) return
+    try {
+      const fotos = await getProjectFotos(id)
+      setProjectFotos(fotos)
+    } catch (err) {
+      logger.error('Fout bij ophalen project foto\'s:', err)
+    }
+  }, [id])
+
   const fetchGoedkeuringen = useCallback(async () => {
     if (!id) return
     try {
@@ -514,7 +527,7 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, montageData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, montageData, fotosData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
@@ -525,6 +538,7 @@ export function ProjectDetail() {
           getProjectToewijzingen(id),
           getWerkbonnenByProject(id),
           getMontageAfsprakenByProject(id).catch(() => []),
+          getProjectFotos(id).catch(() => []),
         ])
         if (!cancelled) {
           setProject(projectData)
@@ -537,6 +551,7 @@ export function ProjectDetail() {
           setProjectToewijzingen(toewijzingenData || [])
           setProjectWerkbonnen(werkbonnenData || [])
           setProjectMontages(montageData || [])
+          setProjectFotos(fotosData || [])
         }
 
         // Fetch linked facturen for gefactureerde offertes
@@ -730,7 +745,7 @@ export function ProjectDetail() {
   const daysLeft = isValidDate ? Math.ceil((eindDatum.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0
   const takenKlaar = projectTaken.filter(t => t.status === 'klaar').length
   const takenTotaal = projectTaken.length
-  const projectFotos = projectDocumenten.filter(d => d.map === "Situatiefoto's" || (d.type.startsWith('image/') && d.tags?.includes('foto')))
+  // projectFotos loaded from state via getProjectFotos
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -764,25 +779,12 @@ export function ProjectDetail() {
                 const file = e.target.files[0]
                 if (!file.type.startsWith('image/')) return
                 try {
-                  const storagePath = `projects/${id}/fotos/${Date.now()}_${file.name}`
-                  const { uploadFile } = await import('@/services/storageService')
-                  await uploadFile(file, storagePath)
-                  await createDocument({
-                    user_id: user?.id || '',
-                    project_id: id || null,
-                    klant_id: project?.klant_id || null,
-                    naam: file.name,
-                    type: file.type,
-                    grootte: file.size,
-                    map: "Situatiefoto's",
-                    storage_path: storagePath,
-                    status: 'definitief',
-                    tags: ['foto', 'situatie'],
-                    gedeeld_met: [],
-                    beschrijving: '',
-                  })
+                  await createProjectFoto(
+                    { user_id: user?.id || '', project_id: id || '', omschrijving: file.name, type: 'situatie' },
+                    file,
+                  )
                   toast.success('Foto geüpload')
-                  await fetchDocumenten()
+                  await fetchProjectFotos()
                 } catch (err) {
                   logger.error('Fout bij uploaden foto:', err)
                   toast.error('Kon foto niet uploaden')
@@ -1882,10 +1884,9 @@ export function ProjectDetail() {
           {/* ── Situatiefoto's ── */}
           <ProjectPhotoGallery
             projectId={id!}
-            klantId={project.klant_id}
             userId={user?.id || ''}
             photos={projectFotos}
-            onPhotosChanged={fetchDocumenten}
+            onPhotosChanged={fetchProjectFotos}
           />
 
           {/* ── Bestanden (drag & drop + upload button) ── */}

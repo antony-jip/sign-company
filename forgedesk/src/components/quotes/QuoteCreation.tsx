@@ -107,7 +107,7 @@ export function QuoteCreation() {
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
-  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2 } = useAppSettings()
+  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, emailHandtekening } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -310,7 +310,7 @@ export function QuoteCreation() {
               urenMap[veld] = (urenMap[veld] || 0) + r.aantal
               totaal += r.aantal
               // Track tarief voor +/- berekening
-              tariefMap[veld].totaalPrijs += r.verkoop_prijs * r.aantal
+              tariefMap[veld].totaalPrijs += round2(r.verkoop_prijs * r.aantal)
               tariefMap[veld].totaalAantal += r.aantal
               break
             }
@@ -1340,7 +1340,13 @@ export function QuoteCreation() {
 
       if (status === 'verzonden' && selectedKlant?.email) {
         try {
-          const { subject, html } = offerteVerzendTemplate({
+          // Haal opgeslagen offerte op voor publiek_token
+          const savedOfferte = await getOfferte(savedOfferteId).catch(() => null)
+          const bekijkUrl = savedOfferte?.publiek_token
+            ? `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
+            : undefined
+
+          const { subject, html, text } = offerteVerzendTemplate({
             klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
             offerteNummer,
             offerteTitel,
@@ -1348,9 +1354,11 @@ export function QuoteCreation() {
             geldigTot,
             bedrijfsnaam,
             primaireKleur,
+            handtekening: emailHandtekening || undefined,
             logoUrl: profile?.logo_url || undefined,
+            bekijkUrl,
           })
-          await sendEmail(selectedKlant.email, subject, '', { html })
+          await sendEmail(selectedKlant.email, subject, text, { html })
         } catch (emailErr) {
           logger.error('Email verzenden mislukt:', emailErr)
           toast.error('Offerte opgeslagen maar email niet verzonden')
@@ -1518,7 +1526,28 @@ export function QuoteCreation() {
         quoteId = editOfferteId || autoSaveIdRef.current
       }
 
-      await sendEmail(emailTo.trim(), emailSubject.trim(), emailBody, { html: emailBody.replace(/\n/g, '<br>') })
+      // Haal offerte op voor publiek_token
+      const savedQuoteId = editOfferteId || autoSaveIdRef.current
+      const savedOfferte = savedQuoteId ? await getOfferte(savedQuoteId).catch(() => null) : null
+      const bekijkUrl = savedOfferte?.publiek_token
+        ? `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
+        : undefined
+
+      const klantNaam = selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || ''
+      const { html: templateHtml, text: templateText } = offerteVerzendTemplate({
+        klantNaam,
+        offerteNummer,
+        offerteTitel,
+        totaalBedrag: formatCurrency(round2(subtotaal + btwBedrag)),
+        geldigTot,
+        bedrijfsnaam,
+        primaireKleur,
+        handtekening: emailHandtekening || undefined,
+        logoUrl: profile?.logo_url || undefined,
+        bekijkUrl,
+      })
+
+      await sendEmail(emailTo.trim(), emailSubject.trim(), templateText, { html: templateHtml })
       if (quoteId) {
         await updateOfferte(quoteId, {
           status: 'verzonden',
@@ -2070,7 +2099,27 @@ export function QuoteCreation() {
 
                   <Separator />
 
-                  <Textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={8} className="resize-y" placeholder="Schrijf uw bericht hier..." />
+                  <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <Mail className="h-3.5 w-3.5" />
+                      Email preview — HTML template
+                    </div>
+                    <div className="text-sm text-foreground/80 space-y-2">
+                      <p>Beste {selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || 'klant'},</p>
+                      <p>Hierbij ontvangt u onze offerte <strong>{offerteNummer}</strong> voor <strong>{offerteTitel}</strong>.</p>
+                      <div className="bg-card rounded border border-border p-3 text-xs space-y-1">
+                        <p><strong>Totaalbedrag:</strong> {formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                        <p><strong>Geldig tot:</strong> {geldigTot ? new Date(geldigTot).toLocaleDateString('nl-NL') : '-'}</p>
+                      </div>
+                      <div className="flex items-center gap-2 py-1">
+                        <span className="inline-block px-4 py-2 rounded-md text-xs font-semibold text-white" style={{ backgroundColor: primaireKleur || '#2941aa' }}>
+                          Offerte bekijken →
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Heeft u vragen? Neem gerust contact op.</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground/60">De klant ontvangt een professionele HTML email met uw bedrijfslogo, huisstijlkleur en een directe link naar de offerte.</p>
+                  </div>
 
                   <Separator />
 

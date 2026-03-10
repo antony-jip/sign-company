@@ -912,26 +912,6 @@ export function EmailReader({
           {forgieLoading === 'summarize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
           Samenvatten
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1.5 text-xs rounded-lg text-blush-deep hover:text-blush-deep hover:bg-blush/20"
-          disabled={forgieLoading !== null}
-          onClick={() => handleForgie('translate-en')}
-        >
-          {forgieLoading === 'translate-en' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
-          Vertaal → EN
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1.5 text-xs rounded-lg text-blush-deep hover:text-blush-deep hover:bg-blush/20"
-          disabled={forgieLoading !== null}
-          onClick={() => handleForgie('generate-reply')}
-        >
-          {forgieLoading === 'generate-reply' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
-          Beantwoord met AI
-        </Button>
       </div>
 
       {/* ── Forgie Summary Card ── */}

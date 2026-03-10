@@ -52,7 +52,7 @@ import { logger } from '../../utils/logger'
 import type { Klant } from '@/types'
 import { callForgie, getForgieUsage } from '@/services/forgieService'
 import type { ForgieAction } from '@/services/forgieService'
-import { Loader2, Globe } from 'lucide-react'
+import { Loader2, Globe, RefreshCw } from 'lucide-react'
 
 interface EmailComposeProps {
   open: boolean
@@ -158,29 +158,17 @@ const DEFAULT_SIGNATURES: Signature[] = [
   {
     id: 'zakelijk',
     naam: 'Zakelijk',
-    inhoud: `Met vriendelijke groet,
-
-[mijn_naam]
-[bedrijf]
-[telefoon]`,
+    inhoud: 'Met vriendelijke groet,',
   },
   {
     id: 'informeel',
     naam: 'Informeel',
-    inhoud: `Groeten,
-
-[mijn_naam]`,
+    inhoud: 'Groeten,',
   },
   {
     id: 'offerte',
     naam: 'Offerte',
-    inhoud: `Met vriendelijke groet,
-
-[mijn_naam]
-[bedrijf]
-[telefoon]
-
-P.S. Heeft u vragen over deze offerte? Bel ons gerust!`,
+    inhoud: 'Met vriendelijke groet,',
   },
 ]
 
@@ -288,6 +276,8 @@ export function EmailCompose({
   const [forgieLoading, setForgieLoading] = useState(false)
   const [forgieOriginalText, setForgieOriginalText] = useState<string | null>(null)
   const [forgieUsage, setForgieUsage] = useState<{ usage: number; limiet: number } | null>(null)
+  const [forgieSuggestion, setForgieSuggestion] = useState<string | null>(null)
+  const [forgieLastAction, setForgieLastAction] = useState<ForgieAction | null>(null)
   const forgieMenuRef = useRef<HTMLDivElement>(null)
 
   const scheduleDropdownRef = useRef<HTMLDivElement>(null)
@@ -299,26 +289,34 @@ export function EmailCompose({
     ? `<br><img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`
     : ''
 
+  // Build signature HTML block (image only, or image + text from selected signature)
+  const buildSignatureHtml = useCallback(() => {
+    const sig = allSignatures.find(s => s.id === selectedSignature)
+    const sigText = sig ? sig.inhoud.replace(/\n/g, '<br>') : ''
+    // Only include image if available; text signature is secondary
+    if (sigImageHtml || sigText) {
+      return `<br><br>--<br>${sigImageHtml}${sigText ? `<br>${sigText}` : ''}`
+    }
+    return ''
+  }, [allSignatures, selectedSignature, sigImageHtml])
+
   useEffect(() => {
     if (open && editorRef.current) {
       const timer = setTimeout(() => {
         if (!editorRef.current) return
+        const sigHtml = buildSignatureHtml()
         if (defaultBody) {
-          editorRef.current.innerHTML = defaultBody.replace(/\n/g, '<br>')
+          // Reply/forward: insert signature before the quoted text
+          editorRef.current.innerHTML = `<br>${sigHtml}${defaultBody.replace(/\n/g, '<br>')}`
         } else {
-          // Use selected signature with optional image
-          const sig = allSignatures.find(s => s.id === selectedSignature)
-          if (sig) {
-            editorRef.current.innerHTML = `<br><br>--<br>${sigImageHtml}${sig.inhoud.replace(/\n/g, '<br>')}`
-          } else if (emailHandtekening) {
-            editorRef.current.innerHTML = `<br><br>--<br>${sigImageHtml}${emailHandtekening.replace(/\n/g, '<br>')}`
-          }
+          // New email: just signature
+          editorRef.current.innerHTML = sigHtml || ''
         }
         setEditorEmpty(!editorRef.current.innerText?.trim())
       }, 50)
       return () => clearTimeout(timer)
     }
-  }, [open, defaultBody, emailHandtekening, selectedSignature, allSignatures, sigImageHtml])
+  }, [open, defaultBody, buildSignatureHtml])
 
   // Sync state when defaults change (reply/forward)
   useEffect(() => {
@@ -391,13 +389,18 @@ export function EmailCompose({
   const handleSignatureChange = useCallback((sigId: string) => {
     setSelectedSignature(sigId)
     const sig = allSignatures.find(s => s.id === sigId)
-    if (sig && editorRef.current) {
-      // Remove old signature (everything after --\n) and add new one
+    if (editorRef.current) {
       const currentHtml = editorRef.current.innerHTML
       const sigSeparator = currentHtml.indexOf('--<br>')
       const bodyPart = sigSeparator >= 0 ? currentHtml.substring(0, sigSeparator) : currentHtml
-      const newSigHtml = `--<br>${sigImageHtml}${sig.inhoud.replace(/\n/g, '<br>')}`
-      editorRef.current.innerHTML = `${bodyPart}${newSigHtml}`
+      if (sig) {
+        const sigText = sig.inhoud.replace(/\n/g, '<br>')
+        const newSigHtml = `--<br>${sigImageHtml}${sigText ? `<br>${sigText}` : ''}`
+        editorRef.current.innerHTML = `${bodyPart}${newSigHtml}`
+      } else {
+        // 'none' selected — remove signature
+        editorRef.current.innerHTML = bodyPart
+      }
       setEditorEmpty(!editorRef.current.innerText?.trim())
     }
     setShowSignatureDropdown(false)
@@ -476,14 +479,57 @@ export function EmailCompose({
     setAttachments(prev => prev.filter((_, i) => i !== index))
   }, [])
 
+  // Drag & drop for attachments
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length > 0) {
+      setAttachments((prev) => [...prev, ...files])
+      toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} toegevoegd`)
+    }
+  }, [])
+
+  // Ref to latest handleSend so the keyboard effect doesn't go stale
+  const handleSendRef = useRef<() => void>(() => {})
+
+  // Ctrl+Enter to send
+  useEffect(() => {
+    if (!open) return
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        handleSendRef.current()
+      }
+      if (e.key === 'Escape' && isFullscreen) {
+        e.preventDefault()
+        setIsFullscreen(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, isFullscreen])
+
   const handleTemplateChange = (value: string) => {
     setTemplate(value)
     if (value !== 'none' && emailTemplates[value] && editorRef.current) {
       const tmpl = emailTemplates[value]
       if (tmpl.onderwerp && !subject) setSubject(tmpl.onderwerp)
-      const signature = emailHandtekening ? `\n\n--\n${emailHandtekening}` : ''
-      const fullBody = tmpl.body + signature
-      editorRef.current.innerHTML = fullBody.replace(/\n/g, '<br>')
+      const sigHtml = buildSignatureHtml()
+      editorRef.current.innerHTML = tmpl.body.replace(/\n/g, '<br>') + sigHtml
       setEditorEmpty(false)
     }
   }
@@ -541,29 +587,37 @@ export function EmailCompose({
     }
     setForgieLoading(true)
     setShowForgieMenu(false)
+    setForgieLastAction(action)
     setForgieOriginalText(currentText)
     try {
       const result = await callForgie(action, currentText)
-      if (editorRef.current) {
-        editorRef.current.innerText = result.result
-        setEditorEmpty(false)
-      }
-      toast('Forgie heeft de tekst herschreven', {
-        action: {
-          label: 'Ongedaan maken',
-          onClick: () => {
-            if (editorRef.current && forgieOriginalText) {
-              editorRef.current.innerText = forgieOriginalText
-              setEditorEmpty(!forgieOriginalText.trim())
-            }
-          },
-        },
-      })
+      setForgieSuggestion(result.result)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Forgie is niet beschikbaar')
     } finally {
       setForgieLoading(false)
     }
+  }
+
+  const handleForgieApply = () => {
+    if (editorRef.current && forgieSuggestion) {
+      editorRef.current.innerText = forgieSuggestion
+      setEditorEmpty(false)
+    }
+    setForgieSuggestion(null)
+    setForgieLastAction(null)
+  }
+
+  const handleForgieRetry = () => {
+    if (forgieLastAction) {
+      setForgieSuggestion(null)
+      handleForgieAction(forgieLastAction)
+    }
+  }
+
+  const handleForgieDismiss = () => {
+    setForgieSuggestion(null)
+    setForgieLastAction(null)
   }
 
   const handleForgieMenuOpen = async () => {
@@ -595,47 +649,7 @@ export function EmailCompose({
       setIsSending(false)
     }
   }
-
-  // Ctrl+Enter to send
-  useEffect(() => {
-    if (!open) return
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault()
-        handleSend()
-      }
-      if (e.key === 'Escape' && isFullscreen) {
-        e.preventDefault()
-        setIsFullscreen(false)
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, isFullscreen])
-
-  // Drag & drop for attachments
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) {
-      setAttachments((prev) => [...prev, ...files])
-      toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} toegevoegd`)
-    }
-  }, [])
+  handleSendRef.current = handleSend
 
   const resetAndClose = () => {
     setTo(defaultTo)
@@ -663,7 +677,7 @@ export function EmailCompose({
   return (
     <div
       className={cn(
-        'flex flex-col',
+        'relative flex flex-col',
         isFullscreen
           ? 'fixed inset-0 z-50 bg-background'
           : 'h-full'
@@ -1223,6 +1237,54 @@ export function EmailCompose({
           </div>
         </div>
       </div>
+
+      {/* ── AI Suggestie Popup ── */}
+      {forgieSuggestion && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px] rounded-2xl">
+          <div
+            className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl flex flex-col"
+            style={{ minWidth: 420, minHeight: 200, maxHeight: '60vh', width: '80%', maxWidth: 600 }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blush-deep" />
+                <span className="text-sm font-semibold text-foreground">AI Suggestie</span>
+              </div>
+              <button
+                onClick={handleForgieDismiss}
+                className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content — scrollbaar */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                {forgieSuggestion}
+              </p>
+            </div>
+
+            {/* Sticky footer knoppen */}
+            <div className="flex items-center gap-2 px-5 py-3.5 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
+              <Button size="sm" className="gap-1.5" onClick={handleForgieApply}>
+                Toepassen
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleForgieRetry} disabled={forgieLoading}>
+                {forgieLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                Opnieuw
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+                setForgieSuggestion(null)
+                setShowForgieMenu(true)
+              }}>
+                Ander
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

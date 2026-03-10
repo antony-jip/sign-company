@@ -77,8 +77,9 @@ export function EmailLayout() {
   // ── Hooks ──
   const {
     emails, setEmails, klanten, setKlanten,
-    isLoading, isRefreshing, useIMAP, isLoadingBody,
-    handleRefresh, handleFolderLoad, loadEmailBody, user,
+    isLoading, isRefreshing, useIMAP, imapTotal, isLoadingBody,
+    isLoadingMore, handleRefresh, handleFolderLoad, loadEmailBody,
+    loadMoreEmails, user,
   } = useEmailData()
 
   const emailActions = useEmailActions({
@@ -108,6 +109,7 @@ export function EmailLayout() {
           email: clean,
           company: klant.bedrijfsnaam,
           phone: cp?.telefoon || klant.telefoon,
+          klantId: klant.id,
           isCustomer: true,
           subscribedNewsletter: false,
           tags: klant.tags || [],
@@ -147,6 +149,20 @@ export function EmailLayout() {
     if (viewMode === 'composing' && composeDefaults.to) return composeDefaults.to
     return ''
   }, [viewMode, selectedEmail, composeDefaults.to])
+
+  // ── Emails for this contact (sent + received) ──
+  const contactEmails = useMemo(() => {
+    const addr = currentSenderEmail?.toLowerCase()
+    if (!addr) return []
+    return emails
+      .filter((e) => {
+        const from = extractSenderEmail(e.van).toLowerCase()
+        const to = extractSenderEmail(e.aan).toLowerCase()
+        return from === addr || to === addr
+      })
+      .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+      .map((e) => ({ id: e.id, onderwerp: e.onderwerp, datum: e.datum, map: e.map, van: e.van, aan: e.aan }))
+  }, [emails, currentSenderEmail])
 
   // ── Email selection handler ──
   const handleSelectEmail = useCallback(async (email: Email) => {
@@ -324,12 +340,14 @@ export function EmailLayout() {
   }, [])
 
   const handleCreateTaskFromEmail = useCallback(async (email: Email, description: string) => {
+    const matchedContact = findContactByEmail(email.van)
     try {
       await createTaak({
         user_id: user?.id || '',
         project_id: '',
+        klant_id: matchedContact?.klantId || recentlyCreatedKlantId || '',
         titel: description,
-        beschrijving: `Aangemaakt vanuit email: "${email.onderwerp}"\nVan: ${email.van}\nDatum: ${email.datum}`,
+        beschrijving: `Aangemaakt vanuit email: "${email.onderwerp}"\nVan: ${email.van}\nDatum: ${email.datum}\nEmail ID: ${email.id}`,
         status: 'todo',
         prioriteit: 'medium',
         toegewezen_aan: '',
@@ -341,7 +359,7 @@ export function EmailLayout() {
       logger.error('Taak aanmaken mislukt:', err)
       toast.error('Kon taak niet aanmaken')
     }
-  }, [user])
+  }, [user, findContactByEmail, recentlyCreatedKlantId])
 
   // Clear recently created klant when switching emails
   useEffect(() => {
@@ -397,12 +415,14 @@ export function EmailLayout() {
   }, [user?.id, recentlyCreatedKlantId])
 
   const handleQuickTaskFromEmail = useCallback(async (data: { titel: string; beschrijving: string }) => {
+    const matchedContact = selectedEmail ? findContactByEmail(selectedEmail.van) : null
     try {
       await createTaak({
         user_id: user?.id || '',
         project_id: '',
+        klant_id: matchedContact?.klantId || recentlyCreatedKlantId || '',
         titel: data.titel,
-        beschrijving: data.beschrijving + (selectedEmail ? `\n\nVanuit email: "${selectedEmail.onderwerp}"` : ''),
+        beschrijving: data.beschrijving + (selectedEmail ? `\n\nVanuit email: "${selectedEmail.onderwerp}"\nEmail ID: ${selectedEmail.id}` : ''),
         status: 'todo',
         prioriteit: 'medium',
         toegewezen_aan: '',
@@ -415,7 +435,7 @@ export function EmailLayout() {
       logger.error('Taak aanmaken mislukt:', err)
       toast.error('Kon taak niet aanmaken')
     }
-  }, [user?.id, selectedEmail])
+  }, [user?.id, selectedEmail, findContactByEmail, recentlyCreatedKlantId])
 
   const handleNavigateToOfferte = useCallback((_klantId?: string) => {
     window.location.hash = '#/offertes/nieuw'
@@ -519,9 +539,9 @@ export function EmailLayout() {
            ═══════════════════════════════════════════════════════════════ */
         <Card className="flex-1 flex overflow-hidden">
 
-          {/* ═══ Column 1: Folder Sidebar (desktop only) ═══ */}
+          {/* ═══ Column 1: Folder Sidebar (desktop only, sticky) ═══ */}
           <div className={cn(
-            'border-r flex-shrink-0 flex flex-col bg-muted/20 dark:bg-muted/10',
+            'border-r flex-shrink-0 flex flex-col bg-muted/20 dark:bg-muted/10 sticky top-0 self-start h-full overflow-y-auto',
             // Always visible on md+ screens, hidden on mobile
             'hidden md:flex w-[200px]'
           )}>
@@ -568,7 +588,7 @@ export function EmailLayout() {
             </nav>
 
             {/* Label section */}
-            <div className="border-t px-3 py-3">
+            <div className="border-t px-3 py-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Tag className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Labels</span>
@@ -866,6 +886,24 @@ export function EmailLayout() {
                       />
                     )
                   })}
+                  {/* Meer laden knop */}
+                  {useIMAP && emails.length < imapTotal && (
+                    <div className="p-3 text-center border-t">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => loadMoreEmails(selectedFolder)}
+                        disabled={isLoadingMore}
+                        className="gap-2 text-muted-foreground"
+                      >
+                        {isLoadingMore ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Laden...</>
+                        ) : (
+                          <>Meer laden ({emails.length} van {imapTotal})</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </ScrollArea>
@@ -901,15 +939,16 @@ export function EmailLayout() {
                 ) : null}
               </div>
 
-              {/* CRM Sidebar */}
+              {/* CRM Sidebar (sticky) */}
               {showSidebar && (
-                <div className="border-l hidden xl:block">
+                <div className="border-l hidden xl:block sticky top-0 self-start h-full overflow-y-auto">
                   <ContactSidebar
                     contact={currentContact}
                     senderName={currentSenderName}
                     senderEmail={currentSenderEmail}
                     senderCompany={currentContact?.company}
                     emailSubject={selectedEmail?.onderwerp}
+                    contactEmails={contactEmails}
                     onAddCustomer={handleAddCustomer}
                     onSubscribeNewsletter={handleSubscribeNewsletter}
                     onCreateProject={handleCreateProjectFromEmail}

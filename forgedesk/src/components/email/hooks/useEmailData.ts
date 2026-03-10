@@ -6,11 +6,13 @@ import type { Email, Klant } from '@/types'
 import type { EmailFolder } from '../emailTypes'
 import { IMAP_FOLDER_MAP } from '../emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 
 export function useEmailData() {
   const { user } = useAuth()
+  const { emailFetchLimit } = useAppSettings()
   const [emails, setEmails] = useState<Email[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -18,6 +20,7 @@ export function useEmailData() {
   const [useIMAP, setUseIMAP] = useState(false)
   const [imapTotal, setImapTotal] = useState(0)
   const [isLoadingBody, setIsLoadingBody] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   // Email body cache for IMAP
   const bodyCacheRef = useRef<Map<string, string>>(new Map())
@@ -61,10 +64,12 @@ export function useEmailData() {
     } catch { /* storage full, ignore */ }
   }, [])
 
+  const fetchLimit = emailFetchLimit || 200
+
   const loadEmails = useCallback(async (folder?: string) => {
     const imapFolder = folder || 'INBOX'
     try {
-      const result = await fetchEmailsFromIMAP(imapFolder, 20, 0)
+      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, 0)
       setImapTotal(result.total)
       setUseIMAP(true)
       const emailData = result.emails.map((msg) => imapToEmail(msg, imapFolder))
@@ -74,7 +79,25 @@ export function useEmailData() {
       setUseIMAP(false)
       return await getEmails().catch(() => [])
     }
-  }, [imapToEmail, setCachedEmails])
+  }, [imapToEmail, setCachedEmails, fetchLimit])
+
+  const loadMoreEmails = useCallback(async (folder: EmailFolder) => {
+    if (!useIMAP || isLoadingMore) return
+    const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
+    const currentCount = emails.length
+    if (currentCount >= imapTotal) return
+    setIsLoadingMore(true)
+    try {
+      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, currentCount)
+      const moreEmails = result.emails.map((msg) => imapToEmail(msg, imapFolder))
+      setEmails((prev) => [...prev, ...moreEmails])
+      setImapTotal(result.total)
+    } catch {
+      toast.error('Kon meer emails niet laden')
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [useIMAP, isLoadingMore, emails.length, imapTotal, imapToEmail, fetchLimit])
 
   // Initial load: show cached emails instantly, then refresh from IMAP
   useEffect(() => {
@@ -201,9 +224,11 @@ export function useEmailData() {
     useIMAP,
     imapTotal,
     isLoadingBody,
+    isLoadingMore,
     handleRefresh,
     handleFolderLoad,
     loadEmailBody,
+    loadMoreEmails,
     user,
   }
 }

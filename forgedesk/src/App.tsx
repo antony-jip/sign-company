@@ -48,6 +48,7 @@ import { PublicBookingPage } from '@/components/booking/PublicBookingPage'
 import { WerkbonnenLayout } from '@/components/werkbonnen/WerkbonnenLayout'
 import { WerkbonDetail } from '@/components/werkbonnen/WerkbonDetail'
 import { BetaalPagina } from '@/components/betaling/BetaalPagina'
+import { BetaaldPagina } from '@/components/betaling/BetaaldPagina'
 import { OffertePubliekPagina } from '@/components/offerte/OffertePubliekPagina'
 import { BestelbonnenLayout } from '@/components/bestelbonnen/BestelbonnenLayout'
 import { BestelbonDetail } from '@/components/bestelbonnen/BestelbonDetail'
@@ -89,6 +90,8 @@ function AppContent() {
       <Route path="/boeken/:userId" element={<PublicBookingPage />} />
       {/* Publieke route - online factuur betalen (geen login vereist) */}
       <Route path="/betalen/:token" element={<BetaalPagina />} />
+      {/* Publieke route - bevestiging na Mollie betaling */}
+      <Route path="/betaald" element={<BetaaldPagina />} />
       {/* Publieke route - offerte bekijken door klant (geen login vereist) */}
       <Route path="/offerte-bekijken/:token" element={<OffertePubliekPagina />} />
       {/* Publieke route - lead formulier invullen (geen login vereist) */}

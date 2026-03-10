@@ -950,6 +950,7 @@ const EMAIL_TABS: SubTab[] = [
   { id: 'handtekening', label: 'Handtekening', icon: FileText },
   { id: 'teamleden', label: 'Team Handtekeningen', icon: Users },
   { id: 'verbinding', label: 'Verbinding', icon: Server },
+  { id: 'algemeen', label: 'Algemeen', icon: Mail },
 ]
 
 function SignatureImageUpload({
@@ -1108,7 +1109,7 @@ function SignaturePreview({
 
 function EmailTab() {
   const { user } = useAuth()
-  const { refreshSettings, profile } = useAppSettings()
+  const { refreshSettings, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
   const [subTab, setSubTab] = useState('handtekening')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -1117,6 +1118,7 @@ function EmailTab() {
   const [afzenderNaam, setAfzenderNaam] = useState('')
   const [handtekeningAfbeelding, setHandtekeningAfbeelding] = useState('')
   const [afbeeldingGrootte, setAfbeeldingGrootte] = useState(64)
+  const [emailFetchLimit, setEmailFetchLimit] = useState(currentFetchLimit || 200)
 
   // Team signatures (admin only)
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
@@ -1453,6 +1455,59 @@ function EmailTab() {
           </Card>
           <EmailSettingsInline onSaved={checkEmailStatus} />
         </div>
+      )}
+
+      {subTab === 'algemeen' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              E-mail Voorkeuren
+            </CardTitle>
+            <CardDescription>Aantal emails dat bij opstarten wordt geladen</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label>Aantal mails bij opstarten</Label>
+              <Select
+                value={String(emailFetchLimit)}
+                onValueChange={(val) => setEmailFetchLimit(Number(val))}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="200">200</SelectItem>
+                  <SelectItem value="500">500</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Meer emails laden kan trager zijn bij een grote inbox.</p>
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={async () => {
+                  if (!user?.id) return
+                  try {
+                    setIsSaving(true)
+                    await updateAppSettings(user.id, { email_fetch_limit: emailFetchLimit })
+                    await refreshSettings()
+                    toast.success('E-mail voorkeuren opgeslagen')
+                  } catch (err) {
+                    console.error('[SettingsLayout] Email voorkeuren opslaan mislukt:', err)
+                    toast.error('Kon voorkeuren niet opslaan')
+                  } finally {
+                    setIsSaving(false)
+                  }
+                }}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Opslaan...' : 'Opslaan'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </>
   )
@@ -1853,29 +1908,66 @@ const INTEGRATIES_TABS: SubTab[] = [
 
 function IntegratiesTab() {
   const [subTab, setSubTab] = useState('koppelingen')
+  const { user } = useAuth()
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
   const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
   // Anthropic key is server-side only (configured via ANTHROPIC_API_KEY env var on Vercel)
   const anthropicConfigured = supabaseConnected
 
-  const [emailConnected, setEmailConnected] = useState(false)
-  const [emailAddress, setEmailAddress] = useState<string | null>(null)
+  // Mollie state
+  const [mollieEnabled, setMollieEnabled] = useState(false)
+  const [mollieApiKey, setMollieApiKey] = useState('')
+  const [mollieSaving, setMollieSaving] = useState(false)
+  const [mollieLoaded, setMollieLoaded] = useState(false)
 
-  // Check email connection status on mount and after save
-  const checkEmailStatus = useCallback(() => {
-    const localSettings = getLocalEmailSettings()
-    if (localSettings && localSettings.gmail_address && localSettings.app_password) {
-      setEmailConnected(true)
-      setEmailAddress(localSettings.gmail_address)
-    } else {
-      setEmailConnected(false)
-      setEmailAddress(null)
-    }
-  }, [])
+  // Exact Online state
+  const [exactClientId, setExactClientId] = useState('')
+  const [exactClientSecret, setExactClientSecret] = useState('')
+  const [exactConnected, setExactConnected] = useState(false)
+  const [exactSaving, setExactSaving] = useState(false)
 
   useEffect(() => {
-    checkEmailStatus()
-  }, [checkEmailStatus])
+    if (!user?.id) return
+    getAppSettings(user.id).then((s) => {
+      setMollieEnabled(s.mollie_enabled ?? false)
+      setMollieApiKey(s.mollie_api_key ?? '')
+      setMollieLoaded(true)
+      setExactClientId(s.exact_online_client_id ?? '')
+      setExactClientSecret(s.exact_online_client_secret ?? '')
+      setExactConnected(s.exact_online_connected ?? false)
+    }).catch(() => {})
+  }, [user?.id])
+
+  const handleMollieSave = async () => {
+    if (!user?.id) return
+    setMollieSaving(true)
+    try {
+      await updateAppSettings(user.id, { mollie_enabled: mollieEnabled, mollie_api_key: mollieApiKey })
+      toast.success('Mollie instellingen opgeslagen')
+    } catch (err) {
+      logger.error('Fout bij opslaan Mollie instellingen:', err)
+      toast.error('Kon Mollie instellingen niet opslaan')
+    } finally {
+      setMollieSaving(false)
+    }
+  }
+
+  const handleExactSave = async () => {
+    if (!user?.id) return
+    setExactSaving(true)
+    try {
+      await updateAppSettings(user.id, {
+        exact_online_client_id: exactClientId,
+        exact_online_client_secret: exactClientSecret,
+      })
+      toast.success('Exact Online instellingen opgeslagen')
+    } catch (err) {
+      logger.error('Fout bij opslaan Exact Online instellingen:', err)
+      toast.error('Kon Exact Online instellingen niet opslaan')
+    } finally {
+      setExactSaving(false)
+    }
+  }
 
   const integrations = [
     {
@@ -1889,18 +1981,6 @@ function IntegratiesTab() {
         </div>
       ),
       details: supabaseConnected ? `URL: ${supabaseUrl.substring(0, 30)}...` : 'Demo modus actief - data wordt lokaal opgeslagen',
-    },
-    {
-      id: 'gmail',
-      name: 'Gmail / SMTP',
-      description: 'E-mail verzenden via SMTP',
-      connected: emailConnected,
-      icon: (
-        <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-          <span className="text-red-700 dark:text-red-400 font-bold text-sm">GM</span>
-        </div>
-      ),
-      details: emailConnected && emailAddress ? `Account: ${emailAddress}` : undefined,
     },
     {
       id: 'anthropic',
@@ -1979,16 +2059,167 @@ function IntegratiesTab() {
                   </p>
                 )}
 
-                {/* Gmail/Email setup info - instellingen staan hieronder inline */}
               </div>
             </div>
           </CardContent>
         </Card>
       ))}
 
-      <EmailSettingsInline
-        onSaved={checkEmailStatus}
-      />
+      {/* ── Mollie Instellingen ── */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <CreditCard className="w-5 h-5 text-orange-700 dark:text-orange-400" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">Mollie Betalingen</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Vul je Mollie API key in. Klanten kunnen dan direct betalen via de betaalpagina.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="mollie-enabled" className="text-sm font-medium">
+                  Mollie betalingen inschakelen
+                </Label>
+                <Switch
+                  id="mollie-enabled"
+                  checked={mollieEnabled}
+                  onCheckedChange={setMollieEnabled}
+                />
+              </div>
+
+              {mollieEnabled && (
+                <div className="space-y-2">
+                  <Label htmlFor="mollie-api-key" className="text-sm font-medium">
+                    Mollie API key
+                  </Label>
+                  <Input
+                    id="mollie-api-key"
+                    type="password"
+                    value={mollieApiKey}
+                    onChange={(e) => setMollieApiKey(e.target.value)}
+                    placeholder="live_... of test_..."
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Je vindt je API key in het{' '}
+                    <a
+                      href="https://my.mollie.com/dashboard/developers/api-keys"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline inline-flex items-center gap-0.5"
+                    >
+                      Mollie Dashboard <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button onClick={handleMollieSave} disabled={mollieSaving} size="sm">
+                  {mollieSaving ? 'Opslaan...' : 'Opslaan'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Exact Online Instellingen ── */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Globe className="w-5 h-5 text-indigo-700 dark:text-indigo-400" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-3 mb-1">
+                <h3 className="text-base font-semibold text-foreground">Exact Online</h3>
+                <Badge
+                  className={
+                    exactConnected
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                      : 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
+                  }
+                >
+                  {exactConnected ? (
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Verbonden
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <XCircle className="w-3 h-3" />
+                      Niet verbonden
+                    </span>
+                  )}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Koppel Exact Online om facturen, relaties en boekingen automatisch te synchroniseren.
+              </p>
+
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="exact-client-id" className="text-sm font-medium">
+                    Client ID
+                  </Label>
+                  <Input
+                    id="exact-client-id"
+                    value={exactClientId}
+                    onChange={(e) => setExactClientId(e.target.value)}
+                    placeholder="Exact Online Client ID"
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exact-client-secret" className="text-sm font-medium">
+                    Client Secret
+                  </Label>
+                  <Input
+                    id="exact-client-secret"
+                    type="password"
+                    value={exactClientSecret}
+                    onChange={(e) => setExactClientSecret(e.target.value)}
+                    placeholder="Exact Online Client Secret"
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Maak een app aan in het{' '}
+                  <a
+                    href="https://apps.exactonline.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline inline-flex items-center gap-0.5"
+                  >
+                    Exact Online App Center <ExternalLink className="w-3 h-3" />
+                  </a>{' '}
+                  om je Client ID en Secret te verkrijgen.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button onClick={handleExactSave} disabled={exactSaving} size="sm" variant="outline">
+                  {exactSaving ? 'Opslaan...' : 'Opslaan'}
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!exactClientId || !exactClientSecret}
+                  onClick={() => toast.info('Exact Online OAuth koppeling wordt binnenkort ondersteund')}
+                  className="gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Verbinden
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
     </>
   )

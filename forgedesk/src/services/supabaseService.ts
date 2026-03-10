@@ -57,6 +57,7 @@ import type {
   VisualizerStats,
   VisualizerCredits,
   CreditTransactie,
+  ProjectFoto,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -1181,11 +1182,8 @@ export async function getProfile(userId: string): Promise<Profile | null> {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
-    if (error) {
-      if (error.code === 'PGRST116') return null // not found
-      throw error
-    }
+      .maybeSingle()
+    if (error) throw error
     return data
   }
   const profiles = getLocalData<Profile>('profiles')
@@ -1717,9 +1715,21 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     offerte_intro_tekst: '',
     offerte_outro_tekst: '',
     afzender_naam: '',
+    email_fetch_limit: 200,
     forgie_enabled: true,
     forgie_bedrijfscontext: '',
     ai_tone_of_voice: '',
+    mollie_api_key: '',
+    mollie_enabled: false,
+    exact_online_client_id: '',
+    exact_online_client_secret: '',
+    exact_online_connected: false,
+    exact_administratie_id: '',
+    exact_verkoopboek: '80',
+    exact_grootboek: '8090',
+    exact_btw_hoog: '2',
+    exact_btw_laag: '',
+    exact_btw_nul: '',
     created_at: now(),
     updated_at: now(),
   }
@@ -1732,12 +1742,9 @@ export async function getAppSettings(userId: string): Promise<AppSettings> {
       .from('app_settings')
       .select('*')
       .eq('user_id', userId)
-      .single()
-    if (error) {
-      if (error.code === 'PGRST116') return getDefaultAppSettings(userId)
-      throw error
-    }
-    return data
+      .maybeSingle()
+    if (error) throw error
+    return data || getDefaultAppSettings(userId)
   }
   const settings = getLocalData<AppSettings>('app_settings')
   const found = settings.find((s) => s.user_id === userId)
@@ -1749,29 +1756,27 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
   if (isSupabaseConfigured() && supabase) {
     const { data: existing } = await supabase
       .from('app_settings')
-      .select('id')
+      .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
-    if (existing) {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .update({ ...updates, updated_at: now() })
-        .eq('user_id', userId)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    } else {
-      const defaults = getDefaultAppSettings(userId)
-      const { data, error } = await supabase
-        .from('app_settings')
-        .insert({ ...defaults, ...updates })
-        .select()
-        .single()
-      if (error) throw error
-      return data
+    const defaults = getDefaultAppSettings(userId)
+    const merged = { ...(existing || defaults), ...updates, user_id: userId, updated_at: now() }
+
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert(merged, { onConflict: 'user_id' })
+    if (error) {
+      console.error('[updateAppSettings] Supabase upsert failed:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        sentFields: Object.keys(merged),
+      })
+      throw error
     }
+    return merged as AppSettings
   }
 
   const settings = getLocalData<AppSettings>('app_settings')
@@ -1793,28 +1798,19 @@ export async function updateProfile(userId: string, updates: Partial<Profile>): 
   if (isSupabaseConfigured() && supabase) {
     const { data: existing } = await supabase
       .from('profiles')
-      .select('id')
+      .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
-    if (existing) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ ...updates, updated_at: now() })
-        .eq('id', userId)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    } else {
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({ id: userId, ...updates, created_at: now(), updated_at: now() })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    }
+    const merged = existing
+      ? { ...existing, ...updates, updated_at: now() }
+      : { id: userId, ...updates, created_at: now(), updated_at: now() }
+
+    const { error } = await supabase
+      .from('profiles')
+      .upsert(merged, { onConflict: 'id' })
+    if (error) throw error
+    return merged as Profile
   }
   const profiles = getLocalData<Profile>('profiles')
   const index = profiles.findIndex((p) => p.id === userId)
@@ -2344,11 +2340,8 @@ export async function getBookingAfspraken(): Promise<BookingAfspraak[]> {
 export async function getBookingAfspraakByToken(token: string): Promise<BookingAfspraak | null> {
   assertId(token, 'token')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('booking_afspraken').select('*').eq('token', token).single()
-    if (error) {
-      if (error.code === 'PGRST116') return null
-      throw error
-    }
+    const { data, error } = await supabase.from('booking_afspraken').select('*').eq('token', token).maybeSingle()
+    if (error) throw error
     return data
   }
   const items = getLocalData<BookingAfspraak>('booking_afspraken')
@@ -3634,11 +3627,8 @@ export async function getDocumentStyle(userId: string): Promise<DocumentStyle | 
       .from('document_styles')
       .select('*')
       .eq('user_id', userId)
-      .single()
-    if (error) {
-      if (error.code === 'PGRST116') return null
-      throw error
-    }
+      .maybeSingle()
+    if (error) throw error
     return data
   }
   const styles = getLocalData<DocumentStyle>('document_styles')
@@ -3652,7 +3642,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
       .from('document_styles')
       .select('id')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       const { data, error } = await supabase
@@ -3807,6 +3797,106 @@ export async function getMontageAfsprakenByKlant(klantId: string): Promise<Monta
     return data || []
   }
   return getLocalData<MontageAfspraak>('montage_afspraken').filter((a) => a.klant_id === klantId)
+}
+
+// ============ PROJECT FOTO'S ============
+
+const PHOTO_BUCKET = 'project-fotos'
+
+export async function getProjectFotos(projectId: string): Promise<ProjectFoto[]> {
+  assertId(projectId, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('project_fotos')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<ProjectFoto>('project_fotos').filter((f) => f.project_id === projectId)
+}
+
+export async function createProjectFoto(
+  foto: { user_id: string; project_id: string; omschrijving: string; type?: string },
+  file: File,
+): Promise<ProjectFoto> {
+  assertId(foto.user_id, 'user_id')
+  assertId(foto.project_id, 'project_id')
+  const storagePath = `${foto.project_id}/${Date.now()}_${file.name}`
+
+  let url: string
+
+  if (isSupabaseConfigured() && supabase) {
+    const { error: uploadError } = await supabase.storage
+      .from(PHOTO_BUCKET)
+      .upload(storagePath, file, { cacheControl: '3600', upsert: false })
+    if (uploadError) throw uploadError
+    const { data: urlData } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(storagePath)
+    url = urlData.publicUrl
+
+    const { data, error } = await supabase
+      .from('project_fotos')
+      .insert({
+        user_id: foto.user_id,
+        project_id: foto.project_id,
+        url,
+        omschrijving: foto.omschrijving,
+        type: foto.type || 'situatie',
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+
+  // localStorage fallback: store base64
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+  url = dataUrl
+
+  const record: ProjectFoto = {
+    id: crypto.randomUUID(),
+    user_id: foto.user_id,
+    project_id: foto.project_id,
+    url,
+    omschrijving: foto.omschrijving,
+    type: foto.type || 'situatie',
+    created_at: now(),
+  }
+  const all = getLocalData<ProjectFoto>('project_fotos')
+  all.push(record)
+  setLocalData('project_fotos', all)
+  return record
+}
+
+export async function deleteProjectFoto(id: string): Promise<void> {
+  assertId(id, 'id')
+  if (isSupabaseConfigured() && supabase) {
+    // Get the foto record to find the storage path
+    const { data: foto } = await supabase.from('project_fotos').select('url').eq('id', id).single()
+    if (foto?.url) {
+      // Try to extract storage path from URL and delete from storage
+      try {
+        const urlObj = new URL(foto.url)
+        const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/project-fotos\/(.+)/)
+        if (pathMatch) {
+          await supabase.storage.from(PHOTO_BUCKET).remove([pathMatch[1]])
+        }
+      } catch {
+        // Storage cleanup is best-effort
+      }
+    }
+    const { error } = await supabase.from('project_fotos').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const all = getLocalData<ProjectFoto>('project_fotos')
+  setLocalData('project_fotos', all.filter((f) => f.id !== id))
 }
 
 // ============ NUMMER GENERATOREN (GECENTRALISEERD) ============
@@ -4327,7 +4417,7 @@ export async function getVisualizerCredits(user_id: string): Promise<VisualizerC
       .from('visualizer_credits')
       .select('*')
       .eq('user_id', user_id)
-      .single()
+      .maybeSingle()
 
     if (data && !error) {
       return {
@@ -4537,7 +4627,7 @@ export async function getForgieGebruik(user_id: string): Promise<{ geschatte_kos
       .select('geschatte_kosten, aantal_calls')
       .eq('user_id', user_id)
       .eq('maand', maand)
-      .single()
+      .maybeSingle()
     return {
       geschatte_kosten: data?.geschatte_kosten ?? 0,
       aantal_calls: data?.aantal_calls ?? 0,
