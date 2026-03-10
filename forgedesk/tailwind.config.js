@@ -17,6 +17,8 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
         display: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        outfit: ['"Outfit"', 'sans-serif'],
+        serif: ['"DM Serif Display"', 'Georgia', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -80,6 +82,15 @@ export default {
           DEFAULT: '#F5D5C8',
           deep: '#C4735A',
         },
+        // Liftoff-inspired landing page palette
+        'lf-bg': '#FAFAF8',
+        'lf-fg': '#1a1a1a',
+        'lf-coral': '#E8866A',
+        'lf-sage': '#7EB5A6',
+        'lf-gold': '#C4A882',
+        'lf-purple': '#9B8EC4',
+        'lf-blue': '#8BAFD4',
+        'lf-border': '#E8E5DE',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -111,6 +122,23 @@ export default {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
+        "orb-float": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(30px, -20px) scale(1.05)" },
+          "66%": { transform: "translate(-20px, 15px) scale(0.95)" },
+        },
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(30px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in-left": {
+          "0%": { opacity: "0", transform: "translateX(-40px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "slide-in-right": {
+          "0%": { opacity: "0", transform: "translateX(40px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -121,6 +149,9 @@ export default {
         "marquee": "marquee 30s linear infinite",
         "pulse-soft": "pulse-soft 3s ease-in-out infinite",
         "shimmer": "shimmer 3s ease-in-out infinite",
+        "orb-float": "orb-float 12s ease-in-out infinite",
+        "orb-float-slow": "orb-float 18s ease-in-out infinite",
+        "fade-up": "fade-up 0.7s cubic-bezier(.4,0,.2,1) forwards",
       },
     },
   },

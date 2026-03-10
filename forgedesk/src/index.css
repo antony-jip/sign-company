@@ -1622,6 +1622,102 @@ html {
 }
 
 /* ================================================================
+   LIFTOFF-INSPIRED LANDING — Premium animations & effects
+   ================================================================ */
+
+/* Scroll-triggered fade-up with stagger support */
+.lf-fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s cubic-bezier(.4,0,.2,1), transform 0.7s cubic-bezier(.4,0,.2,1);
+}
+.lf-fade-up.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.lf-delay-1 { transition-delay: 0.1s; }
+.lf-delay-2 { transition-delay: 0.2s; }
+.lf-delay-3 { transition-delay: 0.3s; }
+.lf-delay-4 { transition-delay: 0.4s; }
+.lf-delay-5 { transition-delay: 0.5s; }
+.lf-delay-6 { transition-delay: 0.6s; }
+
+/* Gradient orb slow float animation */
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -25px) scale(1.04); }
+  50% { transform: translate(-15px, 20px) scale(0.97); }
+  75% { transform: translate(20px, 10px) scale(1.02); }
+}
+.lf-orb {
+  animation: orb-drift 16s ease-in-out infinite;
+  will-change: transform;
+}
+.lf-orb-slow {
+  animation: orb-drift 22s ease-in-out infinite;
+}
+
+/* Glassmorphism nav */
+.lf-glass-nav {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+/* Hero floating card hover */
+.lf-float-card {
+  transition: transform 0.4s cubic-bezier(.4,0,.2,1), box-shadow 0.4s cubic-bezier(.4,0,.2,1);
+}
+.lf-float-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(0,0,0,0.1);
+}
+
+/* FAQ accordion transition */
+.lf-accordion-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s cubic-bezier(.4,0,.2,1);
+}
+.lf-accordion-content.is-open {
+  grid-template-rows: 1fr;
+}
+.lf-accordion-inner {
+  overflow: hidden;
+}
+
+/* Serif italic accent */
+.lf-serif-accent {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-style: italic;
+}
+
+/* Price number styling */
+.lf-price-number {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+}
+
+/* Glow circle behind icons */
+.lf-glow {
+  position: relative;
+}
+.lf-glow::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, currentColor, transparent 70%);
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+/* Smooth section transitions */
+.lf-section {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ================================================================
    PASTEL STATUS BADGES — Outside @layer for highest CSS precedence
    These override Tailwind utilities to ensure consistent status colors
    ================================================================ */
