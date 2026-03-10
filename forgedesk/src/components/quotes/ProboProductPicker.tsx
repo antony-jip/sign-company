@@ -110,109 +110,30 @@ interface ProboProductPickerProps {
   onCancel: () => void
 }
 
-// ── Static Probo Product Catalog ──
+// ── Auto-categorization for API products ──
 
-interface CatalogProduct {
-  code: string
-  name: string
-  category: string
-}
-
-interface CatalogCategory {
-  name: string
-  icon: string
-  products: CatalogProduct[]
-}
-
-const PROBO_CATALOG: CatalogCategory[] = [
-  {
-    name: 'Banners',
-    icon: '🏳️',
-    products: [
-      { code: 'banner-510', name: 'Banner 510g', category: 'Banners' },
-      { code: 'banner-440', name: 'Banner 440g', category: 'Banners' },
-      { code: 'banner-mesh', name: 'Mesh banner', category: 'Banners' },
-      { code: 'banner-510-blockout', name: 'Banner 510g Blockout', category: 'Banners' },
-    ],
-  },
-  {
-    name: 'Plaat / Rigid',
-    icon: '🪧',
-    products: [
-      { code: 'forex-print', name: 'Forex print', category: 'Plaat / Rigid' },
-      { code: 'forex-coloured', name: 'Forex gekleurd', category: 'Plaat / Rigid' },
-      { code: 'dibond', name: 'Dibond', category: 'Plaat / Rigid' },
-      { code: 'dibond-brushed', name: 'Dibond Brushed', category: 'Plaat / Rigid' },
-      { code: 'acrylic', name: 'Acrylaat / Plexiglas', category: 'Plaat / Rigid' },
-      { code: 're-board', name: 'Re-board', category: 'Plaat / Rigid' },
-      { code: 'corrugated-board', name: 'Golfkarton', category: 'Plaat / Rigid' },
-      { code: 'canvasboard', name: 'Canvas op board', category: 'Plaat / Rigid' },
-    ],
-  },
-  {
-    name: 'Stickers / Folie',
-    icon: '🏷️',
-    products: [
-      { code: 'sticker', name: 'Sticker', category: 'Stickers / Folie' },
-      { code: 'window-decal', name: 'Raamdecoratie', category: 'Stickers / Folie' },
-      { code: 'window-perforated', name: 'Geperforeerde raamfolie', category: 'Stickers / Folie' },
-      { code: 'floor-sticker', name: 'Vloersticker', category: 'Stickers / Folie' },
-      { code: 'wall-decal', name: 'Muursticker', category: 'Stickers / Folie' },
-      { code: 'car-wrap', name: 'Autowrap folie', category: 'Stickers / Folie' },
-      { code: 'magnetic-foil', name: 'Magneetfolie', category: 'Stickers / Folie' },
-    ],
-  },
-  {
-    name: 'Textiel',
-    icon: '🧵',
-    products: [
-      { code: 'textile-frame', name: 'Textielframe', category: 'Textiel' },
-      { code: 'textile-flag', name: 'Textielvlag', category: 'Textiel' },
-      { code: 'deco-fabric', name: 'Deko stof', category: 'Textiel' },
-      { code: 'backlit-textile', name: 'Backlit textiel', category: 'Textiel' },
-    ],
-  },
-  {
-    name: 'Wandbekleding',
-    icon: '🖼️',
-    products: [
-      { code: 'wall-paper', name: 'Behang', category: 'Wandbekleding' },
-      { code: 'wall-textile', name: 'Wandtextiel', category: 'Wandbekleding' },
-      { code: 'walltex-pro', name: 'Walltex Pro', category: 'Wandbekleding' },
-    ],
-  },
-  {
-    name: 'Displays',
-    icon: '🪧',
-    products: [
-      { code: 'roll-up', name: 'Roll-up banner', category: 'Displays' },
-      { code: 'pop-up-straight', name: 'Pop-up (recht)', category: 'Displays' },
-      { code: 'pop-up-curved', name: 'Pop-up (gebogen)', category: 'Displays' },
-      { code: 'x-banner', name: 'X-banner', category: 'Displays' },
-      { code: 'a-frame', name: 'A-frame / stoepbord', category: 'Displays' },
-    ],
-  },
-  {
-    name: 'Papier / Canvas',
-    icon: '📄',
-    products: [
-      { code: 'poster', name: 'Poster', category: 'Papier / Canvas' },
-      { code: 'canvas', name: 'Canvas', category: 'Papier / Canvas' },
-      { code: 'photo-paper', name: 'Fotopapier', category: 'Papier / Canvas' },
-      { code: 'backlit-paper', name: 'Backlit papier', category: 'Papier / Canvas' },
-    ],
-  },
-  {
-    name: 'Overig',
-    icon: '📦',
-    products: [
-      { code: 'outdoor-mat', name: 'Buitenmat', category: 'Overig' },
-      { code: 'table-display', name: 'Tafel display', category: 'Overig' },
-    ],
-  },
+// Maps keyword patterns (in product code or name) to category names.
+// Order matters: first match wins.
+const CATEGORY_RULES: Array<{ keywords: string[]; category: string }> = [
+  { keywords: ['banner', 'spandoek', 'mesh'], category: 'Banners & spandoeken' },
+  { keywords: ['dibond', 'acrylic', 'acryl', 'forex', 're-board', 'reboard', 'corrugat', 'golfkarton', 'rigid', 'board', 'alumini', 'pvc-board'], category: 'Plaat materiaal' },
+  { keywords: ['sticker', 'decal', 'folie', 'foil', 'vinyl', 'wrap', 'window', 'floor', 'wall-decal', 'magnet'], category: 'Stickers & folie' },
+  { keywords: ['textile', 'textiel', 'fabric', 'flag', 'vlag', 'deco-fabric', 'backlit-textile'], category: 'Textiel' },
+  { keywords: ['wallpaper', 'wall-paper', 'wall-textile', 'walltex', 'behang', 'wandbekleding'], category: 'Wandbekleding' },
+  { keywords: ['roll-up', 'rollup', 'pop-up', 'popup', 'x-banner', 'a-frame', 'display', 'stoepbord'], category: 'Displays' },
+  { keywords: ['poster', 'canvas', 'photo-paper', 'fotopapier', 'backlit-paper', 'papier', 'paper', 'fine-art'], category: 'Papier & canvas' },
+  { keywords: ['mat', 'carpet', 'doormat'], category: 'Overig' },
 ]
 
-const ALL_CATALOG_PRODUCTS: CatalogProduct[] = PROBO_CATALOG.flatMap((c) => c.products)
+function categorizeProduct(code: string, name: string): string {
+  const lower = `${code} ${name}`.toLowerCase()
+  for (const rule of CATEGORY_RULES) {
+    if (rule.keywords.some((kw) => lower.includes(kw))) {
+      return rule.category
+    }
+  }
+  return 'Overig'
+}
 
 // ── Cache ──
 
@@ -327,16 +248,12 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
   // ── Combined product list ──
 
   const allProducts = useMemo(() => {
-    const combined: ProboProduct[] = []
-    for (const p of apiProducts) {
-      combined.push({ ...p, category: 'Mijn producten' })
-    }
-    for (const p of ALL_CATALOG_PRODUCTS) {
-      if (!combined.some((c) => c.code === p.code)) {
-        combined.push({ code: p.code, name: p.name, category: p.category })
-      }
-    }
-    return combined
+    // Use only API products (these are guaranteed to exist in Probo)
+    // and auto-categorize them based on their code/name
+    return apiProducts.map((p) => ({
+      ...p,
+      category: p.category || categorizeProduct(p.code, p.name),
+    }))
   }, [apiProducts])
 
   const filteredProducts = useMemo(() => {
@@ -354,15 +271,20 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
   }, [allProducts, searchQuery, selectedCategory])
 
   const categories = useMemo(() => {
-    const cats: Array<{ name: string; count: number; icon: string }> = []
-    if (apiProducts.length > 0) {
-      cats.push({ name: 'Mijn producten', count: apiProducts.length, icon: '⭐' })
+    // Build categories dynamically from actual API products
+    const catMap = new Map<string, number>()
+    for (const p of allProducts) {
+      const cat = p.category || 'Overig'
+      catMap.set(String(cat), (catMap.get(String(cat)) || 0) + 1)
     }
-    for (const cat of PROBO_CATALOG) {
-      cats.push({ name: cat.name, count: cat.products.length, icon: cat.icon })
-    }
-    return cats
-  }, [apiProducts])
+    return Array.from(catMap.entries())
+      .sort((a, b) => {
+        if (a[0] === 'Overig') return 1
+        if (b[0] === 'Overig') return -1
+        return b[1] - a[1]
+      })
+      .map(([name, count]) => ({ name, count, icon: '' }))
+  }, [allProducts])
 
   // ── Configure: call Probo API ──
 
