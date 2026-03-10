@@ -131,8 +131,8 @@ function formatElapsedTime(totalSeconds: number): string {
 }
 
 function berekenDuurMinuten(start: string, eind: string): number {
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = eind.split(":").map(Number);
+  const [sh = 0, sm = 0] = (start || '0:0').split(":").map(Number);
+  const [eh = 0, em = 0] = (eind || '0:0').split(":").map(Number);
   return (eh * 60 + em) - (sh * 60 + sm);
 }
 

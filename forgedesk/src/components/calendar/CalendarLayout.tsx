@@ -573,8 +573,8 @@ export function CalendarLayout() {
       const isNarrow = totalCols > 1
 
       // Show medewerker name in narrow cards for clarity
-      const monteurName = isNarrow && afspraak.monteurs.length > 0
-        ? medewerkers.find((m) => m.id === afspraak.monteurs[0])?.naam.split(' ')[0]
+      const monteurName = isNarrow && afspraak.monteurs?.length > 0
+        ? medewerkers.find((m) => m.id === afspraak.monteurs?.[0])?.naam?.split(' ')[0]
         : null
 
       return (

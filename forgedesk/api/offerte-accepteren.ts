@@ -5,7 +5,8 @@ import crypto from 'crypto'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || 'default-key-change-in-production!!'
+const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
+if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY environment variable is required')
 const APP_URL = process.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'
 
 function decrypt(encrypted: string): string {

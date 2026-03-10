@@ -518,7 +518,7 @@ export function generateOffertePDF(
     let optTotalsY = optFinalY + 8
 
     const optSubtotaal = round2(optioneleItems.reduce((s, i) => s + i.totaal, 0))
-    const optBtw = round2(optioneleItems.reduce((s, i) => s + i.totaal * (i.btw_percentage / 100), 0))
+    const optBtw = round2(optioneleItems.reduce((s, i) => s + round2(i.totaal * (i.btw_percentage / 100)), 0))
 
     doc.setFontSize(baseFontSize - 1)
     doc.setFont(bodyFont, 'normal')
