@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   RefreshCw,
   Check,
+  ChevronRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -30,6 +31,7 @@ import { logger } from '../../utils/logger'
 interface ProboProduct {
   code: string
   name: string
+  category?: string
   [key: string]: unknown
 }
 
@@ -82,6 +84,114 @@ interface ProboProductPickerProps {
   onCancel: () => void
 }
 
+// ── Static Probo Product Catalog ──
+// These are the standard Probo product codes organized by category.
+// GET /products only returns "composed products" (pre-configured in webshop).
+// For individual products we need the /products/configure endpoint.
+
+interface CatalogProduct {
+  code: string
+  name: string
+  category: string
+}
+
+interface CatalogCategory {
+  name: string
+  icon: string
+  products: CatalogProduct[]
+}
+
+const PROBO_CATALOG: CatalogCategory[] = [
+  {
+    name: 'Banners',
+    icon: '🏳️',
+    products: [
+      { code: 'banner-510', name: 'Banner 510g', category: 'Banners' },
+      { code: 'banner-440', name: 'Banner 440g', category: 'Banners' },
+      { code: 'banner-mesh', name: 'Mesh banner', category: 'Banners' },
+      { code: 'banner-510-blockout', name: 'Banner 510g Blockout', category: 'Banners' },
+    ],
+  },
+  {
+    name: 'Plaat / Rigid',
+    icon: '🪧',
+    products: [
+      { code: 'forex-print', name: 'Forex print', category: 'Plaat / Rigid' },
+      { code: 'forex-coloured', name: 'Forex gekleurd', category: 'Plaat / Rigid' },
+      { code: 'dibond', name: 'Dibond', category: 'Plaat / Rigid' },
+      { code: 'dibond-brushed', name: 'Dibond Brushed', category: 'Plaat / Rigid' },
+      { code: 'acrylic', name: 'Acrylaat / Plexiglas', category: 'Plaat / Rigid' },
+      { code: 're-board', name: 'Re-board', category: 'Plaat / Rigid' },
+      { code: 'corrugated-board', name: 'Golfkarton', category: 'Plaat / Rigid' },
+      { code: 'canvasboard', name: 'Canvas op board', category: 'Plaat / Rigid' },
+    ],
+  },
+  {
+    name: 'Stickers / Folie',
+    icon: '🏷️',
+    products: [
+      { code: 'sticker', name: 'Sticker', category: 'Stickers / Folie' },
+      { code: 'window-decal', name: 'Raamdecoratie', category: 'Stickers / Folie' },
+      { code: 'window-perforated', name: 'Geperforeerde raamfolie', category: 'Stickers / Folie' },
+      { code: 'floor-sticker', name: 'Vloersticker', category: 'Stickers / Folie' },
+      { code: 'wall-decal', name: 'Muursticker', category: 'Stickers / Folie' },
+      { code: 'car-wrap', name: 'Autowrap folie', category: 'Stickers / Folie' },
+      { code: 'magnetic-foil', name: 'Magneetfolie', category: 'Stickers / Folie' },
+    ],
+  },
+  {
+    name: 'Textiel',
+    icon: '🧵',
+    products: [
+      { code: 'textile-frame', name: 'Textielframe', category: 'Textiel' },
+      { code: 'textile-flag', name: 'Textielvlag', category: 'Textiel' },
+      { code: 'deco-fabric', name: 'Deko stof', category: 'Textiel' },
+      { code: 'backlit-textile', name: 'Backlit textiel', category: 'Textiel' },
+    ],
+  },
+  {
+    name: 'Wandbekleding',
+    icon: '🖼️',
+    products: [
+      { code: 'wall-paper', name: 'Behang', category: 'Wandbekleding' },
+      { code: 'wall-textile', name: 'Wandtextiel', category: 'Wandbekleding' },
+      { code: 'walltex-pro', name: 'Walltex Pro', category: 'Wandbekleding' },
+    ],
+  },
+  {
+    name: 'Displays',
+    icon: '🪧',
+    products: [
+      { code: 'roll-up', name: 'Roll-up banner', category: 'Displays' },
+      { code: 'pop-up-straight', name: 'Pop-up (recht)', category: 'Displays' },
+      { code: 'pop-up-curved', name: 'Pop-up (gebogen)', category: 'Displays' },
+      { code: 'x-banner', name: 'X-banner', category: 'Displays' },
+      { code: 'a-frame', name: 'A-frame / stoepbord', category: 'Displays' },
+    ],
+  },
+  {
+    name: 'Papier / Canvas',
+    icon: '📄',
+    products: [
+      { code: 'poster', name: 'Poster', category: 'Papier / Canvas' },
+      { code: 'canvas', name: 'Canvas', category: 'Papier / Canvas' },
+      { code: 'photo-paper', name: 'Fotopapier', category: 'Papier / Canvas' },
+      { code: 'backlit-paper', name: 'Backlit papier', category: 'Papier / Canvas' },
+    ],
+  },
+  {
+    name: 'Overig',
+    icon: '📦',
+    products: [
+      { code: 'outdoor-mat', name: 'Buitenmat', category: 'Overig' },
+      { code: 'table-display', name: 'Tafel display', category: 'Overig' },
+    ],
+  },
+]
+
+// Flat list for searching
+const ALL_CATALOG_PRODUCTS: CatalogProduct[] = PROBO_CATALOG.flatMap((c) => c.products)
+
 // ── Cache ──
 
 interface CacheEntry<T> {
@@ -104,15 +214,18 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
   const [step, setStep] = useState<'search' | 'configure'>('search')
 
   // Search state
-  const [products, setProducts] = useState<ProboProduct[]>([])
+  const [apiProducts, setApiProducts] = useState<ProboProduct[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
-  const [productError, setProductError] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
   // Configure state
   const [selectedProduct, setSelectedProduct] = useState<ProboProductDetail | null>(null)
+  const [selectedProductCode, setSelectedProductCode] = useState<string>('')
+  const [selectedProductName, setSelectedProductName] = useState<string>('')
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
   const [optionValues, setOptionValues] = useState<Record<string, string>>({})
+  const [configureError, setConfigureError] = useState<string | null>(null)
 
   // Price state
   const [priceResult, setPriceResult] = useState<ProboPriceResult | null>(null)
@@ -121,40 +234,39 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
 
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  // ── Fetch products ──
+  // ── Fetch API products (composed products) ──
 
-  const fetchProducts = useCallback(async () => {
+  const fetchApiProducts = useCallback(async () => {
     if (productListCache.entry && Date.now() < productListCache.entry.expiresAt) {
-      setProducts(productListCache.entry.data)
+      setApiProducts(productListCache.entry.data)
       return
     }
 
     setIsLoadingProducts(true)
-    setProductError(null)
     try {
       const response = await fetch('/api/probo-products', {
         headers: { 'Authorization': `Bearer ${token}` },
       })
       if (!response.ok) {
-        const err = await response.json() as { error?: string }
-        throw new Error(err.error || `Fout ${response.status}`)
+        // Don't error — we still have the static catalog
+        setApiProducts([])
+        return
       }
       const data = await response.json() as { products: ProboProduct[] }
       const prods = Array.isArray(data.products) ? data.products : []
       productListCache.entry = { data: prods, expiresAt: Date.now() + PRODUCT_LIST_TTL }
-      setProducts(prods)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Kon producten niet laden'
-      setProductError(msg)
-      logger.error('Probo products laden mislukt:', err)
+      setApiProducts(prods)
+    } catch {
+      // Silent fail — static catalog is the fallback
+      setApiProducts([])
     } finally {
       setIsLoadingProducts(false)
     }
   }, [token])
 
   useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
+    fetchApiProducts()
+  }, [fetchApiProducts])
 
   // Focus search on mount
   useEffect(() => {
@@ -163,25 +275,81 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
     }
   }, [step])
 
+  // ── Combined product list: API products + static catalog ──
+
+  const allProducts = useMemo(() => {
+    // Merge API products (composed) with static catalog
+    const combined: ProboProduct[] = []
+
+    // Add API products first (user's own composed products)
+    for (const p of apiProducts) {
+      combined.push({ ...p, category: 'Mijn producten' })
+    }
+
+    // Add static catalog products
+    for (const p of ALL_CATALOG_PRODUCTS) {
+      // Don't duplicate if already in API products
+      if (!combined.some((c) => c.code === p.code)) {
+        combined.push({ code: p.code, name: p.name, category: p.category })
+      }
+    }
+
+    return combined
+  }, [apiProducts])
+
   // ── Filtered products ──
 
   const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return products
-    const q = searchQuery.toLowerCase()
-    return products.filter((p) =>
-      p.code.toLowerCase().includes(q) ||
-      p.name.toLowerCase().includes(q)
-    )
-  }, [products, searchQuery])
+    let list = allProducts
 
-  // ── Select product → load detail ──
+    // Filter by category
+    if (selectedCategory) {
+      list = list.filter((p) => p.category === selectedCategory)
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      list = list.filter((p) =>
+        p.code.toLowerCase().includes(q) ||
+        p.name.toLowerCase().includes(q) ||
+        (p.category && String(p.category).toLowerCase().includes(q))
+      )
+    }
+
+    return list
+  }, [allProducts, searchQuery, selectedCategory])
+
+  // ── Categories for sidebar ──
+
+  const categories = useMemo(() => {
+    const cats: Array<{ name: string; count: number; icon: string }> = []
+
+    // Add "Mijn producten" if there are API products
+    if (apiProducts.length > 0) {
+      cats.push({ name: 'Mijn producten', count: apiProducts.length, icon: '⭐' })
+    }
+
+    // Add static categories
+    for (const cat of PROBO_CATALOG) {
+      cats.push({ name: cat.name, count: cat.products.length, icon: cat.icon })
+    }
+
+    return cats
+  }, [apiProducts])
+
+  // ── Select product → load detail via configure endpoint ──
 
   const handleSelectProduct = useCallback(async (product: ProboProduct) => {
+    const code = product.code
+    setSelectedProductCode(code)
+    setSelectedProductName(product.name)
+    setConfigureError(null)
+
     // Check cache
-    const cached = productDetailCache.get(product.code)
+    const cached = productDetailCache.get(code)
     if (cached && Date.now() < cached.expiresAt) {
       setSelectedProduct(cached.data)
-      // Set defaults
       const defaults: Record<string, string> = {}
       if (cached.data.options) {
         for (const opt of cached.data.options) {
@@ -199,31 +367,73 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
     setIsLoadingDetail(true)
     setStep('configure')
     try {
-      const response = await fetch(`/api/probo-product-detail?code=${encodeURIComponent(product.code)}`, {
+      // Try the product detail endpoint first
+      const detailResponse = await fetch(`/api/probo-product-detail?code=${encodeURIComponent(code)}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
-      if (!response.ok) {
-        const err = await response.json() as { error?: string }
-        throw new Error(err.error || `Fout ${response.status}`)
-      }
-      const data = await response.json() as { product: ProboProductDetail }
-      productDetailCache.set(product.code, { data: data.product, expiresAt: Date.now() + PRODUCT_DETAIL_TTL })
-      setSelectedProduct(data.product)
-      // Set defaults
-      const defaults: Record<string, string> = {}
-      if (data.product.options) {
-        for (const opt of data.product.options) {
-          if (opt.default_value) defaults[opt.code] = opt.default_value
-          else if (opt.values?.length) defaults[opt.code] = opt.values[0].code
+
+      if (detailResponse.ok) {
+        const data = await detailResponse.json() as { product: ProboProductDetail }
+        productDetailCache.set(code, { data: data.product, expiresAt: Date.now() + PRODUCT_DETAIL_TTL })
+        setSelectedProduct(data.product)
+        const defaults: Record<string, string> = {}
+        if (data.product.options) {
+          for (const opt of data.product.options) {
+            if (opt.default_value) defaults[opt.code] = opt.default_value
+            else if (opt.values?.length) defaults[opt.code] = opt.values[0].code
+          }
         }
+        setOptionValues(defaults)
+        setPriceResult(null)
+        setPriceError(null)
+        return
       }
-      setOptionValues(defaults)
-      setPriceResult(null)
-      setPriceError(null)
+
+      // Fallback: try the configure endpoint
+      const configResponse = await fetch('/api/probo-configure', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ product_code: code }),
+      })
+
+      if (!configResponse.ok) {
+        const err = await configResponse.json() as { error?: string }
+        throw new Error(err.error || `Product niet beschikbaar (${configResponse.status})`)
+      }
+
+      const configData = await configResponse.json() as { products?: Array<{ options?: ProboProductOption[]; name?: string; [key: string]: unknown }> }
+
+      // Parse configure response - it returns products[0] with options
+      const productConfig = configData.products?.[0]
+      if (productConfig) {
+        const detail: ProboProductDetail = {
+          code,
+          name: (productConfig.name as string) || product.name,
+          options: productConfig.options || [],
+        }
+        productDetailCache.set(code, { data: detail, expiresAt: Date.now() + PRODUCT_DETAIL_TTL })
+        setSelectedProduct(detail)
+        const defaults: Record<string, string> = {}
+        if (detail.options) {
+          for (const opt of detail.options) {
+            if (opt.default_value) defaults[opt.code] = opt.default_value
+            else if (opt.values?.length) defaults[opt.code] = opt.values[0].code
+          }
+        }
+        setOptionValues(defaults)
+        setPriceResult(null)
+        setPriceError(null)
+      } else {
+        throw new Error('Geen productopties ontvangen van Probo')
+      }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Kon product niet laden')
-      logger.error('Probo product detail laden mislukt:', err)
-      setStep('search')
+      const msg = err instanceof Error ? err.message : 'Kon product niet laden'
+      setConfigureError(msg)
+      toast.error(msg)
+      logger.error('Probo product laden mislukt:', err)
     } finally {
       setIsLoadingDetail(false)
     }
@@ -240,11 +450,9 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
       const options: ProboOptie[] = Object.entries(optionValues)
         .filter(([, value]) => value !== '')
         .map(([code, value]) => {
-          // Numeric fields pass value, toggles/booleans only code
           const opt = selectedProduct.options?.find((o) => o.code === code)
           const isNumeric = opt?.type === 'number' || ['width', 'height', 'amount'].includes(code)
           if (isNumeric) return { code, value }
-          // Selection with value
           return value === '__toggle__' ? { code } : { code, value }
         })
 
@@ -281,14 +489,12 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
   const handleApply = useCallback(() => {
     if (!selectedProduct || !priceResult) return
 
-    // Build omschrijving
     const parts = [selectedProduct.name]
     const w = optionValues.width
     const h = optionValues.height
     if (w && h) parts.push(`${w}×${h}cm`)
     else if (w) parts.push(`${w}cm`)
 
-    // Add key option selections to description
     const materialOpt = selectedProduct.options?.find((o) =>
       o.code.includes('material') || o.code.includes('foil') || o.code.includes('vinyl')
     )
@@ -384,7 +590,7 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
   }, [optionValues])
 
   // ════════════════════════════════
-  // STEP 1: Search
+  // STEP 1: Search + Browse
   // ════════════════════════════════
 
   if (step === 'search') {
@@ -396,56 +602,80 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
           <Input
             ref={searchInputRef}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Zoek Probo product..."
+            onChange={(e) => { setSearchQuery(e.target.value); setSelectedCategory(null) }}
+            placeholder="Zoek Probo product (bijv. textielframe, banner, forex)..."
             className="h-8 text-sm pl-8"
           />
         </div>
 
-        {/* Loading */}
+        {/* Loading indicator */}
         {isLoadingProducts && (
-          <div className="flex items-center justify-center py-6 gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Producten laden...
+          <div className="flex items-center justify-center py-2 gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Controleren op eigen producten...
           </div>
         )}
 
-        {/* Error */}
-        {productError && (
-          <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-3 space-y-2">
-            <p className="text-xs text-red-600 flex items-center gap-1.5">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              {productError}
-            </p>
-            <Button variant="outline" size="sm" className="text-xs h-7" onClick={fetchProducts}>
-              Opnieuw proberen
-            </Button>
-          </div>
-        )}
-
-        {/* Product list */}
-        {!isLoadingProducts && !productError && (
-          <div className="max-h-[300px] overflow-y-auto space-y-1">
-            {filteredProducts.length === 0 && searchQuery && (
-              <p className="text-xs text-muted-foreground text-center py-4">
-                Geen producten gevonden voor &quot;{searchQuery}&quot;
-              </p>
-            )}
-            {filteredProducts.map((product) => (
+        {/* Category chips */}
+        {!searchQuery && (
+          <div className="flex flex-wrap gap-1.5">
+            {selectedCategory && (
               <button
-                key={product.code}
-                onClick={() => handleSelectProduct(product)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-muted transition-colors"
+                onClick={() => setSelectedCategory(null)}
+                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
               >
-                <Package className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                  <p className="text-[11px] text-muted-foreground font-mono">{product.code}</p>
-                </div>
+                <ArrowLeft className="h-3 w-3" />
+                Alle categorieën
+              </button>
+            )}
+            {!selectedCategory && categories.map((cat) => (
+              <button
+                key={cat.name}
+                onClick={() => setSelectedCategory(cat.name)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg border border-border hover:bg-muted hover:border-muted-foreground/20 transition-colors"
+              >
+                <span>{cat.icon}</span>
+                <span>{cat.name}</span>
+                <span className="text-muted-foreground/60 ml-0.5">({cat.count})</span>
               </button>
             ))}
           </div>
         )}
+
+        {/* Product list */}
+        <div className="max-h-[280px] overflow-y-auto space-y-0.5">
+          {filteredProducts.length === 0 && searchQuery && (
+            <p className="text-xs text-muted-foreground text-center py-4">
+              Geen producten gevonden voor &quot;{searchQuery}&quot;
+            </p>
+          )}
+          {(searchQuery || selectedCategory ? filteredProducts : []).map((product) => (
+            <button
+              key={product.code}
+              onClick={() => handleSelectProduct(product)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-muted transition-colors group"
+            >
+              <Package className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
+                <p className="text-[11px] text-muted-foreground font-mono">{product.code}</p>
+              </div>
+              {product.category === 'Mijn producten' && (
+                <span className="text-[10px] font-medium text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded">
+                  eigen
+                </span>
+              )}
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+            </button>
+          ))}
+
+          {/* Show prompt to select category or search when nothing is shown */}
+          {!searchQuery && !selectedCategory && (
+            <p className="text-xs text-muted-foreground text-center py-3">
+              Kies een categorie of zoek op productnaam
+            </p>
+          )}
+        </div>
 
         {/* Cancel */}
         <div className="flex justify-end pt-1">
@@ -466,16 +696,21 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
       {/* Header */}
       <div className="flex items-center gap-2">
         <button
-          onClick={() => { setStep('search'); setSelectedProduct(null); setPriceResult(null) }}
+          onClick={() => {
+            setStep('search')
+            setSelectedProduct(null)
+            setPriceResult(null)
+            setConfigureError(null)
+          }}
           className="p-1 rounded hover:bg-muted text-muted-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground truncate">
-            {selectedProduct?.name || 'Product laden...'}
+            {selectedProduct?.name || selectedProductName || 'Product laden...'}
           </p>
-          <p className="text-[11px] text-muted-foreground font-mono">{selectedProduct?.code}</p>
+          <p className="text-[11px] text-muted-foreground font-mono">{selectedProduct?.code || selectedProductCode}</p>
         </div>
       </div>
 
@@ -487,30 +722,61 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
         </div>
       )}
 
+      {/* Configure error */}
+      {configureError && !isLoadingDetail && (
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-3 space-y-2">
+          <p className="text-xs text-red-600 flex items-center gap-1.5">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {configureError}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Dit product is mogelijk niet beschikbaar via de API.
+            Probeer een ander product of configureer dit product in je Probo webshop.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs h-7"
+            onClick={() => {
+              setStep('search')
+              setConfigureError(null)
+            }}
+          >
+            Terug naar producten
+          </Button>
+        </div>
+      )}
+
       {/* Options */}
       {selectedProduct && !isLoadingDetail && (
         <>
-          <div className="space-y-2.5">
-            {/* Render numeric options first (width, height, amount) */}
-            {selectedProduct.options
-              ?.filter((o) => o.type === 'number' || ['width', 'height', 'amount'].includes(o.code))
-              .map(renderOption)
-            }
-
-            {/* Then selection options */}
-            {selectedProduct.options
-              ?.filter((o) => o.type !== 'number' && !['width', 'height', 'amount'].includes(o.code) && o.values && o.values.length > 0)
-              .map(renderOption)
-            }
-
-            {/* Then toggle options */}
-            <div className="space-y-1.5 pt-1">
+          {selectedProduct.options && selectedProduct.options.length > 0 ? (
+            <div className="space-y-2.5">
+              {/* Render numeric options first (width, height, amount) */}
               {selectedProduct.options
-                ?.filter((o) => o.type !== 'number' && !['width', 'height', 'amount'].includes(o.code) && (!o.values || o.values.length === 0))
+                .filter((o) => o.type === 'number' || ['width', 'height', 'amount'].includes(o.code))
                 .map(renderOption)
               }
+
+              {/* Then selection options */}
+              {selectedProduct.options
+                .filter((o) => o.type !== 'number' && !['width', 'height', 'amount'].includes(o.code) && o.values && o.values.length > 0)
+                .map(renderOption)
+              }
+
+              {/* Then toggle options */}
+              <div className="space-y-1.5 pt-1">
+                {selectedProduct.options
+                  .filter((o) => o.type !== 'number' && !['width', 'height', 'amount'].includes(o.code) && (!o.values || o.values.length === 0))
+                  .map(renderOption)
+                }
+              </div>
             </div>
-          </div>
+          ) : (
+            <p className="text-xs text-muted-foreground py-2">
+              Geen configureerbare opties gevonden. Klik op &quot;Bereken inkoopprijs&quot; om de basisprijs op te halen.
+            </p>
+          )}
 
           {/* Calculate button */}
           <Button
