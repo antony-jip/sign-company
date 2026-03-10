@@ -258,6 +258,15 @@ export function OfferteDetail() {
     if (!offerte) return
     setIsSending(true)
     try {
+      // Genereer publiek_token als die nog niet bestaat
+      let publiekToken = offerte.publiek_token
+      if (!publiekToken) {
+        publiekToken = crypto.randomUUID()
+        await updateOfferte(offerte.id, { publiek_token: publiekToken })
+        setOfferte({ ...offerte, publiek_token: publiekToken })
+      }
+      const publiekeUrl = `${window.location.origin}/offerte-bekijken/${publiekToken}`
+
       // Actually send the email
       const sendCp = offerte.contactpersoon_id
         ? klant?.contactpersonen?.find(c => c.id === offerte.contactpersoon_id)
@@ -272,7 +281,7 @@ export function OfferteDetail() {
         primaireKleur,
         handtekening: emailHandtekening || undefined,
         logoUrl: profile?.logo_url || undefined,
-        bekijkUrl: offerte.publiek_token ? `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}` : undefined,
+        bekijkUrl: publiekeUrl,
       })
 
       // Genereer PDF bijlage
