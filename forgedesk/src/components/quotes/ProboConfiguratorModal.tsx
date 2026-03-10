@@ -197,6 +197,7 @@ export function ProboConfiguratorModal({ open, onOpenChange, onSelect }: ProboCo
   const [apiProducts, setApiProducts] = useState<ProboProduct[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
+  const [productsError, setProductsError] = useState<string | null>(null)
   const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set())
 
   // Configure state
@@ -244,19 +245,31 @@ export function ProboConfiguratorModal({ open, onOpenChange, onSelect }: ProboCo
   const fetchApiProducts = useCallback(async () => {
     if (productListCache.entry && Date.now() < productListCache.entry.expiresAt) {
       setApiProducts(productListCache.entry.data)
+      setProductsError(null)
       return
     }
     setIsLoadingProducts(true)
+    setProductsError(null)
     try {
       const response = await fetch('/api/probo-products', {
         headers: { 'Authorization': `Bearer ${token}` },
       })
-      if (!response.ok) { setApiProducts([]); return }
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: `HTTP ${response.status}` })) as { error?: string }
+        setProductsError(err.error || `Fout bij ophalen producten (${response.status})`)
+        setApiProducts([])
+        return
+      }
       const data = await response.json() as { products: ProboProduct[] }
       const prods = Array.isArray(data.products) ? data.products : []
+      if (prods.length === 0) {
+        logger.warn('Probo API returned 0 products', data)
+      }
       productListCache.entry = { data: prods, expiresAt: Date.now() + PRODUCT_LIST_TTL }
       setApiProducts(prods)
-    } catch {
+    } catch (err) {
+      logger.error('Failed to fetch Probo products:', err)
+      setProductsError('Kan geen verbinding maken met Probo API')
       setApiProducts([])
     } finally {
       setIsLoadingProducts(false)
@@ -726,7 +739,21 @@ export function ProboConfiguratorModal({ open, onOpenChange, onSelect }: ProboCo
                   </div>
                 )}
 
-                {!isLoadingProducts && filteredProducts.length === 0 && (
+                {!isLoadingProducts && productsError && (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-4 max-w-md space-y-3">
+                      <p className="text-sm text-red-600 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        {productsError}
+                      </p>
+                      <Button variant="outline" size="sm" onClick={() => { productListCache.entry = null; fetchApiProducts() }}>
+                        Opnieuw proberen
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {!isLoadingProducts && !productsError && filteredProducts.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                     <Package className="h-8 w-8 mb-2 opacity-40" />
                     <p className="text-sm">Geen producten gevonden</p>

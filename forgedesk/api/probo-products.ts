@@ -90,7 +90,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: `Probo API fout: ${response.status}` })
     }
 
-    const data = await response.json() as ProboProduct[]
+    const raw = await response.json()
+
+    // Probo API may return { products: [...] } or a flat array
+    const data: ProboProduct[] = Array.isArray(raw) ? raw
+      : Array.isArray(raw?.products) ? raw.products
+      : []
+
+    console.log(`Probo products: received ${data.length} products (raw type: ${Array.isArray(raw) ? 'array' : typeof raw})`)
 
     // Cache the full list
     cache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_TTL_MS })
