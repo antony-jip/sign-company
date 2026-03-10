@@ -1,7 +1,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Stripe from 'stripe'
+import { createClient } from '@supabase/supabase-js'
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
+
+const supabaseAdmin = createClient(
+  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+)
+
+async function verifyUser(req: VercelRequest): Promise<{ id: string; email?: string }> {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
+  const token = authHeader.split(' ')[1]
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  if (error || !user) throw new Error('Ongeldige sessie')
+  return { id: user.id, email: user.email }
+}
 
 // Map pakket IDs to Stripe price amounts (in cents)
 const PAKKET_PRIJZEN: Record<string, { amount: number; credits: number; naam: string }> = {
@@ -22,18 +37,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const stripe = new Stripe(STRIPE_SECRET_KEY)
+    const user = await verifyUser(req)
 
-    const { pakket_id, user_id, user_email, success_url, cancel_url } = req.body as {
+    const { pakket_id, success_url, cancel_url } = req.body as {
       pakket_id: string
-      user_id: string
-      user_email?: string
       success_url: string
       cancel_url: string
     }
 
-    if (!pakket_id || !user_id || !success_url || !cancel_url) {
-      return res.status(400).json({ error: 'pakket_id, user_id, success_url en cancel_url zijn verplicht' })
+    if (!pakket_id || !success_url || !cancel_url) {
+      return res.status(400).json({ error: 'pakket_id, success_url en cancel_url zijn verplicht' })
     }
+
+    const user_id = user.id
+    const user_email = user.email
 
     const pakket = PAKKET_PRIJZEN[pakket_id]
     if (!pakket) {

@@ -6,16 +6,23 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const EXACT_TOKEN_URL = 'https://start.exactonline.nl/api/oauth2/token'
 
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+async function verifyUser(req: VercelRequest): Promise<string> {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
+  const token = authHeader.split(' ')[1]
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  if (error || !user) throw new Error('Ongeldige sessie')
+  return user.id
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const { user_id } = req.body as { user_id: string }
-
-    if (!user_id) {
-      return res.status(400).json({ error: 'user_id is verplicht' })
-    }
+    const user_id = await verifyUser(req)
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
