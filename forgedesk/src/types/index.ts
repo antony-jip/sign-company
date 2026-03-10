@@ -563,6 +563,12 @@ export interface AppSettings {
   exact_online_client_id?: string;
   exact_online_client_secret?: string;
   exact_online_connected?: boolean;
+  exact_administratie_id?: string;
+  exact_verkoopboek?: string;
+  exact_grootboek?: string;
+  exact_btw_hoog?: string;
+  exact_btw_laag?: string;
+  exact_btw_nul?: string;
   created_at: string;
   updated_at: string;
 }
@@ -796,6 +802,9 @@ export interface Factuur {
   outro_tekst?: string;
   // Contactpersoon
   contactpersoon_id?: string;
+  // Exact Online sync
+  exact_entry_id?: string;
+  exact_synced_at?: string;
   created_at: string;
   updated_at: string;
 }
