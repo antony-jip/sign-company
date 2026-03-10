@@ -1933,12 +1933,6 @@ function IntegratiesTab() {
   const [kvkApiKey, setKvkApiKey] = useState('')
   const [kvkSaving, setKvkSaving] = useState(false)
 
-  // Probo Prints state
-  const [proboEnabled, setProboEnabled] = useState(false)
-  const [proboApiKey, setProboApiKey] = useState('')
-  const [proboSaving, setProboSaving] = useState(false)
-  const [proboTesting, setProboTesting] = useState(false)
-  const [proboTestResult, setProboTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
   useEffect(() => {
     if (!user?.id) return
@@ -1950,8 +1944,6 @@ function IntegratiesTab() {
       setExactClientSecret(s.exact_online_client_secret ?? '')
       setExactConnected(s.exact_online_connected ?? false)
       setKvkApiKey(s.kvk_api_key ?? '')
-      setProboEnabled(s.probo_enabled ?? false)
-      setProboApiKey(s.probo_api_key ?? '')
     }).catch(() => {})
   }, [user?.id])
 
@@ -2308,178 +2300,6 @@ function IntegratiesTab() {
         </CardContent>
       </Card>
 
-      {/* ── Probo Prints Instellingen ── */}
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Package className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
-            </div>
-            <div className="flex-1 space-y-4">
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h3 className="text-base font-semibold text-foreground">Probo Prints</h3>
-                  <Badge
-                    className={
-                      proboEnabled && proboApiKey
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                        : 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
-                    }
-                  >
-                    {proboEnabled && proboApiKey ? (
-                      <span className="flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Verbonden
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1">
-                        <XCircle className="w-3 h-3" />
-                        Niet verbonden
-                      </span>
-                    )}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Koppel je Probo account om live inkoopprijzen op te halen in de calculatie.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="probo-enabled" className="text-sm font-medium">
-                  Probo integratie inschakelen
-                </Label>
-                <Switch
-                  id="probo-enabled"
-                  checked={proboEnabled}
-                  onCheckedChange={setProboEnabled}
-                />
-              </div>
-
-              {proboEnabled && (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="probo-api-key" className="text-sm font-medium">
-                      Probo API Token
-                    </Label>
-                    <Input
-                      id="probo-api-key"
-                      type="password"
-                      value={proboApiKey}
-                      onChange={(e) => { setProboApiKey(e.target.value); setProboTestResult(null) }}
-                      placeholder="Basic auth token..."
-                      className="font-mono text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Je vindt je API token in het{' '}
-                      <a
-                        href="https://www.proboprints.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline inline-flex items-center gap-0.5"
-                      >
-                        Probo Dashboard <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </p>
-                  </div>
-
-                  {/* Test verbinding */}
-                  <div className="space-y-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={proboTesting || !proboApiKey}
-                      onClick={async () => {
-                        setProboTesting(true)
-                        setProboTestResult(null)
-                        try {
-                          // Save first so the API route can read the key
-                          if (user?.id) {
-                            await updateAppSettings(user.id, {
-                              probo_api_key: proboApiKey,
-                              probo_enabled: true,
-                            })
-                            await refreshSettings()
-                          }
-                          const { default: supabase } = await import('@/services/supabaseClient')
-                          const { data: { session: authSession } } = await supabase.auth.getSession()
-                          if (!authSession?.access_token) throw new Error('Niet ingelogd')
-                          const response = await fetch('/api/probo-products', {
-                            headers: {
-                              'Authorization': `Bearer ${authSession.access_token}`,
-                            },
-                          })
-                          if (!response.ok) {
-                            const text = await response.text()
-                            let errorMsg = `Fout ${response.status}`
-                            try {
-                              const err = JSON.parse(text) as { error?: string }
-                              errorMsg = err.error || errorMsg
-                            } catch {
-                              errorMsg = text.slice(0, 100) || errorMsg
-                            }
-                            throw new Error(errorMsg)
-                          }
-                          const data = await response.json() as { products: unknown[] }
-                          setProboTestResult({
-                            success: true,
-                            message: `Verbonden — ${Array.isArray(data.products) ? data.products.length : 0} producten beschikbaar`,
-                          })
-                        } catch (err) {
-                          setProboTestResult({
-                            success: false,
-                            message: err instanceof Error ? err.message : 'Verbinding mislukt',
-                          })
-                        } finally {
-                          setProboTesting(false)
-                        }
-                      }}
-                      className="gap-1.5"
-                    >
-                      {proboTesting ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" />Testen...</>
-                      ) : (
-                        'Verbinding testen'
-                      )}
-                    </Button>
-                    {proboTestResult && (
-                      <div className={`flex items-center gap-2 text-xs ${proboTestResult.success ? 'text-green-600' : 'text-red-600'}`}>
-                        {proboTestResult.success ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                        {proboTestResult.message}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={async () => {
-                    if (!user?.id) return
-                    setProboSaving(true)
-                    try {
-                      await updateAppSettings(user.id, {
-                        probo_api_key: proboApiKey,
-                        probo_enabled: proboEnabled,
-                      })
-                      await refreshSettings()
-                      toast.success('Probo instellingen opgeslagen')
-                    } catch (err) {
-                      logger.error('Fout bij opslaan Probo instellingen:', err)
-                      toast.error('Kon Probo instellingen niet opslaan')
-                    } finally {
-                      setProboSaving(false)
-                    }
-                  }}
-                  disabled={proboSaving}
-                  size="sm"
-                >
-                  {proboSaving ? 'Opslaan...' : 'Opslaan'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
     </>
   )
