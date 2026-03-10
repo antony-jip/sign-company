@@ -12,6 +12,7 @@ import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, Ruler
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import { AutofillInput } from './AutofillInput'
+import { INKOOP_DRAG_TYPE, type InkoopDragData } from './InkoopOffertePaneel'
 import { labelToAutofillField } from '@/utils/autofillUtils'
 import type { CalculatieRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
@@ -593,6 +594,8 @@ export function QuoteItemsTable({
   const [activeVariantId, setActiveVariantId] = useState<string | null>(null)
   // Collapsed state per item
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set())
+  // Inkoop drag-drop state
+  const [inkoopDropTargetId, setInkoopDropTargetId] = useState<string | null>(null)
   // Bijlage upload state
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null)
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null)
@@ -734,6 +737,69 @@ export function QuoteItemsTable({
 
   const setActieveVariant = (itemId: string, variantId: string) => {
     onUpdateItem(itemId, 'actieve_variant_id', variantId)
+  }
+
+  // ── Inkoop drag-drop handlers ──
+  const handleInkoopDragOver = (e: React.DragEvent, itemId: string) => {
+    if (e.dataTransfer.types.includes(INKOOP_DRAG_TYPE)) {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'copy'
+      setInkoopDropTargetId(itemId)
+    }
+  }
+
+  const handleInkoopDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're leaving the item entirely
+    const relatedTarget = e.relatedTarget as HTMLElement | null
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      setInkoopDropTargetId(null)
+    }
+  }
+
+  const handleInkoopDrop = (e: React.DragEvent, itemId: string) => {
+    e.preventDefault()
+    setInkoopDropTargetId(null)
+    const raw = e.dataTransfer.getData(INKOOP_DRAG_TYPE)
+    if (!raw) return
+    try {
+      const data: InkoopDragData = JSON.parse(raw)
+      const item = items.find(i => i.id === itemId)
+      if (!item) return
+
+      // Sla de inkoopprijs op in calculatie en vul verkoopprijs
+      const calcRegel: CalculatieRegel = {
+        id: `calc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        product_naam: data.omschrijving,
+        categorie: 'Materiaal',
+        eenheid: data.eenheid || 'stuks',
+        aantal: data.aantal,
+        inkoop_prijs: round2(data.prijs_per_stuk),
+        verkoop_prijs: round2(data.prijs_per_stuk),
+        marge_percentage: 0,
+        korting_percentage: 0,
+        nacalculatie: false,
+        btw_percentage: 21,
+        notitie: data.leverancier ? `Inkoop via ${data.leverancier}` : '',
+      }
+
+      // Update the item with the dropped inkoop data
+      if (onUpdateItemWithCalculatie) {
+        const existingRegels = item.calculatie_regels || []
+        onUpdateItemWithCalculatie(itemId, {
+          beschrijving: item.beschrijving || data.omschrijving,
+          eenheidsprijs: round2(data.prijs_per_stuk * data.aantal),
+          calculatie_regels: [...existingRegels, calcRegel],
+        })
+      } else {
+        onUpdateItem(itemId, 'eenheidsprijs', round2(data.prijs_per_stuk))
+        onUpdateItem(itemId, 'aantal', data.aantal)
+        if (!item.beschrijving) {
+          onUpdateItem(itemId, 'beschrijving', data.omschrijving)
+        }
+      }
+    } catch {
+      // Invalid drag data
+    }
   }
 
   const toggleCollapse = (id: string) => {
@@ -1174,7 +1240,15 @@ export function QuoteItemsTable({
                 </div>
 
                 {/* ──── PRIJSBEREKENING ──── */}
-                <div className="px-4 py-3 bg-background/50 dark:bg-foreground/80/30">
+                <div
+                  className={cn(
+                    'px-4 py-3 bg-background/50 dark:bg-foreground/80/30 transition-all',
+                    inkoopDropTargetId === item.id && 'ring-2 ring-primary/40 ring-inset bg-primary/5'
+                  )}
+                  onDragOver={(e) => handleInkoopDragOver(e, item.id)}
+                  onDragLeave={handleInkoopDragLeave}
+                  onDrop={(e) => handleInkoopDrop(e, item.id)}
+                >
                   {/* Modus: enkele prijs (geen varianten) */}
                   {(!item.prijs_varianten || item.prijs_varianten.length === 0) && (
                     <>

@@ -24,6 +24,7 @@ import { KlantenImportPage } from '@/components/clients/KlantenImportPage'
 import { QuotesPipeline } from '@/components/quotes/QuotesPipeline'
 import { QuoteCreation } from '@/components/quotes/QuoteCreation'
 import { ForgeQuotePreview } from '@/components/quotes/ForgeQuotePreview'
+import { InkoopOffertesPage } from '@/components/quotes/InkoopOffertesPage'
 import { OfferteDetail } from '@/components/quotes/OfferteDetail'
 import { DocumentsLayout } from '@/components/documents/DocumentsLayout'
 import { EmailLayout } from '@/components/email/EmailLayout'
@@ -116,6 +117,7 @@ function AppContent() {
         <Route path="offertes/:id/bewerken" element={<QuoteCreation />} />
         <Route path="offertes/:id/preview" element={<ForgeQuotePreview />} />
         <Route path="offertes/:id/detail" element={<OfferteDetail />} />
+        <Route path="inkoopoffertes" element={<InkoopOffertesPage />} />
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
         <Route path="email/compose" element={<EmailComposePage />} />

@@ -40,6 +40,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Klanten', icon: Users, path: '/klanten' },
       { label: 'Offertes', icon: FileText, path: '/offertes' },
+      { label: 'Inkoopoffertes', icon: ShoppingCart, path: '/inkoopoffertes' },
       { label: 'Facturen', icon: Receipt, path: '/facturen' },
     ],
   },
