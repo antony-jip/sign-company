@@ -837,26 +837,32 @@ export function ProjectDetail() {
               </div>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <Badge className={`${getStatusColor(project.status)} text-xs px-2.5 py-0.5`}>
-                {statusLabels[project.status] || project.status}
-              </Badge>
+              <select
+                value={project.status}
+                onChange={async (e) => {
+                  const newStatus = e.target.value as Project['status']
+                  try {
+                    const updated = await updateProject(id!, { status: newStatus })
+                    setProject(updated)
+                    toast.success(`Status gewijzigd naar ${statusLabels[newStatus] || newStatus}`)
+                  } catch {
+                    toast.error('Kon status niet wijzigen')
+                  }
+                }}
+                className={`${getStatusColor(project.status)} text-xs px-2.5 py-0.5 rounded-full border-0 cursor-pointer appearance-none font-medium focus:ring-1 focus:ring-primary/30 focus:outline-none pr-6 bg-no-repeat bg-[right_4px_center] bg-[length:12px]`}
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+              >
+                <option value="gepland">Gepland</option>
+                <option value="actief">Actief</option>
+                <option value="in-review">In review</option>
+                <option value="te-factureren">Te factureren</option>
+                <option value="on-hold">On-hold</option>
+                <option value="afgerond">Afgerond</option>
+              </select>
               <Badge className={`${getPriorityColor(project.prioriteit)} text-xs px-2.5 py-0.5`}>
                 {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
               </Badge>
               <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleAiAnalysis}
-                disabled={aiAnalysisLoading}
-                className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
-              >
-                {aiAnalysisLoading
-                  ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                  : <Sparkles className="h-3.5 w-3.5 mr-1" />
-                }
-                AI Analyse
-              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -869,56 +875,6 @@ export function ProjectDetail() {
             </div>
           </div>
 
-          {/* Stats row — pastel accent cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5">
-            <div className="bg-blush/20 rounded-xl p-3 border border-blush/30">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Voortgang</span>
-              <p className="text-lg font-bold mt-0.5 text-foreground">{project.voortgang}%</p>
-              <div className="mt-1.5 h-1 bg-blush/30 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blush-deep rounded-full transition-all duration-500"
-                  style={{ width: `${project.voortgang}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="bg-sage/20 rounded-xl p-3 border border-sage/30">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Goedkeuring</span>
-              {goedkeuringen.length > 0 ? (
-                <>
-                  <p className="text-lg font-bold mt-0.5 text-foreground">
-                    {goedkeuringen.filter(g => g.status === 'goedgekeurd').length}/{goedkeuringen.length}
-                  </p>
-                  <p className="text-[10px] mt-0.5 text-muted-foreground">
-                    {goedkeuringen.some(g => g.status === 'revisie')
-                      ? `${goedkeuringen.filter(g => g.status === 'revisie').length} revisie(s)`
-                      : 'goedgekeurd'}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-lg font-bold mt-0.5 text-foreground">-</p>
-                  <p className="text-[10px] mt-0.5 text-muted-foreground">nog niet verstuurd</p>
-                </>
-              )}
-            </div>
-
-            <div className="bg-mist/20 rounded-xl p-3 border border-mist/30">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Deadline</span>
-              <p className={`text-lg font-bold mt-0.5 ${isOverdue ? 'text-amber-600' : 'text-foreground'}`}>
-                {!isValidDate ? '-' : isOverdue ? `${Math.abs(daysLeft)}d` : project.status === 'afgerond' ? 'Klaar' : `${daysLeft}d`}
-              </p>
-              <p className={`text-[10px] mt-0.5 ${isOverdue ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                {!isValidDate ? 'geen deadline' : isOverdue ? 'verlopen' : project.status === 'afgerond' ? 'afgerond' : 'resterend'}
-              </p>
-            </div>
-
-            <div className="bg-cream/30 rounded-xl p-3 border border-cream/40">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Taken</span>
-              <p className="text-lg font-bold mt-0.5 text-foreground">{takenKlaar}/{takenTotaal}</p>
-              <p className="text-[10px] mt-0.5 text-muted-foreground">afgerond</p>
-            </div>
-          </div>
 
           {/* Budget waarschuwing */}
           {(() => {
@@ -1193,12 +1149,21 @@ export function ProjectDetail() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="taak-toegewezen">Toegewezen aan</Label>
-                      <Input
-                        id="taak-toegewezen"
-                        placeholder="Naam..."
-                        value={nieuweTaakToegewezen}
-                        onChange={(e) => setNieuweTaakToegewezen(e.target.value)}
-                      />
+                      <Select value={nieuweTaakToegewezen} onValueChange={setNieuweTaakToegewezen}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecteer teamlid..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {alleMedewerkers.map((m) => (
+                            <SelectItem key={m.id} value={m.naam}>
+                              {m.naam}
+                            </SelectItem>
+                          ))}
+                          {projectToewijzingen.length > 0 && alleMedewerkers.length === 0 && (
+                            <SelectItem value="" disabled>Geen medewerkers gevonden</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="taak-deadline">Deadline</Label>
@@ -1707,7 +1672,7 @@ export function ProjectDetail() {
                             variant="ghost"
                             size="sm"
                             className="h-6 px-2 text-xs"
-                            onClick={() => navigate(`/offertes/${offerte.id}/preview`, { state: { from: location.pathname } })}
+                            onClick={() => navigate(`/offertes/${offerte.id}/detail`, { state: { from: location.pathname } })}
                           >
                             <Eye className="h-3 w-3 mr-1" />
                             Bekijk
@@ -1739,11 +1704,11 @@ export function ProjectDetail() {
                           </Button>
                         </div>
                         {/* Factureren row */}
-                        {offerte.status === 'goedgekeurd' && !offerte.geconverteerd_naar_factuur_id && (
+                        {!offerte.geconverteerd_naar_factuur_id && (
                           <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20 rounded-md px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800 mt-1">
                             <div className="flex items-center gap-1.5">
                               <CreditCard className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                              <span className="text-xs text-emerald-700 dark:text-emerald-300">Klaar om te factureren</span>
+                              <span className="text-xs text-emerald-700 dark:text-emerald-300">Factureren</span>
                             </div>
                             <Button
                               size="sm"
