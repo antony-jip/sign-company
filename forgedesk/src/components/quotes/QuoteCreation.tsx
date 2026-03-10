@@ -640,6 +640,69 @@ export function QuoteCreation() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [standaardBtw, settings.offerte_regel_velden])
 
+  // ── Inkoop regel → prijsvariant op laatste item ──
+  const handleInkoopRegelAlsPrijsvariant = useCallback((regel: InkoopRegel, leverancier: string) => {
+    if (items.length === 0) {
+      // Geen items, maak er een aan
+      handleInkoopRegelToevoegen(regel)
+      return
+    }
+    // Voeg toe als prijsvariant op het laatste item
+    const lastItem = items[items.length - 1]
+    const variantLabel = leverancier ? `${leverancier}` : `Optie ${String.fromCharCode(65 + (lastItem.prijs_varianten?.length || 0))}`
+    const newVariant: PrijsVariant = {
+      id: `dr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      label: variantLabel,
+      aantal: regel.aantal,
+      eenheidsprijs: round2(regel.prijs_per_stuk),
+      btw_percentage: lastItem.btw_percentage || standaardBtw,
+      korting_percentage: 0,
+      calculatie_regels: [{
+        id: `calc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        product_naam: regel.omschrijving,
+        categorie: 'Materiaal',
+        eenheid: regel.eenheid || 'stuks',
+        aantal: regel.aantal,
+        inkoop_prijs: round2(regel.prijs_per_stuk),
+        verkoop_prijs: round2(regel.prijs_per_stuk),
+        marge_percentage: 0,
+        korting_percentage: 0,
+        nacalculatie: false,
+        btw_percentage: standaardBtw,
+        notitie: `Inkoop via ${leverancier}`,
+      }],
+      heeft_calculatie: true,
+    }
+
+    const existingVarianten = lastItem.prijs_varianten || []
+    if (existingVarianten.length === 0) {
+      // Maak eerst een variant van de huidige prijs
+      const firstVariant: PrijsVariant = {
+        id: `dr-${Date.now()}-a-${Math.random().toString(36).slice(2, 7)}`,
+        label: 'Optie A',
+        aantal: lastItem.aantal,
+        eenheidsprijs: lastItem.eenheidsprijs,
+        btw_percentage: lastItem.btw_percentage,
+        korting_percentage: lastItem.korting_percentage,
+        calculatie_regels: lastItem.calculatie_regels,
+        heeft_calculatie: lastItem.heeft_calculatie,
+      }
+      setItems(prev => prev.map(item =>
+        item.id === lastItem.id
+          ? { ...item, prijs_varianten: [firstVariant, newVariant], actieve_variant_id: firstVariant.id }
+          : item
+      ))
+    } else {
+      setItems(prev => prev.map(item =>
+        item.id === lastItem.id
+          ? { ...item, prijs_varianten: [...existingVarianten, newVariant] }
+          : item
+      ))
+    }
+    toast.success(`Prijsvariant "${variantLabel}" toegevoegd`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, standaardBtw, handleInkoopRegelToevoegen])
+
   // ── Item handlers ──
   const handleAddItem = () => {
     setItems([...items, createEmptyItem()])
@@ -2051,68 +2114,70 @@ export function QuoteCreation() {
             </CardContent>
           </Card>
 
-          {/* ── Items + Inkoop paneel ── */}
-          <div className={cn('flex gap-4', inkoopPaneelOpen ? 'flex-col xl:flex-row' : '')}>
-            {/* Items card */}
-            <Card className={cn(inkoopPaneelOpen ? 'xl:w-2/3' : 'w-full')}>
-              <CardHeader className="pb-3">
+          {/* ── Inkoopoffertes (collapsible) ── */}
+          {user?.id && (
+            <Card>
+              <CardHeader className="pb-0 cursor-pointer" onClick={() => setInkoopPaneelOpen(!inkoopPaneelOpen)}>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
-                    Offerte items
-                    <span className="text-xs text-muted-foreground font-normal ml-1">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center"><ShoppingCart className="h-3.5 w-3.5 text-white" /></div>
+                    Inkoopoffertes
+                    <span className="text-xs text-muted-foreground font-normal ml-1">leveranciersprijzen</span>
                   </CardTitle>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setInkoopPaneelOpen(!inkoopPaneelOpen)}
                     className="text-xs gap-1.5 h-7"
                   >
-                    {inkoopPaneelOpen ? '〈' : '〉'} Inkoopoffertes
+                    {inkoopPaneelOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <QuoteItemsTable
-                  items={items}
-                  onAddItem={handleAddItem}
-                  onUpdateItem={handleUpdateItem}
-                  onRemoveItem={handleRemoveItem}
-                  userId={user?.id}
-                  onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
-                  onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
-                  suggesties={omschrijvingSuggesties}
-                  onCopyItem={handleCopyItem}
-                  onCopyAllItems={handleCopyAllItems}
-                  clipboardCount={clipboardCount}
-                  onPasteItems={handlePasteItems}
-                  onClearClipboard={handleClearClipboard}
-                  toonM2={offerteToonM2}
-                  projectId={selectedProjectId || undefined}
-                  klantId={selectedKlantId || undefined}
-                  offerteId={editOfferteId || autoSaveIdRef.current || undefined}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Inkoop offerte zijpaneel */}
-            {inkoopPaneelOpen && user?.id && (
-              <Card className="xl:w-1/3">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center"><Upload className="h-3.5 w-3.5 text-white" /></div>
-                    Inkoopoffertes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              {inkoopPaneelOpen && (
+                <CardContent className="pt-4">
                   <InkoopOffertePaneel
                     userId={user.id}
                     onRegelToevoegen={handleInkoopRegelToevoegen}
+                    onRegelAlsPrijsvariant={handleInkoopRegelAlsPrijsvariant}
                   />
                 </CardContent>
-              </Card>
-            )}
-          </div>
+              )}
+            </Card>
+          )}
+
+          {/* ── Items ── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
+                  Offerte items
+                  <span className="text-xs text-muted-foreground font-normal ml-1">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <QuoteItemsTable
+                items={items}
+                onAddItem={handleAddItem}
+                onUpdateItem={handleUpdateItem}
+                onRemoveItem={handleRemoveItem}
+                userId={user?.id}
+                onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
+                onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
+                suggesties={omschrijvingSuggesties}
+                onCopyItem={handleCopyItem}
+                onCopyAllItems={handleCopyAllItems}
+                clipboardCount={clipboardCount}
+                onPasteItems={handlePasteItems}
+                onClearClipboard={handleClearClipboard}
+                toonM2={offerteToonM2}
+                projectId={selectedProjectId || undefined}
+                klantId={selectedKlantId || undefined}
+                offerteId={editOfferteId || autoSaveIdRef.current || undefined}
+              />
+            </CardContent>
+          </Card>
 
           {/* ── Afsluittekst ── */}
           <Card>
