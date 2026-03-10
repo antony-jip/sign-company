@@ -45,8 +45,8 @@ import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getCalculatieProducten, getCalculatieTemplates } from '@/services/supabaseService'
 import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate, ProboOptie } from '@/types'
-import { ProboProductPicker } from './ProboProductPicker'
-import type { ProboPickerResult } from './ProboProductPicker'
+import { ProboConfiguratorModal } from './ProboConfiguratorModal'
+import type { ProboPickerResult } from './ProboConfiguratorModal'
 import { logger } from '../../utils/logger'
 
 // ============================================================
@@ -123,6 +123,7 @@ export function CalculatieModal({
   const [templates, setTemplates] = useState<CalculatieTemplate[]>([])
   const [showTemplates, setShowTemplates] = useState(false)
   const [proboActiveRegelId, setProboActiveRegelId] = useState<string | null>(null)
+  const [proboModalOpen, setProboModalOpen] = useState(false)
   const [proboRefreshingId, setProboRefreshingId] = useState<string | null>(null)
 
   const proboEnabled = settings.probo_enabled === true
@@ -603,15 +604,14 @@ export function CalculatieModal({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <button
-                                    onClick={() => setProboActiveRegelId(
-                                      proboActiveRegelId === regel.id ? null : regel.id
-                                    )}
+                                    onClick={() => {
+                                      setProboActiveRegelId(regel.id)
+                                      setProboModalOpen(true)
+                                    }}
                                     className={`flex-shrink-0 h-8 w-8 flex items-center justify-center rounded text-xs font-bold transition-colors ${
-                                      proboActiveRegelId === regel.id
-                                        ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
-                                        : regel.probo_product_code
-                                          ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-500'
-                                          : 'text-muted-foreground/60 hover:bg-muted hover:text-foreground'
+                                      regel.probo_product_code
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-500'
+                                        : 'text-muted-foreground/60 hover:bg-muted hover:text-foreground'
                                     }`}
                                   >
                                     P
@@ -785,19 +785,7 @@ export function CalculatieModal({
                         </Button>
                       </td>
                     </tr>
-                    {/* Probo picker row */}
-                    {proboActiveRegelId === regel.id && proboEnabled && (
-                      <tr className="border-b border-emerald-200 dark:border-emerald-800">
-                        <td colSpan={10} className="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-950/10">
-                          <div className="max-w-md">
-                            <ProboProductPicker
-                              onSelect={(result) => vulRegelMetProbo(regel.id, result)}
-                              onCancel={() => setProboActiveRegelId(null)}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    )}
+                    {/* Probo picker row removed - now uses modal */}
                   </React.Fragment>
                   )
                 })}
@@ -895,6 +883,24 @@ export function CalculatieModal({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Probo Configurator Modal */}
+      {proboEnabled && (
+        <ProboConfiguratorModal
+          open={proboModalOpen}
+          onOpenChange={(open) => {
+            setProboModalOpen(open)
+            if (!open) setProboActiveRegelId(null)
+          }}
+          onSelect={(result) => {
+            if (proboActiveRegelId) {
+              vulRegelMetProbo(proboActiveRegelId, result)
+            }
+            setProboModalOpen(false)
+            setProboActiveRegelId(null)
+          }}
+        />
+      )}
     </Dialog>
   )
 }
