@@ -9,6 +9,22 @@ const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
 if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY environment variable is required')
 const APP_URL = process.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'
 
+// Rate limiting: 10 requests per minuut per IP
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT = 10
+const RATE_WINDOW_MS = 60_000
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
+    return false
+  }
+  entry.count++
+  return entry.count > RATE_LIMIT
+}
+
 function decrypt(encrypted: string): string {
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
   const [ivHex, encHex] = encrypted.split(':')
@@ -22,6 +38,11 @@ function decrypt(encrypted: string): string {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
+  if (isRateLimited(clientIp)) {
+    return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+  }
 
   try {
     const { token, naam, opmerking } = req.body as { token: string; naam?: string; opmerking: string }

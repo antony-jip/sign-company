@@ -1,17 +1,31 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const MOLLIE_WEBHOOK_SECRET = process.env.MOLLIE_WEBHOOK_SECRET || ''
 
 const MOLLIE_API_BASE = 'https://api.mollie.com/v2/payments'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Mollie stuurt geen auth header — webhook moet open staan
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
+    // Verifieer webhook signature als MOLLIE_WEBHOOK_SECRET is geconfigureerd
+    if (MOLLIE_WEBHOOK_SECRET) {
+      const signature = req.headers['x-mollie-signature'] as string | undefined
+      const expectedSignature = crypto
+        .createHmac('sha256', MOLLIE_WEBHOOK_SECRET)
+        .update(JSON.stringify(req.body))
+        .digest('hex')
+      if (signature !== expectedSignature) {
+        console.warn('Mollie webhook: ongeldige signature')
+        return res.status(401).json({ error: 'Ongeldige webhook signature' })
+      }
+    }
+
     const { id: paymentId } = req.body as { id?: string }
 
     if (!paymentId) {

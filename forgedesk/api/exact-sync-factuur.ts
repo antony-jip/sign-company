@@ -6,6 +6,17 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
 
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+async function verifyUser(req: VercelRequest): Promise<string> {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
+  const token = authHeader.split(' ')[1]
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  if (error || !user) throw new Error('Ongeldige sessie')
+  return user.id
+}
+
 // ── Helpers ──
 
 interface ExactSettings {
@@ -163,10 +174,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const { factuur_id, user_id } = req.body as { factuur_id: string; user_id: string }
+    const user_id = await verifyUser(req)
+    const { factuur_id } = req.body as { factuur_id: string }
 
-    if (!factuur_id || !user_id) {
-      return res.status(400).json({ error: 'factuur_id en user_id zijn verplicht' })
+    if (!factuur_id) {
+      return res.status(400).json({ error: 'factuur_id is verplicht' })
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)

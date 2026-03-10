@@ -7,21 +7,33 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const MOLLIE_API_URL = 'https://api.mollie.com/v2/payments'
 const DEFAULT_REDIRECT = 'https://forgedesk-ten.vercel.app'
 
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+async function verifyUser(req: VercelRequest): Promise<string> {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
+  const token = authHeader.split(' ')[1]
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  if (error || !user) throw new Error('Ongeldige sessie')
+  return user.id
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const { factuur_id, bedrag, omschrijving, redirect_url, user_id } = req.body as {
+    const user_id = await verifyUser(req)
+
+    const { factuur_id, bedrag, omschrijving, redirect_url } = req.body as {
       factuur_id: string
       bedrag: number
       omschrijving: string
       redirect_url?: string
-      user_id: string
     }
 
-    if (!factuur_id || !bedrag || !user_id) {
-      return res.status(400).json({ error: 'factuur_id, bedrag en user_id zijn verplicht' })
+    if (!factuur_id || !bedrag) {
+      return res.status(400).json({ error: 'factuur_id en bedrag zijn verplicht' })
     }
 
     // Haal mollie_api_key op uit app_settings voor de user_id

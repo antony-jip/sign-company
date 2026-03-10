@@ -26,11 +26,16 @@ export async function authenticateGmail(): Promise<boolean> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return false
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('user_email_settings')
     .select('id')
     .eq('user_id', session.user.id)
     .single()
+
+  if (error) {
+    console.error('authenticateGmail: email settings ophalen mislukt:', error.message)
+    return false
+  }
 
   return !!data
 }
@@ -125,17 +130,26 @@ export async function markAsRead(messageId: string): Promise<void> {
 export async function starEmail(messageId: string): Promise<void> {
   if (!supabase) return
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('emails')
     .select('starred')
     .eq('id', messageId)
     .single()
 
+  if (error) {
+    console.error('starEmail: email ophalen mislukt:', error.message)
+    throw new Error(`Email ophalen mislukt: ${error.message}`)
+  }
+
   if (data) {
-    await supabase
+    const { error: updateError } = await supabase
       .from('emails')
       .update({ starred: !data.starred })
       .eq('id', messageId)
+    if (updateError) {
+      console.error('starEmail: update mislukt:', updateError.message)
+      throw new Error(`Email update mislukt: ${updateError.message}`)
+    }
   }
 }
 
@@ -291,11 +305,18 @@ export async function getEmailSettings(): Promise<{
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return null
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('user_email_settings')
     .select('gmail_address, smtp_host, smtp_port, imap_host, imap_port, is_verified')
     .eq('user_id', session.user.id)
     .single()
+
+  if (error) {
+    // PGRST116 = no rows found — dat is een normaal geval
+    if (error.code === 'PGRST116') return null
+    console.error('getEmailSettings: ophalen mislukt:', error.message)
+    throw new Error(`Email instellingen ophalen mislukt: ${error.message}`)
+  }
 
   return data
 }
