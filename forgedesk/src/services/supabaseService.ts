@@ -58,6 +58,8 @@ import type {
   VisualizerCredits,
   CreditTransactie,
   ProjectFoto,
+  InkoopOfferte,
+  InkoopRegel,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -4636,4 +4638,132 @@ export async function getForgieGebruik(user_id: string): Promise<{ geschatte_kos
   }
 
   return { geschatte_kosten: 0, aantal_calls: 0, limiet }
+}
+
+// ============ INKOOP OFFERTES ============
+
+export async function getInkoopOffertes(user_id: string): Promise<InkoopOfferte[]> {
+  assertId(user_id, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('inkoop_offertes')
+      .select('*, regels:inkoop_regels(*)')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const offertes = getLocalData<InkoopOfferte>('inkoop_offertes')
+  const regels = getLocalData<InkoopRegel>('inkoop_regels')
+  return offertes
+    .filter((o) => o.user_id === user_id)
+    .map((o) => ({ ...o, regels: regels.filter((r) => r.inkoop_offerte_id === o.id) }))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export async function getInkoopOffertesByProject(project_id: string): Promise<InkoopOfferte[]> {
+  assertId(project_id, 'project_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('inkoop_offertes')
+      .select('*, regels:inkoop_regels(*)')
+      .eq('project_id', project_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const offertes = getLocalData<InkoopOfferte>('inkoop_offertes')
+  const regels = getLocalData<InkoopRegel>('inkoop_regels')
+  return offertes
+    .filter((o) => o.project_id === project_id)
+    .map((o) => ({ ...o, regels: regels.filter((r) => r.inkoop_offerte_id === o.id) }))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export async function createInkoopOfferte(data: Omit<InkoopOfferte, 'id' | 'created_at' | 'regels'>): Promise<InkoopOfferte> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data: row, error } = await supabase
+      .from('inkoop_offertes')
+      .insert({ ...data, totaal: round2(data.totaal) })
+      .select()
+      .single()
+    if (error) throw error
+    return { ...row, regels: [] }
+  }
+  const offertes = getLocalData<InkoopOfferte>('inkoop_offertes')
+  const newOfferte: InkoopOfferte = {
+    ...data,
+    totaal: round2(data.totaal),
+    id: generateId(),
+    created_at: now(),
+    regels: [],
+  }
+  offertes.push(newOfferte)
+  setLocalData('inkoop_offertes', offertes)
+  return newOfferte
+}
+
+export async function createInkoopRegel(data: Omit<InkoopRegel, 'id' | 'created_at'>): Promise<InkoopRegel> {
+  const regelData = {
+    ...data,
+    prijs_per_stuk: round2(data.prijs_per_stuk),
+    totaal: round2(data.totaal),
+  }
+  if (isSupabaseConfigured() && supabase) {
+    const { data: row, error } = await supabase
+      .from('inkoop_regels')
+      .insert(regelData)
+      .select()
+      .single()
+    if (error) throw error
+    return row
+  }
+  const regels = getLocalData<InkoopRegel>('inkoop_regels')
+  const newRegel: InkoopRegel = {
+    ...regelData,
+    id: generateId(),
+    created_at: now(),
+  }
+  regels.push(newRegel)
+  setLocalData('inkoop_regels', regels)
+  return newRegel
+}
+
+export async function updateInkoopRegel(id: string, updates: Partial<InkoopRegel>): Promise<InkoopRegel> {
+  assertId(id)
+  const safeUpdates = { ...updates }
+  if (safeUpdates.prijs_per_stuk != null) safeUpdates.prijs_per_stuk = round2(safeUpdates.prijs_per_stuk)
+  if (safeUpdates.totaal != null) safeUpdates.totaal = round2(safeUpdates.totaal)
+
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('inkoop_regels')
+      .update(safeUpdates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const regels = getLocalData<InkoopRegel>('inkoop_regels')
+  const index = regels.findIndex((r) => r.id === id)
+  if (index === -1) throw new Error('Inkoop regel niet gevonden')
+  regels[index] = { ...regels[index], ...safeUpdates }
+  setLocalData('inkoop_regels', regels)
+  return regels[index]
+}
+
+export async function deleteInkoopOfferte(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    // Verwijder eerst regels, dan offerte
+    await supabase.from('inkoop_regels').delete().eq('inkoop_offerte_id', id)
+    const { error } = await supabase.from('inkoop_offertes').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const offertes = getLocalData<InkoopOfferte>('inkoop_offertes')
+  setLocalData('inkoop_offertes', offertes.filter((o) => o.id !== id))
+  const regels = getLocalData<InkoopRegel>('inkoop_regels')
+  setLocalData('inkoop_regels', regels.filter((r) => r.inkoop_offerte_id !== id))
 }

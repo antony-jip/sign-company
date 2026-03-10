@@ -1369,6 +1369,33 @@ export interface KvkResultaat {
   btw_nummer?: string;
 }
 
+// ============ INKOOP OFFERTES ============
+
+export interface InkoopOfferte {
+  id: string;
+  user_id: string;
+  leverancier_naam: string;
+  project_id?: string;
+  bestand_url?: string;
+  datum: string;
+  totaal: number;
+  created_at: string;
+  regels?: InkoopRegel[];
+}
+
+export interface InkoopRegel {
+  id: string;
+  user_id: string;
+  inkoop_offerte_id: string;
+  omschrijving: string;
+  aantal: number;
+  eenheid?: string;
+  prijs_per_stuk: number;
+  totaal: number;
+  twijfelachtig: boolean;
+  created_at: string;
+}
+
 // ============ DOCUMENT STYLING / HUISSTIJL ============
 
 export type DocumentTemplateId = 'klassiek' | 'modern' | 'minimaal' | 'industrieel';

@@ -56,6 +56,7 @@ import {
   Receipt,
   ArrowRight,
   CheckCircle2,
+  Upload,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -70,7 +71,8 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { initAutofillDefaults, saveAutofillValue, labelToAutofillField } from '@/utils/autofillUtils'
 import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
-import type { CalculatieRegel } from '@/types'
+import { InkoopOffertePaneel } from './InkoopOffertePaneel'
+import type { CalculatieRegel, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
 import { safeSetItem } from '@/utils/localStorageUtils'
 
@@ -154,6 +156,9 @@ export function QuoteCreation() {
 
   // ── Sidebar collapsed on mobile ──
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  // ── Inkoop offerte paneel ──
+  const [inkoopPaneelOpen, setInkoopPaneelOpen] = useState(false)
 
   // ── FIX 16: Afrondingskorting ──
   const [isEditingTotaal, setIsEditingTotaal] = useState(false)
@@ -607,6 +612,32 @@ export function QuoteCreation() {
       totaal: 0,
     }
   }
+
+  // ── Inkoop regel → calculatie item ──
+  const handleInkoopRegelToevoegen = useCallback((regel: InkoopRegel) => {
+    const newItem = createEmptyItem(regel.omschrijving)
+    newItem.aantal = regel.aantal
+    newItem.eenheidsprijs = 0 // Verkoopprijs leeg, gebruiker vult zelf in
+    newItem.totaal = 0
+    // Sla inkoopprijs op in calculatie
+    newItem.calculatie_regels = [{
+      id: `calc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      product_naam: regel.omschrijving,
+      categorie: 'Materiaal',
+      eenheid: regel.eenheid || 'stuks',
+      aantal: regel.aantal,
+      inkoop_prijs: round2(regel.prijs_per_stuk),
+      verkoop_prijs: 0,
+      marge_percentage: 0,
+      korting_percentage: 0,
+      nacalculatie: false,
+      btw_percentage: standaardBtw,
+      notitie: '',
+    }]
+    newItem.heeft_calculatie = true
+    setItems(prev => [...prev, newItem])
+    toast.success(`"${regel.omschrijving}" toegevoegd aan offerte items`)
+  }, [standaardBtw])
 
   // ── Item handlers ──
   const handleAddItem = () => {
@@ -2019,37 +2050,68 @@ export function QuoteCreation() {
             </CardContent>
           </Card>
 
-          {/* ── Items ── */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
-                Offerte items
-                <span className="text-xs text-muted-foreground font-normal ml-1">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QuoteItemsTable
-                items={items}
-                onAddItem={handleAddItem}
-                onUpdateItem={handleUpdateItem}
-                onRemoveItem={handleRemoveItem}
-                userId={user?.id}
-                onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
-                onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
-                suggesties={omschrijvingSuggesties}
-                onCopyItem={handleCopyItem}
-                onCopyAllItems={handleCopyAllItems}
-                clipboardCount={clipboardCount}
-                onPasteItems={handlePasteItems}
-                onClearClipboard={handleClearClipboard}
-                toonM2={offerteToonM2}
-                projectId={selectedProjectId || undefined}
-                klantId={selectedKlantId || undefined}
-                offerteId={editOfferteId || autoSaveIdRef.current || undefined}
-              />
-            </CardContent>
-          </Card>
+          {/* ── Items + Inkoop paneel ── */}
+          <div className={cn('flex gap-4', inkoopPaneelOpen ? 'flex-col xl:flex-row' : '')}>
+            {/* Items card */}
+            <Card className={cn(inkoopPaneelOpen ? 'xl:w-2/3' : 'w-full')}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
+                    Offerte items
+                    <span className="text-xs text-muted-foreground font-normal ml-1">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setInkoopPaneelOpen(!inkoopPaneelOpen)}
+                    className="text-xs gap-1.5 h-7"
+                  >
+                    {inkoopPaneelOpen ? '〈' : '〉'} Inkoopoffertes
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <QuoteItemsTable
+                  items={items}
+                  onAddItem={handleAddItem}
+                  onUpdateItem={handleUpdateItem}
+                  onRemoveItem={handleRemoveItem}
+                  userId={user?.id}
+                  onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
+                  onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
+                  suggesties={omschrijvingSuggesties}
+                  onCopyItem={handleCopyItem}
+                  onCopyAllItems={handleCopyAllItems}
+                  clipboardCount={clipboardCount}
+                  onPasteItems={handlePasteItems}
+                  onClearClipboard={handleClearClipboard}
+                  toonM2={offerteToonM2}
+                  projectId={selectedProjectId || undefined}
+                  klantId={selectedKlantId || undefined}
+                  offerteId={editOfferteId || autoSaveIdRef.current || undefined}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Inkoop offerte zijpaneel */}
+            {inkoopPaneelOpen && user?.id && (
+              <Card className="xl:w-1/3">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center"><Upload className="h-3.5 w-3.5 text-white" /></div>
+                    Inkoopoffertes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <InkoopOffertePaneel
+                    userId={user.id}
+                    onRegelToevoegen={handleInkoopRegelToevoegen}
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           {/* ── Afsluittekst ── */}
           <Card>
