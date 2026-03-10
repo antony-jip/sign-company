@@ -1920,12 +1920,21 @@ function IntegratiesTab() {
   const [mollieSaving, setMollieSaving] = useState(false)
   const [mollieLoaded, setMollieLoaded] = useState(false)
 
+  // Exact Online state
+  const [exactClientId, setExactClientId] = useState('')
+  const [exactClientSecret, setExactClientSecret] = useState('')
+  const [exactConnected, setExactConnected] = useState(false)
+  const [exactSaving, setExactSaving] = useState(false)
+
   useEffect(() => {
     if (!user?.id) return
     getAppSettings(user.id).then((s) => {
       setMollieEnabled(s.mollie_enabled ?? false)
       setMollieApiKey(s.mollie_api_key ?? '')
       setMollieLoaded(true)
+      setExactClientId(s.exact_online_client_id ?? '')
+      setExactClientSecret(s.exact_online_client_secret ?? '')
+      setExactConnected(s.exact_online_connected ?? false)
     }).catch(() => {})
   }, [user?.id])
 
@@ -1940,6 +1949,23 @@ function IntegratiesTab() {
       toast.error('Kon Mollie instellingen niet opslaan')
     } finally {
       setMollieSaving(false)
+    }
+  }
+
+  const handleExactSave = async () => {
+    if (!user?.id) return
+    setExactSaving(true)
+    try {
+      await updateAppSettings(user.id, {
+        exact_online_client_id: exactClientId,
+        exact_online_client_secret: exactClientSecret,
+      })
+      toast.success('Exact Online instellingen opgeslagen')
+    } catch (err) {
+      logger.error('Fout bij opslaan Exact Online instellingen:', err)
+      toast.error('Kon Exact Online instellingen niet opslaan')
+    } finally {
+      setExactSaving(false)
     }
   }
 
@@ -2095,6 +2121,99 @@ function IntegratiesTab() {
               <div className="flex justify-end">
                 <Button onClick={handleMollieSave} disabled={mollieSaving} size="sm">
                   {mollieSaving ? 'Opslaan...' : 'Opslaan'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Exact Online Instellingen ── */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Globe className="w-5 h-5 text-indigo-700 dark:text-indigo-400" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-3 mb-1">
+                <h3 className="text-base font-semibold text-foreground">Exact Online</h3>
+                <Badge
+                  className={
+                    exactConnected
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                      : 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
+                  }
+                >
+                  {exactConnected ? (
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Verbonden
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <XCircle className="w-3 h-3" />
+                      Niet verbonden
+                    </span>
+                  )}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Koppel Exact Online om facturen, relaties en boekingen automatisch te synchroniseren.
+              </p>
+
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="exact-client-id" className="text-sm font-medium">
+                    Client ID
+                  </Label>
+                  <Input
+                    id="exact-client-id"
+                    value={exactClientId}
+                    onChange={(e) => setExactClientId(e.target.value)}
+                    placeholder="Exact Online Client ID"
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exact-client-secret" className="text-sm font-medium">
+                    Client Secret
+                  </Label>
+                  <Input
+                    id="exact-client-secret"
+                    type="password"
+                    value={exactClientSecret}
+                    onChange={(e) => setExactClientSecret(e.target.value)}
+                    placeholder="Exact Online Client Secret"
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Maak een app aan in het{' '}
+                  <a
+                    href="https://apps.exactonline.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline inline-flex items-center gap-0.5"
+                  >
+                    Exact Online App Center <ExternalLink className="w-3 h-3" />
+                  </a>{' '}
+                  om je Client ID en Secret te verkrijgen.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button onClick={handleExactSave} disabled={exactSaving} size="sm" variant="outline">
+                  {exactSaving ? 'Opslaan...' : 'Opslaan'}
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!exactClientId || !exactClientSecret}
+                  onClick={() => toast.info('Exact Online OAuth koppeling wordt binnenkort ondersteund')}
+                  className="gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Verbinden
                 </Button>
               </div>
             </div>

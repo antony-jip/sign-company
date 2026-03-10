@@ -559,6 +559,10 @@ export interface AppSettings {
   // Mollie betaalintegratie
   mollie_api_key?: string;
   mollie_enabled?: boolean;
+  // Exact Online integratie
+  exact_online_client_id?: string;
+  exact_online_client_secret?: string;
+  exact_online_connected?: boolean;
   created_at: string;
   updated_at: string;
 }
