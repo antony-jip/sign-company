@@ -7,6 +7,7 @@ const supabase = createClient(
 )
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -53,6 +54,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const base64Data = bestand_base64.includes(',')
       ? bestand_base64.split(',')[1]
       : bestand_base64
+
+    // Controleer bestandsgrootte (base64 is ~33% groter dan binair)
+    const estimatedBytes = Math.ceil(base64Data.length * 3 / 4)
+    if (estimatedBytes > MAX_FILE_SIZE) {
+      return res.status(400).json({ error: `Bestand is te groot (max ${MAX_FILE_SIZE / 1024 / 1024}MB)` })
+    }
 
     const systemPrompt =
       'Je bent een expert in het uitlezen van leveranciers offertes. ' +
@@ -101,7 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4096,
         system: systemPrompt,
         messages: [
