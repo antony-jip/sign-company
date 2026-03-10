@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,7 +22,6 @@ import {
   createInkoopRegel,
   deleteInkoopOfferte,
 } from '@/services/supabaseService'
-import supabase from '@/services/supabaseClient'
 import type { InkoopOfferte, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
 
@@ -46,7 +45,6 @@ export function InkoopOffertePaneel({ userId, onRegelToevoegen }: InkoopOfferteP
 
   // Opgeslagen offertes
   const [offertes, setOffertes] = useState<InkoopOfferte[]>([])
-  const [isLoaded, setIsLoaded] = useState(false)
   const [expandedOffertes, setExpandedOffertes] = useState<Set<string>>(new Set())
 
   // Upload flow
@@ -72,16 +70,15 @@ export function InkoopOffertePaneel({ userId, onRegelToevoegen }: InkoopOfferteP
     try {
       const data = await getInkoopOffertes(userId)
       setOffertes(data)
-      setIsLoaded(true)
     } catch (err) {
       logger.error('Inkoop offertes laden mislukt:', err)
     }
   }, [userId])
 
-  // Laad bij eerste render
-  if (!isLoaded) {
+  // Laad bij mount
+  useEffect(() => {
     loadOffertes()
-  }
+  }, [loadOffertes])
 
   // Bestand selecteren
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,8 +177,8 @@ export function InkoopOffertePaneel({ userId, onRegelToevoegen }: InkoopOfferteP
         totaal,
       })
 
-      for (const regel of geanalyseerdeRegels) {
-        await createInkoopRegel({
+      await Promise.all(geanalyseerdeRegels.map((regel) =>
+        createInkoopRegel({
           user_id: userId,
           inkoop_offerte_id: offerte.id,
           omschrijving: regel.omschrijving,
@@ -191,7 +188,7 @@ export function InkoopOffertePaneel({ userId, onRegelToevoegen }: InkoopOfferteP
           totaal: round2(regel.totaal),
           twijfelachtig: regel.confidence < 0.7,
         })
-      }
+      ))
 
       toast.success('Inkoopofferte opgeslagen')
       // Reset upload state

@@ -637,7 +637,8 @@ export function QuoteCreation() {
     newItem.heeft_calculatie = true
     setItems(prev => [...prev, newItem])
     toast.success(`"${regel.omschrijving}" toegevoegd aan offerte items`)
-  }, [standaardBtw])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [standaardBtw, settings.offerte_regel_velden])
 
   // ── Item handlers ──
   const handleAddItem = () => {
