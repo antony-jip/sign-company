@@ -1,23 +1,30 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const PROBO_BASE_URL = 'https://api.proboprints.com'
 
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+let supabaseAdmin: SupabaseClient | null = null
+function getSupabase(): SupabaseClient {
+  if (!supabaseAdmin) {
+    const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    if (!url || !key) throw new Error('Supabase niet geconfigureerd')
+    supabaseAdmin = createClient(url, key)
+  }
+  return supabaseAdmin
+}
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
   const token = authHeader.split(' ')[1]
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  const { data: { user }, error } = await getSupabase().auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
 }
 
 async function getProboApiKey(userId: string): Promise<string> {
-  const { data: settings } = await supabaseAdmin
+  const { data: settings } = await getSupabase()
     .from('app_settings')
     .select('probo_api_key, probo_enabled')
     .eq('user_id', userId)
@@ -72,7 +79,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!response.ok) {
-      console.error('Probo product detail error:', response.status, await response.text())
+      const errText = await response.text()
+      console.error('Probo product detail error:', response.status, errText)
       return res.status(502).json({ error: `Probo API fout: ${response.status}` })
     }
 
@@ -84,13 +92,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ product })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
+    console.error('Probo product detail handler error:', error)
     if (message === 'Niet geautoriseerd' || message === 'Ongeldige sessie') {
       return res.status(401).json({ error: message })
     }
     if (message.includes('niet geconfigureerd')) {
       return res.status(400).json({ error: message })
     }
-    console.error('Probo product detail error:', message)
     return res.status(500).json({ error: message })
   }
 }

@@ -1,23 +1,30 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const PROBO_BASE_URL = 'https://api.proboprints.com'
 
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+let supabaseAdmin: SupabaseClient | null = null
+function getSupabase(): SupabaseClient {
+  if (!supabaseAdmin) {
+    const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    if (!url || !key) throw new Error('Supabase niet geconfigureerd')
+    supabaseAdmin = createClient(url, key)
+  }
+  return supabaseAdmin
+}
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
   const token = authHeader.split(' ')[1]
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  const { data: { user }, error } = await getSupabase().auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
 }
 
 async function getProboApiKey(userId: string): Promise<string> {
-  const { data: settings } = await supabaseAdmin
+  const { data: settings } = await getSupabase()
     .from('app_settings')
     .select('probo_api_key, probo_enabled')
     .eq('user_id', userId)
@@ -38,13 +45,6 @@ interface PriceRequestBody {
   product_code: string
   customer_code?: string
   options: ProboOptie[]
-}
-
-interface CompanyAddress {
-  bedrijfsnaam?: string
-  adres?: string
-  postcode?: string
-  stad?: string
 }
 
 interface ProboPriceResponse {
@@ -71,19 +71,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'product_code of customer_code is verplicht' })
     }
 
-    // Haal bedrijfsadres op uit company_settings of app_settings
-    const { data: companyData } = await supabaseAdmin
+    // Haal bedrijfsadres op
+    const { data: companyData } = await getSupabase()
       .from('app_settings')
       .select('*')
       .eq('user_id', userId)
       .maybeSingle()
 
-    const address: CompanyAddress = {
-      bedrijfsnaam: (companyData as Record<string, unknown>)?.afzender_naam as string | undefined,
-      adres: (companyData as Record<string, unknown>)?.bedrijf_adres as string | undefined,
-      postcode: (companyData as Record<string, unknown>)?.bedrijf_postcode as string | undefined,
-      stad: (companyData as Record<string, unknown>)?.bedrijf_stad as string | undefined,
-    }
+    const cd = (companyData || {}) as Record<string, unknown>
 
     // Bouw Probo price request
     const productEntry = customer_code
@@ -94,11 +89,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       deliveries: [
         {
           address: {
-            company_name: address.bedrijfsnaam || 'Sign Company',
-            street: address.adres?.replace(/\s*\d+.*$/, '') || 'Hoofdstraat',
-            house_number: address.adres?.match(/\d+/)?.[0] || '1',
-            postal_code: address.postcode || '1000AA',
-            city: address.stad || 'Amsterdam',
+            company_name: (cd.afzender_naam as string) || 'Sign Company',
+            street: ((cd.bedrijf_adres as string) || 'Hoofdstraat').replace(/\s*\d+.*$/, ''),
+            house_number: ((cd.bedrijf_adres as string) || '1').match(/\d+/)?.[0] || '1',
+            postal_code: (cd.bedrijf_postcode as string) || '1000AA',
+            city: (cd.bedrijf_stad as string) || 'Amsterdam',
             country: 'NL',
           },
           delivery_date_preset: 'cheapest',
@@ -124,7 +119,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Probo price error:', response.status, errorText)
-      // Try to parse Probo's error message
       try {
         const errorData = JSON.parse(errorText) as { message?: string; error?: string }
         return res.status(400).json({
@@ -148,13 +142,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
+    console.error('Probo price handler error:', error)
     if (message === 'Niet geautoriseerd' || message === 'Ongeldige sessie') {
       return res.status(401).json({ error: message })
     }
     if (message.includes('niet geconfigureerd')) {
       return res.status(400).json({ error: message })
     }
-    console.error('Probo price error:', message)
     return res.status(500).json({ error: message })
   }
 }
