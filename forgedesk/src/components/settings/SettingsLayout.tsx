@@ -1926,6 +1926,10 @@ function IntegratiesTab() {
   const [exactConnected, setExactConnected] = useState(false)
   const [exactSaving, setExactSaving] = useState(false)
 
+  // KvK API state
+  const [kvkApiKey, setKvkApiKey] = useState('')
+  const [kvkSaving, setKvkSaving] = useState(false)
+
   useEffect(() => {
     if (!user?.id) return
     getAppSettings(user.id).then((s) => {
@@ -1935,6 +1939,7 @@ function IntegratiesTab() {
       setExactClientId(s.exact_online_client_id ?? '')
       setExactClientSecret(s.exact_online_client_secret ?? '')
       setExactConnected(s.exact_online_connected ?? false)
+      setKvkApiKey(s.kvk_api_key ?? '')
     }).catch(() => {})
   }, [user?.id])
 
@@ -1997,7 +2002,7 @@ function IntegratiesTab() {
       id: 'kvk',
       name: 'KvK API',
       description: 'Kamer van Koophandel opzoeken voor bedrijfsgegevens',
-      connected: false,
+      connected: !!kvkApiKey,
       icon: (
         <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
           <span className="text-blue-700 dark:text-blue-400 font-bold text-sm">KvK</span>
@@ -2214,6 +2219,76 @@ function IntegratiesTab() {
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Verbinden
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── KvK API Instellingen ── */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-blue-700 dark:text-blue-400 font-bold text-sm">KvK</span>
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">KvK API</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Zoek bedrijfsgegevens op via de Kamer van Koophandel. Zonder API key wordt de testomgeving gebruikt.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="kvk-api-key" className="text-sm font-medium">
+                  KvK API key (optioneel)
+                </Label>
+                <Input
+                  id="kvk-api-key"
+                  type="password"
+                  value={kvkApiKey}
+                  onChange={(e) => setKvkApiKey(e.target.value)}
+                  placeholder="l7xx..."
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Vraag een API key aan via{' '}
+                  <a
+                    href="https://developers.kvk.nl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline inline-flex items-center gap-0.5"
+                  >
+                    developers.kvk.nl <ExternalLink className="w-3 h-3" />
+                  </a>
+                  . Zonder key worden testgegevens gebruikt.
+                </p>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={async () => {
+                    if (!user?.id) return
+                    setKvkSaving(true)
+                    try {
+                      await updateAppSettings(user.id, {
+                        kvk_api_key: kvkApiKey,
+                        kvk_api_enabled: !!kvkApiKey,
+                      })
+                      toast.success('KvK instellingen opgeslagen')
+                    } catch (err) {
+                      logger.error('Fout bij opslaan KvK instellingen:', err)
+                      toast.error('Kon KvK instellingen niet opslaan')
+                    } finally {
+                      setKvkSaving(false)
+                    }
+                  }}
+                  disabled={kvkSaving}
+                  size="sm"
+                >
+                  {kvkSaving ? 'Opslaan...' : 'Opslaan'}
                 </Button>
               </div>
             </div>
