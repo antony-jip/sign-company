@@ -18,6 +18,8 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
+import { generateOffertePDF } from '@/services/pdfService'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -94,6 +96,7 @@ export function OfferteDetail() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { pipelineStappen, bedrijfsnaam, primaireKleur, emailHandtekening, profile } = useAppSettings()
+  const documentStyle = useDocumentStyle()
 
   const [offerte, setOfferte] = useState<Offerte | null>(null)
   const [items, setItems] = useState<OfferteItem[]>([])
@@ -272,8 +275,24 @@ export function OfferteDetail() {
         bekijkUrl: offerte.publiek_token ? `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}` : undefined,
       })
 
+      // Genereer PDF bijlage
+      let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
       try {
-        await sendEmail(sendTo, sendSubject || subject, text, { html })
+        const doc = generateOffertePDF(
+          offerte,
+          items,
+          klant || {},
+          { ...profile, primaireKleur: primaireKleur || '#2563eb' },
+          documentStyle,
+        )
+        const pdfBase64 = doc.output('datauristring').split(',')[1]
+        attachments = [{ filename: `${offerte.nummer}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
+      } catch (pdfErr) {
+        logger.error('PDF genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
+      }
+
+      try {
+        await sendEmail(sendTo, sendSubject || subject, text, { html, attachments })
       } catch {
         // Email sending failed (SMTP not configured), continue with status update
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Status is wel bijgewerkt.')
@@ -301,7 +320,7 @@ export function OfferteDetail() {
     } finally {
       setIsSending(false)
     }
-  }, [offerte, klant, sendTo, sendSubject, user, bedrijfsnaam, primaireKleur, emailHandtekening])
+  }, [offerte, klant, items, sendTo, sendSubject, user, bedrijfsnaam, primaireKleur, emailHandtekening, profile, documentStyle])
 
   // Duplicate offerte
   const handleDuplicate = useCallback(async () => {

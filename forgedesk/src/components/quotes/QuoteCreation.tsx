@@ -1547,7 +1547,50 @@ export function QuoteCreation() {
         bekijkUrl,
       })
 
-      await sendEmail(emailTo.trim(), emailSubject.trim(), templateText, { html: templateHtml })
+      // Genereer PDF bijlage
+      let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
+      if (selectedKlant) {
+        try {
+          const offerteData = {
+            nummer: offerteNummer,
+            titel: offerteTitel,
+            subtotaal,
+            btw_bedrag: btwBedrag,
+            totaal: round2(subtotaal + btwBedrag),
+            geldig_tot: geldigTot,
+            notities,
+            voorwaarden,
+            intro_tekst: introTekst,
+            outro_tekst: outroTekst,
+            ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
+          } as Parameters<typeof generateOffertePDF>[0]
+          const pdfItems = items.map((item, index) => ({
+            id: item.id,
+            offerte_id: '',
+            beschrijving: item.beschrijving,
+            aantal: item.aantal,
+            eenheidsprijs: item.eenheidsprijs,
+            btw_percentage: item.btw_percentage,
+            korting_percentage: item.korting_percentage,
+            totaal: item.totaal,
+            volgorde: index + 1,
+            soort: item.soort,
+            extra_velden: item.extra_velden,
+            detail_regels: item.detail_regels,
+            is_optioneel: item.is_optioneel,
+          })) as Parameters<typeof generateOffertePDF>[1]
+          const doc = generateOffertePDF(offerteData, pdfItems, selectedKlant, {
+            ...profile,
+            primaireKleur: primaireKleur || '#2563eb',
+          }, documentStyle)
+          const pdfBase64 = doc.output('datauristring').split(',')[1]
+          attachments = [{ filename: `${offerteNummer}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
+        } catch (pdfErr) {
+          logger.error('PDF genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
+        }
+      }
+
+      await sendEmail(emailTo.trim(), emailSubject.trim(), templateText, { html: templateHtml, attachments })
       if (quoteId) {
         await updateOfferte(quoteId, {
           status: 'verzonden',
