@@ -2021,17 +2021,6 @@ function IntegratiesTab() {
       ),
       details: 'Optioneel — zonder API key worden demogegevens gebruikt',
     },
-    {
-      id: 'probo',
-      name: 'Probo Prints',
-      description: 'Live inkoopprijzen ophalen voor print- en signmaterialen',
-      connected: proboEnabled && !!proboApiKey,
-      icon: (
-        <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
-          <span className="text-emerald-700 dark:text-emerald-400 font-bold text-xs">PRB</span>
-        </div>
-      ),
-    },
   ]
 
   return (
@@ -2409,12 +2398,12 @@ function IntegratiesTab() {
                               probo_enabled: true,
                             })
                           }
-                          const token = (await import('@/contexts/AuthContext')).useAuth as unknown
-                          void token
-                          // Use session from context
+                          const { default: supabase } = await import('@/services/supabaseClient')
+                          const { data: { session: authSession } } = await supabase.auth.getSession()
+                          if (!authSession?.access_token) throw new Error('Niet ingelogd')
                           const response = await fetch('/api/probo-products', {
                             headers: {
-                              'Authorization': `Bearer ${sessionStorage.getItem('sb-access-token') || ''}`,
+                              'Authorization': `Bearer ${authSession.access_token}`,
                             },
                           })
                           if (!response.ok) {
