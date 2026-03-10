@@ -559,9 +559,6 @@ export interface AppSettings {
   // Mollie betaalintegratie
   mollie_api_key?: string;
   mollie_enabled?: boolean;
-  // Probo Prints integratie
-  probo_api_key?: string;
-  probo_enabled?: boolean;
   // Exact Online integratie
   exact_online_client_id?: string;
   exact_online_client_secret?: string;
@@ -610,11 +607,6 @@ export interface CalculatieProduct {
  * Een regel in een calculatie.
  * Elke regel is een product/dienst met aantal, inkoop, verkoop, marge en korting.
  */
-export interface ProboOptie {
-  code: string;
-  value?: string;
-}
-
 export interface CalculatieRegel {
   id: string;
   product_id?: string;             // Optioneel: link naar een catalogus-product
@@ -629,12 +621,6 @@ export interface CalculatieRegel {
   nacalculatie: boolean;           // Markeer voor nacalculatie (achteraf verrekenen)
   btw_percentage: number;          // BTW tarief
   notitie: string;                 // Eventuele toelichting per regel
-  // Probo Prints koppeling (optioneel)
-  probo_product_code?: string;     // bijv. "window-decal"
-  probo_customer_code?: string;    // bijv. "forex-ds-direct-3mm-cut" (composed products)
-  probo_opties?: ProboOptie[];     // opgeslagen configuratie
-  probo_inkoop_excl?: number;      // laatste opgehaalde inkoopprijs
-  probo_datum_ophaal?: string;     // wanneer prijs laatst opgehaald is
 }
 
 /**
