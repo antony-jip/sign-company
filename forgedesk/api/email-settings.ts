@@ -2,7 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
-const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || 'default-key-change-in-production!!'
+const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
+if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY environment variable is required')
 
 function encrypt(text: string): string {
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)

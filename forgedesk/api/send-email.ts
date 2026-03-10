@@ -16,7 +16,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subject,
       body,
       html,
-    } = req.body
+      attachments,
+    } = req.body as {
+      gmail_address: string
+      app_password: string
+      smtp_host?: string
+      smtp_port?: number
+      to: string
+      cc?: string
+      subject: string
+      body?: string
+      html?: string
+      attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
+    }
 
     if (!gmail_address || !app_password) {
       return res.status(400).json({ error: 'E-mailadres en app-wachtwoord zijn verplicht' })
@@ -41,6 +53,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (cc) mailOptions.cc = cc
     if (html) mailOptions.html = html
+    if (attachments?.length) {
+      mailOptions.attachments = attachments.map((a) => ({
+        filename: a.filename,
+        content: Buffer.from(a.content, 'base64'),
+      }))
+    }
 
     console.log('[send-email] html present:', !!html, 'html length:', html?.length || 0)
 

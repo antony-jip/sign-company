@@ -92,8 +92,10 @@ export function PublicBookingPage() {
 
     const tijden: string[] = []
     for (const slot of dagSlots) {
-      const [startH, startM] = slot.start_tijd.split(':').map(Number)
-      const [eindH, eindM] = slot.eind_tijd.split(':').map(Number)
+      const startParts = (slot.start_tijd || '0:0').split(':').map(Number)
+      const eindParts = (slot.eind_tijd || '0:0').split(':').map(Number)
+      const [startH = 0, startM = 0] = startParts
+      const [eindH = 0, eindM = 0] = eindParts
       const startMin = startH * 60 + startM
       const eindMin = eindH * 60 + eindM
 

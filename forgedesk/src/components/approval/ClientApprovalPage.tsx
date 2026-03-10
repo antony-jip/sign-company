@@ -31,6 +31,7 @@ import {
   getProfile,
 } from '@/services/supabaseService'
 import type { TekeningGoedkeuring, Document, Offerte, OfferteItem, Klant, Project, Profile } from '@/types'
+import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
 function getFileIcon(type: string) {
@@ -63,8 +64,8 @@ function formatDate(dateStr: string): string {
 }
 
 function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; korting_percentage: number }) {
-  const bruto = item.aantal * item.eenheidsprijs
-  return bruto - bruto * (item.korting_percentage / 100)
+  const bruto = round2(item.aantal * item.eenheidsprijs)
+  return round2(bruto - round2(bruto * (item.korting_percentage / 100)))
 }
 
 // Progress stepper statuses
@@ -244,13 +245,13 @@ export function ClientApprovalPage() {
   const currentStap = getStapIndex(goedkeuring.status)
 
   // Offerte totals
-  const offerteSubtotaal = offerteItems.reduce((sum, item) => sum + calculateLineTotaal(item), 0)
+  const offerteSubtotaal = round2(offerteItems.reduce((sum, item) => sum + calculateLineTotaal(item), 0))
   const btwGroups: Record<number, number> = {}
   offerteItems.forEach((item) => {
     const lineTotaal = calculateLineTotaal(item)
-    btwGroups[item.btw_percentage] = (btwGroups[item.btw_percentage] || 0) + lineTotaal * (item.btw_percentage / 100)
+    btwGroups[item.btw_percentage] = round2((btwGroups[item.btw_percentage] || 0) + round2(lineTotaal * (item.btw_percentage / 100)))
   })
-  const totaalBtw = Object.values(btwGroups).reduce((sum, val) => sum + val, 0)
+  const totaalBtw = round2(Object.values(btwGroups).reduce((sum, val) => sum + val, 0))
   const offerteTotaal = offerteSubtotaal + totaalBtw
 
   return (

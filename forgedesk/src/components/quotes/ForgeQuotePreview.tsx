@@ -11,6 +11,7 @@ import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Pencil, Downl
 import { downloadFile } from '@/services/storageService'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import type { PrijsVariant } from './QuoteItemsTable'
+import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 
 interface PreviewItem {
@@ -43,8 +44,8 @@ interface ForgeQuotePreviewProps {
 }
 
 function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; korting_percentage: number }) {
-  const bruto = item.aantal * item.eenheidsprijs
-  return bruto - bruto * (item.korting_percentage / 100)
+  const bruto = round2(item.aantal * item.eenheidsprijs)
+  return round2(bruto - round2(bruto * (item.korting_percentage / 100)))
 }
 
 export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: ForgeQuotePreviewProps) {
@@ -305,16 +306,16 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   }, [bijlageItems])
 
   // Calculate totals
-  const subtotaal = items.reduce((sum, item) => sum + calculateLineTotaal(item), 0)
+  const subtotaal = round2(items.reduce((sum, item) => sum + calculateLineTotaal(item), 0))
 
   const btwGroups: Record<number, number> = {}
   items.forEach((item) => {
     const lineTotaal = calculateLineTotaal(item)
-    const btwBedrag = lineTotaal * (item.btw_percentage / 100)
-    btwGroups[item.btw_percentage] = (btwGroups[item.btw_percentage] || 0) + btwBedrag
+    const btwBedrag = round2(lineTotaal * (item.btw_percentage / 100))
+    btwGroups[item.btw_percentage] = round2((btwGroups[item.btw_percentage] || 0) + btwBedrag)
   })
 
-  const totaalBtw = Object.values(btwGroups).reduce((sum, val) => sum + val, 0)
+  const totaalBtw = round2(Object.values(btwGroups).reduce((sum, val) => sum + val, 0))
   const totaal = subtotaal + totaalBtw
 
   return (

@@ -2340,11 +2340,8 @@ export async function getBookingAfspraken(): Promise<BookingAfspraak[]> {
 export async function getBookingAfspraakByToken(token: string): Promise<BookingAfspraak | null> {
   assertId(token, 'token')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('booking_afspraken').select('*').eq('token', token).single()
-    if (error) {
-      if (error.code === 'PGRST116') return null
-      throw error
-    }
+    const { data, error } = await supabase.from('booking_afspraken').select('*').eq('token', token).maybeSingle()
+    if (error) throw error
     return data
   }
   const items = getLocalData<BookingAfspraak>('booking_afspraken')
@@ -3630,11 +3627,8 @@ export async function getDocumentStyle(userId: string): Promise<DocumentStyle | 
       .from('document_styles')
       .select('*')
       .eq('user_id', userId)
-      .single()
-    if (error) {
-      if (error.code === 'PGRST116') return null
-      throw error
-    }
+      .maybeSingle()
+    if (error) throw error
     return data
   }
   const styles = getLocalData<DocumentStyle>('document_styles')
@@ -3648,7 +3642,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
       .from('document_styles')
       .select('id')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       const { data, error } = await supabase
@@ -4423,7 +4417,7 @@ export async function getVisualizerCredits(user_id: string): Promise<VisualizerC
       .from('visualizer_credits')
       .select('*')
       .eq('user_id', user_id)
-      .single()
+      .maybeSingle()
 
     if (data && !error) {
       return {
@@ -4633,7 +4627,7 @@ export async function getForgieGebruik(user_id: string): Promise<{ geschatte_kos
       .select('geschatte_kosten, aantal_calls')
       .eq('user_id', user_id)
       .eq('maand', maand)
-      .single()
+      .maybeSingle()
     return {
       geschatte_kosten: data?.geschatte_kosten ?? 0,
       aantal_calls: data?.aantal_calls ?? 0,

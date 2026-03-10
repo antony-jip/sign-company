@@ -310,7 +310,7 @@ export function QuoteCreation() {
               urenMap[veld] = (urenMap[veld] || 0) + r.aantal
               totaal += r.aantal
               // Track tarief voor +/- berekening
-              tariefMap[veld].totaalPrijs += r.verkoop_prijs * r.aantal
+              tariefMap[veld].totaalPrijs += round2(r.verkoop_prijs * r.aantal)
               tariefMap[veld].totaalAantal += r.aantal
               break
             }
