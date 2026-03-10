@@ -3,21 +3,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Search,
   ArrowLeft,
   Loader2,
   Package,
   AlertTriangle,
-  RefreshCw,
   Check,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -35,27 +28,60 @@ interface ProboProduct {
   [key: string]: unknown
 }
 
-interface ProboProductOptionValue {
+// Probo /products/configure response types
+interface ProboOptionChild {
   code: string
   name?: string
-  [key: string]: unknown
-}
-
-interface ProboProductOption {
-  code: string
-  name?: string
-  type?: string
-  values?: ProboProductOptionValue[]
-  required?: boolean
+  description?: string
+  type_code?: string // "width", "height", "amount", "radio", "checkbox", etc.
+  value?: string | null
   default_value?: string
-  [key: string]: unknown
+  min_value?: string
+  max_value?: string
+  step_size?: string
+  scale?: string
+  reversible?: boolean
+  last_option?: boolean
+  images?: Array<{ language: string; url: string }>
+  // Flat option properties (from /products/product/{code})
+  type?: string
+  values?: Array<{ code: string; name?: string; [key: string]: unknown }>
+  required?: boolean
+  children?: ProboOptionChild[]
 }
 
-interface ProboProductDetail {
+interface ProboAvailableOption {
   code: string
-  name: string
-  options?: ProboProductOption[]
-  [key: string]: unknown
+  name?: string
+  children: ProboOptionChild[]
+}
+
+interface ProboSelectedOption {
+  code: string
+  value: string
+  parent_code?: string
+  name?: string
+}
+
+interface ProboConfigureResponse {
+  products?: Array<{
+    code: string
+    name?: string
+    available_options?: ProboAvailableOption[]
+    selected_options?: ProboSelectedOption[]
+    can_order?: boolean
+    // From /products/product/{code} endpoint
+    options?: ProboOptionChild[]
+    [key: string]: unknown
+  }>
+  // Price fields (when can_order is true)
+  products_purchase_price?: number
+  products_purchase_price_incl_vat?: number
+  products_purchase_base_price?: number
+  products_sales_price?: number
+  products_sales_price_incl_vat?: number
+  purchase_shipping_price?: number
+  products_purchase_rush_surcharge?: number
 }
 
 interface ProboPriceResult {
@@ -85,9 +111,6 @@ interface ProboProductPickerProps {
 }
 
 // ── Static Probo Product Catalog ──
-// These are the standard Probo product codes organized by category.
-// GET /products only returns "composed products" (pre-configured in webshop).
-// For individual products we need the /products/configure endpoint.
 
 interface CatalogProduct {
   code: string
@@ -189,7 +212,6 @@ const PROBO_CATALOG: CatalogCategory[] = [
   },
 ]
 
-// Flat list for searching
 const ALL_CATALOG_PRODUCTS: CatalogProduct[] = PROBO_CATALOG.flatMap((c) => c.products)
 
 // ── Cache ──
@@ -200,9 +222,39 @@ interface CacheEntry<T> {
 }
 
 const productListCache: { entry: CacheEntry<ProboProduct[]> | null } = { entry: null }
-const productDetailCache = new Map<string, CacheEntry<ProboProductDetail>>()
-const PRODUCT_LIST_TTL = 60 * 60 * 1000  // 1 hour
-const PRODUCT_DETAIL_TTL = 30 * 60 * 1000  // 30 min
+const PRODUCT_LIST_TTL = 60 * 60 * 1000
+
+// ── Helpers ──
+
+/** Determine if a child option is a numeric input */
+function isNumericOption(child: ProboOptionChild): boolean {
+  const tc = child.type_code?.toLowerCase() || ''
+  const code = child.code?.toLowerCase() || ''
+  return (
+    tc === 'width' || tc === 'height' || tc === 'amount' ||
+    tc === 'number' || tc === 'integer' || tc === 'input' ||
+    code === 'width' || code === 'height' || code === 'amount' ||
+    child.type === 'number'
+  )
+}
+
+/** Determine if a child option is a radio/select */
+function isRadioOption(child: ProboOptionChild): boolean {
+  const tc = child.type_code?.toLowerCase() || ''
+  return tc === 'radio' || tc === 'select' || tc === 'dropdown'
+}
+
+/** Get display label for numeric input */
+function getNumericLabel(child: ProboOptionChild): string {
+  if (child.name) return child.name
+  const code = child.type_code || child.code
+  switch (code?.toLowerCase()) {
+    case 'width': return 'Breedte (cm)'
+    case 'height': return 'Hoogte (cm)'
+    case 'amount': return 'Aantal'
+    default: return code || 'Waarde'
+  }
+}
 
 // ── Component ──
 
@@ -210,22 +262,28 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
   const { session } = useAuth()
   const token = session?.access_token || ''
 
-  // Step state
-  const [step, setStep] = useState<'search' | 'configure'>('search')
+  // Navigation state
+  const [step, setStep] = useState<'browse' | 'configure'>('browse')
 
-  // Search state
+  // Browse state
   const [apiProducts, setApiProducts] = useState<ProboProduct[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
-  // Configure state
-  const [selectedProduct, setSelectedProduct] = useState<ProboProductDetail | null>(null)
-  const [selectedProductCode, setSelectedProductCode] = useState<string>('')
-  const [selectedProductName, setSelectedProductName] = useState<string>('')
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false)
-  const [optionValues, setOptionValues] = useState<Record<string, string>>({})
+  // Configure wizard state
+  const [productCode, setProductCode] = useState('')
+  const [productName, setProductName] = useState('')
+  const [isLoadingConfigure, setIsLoadingConfigure] = useState(false)
   const [configureError, setConfigureError] = useState<string | null>(null)
+
+  // Probo configure response
+  const [availableOptions, setAvailableOptions] = useState<ProboAvailableOption[]>([])
+  const [selectedOptions, setSelectedOptions] = useState<ProboSelectedOption[]>([])
+  const [canOrder, setCanOrder] = useState(false)
+
+  // Current step option values (user input for current available_options)
+  const [currentValues, setCurrentValues] = useState<Record<string, string>>({})
 
   // Price state
   const [priceResult, setPriceResult] = useState<ProboPriceResult | null>(null)
@@ -234,80 +292,56 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
 
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  // ── Fetch API products (composed products) ──
+  // ── Fetch API products ──
 
   const fetchApiProducts = useCallback(async () => {
     if (productListCache.entry && Date.now() < productListCache.entry.expiresAt) {
       setApiProducts(productListCache.entry.data)
       return
     }
-
     setIsLoadingProducts(true)
     try {
       const response = await fetch('/api/probo-products', {
         headers: { 'Authorization': `Bearer ${token}` },
       })
-      if (!response.ok) {
-        // Don't error — we still have the static catalog
-        setApiProducts([])
-        return
-      }
+      if (!response.ok) { setApiProducts([]); return }
       const data = await response.json() as { products: ProboProduct[] }
       const prods = Array.isArray(data.products) ? data.products : []
       productListCache.entry = { data: prods, expiresAt: Date.now() + PRODUCT_LIST_TTL }
       setApiProducts(prods)
     } catch {
-      // Silent fail — static catalog is the fallback
       setApiProducts([])
     } finally {
       setIsLoadingProducts(false)
     }
   }, [token])
 
-  useEffect(() => {
-    fetchApiProducts()
-  }, [fetchApiProducts])
+  useEffect(() => { fetchApiProducts() }, [fetchApiProducts])
 
-  // Focus search on mount
   useEffect(() => {
-    if (step === 'search') {
+    if (step === 'browse') {
       setTimeout(() => searchInputRef.current?.focus(), 100)
     }
   }, [step])
 
-  // ── Combined product list: API products + static catalog ──
+  // ── Combined product list ──
 
   const allProducts = useMemo(() => {
-    // Merge API products (composed) with static catalog
     const combined: ProboProduct[] = []
-
-    // Add API products first (user's own composed products)
     for (const p of apiProducts) {
       combined.push({ ...p, category: 'Mijn producten' })
     }
-
-    // Add static catalog products
     for (const p of ALL_CATALOG_PRODUCTS) {
-      // Don't duplicate if already in API products
       if (!combined.some((c) => c.code === p.code)) {
         combined.push({ code: p.code, name: p.name, category: p.category })
       }
     }
-
     return combined
   }, [apiProducts])
 
-  // ── Filtered products ──
-
   const filteredProducts = useMemo(() => {
     let list = allProducts
-
-    // Filter by category
-    if (selectedCategory) {
-      list = list.filter((p) => p.category === selectedCategory)
-    }
-
-    // Filter by search query
+    if (selectedCategory) list = list.filter((p) => p.category === selectedCategory)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       list = list.filter((p) =>
@@ -316,145 +350,204 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
         (p.category && String(p.category).toLowerCase().includes(q))
       )
     }
-
     return list
   }, [allProducts, searchQuery, selectedCategory])
 
-  // ── Categories for sidebar ──
-
   const categories = useMemo(() => {
     const cats: Array<{ name: string; count: number; icon: string }> = []
-
-    // Add "Mijn producten" if there are API products
     if (apiProducts.length > 0) {
       cats.push({ name: 'Mijn producten', count: apiProducts.length, icon: '⭐' })
     }
-
-    // Add static categories
     for (const cat of PROBO_CATALOG) {
       cats.push({ name: cat.name, count: cat.products.length, icon: cat.icon })
     }
-
     return cats
   }, [apiProducts])
 
-  // ── Select product → load detail via configure endpoint ──
+  // ── Configure: call Probo API ──
 
-  const handleSelectProduct = useCallback(async (product: ProboProduct) => {
-    const code = product.code
-    setSelectedProductCode(code)
-    setSelectedProductName(product.name)
+  const callConfigure = useCallback(async (
+    code: string,
+    options: Array<{ code: string; value?: string }>,
+  ) => {
+    setIsLoadingConfigure(true)
     setConfigureError(null)
-
-    // Check cache
-    const cached = productDetailCache.get(code)
-    if (cached && Date.now() < cached.expiresAt) {
-      setSelectedProduct(cached.data)
-      const defaults: Record<string, string> = {}
-      if (cached.data.options) {
-        for (const opt of cached.data.options) {
-          if (opt.default_value) defaults[opt.code] = opt.default_value
-          else if (opt.values?.length) defaults[opt.code] = opt.values[0].code
-        }
-      }
-      setOptionValues(defaults)
-      setPriceResult(null)
-      setPriceError(null)
-      setStep('configure')
-      return
-    }
-
-    setIsLoadingDetail(true)
-    setStep('configure')
     try {
-      // Try the product detail endpoint first
-      const detailResponse = await fetch(`/api/probo-product-detail?code=${encodeURIComponent(code)}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      })
-
-      if (detailResponse.ok) {
-        const data = await detailResponse.json() as { product: ProboProductDetail }
-        productDetailCache.set(code, { data: data.product, expiresAt: Date.now() + PRODUCT_DETAIL_TTL })
-        setSelectedProduct(data.product)
-        const defaults: Record<string, string> = {}
-        if (data.product.options) {
-          for (const opt of data.product.options) {
-            if (opt.default_value) defaults[opt.code] = opt.default_value
-            else if (opt.values?.length) defaults[opt.code] = opt.values[0].code
-          }
-        }
-        setOptionValues(defaults)
-        setPriceResult(null)
-        setPriceError(null)
-        return
-      }
-
-      // Fallback: try the configure endpoint
-      const configResponse = await fetch('/api/probo-configure', {
+      const response = await fetch('/api/probo-configure', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ product_code: code }),
+        body: JSON.stringify({ product_code: code, options }),
       })
 
-      if (!configResponse.ok) {
-        const err = await configResponse.json() as { error?: string }
-        throw new Error(err.error || `Product niet beschikbaar (${configResponse.status})`)
+      if (!response.ok) {
+        const err = await response.json() as { error?: string }
+        throw new Error(err.error || `Configuratie mislukt (${response.status})`)
       }
 
-      const configData = await configResponse.json() as { products?: Array<{ options?: ProboProductOption[]; name?: string; [key: string]: unknown }> }
+      const data = await response.json() as ProboConfigureResponse
+      const product = data.products?.[0]
 
-      // Parse configure response - it returns products[0] with options
-      const productConfig = configData.products?.[0]
-      if (productConfig) {
-        const detail: ProboProductDetail = {
-          code,
-          name: (productConfig.name as string) || product.name,
-          options: productConfig.options || [],
-        }
-        productDetailCache.set(code, { data: detail, expiresAt: Date.now() + PRODUCT_DETAIL_TTL })
-        setSelectedProduct(detail)
+      if (!product) {
+        throw new Error('Geen productdata ontvangen van Probo')
+      }
+
+      // Parse available_options (from /products/configure endpoint)
+      if (product.available_options) {
+        setAvailableOptions(product.available_options)
+        setSelectedOptions(product.selected_options || [])
+        setCanOrder(product.can_order || false)
+
+        // Pre-fill default values for available options
         const defaults: Record<string, string> = {}
-        if (detail.options) {
-          for (const opt of detail.options) {
-            if (opt.default_value) defaults[opt.code] = opt.default_value
-            else if (opt.values?.length) defaults[opt.code] = opt.values[0].code
+        for (const group of product.available_options) {
+          for (const child of group.children || []) {
+            if (child.value) {
+              defaults[child.code] = String(child.value)
+            } else if (child.default_value) {
+              defaults[child.code] = child.default_value
+            }
           }
         }
-        setOptionValues(defaults)
-        setPriceResult(null)
-        setPriceError(null)
-      } else {
-        throw new Error('Geen productopties ontvangen van Probo')
+        setCurrentValues(defaults)
+        return
+      }
+
+      // Fallback: parse flat options (from /products/product/{code} endpoint)
+      if (product.options) {
+        const converted: ProboAvailableOption[] = []
+        const numericOpts = product.options.filter((o) =>
+          o.type === 'number' || ['width', 'height', 'amount'].includes(o.code)
+        )
+        const selectOpts = product.options.filter((o) =>
+          o.values && o.values.length > 0 && o.type !== 'number' && !['width', 'height', 'amount'].includes(o.code)
+        )
+        const toggleOpts = product.options.filter((o) =>
+          o.type !== 'number' && !['width', 'height', 'amount'].includes(o.code) &&
+          (!o.values || o.values.length === 0)
+        )
+
+        if (numericOpts.length > 0) {
+          converted.push({
+            code: 'dimensions',
+            name: 'Afmeting & Aantal',
+            children: numericOpts.map((o) => ({
+              code: o.code,
+              name: o.name,
+              type_code: ['width', 'height'].includes(o.code) ? o.code : 'amount',
+              default_value: o.default_value,
+              min_value: '0',
+            })),
+          })
+        }
+        if (selectOpts.length > 0) {
+          converted.push({
+            code: 'options',
+            name: 'Opties',
+            children: selectOpts.map((o) => ({
+              code: o.code,
+              name: o.name,
+              type_code: 'radio',
+              values: o.values,
+            })),
+          })
+        }
+        if (toggleOpts.length > 0) {
+          converted.push({
+            code: 'extras',
+            name: 'Extra opties',
+            children: toggleOpts.map((o) => ({
+              code: o.code,
+              name: o.name,
+              type_code: 'checkbox',
+            })),
+          })
+        }
+
+        setAvailableOptions(converted)
+        setSelectedOptions([])
+        setCanOrder(false)
+
+        const defaults: Record<string, string> = {}
+        for (const opt of product.options) {
+          if (opt.default_value) defaults[opt.code] = opt.default_value
+          else if (opt.values?.length) defaults[opt.code] = opt.values[0].code
+        }
+        setCurrentValues(defaults)
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Kon product niet laden'
+      const msg = err instanceof Error ? err.message : 'Configuratie mislukt'
       setConfigureError(msg)
-      toast.error(msg)
-      logger.error('Probo product laden mislukt:', err)
+      logger.error('Probo configure error:', err)
     } finally {
-      setIsLoadingDetail(false)
+      setIsLoadingConfigure(false)
     }
   }, [token])
+
+  // ── Select product ──
+
+  const handleSelectProduct = useCallback(async (product: ProboProduct) => {
+    setProductCode(product.code)
+    setProductName(product.name)
+    setStep('configure')
+    setAvailableOptions([])
+    setSelectedOptions([])
+    setCanOrder(false)
+    setCurrentValues({})
+    setPriceResult(null)
+    setPriceError(null)
+
+    // Initial configure call (no options selected yet)
+    await callConfigure(product.code, [])
+  }, [callConfigure])
+
+  // ── Next step: send current values to configure ──
+
+  const handleNextStep = useCallback(async () => {
+    // Build options from selected + current values
+    const options: Array<{ code: string; value?: string }> = []
+
+    // Include previously selected options
+    for (const so of selectedOptions) {
+      options.push({ code: so.code, value: so.value })
+    }
+
+    // Include current step values
+    for (const [code, value] of Object.entries(currentValues)) {
+      if (value && value !== '' && value !== '__toggle_off__') {
+        if (value === '__toggle_on__') {
+          options.push({ code })
+        } else {
+          options.push({ code, value })
+        }
+      }
+    }
+
+    await callConfigure(productCode, options)
+  }, [productCode, selectedOptions, currentValues, callConfigure])
 
   // ── Calculate price ──
 
   const handleCalculatePrice = useCallback(async () => {
-    if (!selectedProduct) return
     setIsCalculatingPrice(true)
     setPriceError(null)
     try {
-      // Build options array
-      const options: ProboOptie[] = Object.entries(optionValues)
-        .filter(([, value]) => value !== '')
-        .map(([code, value]) => {
-          const opt = selectedProduct.options?.find((o) => o.code === code)
-          const isNumeric = opt?.type === 'number' || ['width', 'height', 'amount'].includes(code)
-          if (isNumeric) return { code, value }
-          return value === '__toggle__' ? { code } : { code, value }
-        })
+      // Build final options list
+      const options: ProboOptie[] = []
+      for (const so of selectedOptions) {
+        options.push({ code: so.code, value: so.value })
+      }
+      for (const [code, value] of Object.entries(currentValues)) {
+        if (value && value !== '' && value !== '__toggle_off__') {
+          if (value === '__toggle_on__') {
+            options.push({ code })
+          } else {
+            options.push({ code, value })
+          }
+        }
+      }
 
       const response = await fetch('/api/probo-price', {
         method: 'POST',
@@ -462,10 +555,7 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          product_code: selectedProduct.code,
-          options,
-        }),
+        body: JSON.stringify({ product_code: productCode, options }),
       })
 
       if (!response.ok) {
@@ -482,121 +572,151 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
     } finally {
       setIsCalculatingPrice(false)
     }
-  }, [selectedProduct, optionValues, token])
+  }, [productCode, selectedOptions, currentValues, token])
 
-  // ── Apply price ──
+  // ── Apply ──
 
   const handleApply = useCallback(() => {
-    if (!selectedProduct || !priceResult) return
+    if (!priceResult) return
 
-    const parts = [selectedProduct.name]
-    const w = optionValues.width
-    const h = optionValues.height
+    const parts = [productName]
+    const w = currentValues.width || selectedOptions.find((o) => o.code === 'width')?.value
+    const h = currentValues.height || selectedOptions.find((o) => o.code === 'height')?.value
     if (w && h) parts.push(`${w}×${h}cm`)
     else if (w) parts.push(`${w}cm`)
 
-    const materialOpt = selectedProduct.options?.find((o) =>
-      o.code.includes('material') || o.code.includes('foil') || o.code.includes('vinyl')
-    )
-    if (materialOpt && optionValues[materialOpt.code]) {
-      const val = materialOpt.values?.find((v) => v.code === optionValues[materialOpt.code])
-      if (val?.name) parts.push(val.name)
+    const opties: ProboOptie[] = []
+    for (const so of selectedOptions) {
+      opties.push({ code: so.code, value: so.value })
+    }
+    for (const [code, value] of Object.entries(currentValues)) {
+      if (value && value !== '' && value !== '__toggle_off__') {
+        if (value === '__toggle_on__') {
+          opties.push({ code })
+        } else {
+          opties.push({ code, value })
+        }
+      }
     }
 
-    const opties: ProboOptie[] = Object.entries(optionValues)
-      .filter(([, value]) => value !== '')
-      .map(([code, value]) => value === '__toggle__' ? { code } : { code, value })
-
     onSelect({
-      product_code: selectedProduct.code,
-      product_naam: selectedProduct.name,
+      product_code: productCode,
+      product_naam: productName,
       opties,
       inkoop_excl: round2(priceResult.inkoop_excl),
       inkoop_incl: round2(priceResult.inkoop_incl),
       advies_verkoop: round2(priceResult.advies_verkoop),
       omschrijving: parts.join(' - '),
     })
-  }, [selectedProduct, priceResult, optionValues, onSelect])
+  }, [productCode, productName, selectedOptions, currentValues, priceResult, onSelect])
 
-  // ── Render option input ──
+  // ── Render a single option child ──
 
-  const renderOption = useCallback((opt: ProboProductOption) => {
-    const isNumeric = opt.type === 'number' || ['width', 'height', 'amount'].includes(opt.code)
-    const hasValues = opt.values && opt.values.length > 0
-
-    if (isNumeric) {
+  const renderChild = useCallback((child: ProboOptionChild) => {
+    if (isNumericOption(child)) {
       return (
-        <div key={opt.code} className="space-y-1">
-          <Label className="text-xs font-medium text-muted-foreground">
-            {opt.name || opt.code}
-            {opt.required && <span className="text-red-500 ml-0.5">*</span>}
+        <div key={child.code} className="space-y-1.5">
+          <Label className="text-sm font-medium text-foreground">
+            {getNumericLabel(child)}
           </Label>
           <Input
             type="number"
-            value={optionValues[opt.code] || ''}
-            onChange={(e) => setOptionValues((prev) => ({ ...prev, [opt.code]: e.target.value }))}
-            placeholder={opt.default_value || '0'}
-            className="h-8 text-sm"
-            min={0}
+            value={currentValues[child.code] || ''}
+            onChange={(e) => setCurrentValues((prev) => ({ ...prev, [child.code]: e.target.value }))}
+            placeholder={child.default_value || getNumericLabel(child)}
+            className="h-10 text-sm"
+            min={child.min_value ? Number(child.min_value) : 0}
+            max={child.max_value ? Number(child.max_value) : undefined}
+            step={child.step_size ? Number(child.step_size) : undefined}
           />
+          {child.description && (
+            <p className="text-[11px] text-muted-foreground">{child.description}</p>
+          )}
         </div>
       )
     }
 
-    if (hasValues) {
+    // Radio/select options (has images or explicit radio type)
+    if (isRadioOption(child) || (child.values && child.values.length > 0)) {
+      const values = child.values || []
       return (
-        <div key={opt.code} className="space-y-1">
-          <Label className="text-xs font-medium text-muted-foreground">
-            {opt.name || opt.code}
-            {opt.required && <span className="text-red-500 ml-0.5">*</span>}
+        <div key={child.code} className="space-y-2">
+          <Label className="text-sm font-medium text-foreground">
+            {child.name || child.code}
           </Label>
-          <Select
-            value={optionValues[opt.code] || ''}
-            onValueChange={(val) => setOptionValues((prev) => ({ ...prev, [opt.code]: val }))}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Selecteer..." />
-            </SelectTrigger>
-            <SelectContent>
-              {opt.values!.map((v) => (
-                <SelectItem key={v.code} value={v.code}>
-                  <span className="text-xs">{v.name || v.code}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="grid gap-1.5">
+            {values.map((v) => {
+              const isSelected = currentValues[child.code] === v.code
+              const imageUrl = child.images?.find((img) => img.language === 'nl')?.url
+                || child.images?.[0]?.url
+
+              return (
+                <button
+                  key={v.code}
+                  onClick={() => setCurrentValues((prev) => ({ ...prev, [child.code]: v.code }))}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all',
+                    isSelected
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 ring-1 ring-emerald-500'
+                      : 'border-border hover:bg-muted hover:border-muted-foreground/30'
+                  )}
+                >
+                  {/* Radio indicator */}
+                  <div className={cn(
+                    'w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0',
+                    isSelected ? 'border-emerald-500' : 'border-muted-foreground/40'
+                  )}>
+                    {isSelected && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
+                  </div>
+                  {/* Image thumbnail */}
+                  {imageUrl && (
+                    <img src={imageUrl} alt={v.name || v.code} className="w-10 h-10 object-contain rounded" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{v.name || v.code}</p>
+                    {(v as ProboOptionChild).description && (
+                      <p className="text-[11px] text-muted-foreground">{(v as ProboOptionChild).description}</p>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </div>
       )
     }
 
-    // Boolean toggle option
+    // Checkbox/toggle option
+    const isChecked = currentValues[child.code] === '__toggle_on__'
     return (
-      <div key={opt.code} className="flex items-center gap-2">
+      <div key={child.code} className="flex items-center gap-3 py-1">
         <input
           type="checkbox"
-          id={`probo-opt-${opt.code}`}
-          checked={optionValues[opt.code] === '__toggle__'}
-          onChange={(e) => setOptionValues((prev) => ({
+          id={`probo-opt-${child.code}`}
+          checked={isChecked}
+          onChange={(e) => setCurrentValues((prev) => ({
             ...prev,
-            [opt.code]: e.target.checked ? '__toggle__' : '',
+            [child.code]: e.target.checked ? '__toggle_on__' : '__toggle_off__',
           }))}
-          className="h-3.5 w-3.5 rounded border-border"
+          className="h-4 w-4 rounded border-border"
         />
-        <Label htmlFor={`probo-opt-${opt.code}`} className="text-xs text-muted-foreground cursor-pointer">
-          {opt.name || opt.code}
+        <Label htmlFor={`probo-opt-${child.code}`} className="text-sm text-foreground cursor-pointer">
+          {child.name || child.code}
+          {child.description && (
+            <span className="text-muted-foreground ml-1">— {child.description}</span>
+          )}
         </Label>
       </div>
     )
-  }, [optionValues])
+  }, [currentValues])
 
   // ════════════════════════════════
-  // STEP 1: Search + Browse
+  // STEP 1: Browse products
   // ════════════════════════════════
 
-  if (step === 'search') {
+  if (step === 'browse') {
     return (
       <div className="space-y-3">
-        {/* Search input */}
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
@@ -608,7 +728,6 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
           />
         </div>
 
-        {/* Loading indicator */}
         {isLoadingProducts && (
           <div className="flex items-center justify-center py-2 gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -669,7 +788,6 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
             </button>
           ))}
 
-          {/* Show prompt to select category or search when nothing is shown */}
           {!searchQuery && !selectedCategory && (
             <p className="text-xs text-muted-foreground text-center py-3">
               Kies een categorie of zoek op productnaam
@@ -677,7 +795,6 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
           )}
         </div>
 
-        {/* Cancel */}
         <div className="flex justify-end pt-1">
           <Button variant="ghost" size="sm" className="text-xs h-7" onClick={onCancel}>
             Annuleren
@@ -688,18 +805,26 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
   }
 
   // ════════════════════════════════
-  // STEP 2: Configure + Price
+  // STEP 2: Configure wizard
   // ════════════════════════════════
 
+  const currentStepGroup = availableOptions.length > 0 ? availableOptions[0] : null
+  const hasMoreSteps = availableOptions.length > 1
+  const stepNumber = selectedOptions.length > 0 ? Math.ceil(selectedOptions.length / 2) + 1 : 1
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
         <button
           onClick={() => {
-            setStep('search')
-            setSelectedProduct(null)
+            setStep('browse')
+            setAvailableOptions([])
+            setSelectedOptions([])
+            setCanOrder(false)
+            setCurrentValues({})
             setPriceResult(null)
+            setPriceError(null)
             setConfigureError(null)
           }}
           className="p-1 rounded hover:bg-muted text-muted-foreground"
@@ -707,23 +832,40 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">
-            {selectedProduct?.name || selectedProductName || 'Product laden...'}
-          </p>
-          <p className="text-[11px] text-muted-foreground font-mono">{selectedProduct?.code || selectedProductCode}</p>
+          <p className="text-sm font-semibold text-foreground truncate">{productName}</p>
+          <p className="text-[11px] text-muted-foreground font-mono">{productCode}</p>
         </div>
+        {selectedOptions.length > 0 && (
+          <span className="text-[11px] text-muted-foreground">
+            Stap {stepNumber}
+          </span>
+        )}
       </div>
 
-      {/* Loading detail */}
-      {isLoadingDetail && (
-        <div className="flex items-center justify-center py-6 gap-2 text-sm text-muted-foreground">
+      {/* Selected options summary */}
+      {selectedOptions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedOptions.map((so) => (
+            <span
+              key={so.code}
+              className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+            >
+              {so.name || so.code}: {so.value}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Loading */}
+      {isLoadingConfigure && (
+        <div className="flex items-center justify-center py-8 gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           Opties laden...
         </div>
       )}
 
-      {/* Configure error */}
-      {configureError && !isLoadingDetail && (
+      {/* Error */}
+      {configureError && !isLoadingConfigure && (
         <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-3 space-y-2">
           <p className="text-xs text-red-600 flex items-center gap-1.5">
             <AlertTriangle className="h-3.5 w-3.5" />
@@ -737,62 +879,99 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
             variant="outline"
             size="sm"
             className="text-xs h-7"
-            onClick={() => {
-              setStep('search')
-              setConfigureError(null)
-            }}
+            onClick={() => { setStep('browse'); setConfigureError(null) }}
           >
             Terug naar producten
           </Button>
         </div>
       )}
 
-      {/* Options */}
-      {selectedProduct && !isLoadingDetail && (
+      {/* Current step options */}
+      {!isLoadingConfigure && !configureError && currentStepGroup && !canOrder && (
         <>
-          {selectedProduct.options && selectedProduct.options.length > 0 ? (
-            <div className="space-y-2.5">
-              {/* Render numeric options first (width, height, amount) */}
-              {selectedProduct.options
-                .filter((o) => o.type === 'number' || ['width', 'height', 'amount'].includes(o.code))
-                .map(renderOption)
-              }
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-foreground">
+              {currentStepGroup.name || currentStepGroup.code}
+            </h3>
+          </div>
 
-              {/* Then selection options */}
-              {selectedProduct.options
-                .filter((o) => o.type !== 'number' && !['width', 'height', 'amount'].includes(o.code) && o.values && o.values.length > 0)
-                .map(renderOption)
-              }
+          <div className="space-y-4">
+            {currentStepGroup.children.map(renderChild)}
+          </div>
 
-              {/* Then toggle options */}
-              <div className="space-y-1.5 pt-1">
-                {selectedProduct.options
-                  .filter((o) => o.type !== 'number' && !['width', 'height', 'amount'].includes(o.code) && (!o.values || o.values.length === 0))
-                  .map(renderOption)
-                }
-              </div>
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-8"
+              onClick={onCancel}
+            >
+              Annuleren
+            </Button>
+            <div className="flex items-center gap-2">
+              {selectedOptions.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8 gap-1"
+                  onClick={() => {
+                    // Go back: re-configure without last selected options
+                    // Reset to initial state
+                    callConfigure(productCode, [])
+                  }}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Vorige stap
+                </Button>
+              )}
+              <Button
+                size="sm"
+                className="text-xs h-8 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={handleNextStep}
+                disabled={isLoadingConfigure}
+              >
+                {isLoadingConfigure ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <>
+                    Volgende stap
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </>
+                )}
+              </Button>
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground py-2">
-              Geen configureerbare opties gevonden. Klik op &quot;Bereken inkoopprijs&quot; om de basisprijs op te halen.
+          </div>
+        </>
+      )}
+
+      {/* Configuration complete - show price */}
+      {!isLoadingConfigure && !configureError && (canOrder || (availableOptions.length === 0 && selectedOptions.length > 0)) && (
+        <>
+          <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 p-3">
+            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+              <Check className="h-4 w-4" />
+              Configuratie compleet
             </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Alle opties zijn ingesteld. Bereken nu de inkoopprijs.
+            </p>
+          </div>
+
+          {!priceResult && (
+            <Button
+              onClick={handleCalculatePrice}
+              disabled={isCalculatingPrice}
+              className="w-full gap-2 h-10 bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {isCalculatingPrice ? (
+                <><Loader2 className="h-4 w-4 animate-spin" />Berekenen...</>
+              ) : (
+                'Bereken inkoopprijs'
+              )}
+            </Button>
           )}
 
-          {/* Calculate button */}
-          <Button
-            onClick={handleCalculatePrice}
-            disabled={isCalculatingPrice}
-            className="w-full gap-2 h-9"
-            variant="outline"
-          >
-            {isCalculatingPrice ? (
-              <><Loader2 className="h-4 w-4 animate-spin" />Berekenen...</>
-            ) : (
-              <><RefreshCw className="h-3.5 w-3.5" />Bereken inkoopprijs</>
-            )}
-          </Button>
-
-          {/* Price error */}
           {priceError && (
             <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-3">
               <p className="text-xs text-red-600 flex items-center gap-1.5">
@@ -802,7 +981,6 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
             </div>
           )}
 
-          {/* Price result */}
           {priceResult && (
             <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 p-3 space-y-2">
               <div className="space-y-1">
@@ -841,7 +1019,118 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
               </Button>
             </div>
           )}
+
+          {/* Back / Cancel */}
+          {!priceResult && (
+            <div className="flex items-center justify-between pt-1">
+              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={onCancel}>
+                Annuleren
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-7 gap-1"
+                onClick={() => callConfigure(productCode, [])}
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Opnieuw configureren
+              </Button>
+            </div>
+          )}
         </>
+      )}
+
+      {/* No options available and not complete - show manual price calc */}
+      {!isLoadingConfigure && !configureError && availableOptions.length === 0 && selectedOptions.length === 0 && !canOrder && (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Geen opties beschikbaar via de configure endpoint.
+            Je kunt handmatig een prijs berekenen.
+          </p>
+          <div className="space-y-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Breedte (cm)</Label>
+              <Input
+                type="number"
+                value={currentValues.width || ''}
+                onChange={(e) => setCurrentValues((prev) => ({ ...prev, width: e.target.value }))}
+                placeholder="100"
+                className="h-10"
+                min={0}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Hoogte (cm)</Label>
+              <Input
+                type="number"
+                value={currentValues.height || ''}
+                onChange={(e) => setCurrentValues((prev) => ({ ...prev, height: e.target.value }))}
+                placeholder="100"
+                className="h-10"
+                min={0}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Aantal</Label>
+              <Input
+                type="number"
+                value={currentValues.amount || '1'}
+                onChange={(e) => setCurrentValues((prev) => ({ ...prev, amount: e.target.value }))}
+                placeholder="1"
+                className="h-10"
+                min={1}
+              />
+            </div>
+          </div>
+          <Button
+            onClick={handleCalculatePrice}
+            disabled={isCalculatingPrice}
+            className="w-full gap-2 h-10 bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            {isCalculatingPrice ? (
+              <><Loader2 className="h-4 w-4 animate-spin" />Berekenen...</>
+            ) : (
+              'Bereken inkoopprijs'
+            )}
+          </Button>
+
+          {priceError && (
+            <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-3">
+              <p className="text-xs text-red-600 flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {priceError}
+              </p>
+            </div>
+          )}
+
+          {priceResult && (
+            <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 p-3 space-y-2">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-foreground">Totaal inkoop</span>
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(round2(priceResult.inkoop_excl))} excl BTW</span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-200 dark:border-emerald-700">
+                  <span className="text-muted-foreground">Advies verkoopprijs</span>
+                  <span className="font-medium text-blue-600">{formatCurrency(round2(priceResult.advies_verkoop))}</span>
+                </div>
+              </div>
+              <Button
+                onClick={handleApply}
+                className="w-full gap-2 h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Check className="h-3.5 w-3.5" />
+                Gebruik als inkoopprijs
+              </Button>
+            </div>
+          )}
+
+          <div className="flex justify-between pt-1">
+            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={onCancel}>
+              Annuleren
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   )
