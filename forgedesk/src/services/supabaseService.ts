@@ -4680,6 +4680,25 @@ export async function getInkoopOffertesByProject(project_id: string): Promise<In
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
 
+export async function getInkoopOffertesByOfferte(offerte_id: string): Promise<InkoopOfferte[]> {
+  assertId(offerte_id, 'offerte_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('inkoop_offertes')
+      .select('*, regels:inkoop_regels(*)')
+      .eq('offerte_id', offerte_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+  const offertes = getLocalData<InkoopOfferte>('inkoop_offertes')
+  const regels = getLocalData<InkoopRegel>('inkoop_regels')
+  return offertes
+    .filter((o) => o.offerte_id === offerte_id)
+    .map((o) => ({ ...o, regels: regels.filter((r) => r.inkoop_offerte_id === o.id) }))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
 export async function createInkoopOfferte(data: Omit<InkoopOfferte, 'id' | 'created_at' | 'regels'>): Promise<InkoopOfferte> {
   if (isSupabaseConfigured() && supabase) {
     const { data: row, error } = await supabase
