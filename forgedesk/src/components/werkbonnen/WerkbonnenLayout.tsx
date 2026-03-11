@@ -4,40 +4,36 @@ import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
 import {
   Plus, Search, ClipboardCheck, Trash2, Eye, FileText,
-  ArrowUpDown, Filter, Download, Loader2
+  Download, Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { cn, formatCurrency } from '@/lib/utils'
-import { useAuth } from '@/contexts/AuthContext'
-import type { Werkbon, Klant, Project } from '@/types'
+import { cn } from '@/lib/utils'
+import type { Werkbon, Klant, Project, Offerte } from '@/types'
 import {
-  getWerkbonnen, deleteWerkbon, getKlanten, getProjecten, getWerkbonRegels,
+  getWerkbonnen, deleteWerkbon, getKlanten, getProjecten, getOffertes, getWerkbonItems,
 } from '@/services/supabaseService'
-import { round2 } from '@/utils/budgetUtils'
 
-type FilterStatus = 'alle' | 'concept' | 'ingediend' | 'goedgekeurd' | 'gefactureerd'
+type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   concept: { label: 'Concept', color: 'text-[var(--color-cream-text)]', bg: 'bg-[var(--color-cream)]' },
-  ingediend: { label: 'Ingediend', color: 'text-[var(--color-mist-text)]', bg: 'bg-[var(--color-mist)]' },
-  goedgekeurd: { label: 'Goedgekeurd', color: 'text-[var(--color-sage-text)]', bg: 'bg-[var(--color-sage)]' },
-  gefactureerd: { label: 'Gefactureerd', color: 'text-[var(--color-lavender-text)]', bg: 'bg-[var(--color-lavender)]' },
+  definitief: { label: 'Definitief', color: 'text-[var(--color-mist-text)]', bg: 'bg-[var(--color-mist)]' },
+  afgerond: { label: 'Afgerond', color: 'text-[var(--color-sage-text)]', bg: 'bg-[var(--color-sage)]' },
 }
 
 export function WerkbonnenLayout() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
-  const { user } = useAuth()
   const [werkbonnen, setWerkbonnen] = useState<Werkbon[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
-  const [bedragen, setBedragen] = useState<Record<string, number>>({})
+  const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [itemCounts, setItemCounts] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
@@ -49,29 +45,31 @@ export function WerkbonnenLayout() {
     async function loadData() {
       try {
         setIsLoading(true)
-        const [wbs, kl, pr] = await Promise.all([
+        const [wbs, kl, pr, off] = await Promise.all([
           getWerkbonnen(),
           getKlanten(),
           getProjecten(),
+          getOffertes(),
         ])
         if (cancelled) return
         setWerkbonnen(wbs)
         setKlanten(kl)
         setProjecten(pr)
+        setOffertes(off)
 
-        // Bereken bedragen per werkbon
-        const bedragenMap: Record<string, number> = {}
+        // Tel items per werkbon
+        const counts: Record<string, number> = {}
         for (const wb of wbs) {
           try {
-            const regels = await getWerkbonRegels(wb.id)
+            const items = await getWerkbonItems(wb.id)
             if (cancelled) return
-            bedragenMap[wb.id] = round2(regels.reduce((sum, r) => sum + r.totaal, 0))
+            counts[wb.id] = items.length
           } catch {
-            bedragenMap[wb.id] = 0
+            counts[wb.id] = 0
           }
         }
-        setBedragen(bedragenMap)
-      } catch (err) {
+        setItemCounts(counts)
+      } catch {
         if (!cancelled) toast.error('Fout bij laden werkbonnen')
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -85,9 +83,15 @@ export function WerkbonnenLayout() {
     return klanten.find((k) => k.id === klantId)?.bedrijfsnaam || '-'
   }, [klanten])
 
-  const getProjectNaam = useCallback((projectId: string) => {
+  const getProjectNaam = useCallback((projectId?: string) => {
+    if (!projectId) return '-'
     return projecten.find((p) => p.id === projectId)?.naam || '-'
   }, [projecten])
+
+  const getOfferteNummer = useCallback((offerteId?: string) => {
+    if (!offerteId) return '-'
+    return offertes.find((o) => o.id === offerteId)?.nummer || '-'
+  }, [offertes])
 
   const gefilterd = useMemo(() => {
     let result = [...werkbonnen]
@@ -97,7 +101,7 @@ export function WerkbonnenLayout() {
         wb.werkbon_nummer.toLowerCase().includes(q) ||
         getKlantNaam(wb.klant_id).toLowerCase().includes(q) ||
         getProjectNaam(wb.project_id).toLowerCase().includes(q) ||
-        (wb.omschrijving || '').toLowerCase().includes(q)
+        (wb.titel || '').toLowerCase().includes(q)
       )
     }
     if (filterStatus !== 'alle') {
@@ -130,9 +134,9 @@ export function WerkbonnenLayout() {
   }, [deleteTarget])
 
   const handleExportCSV = useCallback(() => {
-    const header = 'Nummer,Klant,Project,Datum,Status,Bedrag\n'
+    const header = 'Nummer,Klant,Project,Offerte,Datum,Status,Items\n'
     const rows = gefilterd.map((wb) =>
-      `${wb.werkbon_nummer},"${getKlantNaam(wb.klant_id)}","${getProjectNaam(wb.project_id)}",${wb.datum},${wb.status},${bedragen[wb.id] || 0}`
+      `${wb.werkbon_nummer},"${getKlantNaam(wb.klant_id)}","${getProjectNaam(wb.project_id)}","${getOfferteNummer(wb.offerte_id)}",${wb.datum},${wb.status},${itemCounts[wb.id] || 0}`
     ).join('\n')
     const blob = new Blob([header + rows], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
@@ -142,7 +146,7 @@ export function WerkbonnenLayout() {
     a.click()
     URL.revokeObjectURL(url)
     toast.success('CSV geëxporteerd')
-  }, [gefilterd, getKlantNaam, getProjectNaam, bedragen])
+  }, [gefilterd, getKlantNaam, getProjectNaam, getOfferteNummer, itemCounts])
 
   if (isLoading) {
     return (
@@ -162,7 +166,7 @@ export function WerkbonnenLayout() {
             <span className="truncate">Werkbonnen</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Beheer werkbonnen voor montage en service werkzaamheden
+            Instructiebladen voor monteurs — afbeeldingen, afmetingen en notities
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -178,8 +182,8 @@ export function WerkbonnenLayout() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {(['concept', 'ingediend', 'goedgekeurd', 'gefactureerd'] as const).map((status) => {
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {(['concept', 'definitief', 'afgerond'] as const).map((status) => {
           const cfg = STATUS_CONFIG[status]
           return (
             <Card key={status} className="cursor-pointer hover:shadow-md transition-shadow"
@@ -205,7 +209,7 @@ export function WerkbonnenLayout() {
           />
         </div>
         <div className="flex gap-1 flex-wrap overflow-x-auto scrollbar-hide">
-          {(['alle', 'concept', 'ingediend', 'goedgekeurd', 'gefactureerd'] as const).map((status) => (
+          {(['alle', 'concept', 'definitief', 'afgerond'] as const).map((status) => (
             <Button
               key={status}
               variant={filterStatus === status ? 'default' : 'outline'}
@@ -228,7 +232,7 @@ export function WerkbonnenLayout() {
               <ClipboardCheck className="h-8 w-8 text-primary/50" />
             </div>
             <p className="text-lg font-medium text-foreground">Geen werkbonnen</p>
-            <p className="text-sm text-muted-foreground mt-1">Registreer uren en materialen per montage of productie-opdracht</p>
+            <p className="text-sm text-muted-foreground mt-1">Maak een werkbon aan vanuit een offerte of handmatig</p>
             <Button className="mt-4" onClick={() => navigate('/werkbonnen/nieuw')}>
               <Plus className="h-4 w-4 mr-1" /> Nieuwe werkbon
             </Button>
@@ -242,22 +246,30 @@ export function WerkbonnenLayout() {
                 <tr className="border-b border-border bg-muted/50">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Nummer</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Klant</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Project</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Offerte / Project</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell">Datum</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell">Bedrag</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell">Items</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Acties</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {gefilterd.map((wb) => {
                   const cfg = STATUS_CONFIG[wb.status] || STATUS_CONFIG.concept
+                  const offerteRef = getOfferteNummer(wb.offerte_id)
+                  const projectRef = getProjectNaam(wb.project_id)
+                  const ref = offerteRef !== '-' ? offerteRef : projectRef
                   return (
                     <tr key={wb.id} className="group hover:bg-muted/30 transition-colors cursor-pointer"
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
-                      <td className="px-4 py-3 font-mono text-sm font-medium">{wb.werkbon_nummer}</td>
+                      <td className="px-4 py-3">
+                        <div>
+                          <span className="font-mono text-sm font-medium">{wb.werkbon_nummer}</span>
+                          {wb.titel && <p className="text-xs text-muted-foreground truncate max-w-[200px]">{wb.titel}</p>}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm">{getKlantNaam(wb.klant_id)}</td>
-                      <td className="px-4 py-3 text-sm hidden md:table-cell">{getProjectNaam(wb.project_id)}</td>
+                      <td className="px-4 py-3 text-sm hidden md:table-cell">{ref}</td>
                       <td className="px-4 py-3 text-sm hidden sm:table-cell">{new Date(wb.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3">
                         <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', cfg.bg, cfg.color)}>
@@ -265,7 +277,7 @@ export function WerkbonnenLayout() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-medium hidden sm:table-cell">
-                        {formatCurrency(bedragen[wb.id] || 0)}
+                        {itemCounts[wb.id] || 0}
                       </td>
                       <td className="px-4 py-3 text-right hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

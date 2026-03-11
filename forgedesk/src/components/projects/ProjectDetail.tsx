@@ -1611,11 +1611,11 @@ export function ProjectDetail() {
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
                         wb.status === 'concept' ? 'bg-muted text-foreground/70' :
-                        wb.status === 'ingediend' ? 'bg-blue-100 text-blue-700' :
-                        wb.status === 'goedgekeurd' ? 'bg-green-100 text-green-700' :
-                        'bg-purple-100 text-purple-700'
+                        wb.status === 'definitief' ? 'bg-blue-100 text-blue-700' :
+                        wb.status === 'afgerond' ? 'bg-green-100 text-green-700' :
+                        'bg-muted text-foreground/70'
                       }`}>
-                        {wb.status}
+                        {wb.status === 'concept' ? 'Concept' : wb.status === 'definitief' ? 'Definitief' : wb.status === 'afgerond' ? 'Afgerond' : wb.status}
                       </span>
                     </div>
                   ))}
