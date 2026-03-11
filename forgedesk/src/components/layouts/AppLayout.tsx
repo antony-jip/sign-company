@@ -9,7 +9,20 @@ import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
 import { TabBar } from '@/components/tabs/TabBar'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { WifiOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+function OfflineBanner() {
+  const isOnline = useOnlineStatus()
+  if (isOnline) return null
+  return (
+    <div className="bg-destructive text-destructive-foreground px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 flex-shrink-0">
+      <WifiOff className="h-4 w-4" />
+      Je bent offline — wijzigingen worden niet opgeslagen
+    </div>
+  )
+}
 
 export function AppLayout() {
   const { isCollapsed, layoutMode } = useSidebar()
@@ -18,6 +31,7 @@ export function AppLayout() {
   if (layoutMode === 'topnav') {
     return (
       <div className="flex flex-col h-[100dvh] overflow-hidden wm-mesh-gradient">
+        <OfflineBanner />
         <TopNav />
         <TabBar />
         <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ position: 'relative', zIndex: 0 }}>
@@ -39,6 +53,7 @@ export function AppLayout() {
           'flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ease-in-out'
         )}
       >
+        <OfflineBanner />
         <Header />
         <HeaderNav />
         <TabBar />

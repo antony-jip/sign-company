@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -88,6 +88,7 @@ import { factuurVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
 
@@ -208,6 +209,10 @@ export function FactuurEditor() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+
+  // Unsaved changes warning
+  useUnsavedWarning(isDirty)
 
   // Existing factuur data (for edit mode)
   const [existingFactuur, setExistingFactuur] = useState<Factuur | null>(null)
@@ -234,6 +239,17 @@ export function FactuurEditor() {
   const [introTekst, setIntroTekst] = useState(factuurIntroTekst)
   const [outroTekst, setOutroTekst] = useState(factuurOutroTekst)
   const [items, setItems] = useState<LineItem[]>([createEmptyLineItem(standaardBtw)])
+
+  // Track form modifications after initial load
+  const initialLoadDone = useRef(false)
+  useEffect(() => {
+    if (!isLoading && !initialLoadDone.current) {
+      // Skip first render after data loads
+      initialLoadDone.current = true
+      return
+    }
+    if (initialLoadDone.current) setIsDirty(true)
+  }, [titel, nummer, klantId, items, notities, voorwaarden, factuurdatum, vervaldatum])
 
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -510,6 +526,7 @@ export function FactuurEditor() {
         }
         const updated = await updateFactuur(existingFactuur.id, updates)
         setExistingFactuur({ ...existingFactuur, ...updated })
+        setIsDirty(false)
         toast.success('Factuur bijgewerkt')
       } else {
         const betaalToken = generateBetaalToken()
