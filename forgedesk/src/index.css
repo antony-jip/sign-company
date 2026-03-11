@@ -1731,27 +1731,30 @@ html {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
-  opacity: 0.7;
+  height: 120px;
+  border-radius: 0 0 16px 16px;
+  opacity: 0.10;
   pointer-events: none;
+  z-index: 0;
 }
-.mod-strip-offertes::before   { background: linear-gradient(90deg, #9B8EC4, #B8A8D8); }
-.mod-strip-facturen::before   { background: linear-gradient(90deg, #E8866A, #F0A88A); }
-.mod-strip-projecten::before  { background: linear-gradient(90deg, #7EB5A6, #A0D0C4); }
-.mod-strip-klanten::before    { background: linear-gradient(90deg, #8BAFD4, #A8C8E8); }
-.mod-strip-werkbonnen::before { background: linear-gradient(90deg, #D4836A, #E8A890); }
-.mod-strip-taken::before      { background: linear-gradient(90deg, #C4A882, #D8C4A4); }
-.mod-strip-planning::before   { background: linear-gradient(90deg, #7EB5A6, #A0D0C4); }
-.mod-strip-email::before      { background: linear-gradient(90deg, #8BAFD4, #A8C8E8); }
-.mod-strip-forgie::before     { background: linear-gradient(90deg, #9B8EC4, #C4A882); }
-.mod-strip-financieel::before { background: linear-gradient(90deg, #C4A882, #D8C4A4); }
-.mod-strip-documenten::before { background: linear-gradient(90deg, #8A8680, #A8A4A0); }
-.mod-strip-rapportages::before{ background: linear-gradient(90deg, #7EB5A6, #A0D0C4); }
-.mod-strip-team::before       { background: linear-gradient(90deg, #8BAFD4, #A8C8E8); }
-.mod-strip-nieuwsbrieven::before { background: linear-gradient(90deg, #8BAFD4, #A8C8E8); }
-.mod-strip-visualizer::before { background: linear-gradient(90deg, #9B8EC4, #B8A8D8); }
-.mod-strip-inkoop::before     { background: linear-gradient(90deg, #9B8EC4, #B8A8D8); }
+.mod-strip > * { position: relative; z-index: 1; }
+.mod-strip-offertes::before   { background: linear-gradient(180deg, #9B8EC4 0%, transparent 100%); }
+.mod-strip-facturen::before   { background: linear-gradient(180deg, #E8866A 0%, transparent 100%); }
+.mod-strip-projecten::before  { background: linear-gradient(180deg, #7EB5A6 0%, transparent 100%); }
+.mod-strip-klanten::before    { background: linear-gradient(180deg, #8BAFD4 0%, transparent 100%); }
+.mod-strip-werkbonnen::before { background: linear-gradient(180deg, #D4836A 0%, transparent 100%); }
+.mod-strip-taken::before      { background: linear-gradient(180deg, #C4A882 0%, transparent 100%); }
+.mod-strip-planning::before   { background: linear-gradient(180deg, #7EB5A6 0%, transparent 100%); }
+.mod-strip-email::before      { background: linear-gradient(180deg, #8BAFD4 0%, transparent 100%); }
+.mod-strip-forgie::before     { background: linear-gradient(180deg, #9B8EC4 0%, transparent 100%); }
+.mod-strip-financieel::before { background: linear-gradient(180deg, #C4A882 0%, transparent 100%); }
+.mod-strip-documenten::before { background: linear-gradient(180deg, #8A8680 0%, transparent 100%); }
+.mod-strip-rapportages::before{ background: linear-gradient(180deg, #7EB5A6 0%, transparent 100%); }
+.mod-strip-team::before       { background: linear-gradient(180deg, #8BAFD4 0%, transparent 100%); }
+.mod-strip-nieuwsbrieven::before { background: linear-gradient(180deg, #8BAFD4 0%, transparent 100%); }
+.mod-strip-visualizer::before { background: linear-gradient(180deg, #9B8EC4 0%, transparent 100%); }
+.mod-strip-inkoop::before     { background: linear-gradient(180deg, #9B8EC4 0%, transparent 100%); }
+.dark .mod-strip::before { opacity: 0.06; }
 
 /* ── Enhanced Stat Cards — gradient backgrounds with glow ── */
 .stat-card-gradient-blush {
