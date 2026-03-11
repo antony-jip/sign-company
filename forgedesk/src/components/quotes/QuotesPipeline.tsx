@@ -644,18 +644,18 @@ export function QuotesPipeline() {
     <div className="space-y-5 animate-fade-in-up mod-strip mod-strip-offertes">
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #9B8EC4, #B8A8D8)', boxShadow: '0 4px 12px rgba(155,142,196,0.25)' }}>
-            <FileText className="h-4.5 w-4.5 text-white" />
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #9B8EC4, #7A6BAA)' }}>
+            <FileText className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
             <h1 className="page-title text-foreground truncate">Offertes</h1>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground mt-0.5">
               {filteredOffertes.length} van {offertes.length} offertes
             </p>
           </div>
         </div>
-        <Button asChild size="sm" className="flex-shrink-0">
+        <Button asChild size="sm" className="flex-shrink-0 shadow-sm">
           <Link to="/offertes/nieuw">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             <span className="hidden sm:inline">Nieuwe offerte</span>
@@ -665,24 +665,24 @@ export function QuotesPipeline() {
       </div>
 
       {/* ── Quick stats ── */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
         {kpis.openCount > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-sky-700 dark:text-sky-400 bg-sky-50/80 dark:bg-sky-900/20 border border-sky-200/50 dark:border-sky-800/30 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
             <FileText className="w-3 h-3" />
             {kpis.openCount} open
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-xs font-medium text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-primary/15 border border-primary/20 px-2.5 py-1 rounded-full">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
           <TrendingUp className="w-3 h-3" />
-          <span className="font-mono">{kpis.conversionRate}%</span> conversie
+          <span className="tabular-nums">{kpis.conversionRate}%</span> conversie
         </div>
         {kpis.overdueFollowUps > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
             <AlertTriangle className="w-3 h-3" />
             {kpis.overdueFollowUps} achterstallig
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50/80 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/30 px-2.5 py-1 rounded-full">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
           <DollarSign className="w-3 h-3" />
           Pipeline {formatCurrency(financialSummary.pipelineTotaal)}
         </div>
