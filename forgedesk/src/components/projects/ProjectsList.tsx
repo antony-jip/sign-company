@@ -484,7 +484,7 @@ export function ProjectsList() {
                 <th className="w-10 py-2.5 px-2" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="row-stagger">
               {gefilterdeProjecten.map((project) => {
                 const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
                 const contactpersoon = getKlantContactpersoon(project.klant_id)

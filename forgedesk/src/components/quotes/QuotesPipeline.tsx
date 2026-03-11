@@ -1309,7 +1309,7 @@ export function QuotesPipeline() {
                     <th className="w-10 py-2.5 px-2" />
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="row-stagger">
                   {sortedListOffertes.map((offerte) => {
                     const expiryStatus = getExpiryStatus(offerte.geldig_tot)
 
