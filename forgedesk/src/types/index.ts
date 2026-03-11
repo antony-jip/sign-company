@@ -1503,3 +1503,94 @@ export interface DocumentStyle {
   created_at: string;
   updated_at: string;
 }
+
+// ============ KLANTPORTAAL ============
+
+export interface ProjectPortaal {
+  id: string;
+  user_id: string;
+  project_id: string;
+  token: string;
+  actief: boolean;
+  verloopt_op: string;
+  instructie_tekst?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface PortaalItem {
+  id: string;
+  user_id: string;
+  project_id: string;
+  portaal_id: string;
+  type: 'offerte' | 'tekening' | 'factuur' | 'bericht';
+  offerte_id?: string;
+  factuur_id?: string;
+  titel: string;
+  omschrijving?: string;
+  label?: string;
+  status: 'verstuurd' | 'bekeken' | 'goedgekeurd' | 'revisie' | 'betaald' | 'vervangen';
+  bekeken_op?: string;
+  mollie_payment_url?: string;
+  bedrag?: number;
+  zichtbaar_voor_klant: boolean;
+  volgorde: number;
+  bestanden: PortaalBestand[];
+  reacties: PortaalReactie[];
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface PortaalBestand {
+  id: string;
+  portaal_item_id: string;
+  bestandsnaam: string;
+  mime_type?: string;
+  grootte?: number;
+  url: string;
+  thumbnail_url?: string;
+  uploaded_by: 'bedrijf' | 'klant';
+  created_at: string;
+}
+
+export interface PortaalReactie {
+  id: string;
+  portaal_item_id: string;
+  type: 'goedkeuring' | 'revisie' | 'bericht';
+  bericht?: string;
+  klant_naam?: string;
+  klant_email?: string;
+  created_at: string;
+}
+
+export interface AppNotificatie {
+  id: string;
+  user_id: string;
+  type: 'goedkeuring' | 'revisie' | 'bericht' | 'betaling' | 'bekeken' | 'herinnering' | 'systeem';
+  titel: string;
+  bericht?: string;
+  link?: string;
+  project_id?: string;
+  offerte_id?: string;
+  klant_id?: string;
+  gelezen: boolean;
+  actie_genomen: boolean;
+  created_at: string;
+}
+
+export interface PortaalInstellingen {
+  portaal_standaard_actief: boolean;
+  link_geldigheid_dagen: number;
+  instructie_tekst: string;
+  klant_kan_offerte_goedkeuren: boolean;
+  klant_kan_tekening_goedkeuren: boolean;
+  klant_kan_bestanden_uploaden: boolean;
+  klant_kan_berichten_sturen: boolean;
+  max_bestandsgrootte_mb: number;
+  email_naar_klant_bij_nieuw_item: boolean;
+  email_naar_mij_bij_reactie: boolean;
+  herinnering_na_dagen: number;
+  bedrijfslogo_op_portaal: boolean;
+  bedrijfskleuren_gebruiken: boolean;
+  contactgegevens_tonen: boolean;
+}

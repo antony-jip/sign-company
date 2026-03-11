@@ -117,6 +117,7 @@ import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
+import { ProjectPortaalTab } from './ProjectPortaalTab'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, MontageAfspraak, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
@@ -1398,6 +1399,11 @@ export function ProjectDetail() {
                 ))}
               </CardContent>
             </Card>
+          )}
+
+          {/* ── Klantportaal Sectie ── */}
+          {project && (
+            <ProjectPortaalTab projectId={project.id} projectNaam={project.naam} />
           )}
         </div>
 
