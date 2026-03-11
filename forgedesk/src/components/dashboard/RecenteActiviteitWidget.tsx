@@ -103,12 +103,12 @@ export function RecenteActiviteitWidget() {
   }, [])
 
   return (
-    <Card className="border border-border">
+    <Card>
       <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-foreground">Recente activiteit</h3>
-          <span className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-            Alles bekijken →
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="card-title-lg text-foreground">Recente activiteit</h3>
+          <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+            Alles →
           </span>
         </div>
         {loading ? (
@@ -126,14 +126,14 @@ export function RecenteActiviteitWidget() {
               <div
                 key={item.id}
                 onClick={() => navigate(item.link)}
-                className={`flex items-start gap-3 py-2.5 cursor-pointer hover:translate-x-0.5 transition-transform ${
-                  idx > 0 ? 'border-t border-border' : ''
+                className={`flex items-start gap-3 py-3 cursor-pointer hover:bg-muted/30 hover:translate-x-0.5 -mx-2 px-2 rounded-lg transition-all ${
+                  idx > 0 ? 'border-t border-border/50' : ''
                 }`}
               >
-                <div className={`w-[7px] h-[7px] rounded-full mt-[6px] flex-shrink-0 ${item.color}`} />
-                <div className="min-w-0">
-                  <p className="text-[13px] leading-snug text-foreground">{item.text}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{item.time}</p>
+                <div className={`w-2 h-2 rounded-full mt-[7px] flex-shrink-0 ${item.color} ring-4 ring-background`} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] leading-snug text-foreground font-medium">{item.text}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{item.time}</p>
                 </div>
               </div>
             ))}
