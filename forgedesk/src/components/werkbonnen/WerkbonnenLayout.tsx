@@ -158,9 +158,9 @@ export function WerkbonnenLayout() {
   }
 
   return (
-    <div className="space-y-6 px-3 sm:px-6 py-6 mod-strip mod-strip-werkbonnen">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="h-full flex flex-col mod-strip mod-strip-werkbonnen">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #D4836A, #B8654E)' }}>
             <ClipboardCheck className="h-5 w-5 text-white" />
@@ -183,6 +183,10 @@ export function WerkbonnenLayout() {
           </Button>
         </div>
       </div>
+
+      {/* Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="space-y-6 p-4 sm:p-6">
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -318,6 +322,8 @@ export function WerkbonnenLayout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
+      </div>
     </div>
   )
 }

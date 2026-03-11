@@ -293,9 +293,9 @@ export function ClientsLayout() {
   }
 
   return (
-    <div className="space-y-6 mod-strip mod-strip-klanten">
-      {/* Page header */}
-      <div className="flex items-center justify-between gap-3">
+    <div className="h-full flex flex-col mod-strip mod-strip-klanten">
+      {/* Page header bar */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #8BAFD4, #6A8DB8)' }}>
             <Users className="h-5 w-5 text-white" />
@@ -312,6 +312,10 @@ export function ClientsLayout() {
           <span className="hidden sm:inline">Nieuwe Klant</span>
         </Button>
       </div>
+
+      {/* Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="space-y-6 p-4 sm:p-6">
 
       {/* Toolbar: Search + Export + View toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -710,6 +714,8 @@ export function ClientsLayout() {
         klant={editingKlant}
       />
 
+      </div>
+      </div>
     </div>
   )
 }

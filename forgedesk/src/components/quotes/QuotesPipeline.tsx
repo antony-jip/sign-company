@@ -642,9 +642,9 @@ export function QuotesPipeline() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in-up mod-strip mod-strip-offertes">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3">
+    <div className="h-full flex flex-col animate-fade-in-up mod-strip mod-strip-offertes">
+      {/* ── Header bar ── */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #9B8EC4, #7A6BAA)' }}>
             <FileText className="h-5 w-5 text-white" />
@@ -664,6 +664,10 @@ export function QuotesPipeline() {
           </Link>
         </Button>
       </div>
+
+      {/* ── Content ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="space-y-5 p-4 sm:p-6">
 
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -1495,6 +1499,8 @@ export function QuotesPipeline() {
           )}
         </>
       )}
+      </div>
+      </div>
     </div>
   )
 }
