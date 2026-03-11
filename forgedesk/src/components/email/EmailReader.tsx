@@ -918,7 +918,7 @@ export function EmailReader({
       {forgieSummary && (
         <div className="mx-6 mt-3 mb-0 bg-blush/20 rounded-xl p-4 flex-shrink-0 animate-fade-in">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs uppercase font-semibold text-blush-deep tracking-wide">Forgie</span>
+            <span className="text-xs uppercase font-semibold text-blush-deep tracking-label">Forgie</span>
             <button onClick={() => setForgieSummary(null)} className="text-muted-foreground hover:text-foreground">
               <X className="w-3.5 h-3.5" />
             </button>
@@ -931,7 +931,7 @@ export function EmailReader({
       {forgieTranslation && (
         <div className="mx-6 mt-3 mb-0 bg-mist/20 rounded-xl p-4 flex-shrink-0 animate-fade-in">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs uppercase font-semibold text-mist-deep tracking-wide">Forgie — Vertaling</span>
+            <span className="text-xs uppercase font-semibold text-mist-deep tracking-label">Forgie — Vertaling</span>
             <button onClick={() => setForgieTranslation(null)} className="text-muted-foreground hover:text-foreground">
               <X className="w-3.5 h-3.5" />
             </button>

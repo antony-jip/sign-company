@@ -591,7 +591,7 @@ export function EmailLayout() {
             <div className="border-t px-3 py-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Tag className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Labels</span>
+                <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Labels</span>
               </div>
               {['offerte', 'klant', 'project', 'leverancier'].map((label) => {
                 const labelCount = emails.filter((e) => e.labels.includes(label)).length

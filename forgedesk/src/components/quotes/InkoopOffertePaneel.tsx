@@ -325,7 +325,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-foreground">Inkoopofferte uploaden</h4>
+          <h4 className="text-sm font-bold text-foreground">Inkoopofferte uploaden</h4>
           <Button variant="ghost" size="sm" onClick={() => { setShowUpload(false); setShowResultaat(false); setGeanalyseerdeRegels([]) }}>
             Annuleren
           </Button>
@@ -464,8 +464,8 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
                 </tbody>
                 <tfoot className="border-t bg-muted/50">
                   <tr>
-                    <td colSpan={3} className="px-2 py-1.5 text-right font-semibold text-foreground">Totaal</td>
-                    <td className="px-2 py-1.5 text-right font-bold tabular-nums">{formatCurrency(regelTotaal)}</td>
+                    <td colSpan={3} className="px-2 py-1.5 text-right font-bold text-foreground">Totaal</td>
+                    <td className="px-2 py-1.5 text-right font-bold font-mono tabular-nums">{formatCurrency(regelTotaal)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -496,10 +496,10 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
                   {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-                  <CardTitle className="text-sm font-semibold truncate">{offerte.leverancier_naam}</CardTitle>
+                  <CardTitle className="text-sm font-bold truncate">{offerte.leverancier_naam}</CardTitle>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm font-bold tabular-nums">{formatCurrency(offerte.totaal)}</span>
+                  <span className="text-sm font-bold font-mono tabular-nums">{formatCurrency(offerte.totaal)}</span>
                   {deleteConfirmId === offerte.id ? (
                     <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                       <Button variant="destructive" size="sm" className="h-6 text-xs px-2" onClick={() => handleDelete(offerte.id)}>
@@ -540,8 +540,8 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
                       </div>
                       {/* Prijs + acties */}
                       <div className="flex items-center gap-2 pl-[18px]">
-                        <span className="text-muted-foreground tabular-nums text-[11px]">{formatCurrency(round2(regel.prijs_per_stuk))}/stk</span>
-                        <span className="font-semibold tabular-nums text-xs">{formatCurrency(round2(regel.totaal))}</span>
+                        <span className="text-muted-foreground font-mono tabular-nums text-[11px]">{formatCurrency(round2(regel.prijs_per_stuk))}/stk</span>
+                        <span className="font-bold font-mono tabular-nums text-xs">{formatCurrency(round2(regel.totaal))}</span>
                         <div className="flex items-center gap-0.5 ml-auto shrink-0">
                           <button
                             onClick={(e) => { e.stopPropagation(); onRegelToevoegen(regel) }}
