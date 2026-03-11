@@ -10,6 +10,7 @@ import {
 } from '@/services/forgieChatService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
+import { ForgieAvatar } from './ForgieAvatar'
 
 const SUGGESTIE_CHIPS = [
   'Wat staat er open?',
@@ -156,7 +157,7 @@ export function ForgieChatWidget() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-card/50 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center gap-2.5">
-              <ForgieMascot size={28} />
+              <ForgieAvatar size={28} />
               <div>
                 <h2 className="text-sm font-bold text-foreground">Forgie</h2>
                 <p className="text-[10px] text-muted-foreground">Je bedrijfsgeheugen</p>
@@ -191,7 +192,7 @@ export function ForgieChatWidget() {
             {messages.length === 0 && !loading && (
               <div className="space-y-4 pt-4">
                 <div className="flex gap-2.5 items-start">
-                  <ForgieMascot size={32} className="flex-shrink-0" />
+                  <ForgieAvatar size={32} className="flex-shrink-0" />
                   <p className="text-sm text-foreground mt-1">
                     Hoi! Ik ben <strong>Forgie</strong> 🦊 Stel me een vraag over je klanten, projecten, offertes of facturen.
                   </p>
@@ -306,22 +307,22 @@ export function ForgieChatWidget() {
           'absolute inset-0 rounded-full backdrop-blur-xl border transition-colors duration-200',
           isOpen
             ? 'bg-white/60 dark:bg-white/10 border-white/40'
-            : 'bg-white/70 dark:bg-white/15 border-white/50 shadow-[0_8px_32px_rgba(232,130,90,0.35)]'
+            : 'bg-white/70 dark:bg-white/15 border-white/50 shadow-[0_8px_32px_rgba(155,142,196,0.35)]'
         )} />
 
         {isOpen ? (
           <X className="w-5 h-5 text-foreground relative z-10" />
         ) : (
           <span className="relative z-10 flex items-center justify-center">
-            <ForgieMascot size={48} className="drop-shadow-sm transition-transform duration-200 group-hover:rotate-6" />
+            <ForgieAvatar size={48} className="drop-shadow-sm transition-transform duration-200 group-hover:rotate-6" />
             {hasUnread && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse" />
             )}
             {/* One-time intro speech bubble for new users */}
             {showIntroBubble && !isOpen && (
-              <span className="absolute -top-14 -left-28 bg-white dark:bg-card backdrop-blur-sm text-xs text-foreground font-medium px-3 py-2 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 whitespace-nowrap pointer-events-none border border-orange-200/50 dark:border-orange-400/20">
+              <span className="absolute -top-14 -left-28 bg-white dark:bg-card backdrop-blur-sm text-xs text-foreground font-medium px-3 py-2 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 whitespace-nowrap pointer-events-none border border-[#9B8EC4]/30 dark:border-[#9B8EC4]/20">
                 Hoi! Ik ben <strong>Forgie</strong>, je AI-assistent 🦊
-                <span className="absolute -bottom-1.5 right-8 w-3 h-3 bg-white dark:bg-card border-b border-r border-orange-200/50 dark:border-orange-400/20 rotate-45" />
+                <span className="absolute -bottom-1.5 right-8 w-3 h-3 bg-white dark:bg-card border-b border-r border-[#9B8EC4]/30 dark:border-[#9B8EC4]/20 rotate-45" />
               </span>
             )}
             {/* Hover hint */}
