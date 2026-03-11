@@ -61,6 +61,7 @@ import { DealDetail } from '@/components/deals/DealDetail'
 import { LeadCaptureLayout } from '@/components/leads/LeadCaptureLayout'
 import { LeadFormulierEditor } from '@/components/leads/LeadFormulierEditor'
 import { LeadFormulierPubliek } from '@/components/leads/LeadFormulierPubliek'
+import { PortaalPagina } from '@/components/portaal/PortaalPagina'
 import { LeadInzendingenLayout } from '@/components/leads/LeadInzendingenLayout'
 import { ForecastLayout } from '@/components/forecast/ForecastLayout'
 import { ForgieChatPage } from '@/components/forgie/ForgieChatPage'
@@ -97,6 +98,8 @@ function AppContent() {
       <Route path="/offerte-bekijken/:token" element={<OffertePubliekPagina />} />
       {/* Publieke route - lead formulier invullen (geen login vereist) */}
       <Route path="/formulier/:token" element={<LeadFormulierPubliek />} />
+      {/* Publieke route - klantportaal (geen login vereist) */}
+      <Route path="/portaal/:token" element={<PortaalPagina />} />
       <Route path="/" element={
         <ProtectedRoute>
           <AppLayout />
