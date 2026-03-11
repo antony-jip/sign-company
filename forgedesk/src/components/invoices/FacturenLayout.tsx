@@ -54,6 +54,7 @@ import {
   Globe,
   Copy,
   Receipt,
+  Share2,
 } from 'lucide-react'
 import {
   getFacturen,
@@ -1576,7 +1577,7 @@ export function FacturenLayout() {
                             <FileDown className="h-4 w-4 mr-2" />
                             Download PDF
                           </DropdownMenuItem>
-                          {factuur.betaal_link && (
+                          {factuur.betaal_link && (<>
                             <DropdownMenuItem onClick={() => {
                               navigator.clipboard.writeText(factuur.betaal_link!).then(() => {
                                 toast.success('Betaallink gekopieerd naar klembord')
@@ -1587,7 +1588,19 @@ export function FacturenLayout() {
                               <Link className="h-4 w-4 mr-2" />
                               Kopieer betaallink
                             </DropdownMenuItem>
-                          )}
+                            <DropdownMenuItem onClick={async () => {
+                              const url = factuur.betaal_link!
+                              if (navigator.share) {
+                                try { await navigator.share({ title: `Factuur ${factuur.nummer}`, url }) } catch { /* cancelled */ }
+                              } else {
+                                await navigator.clipboard.writeText(url)
+                                toast.success('Link gekopieerd naar klembord')
+                              }
+                            }}>
+                              <Share2 className="h-4 w-4 mr-2" />
+                              Deel factuur
+                            </DropdownMenuItem>
+                          </>)}
                           {factuur.status === 'concept' && (
                             <DropdownMenuItem onClick={() => handleSendFactuur(factuur)}>
                               <Send className="h-4 w-4 mr-2" />

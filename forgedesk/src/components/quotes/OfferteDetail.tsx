@@ -61,6 +61,7 @@ import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
+import { ShareButton } from '@/components/shared/ShareButton'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -623,6 +624,15 @@ export function OfferteDetail() {
                   <ExternalLink className="h-4 w-4 mr-1" />
                   Kopieer link
                 </Button>
+              )}
+              {(portaalToken || offerte.publiek_token) && (
+                <ShareButton
+                  title={`Offerte ${offerte.nummer}`}
+                  url={portaalToken
+                    ? `/portaal/${portaalToken}`
+                    : `/offerte-bekijken/${offerte.publiek_token}`
+                  }
+                />
               )}
               {!offerte.geconverteerd_naar_factuur_id ? (
                 <Button size="sm" onClick={handleMaakFactuur}>
