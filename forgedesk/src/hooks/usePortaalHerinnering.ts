@@ -73,7 +73,7 @@ async function checkEnStuurHerinneringen(userId: string, bedrijfsnaam: string) {
 
   if (!portalen || portalen.length === 0) return
 
-  const portaalMap = new Map(portalen.map((p: { id: string; token: string; project_id: string }) => [p.id, p]))
+  const portaalMap = new Map<string, { id: string; token: string; project_id: string }>(portalen.map((p: { id: string; token: string; project_id: string }) => [p.id, p]))
 
   // Get project info for klant emails
   const projectIds = [...new Set(portalen.map((p: { project_id: string }) => p.project_id))]
@@ -82,7 +82,7 @@ async function checkEnStuurHerinneringen(userId: string, bedrijfsnaam: string) {
     .select('id, naam, klant_id')
     .in('id', projectIds)
 
-  const projectMap = new Map((projecten || []).map((p: { id: string; naam: string; klant_id: string }) => [p.id, p]))
+  const projectMap = new Map<string, { id: string; naam: string; klant_id: string }>((projecten || []).map((p: { id: string; naam: string; klant_id: string }) => [p.id, p]))
 
   // Get klant emails
   const klantIds = [...new Set((projecten || []).map((p: { klant_id: string }) => p.klant_id).filter(Boolean))]
@@ -91,7 +91,7 @@ async function checkEnStuurHerinneringen(userId: string, bedrijfsnaam: string) {
     .select('id, email, contactpersoon')
     .in('id', klantIds)
 
-  const klantMap = new Map((klanten || []).map((k: { id: string; email: string; contactpersoon: string }) => [k.id, k]))
+  const klantMap = new Map<string, { id: string; email: string; contactpersoon: string }>((klanten || []).map((k: { id: string; email: string; contactpersoon: string }) => [k.id, k]))
 
   // Get email credentials
   const { sendEmail } = await import('@/services/gmailService')
@@ -101,13 +101,13 @@ async function checkEnStuurHerinneringen(userId: string, bedrijfsnaam: string) {
     if (!portaal) continue
 
     const project = projectMap.get(item.project_id)
-    const klant = project ? klantMap.get(project.klant_id) : null
-    const klantEmail = (klant as { email?: string } | null)?.email
+    const klant = project ? klantMap.get(project.klant_id) : undefined
+    const klantEmail = klant?.email
 
     if (klantEmail) {
       const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
-      const klantNaam = (klant as { contactpersoon?: string } | null)?.contactpersoon || 'klant'
-      const projectNaam = (project as { naam?: string } | null)?.naam || 'project'
+      const klantNaam = klant?.contactpersoon || 'klant'
+      const projectNaam = project?.naam || 'project'
 
       try {
         await sendEmail(

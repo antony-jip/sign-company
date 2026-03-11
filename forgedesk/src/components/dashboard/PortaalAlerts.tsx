@@ -99,7 +99,7 @@ export function PortaalAlerts() {
       setMontagePrefill({
         projectId: notif.project_id || '',
         titel: `Montage — ${project?.naam || 'Project'}`,
-        locatie: project ? [project.adres, project.postcode, project.plaats].filter(Boolean).join(', ') : '',
+        locatie: project?.beschrijving || '',
       })
       setMontageDatum('')
       setMontageNotitie('')
@@ -124,8 +124,8 @@ export function PortaalAlerts() {
         start_tijd: '08:00',
         eind_tijd: '12:00',
         locatie: montagePrefill.locatie,
-        monteurs: [],
-        materialen: '',
+        monteurs: [] as string[],
+        materialen: [] as string[],
         notities: montageNotitie,
         status: 'gepland',
       })

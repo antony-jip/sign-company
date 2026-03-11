@@ -45,6 +45,16 @@ const typeConfig: Record<
     colorClass: "text-amber-600",
     bgClass: "bg-amber-100",
   },
+  offerte_geaccepteerd: {
+    icon: CheckCircle2,
+    colorClass: "text-green-600",
+    bgClass: "bg-green-100",
+  },
+  offerte_wijziging: {
+    icon: AlertCircle,
+    colorClass: "text-blue-600",
+    bgClass: "bg-blue-100",
+  },
   factuur_vervallen: {
     icon: AlertCircle,
     colorClass: "text-red-600",
