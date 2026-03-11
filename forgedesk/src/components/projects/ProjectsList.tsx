@@ -34,6 +34,14 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   cn,
   formatDate,
@@ -114,6 +122,8 @@ export function ProjectsList() {
   const [statusFilter, setStatusFilter] = useState('alle')
   const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'start_datum'>('start_datum')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set())
+  const [bulkStatusValue, setBulkStatusValue] = useState<string>('')
   const photoInputRef = React.useRef<HTMLInputElement>(null)
   const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
@@ -141,6 +151,58 @@ export function ProjectsList() {
     }
     setPhotoUploadProjectId(null)
     setPhotoUploadKlantId(null)
+  }
+
+  const toggleProjectSelection = (id: string) => {
+    setSelectedProjects(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedProjects.size === gefilterdeProjecten.length) {
+      setSelectedProjects(new Set())
+    } else {
+      setSelectedProjects(new Set(gefilterdeProjecten.map(p => p.id)))
+    }
+  }
+
+  const handleBulkSetTeFactureren = async () => {
+    for (const id of selectedProjects) {
+      try { await updateProject(id, { status: 'te-factureren' }) } catch { /* continue */ }
+    }
+    toast.success(`${selectedProjects.size} project(en) op "Te factureren" gezet`)
+    setSelectedProjects(new Set())
+    const data = await getProjecten()
+    setProjecten(data)
+  }
+
+  const handleBulkStatusChange = async (status: string) => {
+    for (const id of selectedProjects) {
+      try { await updateProject(id, { status }) } catch { /* continue */ }
+    }
+    toast.success(`${selectedProjects.size} project(en) status gewijzigd`)
+    setSelectedProjects(new Set())
+    setBulkStatusValue('')
+    const data = await getProjecten()
+    setProjecten(data)
+  }
+
+  const handleBulkExport = () => {
+    const selected = gefilterdeProjecten.filter(p => selectedProjects.has(p.id))
+    const rows = selected.map(p => ({
+      Project: p.naam,
+      Klant: p.klant_naam || getKlantNaam(p.klant_id),
+      Status: statusLabels[p.status] || p.status,
+      Prioriteit: p.prioriteit || '',
+      Bedrag: getProjectBedrag(p.id),
+      Startdatum: p.start_datum ? formatDate(p.start_datum) : '',
+    }))
+    exportCSV(rows, 'projecten-selectie')
+    toast.success(`${selected.length} project(en) geëxporteerd`)
   }
 
   useEffect(() => {
@@ -437,6 +499,13 @@ export function ProjectsList() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/60 bg-muted/30">
+                <th className="py-2.5 px-3 w-10">
+                  <Checkbox
+                    checked={selectedProjects.size > 0 && selectedProjects.size === gefilterdeProjecten.length}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Selecteer alle projecten"
+                  />
+                </th>
                 <th className="text-left py-2.5 px-4 w-[110px]">
                   <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
                 </th>
@@ -503,6 +572,14 @@ export function ProjectsList() {
                     )}
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
+                    {/* Checkbox */}
+                    <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedProjects.has(project.id)}
+                        onCheckedChange={() => toggleProjectSelection(project.id)}
+                        aria-label={`Selecteer ${project.naam}`}
+                      />
+                    </td>
                     {/* Status */}
                     <td className="py-0 px-0">
                       <DropdownMenu>
@@ -753,6 +830,41 @@ export function ProjectsList() {
       )}
       </div>
       </div>
+
+      {/* ── Bulk actiebalk ── */}
+      {selectedProjects.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-foreground text-background rounded-2xl px-5 py-3 flex items-center gap-3 shadow-2xl animate-fade-in-up">
+          <span className="text-sm font-bold">{selectedProjects.size} geselecteerd</span>
+          <div className="w-px h-5 bg-background/20" />
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-8 text-xs"
+            onClick={handleBulkSetTeFactureren}
+          >
+            Zet op te factureren
+          </Button>
+          <Select value={bulkStatusValue} onValueChange={handleBulkStatusChange}>
+            <SelectTrigger className="h-8 w-[140px] text-xs bg-background/10 border-background/20 text-background">
+              <SelectValue placeholder="Wijzig status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOpties.filter(s => s.value !== 'alle').map(s => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-8 text-xs"
+            onClick={handleBulkExport}
+          >
+            <Download className="h-3.5 w-3.5 mr-1" />
+            Exporteer
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
