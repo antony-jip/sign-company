@@ -357,20 +357,30 @@ export function ClientsLayout() {
             </Button>
           </div>
           {/* View toggle */}
-          <div className="flex items-center border rounded-md bg-background">
+          <div className="inline-flex items-center rounded-xl border border-black/[0.06] bg-muted p-0.5">
             <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              variant="ghost"
               size="icon"
-              className="rounded-r-none"
+              className={cn(
+                'h-8 w-8 rounded-lg transition-all',
+                viewMode === 'grid'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
               onClick={() => setViewMode('grid')}
               title="Rasterweergave"
             >
               <LayoutGrid className="w-4 h-4" />
             </Button>
             <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              variant="ghost"
               size="icon"
-              className="rounded-l-none"
+              className={cn(
+                'h-8 w-8 rounded-lg transition-all',
+                viewMode === 'list'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
               onClick={() => setViewMode('list')}
               title="Lijstweergave"
             >
