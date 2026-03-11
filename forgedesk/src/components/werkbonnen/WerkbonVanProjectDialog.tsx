@@ -18,6 +18,7 @@ import {
   createWerkbon, createWerkbonItem, createWerkbonAfbeelding,
   getOfferteItems, updateMontageAfspraak,
 } from '@/services/supabaseService'
+import { downloadFile } from '@/services/storageService'
 
 interface Props {
   open: boolean
@@ -120,21 +121,34 @@ export function WerkbonVanProjectDialog({
             offerte_item_id: offerteItem.id,
           })
 
+          // Resolve storage paths naar display URLs
           if (offerteItem.foto_url) {
-            await createWerkbonAfbeelding({
-              werkbon_item_id: werkbonItem.id,
-              url: offerteItem.foto_url,
-              type: 'foto',
-              omschrijving: 'Productfoto',
-            })
+            let resolvedUrl = offerteItem.foto_url
+            if (!resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('http')) {
+              try { resolvedUrl = await downloadFile(resolvedUrl) } catch { /* skip */ }
+            }
+            if (resolvedUrl) {
+              await createWerkbonAfbeelding({
+                werkbon_item_id: werkbonItem.id,
+                url: resolvedUrl,
+                type: 'foto',
+                omschrijving: 'Productfoto',
+              })
+            }
           }
           if (offerteItem.bijlage_url && offerteItem.bijlage_type?.startsWith('image/')) {
-            await createWerkbonAfbeelding({
-              werkbon_item_id: werkbonItem.id,
-              url: offerteItem.bijlage_url,
-              type: 'tekening',
-              omschrijving: offerteItem.bijlage_naam || 'Bijlage',
-            })
+            let resolvedUrl = offerteItem.bijlage_url
+            if (!resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('http')) {
+              try { resolvedUrl = await downloadFile(resolvedUrl) } catch { /* skip */ }
+            }
+            if (resolvedUrl) {
+              await createWerkbonAfbeelding({
+                werkbon_item_id: werkbonItem.id,
+                url: resolvedUrl,
+                type: 'tekening',
+                omschrijving: offerteItem.bijlage_naam || 'Bijlage',
+              })
+            }
           }
         }
         toast.success(`Werkbon ${werkbon.werkbon_nummer} aangemaakt met ${selected.length} items`)
