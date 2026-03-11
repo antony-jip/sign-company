@@ -77,6 +77,7 @@ import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { useSidebarLayout, type SidebarSectionId } from '@/hooks/useSidebarLayout'
 import type { CalculatieRegel, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { safeSetItem } from '@/utils/localStorageUtils'
 
 const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
@@ -2470,6 +2471,8 @@ export function QuoteCreation() {
                                     <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-muted-foreground" />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
                                   )}
                                 </div>
+
+                                <KlantStatusWarning klant={selectedKlant} className="mt-2" />
 
                                 {selectedKlant.contactpersonen?.length > 0 && (
                                   <div className="space-y-1.5">

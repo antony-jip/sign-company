@@ -122,6 +122,7 @@ import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijd
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { logger } from '../../utils/logger'
+import { KlantStatusBadgeInline } from '@/components/shared/KlantStatusWarning'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -813,7 +814,7 @@ export function ProjectDetail() {
               <span className="text-muted-foreground text-xs">/</span>
               <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
                 <Link to={`/klanten/${klant.id}`}>
-                  {klant.bedrijfsnaam}
+                  {klant.bedrijfsnaam}<KlantStatusBadgeInline klant={klant} />
                 </Link>
               </Button>
             </>

@@ -56,6 +56,7 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import { logger } from '../../utils/logger'
+import { KlantStatusBadgeInline, KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 
@@ -761,7 +762,7 @@ export function OfferteDetail() {
           </div>
           {klant ? (
             <div className="space-y-1.5">
-              <p className="font-semibold text-foreground">{klant.bedrijfsnaam}</p>
+              <p className="font-semibold text-foreground">{klant.bedrijfsnaam}<KlantStatusBadgeInline klant={klant} /></p>
               <p className="text-sm text-muted-foreground">{klant.contactpersoon}</p>
               {klant.email && (
                 <p className="text-sm text-muted-foreground flex items-center gap-1.5">

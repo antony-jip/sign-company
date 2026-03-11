@@ -86,6 +86,7 @@ import { sendEmail } from '@/services/gmailService'
 import { factuurVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { logger } from '../../utils/logger'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 
 // ============ TYPES ============
 
@@ -1118,6 +1119,7 @@ export function FactuurEditor() {
                       {selectedKlant.adres}{selectedKlant.stad ? `, ${selectedKlant.stad}` : ''}
                     </div>
                   )}
+                  <KlantStatusWarning klant={selectedKlant} className="mt-2" />
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Geen klant geselecteerd</p>

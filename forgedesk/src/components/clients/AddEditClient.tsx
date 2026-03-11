@@ -22,6 +22,8 @@ import { createKlant, updateKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import type { Klant, KvkResultaat } from '@/types'
+import { klantStatusConfig } from '@/types'
+import { getAllKlantLabels } from '@/services/supabaseService'
 import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
 
 interface AddEditClientProps {
@@ -55,6 +57,9 @@ interface FormData {
   notities: string
   klant_labels: string[]
   gepinde_notitie: string
+  klant_status: Klant['klant_status']
+  labels: string[]
+  label_input: string
 }
 
 const initialFormData: FormData = {
@@ -73,6 +78,9 @@ const initialFormData: FormData = {
   notities: '',
   klant_labels: [],
   gepinde_notitie: '',
+  klant_status: 'normaal',
+  labels: [],
+  label_input: '',
 }
 
 export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditClientProps) {
@@ -80,8 +88,15 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const [saving, setSaving] = useState(false)
+  const [labelSuggestions, setLabelSuggestions] = useState<string[]>([])
 
   const isEditing = !!klant
+
+  useEffect(() => {
+    if (open && user?.id) {
+      getAllKlantLabels(user.id).then(setLabelSuggestions).catch(() => {})
+    }
+  }, [open, user?.id])
 
   useEffect(() => {
     if (klant) {
@@ -101,6 +116,9 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         notities: klant.notities,
         klant_labels: klant.klant_labels || [],
         gepinde_notitie: klant.gepinde_notitie || '',
+        klant_status: klant.klant_status || 'normaal',
+        labels: klant.labels || [],
+        label_input: '',
       })
     } else {
       setFormData(initialFormData)
@@ -168,6 +186,8 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         contactpersonen: klant?.contactpersonen || [],
         klant_labels: formData.klant_labels,
         gepinde_notitie: formData.gepinde_notitie.trim(),
+        klant_status: formData.klant_status || 'normaal',
+        labels: formData.labels,
       }
 
       let savedKlant: Klant
@@ -332,6 +352,91 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                   <SelectItem value="prospect">Prospect</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {/* Row 4b: Klant Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="klant_status">Klant Status</Label>
+              <Select
+                value={formData.klant_status || 'normaal'}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, klant_status: value as Klant['klant_status'] }))
+                }
+              >
+                <SelectTrigger id="klant_status">
+                  <SelectValue placeholder="Selecteer klant status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(klantStatusConfig).map(([key, cfg]) => (
+                    <SelectItem key={key} value={key}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: cfg.color }}
+                        />
+                        {cfg.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Labels (vrij)</Label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {formData.labels.map((label) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-xs text-muted-foreground"
+                  >
+                    {label}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          labels: prev.labels.filter((l) => l !== label),
+                        }))
+                      }
+                      className="ml-0.5 hover:text-red-500"
+                    >
+                      &times;
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <Input
+                value={formData.label_input}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, label_input: e.target.value }))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault()
+                    const val = formData.label_input.trim().replace(/,$/,'')
+                    if (val && !formData.labels.includes(val)) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        labels: [...prev.labels, val],
+                        label_input: '',
+                      }))
+                    }
+                  }
+                }}
+                placeholder="Label toevoegen (Enter)"
+                list="label-suggestions"
+              />
+              {labelSuggestions.length > 0 && (
+                <datalist id="label-suggestions">
+                  {labelSuggestions
+                    .filter((s) => !formData.labels.includes(s))
+                    .map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                </datalist>
+              )}
             </div>
           </div>
 
