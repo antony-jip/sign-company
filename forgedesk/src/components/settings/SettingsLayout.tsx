@@ -57,6 +57,7 @@ import {
   Plus,
   Loader2,
   Package,
+  Link2,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -75,6 +76,7 @@ import { logger } from '../../utils/logger'
 import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
+import { PortaalTab } from './PortaalTab'
 import { Sparkles } from 'lucide-react'
 
 // Shared sub-tab navigation component
@@ -165,6 +167,7 @@ const settingsTabs = [
   { id: 'integraties', label: 'Integraties', icon: Puzzle, description: 'Koppelingen met externe diensten' },
   { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
   { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
+  { id: 'portaal', label: 'Portaal', icon: Link2, description: 'Klantportaal instellingen' },
   { id: 'forgie', label: 'Forgie AI', icon: Sparkles, description: 'AI assistent, visualizer en data import' },
 ] as const
 
@@ -179,6 +182,7 @@ function renderTabContent(tabId: string) {
     case 'integraties': return <IntegratiesTab />
     case 'beveiliging': return <BeveiligingTab />
     case 'weergave': return <WeergaveTab />
+    case 'portaal': return <PortaalTab />
     case 'forgie': return <ForgieTab />
     default: return null
   }
