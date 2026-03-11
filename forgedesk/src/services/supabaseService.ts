@@ -354,10 +354,30 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
 export async function deleteProject(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Cascade: verwijder direct-gekoppelde child records
+    await supabase.from('taken').delete().eq('project_id', id)
+    await supabase.from('montage_afspraken').delete().eq('project_id', id)
+    await supabase.from('project_fotos').delete().eq('project_id', id)
+    await supabase.from('tijdregistraties').delete().eq('project_id', id)
+    await supabase.from('project_toewijzingen').delete().eq('project_id', id)
+    // Offertes/facturen/werkbonnen: ontkoppelen (niet verwijderen)
+    await supabase.from('offertes').update({ project_id: null }).eq('project_id', id)
+    await supabase.from('facturen').update({ project_id: null }).eq('project_id', id)
+    await supabase.from('werkbonnen').update({ project_id: null }).eq('project_id', id)
     const { error } = await supabase.from('projecten').delete().eq('id', id)
     if (error) throw error
     return
   }
+  // localStorage cascade
+  setLocalData('taken', getLocalData<Taak>('taken').filter(t => t.project_id !== id))
+  setLocalData('montage_afspraken', getLocalData<MontageAfspraak>('montage_afspraken').filter(m => m.project_id !== id))
+  setLocalData('project_fotos', getLocalData<ProjectFoto>('project_fotos').filter(f => f.project_id !== id))
+  setLocalData('tijdregistraties', getLocalData<Tijdregistratie>('tijdregistraties').filter(t => t.project_id !== id))
+  setLocalData('project_toewijzingen', getLocalData<ProjectToewijzing>('project_toewijzingen').filter(t => t.project_id !== id))
+  // Ontkoppel offertes/facturen/werkbonnen
+  setLocalData('offertes', getLocalData<Offerte>('offertes').map(o => o.project_id === id ? { ...o, project_id: undefined } : o))
+  setLocalData('facturen', getLocalData<Factuur>('facturen').map(f => f.project_id === id ? { ...f, project_id: undefined } : f))
+  setLocalData('werkbonnen', getLocalData<Werkbon>('werkbonnen').map(w => w.project_id === id ? { ...w, project_id: undefined } : w))
   const projecten = getLocalData<Project>('projecten')
   setLocalData('projecten', projecten.filter((p) => p.id !== id))
 }
@@ -590,10 +610,15 @@ export async function updateOfferte(id: string, updates: Partial<Offerte>): Prom
 export async function deleteOfferte(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Cascade: verwijder offerte items en versies
+    await supabase.from('offerte_items').delete().eq('offerte_id', id)
+    await supabase.from('offerte_versies').delete().eq('offerte_id', id)
     const { error } = await supabase.from('offertes').delete().eq('id', id)
     if (error) throw error
     return
   }
+  setLocalData('offerte_items', getLocalData<OfferteItem>('offerte_items').filter(i => i.offerte_id !== id))
+  setLocalData('offerte_versies', getLocalData<OfferteVersie>('offerte_versies').filter(v => v.offerte_id !== id))
   const offertes = getLocalData<Offerte>('offertes')
   setLocalData('offertes', offertes.filter((o) => o.id !== id))
 }
@@ -1915,10 +1940,13 @@ export async function updateFactuur(id: string, updates: Partial<Factuur>): Prom
 export async function deleteFactuur(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Cascade: verwijder factuur items
+    await supabase.from('factuur_items').delete().eq('factuur_id', id)
     const { error } = await supabase.from('facturen').delete().eq('id', id)
     if (error) throw error
     return
   }
+  setLocalData('factuur_items', getLocalData<FactuurItem>('factuur_items').filter(i => i.factuur_id !== id))
   const items = getLocalData<Factuur>('facturen')
   setLocalData('facturen', items.filter((f) => f.id !== id))
 }
@@ -2498,11 +2526,20 @@ export async function updateWerkbon(id: string, updates: Partial<Werkbon>): Prom
 
 export async function deleteWerkbon(id: string): Promise<void> {
   assertId(id)
+  // Cascade: verwijder werkbon items (met hun afbeeldingen), regels en fotos
+  const werkbonItems = await getWerkbonItems(id)
+  for (const item of werkbonItems) {
+    await deleteWerkbonItem(item.id)
+  }
   if (isSupabaseConfigured() && supabase) {
+    await supabase.from('werkbon_regels').delete().eq('werkbon_id', id)
+    await supabase.from('werkbon_fotos').delete().eq('werkbon_id', id)
     const { error } = await supabase.from('werkbonnen').delete().eq('id', id)
     if (error) throw error
     return
   }
+  setLocalData('werkbon_regels', getLocalData<WerkbonRegel>('werkbon_regels').filter(r => r.werkbon_id !== id))
+  setLocalData('werkbon_fotos', getLocalData<WerkbonFoto>('werkbon_fotos').filter(f => f.werkbon_id !== id))
   const items = getLocalData<Werkbon>('werkbonnen')
   setLocalData('werkbonnen', items.filter((w) => w.id !== id))
 }
