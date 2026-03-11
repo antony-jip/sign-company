@@ -60,7 +60,7 @@ import {
   GripVertical,
   Pin,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
@@ -1441,11 +1441,38 @@ export function QuoteCreation() {
 
       if (status === 'verzonden' && selectedKlant?.email) {
         try {
-          // Haal opgeslagen offerte op voor publiek_token
+          // Bepaal bekijk-URL via portaal (nieuw) of publiek_token (fallback)
           const savedOfferte = await getOfferte(savedOfferteId).catch(() => null)
-          const bekijkUrl = savedOfferte?.publiek_token
-            ? `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
-            : undefined
+          let bekijkUrl: string | undefined
+
+          if (selectedProjectId && user?.id) {
+            try {
+              const portaal = await createPortaal(selectedProjectId, user.id)
+              const bestaandeItems = await getPortaalItems(portaal.id)
+              if (!bestaandeItems.find(i => i.type === 'offerte' && i.offerte_id === savedOfferteId)) {
+                await createPortaalItem({
+                  user_id: user.id,
+                  project_id: selectedProjectId,
+                  portaal_id: portaal.id,
+                  type: 'offerte',
+                  offerte_id: savedOfferteId,
+                  titel: `Offerte ${offerteNummer}`,
+                  omschrijving: offerteTitel,
+                  label: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(round2(subtotaal + btwBedrag)),
+                  status: 'verstuurd',
+                  zichtbaar_voor_klant: true,
+                  bedrag: round2(subtotaal + btwBedrag),
+                  volgorde: 0,
+                })
+              }
+              bekijkUrl = `${window.location.origin}/portaal/${portaal.token}`
+            } catch {
+              // Fallback naar publiek_token
+            }
+          }
+          if (!bekijkUrl && savedOfferte?.publiek_token) {
+            bekijkUrl = `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
+          }
 
           const { subject, html, text } = offerteVerzendTemplate({
             klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
@@ -1627,12 +1654,42 @@ export function QuoteCreation() {
         quoteId = editOfferteId || autoSaveIdRef.current
       }
 
-      // Haal offerte op voor publiek_token
+      // Bepaal bekijk-URL via portaal (nieuw) of publiek_token (fallback)
       const savedQuoteId = editOfferteId || autoSaveIdRef.current
       const savedOfferte = savedQuoteId ? await getOfferte(savedQuoteId).catch(() => null) : null
-      const bekijkUrl = savedOfferte?.publiek_token
-        ? `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
-        : undefined
+      let bekijkUrl: string | undefined
+
+      if (selectedProjectId && user?.id && savedQuoteId) {
+        try {
+          const portaal = await createPortaal(selectedProjectId, user.id)
+          // Voorkom dubbele portaal_items voor dezelfde offerte
+          const bestaandeItems = await getPortaalItems(portaal.id)
+          if (!bestaandeItems.find(i => i.type === 'offerte' && i.offerte_id === savedQuoteId)) {
+            await createPortaalItem({
+              user_id: user.id,
+              project_id: selectedProjectId,
+              portaal_id: portaal.id,
+              type: 'offerte',
+              offerte_id: savedQuoteId,
+              titel: `Offerte ${offerteNummer}`,
+              omschrijving: offerteTitel,
+              label: formatCurrency(round2(subtotaal + btwBedrag)),
+              status: 'verstuurd',
+              zichtbaar_voor_klant: true,
+              bedrag: round2(subtotaal + btwBedrag),
+              volgorde: 0,
+            })
+          }
+          bekijkUrl = `${window.location.origin}/portaal/${portaal.token}`
+        } catch (err) {
+          logger.error('Portaal aanmaken mislukt, fallback naar publieke link:', err)
+        }
+      }
+
+      // Fallback: gebruik oude publiek_token link
+      if (!bekijkUrl && savedOfferte?.publiek_token) {
+        bekijkUrl = `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
+      }
 
       const klantNaam = selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || ''
       const { html: templateHtml, text: templateText } = offerteVerzendTemplate({
