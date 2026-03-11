@@ -474,16 +474,19 @@ export function OfferteDetail() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/offertes')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1
-            className="page-title text-foreground cursor-pointer hover:text-primary transition-colors"
-            title="Klik om nummer te kopiëren"
-            onClick={() => {
-              navigator.clipboard.writeText(offerte.nummer)
-              toast.success('Offertenummer gekopieerd')
-            }}
-          >
-            <span className="font-mono">{offerte.nummer}</span>
-          </h1>
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#9B8EC4] mb-0.5">Offerte</p>
+            <h1
+              className="text-[26px] sm:text-[32px] font-extrabold tracking-[-0.04em] leading-none text-foreground cursor-pointer hover:text-primary transition-colors"
+              title="Klik om nummer te kopiëren"
+              onClick={() => {
+                navigator.clipboard.writeText(offerte.nummer)
+                toast.success('Offertenummer gekopieerd')
+              }}
+            >
+              {offerte.nummer}
+            </h1>
+          </div>
 
           {/* Status dropdown */}
           <div className="relative">
@@ -641,7 +644,7 @@ export function OfferteDetail() {
         const isModRequested = offerte.status === 'wijziging_gevraagd'
 
         return (
-          <div className="flex items-center gap-0 py-2 px-1 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-0 py-3 px-2 overflow-x-auto scrollbar-hide bg-card rounded-xl border border-border/50">
             {pipelineSteps.map((step, idx) => {
               const isActive = step.key === offerte.status
               const isPast = currentIdx >= 0 && idx < currentIdx
@@ -651,21 +654,21 @@ export function OfferteDetail() {
                 <React.Fragment key={step.key}>
                   {idx > 0 && (
                     <div className={cn(
-                      'h-[2px] w-6 sm:w-10 flex-shrink-0 transition-colors',
-                      isPast ? 'bg-[#9B8EC4]' : 'bg-border'
+                      'h-[2px] flex-1 min-w-4 sm:min-w-8 flex-shrink-0 transition-all duration-500 rounded-full',
+                      isPast ? 'bg-[#9B8EC4]' : 'bg-border/60'
                     )} />
                   )}
-                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                  <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
                     <div className={cn(
-                      'w-3 h-3 rounded-full border-2 transition-all',
-                      isActive && 'bg-[#9B8EC4] border-[#9B8EC4] shadow-[0_0_8px_rgba(155,142,196,0.4)] scale-125',
-                      isPast && 'bg-[#9B8EC4] border-[#9B8EC4]',
-                      isFuture && 'bg-transparent border-border',
-                      (isRejected || isExpired || isModRequested) && !isPast && 'bg-transparent border-border'
+                      'rounded-full border-2 transition-all duration-300',
+                      isActive && 'w-4 h-4 bg-[#9B8EC4] border-[#9B8EC4] shadow-[0_0_12px_rgba(155,142,196,0.5)]',
+                      isPast && 'w-3 h-3 bg-[#9B8EC4] border-[#9B8EC4]',
+                      isFuture && 'w-3 h-3 bg-transparent border-border/60',
+                      (isRejected || isExpired || isModRequested) && !isPast && 'w-3 h-3 bg-transparent border-border/60'
                     )} />
                     <span className={cn(
                       'text-[10px] whitespace-nowrap',
-                      isActive ? 'font-semibold text-[#9B8EC4]' : isPast ? 'text-muted-foreground' : 'text-muted-foreground/50'
+                      isActive ? 'font-bold text-[#9B8EC4]' : isPast ? 'font-medium text-muted-foreground' : 'text-muted-foreground/40'
                     )}>
                       {step.label}
                     </span>
@@ -945,24 +948,24 @@ export function OfferteDetail() {
         </div>
 
         {/* Totals */}
-        <div className="px-5 py-4 border-t border-border flex justify-end">
-          <div className="w-72 space-y-2">
+        <div className="px-5 py-5 border-t border-border flex justify-end">
+          <div className="w-80 space-y-2.5">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotaal</span>
-              <span className="font-medium font-mono text-foreground">{formatCurrency(round2(subtotaal))}</span>
+              <span className="font-semibold tabular-nums text-foreground">{formatCurrency(round2(subtotaal))}</span>
             </div>
             {Object.entries(btwGroups)
               .sort(([a], [b]) => Number(b) - Number(a))
               .map(([pct, bedrag]) => (
                 <div key={pct} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">BTW <span className="font-mono">{pct}%</span></span>
-                  <span className="font-medium font-mono text-foreground">{formatCurrency(bedrag)}</span>
+                  <span className="text-muted-foreground">BTW {pct}%</span>
+                  <span className="font-semibold tabular-nums text-foreground">{formatCurrency(bedrag)}</span>
                 </div>
               ))}
-            <div className="border-t border-border pt-2 mt-2">
-              <div className="flex justify-between">
-                <span className="text-base font-bold text-foreground">Totaal</span>
-                <span className="text-base font-bold font-mono text-primary">{formatCurrency(totaal)}</span>
+            <div className="totalen-groot mt-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Totaal incl. BTW</span>
+                <span className="display-number display-number-md text-foreground">{formatCurrency(totaal)}</span>
               </div>
             </div>
           </div>
