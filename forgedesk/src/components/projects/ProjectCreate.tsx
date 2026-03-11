@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { createProject, getKlanten, getMedewerkers, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
+import { createProject, getKlanten, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Klant, Medewerker } from '@/types'
+import type { Klant } from '@/types'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, FolderKanban, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -26,7 +26,6 @@ export function ProjectCreate() {
   const paramKlantId = searchParams.get('klant_id') || ''
 
   const [klanten, setKlanten] = useState<Klant[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [loading, setLoading] = useState(false)
 
   const [naam, setNaam] = useState('')
@@ -35,21 +34,14 @@ export function ProjectCreate() {
   const [contactpersoonId, setContactpersoonId] = useState('')
   const [vestigingId, setVestigingId] = useState('')
   const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren'>('gepland')
-  const [prioriteit, setPrioriteit] = useState<'laag' | 'medium' | 'hoog' | 'kritiek'>('medium')
   const [startDatum, setStartDatum] = useState(() => new Date().toISOString().split('T')[0])
   const [eindDatum, setEindDatum] = useState('')
-  const [budget, setBudget] = useState('')
-  const [geselecteerdeMedewerkerIds, setGeselecteerdeMedewerkerIds] = useState<string[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [klantenData, medewerkersData] = await Promise.all([
-          getKlanten(),
-          getMedewerkers(),
-        ])
+        const klantenData = await getKlanten()
         setKlanten(klantenData)
-        setMedewerkers(medewerkersData.filter(m => m.status === 'actief'))
       } catch (error) {
         logger.error('Fout bij ophalen data:', error)
       }
@@ -93,19 +85,9 @@ export function ProjectCreate() {
       return
     }
 
-    if (budget && parseFloat(budget) < 0) {
-      toast.error('Budget kan niet negatief zijn')
-      return
-    }
-
     setLoading(true)
 
     try {
-      const teamLedenNamen = geselecteerdeMedewerkerIds.map(id => {
-        const mw = medewerkers.find(m => m.id === id)
-        return mw?.naam || ''
-      }).filter(n => n.length > 0)
-
       // Genereer project nummer
       const settings = await getAppSettings(user.id)
       const projectNummer = await generateProjectNummer(settings?.project_prefix || 'PRJ')
@@ -115,15 +97,15 @@ export function ProjectCreate() {
         klant_id: klantId,
         project_nummer: projectNummer,
         naam: naam.trim(),
-        beschrijving: beschrijving.trim(),
+        beschrijving: beschrijving.trim() || undefined,
         status,
-        prioriteit,
+        prioriteit: 'medium',
         start_datum: startDatum || undefined,
         eind_datum: eindDatum || undefined,
-        budget: parseFloat(budget) || 0,
+        budget: 0,
         besteed: 0,
         voortgang: 0,
-        team_leden: teamLedenNamen,
+        team_leden: [],
         contactpersoon_id: contactpersoonId || undefined,
         vestiging_id: vestigingId || undefined,
         vestiging_naam: vestigingId ? vestigingen.find((v) => v.id === vestigingId)?.naam : undefined,
@@ -268,9 +250,9 @@ export function ProjectCreate() {
           </div>
         </div>
 
-        {/* Status + Prioriteit + Datums */}
-        <div className="rounded-xl border border-black/[0.06] bg-card p-5 mb-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* Status + Datums */}
+        <div className="rounded-xl border border-black/[0.06] bg-card p-5 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</Label>
               <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
@@ -284,21 +266,6 @@ export function ProjectCreate() {
                   <SelectItem value="afgerond">Afgerond</SelectItem>
                   <SelectItem value="on-hold">On Hold</SelectItem>
                   <SelectItem value="te-factureren">Te factureren</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Prioriteit</Label>
-              <Select value={prioriteit} onValueChange={(value: typeof prioriteit) => setPrioriteit(value)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="laag">Laag</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="hoog">Hoog</SelectItem>
-                  <SelectItem value="kritiek">Kritiek</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -321,67 +288,6 @@ export function ProjectCreate() {
                 onChange={(e) => setEindDatum(e.target.value)}
                 className="h-9"
               />
-            </div>
-          </div>
-        </div>
-
-        {/* Budget + Team */}
-        <div className="rounded-xl border border-black/[0.06] bg-card p-5 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Budget (&euro;)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={budget}
-                onChange={(e) => setBudget(e.target.value)}
-                placeholder="0,00"
-                className="h-9"
-              />
-            </div>
-
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Teamleden</Label>
-              {medewerkers.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-2">Geen medewerkers beschikbaar</p>
-              ) : (
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap gap-1.5">
-                    {geselecteerdeMedewerkerIds.map(id => {
-                      const mw = medewerkers.find(m => m.id === id)
-                      if (!mw) return null
-                      return (
-                        <span key={id} className="inline-flex items-center gap-1 bg-sage/30 text-foreground text-xs font-medium px-2 py-1 rounded-md">
-                          {mw.naam}
-                          <button
-                            type="button"
-                            onClick={() => setGeselecteerdeMedewerkerIds(prev => prev.filter(x => x !== id))}
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            &times;
-                          </button>
-                        </span>
-                      )
-                    })}
-                  </div>
-                  <select
-                    className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"
-                    value=""
-                    onChange={(e) => {
-                      if (e.target.value && !geselecteerdeMedewerkerIds.includes(e.target.value)) {
-                        setGeselecteerdeMedewerkerIds(prev => [...prev, e.target.value])
-                      }
-                    }}
-                  >
-                    <option value="">Medewerker toevoegen...</option>
-                    {medewerkers
-                      .filter(m => !geselecteerdeMedewerkerIds.includes(m.id))
-                      .map(m => <option key={m.id} value={m.id}>{m.naam} — {m.functie || m.rol}</option>)
-                    }
-                  </select>
-                </div>
-              )}
             </div>
           </div>
         </div>

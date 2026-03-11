@@ -49,6 +49,7 @@ import {
   Camera,
   Wrench,
   MapPin,
+  X,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -888,6 +889,26 @@ export function ProjectDetail() {
                 <Copy className="h-3.5 w-3.5 mr-1" />
                 Kopiëren
               </Button>
+              <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
+              {projectOffertes.length > 0 ? (
+                <Button
+                  size="sm"
+                  onClick={() => navigate(`/offertes/${projectOffertes[0].id}/detail`, { state: { from: location.pathname } })}
+                  className="h-7 px-3 text-xs font-semibold"
+                >
+                  <FileText className="h-3.5 w-3.5 mr-1" />
+                  Ga naar offerte
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={openNieuweOfferte}
+                  className="h-7 px-3 text-xs font-semibold"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Maak offerte
+                </Button>
+              )}
             </div>
           </div>
 
@@ -1470,32 +1491,70 @@ export function ProjectDetail() {
           {/* ── Team ── */}
           <Card className="border-sage/40 bg-sage/5">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center">
-                  <Users className="h-3.5 w-3.5 text-white" />
-                </div>
-                Team
-                <span className="text-xs text-muted-foreground font-normal ml-auto">{project.team_leden.length} leden</span>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center">
+                    <Users className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Team
+                  <span className="text-xs text-muted-foreground font-normal">{project.team_leden.length} leden</span>
+                </CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              {project.team_leden.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Geen teamleden toegewezen.</p>
-              ) : (
-                <div className="space-y-2">
+              {project.team_leden.length > 0 && (
+                <div className="space-y-2 mb-3">
                   {project.team_leden.map((lid) => (
                     <div
                       key={lid}
-                      className="flex items-center gap-2.5 bg-background rounded-lg px-3 py-2 border border-border/40"
+                      className="flex items-center gap-2.5 bg-background rounded-lg px-3 py-2 border border-border/40 group"
                     >
                       <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
                         {getInitials(lid)}
                       </div>
-                      <span className="text-sm font-medium text-foreground truncate">{lid}</span>
+                      <span className="text-sm font-medium text-foreground truncate flex-1">{lid}</span>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const nieuwTeam = project.team_leden.filter(l => l !== lid)
+                            const updated = await updateProject(id!, { team_leden: nieuwTeam })
+                            setProject(updated)
+                            toast.success(`${lid} verwijderd uit team`)
+                          } catch { toast.error('Kon teamlid niet verwijderen') }
+                        }}
+                        className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Verwijderen"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
+              {alleMedewerkers.length > 0 ? (
+                <select
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"
+                  value=""
+                  onChange={async (e) => {
+                    const mw = alleMedewerkers.find(m => m.id === e.target.value)
+                    if (!mw || project.team_leden.includes(mw.naam)) return
+                    try {
+                      const nieuwTeam = [...project.team_leden, mw.naam]
+                      const updated = await updateProject(id!, { team_leden: nieuwTeam })
+                      setProject(updated)
+                      toast.success(`${mw.naam} toegevoegd aan team`)
+                    } catch { toast.error('Kon teamlid niet toevoegen') }
+                  }}
+                >
+                  <option value="">Medewerker toevoegen...</option>
+                  {alleMedewerkers
+                    .filter(m => !project.team_leden.includes(m.naam))
+                    .map(m => <option key={m.id} value={m.id}>{m.naam}{m.functie ? ` — ${m.functie}` : ''}</option>)
+                  }
+                </select>
+              ) : project.team_leden.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Voeg medewerkers toe via Instellingen → Team</p>
+              ) : null}
             </CardContent>
           </Card>
 
