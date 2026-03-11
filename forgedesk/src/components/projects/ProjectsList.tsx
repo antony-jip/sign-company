@@ -50,6 +50,7 @@ import {
   getPriorityColor,
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
+import { PaginationControls } from '@/components/ui/pagination-controls'
 import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant, Offerte } from '@/types'
@@ -124,6 +125,8 @@ export function ProjectsList() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set())
   const [bulkStatusValue, setBulkStatusValue] = useState<string>('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 50
   const photoInputRef = React.useRef<HTMLInputElement>(null)
   const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
@@ -283,6 +286,15 @@ export function ProjectsList() {
 
     return result
   }, [projecten, klanten, offertes, zoekterm, statusFilter, sortField, sortDir])
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, sortField, sortDir])
+
+  const totalPages = Math.ceil(gefilterdeProjecten.length / PAGE_SIZE)
+  const paginatedProjecten = useMemo(
+    () => gefilterdeProjecten.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [gefilterdeProjecten, currentPage]
+  )
 
   function handleSort(field: typeof sortField) {
     if (field === sortField) {
@@ -497,7 +509,7 @@ export function ProjectsList() {
         <>
         {/* Mobile card view */}
         <div className="md:hidden space-y-2 -mx-1">
-          {gefilterdeProjecten.map((project) => {
+          {paginatedProjecten.map((project) => {
             const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
             const bedrag = getProjectBedrag(project.id)
             return (
@@ -602,7 +614,7 @@ export function ProjectsList() {
               </tr>
             </thead>
             <tbody className="row-stagger">
-              {gefilterdeProjecten.map((project) => {
+              {paginatedProjecten.map((project) => {
                 const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
                 const contactpersoon = getKlantContactpersoon(project.klant_id)
                 const isOverdue = project.eind_datum && new Date(project.eind_datum ?? "") < new Date() && project.status !== 'afgerond'
@@ -873,6 +885,15 @@ export function ProjectsList() {
         </div>
         </>
       )}
+
+      {/* Paginatie */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={gefilterdeProjecten.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
       </div>
       </div>
 

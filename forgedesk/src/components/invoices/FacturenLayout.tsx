@@ -85,6 +85,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import { PaginationControls } from '@/components/ui/pagination-controls'
 
 // ============ TYPES ============
 
@@ -265,6 +266,8 @@ export function FacturenLayout() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [sortField, setSortField] = useState<SortField>('datum')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 50
 
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -397,6 +400,15 @@ export function FacturenLayout() {
 
     return result
   }, [facturen, searchQuery, filterStatus, sortField, sortDir])
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1) }, [searchQuery, filterStatus, sortField, sortDir])
+
+  const totalPages = Math.ceil(filteredFacturen.length / PAGE_SIZE)
+  const paginatedFacturen = useMemo(
+    () => filteredFacturen.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredFacturen, currentPage]
+  )
 
   const goedgekeurdeOffertes = useMemo(() => {
     return offertes.filter((o) => o.status === 'goedgekeurd')
@@ -1410,7 +1422,7 @@ export function FacturenLayout() {
         {filteredFacturen.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">Geen facturen gevonden</p>
         )}
-        {filteredFacturen.map((factuur) => {
+        {paginatedFacturen.map((factuur) => {
           const config = STATUS_CONFIG[factuur.status]
           const isOverdue = factuur.status === 'verzonden' && new Date(factuur.vervaldatum) < new Date()
           const openstaand = factuur.totaal - factuur.betaald_bedrag
@@ -1506,7 +1518,7 @@ export function FacturenLayout() {
                   </td>
                 </tr>
               )}
-              {filteredFacturen.map((factuur) => {
+              {paginatedFacturen.map((factuur) => {
                 const config = STATUS_CONFIG[factuur.status]
                 const isOverdue =
                   factuur.status === 'verzonden' &&
@@ -1708,6 +1720,15 @@ export function FacturenLayout() {
           </table>
         </div>
       </div>
+
+      {/* Paginatie */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredFacturen.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
 
       {/* ── View Factuur Dialog ────────────────────────────────────── */}
       <Dialog open={!!viewingFactuur} onOpenChange={(open) => !open && setViewingFactuur(null)}>
