@@ -295,15 +295,18 @@ export function ClientsLayout() {
     <div className="space-y-6 mod-strip mod-strip-klanten">
       {/* Page header */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <h1 className="page-title text-foreground truncate">
-            Klanten
-          </h1>
-          <Badge variant="secondary" className="text-sm font-medium font-mono flex-shrink-0">
-            {filteredKlanten.length}
-          </Badge>
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #8BAFD4, #6A8DB8)' }}>
+            <Users className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="page-title text-foreground truncate">Klanten</h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              {filteredKlanten.length} van {klanten.length} klanten
+            </p>
+          </div>
         </div>
-        <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} className="flex-shrink-0">
+        <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} className="flex-shrink-0 shadow-sm" size="sm">
           <UserPlus className="w-4 h-4 sm:mr-2" />
           <span className="hidden sm:inline">Nieuwe Klant</span>
         </Button>
