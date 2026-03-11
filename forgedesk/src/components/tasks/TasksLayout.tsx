@@ -33,6 +33,7 @@ import {
   Trash2,
   Loader2,
   CheckCircle2,
+  CheckSquare,
   Circle,
   ChevronLeft,
   ChevronRight,
@@ -510,6 +511,9 @@ export function TasksLayout() {
         {/* === TOP BAR === */}
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-3 border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #C4A882, #A88E66)' }}>
+              <CheckSquare className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            </div>
             <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate">{weekLabel}</h1>
             <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
               <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" onClick={() => setWeekOffset((w) => w - 1)}>

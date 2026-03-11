@@ -21,8 +21,19 @@ export function PlanningLayout() {
 
   return (
     <div className="h-full flex flex-col mod-strip mod-strip-planning">
-      {/* Modus schakelaar bovenaan */}
-      <div className="flex items-center justify-end px-4 py-2 border-b bg-background flex-shrink-0">
+      {/* Module header + modus schakelaar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b bg-background flex-shrink-0">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #7EB5A6, #5A9A88)' }}>
+            <Calendar className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="page-title text-foreground truncate">Planning</h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              Kalender en montageplanning
+            </p>
+          </div>
+        </div>
         <div className="inline-flex rounded-xl border border-black/[0.06] bg-muted p-0.5">
           <Button
             variant="ghost"
