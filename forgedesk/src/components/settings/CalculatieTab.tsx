@@ -952,7 +952,7 @@ function ProductenSection({
                         <th className="text-right px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-24">Inkoop</th>
                         <th className="text-right px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-24">Verkoop</th>
                         <th className="text-right px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Marge</th>
-                        <th className="text-center px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-16">Actief</th>
+                        <th className="text-center px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Actief</th>
                         <th className="w-20" />
                       </tr>
                     </thead>
@@ -1333,13 +1333,13 @@ function TemplatesSection({
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-background dark:bg-foreground/80/50 border-b border-border dark:border-border">
-                          <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[180px]">Product / Dienst</th>
-                          <th className="text-center px-2 py-2 font-medium text-muted-foreground w-16">Aantal</th>
-                          <th className="text-center px-2 py-2 font-medium text-muted-foreground w-16">Eenh.</th>
-                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-20">Inkoop</th>
-                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-20">Verkoop</th>
-                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-16">Marge</th>
-                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-20">Subtotaal</th>
+                          <th className="text-left px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label min-w-[180px]">Product / Dienst</th>
+                          <th className="text-center px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Aantal</th>
+                          <th className="text-center px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Eenh.</th>
+                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Inkoop</th>
+                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Verkoop</th>
+                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Marge</th>
+                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Subtotaal</th>
                           <th className="w-8" />
                         </tr>
                       </thead>

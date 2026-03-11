@@ -496,11 +496,11 @@ export function ForgieTab() {
                   <table className="w-full text-xs">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="text-left p-2">Datum</th>
-                        <th className="text-left p-2">Type</th>
-                        <th className="text-left p-2">Beschrijving</th>
-                        <th className="text-right p-2">Aantal</th>
-                        <th className="text-right p-2">Saldo</th>
+                        <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Datum</th>
+                        <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Type</th>
+                        <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Beschrijving</th>
+                        <th className="text-right p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Aantal</th>
+                        <th className="text-right p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Saldo</th>
                       </tr>
                     </thead>
                     <tbody>

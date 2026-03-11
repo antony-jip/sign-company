@@ -700,7 +700,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         {/* Bijlagen per item */}
         {Object.keys(bijlageUrls).length > 0 && (
           <div className="mx-10 mb-6 space-y-4">
-            <h4 className="text-sm font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label uppercase tracking-wider flex items-center gap-2">
+            <h4 className="font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
               Bijlagen
             </h4>
@@ -788,7 +788,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         <div className="mx-10 pb-10 space-y-6">
           {offerteData.notities && (
             <div>
-              <h4 className="text-sm font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label uppercase tracking-wider mb-2">
+              <h4 className="font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label mb-2">
                 Notities
               </h4>
               <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 leading-relaxed whitespace-pre-wrap">
@@ -799,7 +799,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
 
           {offerteData.voorwaarden && (
             <div className="bg-background dark:bg-foreground/80/30 rounded-lg p-4">
-              <h4 className="text-sm font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label uppercase tracking-wider mb-2">
+              <h4 className="font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label mb-2">
                 Voorwaarden
               </h4>
               <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 leading-relaxed whitespace-pre-wrap">
