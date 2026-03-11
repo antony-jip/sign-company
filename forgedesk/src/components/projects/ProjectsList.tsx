@@ -279,18 +279,18 @@ export function ProjectsList() {
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#7EB5A6' }}>
-            <FolderKanban className="h-4.5 w-4.5 text-white" />
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #7EB5A6, #5A9A88)' }}>
+            <FolderKanban className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="page-title text-foreground truncate">Projecten</h1>
-            <p className="text-xs text-muted-foreground">
+            <h1 className="text-xl font-bold tracking-tight text-foreground truncate">Projecten</h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
               {gefilterdeProjecten.length} van {projecten.length} projecten
             </p>
           </div>
         </div>
-        <Button asChild size="sm" className="flex-shrink-0">
+        <Button asChild size="sm" className="flex-shrink-0 shadow-sm">
           <Link to="/projecten/nieuw">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             <span className="hidden sm:inline">Nieuw project</span>
@@ -300,27 +300,27 @@ export function ProjectsList() {
       </div>
 
       {/* ── Quick stats ── */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
         {stats.actief > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
             <TrendingUp className="w-3 h-3" />
             {stats.actief} actief
           </div>
         )}
         {stats.teFactureren > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
             <Receipt className="w-3 h-3" />
             {stats.teFactureren} te factureren
           </div>
         )}
         {stats.overdue > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
             <AlertTriangle className="w-3 h-3" />
             {stats.overdue} verlopen
           </div>
         )}
         {stats.afgerond > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
             <CheckCircle2 className="w-3 h-3" />
             {stats.afgerond} afgerond
           </div>
@@ -350,10 +350,10 @@ export function ProjectsList() {
                 key={optie.value}
                 onClick={() => setStatusFilter(optie.value)}
                 className={cn(
-                  'px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
+                  'px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all duration-150',
                   statusFilter === optie.value
-                    ? 'bg-foreground text-background'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                    ? 'bg-foreground text-background shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                 )}
               >
                 {optie.label}
@@ -427,11 +427,11 @@ export function ProjectsList() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-xl border border-black/[0.06] bg-card overflow-hidden -mx-3 sm:mx-0">
+        <div className="rounded-xl border border-black/[0.06] bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0 shadow-sm">
           <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-muted/50">
+              <tr className="border-b border-border/60 bg-muted/30">
                 <th className="text-left py-2.5 px-4 w-[110px]">
                   <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
                 </th>
@@ -492,7 +492,10 @@ export function ProjectsList() {
                 return (
                   <tr
                     key={project.id}
-                    className={`border-b border-border/50 last:border-0 hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2 ${getStatusBorderColor(project.status)}`}
+                    className={cn(
+                      'border-b border-border/30 last:border-0 hover:bg-[#F4F3F0]/50 dark:hover:bg-muted/20 cursor-pointer transition-all duration-150 group border-l-2',
+                      getStatusBorderColor(project.status)
+                    )}
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
                     {/* Status */}
@@ -545,7 +548,7 @@ export function ProjectsList() {
                         <div className="min-w-0">
                           <Link
                             to={`/projecten/${project.id}`}
-                            className="text-sm font-medium text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
+                            className="text-[13px] font-semibold text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {project.naam}
@@ -556,9 +559,16 @@ export function ProjectsList() {
                             </p>
                           )}
                         </div>
-                        <Badge className={cn(getPriorityColor(project.prioriteit), 'text-[9px] px-1.5 py-0 flex-shrink-0')}>
+                        <span className={cn(
+                          'text-[9px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 uppercase tracking-wide',
+                          project.prioriteit === 'hoog' || project.prioriteit === 'urgent'
+                            ? 'text-red-600/70 bg-red-50 dark:text-red-400/70 dark:bg-red-950/20'
+                            : project.prioriteit === 'laag'
+                            ? 'text-muted-foreground/50 bg-muted/40'
+                            : 'text-muted-foreground/60 bg-muted/50'
+                        )}>
                           {project.prioriteit}
-                        </Badge>
+                        </span>
                         {isOverdue && (
                           <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[9px] px-1.5 py-0 flex-shrink-0">
                             Verlopen
@@ -569,7 +579,7 @@ export function ProjectsList() {
 
                     {/* Klant */}
                     <td className="py-3 px-4 hidden lg:table-cell">
-                      <span className="text-sm text-foreground">{klantNaam}</span>
+                      <span className="text-[13px] text-foreground">{klantNaam}</span>
                       {project.vestiging_naam && (
                         <p className="text-[11px] text-muted-foreground mt-0.5">{project.vestiging_naam}</p>
                       )}
@@ -607,7 +617,7 @@ export function ProjectsList() {
                       {(() => {
                         const bedrag = getProjectBedrag(project.id)
                         return bedrag > 0 ? (
-                          <span className="text-xs font-medium font-mono text-foreground tabular-nums">
+                          <span className="text-sm font-semibold text-foreground tabular-nums">
                             {formatCurrency(bedrag)}
                           </span>
                         ) : (
@@ -618,7 +628,7 @@ export function ProjectsList() {
 
                     {/* Datum */}
                     <td className="py-3 px-4 text-right hidden lg:table-cell">
-                      <span className="text-xs font-mono text-muted-foreground tabular-nums">
+                      <span className="text-[12px] text-muted-foreground tabular-nums">
                         {formatDate(project.created_at)}
                       </span>
                     </td>
