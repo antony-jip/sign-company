@@ -1989,9 +1989,9 @@ export function QuoteCreation() {
   // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
-    <div className="pb-12">
+    <div className="pb-12 mod-strip mod-strip-offertes">
       {/* ──── HEADER BAR ──── */}
-      <div className="rounded-xl bg-gradient-to-br from-primary/5 via-accent/5 to-transparent dark:from-primary/10 dark:via-accent/10 border border-primary/10 dark:border-primary/20 px-6 py-4 mb-6">
+      <div className="rounded-xl bg-gradient-to-br from-[#9B8EC4]/8 via-[#9B8EC4]/4 to-transparent dark:from-[#9B8EC4]/12 dark:via-[#9B8EC4]/6 border border-[#9B8EC4]/12 dark:border-[#9B8EC4]/20 px-6 py-4 mb-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Back + Title + Badges */}
           <div className="flex items-center gap-3 min-w-0">

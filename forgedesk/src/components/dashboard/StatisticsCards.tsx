@@ -83,41 +83,41 @@ export function StatisticsCards() {
       value: formatCurrency(openstaandeFacturen),
       change: vervallenCount > 0 ? `${vervallenCount} vervallen` : undefined,
       changeDown: vervallenCount > 0,
-      bgColor: 'bg-blush dark:bg-blush/15',
+      gradient: 'stat-card-gradient-blush',
     },
     {
       title: 'Actieve projecten',
       value: animProjecten.toString(),
       change: `${projecten.length} totaal`,
-      bgColor: 'bg-sage dark:bg-sage/15',
+      gradient: 'stat-card-gradient-sage',
     },
     {
       title: 'Offertes verstuurd',
       value: animOffertes.toString(),
       change: `${offertes.length} totaal`,
-      bgColor: 'bg-mist dark:bg-mist/15',
+      gradient: 'stat-card-gradient-mist',
     },
     {
       title: 'Hit rate',
       value: `${animHitRate}%`,
       change: `${goedgekeurd} goedgekeurd`,
-      bgColor: 'bg-cream dark:bg-cream/15',
+      gradient: 'stat-card-gradient-cream',
     },
   ]
 
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 stat-cards-stagger">
       {stats.map((stat) => (
-        <div key={stat.title} className={`${stat.bgColor} rounded-xl p-[22px] cursor-default group stat-card-hover relative overflow-hidden`}>
+        <div key={stat.title} className={`${stat.gradient} rounded-xl p-[22px] cursor-default group stat-card-hover stat-card-glow relative overflow-hidden border border-black/[0.04] dark:border-white/[0.06]`}>
           <Sparkline />
-          <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] mb-1.5 relative z-[1]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8a8680] dark:text-[#a0a0a0] mb-2 relative z-[1]">
             {stat.title}
           </p>
-          <p className="text-[28px] sm:text-[32px] font-extrabold tracking-[-0.03em] font-mono tabular-nums leading-none text-foreground relative z-[1]">
+          <p className="display-number display-number-xl text-foreground relative z-[1]">
             {stat.value}
           </p>
           {stat.change && (
-            <p className={`text-[12px] font-medium mt-2 relative z-[1] ${stat.changeDown ? 'text-destructive' : 'text-[#5A8264] dark:text-[#7AAF85]'}`}>
+            <p className={`text-[12px] font-semibold mt-3 relative z-[1] ${stat.changeDown ? 'text-destructive' : 'text-[#5A8264] dark:text-[#7AAF85]'}`}>
               {stat.changeDown ? '↓' : '↑'} {stat.change}
             </p>
           )}

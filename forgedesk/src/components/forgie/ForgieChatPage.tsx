@@ -93,7 +93,7 @@ export function ForgieChatPage() {
   const showSuggestions = messages.length === 0 && !loading
 
   return (
-    <div className="flex flex-col h-[calc(100vh-5rem)] max-w-3xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-5rem)] max-w-3xl mx-auto mod-strip mod-strip-forgie">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 flex-shrink-0">
         <div className="flex items-center gap-3">

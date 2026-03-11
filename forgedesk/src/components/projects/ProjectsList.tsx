@@ -261,7 +261,7 @@ export function ProjectsList() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in-up">
+    <div className="space-y-5 animate-fade-in-up mod-strip mod-strip-projecten">
       {/* Hidden photo input for quick upload */}
       <input
         ref={photoInputRef}
@@ -284,7 +284,7 @@ export function ProjectsList() {
             <FolderKanban className="h-4.5 w-4.5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-extrabold tracking-[-0.03em] text-foreground truncate">Projecten</h1>
+            <h1 className="page-title text-foreground truncate">Projecten</h1>
             <p className="text-xs text-muted-foreground">
               {gefilterdeProjecten.length} van {projecten.length} projecten
             </p>

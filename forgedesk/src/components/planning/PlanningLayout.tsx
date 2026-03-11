@@ -20,7 +20,7 @@ export function PlanningLayout() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col mod-strip mod-strip-planning">
       {/* Modus schakelaar bovenaan */}
       <div className="flex items-center justify-end px-4 py-2 border-b bg-background flex-shrink-0">
         <div className="inline-flex rounded-xl border border-black/[0.06] bg-muted p-0.5">

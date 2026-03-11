@@ -33,6 +33,13 @@ import {
   getKlanten, getProjecten, getOffertes,
 } from '@/services/supabaseService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
+import { downloadFile } from '@/services/storageService'
+
+// Resolve a URL: if it's a storage path, convert to public URL
+async function resolveUrl(url: string): Promise<string> {
+  if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
+  try { return await downloadFile(url) } catch { return url }
+}
 
 // Resize image voor localStorage limiet
 function resizeImage(file: File, maxWidth: number): Promise<Blob> {
@@ -165,6 +172,15 @@ export function WerkbonDetail() {
             getWerkbonFotos(wb.id),
           ])
           if (cancelled) return
+          // Resolve storage paths in afbeeldingen & fotos naar displayable URLs
+          for (const item of wbItems) {
+            for (const afb of item.afbeeldingen) {
+              afb.url = await resolveUrl(afb.url)
+            }
+          }
+          for (const foto of wbFotos) {
+            foto.url = await resolveUrl(foto.url)
+          }
           setWerkbonItems(wbItems)
           setFotos(wbFotos)
         }

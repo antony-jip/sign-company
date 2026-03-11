@@ -506,7 +506,7 @@ export function TasksLayout() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-120px)]">
+      <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
         {/* === TOP BAR === */}
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-3 border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">

@@ -451,7 +451,7 @@ export function EmailLayout() {
   // ═════════════════════════════════════════════════════════════════
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col mod-strip mod-strip-email">
       {/* ── Top Tab Bar ── */}
       <div className="flex items-center gap-1 mb-4 overflow-x-auto scrollbar-hide">
         {([
