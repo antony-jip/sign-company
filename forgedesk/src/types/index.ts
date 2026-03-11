@@ -1465,7 +1465,7 @@ export interface InkoopRegel {
 
 export type DocumentTemplateId = 'klassiek' | 'modern' | 'minimaal' | 'industrieel';
 export type LogoPositie = 'links' | 'rechts' | 'midden';
-export type BriefpapierModus = 'geen' | 'achtergrond' | 'alleen_eerste_pagina';
+export type BriefpapierModus = 'geen' | 'achtergrond' | 'alleen_eerste_pagina' | 'eerste_en_vervolg';
 
 // ============ SIGNING VISUALIZER ============
 
@@ -1496,6 +1496,7 @@ export interface DocumentStyle {
   // Briefpapier
   briefpapier_url: string;
   briefpapier_modus: BriefpapierModus;
+  vervolgpapier_url: string;
   // Header / Footer
   toon_header: boolean;
   toon_footer: boolean;

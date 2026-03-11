@@ -159,6 +159,7 @@ export function getDefaultDocumentStyle(userId: string): DocumentStyle {
     logo_grootte: modern.defaults.logo_grootte!,
     briefpapier_url: '',
     briefpapier_modus: 'geen',
+    vervolgpapier_url: '',
     toon_header: true,
     toon_footer: true,
     footer_tekst: '',

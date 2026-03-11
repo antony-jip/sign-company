@@ -3812,6 +3812,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
       logo_grootte: 100,
       briefpapier_url: '',
       briefpapier_modus: 'geen',
+      vervolgpapier_url: '',
       toon_header: true,
       toon_footer: true,
       footer_tekst: '',
@@ -3835,6 +3836,29 @@ export async function uploadBriefpapier(userId: string, file: File): Promise<str
   if (isSupabaseConfigured() && supabase) {
     const ext = file.name.split('.').pop() || 'png'
     const path = `${userId}/briefpapier_${Date.now()}.${ext}`
+    const { error } = await supabase.storage
+      .from('briefpapier')
+      .upload(path, file, { upsert: true })
+    if (error) throw error
+    const { data: urlData } = supabase.storage
+      .from('briefpapier')
+      .getPublicUrl(path)
+    return urlData.publicUrl
+  }
+  // localStorage fallback: store as data URL
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+export async function uploadVervolgpapier(userId: string, file: File): Promise<string> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const ext = file.name.split('.').pop() || 'png'
+    const path = `${userId}/vervolgpapier_${Date.now()}.${ext}`
     const { error } = await supabase.storage
       .from('briefpapier')
       .upload(path, file, { upsert: true })
