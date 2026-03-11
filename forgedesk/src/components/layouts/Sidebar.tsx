@@ -193,35 +193,39 @@ export function Sidebar() {
       <NavLink
         to={item.path}
         className={cn(
-          'flex items-center gap-2.5 py-[7px] px-[10px] rounded-[10px] text-[13px] font-medium transition-all duration-200 relative group',
+          'flex items-center gap-2.5 py-[8px] px-[10px] rounded-[10px] text-[13px] font-medium transition-all duration-200 relative group',
           isActive
-            ? 'bg-background font-semibold text-foreground'
-            : 'text-muted-foreground hover:bg-background hover:text-foreground',
+            ? 'font-semibold text-foreground'
+            : 'text-muted-foreground hover:bg-background/80 hover:text-foreground',
           isCollapsed && 'justify-center px-2',
           isForgie && !isActive && 'sidebar-forgie mx-1 my-0.5'
         )}
+        style={isActive ? {
+          background: `${modColor}0C`,
+          boxShadow: `inset 0 0 0 1px ${modColor}15`,
+        } : undefined}
       >
         {isActive && (
           <div
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[16px] rounded-r-[3px] transition-all duration-300"
-            style={{ background: modColor, boxShadow: `0 0 8px ${modColor}40` }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-[3px] transition-all duration-300"
+            style={{ background: modColor, boxShadow: `0 0 12px ${modColor}50` }}
           />
         )}
         <div
           className={cn(
-            'w-[26px] h-[26px] rounded-[7px] flex items-center justify-center flex-shrink-0 transition-all duration-200',
-            isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-80'
+            'w-[28px] h-[28px] rounded-[8px] flex items-center justify-center flex-shrink-0 transition-all duration-200',
+            isActive ? 'opacity-100' : 'opacity-50 group-hover:opacity-75'
           )}
           style={{
-            background: isActive ? `${modColor}18` : 'transparent',
-            boxShadow: isActive ? `0 0 10px ${modColor}12` : 'none',
+            background: isActive ? `${modColor}20` : 'transparent',
+            boxShadow: isActive ? `0 0 16px ${modColor}18` : 'none',
           }}
         >
           <Icon className="w-[15px] h-[15px]" style={isActive ? { color: modColor } : undefined} />
         </div>
         {!isCollapsed && <span className="truncate">{item.label}</span>}
         {isForgie && !isCollapsed && (
-          <span className="ml-auto text-[9px] font-bold uppercase tracking-[0.06em] text-[#9B8EC4] bg-[#9B8EC4]/10 px-1.5 py-0.5 rounded-full">AI</span>
+          <span className="ml-auto text-[9px] font-bold uppercase tracking-[0.06em] text-[#9B8EC4] bg-[#9B8EC4]/12 px-1.5 py-0.5 rounded-full">AI</span>
         )}
       </NavLink>
     )
@@ -245,19 +249,16 @@ export function Sidebar() {
       {/* Logo */}
       <div
         className={cn(
-          'flex items-center h-16 px-4 border-b border-border/50 flex-shrink-0',
-          isCollapsed ? 'justify-center' : 'gap-[9px]'
+          'flex items-center h-16 px-4 flex-shrink-0',
+          isCollapsed ? 'justify-center' : 'gap-[10px]'
         )}
       >
-        <div
-          className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center flex-shrink-0 font-extrabold text-[13px] text-white hover:scale-[1.08] hover:rotate-[-3deg] transition-transform shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
-          style={{ background: '#1A1A1A' }}
-        >
+        <div className="sidebar-logo-mark">
           F
         </div>
         {!isCollapsed && (
-          <span className="text-[15px] font-bold tracking-[-0.03em]">
-            Forge<span className="font-normal text-muted-foreground">desk</span>
+          <span className="text-[16px] font-extrabold tracking-[-0.04em]">
+            FORGE<span className="font-medium text-muted-foreground">desk</span>
           </span>
         )}
       </div>
