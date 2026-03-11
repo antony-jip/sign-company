@@ -30,6 +30,7 @@ import {
   getProject,
   getProfile,
 } from '@/services/supabaseService'
+import { downloadFile } from '@/services/storageService'
 import type { TekeningGoedkeuring, Document, Offerte, OfferteItem, Klant, Project, Profile } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
@@ -98,6 +99,7 @@ export function ClientApprovalPage() {
   const [activeTab, setActiveTab] = useState<'tekeningen' | 'offerte'>('tekeningen')
   const [showBericht, setShowBericht] = useState(false)
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
+  const [docUrls, setDocUrls] = useState<Record<string, string>>({})
   const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
@@ -127,7 +129,19 @@ export function ClientApprovalPage() {
 
         // Fetch related data
         const allDocs = await getDocumenten()
-        setDocumenten(allDocs.filter(d => gk.document_ids.includes(d.id)))
+        const filteredDocs = allDocs.filter(d => gk.document_ids.includes(d.id))
+        setDocumenten(filteredDocs)
+
+        // Resolve storage paths to public URLs
+        const urls: Record<string, string> = {}
+        for (const doc of filteredDocs) {
+          if (doc.storage_path) {
+            try {
+              urls[doc.id] = await downloadFile(doc.storage_path)
+            } catch { /* ignore */ }
+          }
+        }
+        setDocUrls(urls)
 
         const [klantData, projectData] = await Promise.all([
           getKlant(gk.klant_id),
@@ -164,11 +178,20 @@ export function ClientApprovalPage() {
     }
     setIsSubmitting(true)
     try {
-      await updateTekeningGoedkeuringByToken(token, {
-        status: 'goedgekeurd',
-        goedgekeurd_door: goedgekeurdDoor.trim(),
-        goedgekeurd_op: new Date().toISOString(),
+      const apiBase = import.meta.env.VITE_APP_URL || (import.meta.env.VITE_VERCEL_URL ? `https://${import.meta.env.VITE_VERCEL_URL}` : '')
+      const response = await fetch(`${apiBase}/api/goedkeuring-reactie`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          status: 'goedgekeurd',
+          goedgekeurd_door: goedgekeurdDoor.trim(),
+        }),
       })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || 'Fout bij goedkeuren')
+      }
       setGoedkeuring(prev => prev ? {
         ...prev,
         status: 'goedgekeurd',
@@ -192,10 +215,20 @@ export function ClientApprovalPage() {
     }
     setIsSubmitting(true)
     try {
-      await updateTekeningGoedkeuringByToken(token, {
-        status: 'revisie',
-        revisie_opmerkingen: revisieOpmerkingen.trim(),
+      const apiBase = import.meta.env.VITE_APP_URL || (import.meta.env.VITE_VERCEL_URL ? `https://${import.meta.env.VITE_VERCEL_URL}` : '')
+      const response = await fetch(`${apiBase}/api/goedkeuring-reactie`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          status: 'revisie',
+          revisie_opmerkingen: revisieOpmerkingen.trim(),
+        }),
       })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || 'Fout bij revisie aanvragen')
+      }
       setGoedkeuring(prev => prev ? {
         ...prev,
         status: 'revisie',
@@ -287,12 +320,19 @@ export function ClientApprovalPage() {
               <div className="px-4 py-3 border-b border-border">
                 <p className="font-medium text-foreground text-sm">{previewDoc.naam}</p>
               </div>
-              {isImageType(previewDoc.type) ? (
+              {isImageType(previewDoc.type) && docUrls[previewDoc.id] ? (
+                <div className="bg-background p-4 flex items-center justify-center min-h-[300px]">
+                  <img
+                    src={docUrls[previewDoc.id]}
+                    alt={previewDoc.naam}
+                    className="max-w-full max-h-[70vh] object-contain"
+                  />
+                </div>
+              ) : isImageType(previewDoc.type) ? (
                 <div className="bg-background p-4 flex items-center justify-center min-h-[300px]">
                   <div className="text-center">
-                    <FileImage className="h-20 w-20 text-primary/50 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">Afbeelding preview</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">{previewDoc.naam} ({formatFileSize(previewDoc.grootte)})</p>
+                    <div className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">Afbeelding laden...</p>
                   </div>
                 </div>
               ) : (
