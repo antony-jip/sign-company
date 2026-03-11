@@ -45,10 +45,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-    // Valideer token
+    // Valideer token — haal ook user_id en project_id op voor notificaties
     const { data: portaal } = await supabaseAdmin
       .from('project_portalen')
-      .select('id, actief, verloopt_op')
+      .select('id, user_id, project_id, actief, verloopt_op')
       .eq('token', token)
       .single()
 
@@ -66,13 +66,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Update bekeken_op voor items (alleen waar bekeken_op IS NULL)
     if (item_ids && item_ids.length > 0) {
-      // Batch update: zet bekeken_op voor alle opgegeven items die nog niet bekeken zijn
+      // Haal items op die nog NIET bekeken zijn (voor notificatie)
+      const { data: onbekekenItems } = await supabaseAdmin
+        .from('portaal_items')
+        .select('id, titel')
+        .eq('portaal_id', portaal.id)
+        .in('id', item_ids)
+        .is('bekeken_op', null)
+
+      // Batch update: zet bekeken_op
       await supabaseAdmin
         .from('portaal_items')
         .update({ bekeken_op: now })
         .eq('portaal_id', portaal.id)
         .in('id', item_ids)
         .is('bekeken_op', null)
+
+      // Maak notificatie aan voor nieuw-bekeken items
+      if (onbekekenItems && onbekekenItems.length > 0) {
+        try {
+          const { data: project } = await supabaseAdmin
+            .from('projecten')
+            .select('naam, klant_id')
+            .eq('id', portaal.project_id)
+            .single()
+
+          const itemTitels = onbekekenItems.map((i: { titel: string }) => i.titel).join(', ')
+
+          await supabaseAdmin.from('notificaties').insert({
+            user_id: portaal.user_id,
+            type: 'portaal_bekeken',
+            titel: `Klant heeft ${onbekekenItems.length === 1 ? 'een item' : `${onbekekenItems.length} items`} bekeken`,
+            bericht: `${itemTitels} — ${project?.naam || 'Project'}`,
+            link: `/projecten/${portaal.project_id}`,
+            project_id: portaal.project_id,
+            klant_id: project?.klant_id || null,
+            gelezen: false,
+          })
+        } catch (notifError) {
+          console.error('portaal-bekeken notificatie error:', notifError)
+        }
+      }
     }
 
     return res.status(200).json({ success: true })

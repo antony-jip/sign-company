@@ -2090,6 +2090,16 @@ export async function markAlleNotificatiesGelezen(): Promise<void> {
   setLocalData('notificaties', items)
 }
 
+export async function deleteNotificatie(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    await supabase.from('notificaties').delete().eq('id', id)
+    return
+  }
+  const items = getLocalData<Notificatie>('notificaties')
+  setLocalData('notificaties', items.filter((n) => n.id !== id))
+}
+
 // ============ MONTAGE PLANNING ============
 
 export async function getMontageAfspraken(): Promise<MontageAfspraak[]> {
