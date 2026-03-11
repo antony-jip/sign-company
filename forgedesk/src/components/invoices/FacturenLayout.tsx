@@ -82,6 +82,7 @@ import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 // ============ TYPES ============
 
@@ -1206,9 +1207,9 @@ export function FacturenLayout() {
   }
 
   return (
-    <div className="space-y-6 mod-strip mod-strip-facturen">
-      {/* ── Header ────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="h-full flex flex-col mod-strip mod-strip-facturen">
+      {/* ── Header bar ────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #E8866A, #C4604A)' }}>
             <Receipt className="h-5 w-5 text-white" />
@@ -1257,6 +1258,10 @@ export function FacturenLayout() {
           </Button>
         </div>
       </div>
+
+      {/* ── Content ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="space-y-6 p-4 sm:p-6">
 
       {/* ── Statistics ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stat-cards-stagger">
@@ -1426,21 +1431,17 @@ export function FacturenLayout() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50">
+            <tbody className="divide-y divide-border/50 row-stagger">
               {filteredFacturen.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-4 py-16 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                        <Receipt className="h-7 w-7 text-primary/30" />
-                      </div>
-                      <p className="text-sm font-medium text-foreground">Nog geen facturen</p>
-                      <p className="text-xs text-muted-foreground">
-                        {searchQuery || filterStatus !== 'alle'
-                          ? 'Probeer een ander filter of zoekterm.'
-                          : 'Keur een offerte goed en factureer je eerste sign-opdracht.'}
-                      </p>
-                    </div>
+                  <td colSpan={11}>
+                    <EmptyState
+                      module="facturen"
+                      title="Nog geen facturen"
+                      description={searchQuery || filterStatus !== 'alle'
+                        ? 'Probeer een ander filter of zoekterm.'
+                        : 'Keur een offerte goed en factureer je eerste sign-opdracht.'}
+                    />
                   </td>
                 </tr>
               )}
@@ -2405,6 +2406,8 @@ export function FacturenLayout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
+      </div>
     </div>
   )
 }

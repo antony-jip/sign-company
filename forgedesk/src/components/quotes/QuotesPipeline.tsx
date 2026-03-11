@@ -642,9 +642,9 @@ export function QuotesPipeline() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in-up mod-strip mod-strip-offertes">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3">
+    <div className="h-full flex flex-col animate-fade-in-up mod-strip mod-strip-offertes">
+      {/* ── Header bar ── */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #9B8EC4, #7A6BAA)' }}>
             <FileText className="h-5 w-5 text-white" />
@@ -664,6 +664,10 @@ export function QuotesPipeline() {
           </Link>
         </Button>
       </div>
+
+      {/* ── Content ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="space-y-5 p-4 sm:p-6">
 
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -704,7 +708,7 @@ export function QuotesPipeline() {
 
           <div className="flex items-center gap-1 flex-shrink-0">
             {/* View toggle */}
-            <div className="flex items-center bg-muted/60 rounded-md p-0.5 mr-1">
+            <div className="flex items-center bg-muted/60 rounded-lg p-0.5 mr-1">
               <button
                 onClick={() => setViewMode('lijst')}
                 className={cn(
@@ -793,7 +797,7 @@ export function QuotesPipeline() {
                 key={optie.value}
                 onClick={() => setStatusFilter(optie.value as StatusFilter)}
                 className={cn(
-                  'px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
+                  'px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
                   statusFilter === optie.value
                     ? 'bg-foreground text-background'
                     : 'bg-muted/60 text-muted-foreground hover:bg-muted'
@@ -1309,7 +1313,7 @@ export function QuotesPipeline() {
                     <th className="w-10 py-2.5 px-2" />
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="row-stagger">
                   {sortedListOffertes.map((offerte) => {
                     const expiryStatus = getExpiryStatus(offerte.geldig_tot)
 
@@ -1495,6 +1499,8 @@ export function QuotesPipeline() {
           )}
         </>
       )}
+      </div>
+      </div>
     </div>
   )
 }

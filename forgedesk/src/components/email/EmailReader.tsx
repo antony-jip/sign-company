@@ -750,7 +750,7 @@ export function EmailReader({
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
             placeholder="Voeg een interne notitie toe (niet zichtbaar voor de afzender)..."
-            className="w-full min-h-[60px] px-3 py-2 text-sm border rounded-md bg-background resize-none focus:outline-none focus:ring-1 focus:ring-amber-400"
+            className="w-full min-h-[60px] px-3 py-2 text-sm border rounded-lg bg-background resize-none focus:outline-none focus:ring-1 focus:ring-amber-400"
             rows={2}
           />
           <div className="flex items-center justify-end gap-2 mt-2">
@@ -773,7 +773,7 @@ export function EmailReader({
             <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Follow-up herinnering</span>
           </div>
           {email.follow_up_at && (
-            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300">
+            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-sm text-blue-700 dark:text-blue-300">
               <Bell className="w-3.5 h-3.5" />
               Herinnering op {formatDateTime(email.follow_up_at)}
               <button onClick={handleClearFollowUp} className="ml-auto text-blue-500 hover:text-blue-700 underline text-xs">
@@ -1137,7 +1137,7 @@ export function EmailReader({
                   <ChevronDown className="w-3 h-3 text-muted-foreground" />
                 </button>
                 {showReplyModeDropdown && (
-                  <div className="absolute left-0 top-full mt-1 w-56 rounded-md border bg-popover p-1 shadow-lg z-50">
+                  <div className="absolute left-0 top-full mt-1 w-56 rounded-lg border bg-popover p-1 shadow-lg z-50">
                     <button
                       onClick={() => { setReplyMode('reply'); setShowReplyModeDropdown(false) }}
                       className={cn('w-full text-left px-3 py-2 text-sm rounded hover:bg-accent flex items-center gap-2', replyMode === 'reply' && 'bg-accent')}
@@ -1189,7 +1189,7 @@ export function EmailReader({
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 {showTemplates && (
-                  <div className="absolute left-0 top-full mt-1 w-64 rounded-md border bg-popover p-1 shadow-lg z-50">
+                  <div className="absolute left-0 top-full mt-1 w-64 rounded-lg border bg-popover p-1 shadow-lg z-50">
                     {replyTemplates.map(t => (
                       <button
                         key={t.id}
@@ -1218,7 +1218,7 @@ export function EmailReader({
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 {showMergeFields && (
-                  <div className="absolute left-0 top-full mt-1 w-52 rounded-md border bg-popover p-1 shadow-lg z-50">
+                  <div className="absolute left-0 top-full mt-1 w-52 rounded-lg border bg-popover p-1 shadow-lg z-50">
                     {mergeFields.map(f => (
                       <button
                         key={f.id}
@@ -1264,7 +1264,7 @@ export function EmailReader({
               <div className="px-3 py-2 border-t bg-muted/10">
                 <div className="flex flex-wrap gap-2">
                   {attachments.map((file, i) => (
-                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-muted rounded-md text-xs group/file">
+                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-muted rounded-lg text-xs group/file">
                       <div className={`w-6 h-6 rounded flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0 ${getFileTypeColor(file.name)}`}>
                         {getFileExt(file.name)}
                       </div>
@@ -1407,32 +1407,32 @@ export function EmailReader({
                   </div>
 
                   {showSchedule && (
-                    <div className="absolute right-0 bottom-full mb-2 w-72 rounded-md border bg-popover p-2 shadow-lg z-50">
+                    <div className="absolute right-0 bottom-full mb-2 w-72 rounded-lg border bg-popover p-2 shadow-lg z-50">
                       <div className="space-y-1">
                         <button
                           type="button"
-                          className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'now' && 'bg-accent font-medium')}
+                          className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'now' && 'bg-accent font-medium')}
                           onClick={() => handleScheduleSelect('now')}
                         >
                           <div className="flex items-center gap-2"><Send className="w-4 h-4" /> Nu verzenden</div>
                         </button>
                         <button
                           type="button"
-                          className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'tomorrow-9' && 'bg-accent font-medium')}
+                          className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'tomorrow-9' && 'bg-accent font-medium')}
                           onClick={() => handleScheduleSelect('tomorrow-9')}
                         >
                           <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 09:00</div>
                         </button>
                         <button
                           type="button"
-                          className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'tomorrow-14' && 'bg-accent font-medium')}
+                          className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'tomorrow-14' && 'bg-accent font-medium')}
                           onClick={() => handleScheduleSelect('tomorrow-14')}
                         >
                           <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 14:00</div>
                         </button>
                         <button
                           type="button"
-                          className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'next-monday' && 'bg-accent font-medium')}
+                          className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'next-monday' && 'bg-accent font-medium')}
                           onClick={() => handleScheduleSelect('next-monday')}
                         >
                           <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Volgende maandag 09:00</div>
@@ -1442,7 +1442,7 @@ export function EmailReader({
 
                         <button
                           type="button"
-                          className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'custom' && 'bg-accent font-medium')}
+                          className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'custom' && 'bg-accent font-medium')}
                           onClick={() => handleScheduleSelect('custom')}
                         >
                           <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Aangepaste datum/tijd</div>

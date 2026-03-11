@@ -581,7 +581,7 @@ export function CalendarLayout() {
         <div
           key={afspraak.id}
           className={cn(
-            'absolute rounded-md border cursor-pointer transition-all hover:shadow-md hover:z-20 overflow-hidden',
+            'absolute rounded-lg border cursor-pointer transition-all hover:shadow-md hover:z-20 overflow-hidden',
             cfg.bgColor,
             cfg.borderColor
           )}
@@ -767,7 +767,7 @@ export function CalendarLayout() {
                     <button
                       onClick={() => setActiveMedewerker(null)}
                       className={cn(
-                        'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
                         !activeMedewerker
                           ? 'bg-card text-foreground shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
@@ -783,7 +783,7 @@ export function CalendarLayout() {
                           key={mw.id}
                           onClick={() => switchMedewerker(mw.id)}
                           className={cn(
-                            'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
                             isActive
                               ? 'bg-card text-foreground shadow-sm'
                               : 'text-muted-foreground hover:text-foreground'
@@ -986,7 +986,7 @@ export function CalendarLayout() {
                       key={i}
                       onClick={() => setCurrentDate(day)}
                       className={cn(
-                        'relative w-full aspect-square flex flex-col items-center justify-center text-[11px] rounded-md transition-colors',
+                        'relative w-full aspect-square flex flex-col items-center justify-center text-[11px] rounded-lg transition-colors',
                         !isCurrentMonth && 'text-muted-foreground/40',
                         isCurrentMonth && 'text-foreground',
                         isTodayDate && 'bg-primary text-white font-bold',
@@ -1268,7 +1268,7 @@ export function CalendarLayout() {
                       <label
                         key={mw.id}
                         className={cn(
-                          'flex items-center gap-2.5 p-1.5 rounded-md cursor-pointer transition-colors',
+                          'flex items-center gap-2.5 p-1.5 rounded-lg cursor-pointer transition-colors',
                           isChecked
                             ? 'bg-primary/10'
                             : 'hover:bg-background dark:hover:bg-foreground/80'

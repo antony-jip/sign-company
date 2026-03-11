@@ -163,7 +163,7 @@ export function WeekView({ currentDate, selectedDate, events, onSelectDate }: We
                     <div
                       key={event.id}
                       className={cn(
-                        'absolute left-0.5 right-1 rounded-md px-2 py-1 border-l-3 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity z-10',
+                        'absolute left-0.5 right-1 rounded-lg px-2 py-1 border-l-3 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity z-10',
                         getEventColor(event.type)
                       )}
                       style={{ top, height, borderLeftWidth: 3 }}

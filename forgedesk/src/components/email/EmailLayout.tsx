@@ -452,8 +452,23 @@ export function EmailLayout() {
 
   return (
     <div className="h-full flex flex-col mod-strip mod-strip-email">
+      {/* ── Header bar ── */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #8BAFD4, #6A8DB8)' }}>
+            <Mail className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="page-title text-foreground truncate">Email</h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              Klantcommunicatie
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* ── Top Tab Bar ── */}
-      <div className="flex items-center gap-1 mb-4 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-1 px-4 sm:px-6 py-2 overflow-x-auto scrollbar-hide border-b border-border/20">
         {([
           { id: 'email' as EmailTab, label: 'Email', icon: Mail },
           { id: 'gedeelde-inbox' as EmailTab, label: 'Team Inbox', icon: Users },

@@ -1068,7 +1068,7 @@ export function FactuurEditor() {
                         key={klant.id}
                         onClick={() => handleSelectKlant(klant.id)}
                         className={cn(
-                          'w-full text-left px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors',
+                          'w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors',
                           klant.id === klantId && 'bg-accent'
                         )}
                       >
@@ -1171,7 +1171,7 @@ export function FactuurEditor() {
                 </div>
               </div>
               {offerteId && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 rounded-md px-3 py-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2">
                   <Receipt className="h-3 w-3" />
                   Vanuit offerte geimporteerd
                 </div>
@@ -1269,7 +1269,7 @@ export function FactuurEditor() {
                       }}
                       disabled={isHuidige}
                       className={cn(
-                        'w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 group',
+                        'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 group',
                         isHuidige
                           ? 'bg-primary/10 border border-primary/30 cursor-default'
                           : 'hover:bg-accent cursor-pointer'
@@ -1349,7 +1349,7 @@ export function FactuurEditor() {
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className="grid grid-cols-1 md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 p-2 rounded-md border bg-card hover:bg-accent/30 transition-colors"
+                    className="grid grid-cols-1 md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 p-2 rounded-lg border bg-card hover:bg-accent/30 transition-colors"
                   >
                     <Input
                       value={item.beschrijving}
@@ -1617,7 +1617,7 @@ export function FactuurEditor() {
             {herinneringPreview && (
               <div>
                 <Label className="text-sm">Voorbeeld</Label>
-                <div className="mt-1 p-3 rounded-md bg-muted/50 text-xs whitespace-pre-wrap max-h-40 overflow-y-auto">
+                <div className="mt-1 p-3 rounded-lg bg-muted/50 text-xs whitespace-pre-wrap max-h-40 overflow-y-auto">
                   {herinneringPreview}
                 </div>
               </div>

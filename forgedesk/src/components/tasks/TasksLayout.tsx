@@ -33,6 +33,7 @@ import {
   Trash2,
   Loader2,
   CheckCircle2,
+  CheckSquare,
   Circle,
   ChevronLeft,
   ChevronRight,
@@ -507,35 +508,50 @@ export function TasksLayout() {
   return (
     <>
       <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
-        {/* === TOP BAR === */}
-        <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-3 border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate">{weekLabel}</h1>
+        {/* === MODULE HEADER === */}
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-border/40 bg-background flex-shrink-0">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #C4A882, #A88E66)' }}>
+              <CheckSquare className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="page-title text-foreground truncate">Taken</h1>
+              <p className="text-[12px] text-muted-foreground mt-0.5">
+                Productie &amp; oplevering
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* === WEEK NAV + FILTERS === */}
+        <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2.5 border-b border-border/60 bg-card/50 flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap">{weekLabel}</span>
             <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" onClick={() => setWeekOffset((w) => w - 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w - 1)}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
                 variant={isCurrentWeek ? 'default' : 'ghost'}
                 size="sm"
-                className={cn('h-7 text-xs px-3 rounded-md', isCurrentWeek && 'bg-primary hover:bg-wm-hover shadow-sm')}
+                className={cn('h-7 text-xs px-3 rounded-lg', isCurrentWeek && 'bg-primary hover:bg-wm-hover shadow-sm')}
                 onClick={() => setWeekOffset(0)}
               >
                 Vandaag
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" onClick={() => setWeekOffset((w) => w + 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w + 1)}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5 flex-shrink-0">
+            <div className="inline-flex items-center rounded-xl border border-black/[0.06] bg-muted p-0.5 flex-shrink-0">
               {([['alle', 'Alle'], ['project', 'Projecttaken'], ['los', 'Losse taken']] as const).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setTaskFilter(key)}
                   className={cn(
-                    'text-xs px-2.5 py-1 rounded-md transition-all duration-200 whitespace-nowrap',
+                    'text-xs px-2.5 py-1 rounded-lg transition-all duration-200 whitespace-nowrap',
                     taskFilter === key
                       ? 'bg-background text-foreground shadow-sm font-medium'
                       : 'text-muted-foreground hover:text-foreground'

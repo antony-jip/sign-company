@@ -43,6 +43,7 @@ import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
@@ -292,9 +293,9 @@ export function ClientsLayout() {
   }
 
   return (
-    <div className="space-y-6 mod-strip mod-strip-klanten">
-      {/* Page header */}
-      <div className="flex items-center justify-between gap-3">
+    <div className="h-full flex flex-col mod-strip mod-strip-klanten">
+      {/* Page header bar */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #8BAFD4, #6A8DB8)' }}>
             <Users className="h-5 w-5 text-white" />
@@ -311,6 +312,10 @@ export function ClientsLayout() {
           <span className="hidden sm:inline">Nieuwe Klant</span>
         </Button>
       </div>
+
+      {/* Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="space-y-6 p-4 sm:p-6">
 
       {/* Toolbar: Search + Export + View toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -335,11 +340,11 @@ export function ClientsLayout() {
             Importeren
           </Button>
           {/* Export buttons */}
-          <div className="hidden sm:flex items-center">
+          <div className="hidden sm:flex items-center rounded-lg border border-border overflow-hidden">
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 rounded-r-none border-r-0 h-9"
+              className="gap-1.5 rounded-none border-0 border-r border-border h-9"
               onClick={() => exportCSV(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows())}
             >
               <Download className="w-4 h-4" />
@@ -348,7 +353,7 @@ export function ClientsLayout() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 rounded-l-none h-9"
+              className="gap-1.5 rounded-none border-0 h-9"
               onClick={() => exportExcel(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows(), 'Klanten')}
             >
               <FileText className="w-4 h-4" />
@@ -356,20 +361,30 @@ export function ClientsLayout() {
             </Button>
           </div>
           {/* View toggle */}
-          <div className="flex items-center border rounded-md bg-background">
+          <div className="inline-flex items-center rounded-xl border border-black/[0.06] bg-muted p-0.5">
             <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              variant="ghost"
               size="icon"
-              className="rounded-r-none"
+              className={cn(
+                'h-8 w-8 rounded-lg transition-all',
+                viewMode === 'grid'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
               onClick={() => setViewMode('grid')}
               title="Rasterweergave"
             >
               <LayoutGrid className="w-4 h-4" />
             </Button>
             <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              variant="ghost"
               size="icon"
-              className="rounded-l-none"
+              className={cn(
+                'h-8 w-8 rounded-lg transition-all',
+                viewMode === 'list'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
               onClick={() => setViewMode('list')}
               title="Lijstweergave"
             >
@@ -515,33 +530,31 @@ export function ClientsLayout() {
         <SkeletonTable rows={6} cols={4} />
       ) : filteredKlanten.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
-              <Users className="h-7 w-7 text-primary/30" />
-            </div>
-            <p className="text-sm font-medium text-foreground">
-              {searchQuery || statusFilter !== 'alle'
-                ? 'Geen klanten gevonden'
-                : 'Nog geen klanten'}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1 text-center">
-              {searchQuery || statusFilter !== 'alle'
-                ? 'Probeer andere zoektermen of filters.'
-                : 'Voeg je eerste klant toe — winkels, horeca, bedrijven die signing nodig hebben.'}
-            </p>
-            {(searchQuery || statusFilter !== 'alle') && (
-              <Button
-                variant="link"
-                className="mt-2"
-                onClick={() => {
-                  setSearchQuery('')
-                  setStatusFilter('alle')
-                }}
-              >
-                Filters wissen
-              </Button>
-            )}
-          </CardContent>
+          <EmptyState
+            module="klanten"
+            title={searchQuery || statusFilter !== 'alle' ? 'Geen klanten gevonden' : 'Nog geen klanten'}
+            description={searchQuery || statusFilter !== 'alle'
+              ? 'Probeer andere zoektermen of filters.'
+              : 'Voeg je eerste klant toe — winkels, horeca, bedrijven die signing nodig hebben.'}
+            action={
+              (searchQuery || statusFilter !== 'alle') ? (
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setStatusFilter('alle')
+                  }}
+                >
+                  Filters wissen
+                </Button>
+              ) : (
+                <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} size="sm">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Nieuwe Klant
+                </Button>
+              )
+            }
+          />
         </Card>
       ) : viewMode === 'grid' ? (
         /* ==================== GRID VIEW ==================== */
@@ -597,7 +610,7 @@ export function ClientsLayout() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody className="divide-y divide-border/50 row-stagger">
                 {filteredKlanten.map((klant) => (
                   <tr
                     key={klant.id}
@@ -701,6 +714,8 @@ export function ClientsLayout() {
         klant={editingKlant}
       />
 
+      </div>
+      </div>
     </div>
   )
 }

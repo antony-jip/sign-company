@@ -810,7 +810,7 @@ export function EmailCompose({
                 className="h-9"
               />
               {showSuggestions && contactSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 rounded-md border bg-popover shadow-lg z-50 max-h-48 overflow-y-auto">
+                <div className="absolute left-0 right-0 top-full mt-1 rounded-lg border bg-popover shadow-lg z-50 max-h-48 overflow-y-auto">
                   {contactSuggestions.map((klant) => {
                     const contact = klant.contactpersonen?.[0]
                     const email = contact?.email || ''
@@ -879,7 +879,7 @@ export function EmailCompose({
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 {showMergeFields && (
-                  <div className="absolute left-0 top-full mt-1 w-52 rounded-md border bg-popover p-1 shadow-lg z-50">
+                  <div className="absolute left-0 top-full mt-1 w-52 rounded-lg border bg-popover p-1 shadow-lg z-50">
                     {mergeFields.map(f => (
                       <button
                         key={f.id}
@@ -922,7 +922,7 @@ export function EmailCompose({
               <div className="px-3 py-2 border-t bg-muted/10">
                 <div className="flex flex-wrap gap-2">
                   {attachments.map((file, i) => (
-                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-muted rounded-md text-xs">
+                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-muted rounded-lg text-xs">
                       <div className={`w-6 h-6 rounded flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0 ${getFileTypeColor(file.name)}`}>
                         {getFileExt(file.name)}
                       </div>
@@ -1050,7 +1050,7 @@ export function EmailCompose({
               <ChevronDown className="w-3 h-3" />
             </Button>
             {showSignatureDropdown && !editingSignature && (
-              <div className="absolute left-0 bottom-full mb-2 w-64 rounded-md border bg-popover p-1 shadow-lg z-50">
+              <div className="absolute left-0 bottom-full mb-2 w-64 rounded-lg border bg-popover p-1 shadow-lg z-50">
                 <button
                   onClick={() => { setSelectedSignature('none'); setShowSignatureDropdown(false) }}
                   className={cn('w-full text-left px-3 py-2 text-sm rounded hover:bg-accent', selectedSignature === 'none' && 'bg-accent font-medium')}
@@ -1102,7 +1102,7 @@ export function EmailCompose({
               </div>
             )}
             {editingSignature && (
-              <div className="absolute left-0 bottom-full mb-2 w-72 rounded-md border bg-popover p-3 shadow-lg z-50">
+              <div className="absolute left-0 bottom-full mb-2 w-72 rounded-lg border bg-popover p-3 shadow-lg z-50">
                 <h4 className="text-sm font-semibold mb-2">{editingSignature.id ? 'Handtekening bewerken' : 'Nieuwe handtekening'}</h4>
                 <input
                   value={editSigNaam}
@@ -1165,32 +1165,32 @@ export function EmailCompose({
               </Button>
             </div>
             {showScheduleDropdown && (
-              <div className="absolute right-0 bottom-full mb-2 w-72 rounded-md border bg-popover p-2 shadow-md z-50">
+              <div className="absolute right-0 bottom-full mb-2 w-72 rounded-lg border bg-popover p-2 shadow-md z-50">
                 <div className="space-y-1">
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'now' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'now' && 'bg-accent font-medium')}
                     onClick={() => handleScheduleSelect('now')}
                   >
                     <div className="flex items-center gap-2"><Send className="w-4 h-4" /> Nu verzenden</div>
                   </button>
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'tomorrow-9' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'tomorrow-9' && 'bg-accent font-medium')}
                     onClick={() => handleScheduleSelect('tomorrow-9')}
                   >
                     <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 09:00</div>
                   </button>
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'tomorrow-14' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'tomorrow-14' && 'bg-accent font-medium')}
                     onClick={() => handleScheduleSelect('tomorrow-14')}
                   >
                     <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 14:00</div>
                   </button>
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'next-monday' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'next-monday' && 'bg-accent font-medium')}
                     onClick={() => handleScheduleSelect('next-monday')}
                   >
                     <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Volgende week maandag 09:00</div>
@@ -1198,7 +1198,7 @@ export function EmailCompose({
                   <div className="border-t my-1" />
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent', scheduleOption === 'custom' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'custom' && 'bg-accent font-medium')}
                     onClick={() => handleScheduleSelect('custom')}
                   >
                     <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Aangepaste datum/tijd</div>

@@ -262,7 +262,7 @@ export function ProjectsList() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in-up mod-strip mod-strip-projecten">
+    <div className="h-full flex flex-col animate-fade-in-up mod-strip mod-strip-projecten">
       {/* Hidden photo input for quick upload */}
       <input
         ref={photoInputRef}
@@ -278,8 +278,8 @@ export function ProjectsList() {
         }}
       />
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      {/* ── Header bar ── */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #7EB5A6, #5A9A88)' }}>
             <FolderKanban className="h-5 w-5 text-white" />
@@ -299,6 +299,10 @@ export function ProjectsList() {
           </Link>
         </Button>
       </div>
+
+      {/* ── Content ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="space-y-5 p-4 sm:p-6">
 
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -484,7 +488,7 @@ export function ProjectsList() {
                 <th className="w-10 py-2.5 px-2" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="row-stagger">
               {gefilterdeProjecten.map((project) => {
                 const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
                 const contactpersoon = getKlantContactpersoon(project.klant_id)
@@ -742,6 +746,8 @@ export function ProjectsList() {
           </div>
         </div>
       )}
+      </div>
+      </div>
     </div>
   )
 }

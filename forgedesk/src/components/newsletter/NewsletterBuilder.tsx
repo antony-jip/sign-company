@@ -1019,7 +1019,7 @@ export function NewsletterBuilder() {
                 </Button>
 
                 {/* Collapsible section: klanten with their contact persons */}
-                <div className="border rounded-md">
+                <div className="border rounded-lg">
                   <button
                     type="button"
                     className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-accent/50 transition-colors"
@@ -1245,7 +1245,7 @@ export function NewsletterBuilder() {
                     <Eye className="h-4 w-4" />
                     Voorbeeld
                   </CardTitle>
-                  <div className="flex items-center gap-1 bg-muted rounded-md p-0.5">
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
                     <button
                       className={cn(
                         'px-3 py-1 rounded text-xs font-medium transition-colors',
@@ -1322,7 +1322,7 @@ export function NewsletterBuilder() {
                   onClick={() => applyTemplate(template.html)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-md bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
                       {template.icon}
                     </div>
                     <div>
@@ -1342,7 +1342,7 @@ export function NewsletterBuilder() {
                 }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-md bg-muted text-muted-foreground">
+                  <div className="p-2 rounded-lg bg-muted text-muted-foreground">
                     <Code className="h-5 w-5" />
                   </div>
                   <div>

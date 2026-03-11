@@ -68,6 +68,54 @@ export function LoginPage() {
           </Link>
         </div>
 
+        {/* Visual illustration — tools + digital, pastel */}
+        <div className="relative z-10 flex justify-center mb-8">
+          <svg width="280" height="200" viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-80">
+            {/* Desk / workspace base */}
+            <rect x="40" y="130" width="200" height="8" rx="4" fill="#7EB5A6" opacity="0.3" />
+            {/* Monitor */}
+            <rect x="90" y="40" width="100" height="72" rx="8" stroke="#8BAFD4" strokeWidth="2" fill="#8BAFD4" fillOpacity="0.08" />
+            <rect x="96" y="46" width="88" height="56" rx="4" fill="#8BAFD4" fillOpacity="0.06" />
+            {/* Screen content — chart lines */}
+            <polyline points="106,86 118,74 130,80 142,66 154,72 166,58 174,62" fill="none" stroke="#7EB5A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+            <line x1="106" y1="92" x2="174" y2="92" stroke="#8BAFD4" strokeWidth="1" opacity="0.2" />
+            {/* Monitor stand */}
+            <rect x="130" y="112" width="20" height="18" rx="2" fill="#8BAFD4" opacity="0.15" />
+            <rect x="120" y="128" width="40" height="4" rx="2" fill="#8BAFD4" opacity="0.2" />
+            {/* Wrench — left side */}
+            <g transform="translate(32, 70) rotate(-30)">
+              <rect x="0" y="8" width="6" height="40" rx="3" fill="#D4836A" opacity="0.5" />
+              <circle cx="3" cy="6" r="8" stroke="#D4836A" strokeWidth="2" fill="none" opacity="0.4" />
+              <rect x="1" y="0" width="4" height="8" fill="#D4836A" opacity="0.3" />
+            </g>
+            {/* Ruler — right side */}
+            <g transform="translate(220, 55) rotate(15)">
+              <rect x="0" y="0" width="10" height="60" rx="2" fill="#C4A882" opacity="0.35" />
+              {[0, 1, 2, 3, 4, 5].map(i => (
+                <line key={i} x1="0" y1={8 + i * 10} x2={i % 2 === 0 ? 6 : 4} y2={8 + i * 10} stroke="#C4A882" strokeWidth="1" opacity="0.5" />
+              ))}
+            </g>
+            {/* Pen tool — bottom right */}
+            <g transform="translate(210, 105) rotate(35)">
+              <polygon points="0,0 4,-3 35,3 35,7 4,13 0,10" fill="#9B8EC4" opacity="0.4" />
+              <polygon points="35,3 42,5 35,7" fill="#6B5B8A" opacity="0.5" />
+            </g>
+            {/* Document / clipboard — left bottom */}
+            <rect x="48" y="95" width="28" height="36" rx="3" fill="#E8866A" fillOpacity="0.1" stroke="#E8866A" strokeWidth="1.5" opacity="0.4" />
+            <line x1="54" y1="106" x2="70" y2="106" stroke="#E8866A" strokeWidth="1.2" strokeLinecap="round" opacity="0.3" />
+            <line x1="54" y1="112" x2="68" y2="112" stroke="#E8866A" strokeWidth="1.2" strokeLinecap="round" opacity="0.25" />
+            <line x1="54" y1="118" x2="64" y2="118" stroke="#E8866A" strokeWidth="1.2" strokeLinecap="round" opacity="0.2" />
+            {/* Euro coin */}
+            <circle cx="72" cy="150" r="12" stroke="#C4A882" strokeWidth="1.5" opacity="0.35" />
+            <text x="67" y="155" fill="#C4A882" opacity="0.5" fontSize="13" fontWeight="700">€</text>
+            {/* Floating dots — decorative */}
+            <circle cx="190" cy="35" r="3" fill="#9B8EC4" opacity="0.2" />
+            <circle cx="210" cy="45" r="2" fill="#7EB5A6" opacity="0.25" />
+            <circle cx="60" cy="50" r="2.5" fill="#E8866A" opacity="0.2" />
+            <circle cx="250" cy="90" r="2" fill="#8BAFD4" opacity="0.2" />
+          </svg>
+        </div>
+
         <div className="relative z-10 max-w-md">
           <h2 className="text-4xl font-extrabold text-white leading-tight mb-4" style={{ fontFamily: 'Manrope, sans-serif' }}>
             Van offerte tot
