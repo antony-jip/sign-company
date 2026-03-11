@@ -123,6 +123,7 @@ import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { ProjectPortaalTab } from './ProjectPortaalTab'
 import { ProjectProgressIndicator } from './ProjectProgressIndicator'
+import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
@@ -199,6 +200,7 @@ export function ProjectDetail() {
   const location = useLocation()
   const { user } = useAuth()
   const { offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
+  const { config: sidebarConfig } = useProjectSidebarConfig()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [takenWeergave, setTakenWeergave] = useState<'board' | 'tabel'>('board')
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
@@ -1459,6 +1461,7 @@ export function ProjectDetail() {
         {/* ────────────── Rechter Sidebar ────────────── */}
         <div className="space-y-6 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto scrollbar-thin">
           {/* ── Projectvoortgang ── */}
+          {sidebarConfig.voortgang && (
           <Card className="border-border/80 dark:border-border/80">
             <CardContent className="pt-5 pb-4">
               <ProjectProgressIndicator
@@ -1469,9 +1472,10 @@ export function ProjectDetail() {
               />
             </CardContent>
           </Card>
+          )}
 
           {/* ── Klant & Contact ── */}
-          {klant && (
+          {sidebarConfig.klant && klant && (
             <Card className="border-blush/40 bg-blush/5">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -1511,6 +1515,7 @@ export function ProjectDetail() {
           )}
 
           {/* ── Team ── */}
+          {sidebarConfig.team && (
           <Card className="border-sage/40 bg-sage/5">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1579,9 +1584,10 @@ export function ProjectDetail() {
               ) : null}
             </CardContent>
           </Card>
+          )}
 
           {/* ── Montage Planning ── */}
-          {projectMontages.length > 0 && (
+          {sidebarConfig.montage && projectMontages.length > 0 && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1641,7 +1647,7 @@ export function ProjectDetail() {
           )}
 
           {/* ── Werkbonnen ── */}
-          {projectWerkbonnen.length > 0 && (
+          {sidebarConfig.werkbonnen && projectWerkbonnen.length > 0 && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1700,7 +1706,7 @@ export function ProjectDetail() {
           )}
 
           {/* ── Facturen ── */}
-          {projectFacturen.length > 0 && (
+          {sidebarConfig.facturen && projectFacturen.length > 0 && (
             <Card className="border-border/80 dark:border-border/80">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -1744,7 +1750,7 @@ export function ProjectDetail() {
           )}
 
           {/* ── Uitgaven ── */}
-          {projectUitgaven.length > 0 && (
+          {sidebarConfig.uitgaven && projectUitgaven.length > 0 && (
             <Card className="border-border/80 dark:border-border/80">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -1787,14 +1793,16 @@ export function ProjectDetail() {
           )}
 
           {/* ── Signing Visualisaties ── */}
+          {sidebarConfig.visualisaties && (
           <Card className="border-border/80 dark:border-border/80">
             <CardContent className="pt-5">
               <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
             </CardContent>
           </Card>
+          )}
 
           {/* ── Offertes ── */}
-          {projectOffertes.length > 0 && (
+          {sidebarConfig.offertes && projectOffertes.length > 0 && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -2033,14 +2041,17 @@ export function ProjectDetail() {
           </Dialog>
 
           {/* ── Situatiefoto's ── */}
+          {sidebarConfig.fotos && (
           <ProjectPhotoGallery
             projectId={id!}
             userId={user?.id || ''}
             photos={projectFotos}
             onPhotosChanged={fetchProjectFotos}
           />
+          )}
 
           {/* ── Bestanden (drag & drop + upload button) ── */}
+          {sidebarConfig.bestanden && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -2158,6 +2169,7 @@ export function ProjectDetail() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* ── Snelle toevoeg-links voor lege categorieën ── */}
           {(projectOffertes.length === 0 || projectWerkbonnen.length === 0 || projectMontages.length === 0) && (
