@@ -1815,13 +1815,13 @@ html {
 
 /* ── Enhanced Page Title Typography ── */
 .page-title {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 @media (min-width: 640px) {
-  .page-title { font-size: 32px; }
+  .page-title { font-size: 24px; }
 }
 .section-title {
   font-size: 20px;
