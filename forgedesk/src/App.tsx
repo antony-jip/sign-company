@@ -62,6 +62,7 @@ import { LeadCaptureLayout } from '@/components/leads/LeadCaptureLayout'
 import { LeadFormulierEditor } from '@/components/leads/LeadFormulierEditor'
 import { LeadFormulierPubliek } from '@/components/leads/LeadFormulierPubliek'
 import { PortaalPagina } from '@/components/portaal/PortaalPagina'
+import { PortalenOverzicht } from '@/components/portaal/PortalenOverzicht'
 import { LeadInzendingenLayout } from '@/components/leads/LeadInzendingenLayout'
 import { ForecastLayout } from '@/components/forecast/ForecastLayout'
 import { ForgieChatPage } from '@/components/forgie/ForgieChatPage'
@@ -155,6 +156,7 @@ function AppContent() {
         <Route path="forecast" element={<ForecastLayout />} />
         <Route path="booking" element={<BookingBeheer />} />
         <Route path="visualizer" element={<VisualizerLayout />} />
+        <Route path="portalen" element={<PortalenOverzicht />} />
         <Route path="instellingen" element={<SettingsLayout />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

@@ -8,7 +8,7 @@ import {
   ClipboardCheck, ShoppingCart, Warehouse,
   Briefcase, UserPlus, Files, Newspaper,
   Upload, Bot, Calculator, TrendingUp, PackageCheck,
-  CalendarCheck, Sparkles, Wand2,
+  CalendarCheck, Sparkles, Wand2, Link2,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -43,6 +43,7 @@ const MODULE_COLORS: Record<string, string> = {
   '/email': '#8BAFD4',
   '/forgie': '#9B8EC4',
   '/nieuwsbrieven': '#8BAFD4',
+  '/portalen': '#9B8EC4',
   '/financieel': '#C4A882',
   '/documenten': '#8A8680',
   '/rapportages': '#7EB5A6',
@@ -85,6 +86,7 @@ const navSections: NavSection[] = [
     section: 'Communicatie',
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
+      { label: 'Portalen', icon: Link2, path: '/portalen' },
       { label: 'Forgie', icon: Sparkles, path: '/forgie' },
       { label: 'Nieuwsbrieven', icon: Newspaper, path: '/nieuwsbrieven' },
     ],

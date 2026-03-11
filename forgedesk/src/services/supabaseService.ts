@@ -4966,6 +4966,42 @@ export async function updatePortaalInstellingen(userId: string, settings: Partia
   return updated
 }
 
+export async function getAllPortalen(): Promise<(ProjectPortaal & { project_naam?: string; klant_naam?: string; klant_id?: string; items?: PortaalItem[] })[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('project_portalen')
+      .select('*, portaal_items(*, portaal_reacties(*))')
+      .order('updated_at', { ascending: false })
+    if (error) throw error
+    if (!data) return []
+
+    // Enrich with project/klant names
+    const projectIds = [...new Set(data.map((p: Record<string, unknown>) => p.project_id))]
+    const { data: projecten } = await supabase
+      .from('projecten')
+      .select('id, naam, klant_id, klant_naam')
+      .in('id', projectIds)
+    const projectMap = new Map((projecten || []).map((p: Record<string, unknown>) => [p.id, p]))
+
+    return data.map((p: Record<string, unknown>) => {
+      const proj = projectMap.get(p.project_id) as Record<string, unknown> | undefined
+      const items = ((p.portaal_items || []) as Record<string, unknown>[]).map(item => ({
+        ...item,
+        bestanden: [] as PortaalBestand[],
+        reacties: (item.portaal_reacties || []) as PortaalReactie[],
+      })) as PortaalItem[]
+      return {
+        ...p,
+        project_naam: (proj?.naam as string) || '',
+        klant_naam: (proj?.klant_naam as string) || '',
+        klant_id: (proj?.klant_id as string) || '',
+        items,
+      } as ProjectPortaal & { project_naam?: string; klant_naam?: string; klant_id?: string; items?: PortaalItem[] }
+    })
+  }
+  return getLocalData<ProjectPortaal>('project_portalen') as (ProjectPortaal & { project_naam?: string; klant_naam?: string; klant_id?: string; items?: PortaalItem[] })[]
+}
+
 export async function getPortaalByProject(projectId: string): Promise<ProjectPortaal | null> {
   assertId(projectId, 'project_id')
   if (isSupabaseConfigured() && supabase) {
