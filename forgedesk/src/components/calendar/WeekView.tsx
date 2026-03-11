@@ -14,6 +14,7 @@ import {
 import { nl } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import type { CalendarEvent } from '@/types'
+import { getNederlandseFeestdagen, isFeestdag } from '@/utils/feestdagen'
 
 interface WeekViewProps {
   currentDate: Date
@@ -79,6 +80,7 @@ export function WeekView({ currentDate, selectedDate, events, onSelectDate }: We
     : -1
 
   const isCurrentWeek = weekDays.some((d) => isToday(d))
+  const feestdagen = useMemo(() => getNederlandseFeestdagen(currentDate.getFullYear()), [currentDate])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -88,25 +90,29 @@ export function WeekView({ currentDate, selectedDate, events, onSelectDate }: We
         {weekDays.map((day) => {
           const isTodayDate = isToday(day)
           const isSelected = selectedDate ? isSameDay(day, selectedDate) : false
+          const feestdagInfo = isFeestdag(format(day, 'yyyy-MM-dd'), feestdagen)
 
           return (
             <div
               key={day.toISOString()}
               onClick={() => onSelectDate(day)}
+              title={feestdagInfo ? feestdagInfo.naam : undefined}
               className={cn(
                 'flex-1 text-center py-3 cursor-pointer border-r transition-colors',
                 isTodayDate && 'bg-blue-50 dark:bg-blue-900/20',
-                isSelected && !isTodayDate && 'bg-muted/50'
+                isSelected && !isTodayDate && 'bg-muted/50',
+                feestdagInfo && !isTodayDate && !isSelected && 'bg-red-50/60 dark:bg-red-950/20'
               )}
             >
-              <p className="text-xs text-muted-foreground uppercase font-medium">
-                {format(day, 'EEE', { locale: nl })}
+              <p className={cn('text-xs uppercase font-medium', feestdagInfo ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground')}>
+                {feestdagInfo ? feestdagInfo.naam : format(day, 'EEE', { locale: nl })}
               </p>
               <p
                 className={cn(
                   'text-lg font-semibold mt-0.5',
                   isTodayDate && 'text-blue-600 dark:text-blue-400',
-                  !isTodayDate && 'text-foreground'
+                  feestdagInfo && !isTodayDate && 'text-red-600 dark:text-red-400',
+                  !isTodayDate && !feestdagInfo && 'text-foreground'
                 )}
               >
                 {format(day, 'd')}
@@ -138,13 +144,15 @@ export function WeekView({ currentDate, selectedDate, events, onSelectDate }: We
           {weekDays.map((day) => {
             const dayEvents = getEventsForDay(events, day)
             const isTodayDate = isToday(day)
+            const feestdagCol = isFeestdag(format(day, 'yyyy-MM-dd'), feestdagen)
 
             return (
               <div
                 key={day.toISOString()}
                 className={cn(
                   'flex-1 relative border-r',
-                  isTodayDate && 'bg-blue-50/30 dark:bg-blue-900/10'
+                  isTodayDate && 'bg-blue-50/30 dark:bg-blue-900/10',
+                  feestdagCol && !isTodayDate && 'bg-red-50/20 dark:bg-red-950/10'
                 )}
               >
                 {/* Hour lines */}

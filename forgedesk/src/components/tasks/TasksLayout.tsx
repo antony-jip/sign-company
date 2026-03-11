@@ -54,6 +54,8 @@ import type { Taak, Project, Klant, MontageAfspraak } from '@/types'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
+import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal'
+import { updateProject } from '@/services/supabaseService'
 
 type TaakStatus = Taak['status']
 type TaakPrioriteit = Taak['prioriteit']
@@ -169,6 +171,9 @@ export function TasksLayout() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingTaak, setDeletingTaak] = useState<Taak | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Completion prompt
+  const [completionPrompt, setCompletionPrompt] = useState<{ open: boolean; projectId: string; projectNaam: string }>({ open: false, projectId: '', projectNaam: '' })
 
   // Drag state
   const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null)
@@ -383,7 +388,21 @@ export function TasksLayout() {
     const newStatus: TaakStatus = taak.status === 'klaar' ? 'todo' : 'klaar'
     try {
       const updated = await updateTaak(taak.id, { status: newStatus })
-      setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      setTaken((prev) => {
+        const next = prev.map((t) => (t.id === updated.id ? updated : t))
+        // Check: als alle taken van dit project nu 'klaar' zijn → prompt
+        if (newStatus === 'klaar' && taak.project_id) {
+          const projectTaken = next.filter((t) => t.project_id === taak.project_id)
+          const alleKlaar = projectTaken.length > 0 && projectTaken.every((t) => t.status === 'klaar')
+          if (alleKlaar) {
+            const project = projecten.find((p) => p.id === taak.project_id)
+            if (project && project.status !== 'afgerond' && project.status !== 'opgeleverd') {
+              setTimeout(() => setCompletionPrompt({ open: true, projectId: project.id, projectNaam: project.naam }), 500)
+            }
+          }
+        }
+        return next
+      })
       if (newStatus === 'klaar') toast.success('Taak afgerond!')
     } catch (error) {
       logger.error('Fout bij statuswijziging:', error)
@@ -799,6 +818,21 @@ export function TasksLayout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Completion prompt modal */}
+      <CompletionPromptModal
+        open={completionPrompt.open}
+        projectNaam={completionPrompt.projectNaam}
+        onClose={() => setCompletionPrompt((prev) => ({ ...prev, open: false }))}
+        onUpdateStatus={async (status) => {
+          try {
+            await updateProject(completionPrompt.projectId, { status })
+            toast.success(`Project gemarkeerd als ${status}`)
+          } catch {
+            toast.error('Kon projectstatus niet bijwerken')
+          }
+        }}
+      />
     </>
   )
 }

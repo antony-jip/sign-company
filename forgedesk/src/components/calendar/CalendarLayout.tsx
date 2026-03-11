@@ -73,6 +73,7 @@ import {
 } from '@/components/ui/select'
 import type { MontageAfspraak, Project, Medewerker, Klant, Taak } from '@/types'
 import { logger } from '../../utils/logger'
+import { getNederlandseFeestdagen, isFeestdag } from '@/utils/feestdagen'
 
 // ============================================================
 // STATUS CONFIG
@@ -249,6 +250,9 @@ export function CalendarLayout() {
   const [projectTaken, setProjectTaken] = useState<Taak[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // Feestdagen
+  const feestdagen = useMemo(() => getNederlandseFeestdagen(currentDate.getFullYear()), [currentDate])
+
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -401,6 +405,15 @@ export function CalendarLayout() {
     if (!formData.titel.trim() && !formData.project_id) {
       toast.error('Vul een taakomschrijving in of selecteer een project')
       return
+    }
+
+    // Feestdag waarschuwing
+    const feestdagCheck = isFeestdag(formData.datum, feestdagen)
+    if (feestdagCheck) {
+      const doorgaan = window.confirm(
+        `Let op: ${formData.datum} valt op ${feestdagCheck.naam}. Toch inplannen?`
+      )
+      if (!doorgaan) return
     }
 
     setIsSaving(true)
@@ -841,23 +854,26 @@ export function CalendarLayout() {
                     const dayAfspraken = getAfsprakenForDay(date)
                     const overlapLayout = computeOverlapLayout(dayAfspraken)
                     const taskCount = getTasksForDay(date).length
+                    const feestdagInfo = isFeestdag(format(date, 'yyyy-MM-dd'), feestdagen)
 
                     return (
-                      <div key={date.toISOString()} className="flex-1 min-w-0 border-l border-border dark:border-border">
+                      <div key={date.toISOString()} className={cn('flex-1 min-w-0 border-l border-border dark:border-border', feestdagInfo && 'bg-red-50/40 dark:bg-red-950/10')}>
                         {/* Sticky day header */}
                         <div
                           className={cn(
                             'sticky top-0 z-10 bg-card border-b border-border dark:border-border px-2 py-2 text-center h-[60px] flex flex-col items-center justify-center',
-                            today && 'bg-primary/5 dark:bg-primary/10'
+                            today && 'bg-primary/5 dark:bg-primary/10',
+                            feestdagInfo && !today && 'bg-red-50/60 dark:bg-red-950/20'
                           )}
+                          title={feestdagInfo ? feestdagInfo.naam : undefined}
                         >
-                          <p className="text-[10px] uppercase font-medium text-muted-foreground">
-                            {format(date, 'EEE', { locale: nl })}
+                          <p className={cn('text-[10px] uppercase font-medium', feestdagInfo ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground')}>
+                            {feestdagInfo ? feestdagInfo.naam : format(date, 'EEE', { locale: nl })}
                           </p>
                           <p
                             className={cn(
                               'text-lg font-bold leading-tight',
-                              today ? 'text-primary' : 'text-foreground'
+                              today ? 'text-primary' : feestdagInfo ? 'text-red-600 dark:text-red-400' : 'text-foreground'
                             )}
                           >
                             {format(date, 'd')}
@@ -980,22 +996,28 @@ export function CalendarLayout() {
                   const isTodayDate = isToday(day)
                   const isInWeek = weekDates.some((wd) => isSameDay(wd, day))
                   const hasEvent = dayHasAfspraak(day)
+                  const miniFeestdag = isFeestdag(format(day, 'yyyy-MM-dd'), feestdagen)
 
                   return (
                     <button
                       key={i}
                       onClick={() => setCurrentDate(day)}
+                      title={miniFeestdag ? miniFeestdag.naam : undefined}
                       className={cn(
                         'relative w-full aspect-square flex flex-col items-center justify-center text-[11px] rounded-lg transition-colors',
                         !isCurrentMonth && 'text-muted-foreground/40',
                         isCurrentMonth && 'text-foreground',
                         isTodayDate && 'bg-primary text-white font-bold',
                         isInWeek && !isTodayDate && 'bg-primary/10 font-semibold',
+                        miniFeestdag && !isTodayDate && !isInWeek && 'text-red-500 dark:text-red-400',
                         !isTodayDate && !isInWeek && 'hover:bg-muted/50'
                       )}
                     >
                       {format(day, 'd')}
-                      {hasEvent && !isTodayDate && (
+                      {miniFeestdag && !isTodayDate && (
+                        <div className="absolute bottom-0 w-1 h-1 rounded-full bg-red-400" />
+                      )}
+                      {hasEvent && !isTodayDate && !miniFeestdag && (
                         <div className="absolute bottom-0 w-1 h-1 rounded-full bg-primary" />
                       )}
                     </button>

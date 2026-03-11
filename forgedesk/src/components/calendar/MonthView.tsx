@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   startOfMonth,
   endOfMonth,
@@ -14,6 +14,7 @@ import {
 import { nl } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import type { CalendarEvent } from '@/types'
+import { getNederlandseFeestdagen, isFeestdag } from '@/utils/feestdagen'
 
 interface MonthViewProps {
   currentDate: Date
@@ -55,6 +56,8 @@ export function MonthView({ currentDate, selectedDate, events, onSelectDate }: M
 
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd })
 
+  const feestdagen = useMemo(() => getNederlandseFeestdagen(currentDate.getFullYear()), [currentDate])
+
   return (
     <div className="flex flex-col h-full">
       {/* Day headers */}
@@ -78,6 +81,7 @@ export function MonthView({ currentDate, selectedDate, events, onSelectDate }: M
           const dayEvents = getEventsForDay(events, day)
           const maxVisible = 3
           const overflow = dayEvents.length - maxVisible
+          const feestdagInfo = isFeestdag(format(day, 'yyyy-MM-dd'), feestdagen)
 
           return (
             <div
@@ -87,8 +91,10 @@ export function MonthView({ currentDate, selectedDate, events, onSelectDate }: M
                 'border-b border-r p-1.5 cursor-pointer transition-colors min-h-0 overflow-hidden',
                 !isCurrentMonth && 'bg-muted/30',
                 isSelectedDay && 'bg-blue-50 dark:bg-blue-900/20',
+                feestdagInfo && !isSelectedDay && 'bg-red-50/60 dark:bg-red-950/20',
                 'hover:bg-muted/50'
               )}
+              title={feestdagInfo ? feestdagInfo.naam : undefined}
             >
               <div className="flex items-center justify-center mb-1">
                 <span
@@ -97,12 +103,18 @@ export function MonthView({ currentDate, selectedDate, events, onSelectDate }: M
                     isTodayDate && 'bg-blue-600 text-white font-bold',
                     !isTodayDate && isCurrentMonth && 'text-foreground',
                     !isTodayDate && !isCurrentMonth && 'text-muted-foreground/50',
-                    isSelectedDay && !isTodayDate && 'bg-blue-100 dark:bg-blue-800 font-semibold'
+                    isSelectedDay && !isTodayDate && 'bg-blue-100 dark:bg-blue-800 font-semibold',
+                    feestdagInfo && !isTodayDate && 'text-red-600 dark:text-red-400'
                   )}
                 >
                   {format(day, 'd')}
                 </span>
               </div>
+              {feestdagInfo && (
+                <div className="px-1 py-0.5 rounded text-[9px] font-medium text-red-600 dark:text-red-400 truncate leading-tight">
+                  {feestdagInfo.naam}
+                </div>
+              )}
 
               <div className="space-y-0.5">
                 {dayEvents.slice(0, maxVisible).map((event) => (
