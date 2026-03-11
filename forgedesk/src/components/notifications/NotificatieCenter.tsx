@@ -12,6 +12,9 @@ import {
   Banknote,
   Wallet,
   CalendarCheck,
+  RotateCcw,
+  MessageSquare,
+  BellRing,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +89,31 @@ const typeConfig: Record<
     icon: Bell,
     colorClass: "text-muted-foreground",
     bgClass: "bg-muted",
+  },
+  portaal_goedkeuring: {
+    icon: CheckCircle2,
+    colorClass: "text-green-600",
+    bgClass: "bg-green-100",
+  },
+  portaal_revisie: {
+    icon: RotateCcw,
+    colorClass: "text-amber-600",
+    bgClass: "bg-amber-100",
+  },
+  portaal_bericht: {
+    icon: MessageSquare,
+    colorClass: "text-blue-600",
+    bgClass: "bg-blue-100",
+  },
+  portaal_bekeken: {
+    icon: Eye,
+    colorClass: "text-gray-600",
+    bgClass: "bg-gray-100",
+  },
+  portaal_herinnering: {
+    icon: BellRing,
+    colorClass: "text-orange-600",
+    bgClass: "bg-orange-100",
   },
 };
 
@@ -406,6 +434,17 @@ export function NotificatieCenter() {
               </div>
             </ScrollArea>
           )}
+
+          <Separator />
+          <button
+            onClick={() => {
+              setOpen(false);
+              navigate("/portalen");
+            }}
+            className="w-full px-4 py-2.5 text-xs font-medium text-center text-primary hover:bg-accent transition-colors"
+          >
+            Alle meldingen bekijken →
+          </button>
         </div>
       )}
     </div>

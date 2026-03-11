@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import {
   getPortaalByProject,
   getPortaalItems,
@@ -82,6 +83,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 
 export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabProps) {
   const { user } = useAuth()
+  const { profile } = useAppSettings()
   const [portaal, setPortaal] = useState<ProjectPortaal | null>(null)
   const [items, setItems] = useState<PortaalItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -303,6 +305,36 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
       toast.success('Item toegevoegd aan portaal')
       setItemDialogOpen(false)
+
+      // Email naar klant (niet-blokkerend)
+      try {
+        const { getProject, getKlant } = await import('@/services/supabaseService')
+        const { sendEmail } = await import('@/services/gmailService')
+        const project = await getProject(projectId)
+        if (project?.klant_id) {
+          const klant = await getKlant(project.klant_id)
+          const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
+          if (klantEmail && portaal) {
+            const bedrijfsnaam = profile?.bedrijfsnaam || ''
+            const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
+            sendEmail(
+              klantEmail,
+              `${bedrijfsnaam || 'Nieuw item'} — ${titel}`,
+              [
+                `Er is een nieuw item gedeeld voor project ${projectNaam}.`,
+                '',
+                titel,
+                itemOmschrijving || '',
+                '',
+                `Bekijk het hier: ${portaalUrl}`,
+              ].filter(Boolean).join('\n')
+            ).catch(() => {}) // Niet-blokkerend
+          }
+        }
+      } catch {
+        // Email faalt silently
+      }
+
       await fetchPortaal()
     } catch (err) {
       toast.error((err as Error).message || 'Kon item niet toevoegen')
