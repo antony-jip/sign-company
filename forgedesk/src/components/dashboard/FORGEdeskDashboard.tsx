@@ -80,20 +80,20 @@ export function FORGEdeskDashboard() {
   const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1)
 
   return (
-    <div className="space-y-5">
-      {/* Compact header */}
+    <div className="space-y-6">
+      {/* Welcome header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="page-title text-foreground">
+          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-1.5">{formattedDate}</p>
+          <h1 className="text-[32px] sm:text-[38px] font-extrabold tracking-[-0.04em] leading-[1.1] text-foreground">
             {greeting}{userName ? ', ' : ''}
             {userName && <span className="wm-gradient-text">{userName}</span>}
           </h1>
-          <p className="text-[13px] text-muted-foreground mt-1.5 font-medium">{formattedDate}</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/offertes/nieuw')}
-            className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2 rounded-[10px] bg-foreground text-background hover:shadow-md hover:-translate-y-px transition-all active:scale-[0.96]"
+            className="inline-flex items-center gap-1.5 text-[13px] font-bold px-5 py-2.5 rounded-[12px] bg-foreground text-background hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-[0.96]"
           >
             + Nieuwe offerte
           </button>
@@ -120,13 +120,13 @@ export function FORGEdeskDashboard() {
       <StatisticsCards />
 
       {/* Row 1: Recente activiteit | Vandaag planning */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RecenteActiviteitWidget />
         <TodayPlanningWidget />
       </div>
 
       {/* Row 2: Taken | Openstaande offertes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <PriorityTasks />
         <OpenstaandeOffertesWidget />
       </div>
