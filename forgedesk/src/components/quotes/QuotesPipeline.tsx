@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -1215,21 +1216,21 @@ export function QuotesPipeline() {
         <>
           {sortedListOffertes.length === 0 ? (
             <Card className="border-dashed">
-              <CardContent className="py-16 text-center">
-                <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                <h3 className="text-base font-medium text-foreground">Geen offertes gevonden</h3>
-                <p className="text-sm text-muted-foreground mt-1 mb-4">
-                  {searchQuery || statusFilter !== 'alle'
-                    ? 'Pas je filters aan of maak een nieuwe offerte aan.'
-                    : 'Maak je eerste offerte aan.'}
-                </p>
-                <Button asChild variant="outline" size="sm">
-                  <Link to="/offertes/nieuw">
-                    <Plus className="mr-1.5 h-3.5 w-3.5" />
-                    Nieuwe offerte
-                  </Link>
-                </Button>
-              </CardContent>
+              <EmptyState
+                module="offertes"
+                title="Geen offertes gevonden"
+                description={searchQuery || statusFilter !== 'alle'
+                  ? 'Pas je filters aan of maak een nieuwe offerte aan.'
+                  : 'Maak je eerste offerte en stuur hem direct naar je klant.'}
+                action={
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/offertes/nieuw">
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
+                      Nieuwe offerte
+                    </Link>
+                  </Button>
+                }
+              />
             </Card>
           ) : (
             <div className="rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
