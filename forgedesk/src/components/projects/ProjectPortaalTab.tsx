@@ -23,6 +23,9 @@ import {
   Upload,
   Calendar,
   AlertCircle,
+  Bell,
+  Send,
+  Reply,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -51,13 +54,17 @@ import {
   getPortaalByProject,
   getPortaalItems,
   createPortaalItem,
+  createPortaalReactie,
+  updatePortaalItem,
   deletePortaalItem,
   createPortaalBestand,
   getOffertesByProject,
   getFacturenByProject,
+  getNotificaties,
+  markNotificatieGelezen,
 } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
-import type { ProjectPortaal, PortaalItem, Offerte, Factuur } from '@/types'
+import type { ProjectPortaal, PortaalItem, Offerte, Factuur, Notificatie } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 interface ProjectPortaalTabProps {
@@ -107,6 +114,14 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [facturen, setFacturen] = useState<Factuur[]>([])
 
+  // Notificaties voor dit project
+  const [notificaties, setNotificaties] = useState<Notificatie[]>([])
+
+  // Inline reply state
+  const [replyItemId, setReplyItemId] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState('')
+  const [replySending, setReplySending] = useState(false)
+
   const fetchPortaal = useCallback(async () => {
     try {
       const p = await getPortaalByProject(projectId)
@@ -115,6 +130,16 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         const itms = await getPortaalItems(p.id)
         setItems(itms)
       }
+      // Haal portaal-gerelateerde notificaties op voor dit project
+      try {
+        const allNotifs = await getNotificaties()
+        const portaalNotifs = allNotifs.filter(
+          n => n.project_id === projectId &&
+            ['portaal_goedkeuring', 'portaal_revisie', 'portaal_bericht', 'portaal_bekeken'].includes(n.type) &&
+            !n.gelezen
+        )
+        setNotificaties(portaalNotifs)
+      } catch { /* ignore */ }
     } catch (err) {
       console.error('Fout bij ophalen portaal:', err)
     } finally {
@@ -353,6 +378,47 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     }
   }
 
+  async function handleReply(itemId: string) {
+    if (!replyText.trim() || !portaal) return
+    setReplySending(true)
+    try {
+      // Maak een nieuw bericht-item als reactie op het portaal
+      await createPortaalItem({
+        user_id: user!.id,
+        project_id: projectId,
+        portaal_id: portaal.id,
+        type: 'bericht',
+        titel: 'Reactie',
+        omschrijving: replyText.trim(),
+        status: 'verstuurd',
+        zichtbaar_voor_klant: true,
+        volgorde: 0,
+      })
+
+      // Reset item status als het revisie was → verstuurd (nieuwe versie onderweg)
+      const item = items.find(i => i.id === itemId)
+      if (item?.status === 'revisie') {
+        await updatePortaalItem(itemId, { status: 'verstuurd' })
+      }
+
+      setReplyText('')
+      setReplyItemId(null)
+      toast.success('Reactie verstuurd')
+      await fetchPortaal()
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setReplySending(false)
+    }
+  }
+
+  async function handleMarkNotifGelezen(notifId: string) {
+    try {
+      await markNotificatieGelezen(notifId)
+      setNotificaties(prev => prev.filter(n => n.id !== notifId))
+    } catch { /* ignore */ }
+  }
+
   if (loading) {
     return (
       <Card className="border-border/80 dark:border-border/80">
@@ -483,6 +549,38 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
             </div>
           )}
 
+          {/* Notificaties */}
+          {notificaties.length > 0 && (
+            <div className="border-t pt-3 space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Bell className="h-3 w-3" />
+                Meldingen
+                <Badge className="bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400 text-[10px] px-1.5">{notificaties.length}</Badge>
+              </p>
+              {notificaties.map((notif) => (
+                <div
+                  key={notif.id}
+                  className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs cursor-pointer hover:bg-muted/80 transition-colors ${
+                    notif.type === 'portaal_goedkeuring' ? 'bg-green-50/50 dark:bg-green-950/20'
+                    : notif.type === 'portaal_revisie' ? 'bg-amber-50/50 dark:bg-amber-950/20'
+                    : 'bg-blue-50/50 dark:bg-blue-950/20'
+                  }`}
+                  onClick={() => handleMarkNotifGelezen(notif.id)}
+                  title="Klik om te markeren als gelezen"
+                >
+                  {notif.type === 'portaal_goedkeuring' ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 flex-shrink-0 mt-0.5" />
+                    : notif.type === 'portaal_revisie' ? <RotateCcw className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    : <MessageSquare className="h-3.5 w-3.5 text-blue-600 flex-shrink-0 mt-0.5" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground">{notif.titel}</p>
+                    {notif.bericht && <p className="text-muted-foreground mt-0.5 line-clamp-2">{notif.bericht}</p>}
+                    <span className="text-muted-foreground/60">{formatDate(notif.created_at)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Items lijst */}
           {items.length > 0 && (
             <div className="border-t pt-3 space-y-2">
@@ -490,6 +588,8 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 const TypeIcon = TYPE_ICONS[item.type] || FileText
                 const config = STATUS_CONFIG[item.status] || STATUS_CONFIG.verstuurd
                 const StatusIcon = config.icon
+                const hasRevisie = item.reacties?.some(r => r.type === 'revisie')
+                const hasBericht = item.reacties?.some(r => r.type === 'bericht')
 
                 return (
                   <div key={item.id} className="space-y-1">
@@ -546,15 +646,17 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                     {item.reacties && item.reacties.length > 0 && (
                       <div className="ml-6 space-y-1">
                         {item.reacties.map((reactie) => (
-                          <div key={reactie.id} className={`flex items-start gap-1.5 text-[10px] rounded px-2 py-1 ${
+                          <div key={reactie.id} className={`flex items-start gap-1.5 text-[10px] rounded px-2 py-1.5 ${
                             reactie.type === 'goedkeuring' ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
                             : reactie.type === 'revisie' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
                             : 'bg-muted text-muted-foreground'
                           }`}>
-                            {reactie.type === 'goedkeuring' ? <CheckCircle2 className="h-3 w-3 flex-shrink-0 mt-0.5" /> : <RotateCcw className="h-3 w-3 flex-shrink-0 mt-0.5" />}
-                            <div>
+                            {reactie.type === 'goedkeuring' ? <CheckCircle2 className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                              : reactie.type === 'revisie' ? <RotateCcw className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                              : <MessageSquare className="h-3 w-3 flex-shrink-0 mt-0.5" />}
+                            <div className="flex-1">
                               <span className="font-medium">
-                                {reactie.type === 'goedkeuring' ? 'Goedgekeurd' : 'Revisie'}
+                                {reactie.type === 'goedkeuring' ? 'Goedgekeurd' : reactie.type === 'revisie' ? 'Revisie' : 'Bericht'}
                                 {reactie.klant_naam && ` — ${reactie.klant_naam}`}
                               </span>
                               {reactie.bericht && <p className="text-muted-foreground mt-0.5">{reactie.bericht}</p>}
@@ -562,6 +664,55 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Reageer knop — toon bij revisie of bericht reacties */}
+                    {isActief && (hasRevisie || hasBericht) && replyItemId !== item.id && (
+                      <div className="ml-6">
+                        <button
+                          onClick={() => { setReplyItemId(item.id); setReplyText('') }}
+                          className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <Reply className="h-3 w-3" />
+                          Reageren
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Inline reply input */}
+                    {replyItemId === item.id && (
+                      <div className="ml-6 flex items-end gap-1.5">
+                        <Textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault()
+                              if (replyText.trim()) handleReply(item.id)
+                            }
+                          }}
+                          placeholder="Typ een reactie naar de klant..."
+                          rows={1}
+                          className="text-xs min-h-[32px] resize-none"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          className="h-8 w-8 p-0 flex-shrink-0"
+                          disabled={replySending || !replyText.trim()}
+                          onClick={() => handleReply(item.id)}
+                        >
+                          {replySending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs text-muted-foreground flex-shrink-0"
+                          onClick={() => setReplyItemId(null)}
+                        >
+                          Annuleer
+                        </Button>
                       </div>
                     )}
                   </div>
