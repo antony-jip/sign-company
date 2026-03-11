@@ -474,9 +474,21 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] text-muted-foreground">{formatDate(item.created_at)}</span>
-                        {item.bekeken_op && (
-                          <span className="text-[10px] text-blue-500 flex items-center gap-0.5">
-                            <Eye className="h-2.5 w-2.5" /> Bekeken
+                        {item.bekeken_op ? (() => {
+                          const bekekenDagenGeleden = (Date.now() - new Date(item.bekeken_op).getTime()) / 86400000
+                          const heeftReactie = item.reacties && item.reacties.length > 0
+                          const isOranje = bekekenDagenGeleden > 1 && !heeftReactie
+                          return (
+                            <span className={`text-[10px] flex items-center gap-0.5 ${isOranje ? 'text-amber-500' : 'text-blue-500'}`}
+                              title={isOranje ? `Bekeken ${Math.floor(bekekenDagenGeleden)} dagen geleden, geen reactie` : `Bekeken op ${formatDate(item.bekeken_op)}`}
+                            >
+                              <Eye className="h-2.5 w-2.5" />
+                              {isOranje ? `${Math.floor(bekekenDagenGeleden)}d geen reactie` : 'Bekeken'}
+                            </span>
+                          )
+                        })() : (
+                          <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5" title="Nog niet bekeken">
+                            <Eye className="h-2.5 w-2.5" /> Niet bekeken
                           </span>
                         )}
                       </div>
@@ -498,6 +510,28 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
+                  {/* Reacties onder het item */}
+                  {item.reacties && item.reacties.length > 0 && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {item.reacties.map((reactie) => (
+                        <div key={reactie.id} className={`flex items-start gap-1.5 text-[10px] rounded px-2 py-1 ${
+                          reactie.type === 'goedkeuring' ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
+                          : reactie.type === 'revisie' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
+                          : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {reactie.type === 'goedkeuring' ? <CheckCircle2 className="h-3 w-3 flex-shrink-0 mt-0.5" /> : <RotateCcw className="h-3 w-3 flex-shrink-0 mt-0.5" />}
+                          <div>
+                            <span className="font-medium">
+                              {reactie.type === 'goedkeuring' ? 'Goedgekeurd' : 'Revisie'}
+                              {reactie.klant_naam && ` — ${reactie.klant_naam}`}
+                            </span>
+                            {reactie.bericht && <p className="text-muted-foreground mt-0.5">{reactie.bericht}</p>}
+                            <span className="text-muted-foreground/60">{formatDate(reactie.created_at)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 )
               })}
             </div>

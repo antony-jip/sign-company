@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Loader2,
@@ -19,9 +19,12 @@ import {
   AlertCircle,
   RotateCcw,
   Clock,
+  Paperclip,
 } from 'lucide-react'
 import { PortaalVerlopen } from './PortaalVerlopen'
 import { PortaalGesloten } from './PortaalGesloten'
+import { PortaalReactieForm } from './PortaalReactieForm'
+import { PortaalLightbox } from './PortaalLightbox'
 
 // Types voor de API response
 interface PortaalBestand {
@@ -119,6 +122,16 @@ function formatDate(dateStr: string): string {
   }).format(new Date(dateStr))
 }
 
+function formatDateTime(dateStr: string): string {
+  return new Intl.DateTimeFormat('nl-NL', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(dateStr))
+}
+
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('nl-NL', {
     style: 'currency',
@@ -131,16 +144,91 @@ function isImageFile(mimeType: string | null, filename: string): boolean {
   return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(filename)
 }
 
-function PortaalItemCard({ item, primaire_kleur }: { item: PortaalItemData; primaire_kleur: string }) {
+// ─── Bekeken Tracker Hook ───
+function useBekekenTracker(token: string | undefined) {
+  const bekekenSet = useRef(new Set<string>())
+  const flushTimer = useRef<ReturnType<typeof setInterval>>()
+
+  const flush = useCallback(() => {
+    if (!token || bekekenSet.current.size === 0) return
+    const ids = Array.from(bekekenSet.current)
+    bekekenSet.current.clear()
+    fetch('/api/portaal-bekeken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, item_ids: ids }),
+    }).catch(() => {}) // fire-and-forget
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    // Flush elke 5 seconden
+    flushTimer.current = setInterval(flush, 5000)
+    // Flush bij page unload
+    const handleUnload = () => flush()
+    window.addEventListener('beforeunload', handleUnload)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush()
+    })
+    return () => {
+      clearInterval(flushTimer.current)
+      window.removeEventListener('beforeunload', handleUnload)
+      flush() // final flush
+    }
+  }, [token, flush])
+
+  const markBekeken = useCallback((itemId: string) => {
+    bekekenSet.current.add(itemId)
+  }, [])
+
+  return { markBekeken }
+}
+
+// ─── Item Card Component ───
+function PortaalItemCard({
+  item,
+  primaire_kleur,
+  token,
+  onReactie,
+  onImageClick,
+  markBekeken,
+}: {
+  item: PortaalItemData
+  primaire_kleur: string
+  token: string
+  onReactie: () => void
+  onImageClick: (images: { url: string; bestandsnaam: string; grootte?: number | null }[], index: number) => void
+  markBekeken: (itemId: string) => void
+}) {
   const TypeIcon = TYPE_ICONS[item.type] || FileText
   const statusConfig = STATUS_CONFIG[item.status] || STATUS_CONFIG.verstuurd
   const StatusIcon = statusConfig.icon
+  const cardRef = useRef<HTMLDivElement>(null)
 
   const images = item.bestanden.filter(b => isImageFile(b.mime_type, b.bestandsnaam))
   const files = item.bestanden.filter(b => !isImageFile(b.mime_type, b.bestandsnaam))
 
+  // Klant-geüploade bestanden bij reacties
+  const klantBestanden = item.bestanden.filter(b => b.uploaded_by === 'klant')
+
+  // IntersectionObserver voor bekeken tracking
+  useEffect(() => {
+    if (!cardRef.current) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          markBekeken(item.id)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.5 }
+    )
+    observer.observe(cardRef.current)
+    return () => observer.disconnect()
+  }, [item.id, markBekeken])
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div ref={cardRef} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
@@ -206,17 +294,15 @@ function PortaalItemCard({ item, primaire_kleur }: { item: PortaalItemData; prim
         </div>
       )}
 
-      {/* Afbeeldingen */}
+      {/* Afbeeldingen — klik voor lightbox */}
       {images.length > 0 && (
         <div className="px-5 pb-3">
           <div className={`grid gap-2 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            {images.map((img) => (
-              <a
+            {images.map((img, idx) => (
+              <button
                 key={img.id}
-                href={img.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-lg overflow-hidden border border-gray-100 hover:border-gray-300 transition-colors"
+                onClick={() => onImageClick(images.map(i => ({ url: i.url, bestandsnaam: i.bestandsnaam, grootte: i.grootte })), idx)}
+                className="block rounded-lg overflow-hidden border border-gray-100 hover:border-gray-300 transition-colors cursor-zoom-in"
               >
                 <img
                   src={img.thumbnail_url || img.url}
@@ -224,7 +310,7 @@ function PortaalItemCard({ item, primaire_kleur }: { item: PortaalItemData; prim
                   className="w-full h-48 object-cover"
                   loading="lazy"
                 />
-              </a>
+              </button>
             ))}
           </div>
         </div>
@@ -251,55 +337,118 @@ function PortaalItemCard({ item, primaire_kleur }: { item: PortaalItemData; prim
 
       {/* Reacties */}
       {item.reacties.length > 0 && (
-        <div className="border-t border-gray-100 px-5 py-3 space-y-2">
-          {item.reacties.map((reactie) => (
-            <div key={reactie.id} className="text-sm">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="font-medium text-gray-700">{reactie.klant_naam || 'Klant'}</span>
-                <span className="text-xs text-gray-400">{formatDate(reactie.created_at)}</span>
+        <div className="border-t border-gray-100 px-5 py-3 space-y-3">
+          {item.reacties.map((reactie) => {
+            const isGoedkeuring = reactie.type === 'goedkeuring'
+            const isRevisie = reactie.type === 'revisie'
+            const bgColor = isGoedkeuring ? 'bg-green-50 border-green-200' : isRevisie ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
+            const iconColor = isGoedkeuring ? 'text-green-600' : isRevisie ? 'text-amber-600' : 'text-gray-500'
+            const ReactieIcon = isGoedkeuring ? CheckCircle2 : isRevisie ? RotateCcw : MessageSquare
+
+            // Find klant-uploaded bestanden for this reactie (matched by created_at proximity)
+            const reactieBestanden = klantBestanden.filter(b => {
+              const bTime = new Date(b.created_at).getTime()
+              const rTime = new Date(reactie.created_at).getTime()
+              return Math.abs(bTime - rTime) < 60000 // within 1 minute
+            })
+
+            return (
+              <div key={reactie.id} className={`rounded-xl border p-3 ${bgColor}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <ReactieIcon className={`w-4 h-4 ${iconColor}`} />
+                  <span className="text-sm font-medium text-gray-800">
+                    {isGoedkeuring ? 'Goedgekeurd' : isRevisie ? 'Revisie gevraagd' : 'Bericht'}
+                    {reactie.klant_naam && ` door ${reactie.klant_naam}`}
+                  </span>
+                </div>
+                {reactie.bericht && (
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap ml-6">{reactie.bericht}</p>
+                )}
+                {reactieBestanden.length > 0 && (
+                  <div className="ml-6 mt-2 space-y-1">
+                    {reactieBestanden.map((b) => (
+                      <a
+                        key={b.id}
+                        href={b.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        <Paperclip className="w-3 h-3" />
+                        {b.bestandsnaam}
+                      </a>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-1.5 ml-6">{formatDateTime(reactie.created_at)}</p>
               </div>
-              {reactie.bericht && (
-                <p className="text-gray-600 whitespace-pre-wrap">{reactie.bericht}</p>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
+
+      {/* Reactie formulier */}
+      <PortaalReactieForm
+        token={token}
+        itemId={item.id}
+        itemType={item.type}
+        itemStatus={item.status}
+        primaire_kleur={primaire_kleur}
+        onReactie={onReactie}
+      />
     </div>
   )
 }
 
+// ─── Main Page ───
 export function PortaalPagina() {
   const { token } = useParams<{ token: string }>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [data, setData] = useState<PortaalData | null>(null)
 
-  useEffect(() => {
+  // Lightbox
+  const [lightboxImages, setLightboxImages] = useState<{ url: string; bestandsnaam: string; grootte?: number | null }[] | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  // Bekeken tracker
+  const { markBekeken } = useBekekenTracker(token)
+
+  const fetchPortaal = useCallback(async () => {
     if (!token) return
-
-    async function fetchPortaal() {
-      try {
-        const response = await fetch(`/api/portaal-get?token=${encodeURIComponent(token!)}`)
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError('Portaal niet gevonden')
-          } else {
-            setError('Er ging iets mis')
-          }
-          return
-        }
-        const result = await response.json()
-        setData(result)
-      } catch {
-        setError('Verbinding mislukt. Probeer het later opnieuw.')
-      } finally {
-        setLoading(false)
+    try {
+      const response = await fetch(`/api/portaal-get?token=${encodeURIComponent(token)}`)
+      if (!response.ok) {
+        setError(response.status === 404 ? 'Portaal niet gevonden' : 'Er ging iets mis')
+        return
       }
+      const result = await response.json()
+      setData(result)
+    } catch {
+      setError('Verbinding mislukt. Probeer het later opnieuw.')
+    } finally {
+      setLoading(false)
     }
-
-    fetchPortaal()
   }, [token])
+
+  useEffect(() => {
+    fetchPortaal()
+  }, [fetchPortaal])
+
+  // Mark portaal as bekeken on load
+  useEffect(() => {
+    if (!token || !data || data.status !== 'actief') return
+    fetch('/api/portaal-bekeken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    }).catch(() => {})
+  }, [token, data?.status])
+
+  function handleImageClick(images: { url: string; bestandsnaam: string; grootte?: number | null }[], index: number) {
+    setLightboxImages(images)
+    setLightboxIndex(index)
+  }
 
   if (loading) {
     return (
@@ -320,7 +469,6 @@ export function PortaalPagina() {
     )
   }
 
-  // Gesloten
   if (data.status === 'gesloten') {
     return (
       <PortaalGesloten
@@ -331,7 +479,6 @@ export function PortaalPagina() {
     )
   }
 
-  // Verlopen
   if (data.status === 'verlopen') {
     return (
       <PortaalVerlopen
@@ -343,7 +490,6 @@ export function PortaalPagina() {
     )
   }
 
-  // Actief
   const bedrijf = data.bedrijf!
   const project = data.project
   const portaal = data.portaal!
@@ -354,6 +500,15 @@ export function PortaalPagina() {
 
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
+      {/* Lightbox */}
+      {lightboxImages && (
+        <PortaalLightbox
+          images={lightboxImages}
+          startIndex={lightboxIndex}
+          onClose={() => setLightboxImages(null)}
+        />
+      )}
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -378,7 +533,6 @@ export function PortaalPagina() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        {/* Project info */}
         {project && (
           <div>
             <h1 className="text-xl font-semibold text-gray-900">{project.naam}</h1>
@@ -390,20 +544,17 @@ export function PortaalPagina() {
           </div>
         )}
 
-        {/* Instructietekst */}
         {portaal.instructie_tekst && (
           <div className="bg-white rounded-2xl border border-gray-200 px-5 py-4">
             <p className="text-sm text-gray-700 whitespace-pre-wrap">{portaal.instructie_tekst}</p>
           </div>
         )}
 
-        {/* Verloopt datum */}
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <Calendar className="w-3.5 h-3.5" />
           <span>Beschikbaar tot {formatDate(portaal.verloopt_op)}</span>
         </div>
 
-        {/* Items timeline */}
         {items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 px-5 py-12 text-center">
             <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
@@ -412,12 +563,19 @@ export function PortaalPagina() {
         ) : (
           <div className="space-y-4">
             {items.map((item) => (
-              <PortaalItemCard key={item.id} item={item} primaire_kleur={primaire_kleur} />
+              <PortaalItemCard
+                key={item.id}
+                item={item}
+                primaire_kleur={primaire_kleur}
+                token={token!}
+                onReactie={fetchPortaal}
+                onImageClick={handleImageClick}
+                markBekeken={markBekeken}
+              />
             ))}
           </div>
         )}
 
-        {/* Contact footer */}
         {toonContact && (bedrijf.telefoon || bedrijf.email || bedrijf.website) && (
           <div className="bg-white rounded-2xl border border-gray-200 px-5 py-4 space-y-2">
             <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
@@ -448,7 +606,6 @@ export function PortaalPagina() {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="max-w-3xl mx-auto px-4 py-8 text-center">
         <p className="text-xs text-gray-400">Powered by FORGEdesk</p>
       </footer>
