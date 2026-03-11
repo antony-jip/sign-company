@@ -1405,8 +1405,67 @@ export function FacturenLayout() {
         ))}
       </div>
 
-      {/* ── Table ─────────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
+      {/* ── Mobile card view ── */}
+      <div className="md:hidden space-y-2 -mx-1">
+        {filteredFacturen.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8">Geen facturen gevonden</p>
+        )}
+        {filteredFacturen.map((factuur) => {
+          const config = STATUS_CONFIG[factuur.status]
+          const isOverdue = factuur.status === 'verzonden' && new Date(factuur.vervaldatum) < new Date()
+          const openstaand = factuur.totaal - factuur.betaald_bedrag
+          return (
+            <div
+              key={`mobile-${factuur.id}`}
+              onClick={() => setViewingFactuur(factuur)}
+              className={cn(
+                'p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-3',
+                isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border
+              )}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-mono font-semibold text-foreground">{factuur.nummer}</span>
+                    {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
+                      <Badge variant="secondary" className={cn('text-[9px] px-1 py-0 h-4', TYPE_CONFIG[factuur.factuur_type].color)}>
+                        {TYPE_CONFIG[factuur.factuur_type].label}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {factuur.klant_naam || 'Onbekende klant'}
+                  </p>
+                </div>
+                <Badge variant="secondary" className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-lg flex-shrink-0', config.color)}>
+                  <span className={cn('w-1.5 h-1.5 rounded-full mr-1 inline-block', config.dot)} />
+                  {config.label}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span>{formatDate(factuur.factuurdatum)}</span>
+                  {isOverdue && (
+                    <span className="text-red-600 dark:text-red-400 font-medium flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      Verlopen
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {openstaand > 0 && openstaand < factuur.totaal && (
+                    <span className="text-[10px] text-muted-foreground">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
+                  )}
+                  <span className="font-mono font-semibold text-foreground">{formatCurrency(factuur.totaal)}</span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── Desktop Table ─────────────────────────────────────────────────── */}
+      <div className="hidden md:block rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

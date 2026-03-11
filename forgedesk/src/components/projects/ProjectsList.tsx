@@ -494,7 +494,51 @@ export function ProjectsList() {
           />
         </Card>
       ) : (
-        <div className="rounded-xl border border-black/[0.06] bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0 shadow-sm">
+        <>
+        {/* Mobile card view */}
+        <div className="md:hidden space-y-2 -mx-1">
+          {gefilterdeProjecten.map((project) => {
+            const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
+            const bedrag = getProjectBedrag(project.id)
+            return (
+              <div
+                key={`mobile-${project.id}`}
+                onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
+                className={cn(
+                  'p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-3',
+                  getStatusBorderColor(project.status)
+                )}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">{project.naam}</p>
+                    {klantNaam && <p className="text-xs text-muted-foreground truncate mt-0.5">{klantNaam}</p>}
+                  </div>
+                  <Badge className={cn('text-[10px] capitalize flex-shrink-0', getStatusColor(project.status))}>
+                    {statusLabels[project.status] || project.status}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'text-[10px] font-medium px-1.5 py-0.5 rounded uppercase',
+                      getPriorityColor(project.prioriteit)
+                    )}>
+                      {project.prioriteit}
+                    </span>
+                    <span>{formatDate(project.created_at)}</span>
+                  </div>
+                  {bedrag > 0 && (
+                    <span className="font-mono font-semibold text-foreground">{formatCurrency(bedrag)}</span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block rounded-xl border border-black/[0.06] bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0 shadow-sm">
           <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -827,6 +871,7 @@ export function ProjectsList() {
           </table>
           </div>
         </div>
+        </>
       )}
       </div>
       </div>
