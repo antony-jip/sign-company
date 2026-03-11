@@ -715,7 +715,7 @@ export function VisualizerLayout() {
   // START SCHERM — Generator formulier
   // ═══════════════════════════════════════════════════════════════════
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 mod-strip mod-strip-visualizer">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 bg-sage/20 rounded-lg">

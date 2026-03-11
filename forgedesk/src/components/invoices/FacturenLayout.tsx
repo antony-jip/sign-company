@@ -1206,15 +1206,15 @@ export function FacturenLayout() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mod-strip mod-strip-facturen">
       {/* ── Header ────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #E8866A, #F0A88A)', boxShadow: '0 4px 12px rgba(232,134,106,0.25)' }}>
             <FileText className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground font-display truncate">Facturen</h1>
+            <h1 className="page-title text-foreground truncate">Facturen</h1>
             <p className="text-sm text-muted-foreground">
               {filteredFacturen.length} van {facturen.length} facturen
             </p>
@@ -1476,7 +1476,9 @@ export function FacturenLayout() {
                     className={cn(
                       'group hover:bg-[#F4F3F0]/60 transition-colors',
                       'border-l-2',
-                      isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border
+                      isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border,
+                      factuur.status === 'betaald' && 'factuur-row-betaald',
+                      isOverdue && 'factuur-row-verlopen'
                     )}
                   >
                     <td className="w-1" />

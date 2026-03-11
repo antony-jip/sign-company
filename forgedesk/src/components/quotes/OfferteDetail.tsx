@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -11,7 +11,7 @@ import {
   deleteOfferte,
 } from '@/services/supabaseService'
 import type { Offerte, OfferteItem, Klant, OfferteActiviteit } from '@/types'
-import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
+import { cn, formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -467,7 +467,7 @@ export function OfferteDetail() {
   )
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 mod-strip mod-strip-offertes">
       {/* Top bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -475,7 +475,7 @@ export function OfferteDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1
-            className="text-xl font-extrabold tracking-[-0.03em] text-foreground cursor-pointer hover:text-primary transition-colors"
+            className="page-title text-foreground cursor-pointer hover:text-primary transition-colors"
             title="Klik om nummer te kopiëren"
             onClick={() => {
               navigator.clipboard.writeText(offerte.nummer)
@@ -624,6 +624,79 @@ export function OfferteDetail() {
 
       {/* Status color strip */}
       <div className={`h-1 w-full rounded-t-lg ${getStatusBadgeClass(offerte.status)}`} style={{ border: 'none' }} />
+
+      {/* Status pipeline */}
+      {(() => {
+        const pipelineSteps = [
+          { key: 'concept', label: 'Concept' },
+          { key: 'verzonden', label: 'Verstuurd' },
+          { key: 'bekeken', label: 'Bekeken' },
+          { key: 'goedgekeurd', label: 'Akkoord' },
+          { key: 'gefactureerd', label: 'Gefactureerd' },
+        ]
+        const statusOrder = pipelineSteps.map(s => s.key)
+        const currentIdx = statusOrder.indexOf(offerte.status)
+        const isRejected = offerte.status === 'afgewezen'
+        const isExpired = offerte.status === 'verlopen'
+        const isModRequested = offerte.status === 'wijziging_gevraagd'
+
+        return (
+          <div className="flex items-center gap-0 py-2 px-1 overflow-x-auto scrollbar-hide">
+            {pipelineSteps.map((step, idx) => {
+              const isActive = step.key === offerte.status
+              const isPast = currentIdx >= 0 && idx < currentIdx
+              const isFuture = currentIdx >= 0 && idx > currentIdx
+
+              return (
+                <React.Fragment key={step.key}>
+                  {idx > 0 && (
+                    <div className={cn(
+                      'h-[2px] w-6 sm:w-10 flex-shrink-0 transition-colors',
+                      isPast ? 'bg-[#9B8EC4]' : 'bg-border'
+                    )} />
+                  )}
+                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                    <div className={cn(
+                      'w-3 h-3 rounded-full border-2 transition-all',
+                      isActive && 'bg-[#9B8EC4] border-[#9B8EC4] shadow-[0_0_8px_rgba(155,142,196,0.4)] scale-125',
+                      isPast && 'bg-[#9B8EC4] border-[#9B8EC4]',
+                      isFuture && 'bg-transparent border-border',
+                      (isRejected || isExpired || isModRequested) && !isPast && 'bg-transparent border-border'
+                    )} />
+                    <span className={cn(
+                      'text-[10px] whitespace-nowrap',
+                      isActive ? 'font-semibold text-[#9B8EC4]' : isPast ? 'text-muted-foreground' : 'text-muted-foreground/50'
+                    )}>
+                      {step.label}
+                    </span>
+                  </div>
+                </React.Fragment>
+              )
+            })}
+            {(isRejected || isExpired || isModRequested) && (
+              <>
+                <div className="h-[2px] w-6 sm:w-10 flex-shrink-0 bg-border" />
+                <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                  <div className={cn(
+                    'w-3 h-3 rounded-full border-2 scale-125',
+                    isRejected && 'bg-red-400 border-red-400 shadow-[0_0_8px_rgba(248,113,113,0.4)]',
+                    isExpired && 'bg-amber-400 border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)]',
+                    isModRequested && 'bg-blue-400 border-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.4)]'
+                  )} />
+                  <span className={cn(
+                    'text-[10px] font-semibold whitespace-nowrap',
+                    isRejected && 'text-red-500',
+                    isExpired && 'text-amber-500',
+                    isModRequested && 'text-blue-500'
+                  )}>
+                    {STATUS_LABELS[offerte.status]}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Client + Details grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -157,11 +157,11 @@ export function WerkbonnenLayout() {
   }
 
   return (
-    <div className="space-y-6 px-3 sm:px-6 py-6">
+    <div className="space-y-6 px-3 sm:px-6 py-6 mod-strip mod-strip-werkbonnen">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold tracking-[-0.03em] flex items-center gap-2">
+          <h1 className="page-title flex items-center gap-2 text-foreground">
             <ClipboardCheck className="h-6 w-6 text-[#D4836A] flex-shrink-0" />
             <span className="truncate">Werkbonnen</span>
           </h1>

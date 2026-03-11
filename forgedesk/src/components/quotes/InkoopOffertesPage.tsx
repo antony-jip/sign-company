@@ -70,11 +70,11 @@ export function InkoopOffertesPage() {
   const totaalInkoop = round2(offertes.reduce((sum, o) => sum + o.totaal, 0))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mod-strip mod-strip-inkoop">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground flex items-center gap-3">
+          <h1 className="page-title text-foreground flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
               <ShoppingCart className="h-5 w-5 text-white" />
             </div>

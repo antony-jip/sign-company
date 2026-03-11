@@ -28,6 +28,28 @@ interface NavSection {
   items: NavItem[]
 }
 
+// Module accent colors for icon glows
+const MODULE_COLORS: Record<string, string> = {
+  '/': '#5A8264',
+  '/klanten': '#8BAFD4',
+  '/offertes': '#9B8EC4',
+  '/inkoopoffertes': '#9B8EC4',
+  '/facturen': '#E8866A',
+  '/projecten': '#7EB5A6',
+  '/taken': '#C4A882',
+  '/werkbonnen': '#D4836A',
+  '/visualizer': '#9B8EC4',
+  '/planning': '#7EB5A6',
+  '/email': '#8BAFD4',
+  '/forgie': '#9B8EC4',
+  '/nieuwsbrieven': '#8BAFD4',
+  '/financieel': '#C4A882',
+  '/documenten': '#8A8680',
+  '/rapportages': '#7EB5A6',
+  '/team': '#8BAFD4',
+  '/instellingen': '#8A8680',
+}
+
 const navSections: NavSection[] = [
   {
     section: 'Overzicht',
@@ -164,26 +186,43 @@ export function Sidebar() {
         ? location.pathname === '/'
         : location.pathname.startsWith(item.path)
     const Icon = item.icon
+    const modColor = MODULE_COLORS[item.path] || '#8A8680'
+    const isForgie = item.path === '/forgie'
 
     const link = (
       <NavLink
         to={item.path}
         className={cn(
-          'flex items-center gap-3 py-[7px] px-[10px] rounded-[10px] text-[13px] font-medium transition-all duration-200 relative group',
+          'flex items-center gap-2.5 py-[7px] px-[10px] rounded-[10px] text-[13px] font-medium transition-all duration-200 relative group',
           isActive
             ? 'bg-background font-semibold text-foreground'
             : 'text-muted-foreground hover:bg-background hover:text-foreground',
-          isCollapsed && 'justify-center px-2'
+          isCollapsed && 'justify-center px-2',
+          isForgie && !isActive && 'sidebar-forgie mx-1 my-0.5'
         )}
       >
         {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[16px] rounded-r-[3px]" style={{ background: `hsl(var(--sidebar-primary))` }} />
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[16px] rounded-r-[3px] transition-all duration-300"
+            style={{ background: modColor, boxShadow: `0 0 8px ${modColor}40` }}
+          />
         )}
-        <Icon className={cn(
-          'w-4 h-4 flex-shrink-0 transition-colors duration-200',
-          isActive ? 'opacity-65' : 'opacity-40 group-hover:opacity-60'
-        )} />
+        <div
+          className={cn(
+            'w-[26px] h-[26px] rounded-[7px] flex items-center justify-center flex-shrink-0 transition-all duration-200',
+            isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-80'
+          )}
+          style={{
+            background: isActive ? `${modColor}18` : 'transparent',
+            boxShadow: isActive ? `0 0 10px ${modColor}12` : 'none',
+          }}
+        >
+          <Icon className="w-[15px] h-[15px]" style={isActive ? { color: modColor } : undefined} />
+        </div>
         {!isCollapsed && <span className="truncate">{item.label}</span>}
+        {isForgie && !isCollapsed && (
+          <span className="ml-auto text-[9px] font-bold uppercase tracking-[0.06em] text-[#9B8EC4] bg-[#9B8EC4]/10 px-1.5 py-0.5 rounded-full">AI</span>
+        )}
       </NavLink>
     )
 
@@ -211,8 +250,8 @@ export function Sidebar() {
         )}
       >
         <div
-          className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center flex-shrink-0 font-extrabold text-[13px] text-foreground hover:scale-[1.08] hover:rotate-[-3deg] transition-transform"
-          style={{ background: `linear-gradient(135deg, var(--wm-gradient-end), var(--wm-gradient-start))` }}
+          className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center flex-shrink-0 font-extrabold text-[13px] text-white hover:scale-[1.08] hover:rotate-[-3deg] transition-transform shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+          style={{ background: '#1A1A1A' }}
         >
           F
         </div>

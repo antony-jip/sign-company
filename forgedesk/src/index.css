@@ -1718,6 +1718,274 @@ html {
 }
 
 /* ================================================================
+   FORGEDESK VISUAL IDENTITY — Premium feel, module personality
+   ================================================================ */
+
+/* ── Module Color Strips — top accent bar per page ── */
+.mod-strip {
+  position: relative;
+}
+.mod-strip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+.mod-strip-offertes::before   { background: linear-gradient(90deg, #9B8EC4, #B8A8D8); }
+.mod-strip-facturen::before   { background: linear-gradient(90deg, #E8866A, #F0A88A); }
+.mod-strip-projecten::before  { background: linear-gradient(90deg, #7EB5A6, #A0D0C4); }
+.mod-strip-klanten::before    { background: linear-gradient(90deg, #8BAFD4, #A8C8E8); }
+.mod-strip-werkbonnen::before { background: linear-gradient(90deg, #D4836A, #E8A890); }
+.mod-strip-taken::before      { background: linear-gradient(90deg, #C4A882, #D8C4A4); }
+.mod-strip-planning::before   { background: linear-gradient(90deg, #7EB5A6, #A0D0C4); }
+.mod-strip-email::before      { background: linear-gradient(90deg, #8BAFD4, #A8C8E8); }
+.mod-strip-forgie::before     { background: linear-gradient(90deg, #9B8EC4, #C4A882); }
+.mod-strip-financieel::before { background: linear-gradient(90deg, #C4A882, #D8C4A4); }
+.mod-strip-documenten::before { background: linear-gradient(90deg, #8A8680, #A8A4A0); }
+.mod-strip-rapportages::before{ background: linear-gradient(90deg, #7EB5A6, #A0D0C4); }
+.mod-strip-team::before       { background: linear-gradient(90deg, #8BAFD4, #A8C8E8); }
+.mod-strip-nieuwsbrieven::before { background: linear-gradient(90deg, #8BAFD4, #A8C8E8); }
+.mod-strip-visualizer::before { background: linear-gradient(90deg, #9B8EC4, #B8A8D8); }
+.mod-strip-inkoop::before     { background: linear-gradient(90deg, #9B8EC4, #B8A8D8); }
+
+/* ── Enhanced Stat Cards — gradient backgrounds with glow ── */
+.stat-card-gradient-blush {
+  background: linear-gradient(135deg, #EDCFC4 0%, #F5DDD4 50%, #FAE8E0 100%);
+}
+.stat-card-gradient-sage {
+  background: linear-gradient(135deg, #B8CCBE 0%, #CCDcD0 50%, #E0ECE4 100%);
+}
+.stat-card-gradient-mist {
+  background: linear-gradient(135deg, #BCCAD6 0%, #CEDAE6 50%, #E0EAF2 100%);
+}
+.stat-card-gradient-cream {
+  background: linear-gradient(135deg, #E2DCCB 0%, #EAE6D8 50%, #F2EFE4 100%);
+}
+.dark .stat-card-gradient-blush { background: linear-gradient(135deg, rgba(232,134,106,0.12) 0%, rgba(232,134,106,0.06) 100%); }
+.dark .stat-card-gradient-sage  { background: linear-gradient(135deg, rgba(126,181,166,0.12) 0%, rgba(126,181,166,0.06) 100%); }
+.dark .stat-card-gradient-mist  { background: linear-gradient(135deg, rgba(139,175,212,0.12) 0%, rgba(139,175,212,0.06) 100%); }
+.dark .stat-card-gradient-cream { background: linear-gradient(135deg, rgba(196,168,130,0.12) 0%, rgba(196,168,130,0.06) 100%); }
+
+/* Stat card inner glow on hover */
+.stat-card-glow:hover {
+  box-shadow:
+    0 12px 40px -12px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+/* ── Sidebar Icon Glow ── */
+.sidebar-icon-glow {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-icon-glow:hover,
+.sidebar-icon-glow.active {
+  box-shadow: 0 0 12px currentColor;
+}
+
+/* ── Sidebar Forgie AI Section ── */
+.sidebar-forgie {
+  background: linear-gradient(135deg, rgba(155,142,196,0.08), rgba(155,142,196,0.03));
+  border: 1px solid rgba(155,142,196,0.12);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-forgie:hover {
+  background: linear-gradient(135deg, rgba(155,142,196,0.12), rgba(155,142,196,0.05));
+  border-color: rgba(155,142,196,0.20);
+  box-shadow: 0 0 20px rgba(155,142,196,0.08);
+}
+.dark .sidebar-forgie {
+  background: linear-gradient(135deg, rgba(155,142,196,0.06), rgba(155,142,196,0.02));
+  border-color: rgba(155,142,196,0.10);
+}
+
+/* ── Enhanced Page Title Typography ── */
+.page-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+@media (min-width: 640px) {
+  .page-title { font-size: 32px; }
+}
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.card-title-lg {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* ── Offerte Status Pipeline ── */
+.status-pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.status-pipeline-step {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+.status-pipeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid hsl(var(--border));
+  background: hsl(var(--background));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  flex-shrink: 0;
+}
+.status-pipeline-dot.active {
+  width: 12px;
+  height: 12px;
+  border-color: currentColor;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+.status-pipeline-dot.completed {
+  border-color: currentColor;
+  background: currentColor;
+}
+.status-pipeline-line {
+  height: 2px;
+  width: 32px;
+  background: hsl(var(--border));
+  transition: background 0.3s ease;
+}
+.status-pipeline-line.completed {
+  background: currentColor;
+}
+
+/* ── Factuur Row Status Glow ── */
+.factuur-row-betaald {
+  background: linear-gradient(90deg, rgba(74,153,96,0.06), transparent 60%);
+}
+.factuur-row-verlopen {
+  background: linear-gradient(90deg, rgba(196,91,79,0.06), transparent 60%);
+}
+.dark .factuur-row-betaald {
+  background: linear-gradient(90deg, rgba(74,153,96,0.08), transparent 60%);
+}
+.dark .factuur-row-verlopen {
+  background: linear-gradient(90deg, rgba(196,91,79,0.08), transparent 60%);
+}
+
+/* ── Marge Progress Bar ── */
+.marge-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: hsl(var(--border));
+  overflow: hidden;
+}
+.marge-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.marge-bar-fill.healthy { background: linear-gradient(90deg, #4A9960, #7EB5A6); }
+.marge-bar-fill.warning { background: linear-gradient(90deg, #B8883A, #C4A882); }
+.marge-bar-fill.danger  { background: linear-gradient(90deg, #C45B4F, #E8866A); }
+
+/* ── Enhanced Modal Animation ── */
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+[role="dialog"] {
+  animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Enhanced Toast / Sonner ── */
+[data-sonner-toaster] [data-sonner-toast] {
+  animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* ── Confetti / Check Animation for Betaald ── */
+@keyframes checkmarkDraw {
+  0% { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+.animate-checkmark {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: checkmarkDraw 0.4s 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ── Staggered stat cards ── */
+.stat-cards-stagger > *:nth-child(1) { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards; opacity: 0; }
+.stat-cards-stagger > *:nth-child(2) { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards; opacity: 0; }
+.stat-cards-stagger > *:nth-child(3) { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.19s forwards; opacity: 0; }
+.stat-cards-stagger > *:nth-child(4) { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.26s forwards; opacity: 0; }
+
+/* ── Activity Feed Icons ── */
+.activity-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.activity-icon-success { background: #E8F5EC; color: #4A9960; }
+.activity-icon-info    { background: #E8EFF8; color: #4A7AB5; }
+.activity-icon-warning { background: #F8F0E0; color: #B8883A; }
+.activity-icon-purple  { background: #EEE8F8; color: #7A5AB5; }
+.activity-icon-danger  { background: #FAE8E6; color: #C45B4F; }
+.dark .activity-icon-success { background: rgba(74,153,96,0.15); color: #7AAF85; }
+.dark .activity-icon-info    { background: rgba(74,122,181,0.15); color: #7AA4CC; }
+.dark .activity-icon-warning { background: rgba(184,136,58,0.15); color: #D4AA60; }
+.dark .activity-icon-purple  { background: rgba(122,90,181,0.15); color: #A07ACC; }
+.dark .activity-icon-danger  { background: rgba(196,91,79,0.15); color: #DA7B70; }
+
+/* ── Number Display — Large, premium data presentation ── */
+.display-number {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.display-number-xl { font-size: 36px; }
+.display-number-lg { font-size: 28px; }
+.display-number-md { font-size: 22px; }
+@media (min-width: 640px) {
+  .display-number-xl { font-size: 40px; }
+  .display-number-lg { font-size: 32px; }
+}
+
+/* ── Totalen Section — Visual hierarchy ── */
+.totalen-groot {
+  background: hsl(var(--primary) / 0.04);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.dark .totalen-groot {
+  background: hsl(var(--primary) / 0.08);
+}
+
+/* ================================================================
    PASTEL STATUS BADGES — Outside @layer for highest CSS precedence
    These override Tailwind utilities to ensure consistent status colors
    ================================================================ */

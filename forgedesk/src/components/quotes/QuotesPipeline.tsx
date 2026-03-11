@@ -641,15 +641,15 @@ export function QuotesPipeline() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in-up">
+    <div className="space-y-5 animate-fade-in-up mod-strip mod-strip-offertes">
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
+          <div className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #9B8EC4, #B8A8D8)', boxShadow: '0 4px 12px rgba(155,142,196,0.25)' }}>
             <FileText className="h-4.5 w-4.5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl font-extrabold tracking-[-0.03em] text-foreground truncate">Offertes</h1>
+            <h1 className="page-title text-foreground truncate">Offertes</h1>
             <p className="text-xs text-muted-foreground">
               {filteredOffertes.length} van {offertes.length} offertes
             </p>

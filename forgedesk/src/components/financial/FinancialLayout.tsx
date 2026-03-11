@@ -127,14 +127,14 @@ export function FinancialLayout() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mod-strip mod-strip-financieel">
       {/* Page Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg flex-shrink-0">
           <PiggyBank className="w-6 h-6 text-accent dark:text-primary" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground dark:text-white font-display truncate">
+          <h1 className="page-title text-foreground dark:text-white truncate">
             Financieel Overzicht
           </h1>
           <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 truncate">

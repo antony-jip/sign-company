@@ -84,11 +84,11 @@ export function FORGEdeskDashboard() {
       {/* Compact header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.03em] leading-tight text-foreground">
+          <h1 className="page-title text-foreground">
             {greeting}{userName ? ', ' : ''}
             {userName && <span className="wm-gradient-text">{userName}</span>}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">{formattedDate}</p>
+          <p className="text-[13px] text-muted-foreground mt-1.5 font-medium">{formattedDate}</p>
         </div>
         <div className="flex gap-2">
           <button
