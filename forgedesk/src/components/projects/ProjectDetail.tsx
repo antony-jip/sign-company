@@ -2429,6 +2429,7 @@ const statusIcons: Record<string, { label: string; color: string }> = {
 function TaakCard({ taak, onStatusChange }: { key?: React.Key; taak: Taak; onStatusChange?: (status: Taak['status']) => void }) {
   const isOverdue = new Date(taak.deadline ?? "") < new Date() && taak.status !== 'klaar'
   const isDone = taak.status === 'klaar'
+  const [isDragging, setIsDragging] = useState(false)
 
   return (
     <div
@@ -2436,13 +2437,14 @@ function TaakCard({ taak, onStatusChange }: { key?: React.Key; taak: Taak; onSta
       onDragStart={(e) => {
         e.dataTransfer.setData('text/plain', taak.id)
         e.dataTransfer.effectAllowed = 'move'
-        ;(e.target as HTMLElement).style.opacity = '0.5'
+        setIsDragging(true)
       }}
-      onDragEnd={(e) => {
-        ;(e.target as HTMLElement).style.opacity = '1'
+      onDragEnd={() => {
+        setIsDragging(false)
       }}
       className={cn(
         'group rounded-lg border bg-card p-2.5 cursor-grab active:cursor-grabbing transition-all duration-150 hover:shadow-sm',
+        isDragging && 'opacity-50',
         isDone ? 'opacity-60 border-border/40' : 'border-border/60 hover:border-border',
       )}
     >
