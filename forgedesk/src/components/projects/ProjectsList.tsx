@@ -551,17 +551,17 @@ export function ProjectsList() {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            {project.project_nummer && (
-                              <span className="text-[11px] font-mono text-muted-foreground flex-shrink-0">{project.project_nummer}</span>
-                            )}
+                          <div>
                             <Link
                               to={`/projecten/${project.id}`}
-                              className="text-[13px] font-semibold text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
+                              className="text-[13px] font-medium text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
                               onClick={(e) => e.stopPropagation()}
                             >
                               {project.naam}
                             </Link>
+                            {project.project_nummer && (
+                              <span className="text-xs text-gray-400 font-mono">{project.project_nummer}</span>
+                            )}
                           </div>
                           {project.beschrijving && (
                             <p className="text-[11px] text-muted-foreground truncate max-w-[300px] mt-0.5">

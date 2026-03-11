@@ -833,11 +833,11 @@ export function ProjectDetail() {
                 <Briefcase className="h-5 w-5 text-white" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div>
+                  <h1 className="text-xl font-medium text-foreground leading-tight">{project.naam}</h1>
                   {project.project_nummer && (
-                    <span className="text-[12px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">{project.project_nummer}</span>
+                    <span className="text-xs text-gray-400 font-mono">{project.project_nummer}</span>
                   )}
-                  <h1 className="text-xl font-bold text-foreground leading-tight">{project.naam}</h1>
                 </div>
                 <p className="text-[13px] text-muted-foreground mt-1 flex items-center gap-1.5">
                   <Users className="h-3 w-3" />
