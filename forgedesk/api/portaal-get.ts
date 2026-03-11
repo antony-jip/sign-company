@@ -116,21 +116,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('zichtbaar_voor_klant', true)
       .order('created_at', { ascending: false })
 
-    const safeItems = (items || []).map((item: Record<string, unknown>) => ({
-      id: item.id,
-      type: item.type,
-      titel: item.titel,
-      omschrijving: item.omschrijving,
-      label: item.label,
-      status: item.status,
-      bekeken_op: item.bekeken_op,
-      mollie_payment_url: item.mollie_payment_url,
-      bedrag: item.bedrag,
-      volgorde: item.volgorde,
-      created_at: item.created_at,
-      bestanden: item.portaal_bestanden || [],
-      reacties: item.portaal_reacties || [],
-    }))
+    // Genereer publieke URLs voor bestanden die als storage-pad zijn opgeslagen
+    const DOCUMENTEN_BUCKET = 'documenten'
+    const PORTAAL_BUCKET = 'portaal-bestanden'
+
+    function resolveFileUrl(bestand: Record<string, unknown>): Record<string, unknown> {
+      const url = bestand.url as string | null
+      if (!url) return bestand
+
+      // Al een volledige URL (http/https of data:) → niet aanpassen
+      if (url.startsWith('http') || url.startsWith('data:')) return bestand
+
+      // Storage pad → genereer publieke URL
+      // Admin-uploads gaan naar 'documenten' bucket (pad begint met 'portaal/')
+      // Klant-uploads gaan naar 'portaal-bestanden' bucket (pad begint met 'portaal-bestanden/')
+      const bucket = url.startsWith('portaal-bestanden/') ? PORTAAL_BUCKET : DOCUMENTEN_BUCKET
+      const storagePath = url.startsWith('portaal-bestanden/') ? url.replace('portaal-bestanden/', '') : url
+
+      const { data: publicUrl } = supabaseAdmin.storage
+        .from(bucket)
+        .getPublicUrl(storagePath)
+
+      return {
+        ...bestand,
+        url: publicUrl.publicUrl,
+        thumbnail_url: bestand.thumbnail_url === url ? publicUrl.publicUrl : bestand.thumbnail_url,
+      }
+    }
+
+    const safeItems = (items || []).map((item: Record<string, unknown>) => {
+      const bestanden = ((item.portaal_bestanden || []) as Record<string, unknown>[]).map(resolveFileUrl)
+      return {
+        id: item.id,
+        type: item.type,
+        titel: item.titel,
+        omschrijving: item.omschrijving,
+        label: item.label,
+        status: item.status,
+        bekeken_op: item.bekeken_op,
+        mollie_payment_url: item.mollie_payment_url,
+        bedrag: item.bedrag,
+        volgorde: item.volgorde,
+        created_at: item.created_at,
+        bestanden,
+        reacties: item.portaal_reacties || [],
+      }
+    })
 
     return res.status(200).json({
       status: 'actief',

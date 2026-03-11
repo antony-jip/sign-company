@@ -899,10 +899,13 @@ export interface Medewerker {
 export interface Notificatie {
   id: string;
   user_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering';
   titel: string;
   bericht: string;
   link?: string;
+  project_id?: string;
+  klant_id?: string;
+  actie_genomen?: boolean;
   gelezen: boolean;
   created_at: string;
   updated_at?: string;

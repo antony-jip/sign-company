@@ -116,7 +116,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Koppel eventuele bestanden aan de reactie
     if (bestanden && bestanden.length > 0) {
-      // Update de portaal_bestanden records die matchen op URL
       for (const url of bestanden) {
         await supabaseAdmin
           .from('portaal_bestanden')
@@ -125,6 +124,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('url', url)
           .eq('uploaded_by', 'klant')
       }
+    }
+
+    // --- Notificatie + Email naar gebruiker (niet-blokkerend) ---
+    try {
+      const displayNaam = klant_naam?.trim() || 'Klant'
+      const notifType = type === 'goedkeuring' ? 'portaal_goedkeuring' : type === 'revisie' ? 'portaal_revisie' : 'portaal_bericht'
+      const actieLabel = type === 'goedkeuring' ? 'goedgekeurd' : type === 'revisie' ? 'revisie gevraagd' : 'een bericht gestuurd'
+
+      // Haal project info voor context
+      const { data: project } = await supabaseAdmin
+        .from('projecten')
+        .select('naam, klant_id')
+        .eq('id', portaal.project_id)
+        .single()
+
+      // Haal item titel
+      const { data: fullItem } = await supabaseAdmin
+        .from('portaal_items')
+        .select('titel')
+        .eq('id', portaal_item_id)
+        .single()
+
+      // Maak in-app notificatie aan
+      await supabaseAdmin.from('notificaties').insert({
+        user_id: portaal.user_id,
+        type: notifType,
+        titel: `${displayNaam} heeft ${actieLabel}`,
+        bericht: bericht?.trim()
+          ? `"${bericht.trim()}" — ${fullItem?.titel || 'Item'} (${project?.naam || 'Project'})`
+          : `${fullItem?.titel || 'Item'} — ${project?.naam || 'Project'}`,
+        link: `/projecten/${portaal.project_id}`,
+        project_id: portaal.project_id,
+        klant_id: project?.klant_id || null,
+        actie_genomen: false,
+        gelezen: false,
+      })
+
+      // Stuur email naar gebruiker
+      const { data: emailSettings } = await supabaseAdmin
+        .from('app_settings')
+        .select('email_instellingen')
+        .eq('user_id', portaal.user_id)
+        .maybeSingle()
+
+      const emailConfig = emailSettings?.email_instellingen as { gmail_address?: string; app_password?: string; smtp_host?: string; smtp_port?: number } | null
+
+      if (emailConfig?.gmail_address && emailConfig?.app_password) {
+        const onderwerp = type === 'goedkeuring'
+          ? `Goedgekeurd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
+          : type === 'revisie'
+          ? `Revisie gevraagd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
+          : `Nieuw bericht: ${fullItem?.titel || 'Item'} — ${displayNaam}`
+
+        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://forgedesk.nl')
+
+        const emailBody = [
+          `${displayNaam} heeft ${actieLabel}:`,
+          bericht?.trim() ? `\n"${bericht.trim()}"` : '',
+          `\nItem: ${fullItem?.titel || 'Item'}`,
+          `Project: ${project?.naam || 'Project'}`,
+          `\nBekijk in FORGEdesk: ${appUrl}/projecten/${portaal.project_id}`,
+        ].filter(Boolean).join('\n')
+
+        // Fire-and-forget email
+        fetch(`${appUrl}/api/send-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gmail_address: emailConfig.gmail_address,
+            app_password: emailConfig.app_password,
+            smtp_host: emailConfig.smtp_host,
+            smtp_port: emailConfig.smtp_port,
+            to: emailConfig.gmail_address, // Naar de gebruiker zelf
+            subject: onderwerp,
+            body: emailBody,
+          }),
+        }).catch(err => console.warn('Email naar gebruiker mislukt:', err))
+      }
+    } catch (notifErr) {
+      console.warn('Notificatie/email bij reactie mislukt:', notifErr)
     }
 
     return res.status(201).json({ reactie })

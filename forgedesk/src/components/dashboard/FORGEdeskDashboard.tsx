@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { StatisticsCards } from './StatisticsCards'
+import { PortaalAlerts } from './PortaalAlerts'
+import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
 import { RecenteActiviteitWidget } from './RecenteActiviteitWidget'
 import { OpenstaandeOffertesWidget } from './OpenstaandeOffertesWidget'
 import { TodayPlanningWidget } from './TodayPlanningWidget'
@@ -46,6 +48,9 @@ export function FORGEdeskDashboard() {
   const { user } = useAuth()
   const { profile } = useAppSettings()
   const userName = profile?.voornaam || user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
+
+  // Automatische herinnering check (eenmalig bij page load)
+  usePortaalHerinnering()
 
   // Verlopen facturen for alert bar
   const [verlopenFacturen, setVerlopenFacturen] = useState<{ count: number; bedrag: number }>({ count: 0, bedrag: 0 })
@@ -115,6 +120,9 @@ export function FORGEdeskDashboard() {
           </span>
         </div>
       )}
+
+      {/* Portaal alerts */}
+      <PortaalAlerts />
 
       {/* 4 stat cards */}
       <StatisticsCards />
