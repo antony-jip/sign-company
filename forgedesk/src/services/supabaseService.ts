@@ -68,6 +68,8 @@ import type {
   PortaalReactie,
   AppNotificatie,
   PortaalInstellingen,
+  AuditLogEntry,
+  PlanningInstellingen,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -5313,4 +5315,113 @@ export async function getAllePortalen(userId: string): Promise<(ProjectPortaal &
   }
   const portalen = getLocalData<ProjectPortaal>('project_portalen')
   return portalen.filter((p) => p.user_id === userId).sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+// ============ AUDIT LOG (Quick Win 3) ============
+
+export async function createAuditLogEntry(
+  data: Omit<AuditLogEntry, 'id' | 'created_at'>
+): Promise<AuditLogEntry> {
+  const entry: AuditLogEntry = {
+    ...data,
+    id: generateId(),
+    created_at: now(),
+  }
+  if (isSupabaseConfigured() && supabase) {
+    const { data: result, error } = await supabase
+      .from('audit_log')
+      .insert(entry)
+      .select()
+      .single()
+    if (error) throw error
+    return result as AuditLogEntry
+  }
+  const items = getLocalData<AuditLogEntry>('audit_log')
+  items.unshift(entry)
+  // Max 1000 entries bewaren in localStorage
+  if (items.length > 1000) items.length = 1000
+  setLocalData('audit_log', items)
+  return entry
+}
+
+export async function getAuditLog(
+  entityType: string,
+  entityId: string,
+  limit = 50
+): Promise<AuditLogEntry[]> {
+  assertId(entityId, 'entity_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('audit_log')
+      .select('*')
+      .eq('entity_type', entityType)
+      .eq('entity_id', entityId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return (data || []) as AuditLogEntry[]
+  }
+  const items = getLocalData<AuditLogEntry>('audit_log')
+  return items
+    .filter((e) => e.entity_type === entityType && e.entity_id === entityId)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, limit)
+}
+
+// ============ KLANT LABELS HELPER (Quick Win 1) ============
+
+export async function getAllKlantLabels(userId: string): Promise<string[]> {
+  assertId(userId, 'user_id')
+  const klanten = await getKlanten()
+  const labelSet = new Set<string>()
+  for (const k of klanten) {
+    if (k.labels) {
+      for (const l of k.labels) labelSet.add(l)
+    }
+  }
+  return Array.from(labelSet).sort()
+}
+
+// ============ PLANNING INSTELLINGEN (Quick Win 5) ============
+
+const DEFAULT_PLANNING_INSTELLINGEN: PlanningInstellingen = {
+  feestdagen_tonen: true,
+  feestdag_waarschuwing: true,
+  custom_geblokkeerde_dagen: [],
+}
+
+export async function getPlanningInstellingen(userId: string): Promise<PlanningInstellingen> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('planning_instellingen')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+    if (error && error.code !== 'PGRST116') throw error
+    if (data) return data as PlanningInstellingen
+  }
+  const stored = localStorage.getItem(`forgedesk_planning_instellingen_${userId}`)
+  if (stored) {
+    try { return JSON.parse(stored) as PlanningInstellingen } catch { /* ignore */ }
+  }
+  return { ...DEFAULT_PLANNING_INSTELLINGEN }
+}
+
+export async function savePlanningInstellingen(
+  userId: string,
+  instellingen: PlanningInstellingen
+): Promise<void> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase
+      .from('planning_instellingen')
+      .upsert({ user_id: userId, ...instellingen })
+    if (error) throw error
+    return
+  }
+  localStorage.setItem(
+    `forgedesk_planning_instellingen_${userId}`,
+    JSON.stringify(instellingen)
+  )
 }
