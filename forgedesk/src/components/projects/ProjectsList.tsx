@@ -627,7 +627,7 @@ export function ProjectsList() {
                       {(() => {
                         const bedrag = getProjectBedrag(project.id)
                         return bedrag > 0 ? (
-                          <span className="text-sm font-semibold text-foreground tabular-nums">
+                          <span className="text-sm font-semibold text-foreground tabular-nums font-mono">
                             {formatCurrency(bedrag)}
                           </span>
                         ) : (

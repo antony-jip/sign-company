@@ -113,7 +113,7 @@ export function StatisticsCards() {
           <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] dark:text-[#a0a0a0] mb-3 relative z-[1]">
             {stat.title}
           </p>
-          <p className="display-number display-number-xl text-foreground relative z-[1]">
+          <p className="display-number display-number-xl text-foreground relative z-[1] font-mono">
             {stat.value}
           </p>
           {stat.change && (

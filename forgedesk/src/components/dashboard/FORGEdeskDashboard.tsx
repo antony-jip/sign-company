@@ -127,7 +127,7 @@ export function FORGEdeskDashboard() {
         >
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           <span className="text-[13.5px] font-medium">
-            <strong>{verlopenFacturen.count} facturen verlopen</strong> — {formatCurrency(verlopenFacturen.bedrag)} openstaand
+            <strong>{verlopenFacturen.count} facturen verlopen</strong> — <span className="font-mono">{formatCurrency(verlopenFacturen.bedrag)}</span> openstaand
           </span>
           <span className="ml-auto text-[13px] font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
             Bekijk →
@@ -143,7 +143,7 @@ export function FORGEdeskDashboard() {
         >
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           <span className="text-[13.5px] font-medium">
-            <strong>{wachtOpReactie.count} {wachtOpReactie.count === 1 ? 'offerte wacht' : 'offertes wachten'} op reactie</strong> — {formatCurrency(wachtOpReactie.bedrag)} totaal
+            <strong>{wachtOpReactie.count} {wachtOpReactie.count === 1 ? 'offerte wacht' : 'offertes wachten'} op reactie</strong> — <span className="font-mono">{formatCurrency(wachtOpReactie.bedrag)}</span> totaal
           </span>
           <span className="ml-auto text-[13px] font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
             Bekijk →

@@ -942,7 +942,7 @@ export function ProjectDetail() {
                       ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
                       : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground font-mono">
                     {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)}
                   </p>
                 </div>
@@ -971,13 +971,13 @@ export function ProjectDetail() {
                       <div key={offerte.id} className="flex items-center justify-between bg-card rounded-lg px-3 py-2 border border-indigo-200 dark:border-indigo-800">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-sm font-medium truncate">{offerte.titel}</span>
-                          <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
+                          <span className="text-xs text-muted-foreground font-mono">{offerte.nummer}</span>
                           <Badge className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0`}>
                             {offerte.status}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-sm font-bold">{formatCurrency(offerte.totaal)}</span>
+                          <span className="text-sm font-bold font-mono">{formatCurrency(offerte.totaal)}</span>
                           <Button
                             size="sm"
                             className="h-7 px-3 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
@@ -1850,7 +1850,7 @@ export function ProjectDetail() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
-                          <span className="text-sm font-bold text-foreground">{formatCurrency(offerte.totaal)}</span>
+                          <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(offerte.totaal)}</span>
                         </div>
                         <div className="flex items-center gap-1 pt-0.5 flex-wrap">
                           <Button
@@ -1926,7 +1926,7 @@ export function ProjectDetail() {
                                        linkedFactuur.status}
                                     </span>
                                     <span className="mx-1">&middot;</span>
-                                    {formatCurrency(linkedFactuur.totaal)}
+                                    <span className="font-mono">{formatCurrency(linkedFactuur.totaal)}</span>
                                   </>
                                 ) : 'Gefactureerd'}
                               </span>

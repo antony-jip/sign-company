@@ -641,16 +641,16 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                                 </span>
                               )}
                             </td>
-                            <td className="py-2 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 text-xs">
+                            <td className="py-2 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 text-xs font-mono">
                               {variant.aantal}
                             </td>
-                            <td className="py-2 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 text-xs">
+                            <td className="py-2 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 text-xs font-mono">
                               {formatCurrency(variant.eenheidsprijs)}
                             </td>
-                            <td className="py-2 px-2 text-right text-muted-foreground/60 dark:text-muted-foreground text-xs">
+                            <td className="py-2 px-2 text-right text-muted-foreground/60 dark:text-muted-foreground text-xs font-mono">
                               {variant.btw_percentage}%
                             </td>
-                            <td className="py-2 px-2 text-right text-xs font-medium text-foreground/70 dark:text-muted-foreground/50">
+                            <td className="py-2 px-2 text-right text-xs font-medium text-foreground/70 dark:text-muted-foreground/50 font-mono">
                               {formatCurrency(variantTotaal)}
                             </td>
                           </tr>
@@ -678,16 +678,16 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-2 text-right text-foreground/70 dark:text-muted-foreground/50">
+                    <td className="py-3 px-2 text-right text-foreground/70 dark:text-muted-foreground/50 font-mono">
                       {item.aantal}
                     </td>
-                    <td className="py-3 px-2 text-right text-foreground/70 dark:text-muted-foreground/50">
+                    <td className="py-3 px-2 text-right text-foreground/70 dark:text-muted-foreground/50 font-mono">
                       {formatCurrency(item.eenheidsprijs)}
                     </td>
-                    <td className="py-3 px-2 text-right text-muted-foreground dark:text-muted-foreground/60">
+                    <td className="py-3 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 font-mono">
                       {item.btw_percentage}%
                     </td>
-                    <td className="py-3 px-2 text-right font-medium text-foreground dark:text-muted-foreground/20">
+                    <td className="py-3 px-2 text-right font-medium text-foreground dark:text-muted-foreground/20 font-mono">
                       {formatCurrency(lineTotaal)}
                     </td>
                   </tr>
@@ -745,7 +745,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           <div className="w-72 space-y-2">
             <div className="flex justify-between text-sm text-muted-foreground dark:text-muted-foreground/60 py-1">
               <span>Subtotaal</span>
-              <span className="font-medium text-foreground dark:text-muted-foreground/20">
+              <span className="font-medium text-foreground dark:text-muted-foreground/20 font-mono">
                 {formatCurrency(subtotaal)}
               </span>
             </div>
@@ -757,8 +757,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   key={percentage}
                   className="flex justify-between text-sm text-muted-foreground dark:text-muted-foreground/60 py-1"
                 >
-                  <span>BTW {percentage}%</span>
-                  <span className="font-medium text-foreground dark:text-muted-foreground/20">
+                  <span className="font-mono">BTW {percentage}%</span>
+                  <span className="font-medium text-foreground dark:text-muted-foreground/20 font-mono">
                     {formatCurrency(bedrag)}
                   </span>
                 </div>
@@ -767,7 +767,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             <div className="border-t-2 border-border dark:border-border pt-3 mt-2">
               <div className="flex justify-between">
                 <span className="text-lg font-bold text-foreground dark:text-white">Totaal</span>
-                <span className="text-lg font-bold" style={{ color: primaireKleur }}>
+                <span className="text-lg font-bold font-mono" style={{ color: primaireKleur }}>
                   {formatCurrency(totaal, valuta)}
                 </span>
               </div>

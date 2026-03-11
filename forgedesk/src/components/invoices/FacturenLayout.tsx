@@ -1269,7 +1269,7 @@ export function FacturenLayout() {
           <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] mb-3">
             Totaal openstaand
           </p>
-          <p className="display-number display-number-lg text-foreground">
+          <p className="display-number display-number-lg text-foreground font-mono">
             {formatCurrency(statistics.totaalOpenstaand)}
           </p>
           <p className="text-[12px] font-semibold text-[#3A7D52] mt-3">
@@ -1281,7 +1281,7 @@ export function FacturenLayout() {
           <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] mb-3">
             Betaald deze maand
           </p>
-          <p className="display-number display-number-lg text-foreground">
+          <p className="display-number display-number-lg text-foreground font-mono">
             {formatCurrency(statistics.betaaldDezeMaand)}
           </p>
           <p className="text-[12px] font-semibold text-[#3A7D52] mt-3">
