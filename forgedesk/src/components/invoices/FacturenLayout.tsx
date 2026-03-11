@@ -82,6 +82,7 @@ import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 // ============ TYPES ============
 
@@ -1426,21 +1427,17 @@ export function FacturenLayout() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50">
+            <tbody className="divide-y divide-border/50 row-stagger">
               {filteredFacturen.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-4 py-16 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                        <Receipt className="h-7 w-7 text-primary/30" />
-                      </div>
-                      <p className="text-sm font-medium text-foreground">Nog geen facturen</p>
-                      <p className="text-xs text-muted-foreground">
-                        {searchQuery || filterStatus !== 'alle'
-                          ? 'Probeer een ander filter of zoekterm.'
-                          : 'Keur een offerte goed en factureer je eerste sign-opdracht.'}
-                      </p>
-                    </div>
+                  <td colSpan={11}>
+                    <EmptyState
+                      module="facturen"
+                      title="Nog geen facturen"
+                      description={searchQuery || filterStatus !== 'alle'
+                        ? 'Probeer een ander filter of zoekterm.'
+                        : 'Keur een offerte goed en factureer je eerste sign-opdracht.'}
+                    />
                   </td>
                 </tr>
               )}

@@ -43,6 +43,7 @@ import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
@@ -515,33 +516,31 @@ export function ClientsLayout() {
         <SkeletonTable rows={6} cols={4} />
       ) : filteredKlanten.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
-              <Users className="h-7 w-7 text-primary/30" />
-            </div>
-            <p className="text-sm font-medium text-foreground">
-              {searchQuery || statusFilter !== 'alle'
-                ? 'Geen klanten gevonden'
-                : 'Nog geen klanten'}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1 text-center">
-              {searchQuery || statusFilter !== 'alle'
-                ? 'Probeer andere zoektermen of filters.'
-                : 'Voeg je eerste klant toe — winkels, horeca, bedrijven die signing nodig hebben.'}
-            </p>
-            {(searchQuery || statusFilter !== 'alle') && (
-              <Button
-                variant="link"
-                className="mt-2"
-                onClick={() => {
-                  setSearchQuery('')
-                  setStatusFilter('alle')
-                }}
-              >
-                Filters wissen
-              </Button>
-            )}
-          </CardContent>
+          <EmptyState
+            module="klanten"
+            title={searchQuery || statusFilter !== 'alle' ? 'Geen klanten gevonden' : 'Nog geen klanten'}
+            description={searchQuery || statusFilter !== 'alle'
+              ? 'Probeer andere zoektermen of filters.'
+              : 'Voeg je eerste klant toe — winkels, horeca, bedrijven die signing nodig hebben.'}
+            action={
+              (searchQuery || statusFilter !== 'alle') ? (
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setStatusFilter('alle')
+                  }}
+                >
+                  Filters wissen
+                </Button>
+              ) : (
+                <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} size="sm">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Nieuwe Klant
+                </Button>
+              )
+            }
+          />
         </Card>
       ) : viewMode === 'grid' ? (
         /* ==================== GRID VIEW ==================== */
@@ -597,7 +596,7 @@ export function ClientsLayout() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody className="divide-y divide-border/50 row-stagger">
                 {filteredKlanten.map((klant) => (
                   <tr
                     key={klant.id}

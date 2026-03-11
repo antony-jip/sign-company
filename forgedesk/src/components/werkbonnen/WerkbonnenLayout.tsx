@@ -13,6 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { EmptyState } from '@/components/ui/empty-state'
 import type { Werkbon, Klant, Project, Offerte } from '@/types'
 import {
   getWerkbonnen, deleteWerkbon, getKlanten, getProjecten, getOffertes, getWerkbonItems,
@@ -160,14 +161,16 @@ export function WerkbonnenLayout() {
     <div className="space-y-6 px-3 sm:px-6 py-6 mod-strip mod-strip-werkbonnen">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="min-w-0">
-          <h1 className="page-title flex items-center gap-2 text-foreground">
-            <ClipboardCheck className="h-6 w-6 text-[#D4836A] flex-shrink-0" />
-            <span className="truncate">Werkbonnen</span>
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Instructiebladen voor monteurs — afbeeldingen, afmetingen en notities
-          </p>
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #D4836A, #B8654E)' }}>
+            <ClipboardCheck className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="page-title text-foreground truncate">Werkbonnen</h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              Instructiebladen voor monteurs — afbeeldingen, afmetingen en notities
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex">
@@ -186,7 +189,7 @@ export function WerkbonnenLayout() {
         {(['concept', 'definitief', 'afgerond'] as const).map((status) => {
           const cfg = STATUS_CONFIG[status]
           return (
-            <Card key={status} className="cursor-pointer hover:shadow-md transition-shadow"
+            <Card key={status} className="cursor-pointer hover-lift"
               onClick={() => setFilterStatus(status === filterStatus ? 'alle' : status)}>
               <CardContent className="p-4">
                 <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">{cfg.label}</p>
@@ -227,16 +230,16 @@ export function WerkbonnenLayout() {
       {/* Table */}
       {gefilterd.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-[#D4836A]/10 to-[#D4836A]/5 flex items-center justify-center mb-4">
-              <ClipboardCheck className="h-8 w-8 text-[#D4836A] opacity-30" />
-            </div>
-            <p className="text-lg font-medium text-foreground">Nog geen werkbonnen</p>
-            <p className="text-sm text-muted-foreground mt-1">Maak een werkbon aan vanuit een offerte of handmatig</p>
-            <Button className="mt-4" onClick={() => navigate('/werkbonnen/nieuw')}>
-              <Plus className="h-4 w-4 mr-1" /> Nieuwe werkbon
-            </Button>
-          </CardContent>
+          <EmptyState
+            module="werkbonnen"
+            title="Nog geen werkbonnen"
+            description="Maak een werkbon aan vanuit een offerte of handmatig."
+            action={
+              <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm">
+                <Plus className="h-4 w-4 mr-2" /> Nieuwe werkbon
+              </Button>
+            }
+          />
         </Card>
       ) : (
         <div className="rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
@@ -253,7 +256,7 @@ export function WerkbonnenLayout() {
                   <th className="px-4 py-3 text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Acties</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y row-stagger">
                 {gefilterd.map((wb) => {
                   const cfg = STATUS_CONFIG[wb.status] || STATUS_CONFIG.concept
                   const offerteRef = getOfferteNummer(wb.offerte_id)
