@@ -1720,6 +1720,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     factuur_outro_tekst: '',
     creditnota_prefix: 'CN',
     werkbon_prefix: 'WB',
+    project_prefix: 'PRJ',
     herinnering_1_tekst: '',
     herinnering_2_tekst: '',
     aanmaning_tekst: '',
@@ -4059,14 +4060,14 @@ export async function generateCreditnotaNummer(): Promise<string> {
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
-export async function generateProjectNummer(): Promise<string> {
+export async function generateProjectNummer(prefix: string = 'PRJ'): Promise<string> {
   const jaar = new Date().getFullYear()
   const projecten = await getProjecten()
-  const prefix = `PRJ-${jaar}-`
+  const jaarPrefix = `${prefix}-${jaar}-`
   const maxNr = projecten
-    .filter((p) => (p.naam || '').startsWith(prefix))
-    .reduce((max, p) => Math.max(max, parseInt((p.naam || '').replace(prefix, ''), 10) || 0), 0)
-  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
+    .filter((p) => (p.project_nummer || '').startsWith(jaarPrefix))
+    .reduce((max, p) => Math.max(max, parseInt((p.project_nummer || '').replace(jaarPrefix, ''), 10) || 0), 0)
+  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 // ============ CONVERSIE FUNCTIES ============

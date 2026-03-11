@@ -704,6 +704,7 @@ function DocumentenTab() {
   const [factuurPrefix, setFactuurPrefix] = useState('FAC')
   const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
   const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
+  const [projectPrefix, setProjectPrefix] = useState('PRJ')
   const [betaaltermijn, setBetaaltermijn] = useState('30')
   const [voorwaarden, setVoorwaarden] = useState('')
   const [herinnering1, setHerinnering1] = useState('')
@@ -739,6 +740,7 @@ function DocumentenTab() {
       setFactuurPrefix(data.factuur_prefix || 'FAC')
       setCreditnotaPrefix(data.creditnota_prefix || 'CN')
       setWerkbonPrefix(data.werkbon_prefix || 'WB')
+      setProjectPrefix(data.project_prefix || 'PRJ')
       setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
       setVoorwaarden(data.factuur_voorwaarden || '')
       setHerinnering1(data.herinnering_1_tekst || '')
@@ -778,6 +780,7 @@ function DocumentenTab() {
         factuur_prefix: factuurPrefix,
         creditnota_prefix: creditnotaPrefix,
         werkbon_prefix: werkbonPrefix,
+        project_prefix: projectPrefix,
         factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
         factuur_voorwaarden: voorwaarden,
         herinnering_1_tekst: herinnering1,
@@ -910,7 +913,7 @@ function DocumentenTab() {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Prefixes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="factuur-prefix">Factuur prefix</Label>
                   <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value.toUpperCase())} placeholder="FAC" maxLength={5} />
@@ -925,6 +928,11 @@ function DocumentenTab() {
                   <Label htmlFor="werkbon-prefix">Werkbon prefix</Label>
                   <Input id="werkbon-prefix" value={werkbonPrefix} onChange={(e) => setWerkbonPrefix(e.target.value.toUpperCase())} placeholder="WB" maxLength={5} />
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {werkbonPrefix}-2026-0001</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="project-prefix">Project prefix</Label>
+                  <Input id="project-prefix" value={projectPrefix} onChange={(e) => setProjectPrefix(e.target.value.toUpperCase())} placeholder="PRJ" maxLength={5} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {projectPrefix}-2026-0001</p>
                 </div>
               </div>
 

@@ -139,6 +139,7 @@ export interface Project {
   user_id?: string;
   klant_id: string;
   klant_naam?: string;
+  project_nummer?: string;
   naam: string;
   beschrijving: string;
   status: 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren';
@@ -550,6 +551,7 @@ export interface AppSettings {
   factuur_outro_tekst: string;
   creditnota_prefix: string;
   werkbon_prefix: string;
+  project_prefix: string;
   // Werkbon instellingen
   werkbon_monteur_uren: boolean;
   werkbon_monteur_opmerkingen: boolean;

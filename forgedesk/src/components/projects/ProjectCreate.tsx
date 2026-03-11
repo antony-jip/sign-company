@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { createProject, getKlanten, getMedewerkers } from '@/services/supabaseService'
+import { createProject, getKlanten, getMedewerkers, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Klant, Medewerker } from '@/types'
 import { toast } from 'sonner'
@@ -106,9 +106,14 @@ export function ProjectCreate() {
         return mw?.naam || ''
       }).filter(n => n.length > 0)
 
+      // Genereer project nummer
+      const settings = await getAppSettings(user.id)
+      const projectNummer = await generateProjectNummer(settings?.project_prefix || 'PRJ')
+
       await createProject({
         user_id: user.id,
         klant_id: klantId,
+        project_nummer: projectNummer,
         naam: naam.trim(),
         beschrijving: beschrijving.trim(),
         status,
