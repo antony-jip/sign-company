@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { StatisticsCards } from './StatisticsCards'
+import { PortaalAlerts } from './PortaalAlerts'
 import { RecenteActiviteitWidget } from './RecenteActiviteitWidget'
 import { OpenstaandeOffertesWidget } from './OpenstaandeOffertesWidget'
 import { TodayPlanningWidget } from './TodayPlanningWidget'
@@ -115,6 +116,9 @@ export function FORGEdeskDashboard() {
           </span>
         </div>
       )}
+
+      {/* Portaal alerts */}
+      <PortaalAlerts />
 
       {/* 4 stat cards */}
       <StatisticsCards />
