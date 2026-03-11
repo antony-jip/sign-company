@@ -295,7 +295,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
             mime_type: file.type,
             grootte: file.size,
             url,
-            thumbnail_url: file.type.startsWith('image/') ? url : null,
+            thumbnail_url: file.type.startsWith('image/') ? url : undefined,
             uploaded_by: 'bedrijf',
           })
         }
@@ -460,78 +460,79 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 const StatusIcon = config.icon
 
                 return (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-2.5 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
-                  >
-                    <TypeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground truncate">{item.titel}</span>
-                        {item.label && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{item.label}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground">{formatDate(item.created_at)}</span>
-                        {item.bekeken_op ? (() => {
-                          const bekekenDagenGeleden = (Date.now() - new Date(item.bekeken_op).getTime()) / 86400000
-                          const heeftReactie = item.reacties && item.reacties.length > 0
-                          const isOranje = bekekenDagenGeleden > 1 && !heeftReactie
-                          return (
-                            <span className={`text-[10px] flex items-center gap-0.5 ${isOranje ? 'text-amber-500' : 'text-blue-500'}`}
-                              title={isOranje ? `Bekeken ${Math.floor(bekekenDagenGeleden)} dagen geleden, geen reactie` : `Bekeken op ${formatDate(item.bekeken_op)}`}
-                            >
-                              <Eye className="h-2.5 w-2.5" />
-                              {isOranje ? `${Math.floor(bekekenDagenGeleden)}d geen reactie` : 'Bekeken'}
-                            </span>
-                          )
-                        })() : (
-                          <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5" title="Nog niet bekeken">
-                            <Eye className="h-2.5 w-2.5" /> Niet bekeken
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <Badge className={`${config.color} text-[10px] px-1.5 flex items-center gap-0.5`}>
-                      <StatusIcon className="h-2.5 w-2.5" />
-                      {config.label}
-                    </Badge>
-                    {!item.zichtbaar_voor_klant && (
-                      <EyeOff className="h-3 w-3 text-muted-foreground" title="Verborgen" />
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDeleteItem(item.id)}
-                      title="Verbergen voor klant"
+                  <div key={item.id} className="space-y-1">
+                    <div
+                      className="flex items-center gap-2.5 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
                     >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  {/* Reacties onder het item */}
-                  {item.reacties && item.reacties.length > 0 && (
-                    <div className="ml-6 mt-1 space-y-1">
-                      {item.reacties.map((reactie) => (
-                        <div key={reactie.id} className={`flex items-start gap-1.5 text-[10px] rounded px-2 py-1 ${
-                          reactie.type === 'goedkeuring' ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
-                          : reactie.type === 'revisie' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
-                          : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {reactie.type === 'goedkeuring' ? <CheckCircle2 className="h-3 w-3 flex-shrink-0 mt-0.5" /> : <RotateCcw className="h-3 w-3 flex-shrink-0 mt-0.5" />}
-                          <div>
-                            <span className="font-medium">
-                              {reactie.type === 'goedkeuring' ? 'Goedgekeurd' : 'Revisie'}
-                              {reactie.klant_naam && ` — ${reactie.klant_naam}`}
-                            </span>
-                            {reactie.bericht && <p className="text-muted-foreground mt-0.5">{reactie.bericht}</p>}
-                            <span className="text-muted-foreground/60">{formatDate(reactie.created_at)}</span>
-                          </div>
+                      <TypeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground truncate">{item.titel}</span>
+                          {item.label && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{item.label}</span>
+                          )}
                         </div>
-                      ))}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-muted-foreground">{formatDate(item.created_at)}</span>
+                          {item.bekeken_op ? (() => {
+                            const bekekenDagenGeleden = (Date.now() - new Date(item.bekeken_op).getTime()) / 86400000
+                            const heeftReactie = item.reacties && item.reacties.length > 0
+                            const isOranje = bekekenDagenGeleden > 1 && !heeftReactie
+                            return (
+                              <span className={`text-[10px] flex items-center gap-0.5 ${isOranje ? 'text-amber-500' : 'text-blue-500'}`}
+                                title={isOranje ? `Bekeken ${Math.floor(bekekenDagenGeleden)} dagen geleden, geen reactie` : `Bekeken op ${formatDate(item.bekeken_op)}`}
+                              >
+                                <Eye className="h-2.5 w-2.5" />
+                                {isOranje ? `${Math.floor(bekekenDagenGeleden)}d geen reactie` : 'Bekeken'}
+                              </span>
+                            )
+                          })() : (
+                            <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5" title="Nog niet bekeken">
+                              <Eye className="h-2.5 w-2.5" /> Niet bekeken
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Badge className={`${config.color} text-[10px] px-1.5 flex items-center gap-0.5`}>
+                        <StatusIcon className="h-2.5 w-2.5" />
+                        {config.label}
+                      </Badge>
+                      {!item.zichtbaar_voor_klant && (
+                        <EyeOff className="h-3 w-3 text-muted-foreground" title="Verborgen" />
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDeleteItem(item.id)}
+                        title="Verbergen voor klant"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                  )}
+                    {/* Reacties onder het item */}
+                    {item.reacties && item.reacties.length > 0 && (
+                      <div className="ml-6 space-y-1">
+                        {item.reacties.map((reactie) => (
+                          <div key={reactie.id} className={`flex items-start gap-1.5 text-[10px] rounded px-2 py-1 ${
+                            reactie.type === 'goedkeuring' ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
+                            : reactie.type === 'revisie' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
+                            : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {reactie.type === 'goedkeuring' ? <CheckCircle2 className="h-3 w-3 flex-shrink-0 mt-0.5" /> : <RotateCcw className="h-3 w-3 flex-shrink-0 mt-0.5" />}
+                            <div>
+                              <span className="font-medium">
+                                {reactie.type === 'goedkeuring' ? 'Goedgekeurd' : 'Revisie'}
+                                {reactie.klant_naam && ` — ${reactie.klant_naam}`}
+                              </span>
+                              {reactie.bericht && <p className="text-muted-foreground mt-0.5">{reactie.bericht}</p>}
+                              <span className="text-muted-foreground/60">{formatDate(reactie.created_at)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>
