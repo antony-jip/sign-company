@@ -169,7 +169,7 @@ export function MontagePlanningWidget() {
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset((o) => o + 1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1">
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1 font-mono">
               {weekTotal}
             </span>
           </div>
@@ -218,10 +218,10 @@ export function MontagePlanningWidget() {
           </div>
         ) : weekTotal === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500/10 to-amber-400/10 flex items-center justify-center mb-3">
-              <CalendarDays className="w-6 h-6 text-orange-500/40" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-400/10 flex items-center justify-center mb-3">
+              <CalendarDays className="w-6 h-6 opacity-30" />
             </div>
-            <p className="text-sm font-medium text-foreground/70">Geen montages deze week</p>
+            <p className="text-sm font-medium text-foreground/70">Nog geen montages deze week</p>
             <Button variant="link" size="sm" className="mt-1 text-xs" onClick={() => navigate('/montage')}>
               Ga naar montageplanning
             </Button>
@@ -244,7 +244,7 @@ export function MontagePlanningWidget() {
                     today && 'bg-primary/5'
                   )}>
                     <span className={cn(
-                      'text-[11px] font-bold uppercase tracking-wider w-6',
+                      'text-[11px] font-bold uppercase tracking-label w-6',
                       today ? 'text-primary' : 'text-muted-foreground'
                     )}>
                       {DAG_NAMEN[dayIdx]}

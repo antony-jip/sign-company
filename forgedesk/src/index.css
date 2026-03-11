@@ -630,10 +630,10 @@ tbody tr:hover {
 /* Section label in sidebar */
 .wm-sidebar-section {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: hsl(var(--muted-foreground) / 0.5);
+  letter-spacing: 0.1em;
+  color: #b5b0aa;
   padding: 16px 16px 6px;
 }
 

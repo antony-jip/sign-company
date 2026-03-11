@@ -25,21 +25,21 @@ export function VisualizerDashboardWidget() {
 
   return (
     <div
-      className="bg-mist dark:bg-mist/15 rounded-2xl p-[22px] cursor-pointer group stat-card-hover relative overflow-hidden"
+      className="bg-mist dark:bg-mist/15 rounded-xl p-[22px] cursor-pointer group stat-card-hover relative overflow-hidden"
       onClick={() => navigate('/visualizer')}
     >
       <div className="flex items-center gap-2 mb-1.5">
         <Wand2 className="h-4 w-4 text-muted-foreground" />
-        <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+        <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
           Visualisaties
         </p>
       </div>
-      <p className="text-[28px] font-extrabold tracking-[-0.04em] tabular-nums leading-none text-foreground">
+      <p className="text-[28px] font-extrabold tracking-[-0.04em] tabular-nums leading-none text-foreground font-mono">
         {stats.gegenereerd_deze_maand}
         <span className="text-sm font-medium text-muted-foreground ml-1">deze maand</span>
       </p>
       <p className="text-[12px] font-semibold mt-2 text-[#5A8264] dark:text-[#7AAF85]">
-        €{round2(stats.kosten_deze_maand_eur)} kosten
+        <span className="font-mono">€{round2(stats.kosten_deze_maand_eur)}</span> kosten
       </p>
     </div>
   )

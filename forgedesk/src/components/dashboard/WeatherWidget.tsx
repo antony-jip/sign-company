@@ -177,7 +177,7 @@ export function WeatherWidget() {
           {getWeatherIcon(current.weatherCode, 'h-8 w-8')}
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-foreground">{current.temperature}°</span>
+              <span className="text-2xl font-bold text-foreground font-mono">{current.temperature}°</span>
               <span className="text-sm text-muted-foreground">
                 {WMO_DESCRIPTIONS[current.weatherCode] || 'Onbekend'}
               </span>
@@ -185,15 +185,15 @@ export function WeatherWidget() {
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Thermometer className="h-3 w-3" />
-                Voelt als {current.apparentTemperature}°
+                Voelt als <span className="font-mono">{current.apparentTemperature}°</span>
               </span>
               <span className="flex items-center gap-1">
                 <Wind className="h-3 w-3" />
-                {current.windSpeed} km/u
+                <span className="font-mono">{current.windSpeed}</span> km/u
               </span>
               <span className="flex items-center gap-1">
                 <Droplets className="h-3 w-3" />
-                {current.humidity}%
+                <span className="font-mono">{current.humidity}%</span>
               </span>
             </div>
           </div>
@@ -220,13 +220,13 @@ export function WeatherWidget() {
             </span>
             {getWeatherIcon(day.weatherCode, 'h-4 w-4')}
             <div className="flex items-center gap-1 text-xs">
-              <span className="font-semibold text-foreground">{day.maxTemp}°</span>
-              <span className="text-muted-foreground">{day.minTemp}°</span>
+              <span className="font-semibold text-foreground font-mono">{day.maxTemp}°</span>
+              <span className="text-muted-foreground font-mono">{day.minTemp}°</span>
             </div>
             {day.precipitationProbability > 20 && (
               <span className="text-[10px] text-blue-500 flex items-center gap-0.5">
                 <Droplets className="h-2.5 w-2.5" />
-                {day.precipitationProbability}%
+                <span className="font-mono">{day.precipitationProbability}%</span>
               </span>
             )}
           </div>
