@@ -289,7 +289,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       // Upload bestanden bij tekening
       if (itemType === 'tekening' && uploadFiles.length > 0) {
         for (const file of uploadFiles) {
-          const path = `portaal/${portaal.id}/${Date.now()}_${file.name}`
+          const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${file.name}`
           const url = await uploadFile(file, path)
           await createPortaalBestand({
             portaal_item_id: newItem.id,

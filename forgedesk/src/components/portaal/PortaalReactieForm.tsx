@@ -6,12 +6,13 @@ import {
   Paperclip,
   X,
   FileText,
+  Send,
 } from 'lucide-react'
 
 interface PortaalReactieFormProps {
   token: string
   itemId: string
-  itemType: string // 'offerte' | 'tekening'
+  itemType: string // 'offerte' | 'tekening' | 'bericht'
   itemStatus: string
   primaire_kleur: string
   onReactie: () => void // callback to refresh data
@@ -50,13 +51,8 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
   const [files, setFiles] = useState<File[]>([])
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
 
-  // Niet tonen als al gereageerd
-  if (['goedgekeurd', 'revisie', 'betaald'].includes(itemStatus)) {
-    return null
-  }
-
-  // Alleen offerte en tekening hebben reactie knoppen
-  if (itemType !== 'offerte' && itemType !== 'tekening') {
+  // Niet tonen als al gereageerd (behalve bericht — chat blijft altijd open)
+  if (itemType !== 'bericht' && ['goedgekeurd', 'revisie', 'betaald'].includes(itemStatus)) {
     return null
   }
 
@@ -104,9 +100,12 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
     return urls
   }
 
-  async function handleSubmit(type: 'goedkeuring' | 'revisie') {
+  async function handleSubmit(type: 'goedkeuring' | 'revisie' | 'bericht') {
     if (type === 'revisie' && !bericht.trim()) {
       setError('Geef aan wat er anders moet')
+      return
+    }
+    if (type === 'bericht' && !bericht.trim()) {
       return
     }
 
@@ -139,13 +138,71 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
         throw new Error(err.error || 'Kon reactie niet versturen')
       }
 
-      // Succes
+      // Succes — reset velden
+      setBericht('')
+      setFiles([])
+      setUploadedUrls([])
+      setModus('idle')
       onReactie()
     } catch (err) {
       setError((err as Error).message)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Bericht chat modus — altijd een chatachtige input tonen
+  if (itemType === 'bericht') {
+    return (
+      <div className="border-t border-gray-100 px-5 py-3">
+        {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
+        <div className="flex items-end gap-2">
+          <div className="flex-1 relative">
+            <textarea
+              value={bericht}
+              onChange={(e) => {
+                setBericht(e.target.value)
+                // Auto-resize
+                e.target.style.height = 'auto'
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  if (bericht.trim()) handleSubmit('bericht')
+                }
+              }}
+              placeholder="Typ een reactie..."
+              rows={1}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent resize-none"
+              style={{ '--tw-ring-color': primaire_kleur, minHeight: '38px' } as React.CSSProperties}
+            />
+          </div>
+          <button
+            onClick={() => { if (bericht.trim()) handleSubmit('bericht') }}
+            disabled={loading || !bericht.trim()}
+            className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white transition-colors disabled:opacity-40"
+            style={{ backgroundColor: primaire_kleur }}
+            title="Versturen"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </button>
+        </div>
+        {/* Naam opslaan (verborgen tot eerste keer) */}
+        {!naam && (
+          <div className="mt-2">
+            <input
+              type="text"
+              value={naam}
+              onChange={(e) => saveNaam(e.target.value)}
+              placeholder="Uw naam (optioneel)"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-600 focus:outline-none focus:ring-1 focus:border-transparent"
+              style={{ '--tw-ring-color': primaire_kleur } as React.CSSProperties}
+            />
+          </div>
+        )}
+      </div>
+    )
   }
 
   // Revisie modus

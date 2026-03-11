@@ -260,12 +260,23 @@ function PortaalItemCard({
         </div>
       </div>
 
-      {/* Omschrijving */}
-      {item.omschrijving && (
+      {/* Omschrijving — chat bubble voor bericht items */}
+      {item.omschrijving && item.type === 'bericht' ? (
+        <div className="px-5 pb-3">
+          <div className="flex justify-start">
+            <div className="max-w-[80%]">
+              <div className="rounded-2xl rounded-bl-md bg-gray-100 px-3.5 py-2">
+                <p className="text-sm text-gray-800 whitespace-pre-wrap">{item.omschrijving}</p>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-0.5">{formatDate(item.created_at)}</p>
+            </div>
+          </div>
+        </div>
+      ) : item.omschrijving ? (
         <div className="px-5 pb-3">
           <p className="text-sm text-gray-600 whitespace-pre-wrap">{item.omschrijving}</p>
         </div>
-      )}
+      ) : null}
 
       {/* Bedrag */}
       {item.bedrag != null && item.type === 'factuur' && (
@@ -341,9 +352,7 @@ function PortaalItemCard({
           {item.reacties.map((reactie) => {
             const isGoedkeuring = reactie.type === 'goedkeuring'
             const isRevisie = reactie.type === 'revisie'
-            const bgColor = isGoedkeuring ? 'bg-green-50 border-green-200' : isRevisie ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
-            const iconColor = isGoedkeuring ? 'text-green-600' : isRevisie ? 'text-amber-600' : 'text-gray-500'
-            const ReactieIcon = isGoedkeuring ? CheckCircle2 : isRevisie ? RotateCcw : MessageSquare
+            const isBericht = reactie.type === 'bericht'
 
             // Find klant-uploaded bestanden for this reactie (matched by created_at proximity)
             const reactieBestanden = klantBestanden.filter(b => {
@@ -351,6 +360,49 @@ function PortaalItemCard({
               const rTime = new Date(reactie.created_at).getTime()
               return Math.abs(bTime - rTime) < 60000 // within 1 minute
             })
+
+            // Chat-stijl voor bericht reacties
+            if (isBericht && item.type === 'bericht') {
+              return (
+                <div key={reactie.id} className="flex justify-end">
+                  <div className="max-w-[80%]">
+                    <div
+                      className="rounded-2xl rounded-br-md px-3.5 py-2 text-white text-sm"
+                      style={{ backgroundColor: primaire_kleur }}
+                    >
+                      {reactie.bericht && (
+                        <p className="whitespace-pre-wrap">{reactie.bericht}</p>
+                      )}
+                      {reactieBestanden.length > 0 && (
+                        <div className="mt-1.5 space-y-1">
+                          {reactieBestanden.map((b) => (
+                            <a
+                              key={b.id}
+                              href={b.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs text-white/80 hover:text-white underline"
+                            >
+                              <Paperclip className="w-3 h-3" />
+                              {b.bestandsnaam}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-0.5 text-right">
+                      {reactie.klant_naam && `${reactie.klant_naam} · `}
+                      {formatDateTime(reactie.created_at)}
+                    </p>
+                  </div>
+                </div>
+              )
+            }
+
+            // Standaard reactie kaart (goedkeuring/revisie/bericht op niet-bericht items)
+            const bgColor = isGoedkeuring ? 'bg-green-50 border-green-200' : isRevisie ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
+            const iconColor = isGoedkeuring ? 'text-green-600' : isRevisie ? 'text-amber-600' : 'text-gray-500'
+            const ReactieIcon = isGoedkeuring ? CheckCircle2 : isRevisie ? RotateCcw : MessageSquare
 
             return (
               <div key={reactie.id} className={`rounded-xl border p-3 ${bgColor}`}>
