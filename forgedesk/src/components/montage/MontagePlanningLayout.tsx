@@ -58,8 +58,11 @@ import {
   deleteMontageAfspraak,
   getProjecten,
   getMedewerkers,
+  getKlanten,
+  getOffertes,
 } from "@/services/supabaseService";
-import type { MontageAfspraak, Project, Medewerker } from "@/types";
+import type { MontageAfspraak, Project, Medewerker, Klant, Offerte } from "@/types";
+import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -210,7 +213,7 @@ export function MontagePlanningLayout() {
   const [currentMonday, setCurrentMonday] = useState<Date>(() =>
     getMondayOfWeek(new Date())
   );
-  const [viewMode, setViewMode] = useState<"week" | "list">("week");
+  const [viewMode, setViewMode] = useState<"week" | "list" | "raster">("week");
   const [afspraken, setAfspraken] = useState<MontageAfspraak[]>([]);
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
@@ -225,6 +228,10 @@ export function MontagePlanningLayout() {
   );
   const [draggingAfspraakId, setDraggingAfspraakId] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  const [klanten, setKlanten] = useState<Klant[]>([]);
+  const [offertes, setOffertes] = useState<Offerte[]>([]);
+  const [werkbonDialogOpen, setWerkbonDialogOpen] = useState(false);
+  const [werkbonMontage, setWerkbonMontage] = useState<MontageAfspraak | null>(null);
 
   const weekDates = useMemo(() => getWeekDates(currentMonday), [currentMonday]);
   const weekNumber = useMemo(
@@ -238,15 +245,19 @@ export function MontagePlanningLayout() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [afsprakenData, medewerkerData, projectData] = await Promise.all([
+      const [afsprakenData, medewerkerData, projectData, klantenData, offertesData] = await Promise.all([
         getMontageAfspraken().catch(() => []),
         getMedewerkers().catch(() => []),
         getProjecten().catch(() => []),
+        getKlanten().catch(() => []),
+        getOffertes().catch(() => []),
       ]);
 
       setAfspraken(afsprakenData || []);
       setMedewerkers(medewerkerData || []);
       setProjecten(projectData || []);
+      setKlanten(klantenData || []);
+      setOffertes(offertesData || []);
     } catch {
       toast.error('Kon montageplanning niet laden');
     } finally {
@@ -798,25 +809,38 @@ export function MontagePlanningLayout() {
 
         <div className="flex items-center justify-between">
           {renderMonteurAvatars(afspraak.monteurs)}
-          {nextActions.length > 0 && (
-            <div className="flex gap-1">
-              {nextActions.map((action) => (
-                <Button
-                  key={action.status}
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-1.5 text-xs"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStatusUpdate(afspraak, action.status);
-                  }}
-                  title={action.label}
-                >
-                  {action.icon}
-                </Button>
-              ))}
-            </div>
-          )}
+          <div className="flex gap-1">
+            {!afspraak.werkbon_id && afspraak.project_id && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setWerkbonMontage(afspraak);
+                  setWerkbonDialogOpen(true);
+                }}
+                title="Werkbon toevoegen"
+              >
+                <ClipboardList className="h-3 w-3" />
+              </Button>
+            )}
+            {nextActions.length > 0 && nextActions.map((action) => (
+              <Button
+                key={action.status}
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStatusUpdate(afspraak, action.status);
+                }}
+                title={action.label}
+              >
+                {action.icon}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -1073,6 +1097,160 @@ export function MontagePlanningLayout() {
             )}
           </tbody>
         </table>
+      </div>
+    );
+  }
+
+  function renderRasterView() {
+    // Grid: monteurs als rijen, Ma-Vr als kolommen
+    const werkdagen = weekDates.slice(0, 5); // Ma t/m Vr
+
+    return (
+      <div className="min-w-[800px]">
+        {/* Header rij met dagen */}
+        <div className="grid gap-0" style={{ gridTemplateColumns: "180px repeat(5, 1fr)" }}>
+          <div className="p-2 border-b-2 border-r bg-muted/30">
+            <span className="text-xs font-semibold text-muted-foreground uppercase">Monteur</span>
+          </div>
+          {werkdagen.map((date, i) => {
+            const dateStr = formatDate(date);
+            const isToday = dateStr === todayStr;
+            return (
+              <div
+                key={dateStr}
+                className={cn(
+                  "p-2 text-center border-b-2 border-r last:border-r-0",
+                  isToday ? "bg-blue-50 border-blue-500" : "bg-muted/30 border-border"
+                )}
+              >
+                <div className={cn("text-sm font-semibold", isToday ? "text-blue-700" : "text-foreground/70")}>
+                  {DAG_NAMEN[i]}
+                </div>
+                <div className={cn("text-xs", isToday ? "text-blue-600" : "text-muted-foreground")}>
+                  {formatDateDutch(date)}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Monteur rijen */}
+          {monteurs.map((monteur, monteurIdx) => (
+            <>
+              {/* Monteur naam cel */}
+              <div
+                key={`name-${monteur.id}`}
+                className="p-2 border-b border-r bg-background flex items-center gap-2"
+              >
+                <div
+                  className={cn(
+                    "h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-medium shrink-0",
+                    getAvatarColor(monteurIdx)
+                  )}
+                >
+                  {getInitials(monteur.naam)}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{monteur.naam}</div>
+                  <div className="text-[10px] text-muted-foreground truncate">{monteur.functie}</div>
+                </div>
+              </div>
+
+              {/* Dag cellen voor deze monteur */}
+              {werkdagen.map((date) => {
+                const dateStr = formatDate(date);
+                const isToday = dateStr === todayStr;
+                const cellAfspraken = weekAfspraken.filter(
+                  (a) => a.datum === dateStr && a.monteurs.includes(monteur.id)
+                );
+
+                return (
+                  <div
+                    key={`${monteur.id}-${dateStr}`}
+                    className={cn(
+                      "p-1 border-b border-r last:border-r-0 min-h-[80px]",
+                      isToday ? "bg-blue-50/30" : "bg-background",
+                      dragOverDate === `${monteur.id}-${dateStr}` && "bg-primary/5 ring-2 ring-primary/30 ring-inset"
+                    )}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      setDragOverDate(`${monteur.id}-${dateStr}`);
+                    }}
+                    onDragLeave={() => setDragOverDate(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOverDate(null);
+                      const id = e.dataTransfer.getData("text/plain");
+                      if (id) handleDragDrop(id, dateStr);
+                    }}
+                  >
+                    {cellAfspraken.map((afspraak) => {
+                      const config = STATUS_CONFIG[afspraak.status];
+                      return (
+                        <div
+                          key={afspraak.id}
+                          draggable
+                          onDragStart={(e) => {
+                            setDraggingAfspraakId(afspraak.id);
+                            e.dataTransfer.effectAllowed = "move";
+                            e.dataTransfer.setData("text/plain", afspraak.id);
+                          }}
+                          onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
+                          className={cn(
+                            "rounded-md border p-1.5 mb-1 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-sm text-xs",
+                            config.bgColor, config.borderColor,
+                            draggingAfspraakId === afspraak.id && "opacity-50 ring-2 ring-primary"
+                          )}
+                          onClick={() => openEditDialog(afspraak)}
+                        >
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <Clock className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                            <span className="text-[10px] text-muted-foreground">
+                              {afspraak.start_tijd}-{afspraak.eind_tijd}
+                            </span>
+                          </div>
+                          <div className="font-medium truncate leading-tight">{afspraak.titel}</div>
+                          {afspraak.locatie && (
+                            <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground mt-0.5 truncate">
+                              <MapPin className="h-2.5 w-2.5 shrink-0" />
+                              {afspraak.locatie}
+                            </div>
+                          )}
+                          {afspraak.werkbon_id && (
+                            <div className="flex items-center gap-0.5 text-[10px] text-primary mt-0.5">
+                              <ClipboardList className="h-2.5 w-2.5 shrink-0" />
+                              Werkbon
+                            </div>
+                          )}
+                          {!afspraak.werkbon_id && afspraak.project_id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 px-1 text-[10px] mt-0.5 w-full justify-start text-muted-foreground hover:text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setWerkbonMontage(afspraak);
+                                setWerkbonDialogOpen(true);
+                              }}
+                            >
+                              <ClipboardList className="h-2.5 w-2.5 mr-0.5" />
+                              + Werkbon
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {cellAfspraken.length === 0 && (
+                      <div className="h-full flex items-center justify-center">
+                        <span className="text-[10px] text-muted-foreground/40 italic">—</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          ))}
+        </div>
       </div>
     );
   }
@@ -1579,6 +1757,16 @@ export function MontagePlanningLayout() {
                 <span className="sm:hidden">Week</span>
               </Button>
               <Button
+                variant={viewMode === "raster" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("raster")}
+                className="h-8"
+              >
+                <Users className="h-4 w-4 mr-1.5" />
+                <span className="hidden sm:inline">Rasterweergave</span>
+                <span className="sm:hidden">Raster</span>
+              </Button>
+              <Button
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("list")}
@@ -1593,7 +1781,7 @@ export function MontagePlanningLayout() {
         </CardHeader>
 
         <CardContent className="overflow-x-auto">
-          {viewMode === "week" ? renderWeekView() : renderListView()}
+          {viewMode === "week" ? renderWeekView() : viewMode === "raster" ? renderRasterView() : renderListView()}
         </CardContent>
       </Card>
 
@@ -1668,6 +1856,27 @@ export function MontagePlanningLayout() {
       </Card>
 
       {renderDialog()}
+
+      {/* Werkbon aanmaken vanuit montage */}
+      {werkbonMontage && werkbonMontage.project_id && (() => {
+        const project = projecten.find(p => p.id === werkbonMontage.project_id);
+        const projectOffertes = offertes.filter(o => o.project_id === werkbonMontage.project_id);
+        const klant = klanten.find(k => k.id === project?.klant_id) || null;
+        return (
+          <WerkbonVanProjectDialog
+            open={werkbonDialogOpen}
+            onOpenChange={(open) => {
+              setWerkbonDialogOpen(open);
+              if (!open) setWerkbonMontage(null);
+            }}
+            projectId={werkbonMontage.project_id}
+            klantId={project?.klant_id || ''}
+            klant={klant}
+            offertes={projectOffertes}
+            montageAfspraak={werkbonMontage}
+          />
+        );
+      })()}
     </div>
   );
 }

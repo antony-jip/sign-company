@@ -116,6 +116,7 @@ import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
+import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, MontageAfspraak, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
@@ -246,6 +247,7 @@ export function ProjectDetail() {
   const [alleMedewerkers, setAlleMedewerkers] = useState<Medewerker[]>([])
   const [projectToewijzingen, setProjectToewijzingen] = useState<ProjectToewijzing[]>([])
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
+  const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
   const [projectFotos, setProjectFotos] = useState<ProjectFoto[]>([])
   const [projectMontages, setProjectMontages] = useState<MontageAfspraak[]>([])
   const [montageDialogOpen, setMontageDialogOpen] = useState(false)
@@ -1586,7 +1588,7 @@ export function ProjectDetail() {
                 </CardTitle>
                 <Button
                   variant="ghost" size="icon" className="h-7 w-7"
-                  onClick={() => navigate(`/werkbonnen/nieuw`)}
+                  onClick={() => setShowWerkbonDialog(true)}
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </Button>
@@ -1623,6 +1625,18 @@ export function ProjectDetail() {
               )}
             </CardContent>
           </Card>
+
+          {/* Werkbon aanmaken dialog */}
+          {project && (
+            <WerkbonVanProjectDialog
+              open={showWerkbonDialog}
+              onOpenChange={setShowWerkbonDialog}
+              projectId={project.id}
+              klantId={project.klant_id}
+              klant={klant}
+              offertes={projectOffertes}
+            />
+          )}
 
 
           {/* ── Signing Visualisaties ── */}
