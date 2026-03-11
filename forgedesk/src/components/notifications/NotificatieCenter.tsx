@@ -15,6 +15,7 @@ import {
   RotateCcw,
   MessageSquare,
   BellRing,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,10 +27,11 @@ import {
   markAlleNotificatiesGelezen,
   createNotificatie,
 } from "@/services/supabaseService";
+import supabase from "@/services/supabaseClient";
 import type { Notificatie } from "@/types";
 import { cn } from "@/lib/utils";
 
-const POLL_INTERVAL_MS = 60_000;
+const POLL_INTERVAL_MS = 30_000; // Fallback polling elke 30s
 
 const typeConfig: Record<
   Notificatie["type"],
@@ -239,10 +241,65 @@ const demoNotificaties: Omit<Notificatie, "id" | "created_at">[] = [
   },
 ];
 
+// Toast voor nieuwe notificatie
+function NotificatieToast({
+  notificatie,
+  onClose,
+  onClick,
+}: {
+  notificatie: Notificatie;
+  onClose: () => void;
+  onClick: () => void;
+}) {
+  const config = typeConfig[notificatie.type];
+  const Icon = config.icon;
+
+  useEffect(() => {
+    const timer = setTimeout(onClose, 6000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 fade-in duration-300">
+      <button
+        onClick={onClick}
+        className="flex items-start gap-3 w-96 bg-white dark:bg-gray-900 border border-border rounded-lg shadow-lg p-4 hover:bg-accent/50 transition-colors text-left"
+      >
+        <div
+          className={cn(
+            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+            config.bgClass
+          )}
+        >
+          <Icon className={cn("h-4 w-4", config.colorClass)} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">
+            {notificatie.titel}
+          </p>
+          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+            {notificatie.bericht}
+          </p>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="shrink-0 text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </button>
+    </div>
+  );
+}
+
 export function NotificatieCenter() {
   const [notificaties, setNotificaties] = useState<Notificatie[]>([]);
   const [open, setOpen] = useState(false);
   const [laden, setLaden] = useState(false);
+  const [toast, setToast] = useState<Notificatie | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -311,6 +368,42 @@ export function NotificatieCenter() {
     };
   }, [laadNotificaties]);
 
+  // Real-time Supabase subscription voor instant notificaties
+  useEffect(() => {
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel('notificaties-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notificaties' },
+        (payload) => {
+          const nieuw = payload.new as Notificatie;
+          setNotificaties((prev) => {
+            // Voorkom duplicaten
+            if (prev.some((n) => n.id === nieuw.id)) return prev;
+            return [nieuw, ...prev];
+          });
+          // Toon toast melding
+          setToast(nieuw);
+          // Speel notificatie geluid af (als browser het toelaat)
+          try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' +
+              'oGAACBhYqFbF1fdH2LkZGMhHpxam51gIuUl5ORiH54cnBze4WOk5KPiIJ7dnR1eoKKkJCOioWAfHl4eXyDiY2NjImFgn98e3t9gIWJi4qIhoOBf39+f4KFiImIh4WDgYB/f3+BhIaHh4aFg4KBgH+AgYOFhoaGhYSDgoGAgIGChIWFhYWEg4KBgYCBgoOEhYWEhIOCgoGBgYGCg4SEhISEg4OCgoGBgYKDg4SEhIODgoKBgYGBgoODhISDg4OCgoKBgYGCgoODg4ODg4KCgoKBgYGCgoODg4ODgoKCgoKBgYGCgoODg4OCgoKCgoKBgQ==');
+            audio.volume = 0.3;
+            audio.play().catch(() => {});
+          } catch {
+            // Negeer audio fouten
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   useEffect(() => {
     function handleBuitenKlik(event: MouseEvent) {
       if (
@@ -346,8 +439,24 @@ export function NotificatieCenter() {
     setNotificaties((prev) => prev.map((n) => ({ ...n, gelezen: true })));
   }
 
+  function handleToastClick() {
+    if (toast?.link) {
+      navigate(toast.link);
+    }
+    setToast(null);
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
+      {/* Toast melding bij nieuwe notificatie */}
+      {toast && (
+        <NotificatieToast
+          notificatie={toast}
+          onClose={() => setToast(null)}
+          onClick={handleToastClick}
+        />
+      )}
+
       <Button
         variant="ghost"
         size="icon"
@@ -355,7 +464,7 @@ export function NotificatieCenter() {
         onClick={() => setOpen((prev) => !prev)}
         aria-label="Notificaties openen"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className={cn("h-5 w-5", aantalOngelezen > 0 && "animate-bounce")} />
         {aantalOngelezen > 0 && (
           <Badge
             variant="destructive"
