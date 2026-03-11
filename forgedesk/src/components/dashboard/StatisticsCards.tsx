@@ -106,18 +106,18 @@ export function StatisticsCards() {
   ]
 
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 stat-cards-stagger">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 stat-cards-stagger">
       {stats.map((stat) => (
-        <div key={stat.title} className={`${stat.gradient} rounded-xl p-[22px] cursor-default group stat-card-hover stat-card-glow relative overflow-hidden border border-black/[0.04] dark:border-white/[0.06]`}>
+        <div key={stat.title} className={`${stat.gradient} rounded-2xl p-6 cursor-default group stat-card-hover stat-card-glow relative overflow-hidden`}>
           <Sparkline />
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8a8680] dark:text-[#a0a0a0] mb-2 relative z-[1]">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] dark:text-[#a0a0a0] mb-3 relative z-[1]">
             {stat.title}
           </p>
           <p className="display-number display-number-xl text-foreground relative z-[1]">
             {stat.value}
           </p>
           {stat.change && (
-            <p className={`text-[12px] font-semibold mt-3 relative z-[1] ${stat.changeDown ? 'text-destructive' : 'text-[#5A8264] dark:text-[#7AAF85]'}`}>
+            <p className={`text-[12px] font-bold mt-4 relative z-[1] ${stat.changeDown ? 'text-destructive' : 'text-[#3A7D52] dark:text-[#7AAF85]'}`}>
               {stat.changeDown ? '↓' : '↑'} {stat.change}
             </p>
           )}
