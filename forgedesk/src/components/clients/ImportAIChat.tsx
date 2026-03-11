@@ -444,7 +444,7 @@ export function ImportAIChat() {
       <ScrollArea className="flex-1 px-5">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-wm-pale/30 to-primary/10 dark:from-[#4A442D]/40 dark:to-accent/40 flex items-center justify-center mb-3">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-wm-pale/30 to-primary/10 dark:from-[#4A442D]/40 dark:to-accent/40 flex items-center justify-center mb-3">
               <Sparkles className="w-6 h-6 text-primary" />
             </div>
             <p className="text-sm font-medium text-foreground mb-1">Doorzoek je klantdata</p>
@@ -513,7 +513,7 @@ export function ImportAIChat() {
                               <thead>
                                 <tr className="bg-muted/50">
                                   {msg.data.headers.map((h, i) => (
-                                    <th key={i} className="text-left px-3 py-2 font-semibold text-muted-foreground">
+                                    <th key={i} className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                                       {h}
                                     </th>
                                   ))}

@@ -161,7 +161,7 @@ export function EmailListItem({
               <span
                 key={label}
                 className={cn(
-                  'px-1.5 py-0 rounded text-[9px] font-semibold uppercase tracking-wider',
+                  'px-1.5 py-0 rounded text-[9px] font-semibold uppercase tracking-label',
                   label === 'offerte' && 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
                   label === 'klant' && 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300',
                   label === 'project' && 'bg-primary/10 text-primary',

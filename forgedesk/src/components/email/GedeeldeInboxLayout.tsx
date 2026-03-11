@@ -210,7 +210,7 @@ export function GedeeldeInboxLayout() {
             <Users className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Gedeelde Inbox</h2>
+            <h2 className="text-xl font-bold tracking-[-0.02em]">Gedeelde Inbox</h2>
             <p className="text-sm text-muted-foreground">
               {statusCounts.open || 0} open, {emails.length} totaal
             </p>

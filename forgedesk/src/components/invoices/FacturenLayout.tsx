@@ -1214,7 +1214,7 @@ export function FacturenLayout() {
             <FileText className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-foreground font-display truncate">Facturen</h1>
+            <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground font-display truncate">Facturen</h1>
             <p className="text-sm text-muted-foreground">
               {filteredFacturen.length} van {facturen.length} facturen
             </p>
@@ -1260,16 +1260,16 @@ export function FacturenLayout() {
 
       {/* ── Statistics ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-primary/15 dark:border-primary/10 bg-gradient-to-br from-wm-pale/15 to-card dark:from-accent/10 dark:to-card p-4">
+        <div className="wm-stat-card relative overflow-hidden rounded-xl border border-black/[0.06] bg-gradient-to-br from-wm-pale/15 to-card dark:from-accent/10 dark:to-card p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="wm-stat-icon p-1.5 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
               <Euro className="h-4 w-4" />
             </div>
-            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-wide">
+            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-label">
               Totaal openstaand
             </span>
           </div>
-          <p className="text-2xl font-bold text-foreground">
+          <p className="text-2xl font-bold font-mono text-foreground">
             {formatCurrency(statistics.totaalOpenstaand)}
           </p>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -1277,16 +1277,16 @@ export function FacturenLayout() {
           </p>
         </div>
 
-        <div className="wm-stat-card relative overflow-hidden rounded-2xl border border-primary/15 dark:border-primary/10 bg-gradient-to-br from-wm-pale/10 to-card dark:from-primary/8 dark:to-card p-4">
+        <div className="wm-stat-card relative overflow-hidden rounded-xl border border-black/[0.06] bg-gradient-to-br from-wm-pale/10 to-card dark:from-primary/8 dark:to-card p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="wm-stat-icon p-1.5 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
               <CheckCircle2 className="h-4 w-4" />
             </div>
-            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-wide">
+            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-label">
               Betaald deze maand
             </span>
           </div>
-          <p className="text-2xl font-bold text-foreground">
+          <p className="text-2xl font-bold font-mono text-foreground">
             {formatCurrency(statistics.betaaldDezeMaand)}
           </p>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -1294,20 +1294,20 @@ export function FacturenLayout() {
           </p>
         </div>
 
-        <div className="wm-stat-card relative overflow-hidden rounded-2xl p-4" style={{ border: '1px solid var(--color-coral-border)', background: 'linear-gradient(to bottom right, var(--color-coral), var(--color-coral))' }}>
+        <div className="wm-stat-card relative overflow-hidden rounded-xl p-4" style={{ border: '1px solid var(--color-coral-border)', background: 'linear-gradient(to bottom right, var(--color-coral), var(--color-coral))' }}>
           <div className="flex items-center gap-2 mb-2">
             <div className="wm-stat-icon p-1.5 rounded-lg" style={{ background: 'color-mix(in srgb, var(--color-coral-border) 60%, transparent)' }}>
               <AlertTriangle className="h-4 w-4" style={{ color: 'var(--color-coral-text)' }} />
             </div>
-            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-coral-text)' }}>
+            <span className="text-xs font-medium uppercase tracking-label" style={{ color: 'var(--color-coral-text)' }}>
               Vervallen facturen
             </span>
           </div>
-          <p className="text-2xl font-bold text-foreground">
+          <p className="text-2xl font-bold font-mono text-foreground">
             {verlopenCount}
           </p>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {verlopenTotaal > 0 ? formatCurrency(verlopenTotaal) : 'actie vereist'}
+            {verlopenTotaal > 0 ? <span className="font-mono">{formatCurrency(verlopenTotaal)}</span> : 'actie vereist'}
           </p>
           {verlopenCount > 0 && (
             <button
@@ -1320,16 +1320,16 @@ export function FacturenLayout() {
           )}
         </div>
 
-        <div className="wm-stat-card relative overflow-hidden rounded-2xl p-4" style={{ border: '1px solid var(--color-cream-border)', background: 'var(--color-cream)' }}>
+        <div className="wm-stat-card relative overflow-hidden rounded-xl p-4" style={{ border: '1px solid var(--color-cream-border)', background: 'var(--color-cream)' }}>
           <div className="flex items-center gap-2 mb-2">
             <div className="wm-stat-icon p-1.5 rounded-lg" style={{ background: 'color-mix(in srgb, var(--color-cream-border) 60%, transparent)' }}>
               <Clock className="h-4 w-4" style={{ color: 'var(--color-cream-text)' }} />
             </div>
-            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-cream-text)' }}>
+            <span className="text-xs font-medium uppercase tracking-label" style={{ color: 'var(--color-cream-text)' }}>
               Gem. betaaltermijn
             </span>
           </div>
-          <p className="text-2xl font-bold text-foreground">
+          <p className="text-2xl font-bold font-mono text-foreground">
             {statistics.gemiddeldeBetaaltermijn} dagen
           </p>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -1419,7 +1419,7 @@ export function FacturenLayout() {
       </div>
 
       {/* ── Table ─────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-border/60 bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
+      <div className="rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -1439,7 +1439,7 @@ export function FacturenLayout() {
                 ].map((col) => (
                   <th
                     key={col.key}
-                    className={`px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${col.hide}`}
+                    className={`px-4 py-3 text-left text-[11px] font-bold uppercase tracking-label text-[#8a8680] ${col.hide}`}
                   >
                     {col.label}
                   </th>
@@ -1451,10 +1451,10 @@ export function FacturenLayout() {
                 <tr>
                   <td colSpan={11} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                        <Receipt className="h-7 w-7 text-primary/50" />
+                      <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                        <Receipt className="h-7 w-7 text-primary/30" />
                       </div>
-                      <p className="text-sm font-medium text-foreground">Geen facturen gevonden</p>
+                      <p className="text-sm font-medium text-foreground">Nog geen facturen</p>
                       <p className="text-xs text-muted-foreground">
                         {searchQuery || filterStatus !== 'alle'
                           ? 'Probeer een ander filter of zoekterm.'
@@ -1532,7 +1532,7 @@ export function FacturenLayout() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm font-semibold text-foreground">
+                      <span className="text-sm font-mono font-semibold text-foreground">
                         {formatCurrency(factuur.totaal)}
                       </span>
                     </td>
@@ -1667,7 +1667,7 @@ export function FacturenLayout() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Klant</p>
+                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Klant</p>
                   <a
                     href={`/klanten/${viewingFactuur.klant_id}`}
                     className="text-sm font-medium text-accent dark:text-wm-light hover:underline"
@@ -1676,7 +1676,7 @@ export function FacturenLayout() {
                   </a>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Status</p>
+                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Status</p>
                   <Badge
                     variant="secondary"
                     className={cn(
@@ -1688,20 +1688,20 @@ export function FacturenLayout() {
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Titel</p>
+                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Titel</p>
                   <p className="text-sm">{viewingFactuur.titel}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Factuurdatum</p>
+                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Factuurdatum</p>
                   <p className="text-sm">{formatDate(viewingFactuur.factuurdatum)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Vervaldatum</p>
+                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Vervaldatum</p>
                   <p className="text-sm">{formatDate(viewingFactuur.vervaldatum)}</p>
                 </div>
                 {viewingFactuur.betaaldatum && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Betaaldatum</p>
+                    <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Betaaldatum</p>
                     <p className="text-sm">{formatDate(viewingFactuur.betaaldatum)}</p>
                   </div>
                 )}
@@ -1736,21 +1736,21 @@ export function FacturenLayout() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotaal</span>
-                  <span>{formatCurrency(viewingFactuur.subtotaal)}</span>
+                  <span className="font-mono">{formatCurrency(viewingFactuur.subtotaal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">BTW</span>
-                  <span>{formatCurrency(viewingFactuur.btw_bedrag)}</span>
+                  <span className="font-mono">{formatCurrency(viewingFactuur.btw_bedrag)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-sm font-bold">
                   <span>Totaal</span>
-                  <span>{formatCurrency(viewingFactuur.totaal)}</span>
+                  <span className="font-mono">{formatCurrency(viewingFactuur.totaal)}</span>
                 </div>
                 {viewingFactuur.betaald_bedrag > 0 && viewingFactuur.betaald_bedrag < viewingFactuur.totaal && (
                   <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
                     <span>Betaald</span>
-                    <span>{formatCurrency(viewingFactuur.betaald_bedrag)}</span>
+                    <span className="font-mono">{formatCurrency(viewingFactuur.betaald_bedrag)}</span>
                   </div>
                 )}
               </div>
@@ -1759,7 +1759,7 @@ export function FacturenLayout() {
                 <>
                   <Separator />
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Notities</p>
+                    <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Notities</p>
                     <p className="text-sm text-foreground/80">{viewingFactuur.notities}</p>
                   </div>
                 </>
@@ -1767,7 +1767,7 @@ export function FacturenLayout() {
 
               {viewingFactuur.voorwaarden && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Betalingsvoorwaarden</p>
+                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Betalingsvoorwaarden</p>
                   <p className="text-sm text-foreground/80">{viewingFactuur.voorwaarden}</p>
                 </div>
               )}
@@ -1977,12 +1977,12 @@ export function FacturenLayout() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-muted/50 border-b border-border">
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">Beschrijving</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground w-20">Aantal</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground w-28">Prijs</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground w-20">BTW %</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground w-24">Korting %</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground w-28">Totaal</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Beschrijving</th>
+                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-20">Aantal</th>
+                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-28">Prijs</th>
+                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-20">BTW %</th>
+                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-24">Korting %</th>
+                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-28">Totaal</th>
                         <th className="px-3 py-2 w-10" />
                       </tr>
                     </thead>
@@ -2040,7 +2040,7 @@ export function FacturenLayout() {
                             />
                           </td>
                           <td className="px-3 py-2 text-right">
-                            <span className="text-sm font-medium text-foreground">
+                            <span className="text-sm font-mono font-medium text-foreground">
                               {formatCurrency(calcLineTotal(item))}
                             </span>
                           </td>
@@ -2065,16 +2065,16 @@ export function FacturenLayout() {
                   <div className="w-64 space-y-1.5">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Subtotaal</span>
-                      <span className="font-medium">{formatCurrency(calcSubtotaal(formData.items))}</span>
+                      <span className="font-mono font-medium">{formatCurrency(calcSubtotaal(formData.items))}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">BTW</span>
-                      <span className="font-medium">{formatCurrency(calcBtwBedrag(formData.items))}</span>
+                      <span className="font-mono font-medium">{formatCurrency(calcBtwBedrag(formData.items))}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between text-sm font-bold">
                       <span>Totaal</span>
-                      <span>{formatCurrency(round2(calcSubtotaal(formData.items) + calcBtwBedrag(formData.items)))}</span>
+                      <span className="font-mono">{formatCurrency(round2(calcSubtotaal(formData.items) + calcBtwBedrag(formData.items)))}</span>
                     </div>
                   </div>
                 </div>
@@ -2156,7 +2156,7 @@ export function FacturenLayout() {
                         </p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-bold text-foreground">
+                        <p className="text-sm font-mono font-bold text-foreground">
                           {formatCurrency(offerte.totaal)}
                         </p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -2205,11 +2205,11 @@ export function FacturenLayout() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Bedrag</span>
-                  <span className="font-semibold">{formatCurrency(creditnotaFactuur.totaal)}</span>
+                  <span className="font-mono font-semibold">{formatCurrency(creditnotaFactuur.totaal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Creditnota bedrag</span>
-                  <span className="font-semibold text-red-600">{formatCurrency(-creditnotaFactuur.totaal)}</span>
+                  <span className="font-mono font-semibold text-red-600">{formatCurrency(-creditnotaFactuur.totaal)}</span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -2253,7 +2253,7 @@ export function FacturenLayout() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Offerte totaal</span>
-                  <span className="font-semibold">{formatCurrency(voorschotOfferte.totaal)}</span>
+                  <span className="font-mono font-semibold">{formatCurrency(voorschotOfferte.totaal)}</span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -2280,13 +2280,13 @@ export function FacturenLayout() {
               <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 space-y-1">
                 <div className="flex justify-between text-sm font-semibold">
                   <span className="text-purple-700 dark:text-purple-300">Voorschotbedrag</span>
-                  <span className="text-purple-700 dark:text-purple-300">
+                  <span className="font-mono text-purple-700 dark:text-purple-300">
                     {formatCurrency(round2(voorschotOfferte.totaal * (voorschotPercentage / 100)))}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Resterend na voorschot</span>
-                  <span>{formatCurrency(round2(voorschotOfferte.totaal * ((100 - voorschotPercentage) / 100)))}</span>
+                  <span className="font-mono">{formatCurrency(round2(voorschotOfferte.totaal * ((100 - voorschotPercentage) / 100)))}</span>
                 </div>
               </div>
             </div>
@@ -2322,7 +2322,7 @@ export function FacturenLayout() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Totaalbedrag</span>
-                  <span className="font-semibold">{formatCurrency(eindafrekeningFactuur.totaal)}</span>
+                  <span className="font-mono font-semibold">{formatCurrency(eindafrekeningFactuur.totaal)}</span>
                 </div>
               </div>
 
@@ -2333,7 +2333,7 @@ export function FacturenLayout() {
                     {betaaldeVoorschotten.map((vs) => (
                       <div key={vs.id} className="flex justify-between text-sm p-2 rounded bg-emerald-50 dark:bg-emerald-900/20">
                         <span className="font-mono text-emerald-700 dark:text-emerald-300">{vs.nummer}</span>
-                        <span className="font-semibold text-emerald-700 dark:text-emerald-300">-{formatCurrency(vs.totaal)}</span>
+                        <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300">-{formatCurrency(vs.totaal)}</span>
                       </div>
                     ))}
                   </div>
@@ -2347,7 +2347,7 @@ export function FacturenLayout() {
               <Separator />
               <div className="flex justify-between text-sm font-bold p-2 rounded bg-teal-50 dark:bg-teal-900/20">
                 <span className="text-teal-700 dark:text-teal-300">Resterend bedrag</span>
-                <span className="text-teal-700 dark:text-teal-300">
+                <span className="font-mono text-teal-700 dark:text-teal-300">
                   {formatCurrency(round2(
                     eindafrekeningFactuur.totaal - betaaldeVoorschotten.reduce((s, f) => s + f.totaal, 0)
                   ))}

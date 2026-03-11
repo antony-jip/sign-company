@@ -280,11 +280,11 @@ export function ProjectsList() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
+          <div className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#7EB5A6' }}>
             <FolderKanban className="h-4.5 w-4.5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-foreground truncate">Projecten</h1>
+            <h1 className="text-xl font-extrabold tracking-[-0.03em] text-foreground truncate">Projecten</h1>
             <p className="text-xs text-muted-foreground">
               {gefilterdeProjecten.length} van {projecten.length} projecten
             </p>
@@ -409,10 +409,10 @@ export function ProjectsList() {
 
       {/* ── Table ── */}
       {gefilterdeProjecten.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="border-dashed border-black/[0.06] rounded-xl">
           <CardContent className="py-16 text-center">
             <FolderKanban className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <h3 className="text-base font-medium text-foreground">Geen projecten gevonden</h3>
+            <h3 className="text-base font-medium text-foreground">Nog geen projecten</h3>
             <p className="text-sm text-muted-foreground mt-1 mb-4">
               {zoekterm || statusFilter !== 'alle'
                 ? 'Pas je filters aan of maak een nieuw project aan.'
@@ -427,18 +427,18 @@ export function ProjectsList() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
+        <div className="rounded-xl border border-black/[0.06] bg-card overflow-hidden -mx-3 sm:mx-0">
           <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="text-left py-2.5 px-4 w-[110px]">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
+                  <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
                 </th>
                 <th className="text-left py-2.5 px-4">
                   <button
                     onClick={() => handleSort('naam')}
-                    className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors"
                   >
                     Project
                     {sortField === 'naam' ? (
@@ -449,15 +449,15 @@ export function ProjectsList() {
                   </button>
                 </th>
                 <th className="text-left py-2.5 px-4 hidden lg:table-cell">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Klant</span>
+                  <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Klant</span>
                 </th>
                 <th className="text-left py-2.5 px-4 hidden md:table-cell">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Team</span>
+                  <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Team</span>
                 </th>
                 <th className="text-right py-2.5 px-4 hidden xl:table-cell">
                   <button
                     onClick={() => handleSort('bedrag')}
-                    className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                   >
                     Bedrag
                     {sortField === 'bedrag' ? (
@@ -470,7 +470,7 @@ export function ProjectsList() {
                 <th className="text-right py-2.5 px-4 hidden lg:table-cell">
                   <button
                     onClick={() => handleSort('start_datum')}
-                    className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                   >
                     Datum
                     {sortField === 'start_datum' ? (
@@ -607,7 +607,7 @@ export function ProjectsList() {
                       {(() => {
                         const bedrag = getProjectBedrag(project.id)
                         return bedrag > 0 ? (
-                          <span className="text-xs font-medium text-foreground tabular-nums">
+                          <span className="text-xs font-medium font-mono text-foreground tabular-nums">
                             {formatCurrency(bedrag)}
                           </span>
                         ) : (
@@ -618,7 +618,7 @@ export function ProjectsList() {
 
                     {/* Datum */}
                     <td className="py-3 px-4 text-right hidden lg:table-cell">
-                      <span className="text-xs text-muted-foreground tabular-nums">
+                      <span className="text-xs font-mono text-muted-foreground tabular-nums">
                         {formatDate(project.created_at)}
                       </span>
                     </td>

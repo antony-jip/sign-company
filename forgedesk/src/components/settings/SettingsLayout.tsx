@@ -196,7 +196,7 @@ export function SettingsLayout() {
           <Settings className="w-6 h-6 text-muted-foreground dark:text-muted-foreground/60" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground dark:text-white font-display truncate">
+          <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground dark:text-white font-display truncate">
             Instellingen
           </h1>
           <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 truncate">
@@ -1167,7 +1167,7 @@ function SignaturePreview({
   const imgSize = afbeeldingGrootte ?? 64
   return (
     <div className="space-y-2">
-      <Label className="text-xs uppercase tracking-wider text-muted-foreground">Voorbeeld</Label>
+      <Label className="text-xs uppercase tracking-label text-muted-foreground">Voorbeeld</Label>
       <div className="border rounded-lg p-4 bg-white dark:bg-muted/30 space-y-3">
         <div className="border-t border-muted pt-3">
           {afbeelding && (
@@ -3126,7 +3126,7 @@ function WeergaveTab() {
           const sectionItems = ALL_SIDEBAR_ITEMS.filter((i) => i.section === section)
           return (
             <div key={section}>
-              <h4 className="text-xs font-semibold text-muted-foreground dark:text-muted-foreground/60 uppercase tracking-wider mb-2">
+              <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2">
                 {section}
               </h4>
               <div className="space-y-2">

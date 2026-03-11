@@ -1240,9 +1240,9 @@ export function EmailCompose({
 
       {/* ── AI Suggestie Popup ── */}
       {forgieSuggestion && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px] rounded-2xl">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px] rounded-xl">
           <div
-            className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl flex flex-col"
+            className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl flex flex-col"
             style={{ minWidth: 420, minHeight: 200, maxHeight: '60vh', width: '80%', maxWidth: 600 }}
           >
             {/* Header */}

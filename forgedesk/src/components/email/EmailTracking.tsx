@@ -92,7 +92,7 @@ export function EmailTracking({ emails }: EmailTrackingProps) {
               <Mail className="w-4 h-4 text-muted-foreground" />
               <span className="text-xs font-medium text-muted-foreground">Verzonden</span>
             </div>
-            <p className="text-2xl font-bold">{stats.totalSent}</p>
+            <p className="text-2xl font-bold font-mono">{stats.totalSent}</p>
           </CardContent>
         </Card>
         <Card>
@@ -101,7 +101,7 @@ export function EmailTracking({ emails }: EmailTrackingProps) {
               <Eye className="w-4 h-4 text-blue-500" />
               <span className="text-xs font-medium text-muted-foreground">Geopend</span>
             </div>
-            <p className="text-2xl font-bold">{stats.totalOpened}</p>
+            <p className="text-2xl font-bold font-mono">{stats.totalOpened}</p>
           </CardContent>
         </Card>
         <Card>
@@ -110,7 +110,7 @@ export function EmailTracking({ emails }: EmailTrackingProps) {
               <MousePointer2 className="w-4 h-4 text-emerald-500" />
               <span className="text-xs font-medium text-muted-foreground">Geklikt</span>
             </div>
-            <p className="text-2xl font-bold">{stats.totalClicked}</p>
+            <p className="text-2xl font-bold font-mono">{stats.totalClicked}</p>
           </CardContent>
         </Card>
         <Card>
@@ -119,7 +119,7 @@ export function EmailTracking({ emails }: EmailTrackingProps) {
               <TrendingUp className="w-4 h-4 text-primary" />
               <span className="text-xs font-medium text-muted-foreground">Open rate</span>
             </div>
-            <p className="text-2xl font-bold">{stats.openRate.toFixed(1)}%</p>
+            <p className="text-2xl font-bold font-mono">{stats.openRate.toFixed(1)}%</p>
           </CardContent>
         </Card>
         <Card>
@@ -128,7 +128,7 @@ export function EmailTracking({ emails }: EmailTrackingProps) {
               <ArrowUpRight className="w-4 h-4 text-amber-500" />
               <span className="text-xs font-medium text-muted-foreground">Click rate</span>
             </div>
-            <p className="text-2xl font-bold">{stats.clickRate.toFixed(1)}%</p>
+            <p className="text-2xl font-bold font-mono">{stats.clickRate.toFixed(1)}%</p>
           </CardContent>
         </Card>
       </div>

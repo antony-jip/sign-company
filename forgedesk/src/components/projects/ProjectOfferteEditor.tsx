@@ -289,7 +289,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
                     <FileText className="h-4 w-4 text-accent dark:text-primary" />
-                    Offerte Regels
+                    Offerte regels
                   </CardTitle>
                   <Button size="sm" variant="outline" onClick={handleAddItem}>
                     <Plus className="h-4 w-4 mr-1" />
@@ -362,7 +362,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1 pt-1">
-                              <span className="text-sm font-bold text-foreground whitespace-nowrap">
+                              <span className="text-sm font-bold font-mono text-foreground whitespace-nowrap">
                                 {formatCurrency(item.totaal)}
                               </span>
                               <div className="flex items-center gap-0.5">
@@ -397,15 +397,15 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                 <div className="border-t pt-3 mt-3 space-y-1">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotaal</span>
-                    <span className="font-medium">{formatCurrency(subtotaal)}</span>
+                    <span className="font-medium font-mono">{formatCurrency(subtotaal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">BTW</span>
-                    <span className="font-medium">{formatCurrency(btwBedrag)}</span>
+                    <span className="font-medium font-mono">{formatCurrency(btwBedrag)}</span>
                   </div>
                   <div className="flex justify-between text-base font-bold border-t pt-2">
                     <span>Totaal</span>
-                    <span className="text-accent dark:text-primary">{formatCurrency(totaal)}</span>
+                    <span className="text-accent dark:text-primary font-mono">{formatCurrency(totaal)}</span>
                   </div>
                 </div>
               </CardContent>

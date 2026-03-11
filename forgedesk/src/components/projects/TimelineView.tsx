@@ -71,7 +71,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
   if (taken.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p className="text-lg font-medium">Geen taken om weer te geven</p>
+        <p className="text-base font-medium">Nog geen taken</p>
         <p className="text-sm mt-1">Voeg taken toe om de tijdlijn te vullen.</p>
       </div>
     )
@@ -97,7 +97,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
       </div>
 
       {/* Timeline chart */}
-      <div className="border border-border dark:border-border rounded-lg overflow-hidden">
+      <div className="border border-black/[0.06] rounded-xl overflow-hidden">
         {/* Month headers */}
         <div className="relative h-8 bg-background dark:bg-foreground/80/50 border-b border-border dark:border-border">
           {timeline.maanden.map((maand, index) => (
@@ -106,7 +106,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
               className="absolute top-0 h-full flex items-center border-l border-border dark:border-border px-2"
               style={{ left: `${maand.positie}%` }}
             >
-              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+              <span className="text-xs font-mono font-medium text-muted-foreground whitespace-nowrap">
                 {maand.label}
               </span>
             </div>
@@ -200,7 +200,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
             <span className="text-xs text-muted-foreground whitespace-nowrap">
               {taak.toegewezen_aan}
             </span>
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
+            <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">
               {formatDate(taak.deadline ?? "")}
             </span>
           </div>

@@ -123,7 +123,7 @@ export function EmailTemplates() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
       {/* Template list */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+        <h3 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">
           Beschikbare templates
         </h3>
         <ScrollArea className="h-[calc(100%-2rem)]">
@@ -164,7 +164,7 @@ export function EmailTemplates() {
 
       {/* Preview */}
       <div className="flex flex-col">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+        <h3 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3">
           Voorbeeld
         </h3>
         {selectedTemplate ? (

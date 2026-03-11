@@ -161,8 +161,8 @@ export function WerkbonnenLayout() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ClipboardCheck className="h-6 w-6 text-primary flex-shrink-0" />
+          <h1 className="text-2xl font-extrabold tracking-[-0.03em] flex items-center gap-2">
+            <ClipboardCheck className="h-6 w-6 text-[#D4836A] flex-shrink-0" />
             <span className="truncate">Werkbonnen</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -189,7 +189,7 @@ export function WerkbonnenLayout() {
             <Card key={status} className="cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => setFilterStatus(status === filterStatus ? 'alle' : status)}>
               <CardContent className="p-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase">{cfg.label}</p>
+                <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">{cfg.label}</p>
                 <p className="text-2xl font-bold mt-1">{statusCounts[status] || 0}</p>
               </CardContent>
             </Card>
@@ -228,10 +228,10 @@ export function WerkbonnenLayout() {
       {gefilterd.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-4">
-              <ClipboardCheck className="h-8 w-8 text-primary/50" />
+            <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-[#D4836A]/10 to-[#D4836A]/5 flex items-center justify-center mb-4">
+              <ClipboardCheck className="h-8 w-8 text-[#D4836A] opacity-30" />
             </div>
-            <p className="text-lg font-medium text-foreground">Geen werkbonnen</p>
+            <p className="text-lg font-medium text-foreground">Nog geen werkbonnen</p>
             <p className="text-sm text-muted-foreground mt-1">Maak een werkbon aan vanuit een offerte of handmatig</p>
             <Button className="mt-4" onClick={() => navigate('/werkbonnen/nieuw')}>
               <Plus className="h-4 w-4 mr-1" /> Nieuwe werkbon
@@ -239,18 +239,18 @@ export function WerkbonnenLayout() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-2xl border border-border/60 bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
+        <div className="rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Nummer</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Klant</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Offerte / Project</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell">Datum</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell">Items</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Acties</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Nummer</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Klant</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Offerte / Project</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden sm:table-cell">Datum</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden sm:table-cell">Items</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Acties</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

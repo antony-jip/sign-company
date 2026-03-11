@@ -293,7 +293,7 @@ export function ForgieTab() {
           <div className="flex items-center gap-6">
             <div className="text-center">
               <div className={cn(
-                'text-4xl font-bold tabular-nums',
+                'text-4xl font-bold font-mono tabular-nums',
                 creditStatus === 'leeg' && 'text-red-500',
                 creditStatus === 'laag' && 'text-orange-500',
                 creditStatus === 'ok' && 'text-foreground',
@@ -404,7 +404,7 @@ export function ForgieTab() {
                       </div>
 
                       <div className="text-right shrink-0">
-                        <div className="text-lg font-bold">{pakket.prijs_eur.toFixed(2).replace('.', ',')} EUR</div>
+                        <div className="text-lg font-bold font-mono">{pakket.prijs_eur.toFixed(2).replace('.', ',')} EUR</div>
                         <div className="text-xs text-muted-foreground">
                           {pakket.prijs_per_credit_eur.toFixed(2).replace('.', ',')} EUR/credit
                         </div>
@@ -551,7 +551,7 @@ export function ForgieTab() {
       {/* FORGIE AI INSTELLINGEN                     */}
       {/* ═══════════════════════════════════════════ */}
       <div className="pt-2">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
+        <h3 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label flex items-center gap-2 mb-4">
           <Bot className="w-4 h-4" />
           Forgie AI-assistent
         </h3>
@@ -701,7 +701,7 @@ export function ForgieTab() {
             </div>
           ) : imports.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Geïmporteerde bestanden</p>
+              <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Geïmporteerde bestanden</p>
               {imports.map(imp => (
                 <div key={imp.bestandsnaam} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3 min-w-0">
@@ -727,7 +727,7 @@ export function ForgieTab() {
       {/* SIGNING VISUALIZER INSTELLINGEN            */}
       {/* ═══════════════════════════════════════════ */}
       <div className="pt-2">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
+        <h3 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label flex items-center gap-2 mb-4">
           <Palette className="w-4 h-4" />
           Signing Visualizer
         </h3>

@@ -36,8 +36,8 @@ export function TeamAvailability({ teamLeden }: TeamAvailabilityProps) {
   if (teamLeden.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <User className="h-12 w-12 mx-auto mb-3 opacity-40" />
-        <p className="text-lg font-medium">Geen teamleden</p>
+        <User className="h-10 w-10 mx-auto mb-3 opacity-30" />
+        <p className="text-base font-medium">Nog geen teamleden</p>
         <p className="text-sm mt-1">Er zijn nog geen teamleden toegewezen aan dit project.</p>
       </div>
     )
@@ -53,7 +53,7 @@ export function TeamAvailability({ teamLeden }: TeamAvailabilityProps) {
         return (
           <Card
             key={lid}
-            className="hover:shadow-md transition-shadow duration-200 border-border dark:border-border"
+            className="hover:shadow-md transition-shadow duration-200 border-black/[0.06] rounded-xl"
           >
             <CardContent className="p-5">
               <div className="flex items-start gap-4">

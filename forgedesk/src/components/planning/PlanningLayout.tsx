@@ -23,7 +23,7 @@ export function PlanningLayout() {
     <div className="h-full flex flex-col">
       {/* Modus schakelaar bovenaan */}
       <div className="flex items-center justify-end px-4 py-2 border-b bg-background flex-shrink-0">
-        <div className="inline-flex rounded-lg border bg-muted p-0.5">
+        <div className="inline-flex rounded-xl border border-black/[0.06] bg-muted p-0.5">
           <Button
             variant="ghost"
             size="sm"

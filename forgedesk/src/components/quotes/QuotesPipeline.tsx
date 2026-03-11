@@ -649,7 +649,7 @@ export function QuotesPipeline() {
             <FileText className="h-4.5 w-4.5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Offertes</h1>
+            <h1 className="text-lg sm:text-xl font-extrabold tracking-[-0.03em] text-foreground truncate">Offertes</h1>
             <p className="text-xs text-muted-foreground">
               {filteredOffertes.length} van {offertes.length} offertes
             </p>
@@ -674,7 +674,7 @@ export function QuotesPipeline() {
         )}
         <div className="flex items-center gap-1.5 text-xs font-medium text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-primary/15 border border-primary/20 px-2.5 py-1 rounded-full">
           <TrendingUp className="w-3 h-3" />
-          {kpis.conversionRate}% conversie
+          <span className="font-mono">{kpis.conversionRate}%</span> conversie
         </div>
         {kpis.overdueFollowUps > 0 && (
           <div className="flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30 px-2.5 py-1 rounded-full">
@@ -903,13 +903,13 @@ export function QuotesPipeline() {
             return (
               <div
                 key={col.key}
-                className={`relative overflow-hidden rounded-2xl border ${col.borderColor} bg-gradient-to-br ${col.bgColor} backdrop-blur-sm p-4 text-left`}
+                className={`relative overflow-hidden rounded-xl border ${col.borderColor} bg-gradient-to-br ${col.bgColor} backdrop-blur-sm p-4 text-left`}
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
-                  <span className={`text-xs font-medium ${col.textColor} uppercase tracking-wide`}>{col.label}</span>
+                  <span className={`text-[11px] font-bold ${col.textColor} uppercase tracking-label`}>{col.label}</span>
                 </div>
-                <p className="text-lg font-bold text-foreground">{formatCurrency(data.totaal)}</p>
+                <p className="text-lg font-bold font-mono text-foreground">{formatCurrency(data.totaal)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {data.count} {data.count === 1 ? 'offerte' : 'offertes'}
                 </p>
@@ -919,21 +919,21 @@ export function QuotesPipeline() {
         </div>
 
         {/* Sales Summary Bar */}
-        <div className="flex flex-wrap items-center gap-3 sm:gap-6 px-4 sm:px-5 py-3 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-6 px-4 sm:px-5 py-3 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Pipeline:</span>
-            <span className="text-xs sm:text-sm font-bold text-foreground whitespace-nowrap">{formatCurrency(salesSummary.pipelineValue)}</span>
+            <span className="text-xs sm:text-sm font-bold font-mono text-foreground whitespace-nowrap">{formatCurrency(salesSummary.pipelineValue)}</span>
           </div>
           <div className="hidden sm:block w-px h-5 bg-border" />
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Verstuurd:</span>
-            <span className="text-xs sm:text-sm font-bold text-foreground whitespace-nowrap">{formatCurrency(salesSummary.verstuurdValue)}</span>
+            <span className="text-xs sm:text-sm font-bold font-mono text-foreground whitespace-nowrap">{formatCurrency(salesSummary.verstuurdValue)}</span>
           </div>
           <div className="hidden sm:block w-px h-5 bg-border" />
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Akkoord:</span>
-            <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{formatCurrency(salesSummary.akkoordValue)}</span>
+            <span className="text-xs sm:text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{formatCurrency(salesSummary.akkoordValue)}</span>
           </div>
         </div>
 
@@ -947,7 +947,7 @@ export function QuotesPipeline() {
             return (
               <div
                 key={col.key}
-                className={`rounded-2xl border bg-gradient-to-b ${col.color} backdrop-blur-sm flex flex-col overflow-hidden transition-all duration-150 ${
+                className={`rounded-xl border bg-gradient-to-b ${col.color} backdrop-blur-sm flex flex-col overflow-hidden transition-all duration-150 ${
                   isDragOver
                     ? 'border-primary shadow-lg scale-[1.01]'
                     : 'border-border/60'
@@ -960,14 +960,14 @@ export function QuotesPipeline() {
                 <div className={`px-4 py-3 ${col.headerBg} backdrop-blur-sm border-b border-border/50 dark:border-border/50`}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className={`w-2 h-2 rounded-full ${col.accent}`} />
-                    <h3 className="font-semibold text-sm text-foreground">
+                    <h3 className="font-bold text-sm text-foreground">
                       {col.label}
                     </h3>
                     <Badge variant="secondary" className="ml-auto text-xs px-2 py-0 h-5 rounded-lg">
                       {colOffertes.length}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground font-medium pl-4">
+                  <p className="text-xs text-muted-foreground font-medium font-mono pl-4">
                     {formatCurrency(colTotal)}
                   </p>
                 </div>
@@ -1001,7 +1001,7 @@ export function QuotesPipeline() {
                         >
                           {/* Top row: nummer + indicators */}
                           <div className="flex items-center justify-between gap-1">
-                            <span className="text-xs font-mono font-semibold text-accent dark:text-wm-light">
+                            <span className="text-xs font-mono font-medium text-accent dark:text-wm-light">
                               {offerte.nummer}
                             </span>
                             <div className="flex items-center gap-1">
@@ -1042,7 +1042,7 @@ export function QuotesPipeline() {
 
                           {/* Amount + relative date */}
                           <div className="flex items-center justify-between pt-2 border-t border-border dark:border-border/50">
-                            <span className="text-sm font-bold text-foreground">
+                            <span className="text-sm font-bold font-mono text-foreground">
                               {formatCurrency(offerte.totaal)}
                             </span>
                             <span className="text-[10px] text-muted-foreground">
@@ -1167,9 +1167,9 @@ export function QuotesPipeline() {
         </div>
 
         {/* Pipeline Overview Summary */}
-        <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-sm">
+        <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-card/80 backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <CardTitle className="text-lg font-bold tracking-[-0.02em] text-foreground flex items-center gap-2">
               <Users className="h-5 w-5 text-muted-foreground" />
               Pipeline Overzicht
             </CardTitle>
@@ -1188,8 +1188,8 @@ export function QuotesPipeline() {
                       <div className={`w-2 h-2 rounded-full ${col.accent}`} />
                       <p className="text-sm font-medium text-muted-foreground">{col.label}</p>
                     </div>
-                    <p className="text-xl font-bold text-foreground">{colOffertes.length}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">{formatCurrency(colTotal)}</p>
+                    <p className="text-xl font-bold font-mono text-foreground">{colOffertes.length}</p>
+                    <p className="text-sm font-mono text-muted-foreground mt-0.5">{formatCurrency(colTotal)}</p>
                   </div>
                 )
               })}
@@ -1200,7 +1200,7 @@ export function QuotesPipeline() {
                 <Badge variant="secondary" className="rounded-lg px-3 py-1 text-sm">
                   {offertes.length} offertes
                 </Badge>
-                <span className="text-lg font-bold text-foreground">
+                <span className="text-lg font-bold font-mono text-foreground">
                   {formatCurrency(round2(offertes.reduce((s, o) => s + o.totaal, 0)))}
                 </span>
               </div>
@@ -1238,12 +1238,12 @@ export function QuotesPipeline() {
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
                     <th className="text-left py-2.5 px-4 w-[110px]">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
+                      <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
                     </th>
                     <th className="text-left py-2.5 px-4">
                       <button
                         onClick={() => handleListSort('nummer')}
-                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors"
                       >
                         Offerte
                         {listSortColumn === 'nummer' ? (
@@ -1256,7 +1256,7 @@ export function QuotesPipeline() {
                     <th className="text-left py-2.5 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('klant_naam')}
-                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors"
                       >
                         Klant
                         {listSortColumn === 'klant_naam' ? (
@@ -1269,7 +1269,7 @@ export function QuotesPipeline() {
                     <th className="text-right py-2.5 px-4 hidden xl:table-cell">
                       <button
                         onClick={() => handleListSort('totaal')}
-                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                       >
                         Bedrag
                         {listSortColumn === 'totaal' ? (
@@ -1282,7 +1282,7 @@ export function QuotesPipeline() {
                     <th className="text-right py-2.5 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('created_at')}
-                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                       >
                         Datum
                         {listSortColumn === 'created_at' ? (
@@ -1295,7 +1295,7 @@ export function QuotesPipeline() {
                     <th className="text-right py-2.5 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('geldig_tot')}
-                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                       >
                         Geldig tot
                         {listSortColumn === 'geldig_tot' ? (
@@ -1395,7 +1395,7 @@ export function QuotesPipeline() {
 
                         {/* Bedrag */}
                         <td className="py-3 px-4 text-right hidden xl:table-cell">
-                          <span className="text-xs font-medium text-foreground tabular-nums">
+                          <span className="text-xs font-medium font-mono text-foreground tabular-nums">
                             {formatCurrency(offerte.totaal)}
                           </span>
                         </td>

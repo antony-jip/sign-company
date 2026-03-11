@@ -777,7 +777,7 @@ export function MontagePlanningLayout() {
         <div className="flex items-start justify-between gap-1 mb-1.5">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
-            <span>
+            <span className="font-mono">
               {afspraak.start_tijd} - {afspraak.eind_tijd}
             </span>
           </div>
@@ -898,7 +898,8 @@ export function MontagePlanningLayout() {
 
               <div className="space-y-0">
                 {dayAfspraken.length === 0 ? (
-                  <div className="text-xs text-muted-foreground text-center py-4 italic">
+                  <div className="flex flex-col items-center gap-1 text-xs text-muted-foreground text-center py-4">
+                    <Wrench className="h-4 w-4 opacity-30" />
                     Geen montages
                   </div>
                 ) : (
@@ -923,31 +924,31 @@ export function MontagePlanningLayout() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-background">
-              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
+              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Datum
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
+              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Tijd
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
+              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Project
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
+              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Klant
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
+              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Locatie
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
+              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Medewerkers
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
+              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Status
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
+              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Materialen
               </th>
-              <th className="text-left py-3 px-4 font-semibold text-foreground/70">
+              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Acties
               </th>
             </tr>
@@ -957,9 +958,12 @@ export function MontagePlanningLayout() {
               <tr>
                 <td
                   colSpan={9}
-                  className="text-center py-8 text-muted-foreground"
+                  className="text-center py-12 text-muted-foreground"
                 >
-                  Geen montage afspraken deze week
+                  <div className="flex flex-col items-center gap-2">
+                    <Wrench className="h-8 w-8 opacity-30" />
+                    <span>Geen montages</span>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -992,7 +996,7 @@ export function MontagePlanningLayout() {
                         {formatDateDutch(dateObj)}
                       </div>
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3 px-4 whitespace-nowrap font-mono">
                       {afspraak.start_tijd} - {afspraak.eind_tijd}
                     </td>
                     <td className="py-3 px-4">
@@ -1110,7 +1114,7 @@ export function MontagePlanningLayout() {
         {/* Header rij met dagen */}
         <div className="grid gap-0" style={{ gridTemplateColumns: "180px repeat(5, 1fr)" }}>
           <div className="p-2 border-b-2 border-r bg-muted/30">
-            <span className="text-xs font-semibold text-muted-foreground uppercase">Monteur</span>
+            <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Monteur</span>
           </div>
           {werkdagen.map((date, i) => {
             const dateStr = formatDate(date);
@@ -1205,7 +1209,7 @@ export function MontagePlanningLayout() {
                         >
                           <div className="flex items-center gap-1 mb-0.5">
                             <Clock className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-[10px] text-muted-foreground font-mono">
                               {afspraak.start_tijd}-{afspraak.eind_tijd}
                             </span>
                           </div>
@@ -1395,7 +1399,7 @@ export function MontagePlanningLayout() {
                   <label
                     key={monteur.id}
                     className={cn(
-                      "flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors",
+                      "flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition-colors",
                       formData.monteurs.includes(monteur.id)
                         ? "bg-blue-50 border-blue-300"
                         : "hover:bg-background"
@@ -1532,7 +1536,7 @@ export function MontagePlanningLayout() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-3">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
+          <div className="animate-spin h-8 w-8 border-4 border-[#7EB5A6] border-t-transparent rounded-full mx-auto" />
           <p className="text-muted-foreground">Planning laden...</p>
         </div>
       </div>
@@ -1543,7 +1547,7 @@ export function MontagePlanningLayout() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-display truncate">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.03em] font-display truncate">
             Montage Planning
           </h1>
           <p className="text-muted-foreground mt-1 truncate">
@@ -1558,23 +1562,23 @@ export function MontagePlanningLayout() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="rounded-xl border-black/[0.06]">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-blue-100">
-                <ClipboardList className="h-6 w-6 text-blue-600" />
+              <div className="p-3 rounded-xl bg-[#7EB5A6]/15">
+                <ClipboardList className="h-6 w-6 text-[#7EB5A6]" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
                   Montages deze week
                 </p>
-                <p className="text-2xl font-bold">{stats.totaalWeek}</p>
+                <p className="text-2xl font-bold font-mono">{stats.totaalWeek}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-xl border-black/[0.06]">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-amber-100">
@@ -1584,13 +1588,13 @@ export function MontagePlanningLayout() {
                 <p className="text-sm text-muted-foreground">
                   Gepland vandaag
                 </p>
-                <p className="text-2xl font-bold">{stats.geplandVandaag}</p>
+                <p className="text-2xl font-bold font-mono">{stats.geplandVandaag}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-xl border-black/[0.06]">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-green-100">
@@ -1600,7 +1604,7 @@ export function MontagePlanningLayout() {
                 <p className="text-sm text-muted-foreground">
                   Medewerkers beschikbaar
                 </p>
-                <p className="text-2xl font-bold">
+                <p className="text-2xl font-bold font-mono">
                   {stats.monteursBeschikbaar}
                 </p>
               </div>
@@ -1608,7 +1612,7 @@ export function MontagePlanningLayout() {
           </CardContent>
         </Card>
 
-        <Card className={conflicts.length > 0 ? "border-red-200 bg-red-50/50" : ""}>
+        <Card className={cn("rounded-xl border-black/[0.06]", conflicts.length > 0 && "border-red-200 bg-red-50/50")}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className={cn("p-3 rounded-xl", conflicts.length > 0 ? "bg-red-100" : "bg-muted")}>
@@ -1618,7 +1622,7 @@ export function MontagePlanningLayout() {
                 <p className="text-sm text-muted-foreground">
                   Conflicten
                 </p>
-                <p className={cn("text-2xl font-bold", conflicts.length > 0 && "text-red-600")}>
+                <p className={cn("text-2xl font-bold font-mono", conflicts.length > 0 && "text-red-600")}>
                   {conflicts.length}
                 </p>
               </div>
@@ -1629,7 +1633,7 @@ export function MontagePlanningLayout() {
 
       {/* Conflict warnings */}
       {conflicts.length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <span className="text-sm font-semibold text-red-700">
@@ -1703,7 +1707,7 @@ export function MontagePlanningLayout() {
         </Button>
       </div>
 
-      <Card>
+      <Card className="rounded-xl border-black/[0.06]">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2 sm:gap-4">
@@ -1717,8 +1721,8 @@ export function MontagePlanningLayout() {
               </Button>
 
               <div className="text-center min-w-[140px] sm:min-w-[180px]">
-                <CardTitle className="text-base sm:text-lg">
-                  Week {weekNumber}, {year}
+                <CardTitle className="text-base sm:text-lg font-bold tracking-[-0.02em]">
+                  Week <span className="font-mono">{weekNumber}</span>, {year}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {formatDateDutch(weekDates[0])} -{" "}
@@ -1745,7 +1749,7 @@ export function MontagePlanningLayout() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-1 border rounded-lg p-1">
+            <div className="flex items-center gap-1 border rounded-xl p-1">
               <Button
                 variant={viewMode === "week" ? "default" : "ghost"}
                 size="sm"
@@ -1785,9 +1789,9 @@ export function MontagePlanningLayout() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-xl border-black/[0.06]">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base font-bold tracking-[-0.02em] flex items-center gap-2">
             <Users className="h-5 w-5" />
             Medewerkers overzicht
           </CardTitle>
@@ -1812,7 +1816,7 @@ export function MontagePlanningLayout() {
                   key={monteur.id}
                   onClick={() => setSelectedMonteur(selectedMonteur === monteur.id ? "alle" : monteur.id)}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm",
+                    "flex items-center gap-3 p-3 rounded-xl border border-black/[0.06] cursor-pointer transition-all hover:shadow-sm",
                     selectedMonteur === monteur.id && "ring-2 ring-primary border-primary bg-primary/5"
                   )}
                 >

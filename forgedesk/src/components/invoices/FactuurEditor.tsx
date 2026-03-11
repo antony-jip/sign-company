@@ -167,10 +167,10 @@ function generateTypedNummer(existing: { nummer: string }[], prefix: string): st
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  concept: { label: 'Concept', color: 'bg-muted text-foreground/70 dark:bg-foreground/70 dark:text-muted-foreground/50' },
-  verzonden: { label: 'Verzonden', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
-  betaald: { label: 'Betaald', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
-  vervallen: { label: 'Vervallen', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+  concept: { label: 'Concept', color: 'bg-[#f5f4f1] text-[#8a8680]' },
+  verzonden: { label: 'Verzonden', color: 'bg-[#8BAFD415] text-[#5a8ab5]' },
+  betaald: { label: 'Betaald', color: 'bg-[#16a34a12] text-[#16a34a]' },
+  vervallen: { label: 'Vervallen', color: 'bg-[#ef444412] text-[#ef4444]' },
   gecrediteerd: { label: 'Gecrediteerd', color: 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-pale' },
 }
 
@@ -874,7 +874,7 @@ export function FactuurEditor() {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold">
+                <h1 className="text-lg font-extrabold tracking-[-0.03em]">
                   {isEditMode ? `Factuur ${nummer}` : 'Nieuwe factuur'}
                 </h1>
                 {isEditMode && existingFactuur && (
@@ -883,7 +883,7 @@ export function FactuurEditor() {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">{nummer}</p>
+              <p className="text-xs font-mono text-muted-foreground">{nummer}</p>
             </div>
           </div>
 
@@ -1136,7 +1136,7 @@ export function FactuurEditor() {
             <CardContent className="space-y-3">
               <div>
                 <Label className="text-xs">Factuurnummer</Label>
-                <Input value={nummer} readOnly className="bg-muted/50 text-sm" />
+                <Input value={nummer} readOnly className="bg-muted/50 text-sm font-mono" />
               </div>
               <div>
                 <Label className="text-xs">Titel</Label>
@@ -1190,29 +1190,29 @@ export function FactuurEditor() {
             <CardContent className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotaal</span>
-                <span>{formatCurrency(subtotaal)}</span>
+                <span className="font-mono">{formatCurrency(subtotaal)}</span>
               </div>
               {Object.entries(btwGroups).map(([pct, bedrag]) => (
                 <div key={pct} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">BTW {pct}%</span>
-                  <span>{formatCurrency(bedrag)}</span>
+                  <span className="text-muted-foreground">BTW <span className="font-mono">{pct}%</span></span>
+                  <span className="font-mono">{formatCurrency(bedrag)}</span>
                 </div>
               ))}
               <Separator />
               <div className="flex justify-between text-sm font-semibold">
                 <span>Totaal incl. BTW</span>
-                <span className="text-lg">{formatCurrency(totaal)}</span>
+                <span className="text-lg font-mono">{formatCurrency(totaal)}</span>
               </div>
               {existingFactuur && existingFactuur.betaald_bedrag > 0 && (
                 <>
                   <Separator />
                   <div className="flex justify-between text-sm text-emerald-600">
                     <span>Betaald</span>
-                    <span>{formatCurrency(existingFactuur.betaald_bedrag)}</span>
+                    <span className="font-mono">{formatCurrency(existingFactuur.betaald_bedrag)}</span>
                   </div>
                   <div className="flex justify-between text-sm font-semibold">
                     <span>Openstaand</span>
-                    <span>{formatCurrency(round2(totaal - existingFactuur.betaald_bedrag))}</span>
+                    <span className="font-mono">{formatCurrency(round2(totaal - existingFactuur.betaald_bedrag))}</span>
                   </div>
                 </>
               )}
@@ -1282,13 +1282,13 @@ export function FactuurEditor() {
                               Huidig
                             </Badge>
                           )}
-                          <span className="font-medium truncate">{offerte.nummer}</span>
+                          <span className="font-mono font-medium truncate">{offerte.nummer}</span>
                         </div>
                         <div className="text-xs text-muted-foreground truncate">
                           {offerte.klant_naam || 'Klant'} — {offerte.titel}
                         </div>
                         <div className="text-xs font-medium text-muted-foreground">
-                          {formatCurrency(offerte.totaal)}
+                          <span className="font-mono">{formatCurrency(offerte.totaal)}</span>
                         </div>
                       </div>
                       {!isHuidige && (
@@ -1335,7 +1335,7 @@ export function FactuurEditor() {
             </CardHeader>
             <CardContent>
               {/* Table header */}
-              <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 px-2 mb-2 text-xs font-medium text-muted-foreground">
+              <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 px-2 mb-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 <span>Omschrijving</span>
                 <span className="text-right">Aantal</span>
                 <span className="text-right">Prijs</span>
@@ -1390,7 +1390,7 @@ export function FactuurEditor() {
                       max={100}
                       step="1"
                     />
-                    <div className="flex items-center justify-end text-sm font-medium tabular-nums">
+                    <div className="flex items-center justify-end text-sm font-mono font-medium tabular-nums">
                       {formatCurrency(calcLineTotal(item))}
                     </div>
                     <div className="flex items-center gap-1">
@@ -1502,7 +1502,7 @@ export function FactuurEditor() {
             </div>
             <div className="text-sm">
               <span className="text-muted-foreground">Bedrag:</span>{' '}
-              <span className="font-semibold">{formatCurrency(totaal)}</span>
+              <span className="font-mono font-semibold">{formatCurrency(totaal)}</span>
             </div>
             <div className="text-sm">
               <span className="text-muted-foreground">Vervaldatum:</span>{' '}
@@ -1557,7 +1557,7 @@ export function FactuurEditor() {
           <div className="space-y-3 py-2">
             <div className="text-sm">
               <span className="text-muted-foreground">Credit bedrag:</span>{' '}
-              <span className="font-semibold text-red-600">{formatCurrency(-(existingFactuur?.totaal || 0))}</span>
+              <span className="font-mono font-semibold text-red-600">{formatCurrency(-(existingFactuur?.totaal || 0))}</span>
             </div>
             <div>
               <Label className="text-sm">Reden voor creditnota</Label>

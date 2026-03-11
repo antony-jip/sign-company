@@ -519,7 +519,7 @@ export function ClientProfile() {
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-accent dark:text-primary font-display">
+            <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-accent dark:text-primary font-display">
               {klant.bedrijfsnaam}
             </h1>
             <Badge className={cn('capitalize', getStatusColor(klant.status))}>
@@ -779,13 +779,13 @@ export function ClientProfile() {
             {klant.btw_nummer && (
               <div>
                 <p className="text-xs text-muted-foreground">BTW</p>
-                <p className="text-sm font-medium text-foreground">{klant.btw_nummer}</p>
+                <p className="text-sm font-medium font-mono text-foreground">{klant.btw_nummer}</p>
               </div>
             )}
             {klant.kvk_nummer && (
               <div>
                 <p className="text-xs text-muted-foreground">KvK</p>
-                <p className="text-sm font-medium text-foreground">{klant.kvk_nummer}</p>
+                <p className="text-sm font-medium font-mono text-foreground">{klant.kvk_nummer}</p>
               </div>
             )}
             {!klant.btw_nummer && !klant.kvk_nummer && (
@@ -871,12 +871,12 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Omschrijving</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">PM</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Deadline</th>
-                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waarde</th>
-                        <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Downloads</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Omschrijving</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">PM</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden lg:table-cell">Deadline</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Waarde</th>
+                        <th className="text-center py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Downloads</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
@@ -1004,11 +1004,11 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Totaal</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Geldig tot</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Nummer</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Titel</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Totaal</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Geldig tot</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
@@ -1019,7 +1019,7 @@ export function ClientProfile() {
                           onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
                         >
                           <td className="py-3 px-4">
-                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                            <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">
                               {offerte.nummer}
                             </span>
                           </td>
@@ -1063,11 +1063,11 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fase</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waarde</th>
-                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Kans</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Titel</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Fase</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Waarde</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Kans</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
@@ -1113,18 +1113,18 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Totaal</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Datum</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Nummer</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Titel</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Totaal</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Datum</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
                       {clientFacturen.map((factuur) => (
                         <tr key={factuur.id} className="hover:bg-background dark:hover:bg-foreground/80/50 transition-colors">
                           <td className="py-3 px-4">
-                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
+                            <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
                           </td>
                           <td className="py-3 px-4 text-sm">{factuur.titel}</td>
                           <td className="py-3 px-4">
@@ -1163,7 +1163,7 @@ export function ClientProfile() {
                     <thead>
                       <tr className="border-b">
                         {['Datum', 'Project', 'Medewerker', 'Uren', 'Beschrijving'].map((h) => (
-                          <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase">{h}</th>
+                          <th key={h} className="px-4 py-2 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">{h}</th>
                         ))}
                       </tr>
                     </thead>

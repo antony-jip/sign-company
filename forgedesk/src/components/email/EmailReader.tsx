@@ -832,13 +832,13 @@ export function EmailReader({
       <div className="px-6 pt-5 pb-4 border-b flex-shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-foreground leading-tight">{email.onderwerp}</h2>
+            <h2 className="text-xl font-bold tracking-[-0.02em] text-foreground leading-tight">{email.onderwerp}</h2>
             <div className="flex items-center gap-2 mt-2">
               {visibleLabels.map((label) => (
                 <Badge
                   key={label}
                   variant="secondary"
-                  className={`text-xs uppercase tracking-wider font-semibold px-2 py-0.5 ${getLabelColor(label)}`}
+                  className={`text-xs uppercase tracking-label font-semibold px-2 py-0.5 ${getLabelColor(label)}`}
                 >
                   {label}
                 </Badge>
