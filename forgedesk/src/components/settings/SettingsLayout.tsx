@@ -672,6 +672,7 @@ function BedrijfTab() {
 const DOCUMENTEN_TABS: SubTab[] = [
   { id: 'offertes', label: 'Offertes', icon: FileText },
   { id: 'facturen', label: 'Facturen', icon: Receipt },
+  { id: 'werkbonnen', label: 'Werkbonnen', icon: Package },
 ]
 
 function DocumentenTab() {
@@ -687,6 +688,13 @@ function DocumentenTab() {
   const [standaardBtw, setStandaardBtw] = useState('21')
   const [offerteIntroTekst, setOfferteIntroTekst] = useState('')
   const [offerteOutroTekst, setOfferteOutroTekst] = useState('')
+
+  // Werkbon instellingen
+  const [werkbonMonteurUren, setWerkbonMonteurUren] = useState(true)
+  const [werkbonMonteurOpmerkingen, setWerkbonMonteurOpmerkingen] = useState(true)
+  const [werkbonMonteurFotos, setWerkbonMonteurFotos] = useState(false)
+  const [werkbonKlantHandtekening, setWerkbonKlantHandtekening] = useState(false)
+  const [werkbonBriefpapier, setWerkbonBriefpapier] = useState(true)
 
   // Factuur velden
   const [factuurPrefix, setFactuurPrefix] = useState('FAC')
@@ -710,6 +718,12 @@ function DocumentenTab() {
       setStandaardBtw(String(data.standaard_btw || 21))
       setOfferteIntroTekst(data.offerte_intro_tekst || '')
       setOfferteOutroTekst(data.offerte_outro_tekst || '')
+      // Werkbonnen
+      setWerkbonMonteurUren(data.werkbon_monteur_uren ?? true)
+      setWerkbonMonteurOpmerkingen(data.werkbon_monteur_opmerkingen ?? true)
+      setWerkbonMonteurFotos(data.werkbon_monteur_fotos ?? false)
+      setWerkbonKlantHandtekening(data.werkbon_klant_handtekening ?? false)
+      setWerkbonBriefpapier(data.werkbon_briefpapier ?? true)
       // Facturen
       setFactuurPrefix(data.factuur_prefix || 'FAC')
       setCreditnotaPrefix(data.creditnota_prefix || 'CN')
@@ -743,6 +757,12 @@ function DocumentenTab() {
         standaard_btw: parseFloat(standaardBtw) || 21,
         offerte_intro_tekst: offerteIntroTekst,
         offerte_outro_tekst: offerteOutroTekst,
+        // Werkbonnen
+        werkbon_monteur_uren: werkbonMonteurUren,
+        werkbon_monteur_opmerkingen: werkbonMonteurOpmerkingen,
+        werkbon_monteur_fotos: werkbonMonteurFotos,
+        werkbon_klant_handtekening: werkbonKlantHandtekening,
+        werkbon_briefpapier: werkbonBriefpapier,
         // Facturen
         factuur_prefix: factuurPrefix,
         creditnota_prefix: creditnotaPrefix,
@@ -935,6 +955,64 @@ function DocumentenTab() {
                 <div className="space-y-2">
                   <Label htmlFor="aanmaning">Aanmaning</Label>
                   <Textarea id="aanmaning" value={aanmaningTekst} onChange={(e) => setAanmaningTekst(e.target.value)} placeholder="Bijv. Indien wij binnen 7 dagen geen betaling ontvangen, zijn wij genoodzaakt verdere stappen te ondernemen." rows={2} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {saveButton}
+        </div>
+      )}
+
+      {subTab === 'werkbonnen' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Werkbon Instellingen
+              </CardTitle>
+              <CardDescription>Bepaal wat de monteur ziet en kan doen op de werkbon</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Monteur kan uren invullen</Label>
+                    <p className="text-xs text-muted-foreground">De monteur kan gewerkte uren registreren op de werkbon</p>
+                  </div>
+                  <Switch checked={werkbonMonteurUren} onCheckedChange={setWerkbonMonteurUren} />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Monteur kan opmerkingen toevoegen</Label>
+                    <p className="text-xs text-muted-foreground">Veld voor opmerkingen of bijzonderheden van de monteur</p>
+                  </div>
+                  <Switch checked={werkbonMonteurOpmerkingen} onCheckedChange={setWerkbonMonteurOpmerkingen} />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Monteur kan foto's maken</Label>
+                    <p className="text-xs text-muted-foreground">Upload van voor/na foto's op de werkbon</p>
+                  </div>
+                  <Switch checked={werkbonMonteurFotos} onCheckedChange={setWerkbonMonteurFotos} />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Klant handtekening tonen</Label>
+                    <p className="text-xs text-muted-foreground">Handtekeningveld voor de klant op de werkbon</p>
+                  </div>
+                  <Switch checked={werkbonKlantHandtekening} onCheckedChange={setWerkbonKlantHandtekening} />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Briefpapier op werkbon PDF</Label>
+                    <p className="text-xs text-muted-foreground">Toon bedrijfslogo en gegevens op de werkbon PDF</p>
+                  </div>
+                  <Switch checked={werkbonBriefpapier} onCheckedChange={setWerkbonBriefpapier} />
                 </div>
               </div>
             </CardContent>
