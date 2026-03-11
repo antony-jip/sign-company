@@ -428,7 +428,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                 {fetchedOfferte.project_id ? (
                   <button
                     onClick={() => navigate(`/projecten/${fetchedOfferte.project_id}`)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-lg transition-colors"
                   >
                     <FolderPlus className="h-3.5 w-3.5" />
                     Bekijk Project
@@ -436,7 +436,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                 ) : (
                   <button
                     onClick={handleMaakProject}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-lg transition-colors"
                   >
                     <FolderPlus className="h-3.5 w-3.5" />
                     Maak Project
@@ -444,13 +444,13 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                 )}
                 <button
                   onClick={() => navigate('/montage')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-md transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-lg transition-colors"
                 >
                   Plan Montage
                 </button>
                 <button
                   onClick={() => navigate(`/facturen?convert_offerte=${fetchedOfferte.id}`)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-md transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors"
                 >
                   <Receipt className="h-3.5 w-3.5" />
                   Factureer

@@ -126,7 +126,7 @@ export function CalendarMiniWidget() {
               <div
                 key={dayStr}
                 className={cn(
-                  'relative flex flex-col items-center justify-center h-8 rounded-md text-sm transition-colors',
+                  'relative flex flex-col items-center justify-center h-8 rounded-lg text-sm transition-colors',
                   isTodayDate
                     ? 'bg-gradient-to-br from-accent to-primary text-white font-bold shadow-sm'
                     : 'text-foreground/80 hover:bg-muted/60'
@@ -163,7 +163,7 @@ export function CalendarMiniWidget() {
               return (
                 <div
                   key={event.id}
-                  className="flex items-start gap-2 p-2 rounded-md hover:bg-background dark:hover:bg-foreground/80/50 transition-colors cursor-pointer"
+                  className="flex items-start gap-2 p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 transition-colors cursor-pointer"
                 >
                   <div
                     className="w-1 h-full min-h-[32px] rounded-full flex-shrink-0"

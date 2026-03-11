@@ -704,7 +704,7 @@ export function QuotesPipeline() {
 
           <div className="flex items-center gap-1 flex-shrink-0">
             {/* View toggle */}
-            <div className="flex items-center bg-muted/60 rounded-md p-0.5 mr-1">
+            <div className="flex items-center bg-muted/60 rounded-lg p-0.5 mr-1">
               <button
                 onClick={() => setViewMode('lijst')}
                 className={cn(
@@ -793,7 +793,7 @@ export function QuotesPipeline() {
                 key={optie.value}
                 onClick={() => setStatusFilter(optie.value as StatusFilter)}
                 className={cn(
-                  'px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
+                  'px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
                   statusFilter === optie.value
                     ? 'bg-foreground text-background'
                     : 'bg-muted/60 text-muted-foreground hover:bg-muted'

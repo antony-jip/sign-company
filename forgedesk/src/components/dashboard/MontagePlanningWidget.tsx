@@ -240,7 +240,7 @@ export function MontagePlanningWidget() {
                 <div key={key}>
                   {/* Day header */}
                   <div className={cn(
-                    'flex items-center gap-2 px-2 py-1.5 rounded-md mt-1',
+                    'flex items-center gap-2 px-2 py-1.5 rounded-lg mt-1',
                     today && 'bg-primary/5'
                   )}>
                     <span className={cn(

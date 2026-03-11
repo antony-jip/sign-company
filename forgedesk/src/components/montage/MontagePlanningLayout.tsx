@@ -1201,7 +1201,7 @@ export function MontagePlanningLayout() {
                           }}
                           onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
                           className={cn(
-                            "rounded-md border p-1.5 mb-1 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-sm text-xs",
+                            "rounded-lg border p-1.5 mb-1 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-sm text-xs",
                             config.bgColor, config.borderColor,
                             draggingAfspraakId === afspraak.id && "opacity-50 ring-2 ring-primary"
                           )}
@@ -1440,7 +1440,7 @@ export function MontagePlanningLayout() {
                 });
                 if (formConflicts.length === 0) return null;
                 return (
-                  <div className="mt-2 rounded-md border border-red-200 bg-red-50 p-3">
+                  <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-red-700 mb-1">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       Overlap gedetecteerd

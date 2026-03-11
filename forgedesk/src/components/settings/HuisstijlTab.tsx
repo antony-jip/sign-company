@@ -128,7 +128,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
         {!fullscreen && (
           <button
             onClick={() => setFullscreen(true)}
-            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-foreground/80/90 rounded-md p-1.5 shadow-sm"
+            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-foreground/80/90 rounded-lg p-1.5 shadow-sm"
           >
             <Maximize2 className="w-3.5 h-3.5 text-muted-foreground dark:text-muted-foreground/50" />
           </button>
@@ -873,7 +873,7 @@ export function HuisstijlTab() {
 
             {style.briefpapier_url && (
               <>
-                <div className="rounded-md border border-border dark:border-border p-2 bg-background dark:bg-foreground/80/50">
+                <div className="rounded-lg border border-border dark:border-border p-2 bg-background dark:bg-foreground/80/50">
                   <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
                     <Check className="w-3.5 h-3.5" />
                     Briefpapier geüpload

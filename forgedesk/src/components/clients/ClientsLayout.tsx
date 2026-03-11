@@ -336,11 +336,11 @@ export function ClientsLayout() {
             Importeren
           </Button>
           {/* Export buttons */}
-          <div className="hidden sm:flex items-center">
+          <div className="hidden sm:flex items-center rounded-lg border border-border overflow-hidden">
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 rounded-r-none border-r-0 h-9"
+              className="gap-1.5 rounded-none border-0 border-r border-border h-9"
               onClick={() => exportCSV(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows())}
             >
               <Download className="w-4 h-4" />
@@ -349,7 +349,7 @@ export function ClientsLayout() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 rounded-l-none h-9"
+              className="gap-1.5 rounded-none border-0 h-9"
               onClick={() => exportExcel(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows(), 'Klanten')}
             >
               <FileText className="w-4 h-4" />

@@ -39,7 +39,7 @@ export function PlanningLayout() {
             variant="ghost"
             size="sm"
             className={cn(
-              'gap-2 rounded-md px-3 h-8 text-xs font-medium transition-all',
+              'gap-2 rounded-lg px-3 h-8 text-xs font-medium transition-all',
               modus === 'kalender'
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -53,7 +53,7 @@ export function PlanningLayout() {
             variant="ghost"
             size="sm"
             className={cn(
-              'gap-2 rounded-md px-3 h-8 text-xs font-medium transition-all',
+              'gap-2 rounded-lg px-3 h-8 text-xs font-medium transition-all',
               modus === 'montage'
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
