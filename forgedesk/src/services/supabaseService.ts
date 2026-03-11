@@ -261,10 +261,10 @@ export async function getProjecten(): Promise<Project[]> {
       .select('*, klanten(bedrijfsnaam)')
       .order('created_at', { ascending: false })
     if (error) throw error
-    return (data || []).map((p: Project & { klanten?: { bedrijfsnaam?: string } }) => ({
-      ...p,
-      klant_naam: p.klanten?.bedrijfsnaam || '',
-    }))
+    return (data || []).map((p: Project & { klanten?: { bedrijfsnaam?: string } }) => {
+      const { klanten: _kl, ...rest } = p as Record<string, unknown>
+      return { ...rest, klant_naam: p.klanten?.bedrijfsnaam || '' } as Project
+    })
   }
   const projecten = getLocalData<Project>('projecten')
   const klanten = getLocalData<Klant>('klanten')
@@ -283,7 +283,9 @@ export async function getProject(id: string): Promise<Project | null> {
       .eq('id', id)
       .single()
     if (error) throw error
-    return data ? { ...data, klant_naam: data.klanten?.bedrijfsnaam || '' } : null
+    if (!data) return null
+    const { klanten: _kl, ...rest } = data as Record<string, unknown>
+    return { ...rest, klant_naam: (data as { klanten?: { bedrijfsnaam?: string } }).klanten?.bedrijfsnaam || '' } as Project
   }
   const projecten = getLocalData<Project>('projecten')
   const klanten = getLocalData<Klant>('klanten')
@@ -467,10 +469,10 @@ export async function getOffertes(): Promise<Offerte[]> {
         .select('*, klanten(bedrijfsnaam)')
         .order('created_at', { ascending: false })
       if (error) throw error
-      return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
-        ...o,
-        klant_naam: o.klanten?.bedrijfsnaam || '',
-      }))
+      return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => {
+        const { klanten: _kl, ...rest } = o as Record<string, unknown>
+        return { ...rest, klant_naam: o.klanten?.bedrijfsnaam || '' } as Offerte
+      })
     } catch (err) {
       // Supabase failed — fall back to localStorage
       console.warn('Supabase getOffertes failed, falling back to localStorage:', err)
@@ -493,7 +495,9 @@ export async function getOfferte(id: string): Promise<Offerte | null> {
       .eq('id', id)
       .single()
     if (error) throw error
-    return data ? { ...data, klant_naam: data.klanten?.bedrijfsnaam || '' } : null
+    if (!data) return null
+    const { klanten: _kl, ...rest } = data as Record<string, unknown>
+    return { ...rest, klant_naam: (data as { klanten?: { bedrijfsnaam?: string } }).klanten?.bedrijfsnaam || '' } as Offerte
   }
   const offertes = getLocalData<Offerte>('offertes')
   const klanten = getLocalData<Klant>('klanten')
@@ -511,10 +515,10 @@ export async function getOffertesByProject(projectId: string): Promise<Offerte[]
       .eq('project_id', projectId)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
-      ...o,
-      klant_naam: o.klanten?.bedrijfsnaam || '',
-    }))
+    return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => {
+      const { klanten: _kl, ...rest } = o as Record<string, unknown>
+      return { ...rest, klant_naam: o.klanten?.bedrijfsnaam || '' } as Offerte
+    })
   }
   const offertes = getLocalData<Offerte>('offertes')
   const klanten = getLocalData<Klant>('klanten')
