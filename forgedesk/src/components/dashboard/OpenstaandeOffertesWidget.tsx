@@ -37,15 +37,15 @@ export function OpenstaandeOffertesWidget() {
   }, [])
 
   return (
-    <Card className="border border-border">
+    <Card>
       <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-foreground">Openstaande offertes</h3>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="card-title-lg text-foreground">Openstaande offertes</h3>
           <span
             onClick={() => navigate('/offertes')}
-            className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+            className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
           >
-            Offertes →
+            Alles →
           </span>
         </div>
         {loading ? (
@@ -71,8 +71,8 @@ export function OpenstaandeOffertesWidget() {
                 <div
                   key={offerte.id}
                   onClick={() => navigate(`/offertes/${offerte.id}`)}
-                  className={`flex items-center gap-2.5 py-2.5 cursor-pointer hover:translate-x-0.5 transition-transform ${
-                    idx > 0 ? 'border-t border-border' : ''
+                  className={`flex items-center gap-3 py-3 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-all ${
+                    idx > 0 ? 'border-t border-border/50' : ''
                   }`}
                 >
                   <div className={`w-1 h-9 rounded-sm flex-shrink-0 ${barColors[offerte.status] || 'bg-border'}`} />
