@@ -914,6 +914,7 @@ export interface MontageAfspraak {
   status: 'gepland' | 'onderweg' | 'bezig' | 'afgerond' | 'uitgesteld';
   materialen: string[];
   notities: string;
+  werkbon_id?: string;             // link naar gekoppelde werkbon
   created_at: string;
   updated_at: string;
 }
@@ -1007,6 +1008,7 @@ export interface Werkbon {
   offerte_id?: string;
   project_id?: string;
   klant_id: string;
+  montage_afspraak_id?: string;    // link naar planning item
   // Meta
   titel?: string;
   datum: string;
