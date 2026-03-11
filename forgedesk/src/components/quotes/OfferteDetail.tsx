@@ -57,6 +57,8 @@ import {
 } from 'lucide-react'
 import { logger } from '../../utils/logger'
 import { KlantStatusBadgeInline, KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
+import { logWijziging } from '@/utils/auditLogger'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 
@@ -246,6 +248,11 @@ export function OfferteDetail() {
       const updated = await updateOfferte(offerte.id, updates)
       setOfferte(updated)
       setStatusOpen(false)
+      // Audit log
+      if (user?.id) {
+        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        logWijziging({ userId: user.id, entityType: 'offerte', entityId: offerte.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: offerte.status, nieuweWaarde: newStatus })
+      }
       toast.success(`Status bijgewerkt naar ${STATUS_LABELS[newStatus]}`)
     } catch (err) {
       logger.error('Failed to update status:', err)
@@ -1106,6 +1113,11 @@ export function OfferteDetail() {
       {/* Signing Visualisaties */}
       <div className="rounded-xl border border-border bg-card p-5">
         <VisualisatieGallery offerte_id={offerte.id} klant_id={offerte.klant_id} />
+      </div>
+
+      {/* Audit Log */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <AuditLogPanel entityType="offerte" entityId={offerte.id} />
       </div>
 
       {/* Send Dialog */}

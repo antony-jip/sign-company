@@ -52,6 +52,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
 import type { Taak, Project, Klant, MontageAfspraak } from '@/types'
 import { logger } from '../../utils/logger'
+import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
+import { logWijziging } from '@/utils/auditLogger'
 
 type TaakStatus = Taak['status']
 type TaakPrioriteit = Taak['prioriteit']
@@ -436,6 +438,15 @@ export function TasksLayout() {
         locatie: formData.locatie.trim() || undefined,
       })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      // Audit log
+      if (user?.id && editingTaak) {
+        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        if (editingTaak.status !== formData.status) {
+          logWijziging({ userId: user.id, entityType: 'taak', entityId: editingTaak.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: editingTaak.status, nieuweWaarde: formData.status })
+        } else {
+          logWijziging({ userId: user.id, entityType: 'taak', entityId: editingTaak.id, actie: 'gewijzigd', medewerkerNaam: naam })
+        }
+      }
       toast.success('Taak bijgewerkt')
       setEditDialogOpen(false)
     } catch (error) {
@@ -769,6 +780,7 @@ export function TasksLayout() {
         open={editDialogOpen} onOpenChange={setEditDialogOpen}
         formData={formData} setFormData={setFormData}
         onSave={handleSave} isSaving={isSaving} projecten={projecten} klanten={klanten}
+        editingTaakId={editingTaak?.id}
       />
 
       {/* Delete dialog */}
@@ -1363,11 +1375,12 @@ function TaskCard({
 // === EDIT DIALOG ===
 
 function EditTaskDialog({
-  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten,
+  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten, editingTaakId,
 }: {
   open: boolean; onOpenChange: (open: boolean) => void
   formData: TaakFormData; setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
   onSave: () => void; isSaving: boolean; projecten: Project[]; klanten: Klant[]
+  editingTaakId?: string
 }) {
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -1479,6 +1492,9 @@ function EditTaskDialog({
             <Input id="edit-toegewezen" value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
           </div>
         </div>
+        {editingTaakId && (
+          <AuditLogPanel entityType="taak" entityId={editingTaakId} />
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Annuleren</Button>
           <Button onClick={onSave} disabled={isSaving}>

@@ -123,6 +123,8 @@ import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { logger } from '../../utils/logger'
 import { KlantStatusBadgeInline } from '@/components/shared/KlantStatusWarning'
+import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
+import { logWijziging } from '@/utils/auditLogger'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -846,8 +848,13 @@ export function ProjectDetail() {
                 onChange={async (e) => {
                   const newStatus = e.target.value as Project['status']
                   try {
+                    const oudeStatus = project.status
                     const updated = await updateProject(id!, { status: newStatus })
                     setProject(updated)
+                    if (user?.id) {
+                      const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+                      logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
+                    }
                     toast.success(`Status gewijzigd naar ${statusLabels[newStatus] || newStatus}`)
                   } catch {
                     toast.error('Kon status niet wijzigen')
@@ -1405,6 +1412,11 @@ export function ProjectDetail() {
           {/* ── Klantportaal Sectie ── */}
           {project && (
             <ProjectPortaalTab projectId={project.id} projectNaam={project.naam} />
+          )}
+
+          {/* Audit Log */}
+          {project && (
+            <AuditLogPanel entityType="project" entityId={project.id} />
           )}
         </div>
 

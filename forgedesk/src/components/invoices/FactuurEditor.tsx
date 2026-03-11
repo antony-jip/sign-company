@@ -87,6 +87,8 @@ import { factuurVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
+import { logWijziging } from '@/utils/auditLogger'
 
 // ============ TYPES ============
 
@@ -704,11 +706,15 @@ export function FactuurEditor() {
       }
       const updated = await updateFactuur(existingFactuur.id, updates)
       setExistingFactuur({ ...existingFactuur, ...updated, ...updates })
+      if (user?.id) {
+        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        logWijziging({ userId: user.id, entityType: 'factuur', entityId: existingFactuur.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: existingFactuur.status, nieuweWaarde: 'betaald' })
+      }
       toast.success(`${nummer} gemarkeerd als betaald`)
     } catch {
       toast.error('Kon status niet bijwerken')
     }
-  }, [existingFactuur, nummer])
+  }, [existingFactuur, nummer, user])
 
   // ============ DELETE ============
 
@@ -1638,6 +1644,13 @@ export function FactuurEditor() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Audit Log */}
+      {existingFactuur && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <AuditLogPanel entityType="factuur" entityId={existingFactuur.id} />
+        </div>
+      )}
     </div>
   )
 }
