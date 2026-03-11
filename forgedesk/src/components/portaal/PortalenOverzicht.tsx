@@ -27,6 +27,7 @@ import {
 } from '@/services/supabaseService'
 import type { ProjectPortaal, PortaalItem, Notificatie } from '@/types'
 import { formatDate } from '@/lib/utils'
+import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
 
 type PortaalEnriched = ProjectPortaal & {
   project_naam?: string
@@ -109,6 +110,9 @@ export function PortalenOverzicht() {
   const [notificaties, setNotificaties] = useState<Notificatie[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterType>('alle')
+
+  // Automatische herinnering check
+  usePortaalHerinnering()
 
   const fetchData = useCallback(async () => {
     try {
