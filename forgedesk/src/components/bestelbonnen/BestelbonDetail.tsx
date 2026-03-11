@@ -375,7 +375,7 @@ export function BestelbonDetail() {
                 <SelectTrigger><SelectValue placeholder="Selecteer leverancier" /></SelectTrigger>
                 <SelectContent>
                   {leveranciers.filter((l) => l.actief).map((l) => (
-                    <SelectItem key={l.id} value={l.id}>{l.bedrijfsnaam}</SelectItem>
+                    <SelectItem key={l.id} value={l.id}>{l.bedrijfsnaam || l.contactpersoon}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

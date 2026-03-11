@@ -1512,7 +1512,7 @@ function EditTaskDialog({
                 <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="geen">Intern (geen klant)</SelectItem>
-                  {klanten.map((k) => (<SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam}</SelectItem>))}
+                  {klanten.map((k) => (<SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam || k.contactpersoon}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>

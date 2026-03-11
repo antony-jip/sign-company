@@ -1197,7 +1197,7 @@ export function ProjectDetail() {
                             </SelectItem>
                           ))}
                           {projectToewijzingen.length > 0 && alleMedewerkers.length === 0 && (
-                            <SelectItem value="" disabled>Geen medewerkers gevonden</SelectItem>
+                            <SelectItem value="_empty" disabled>Geen medewerkers gevonden</SelectItem>
                           )}
                         </SelectContent>
                       </Select>
