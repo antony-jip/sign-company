@@ -1209,13 +1209,13 @@ export function FacturenLayout() {
     <div className="space-y-6 mod-strip mod-strip-facturen">
       {/* ── Header ────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #E8866A, #F0A88A)', boxShadow: '0 4px 12px rgba(232,134,106,0.25)' }}>
-            <FileText className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #E8866A, #C4604A)' }}>
+            <Receipt className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
             <h1 className="page-title text-foreground truncate">Facturen</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground mt-0.5">
               {filteredFacturen.length} van {facturen.length} facturen
             </p>
           </div>
@@ -1259,59 +1259,44 @@ export function FacturenLayout() {
       </div>
 
       {/* ── Statistics ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="wm-stat-card relative overflow-hidden rounded-xl border border-black/[0.06] bg-gradient-to-br from-wm-pale/15 to-card dark:from-accent/10 dark:to-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="wm-stat-icon p-1.5 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
-              <Euro className="h-4 w-4" />
-            </div>
-            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-label">
-              Totaal openstaand
-            </span>
-          </div>
-          <p className="text-2xl font-bold font-mono text-foreground">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stat-cards-stagger">
+        <div className="stat-card-gradient-blush stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] mb-3">
+            Totaal openstaand
+          </p>
+          <p className="display-number display-number-lg text-foreground">
             {formatCurrency(statistics.totaalOpenstaand)}
           </p>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-[12px] font-semibold text-[#3A7D52] mt-3">
             nog te ontvangen
           </p>
         </div>
 
-        <div className="wm-stat-card relative overflow-hidden rounded-xl border border-black/[0.06] bg-gradient-to-br from-wm-pale/10 to-card dark:from-primary/8 dark:to-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="wm-stat-icon p-1.5 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
-              <CheckCircle2 className="h-4 w-4" />
-            </div>
-            <span className="text-xs font-medium text-accent dark:text-wm-light uppercase tracking-label">
-              Betaald deze maand
-            </span>
-          </div>
-          <p className="text-2xl font-bold font-mono text-foreground">
+        <div className="stat-card-gradient-sage stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] mb-3">
+            Betaald deze maand
+          </p>
+          <p className="display-number display-number-lg text-foreground">
             {formatCurrency(statistics.betaaldDezeMaand)}
           </p>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-[12px] font-semibold text-[#3A7D52] mt-3">
             ontvangen
           </p>
         </div>
 
-        <div className="wm-stat-card relative overflow-hidden rounded-xl p-4" style={{ border: '1px solid var(--color-coral-border)', background: 'linear-gradient(to bottom right, var(--color-coral), var(--color-coral))' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="wm-stat-icon p-1.5 rounded-lg" style={{ background: 'color-mix(in srgb, var(--color-coral-border) 60%, transparent)' }}>
-              <AlertTriangle className="h-4 w-4" style={{ color: 'var(--color-coral-text)' }} />
-            </div>
-            <span className="text-xs font-medium uppercase tracking-label" style={{ color: 'var(--color-coral-text)' }}>
-              Vervallen facturen
-            </span>
-          </div>
-          <p className="text-2xl font-bold font-mono text-foreground">
+        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, var(--color-coral), color-mix(in srgb, var(--color-coral) 70%, white))', border: '1px solid var(--color-coral-border)' }}>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: 'var(--color-coral-text)' }}>
+            Vervallen facturen
+          </p>
+          <p className="display-number display-number-lg text-foreground">
             {verlopenCount}
           </p>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {verlopenTotaal > 0 ? <span className="font-mono">{formatCurrency(verlopenTotaal)}</span> : 'actie vereist'}
+          <p className="text-[12px] font-semibold mt-3" style={{ color: 'var(--color-coral-text)' }}>
+            {verlopenTotaal > 0 ? formatCurrency(verlopenTotaal) : 'actie vereist'}
           </p>
           {verlopenCount > 0 && (
             <button
-              className="text-xs hover:underline mt-1"
+              className="text-[11px] font-bold hover:underline mt-1"
               style={{ color: 'var(--color-coral-text)' }}
               onClick={() => setFilterStatus('verlopen')}
             >
@@ -1320,19 +1305,14 @@ export function FacturenLayout() {
           )}
         </div>
 
-        <div className="wm-stat-card relative overflow-hidden rounded-xl p-4" style={{ border: '1px solid var(--color-cream-border)', background: 'var(--color-cream)' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="wm-stat-icon p-1.5 rounded-lg" style={{ background: 'color-mix(in srgb, var(--color-cream-border) 60%, transparent)' }}>
-              <Clock className="h-4 w-4" style={{ color: 'var(--color-cream-text)' }} />
-            </div>
-            <span className="text-xs font-medium uppercase tracking-label" style={{ color: 'var(--color-cream-text)' }}>
-              Gem. betaaltermijn
-            </span>
-          </div>
-          <p className="text-2xl font-bold font-mono text-foreground">
-            {statistics.gemiddeldeBetaaltermijn} dagen
+        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, var(--color-cream), color-mix(in srgb, var(--color-cream) 70%, white))', border: '1px solid var(--color-cream-border)' }}>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: 'var(--color-cream-text)' }}>
+            Gem. betaaltermijn
           </p>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="display-number display-number-lg text-foreground">
+            {statistics.gemiddeldeBetaaltermijn} <span className="text-[18px]">dagen</span>
+          </p>
+          <p className="text-[12px] font-semibold mt-3" style={{ color: 'var(--color-cream-text)' }}>
             gemiddeld
           </p>
         </div>
