@@ -179,11 +179,11 @@ export function TodayPlanningWidget() {
           <div className="flex items-center gap-2">
             {totalOverdue > 0 && (
               <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)' }}>
-                {totalOverdue} achterstallig
+                <span className="font-mono">{totalOverdue}</span> achterstallig
               </span>
             )}
             <span className="text-xs text-muted-foreground">
-              {totalToday} {totalToday === 1 ? 'item' : 'items'}
+              <span className="font-mono">{totalToday}</span> {totalToday === 1 ? 'item' : 'items'}
             </span>
           </div>
         </div>
@@ -193,7 +193,7 @@ export function TodayPlanningWidget() {
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-3.5 w-3.5" style={{ color: 'var(--color-coral-text)' }} />
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-coral-text)' }}>
+              <span className="text-[11px] font-bold uppercase tracking-label" style={{ color: 'var(--color-coral-text)' }}>
                 Achterstallig
               </span>
             </div>
@@ -214,7 +214,7 @@ export function TodayPlanningWidget() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
               <CheckCircle2 className="w-6 h-6 text-primary/40" />
             </div>
             <p className="text-sm font-medium text-foreground/70">Geen montages of taken vandaag</p>
@@ -226,10 +226,10 @@ export function TodayPlanningWidget() {
         {tomorrowItems.length > 0 && (
           <div className="mt-4 pt-3 border-t border-border/50">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <span className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
                 Morgen
               </span>
-              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
                 {tomorrowItems.length}
               </span>
             </div>

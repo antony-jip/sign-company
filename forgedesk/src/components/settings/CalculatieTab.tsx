@@ -367,11 +367,11 @@ function StartSection({
       <Card>
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex-shrink-0">
+            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex-shrink-0">
               <Calculator className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-foreground dark:text-white mb-1">
+              <h2 className="text-xl font-bold tracking-[-0.02em] text-foreground dark:text-white mb-1">
                 Calculatie & Offerte Templates
               </h2>
               <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 leading-relaxed">
@@ -551,7 +551,7 @@ function StartSection({
         >
           <div className="flex items-center gap-2 mb-1">
             <Package className="h-4 w-4 text-blue-500" />
-            <span className="text-2xl font-bold text-foreground dark:text-white">{productenCount}</span>
+            <span className="text-2xl font-bold font-mono text-foreground dark:text-white">{productenCount}</span>
           </div>
           <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Producten in catalogus</p>
         </button>
@@ -561,7 +561,7 @@ function StartSection({
         >
           <div className="flex items-center gap-2 mb-1">
             <Calculator className="h-4 w-4 text-indigo-500" />
-            <span className="text-2xl font-bold text-foreground dark:text-white">{templatesCount}</span>
+            <span className="text-2xl font-bold font-mono text-foreground dark:text-white">{templatesCount}</span>
           </div>
           <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Calculatie templates</p>
         </button>
@@ -571,7 +571,7 @@ function StartSection({
         >
           <div className="flex items-center gap-2 mb-1">
             <Copy className="h-4 w-4 text-purple-500" />
-            <span className="text-2xl font-bold text-foreground dark:text-white">{offerteTemplatesCount}</span>
+            <span className="text-2xl font-bold font-mono text-foreground dark:text-white">{offerteTemplatesCount}</span>
           </div>
           <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Offerte templates</p>
         </button>
@@ -918,8 +918,8 @@ function ProductenSection({
       ) : producten.length === 0 && !showForm ? (
         <Card>
           <CardContent className="p-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center mx-auto mb-4">
-              <Package className="h-8 w-8 text-blue-500/40" />
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center mx-auto mb-4">
+              <Package className="h-8 w-8 text-blue-500/40 opacity-30" />
             </div>
             <p className="text-sm font-medium text-foreground/70 dark:text-muted-foreground/50 mb-1">
               Nog geen producten in je catalogus
@@ -939,7 +939,7 @@ function ProductenSection({
             <Card key={categorie}>
               <CardContent className="p-0">
                 <div className="px-4 py-2.5 border-b border-border dark:border-border bg-background/50 dark:bg-foreground/80/30">
-                  <h4 className="text-xs font-semibold text-muted-foreground dark:text-muted-foreground/60 uppercase tracking-wider">
+                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">
                     {categorie} <span className="text-muted-foreground/60 dark:text-muted-foreground font-normal">({prods.length})</span>
                   </h4>
                 </div>
@@ -947,12 +947,12 @@ function ProductenSection({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left px-4 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs">Product</th>
-                        <th className="text-center px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-20">Eenheid</th>
-                        <th className="text-right px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-24">Inkoop</th>
-                        <th className="text-right px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-24">Verkoop</th>
-                        <th className="text-right px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-20">Marge</th>
-                        <th className="text-center px-3 py-2 font-medium text-muted-foreground dark:text-muted-foreground/60 text-xs w-16">Actief</th>
+                        <th className="text-left px-4 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label">Product</th>
+                        <th className="text-center px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Eenheid</th>
+                        <th className="text-right px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-24">Inkoop</th>
+                        <th className="text-right px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-24">Verkoop</th>
+                        <th className="text-right px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Marge</th>
+                        <th className="text-center px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Actief</th>
                         <th className="w-20" />
                       </tr>
                     </thead>
@@ -1333,13 +1333,13 @@ function TemplatesSection({
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-background dark:bg-foreground/80/50 border-b border-border dark:border-border">
-                          <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[180px]">Product / Dienst</th>
-                          <th className="text-center px-2 py-2 font-medium text-muted-foreground w-16">Aantal</th>
-                          <th className="text-center px-2 py-2 font-medium text-muted-foreground w-16">Eenh.</th>
-                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-20">Inkoop</th>
-                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-20">Verkoop</th>
-                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-16">Marge</th>
-                          <th className="text-right px-2 py-2 font-medium text-muted-foreground w-20">Subtotaal</th>
+                          <th className="text-left px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label min-w-[180px]">Product / Dienst</th>
+                          <th className="text-center px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Aantal</th>
+                          <th className="text-center px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Eenh.</th>
+                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Inkoop</th>
+                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Verkoop</th>
+                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Marge</th>
+                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Subtotaal</th>
                           <th className="w-8" />
                         </tr>
                       </thead>
@@ -1500,8 +1500,8 @@ function TemplatesSection({
       ) : templates.length === 0 && !showForm ? (
         <Card>
           <CardContent className="p-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center mx-auto mb-4">
-              <Calculator className="h-8 w-8 text-indigo-500/40" />
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center mx-auto mb-4">
+              <Calculator className="h-8 w-8 text-indigo-500/40 opacity-30" />
             </div>
             <p className="text-sm font-medium text-foreground/70 dark:text-muted-foreground/50 mb-1">
               Nog geen calculatie templates
@@ -1894,8 +1894,8 @@ function OfferteTemplatesSubSection({
       ) : offerteTemplates.length === 0 && !showForm ? (
         <Card>
           <CardContent className="p-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 flex items-center justify-center mx-auto mb-4">
-              <Copy className="h-8 w-8 text-purple-500/40" />
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 flex items-center justify-center mx-auto mb-4">
+              <Copy className="h-8 w-8 text-purple-500/40 opacity-30" />
             </div>
             <p className="text-sm font-medium text-foreground/70 dark:text-muted-foreground/50 mb-1">
               Nog geen offerte templates
@@ -2307,8 +2307,8 @@ function InstellingenSection() {
             </div>
 
             {/* Rechts: live preview */}
-            <div className="bg-white dark:bg-card rounded-2xl border border-border shadow-sm p-4 space-y-3">
-              <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Uren &amp; Materiaal</p>
+            <div className="bg-white dark:bg-card rounded-xl border border-black/[0.06] shadow-sm p-4 space-y-3">
+              <p className="text-[10px] font-bold text-[#8a8680] uppercase tracking-label">Uren &amp; Materiaal</p>
               <div className="space-y-1.5">
                 {urenVelden.map((veld, i) => {
                   const dummyUren = [5, 3, 4, 2, 6, 1, 8, 7]

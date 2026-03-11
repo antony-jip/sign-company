@@ -124,7 +124,7 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
                 <span className="text-xs font-medium text-muted-foreground">Ontvangen</span>
               </div>
             </div>
-            <p className="text-2xl font-bold">{stats.ontvangenWeek}</p>
+            <p className="text-2xl font-bold font-mono">{stats.ontvangenWeek}</p>
             <p className="text-[10px] text-muted-foreground mt-1">deze week</p>
           </CardContent>
         </Card>
@@ -139,7 +139,7 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
                 <span className="text-xs font-medium text-muted-foreground">Verzonden</span>
               </div>
             </div>
-            <p className="text-2xl font-bold">{stats.verzondenWeek}</p>
+            <p className="text-2xl font-bold font-mono">{stats.verzondenWeek}</p>
             <p className="text-[10px] text-muted-foreground mt-1">deze week</p>
           </CardContent>
         </Card>
@@ -154,7 +154,7 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
                 <span className="text-xs font-medium text-muted-foreground">Open rate</span>
               </div>
             </div>
-            <p className="text-2xl font-bold">{stats.openRate.toFixed(1)}%</p>
+            <p className="text-2xl font-bold font-mono">{stats.openRate.toFixed(1)}%</p>
             <p className="text-[10px] text-muted-foreground mt-1">van gevolgde emails</p>
           </CardContent>
         </Card>
@@ -169,7 +169,7 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
                 <span className="text-xs font-medium text-muted-foreground">Ongelezen</span>
               </div>
             </div>
-            <p className="text-2xl font-bold">{stats.ongelezen}</p>
+            <p className="text-2xl font-bold font-mono">{stats.ongelezen}</p>
             <p className="text-[10px] text-muted-foreground mt-1">in inbox</p>
           </CardContent>
         </Card>
@@ -291,23 +291,23 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Totaal verzonden</span>
-                <span className="text-sm font-bold">{stats.totaalVerzonden}</span>
+                <span className="text-sm font-bold font-mono">{stats.totaalVerzonden}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Totaal ontvangen</span>
-                <span className="text-sm font-bold">{stats.totaalOntvangen}</span>
+                <span className="text-sm font-bold font-mono">{stats.totaalOntvangen}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Open rate</span>
-                <span className="text-sm font-bold">{stats.openRate.toFixed(1)}%</span>
+                <span className="text-sm font-bold font-mono">{stats.openRate.toFixed(1)}%</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Click rate</span>
-                <span className="text-sm font-bold">{stats.clickRate.toFixed(1)}%</span>
+                <span className="text-sm font-bold font-mono">{stats.clickRate.toFixed(1)}%</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Gem. responstijd</span>
-                <span className="text-sm font-bold">{stats.gemResponseTijd.toFixed(1)} uur</span>
+                <span className="text-sm font-bold font-mono">{stats.gemResponseTijd.toFixed(1)} uur</span>
               </div>
             </div>
           </CardContent>

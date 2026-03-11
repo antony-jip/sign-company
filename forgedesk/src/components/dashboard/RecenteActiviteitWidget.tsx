@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Clock } from 'lucide-react'
 import { getOffertes, getFacturen } from '@/services/supabaseService'
 import type { Offerte, Factuur } from '@/types'
 import { formatCurrency } from '@/lib/utils'
@@ -116,7 +116,10 @@ export function RecenteActiviteitWidget() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : items.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4">Nog geen activiteit</p>
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <Clock className="w-8 h-8 mb-3 opacity-30" />
+            <p className="text-sm font-medium text-foreground/70">Nog geen activiteit</p>
+          </div>
         ) : (
           <div className="space-y-0">
             {items.map((item, idx) => (

@@ -475,14 +475,14 @@ export function OfferteDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1
-            className="text-xl font-bold text-foreground tracking-tight cursor-pointer hover:text-primary transition-colors"
+            className="text-xl font-extrabold tracking-[-0.03em] text-foreground cursor-pointer hover:text-primary transition-colors"
             title="Klik om nummer te kopiëren"
             onClick={() => {
               navigator.clipboard.writeText(offerte.nummer)
               toast.success('Offertenummer gekopieerd')
             }}
           >
-            {offerte.nummer}
+            <span className="font-mono">{offerte.nummer}</span>
           </h1>
 
           {/* Status dropdown */}
@@ -630,7 +630,7 @@ export function OfferteDetail() {
         {/* Klant info */}
         <div className="rounded-xl border border-border bg-card p-5 space-y-3">
           <div className="section-header-pastel">
-            <h3 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5" />
               Klant
             </h3>
@@ -670,7 +670,7 @@ export function OfferteDetail() {
         {/* Details */}
         <div className="rounded-xl border border-border bg-card p-5 space-y-3">
           <div className="section-header-pastel">
-            <h3 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" />
               Details
             </h3>
@@ -727,7 +727,7 @@ export function OfferteDetail() {
         {(offerte.eerste_bekeken_op || offerte.geaccepteerd_door || offerte.wijziging_opmerking) && (
           <div className="rounded-xl border border-border bg-card p-5 space-y-3">
             <div className="section-header-pastel">
-              <h3 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
                 <Eye className="h-3.5 w-3.5" />
                 Klant activiteit
               </h3>
@@ -777,7 +777,7 @@ export function OfferteDetail() {
 
       {/* Titel */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h2 className="text-lg font-semibold text-foreground">
+        <h2 className="text-lg font-bold tracking-[-0.02em] text-foreground">
           {isEditing ? (
             <Input
               value={editTitel}
@@ -794,7 +794,7 @@ export function OfferteDetail() {
       {(isEditing || offerte.intro_tekst) && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-2">
           <div className="section-header-pastel">
-            <h3 className="text-xs font-semibold uppercase tracking-wider">
+            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Intro tekst
             </h3>
           </div>
@@ -814,18 +814,18 @@ export function OfferteDetail() {
       {/* Offerte Regels */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border bg-muted/30">
-          <h3 className="text-sm font-semibold text-foreground">Offerte Regels</h3>
+          <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Offerte Regels</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 font-semibold text-muted-foreground w-10">#</th>
-                <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Omschrijving</th>
-                <th className="text-right py-3 px-4 font-semibold text-muted-foreground w-20">Aantal</th>
-                <th className="text-right py-3 px-4 font-semibold text-muted-foreground w-28">Prijs</th>
-                <th className="text-right py-3 px-4 font-semibold text-muted-foreground w-16">BTW</th>
-                <th className="text-right py-3 px-4 font-semibold text-muted-foreground w-28">Totaal</th>
+                <th className="text-left py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-10">#</th>
+                <th className="text-left py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label">Omschrijving</th>
+                <th className="text-right py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Aantal</th>
+                <th className="text-right py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-28">Prijs</th>
+                <th className="text-right py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">BTW</th>
+                <th className="text-right py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-28">Totaal</th>
               </tr>
             </thead>
             <tbody>
@@ -849,19 +849,19 @@ export function OfferteDetail() {
                       <td className="py-3 px-4 text-foreground">
                         {item.beschrijving}
                         {item.korting_percentage > 0 && (
-                          <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
+                          <span className="ml-2 text-xs font-mono text-emerald-600 dark:text-emerald-400">
                             (-{item.korting_percentage}%)
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right text-foreground">{item.aantal}</td>
-                      <td className="py-3 px-4 text-right text-foreground">
+                      <td className="py-3 px-4 text-right font-mono text-foreground">{item.aantal}</td>
+                      <td className="py-3 px-4 text-right font-mono text-foreground">
                         {formatCurrency(item.eenheidsprijs)}
                       </td>
-                      <td className="py-3 px-4 text-right text-muted-foreground">
+                      <td className="py-3 px-4 text-right font-mono text-muted-foreground">
                         {item.btw_percentage}%
                       </td>
-                      <td className="py-3 px-4 text-right font-medium text-foreground">
+                      <td className="py-3 px-4 text-right font-medium font-mono text-foreground">
                         {formatCurrency(lineTotaal)}
                       </td>
                     </tr>
@@ -876,20 +876,20 @@ export function OfferteDetail() {
           <div className="w-72 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotaal</span>
-              <span className="font-medium text-foreground">{formatCurrency(round2(subtotaal))}</span>
+              <span className="font-medium font-mono text-foreground">{formatCurrency(round2(subtotaal))}</span>
             </div>
             {Object.entries(btwGroups)
               .sort(([a], [b]) => Number(b) - Number(a))
               .map(([pct, bedrag]) => (
                 <div key={pct} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">BTW {pct}%</span>
-                  <span className="font-medium text-foreground">{formatCurrency(bedrag)}</span>
+                  <span className="text-muted-foreground">BTW <span className="font-mono">{pct}%</span></span>
+                  <span className="font-medium font-mono text-foreground">{formatCurrency(bedrag)}</span>
                 </div>
               ))}
             <div className="border-t border-border pt-2 mt-2">
               <div className="flex justify-between">
                 <span className="text-base font-bold text-foreground">Totaal</span>
-                <span className="text-base font-bold text-primary">{formatCurrency(totaal)}</span>
+                <span className="text-base font-bold font-mono text-primary">{formatCurrency(totaal)}</span>
               </div>
             </div>
           </div>
@@ -900,7 +900,7 @@ export function OfferteDetail() {
       {(isEditing || offerte.outro_tekst) && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-2">
           <div className="section-header-pastel">
-            <h3 className="text-xs font-semibold uppercase tracking-wider">
+            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Outro tekst
             </h3>
           </div>
@@ -921,7 +921,7 @@ export function OfferteDetail() {
       {isEditing && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-2">
           <div className="section-header-pastel">
-            <h3 className="text-xs font-semibold uppercase tracking-wider">
+            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Notities
             </h3>
           </div>
@@ -938,7 +938,7 @@ export function OfferteDetail() {
       {!isEditing && offerte.notities && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-2">
           <div className="section-header-pastel">
-            <h3 className="text-xs font-semibold uppercase tracking-wider">
+            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Notities
             </h3>
           </div>
@@ -949,7 +949,7 @@ export function OfferteDetail() {
       {/* Activiteit log */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
         <div className="section-header-pastel">
-          <h3 className="text-xs font-semibold uppercase tracking-wider">
+          <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
             Activiteit
           </h3>
         </div>

@@ -242,7 +242,7 @@ export function KlantenImportPage() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground font-display">Importeren</h1>
+          <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground font-display">Importeren</h1>
           <p className="text-sm text-muted-foreground">Importeer klanten, contactpersonen en activiteiten via CSV</p>
         </div>
       </div>
@@ -320,7 +320,7 @@ export function KlantenImportPage() {
                       <thead>
                         <tr className="bg-muted/50 border-b">
                           {Object.keys(activeTab === 'klanten' ? voorbeeldKlanten[0] : voorbeeldActiviteiten[0]).map((key) => (
-                            <th key={key} className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap">
+                            <th key={key} className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] whitespace-nowrap">
                               {key}
                             </th>
                           ))}
@@ -463,9 +463,9 @@ Regels:
                   <table className="w-full text-xs">
                     <thead className="sticky top-0 bg-muted/90 backdrop-blur-sm z-10">
                       <tr className="border-b">
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground">#</th>
+                        <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">#</th>
                         {previewHeaders.map((h) => (
-                          <th key={h} className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap">
+                          <th key={h} className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] whitespace-nowrap">
                             {h}
                           </th>
                         ))}

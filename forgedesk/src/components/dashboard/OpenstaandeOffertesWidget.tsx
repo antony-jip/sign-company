@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2 } from 'lucide-react'
+import { Loader2, FileText } from 'lucide-react'
 import { getOffertes } from '@/services/supabaseService'
 import type { Offerte } from '@/types'
 import { formatCurrency } from '@/lib/utils'
@@ -53,7 +53,10 @@ export function OpenstaandeOffertesWidget() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : offertes.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4">Geen openstaande offertes</p>
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <FileText className="w-8 h-8 mb-3 opacity-30" />
+            <p className="text-sm font-medium text-foreground/70">Nog geen openstaande offertes</p>
+          </div>
         ) : (
           <div className="space-y-0">
             {offertes.map((offerte, idx) => {
@@ -76,7 +79,7 @@ export function OpenstaandeOffertesWidget() {
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-foreground truncate">{offerte.titel}</p>
                     <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                      {offerte.klant_naam || 'Onbekend'} · {formatCurrency(offerte.totaal)}
+                      {offerte.klant_naam || 'Onbekend'} · <span className="font-mono">{formatCurrency(offerte.totaal)}</span>
                     </p>
                   </div>
                   <span className={`text-xs font-semibold whitespace-nowrap ${statusInfo.color}`}>

@@ -46,7 +46,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 group",
+        "cursor-pointer transition-all duration-200 rounded-xl border-black/[0.06] hover:shadow-lg hover:border-[#8BAFD4]/40 dark:hover:border-[#8BAFD4]/30 group",
         selected && "ring-2 ring-primary border-primary/30"
       )}
       onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
@@ -66,8 +66,8 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
                 />
               </div>
             ) : null}
-            <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="w-10 h-10 rounded-lg bg-[#8BAFD4]/15 dark:bg-[#8BAFD4]/20 flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-5 h-5 text-[#8BAFD4] dark:text-[#8BAFD4]" />
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-base text-foreground dark:text-white truncate">
@@ -207,7 +207,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
           </div>
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/60 flex-shrink-0 ml-2">
             <FolderKanban className="w-4 h-4" />
-            <span className="font-medium">{projectCount}</span>
+            <span className="font-medium font-mono">{projectCount}</span>
           </div>
         </div>
       </CardContent>

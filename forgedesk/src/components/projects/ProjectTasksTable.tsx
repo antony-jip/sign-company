@@ -86,7 +86,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
   if (taken.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p className="text-lg font-medium">Geen taken gevonden</p>
+        <p className="text-base font-medium">Nog geen taken</p>
         <p className="text-sm mt-1">Er zijn nog geen taken voor dit project.</p>
       </div>
     )
@@ -108,7 +108,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-auto p-0 font-semibold text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                  className="h-auto p-0 font-bold text-[11px] uppercase tracking-label text-[#8a8680] hover:text-foreground"
                   onClick={() => handleSort(field)}
                 >
                   {label}
@@ -152,7 +152,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
                 </td>
                 <td className="py-3 px-4">
                   <span
-                    className={`text-sm ${
+                    className={`text-sm font-mono ${
                       isOverdue
                         ? 'text-red-600 dark:text-red-400 font-medium'
                         : 'text-foreground'

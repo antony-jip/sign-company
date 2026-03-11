@@ -74,7 +74,7 @@ export function InkoopOffertesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
               <ShoppingCart className="h-5 w-5 text-white" />
             </div>
@@ -86,34 +86,34 @@ export function InkoopOffertesPage() {
         </div>
         <div className="text-right">
           <p className="text-xs text-muted-foreground">Totaal inkoop</p>
-          <p className="text-xl font-bold tabular-nums">{formatCurrency(totaalInkoop)}</p>
+          <p className="text-xl font-bold font-mono tabular-nums">{formatCurrency(totaalInkoop)}</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Offertes</p>
-            <p className="text-2xl font-bold">{offertes.length}</p>
+            <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Offertes</p>
+            <p className="text-2xl font-bold font-mono">{offertes.length}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Leveranciers</p>
-            <p className="text-2xl font-bold">{new Set(offertes.map(o => o.leverancier_naam)).size}</p>
+            <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Leveranciers</p>
+            <p className="text-2xl font-bold font-mono">{new Set(offertes.map(o => o.leverancier_naam)).size}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Totaal regels</p>
-            <p className="text-2xl font-bold">{offertes.reduce((sum, o) => sum + (o.regels?.length || 0), 0)}</p>
+            <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Totaal regels</p>
+            <p className="text-2xl font-bold font-mono">{offertes.reduce((sum, o) => sum + (o.regels?.length || 0), 0)}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Totaal inkoop</p>
-            <p className="text-2xl font-bold tabular-nums">{formatCurrency(totaalInkoop)}</p>
+            <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Totaal inkoop</p>
+            <p className="text-2xl font-bold font-mono tabular-nums">{formatCurrency(totaalInkoop)}</p>
           </CardContent>
         </Card>
       </div>
@@ -124,9 +124,9 @@ export function InkoopOffertesPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       ) : offertes.length === 0 ? (
-        <Card>
+        <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <CardContent className="py-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+            <FileText className="h-12 w-12 text-muted-foreground opacity-30 mx-auto mb-3" />
             <p className="text-muted-foreground">Nog geen inkoopoffertes</p>
             <p className="text-xs text-muted-foreground/60 mt-1">
               Upload inkoopoffertes via het offerte-scherm bij het aanmaken van een nieuwe offerte.
@@ -144,12 +144,12 @@ export function InkoopOffertesPage() {
                     <div className="flex items-center gap-3 min-w-0">
                       {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
                       <div className="min-w-0">
-                        <CardTitle className="text-base font-semibold truncate">{offerte.leverancier_naam}</CardTitle>
+                        <CardTitle className="text-base font-bold truncate">{offerte.leverancier_naam}</CardTitle>
                         <p className="text-xs text-muted-foreground">{offerte.datum} &middot; {offerte.regels?.length || 0} regels</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-lg font-bold tabular-nums">{formatCurrency(offerte.totaal)}</span>
+                      <span className="text-lg font-bold font-mono tabular-nums">{formatCurrency(offerte.totaal)}</span>
                       {deleteConfirmId === offerte.id ? (
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button variant="destructive" size="sm" className="h-7 text-xs px-2" onClick={() => handleDelete(offerte.id)}>
@@ -176,11 +176,11 @@ export function InkoopOffertesPage() {
                       <table className="w-full text-sm">
                         <thead className="bg-muted/50">
                           <tr>
-                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Omschrijving</th>
-                            <th className="text-right px-3 py-2 font-medium text-muted-foreground w-20">Aantal</th>
-                            <th className="text-right px-3 py-2 font-medium text-muted-foreground w-24">Eenheid</th>
-                            <th className="text-right px-3 py-2 font-medium text-muted-foreground w-28">Prijs/stk</th>
-                            <th className="text-right px-3 py-2 font-medium text-muted-foreground w-28">Totaal</th>
+                            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Omschrijving</th>
+                            <th className="text-right px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-20">Aantal</th>
+                            <th className="text-right px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-24">Eenheid</th>
+                            <th className="text-right px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-28">Prijs/stk</th>
+                            <th className="text-right px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-28">Totaal</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -192,17 +192,17 @@ export function InkoopOffertesPage() {
                                   <span className="text-foreground">{regel.omschrijving}</span>
                                 </div>
                               </td>
-                              <td className="px-3 py-2 text-right tabular-nums">{regel.aantal}</td>
+                              <td className="px-3 py-2 text-right font-mono tabular-nums">{regel.aantal}</td>
                               <td className="px-3 py-2 text-right text-muted-foreground">{regel.eenheid || 'stuks'}</td>
-                              <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(round2(regel.prijs_per_stuk))}</td>
-                              <td className="px-3 py-2 text-right tabular-nums font-medium">{formatCurrency(round2(regel.totaal))}</td>
+                              <td className="px-3 py-2 text-right font-mono tabular-nums">{formatCurrency(round2(regel.prijs_per_stuk))}</td>
+                              <td className="px-3 py-2 text-right font-mono tabular-nums font-medium">{formatCurrency(round2(regel.totaal))}</td>
                             </tr>
                           ))}
                         </tbody>
                         <tfoot className="border-t bg-muted/30">
                           <tr>
-                            <td colSpan={4} className="px-3 py-2 text-right font-semibold">Totaal</td>
-                            <td className="px-3 py-2 text-right font-bold tabular-nums">{formatCurrency(offerte.totaal)}</td>
+                            <td colSpan={4} className="px-3 py-2 text-right font-bold">Totaal</td>
+                            <td className="px-3 py-2 text-right font-bold font-mono tabular-nums">{formatCurrency(offerte.totaal)}</td>
                           </tr>
                         </tfoot>
                       </table>

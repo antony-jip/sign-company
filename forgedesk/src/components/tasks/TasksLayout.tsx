@@ -589,7 +589,7 @@ export function TasksLayout() {
                 )}
               >
                 <div className={cn(
-                  'text-[11px] uppercase tracking-wider font-semibold',
+                  'text-[11px] uppercase tracking-label font-bold',
                   isToday ? 'text-primary' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
                 )}>
                   {DAY_LABELS[i]}
@@ -605,7 +605,7 @@ export function TasksLayout() {
                   </span>
                   {dayTasks.length > 0 && (
                     <span className={cn(
-                      'text-[10px] font-medium tabular-nums px-1.5 py-0.5 rounded-full',
+                      'text-[10px] font-medium font-mono tabular-nums px-1.5 py-0.5 rounded-full',
                       isToday
                         ? 'bg-primary/15 text-primary'
                         : 'bg-muted/60 text-muted-foreground/50'
@@ -626,7 +626,7 @@ export function TasksLayout() {
             <div className="w-14 flex-shrink-0 relative">
               {HOURS.map((hour) => (
                 <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
-                  <span className="absolute -top-2.5 right-3 text-[11px] text-muted-foreground/40 tabular-nums font-medium">
+                  <span className="absolute -top-2.5 right-3 text-[11px] text-muted-foreground/40 font-mono tabular-nums font-medium">
                     {String(hour).padStart(2, '0')}:00
                   </span>
                 </div>
@@ -673,7 +673,7 @@ export function TasksLayout() {
       {/* === FLOATING ACTION BUTTON === */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
         {fabOpen && (
-          <div className="w-80 rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/10 p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="w-80 rounded-xl border border-black/[0.06] bg-card shadow-2xl shadow-black/10 p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-foreground">Snel toevoegen</span>
               <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => setFabOpen(false)}>

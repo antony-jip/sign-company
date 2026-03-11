@@ -313,7 +313,7 @@ function BijlageDropZone({
         <div className="flex items-center justify-center h-5 w-5 rounded bg-violet-100 dark:bg-violet-900/30">
           <ImageIcon className="h-3 w-3 text-violet-500 dark:text-violet-400" />
         </div>
-        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tekening / Bijlage</span>
+        <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Tekening / Bijlage</span>
         {!sectionOpen && hasContent && (
           <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-full">
             {hasBijlage ? item.bijlage_naam || '1 bestand' : `${visualisaties.length} voorbeeld${visualisaties.length > 1 ? 'en' : ''}`}
@@ -425,7 +425,7 @@ function BijlageDropZone({
       {/* ── Gegenereerde visualisaties van deze offerte ── */}
       {visualisaties.length > 0 && (
         <div className="mt-2">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
+          <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1.5">
             Gegenereerde voorbeelden
           </p>
           <div className="flex gap-1.5 flex-wrap">
@@ -900,7 +900,7 @@ export function QuoteItemsTable({
 
               {/* FIX 13: Optioneel badge */}
               {item.is_optioneel && (
-                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded flex-shrink-0">
+                <span className="text-[9px] font-bold uppercase tracking-label text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded flex-shrink-0">
                   Optioneel
                 </span>
               )}
@@ -913,7 +913,7 @@ export function QuoteItemsTable({
               )}
 
               <span className={cn(
-                "text-base font-bold flex-shrink-0 min-w-[90px] text-right tabular-nums",
+                "text-base font-bold font-mono flex-shrink-0 min-w-[90px] text-right tabular-nums",
                 item.is_optioneel ? "text-muted-foreground" : "text-foreground"
               )}>
                 {formatCurrency(lineTotaal)}
@@ -965,7 +965,7 @@ export function QuoteItemsTable({
                 <div className="px-4 py-2.5 border-b border-border dark:border-border">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Afmetingen</span>
+                    <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Afmetingen</span>
                     <button
                       onClick={() => onUpdateItem(item.id, 'afmeting_vrij', !item.afmeting_vrij)}
                       className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
@@ -1032,7 +1032,7 @@ export function QuoteItemsTable({
                       {toonM2 && ((item.breedte_mm || 0) > 0 && (item.hoogte_mm || 0) > 0) && (
                         <div className="pt-4 flex items-center gap-1.5">
                           <span className="text-xs text-muted-foreground">=</span>
-                          <span className="text-sm font-semibold text-foreground tabular-nums">
+                          <span className="text-sm font-medium font-mono text-foreground tabular-nums">
                             {(item.oppervlakte_m2 || ((item.breedte_mm || 0) / 1000) * ((item.hoogte_mm || 0) / 1000)).toFixed(2)} m²
                           </span>
                         </div>
@@ -1335,7 +1335,7 @@ export function QuoteItemsTable({
                         <div className="space-y-1 ml-auto">
                           <label className="text-[11px] font-medium text-muted-foreground text-right block">Totaal</label>
                           <div className="h-9 flex items-center justify-end">
-                            <span className="text-base font-bold text-foreground tabular-nums">
+                            <span className="text-base font-bold font-mono text-foreground tabular-nums">
                               {formatCurrency(lineTotaal)}
                             </span>
                           </div>
@@ -1397,7 +1397,7 @@ export function QuoteItemsTable({
                   {item.prijs_varianten && item.prijs_varianten.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                        <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">
                           Prijsopties — beide op offerte, vink de standaard aan
                         </span>
                       </div>
@@ -1449,7 +1449,7 @@ export function QuoteItemsTable({
                                 </span>
                               )}
 
-                              <span className="text-sm font-bold text-foreground tabular-nums ml-auto mr-2">
+                              <span className="text-sm font-bold font-mono text-foreground tabular-nums ml-auto mr-2">
                                 {formatCurrency(variantTotaal)}
                               </span>
 

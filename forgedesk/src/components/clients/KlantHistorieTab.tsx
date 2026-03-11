@@ -188,7 +188,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
       {/* Tijdlijn tabel */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base font-bold tracking-[-0.02em] flex items-center gap-2">
             <FolderKanban className="w-4 h-4 text-blue-500" />
             Activiteiten ({filteredItems.length})
           </CardTitle>
@@ -198,11 +198,11 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Datum</th>
-                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Type</th>
-                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Omschrijving</th>
-                  <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Status</th>
-                  <th className="text-right py-2 text-xs font-medium text-muted-foreground">Bedrag</th>
+                  <th className="text-left py-2 pr-3 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Datum</th>
+                  <th className="text-left py-2 pr-3 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Type</th>
+                  <th className="text-left py-2 pr-3 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Omschrijving</th>
+                  <th className="text-left py-2 pr-3 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Status</th>
+                  <th className="text-right py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Bedrag</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -229,7 +229,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
                     <td className="py-2 pr-3">
                       {getStatusBadge(item.status)}
                     </td>
-                    <td className="py-2 text-right font-medium tabular-nums whitespace-nowrap">
+                    <td className="py-2 text-right font-medium font-mono tabular-nums whitespace-nowrap">
                       {item.bedrag && item.bedrag > 0 ? formatCurrency(item.bedrag) : '-'}
                     </td>
                   </tr>

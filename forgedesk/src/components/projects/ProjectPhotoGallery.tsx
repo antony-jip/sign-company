@@ -157,7 +157,7 @@ export function ProjectPhotoGallery({
 
   return (
     <>
-      <Card className="border-border/60">
+      <Card className="border-black/[0.06] rounded-xl">
         <CardContent className="p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
@@ -165,9 +165,9 @@ export function ProjectPhotoGallery({
               <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
                 <Camera className="h-3.5 w-3.5 text-white" />
               </div>
-              <h3 className="text-sm font-semibold text-foreground">Situatiefoto's</h3>
+              <h3 className="text-sm font-bold tracking-[-0.02em] text-foreground">Situatiefoto's</h3>
               {photos.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                <Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
                   {photos.length}
                 </Badge>
               )}
@@ -313,7 +313,7 @@ export function ProjectPhotoGallery({
           {/* Top bar */}
           <div className="flex items-center justify-between px-4 py-3 bg-black/40">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="text-white/60 text-sm font-medium">
+              <span className="text-white/60 text-sm font-mono font-medium">
                 {lightboxIndex + 1} / {photos.length}
               </span>
               <span className="text-white/40 text-sm truncate">{currentPhoto.omschrijving}</span>

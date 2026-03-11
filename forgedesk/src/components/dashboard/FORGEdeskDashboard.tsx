@@ -84,7 +84,7 @@ export function FORGEdeskDashboard() {
       {/* Compact header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.04em] leading-tight text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.03em] leading-tight text-foreground">
             {greeting}{userName ? ', ' : ''}
             {userName && <span className="wm-gradient-text">{userName}</span>}
           </h1>
@@ -104,7 +104,7 @@ export function FORGEdeskDashboard() {
       {verlopenFacturen.count > 0 && (
         <div
           onClick={() => navigate('/facturen')}
-          className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-destructive/8 dark:bg-destructive/10 text-destructive cursor-pointer hover:bg-destructive/12 transition-colors"
+          className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-destructive/8 dark:bg-destructive/10 text-destructive cursor-pointer hover:bg-destructive/12 transition-colors"
         >
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           <span className="text-[13.5px] font-medium">

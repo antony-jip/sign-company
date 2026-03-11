@@ -217,10 +217,10 @@ export function EmailComposePage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-foreground">Offerte versturen</h1>
+          <h1 className="text-xl font-extrabold tracking-[-0.03em] text-foreground">Offerte versturen</h1>
           {offerte && (
             <p className="text-sm text-muted-foreground">
-              {offerte.nummer} — {offerte.titel}
+              <span className="font-mono">{offerte.nummer}</span> — {offerte.titel}
               {klant && <> — {klant.bedrijfsnaam}</>}
             </p>
           )}
@@ -241,7 +241,7 @@ export function EmailComposePage() {
       </div>
 
       {/* Email form */}
-      <div className="rounded-2xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
+      <div className="rounded-xl border border-black/[0.06] bg-card overflow-hidden shadow-sm">
         <div className="p-6 space-y-4">
           {/* To */}
           <div className="flex items-center gap-3">
@@ -363,7 +363,7 @@ export function EmailComposePage() {
           <div className="text-xs text-muted-foreground">
             {offerte && (
               <span>
-                Offerte {offerte.nummer} — {formatCurrency(offerte.totaal)} incl. BTW
+                Offerte <span className="font-mono">{offerte.nummer}</span> — {formatCurrency(offerte.totaal)} incl. BTW
               </span>
             )}
           </div>

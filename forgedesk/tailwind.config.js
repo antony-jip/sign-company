@@ -15,10 +15,14 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        display: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Outfit', 'system-ui', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', 'Outfit', 'system-ui', 'sans-serif'],
+        mono: ['"DM Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
         outfit: ['"Outfit"', 'sans-serif'],
         serif: ['"DM Serif Display"', 'Georgia', 'serif'],
+      },
+      letterSpacing: {
+        'label': '0.06em',
       },
       colors: {
         border: "hsl(var(--border))",
@@ -82,6 +86,15 @@ export default {
           DEFAULT: '#F5D5C8',
           deep: '#C4735A',
         },
+        // Module accent kleuren (per-module identity)
+        'mod-projecten': '#7EB5A6',
+        'mod-klanten': '#8BAFD4',
+        'mod-offertes': '#9B8EC4',
+        'mod-facturen': '#E8866A',
+        'mod-werkbonnen': '#D4836A',
+        'mod-taken': '#C4A882',
+        'mod-planning': '#7EB5A6',
+        'mod-email': '#8BAFD4',
         // Liftoff-inspired landing page palette
         'lf-bg': '#FAFAF8',
         'lf-fg': '#1a1a1a',

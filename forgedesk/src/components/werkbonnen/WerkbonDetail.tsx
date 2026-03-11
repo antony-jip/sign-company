@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import {
   ArrowLeft, Save, FileText, Plus, Trash2, GripVertical,
   Camera, MapPin, ChevronUp, ChevronDown, ImagePlus, X,
-  Maximize2, Pen, RotateCcw,
+  Maximize2, Pen, RotateCcw, ClipboardCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -460,8 +460,8 @@ export function WerkbonDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold">
-              {isNew ? 'Nieuwe werkbon' : `Werkbon ${werkbonNummer}`}
+            <h1 className="text-xl font-extrabold tracking-[-0.03em]">
+              {isNew ? 'Nieuwe werkbon' : <span>Werkbon <span className="font-mono">{werkbonNummer}</span></span>}
             </h1>
             {!isNew && (
               <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1', STATUS_CONFIG[status]?.bg, STATUS_CONFIG[status]?.color)}>
@@ -588,15 +588,16 @@ export function WerkbonDetail() {
           {/* Items als kaarten */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Items ({werkbonItems.length})</h2>
+              <h2 className="text-lg font-bold tracking-[-0.02em]">Items ({werkbonItems.length})</h2>
               <Button size="sm" onClick={handleItemToevoegen} disabled={isNew}>
                 <Plus className="h-4 w-4 mr-1" /> Item toevoegen
               </Button>
             </div>
 
             {werkbonItems.length === 0 ? (
-              <Card className="border-dashed">
+              <Card className="border-dashed rounded-xl border-black/[0.06]">
                 <CardContent className="flex flex-col items-center justify-center py-12">
+                  <ClipboardCheck className="h-8 w-8 text-[#D4836A] opacity-30 mb-3" />
                   <p className="text-sm text-muted-foreground">
                     {isNew ? 'Sla de werkbon eerst op om items toe te voegen' : 'Nog geen items. Voeg een item toe.'}
                   </p>
@@ -604,7 +605,7 @@ export function WerkbonDetail() {
               </Card>
             ) : (
               werkbonItems.map((item, idx) => (
-                <Card key={item.id} className="overflow-hidden">
+                <Card key={item.id} className="overflow-hidden rounded-xl border-black/[0.06]">
                   <CardContent className="p-4 space-y-4">
                     {/* Item header */}
                     <div className="flex items-start justify-between gap-3">
@@ -646,6 +647,7 @@ export function WerkbonDetail() {
                           value={item.afmeting_breedte_mm || ''}
                           onChange={(e) => handleItemUpdate(item.id, { afmeting_breedte_mm: e.target.value ? Number(e.target.value) : undefined })}
                           placeholder="bijv. 1200"
+                          className="font-mono"
                         />
                       </div>
                       <div>
@@ -656,6 +658,7 @@ export function WerkbonDetail() {
                           value={item.afmeting_hoogte_mm || ''}
                           onChange={(e) => handleItemUpdate(item.id, { afmeting_hoogte_mm: e.target.value ? Number(e.target.value) : undefined })}
                           placeholder="bijv. 800"
+                          className="font-mono"
                         />
                       </div>
                     </div>
@@ -663,7 +666,7 @@ export function WerkbonDetail() {
                     {/* Afmetingen display */}
                     {(item.afmeting_breedte_mm || item.afmeting_hoogte_mm) && (
                       <div className="bg-muted/50 rounded-lg px-3 py-2">
-                        <span className="text-lg font-bold text-foreground">
+                        <span className="text-lg font-bold font-mono text-foreground">
                           {item.afmeting_breedte_mm || '?'} &times; {item.afmeting_hoogte_mm || '?'} mm
                         </span>
                       </div>

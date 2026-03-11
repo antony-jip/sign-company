@@ -302,7 +302,7 @@ function AddContactForm({
 
           {/* ── Persoonlijke gegevens ── */}
           <div>
-            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 flex items-center gap-2">
+            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2.5 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Users className="w-3 h-3 text-primary" />
               </span>
@@ -342,7 +342,7 @@ function AddContactForm({
 
           {/* ── Bedrijfsgegevens ── */}
           <div>
-            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 flex items-center gap-2">
+            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2.5 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-amber-500/10 flex items-center justify-center flex-shrink-0">
                 <Building2 className="w-3 h-3 text-amber-600" />
               </span>
@@ -390,7 +390,7 @@ function AddContactForm({
 
           {/* ── Adres ── */}
           <div>
-            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 flex items-center gap-2">
+            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2.5 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                 <MapPin className="w-3 h-3 text-blue-500" />
               </span>
@@ -434,7 +434,7 @@ function AddContactForm({
 
           {/* ── Status & Tags ── */}
           <div>
-            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 flex items-center gap-2">
+            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2.5 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                 <Tag className="w-3 h-3 text-emerald-500" />
               </span>
@@ -930,7 +930,7 @@ export function ContactSidebar({
 
           {/* ── MENSEN IN DEZE CONVERSATIE ── */}
           <div className="mb-4">
-            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Users className="w-3 h-3 text-primary" />
               </span>
@@ -957,7 +957,7 @@ export function ContactSidebar({
           {linkedDeal && (
             <>
               <div className="mb-4">
-                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+                <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3 flex items-center gap-2">
                   <span className="w-5 h-5 rounded-md bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                     <Link2 className="w-3 h-3 text-blue-500" />
                   </span>
@@ -990,7 +990,7 @@ export function ContactSidebar({
 
           {/* ── CONTACT DETAILS ── */}
           <div className="mb-4">
-            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Mail className="w-3 h-3 text-primary" />
               </span>
@@ -1100,7 +1100,7 @@ export function ContactSidebar({
             <>
               {contact.tags.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-amber-500/10 flex items-center justify-center flex-shrink-0">
                       <Tag className="w-3 h-3 text-amber-500" />
                     </span>
@@ -1120,7 +1120,7 @@ export function ContactSidebar({
 
               {contact.deals && contact.deals.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                       <Banknote className="w-3 h-3 text-emerald-500" />
                     </span>
@@ -1146,7 +1146,7 @@ export function ContactSidebar({
 
               {contact.activities && contact.activities.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                       <Calendar className="w-3 h-3 text-blue-500" />
                     </span>
@@ -1172,7 +1172,7 @@ export function ContactSidebar({
 
               {contactEmails.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <Mail className="w-3 h-3 text-primary" />
                     </span>
@@ -1208,7 +1208,7 @@ export function ContactSidebar({
 
               {contact.notes && (
                 <div className="mb-4">
-                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-muted-foreground/10 flex items-center justify-center flex-shrink-0">
                       <FileText className="w-3 h-3 text-muted-foreground" />
                     </span>

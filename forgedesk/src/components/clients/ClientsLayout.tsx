@@ -296,10 +296,10 @@ export function ClientsLayout() {
       {/* Page header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground font-display truncate">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-[-0.03em] text-foreground font-display truncate">
             Klanten
           </h1>
-          <Badge variant="secondary" className="text-sm font-medium flex-shrink-0">
+          <Badge variant="secondary" className="text-sm font-medium font-mono flex-shrink-0">
             {filteredKlanten.length}
           </Badge>
         </div>
@@ -513,13 +513,13 @@ export function ClientsLayout() {
       ) : filteredKlanten.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
-              <Users className="h-7 w-7 text-primary/40" />
+            <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
+              <Users className="h-7 w-7 text-primary/30" />
             </div>
             <p className="text-sm font-medium text-foreground">
               {searchQuery || statusFilter !== 'alle'
                 ? 'Geen klanten gevonden'
-                : 'Nog geen opdrachtgevers'}
+                : 'Nog geen klanten'}
             </p>
             <p className="text-xs text-muted-foreground mt-1 text-center">
               {searchQuery || statusFilter !== 'alle'
@@ -557,7 +557,7 @@ export function ClientsLayout() {
         </div>
       ) : (
         /* ==================== LIST VIEW ==================== */
-        <Card>
+        <Card className="rounded-xl border-black/[0.06]">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -569,28 +569,28 @@ export function ClientsLayout() {
                       aria-label="Selecteer alles"
                     />
                   </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
+                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
                     Bedrijfsnaam
                   </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 hidden md:table-cell">
+                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden md:table-cell">
                     Contactpersoon
                   </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden lg:table-cell">
                     Email
                   </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 hidden xl:table-cell">
+                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden xl:table-cell">
                     Telefoon
                   </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden lg:table-cell">
                     Stad
                   </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
+                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
                     Status
                   </th>
-                  <th className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
+                  <th className="text-center text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
                     Projecten
                   </th>
-                  <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 py-3 w-12">
+                  <th className="text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-2 py-3 w-12">
                   </th>
                 </tr>
               </thead>
@@ -615,8 +615,8 @@ export function ClientsLayout() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-semibold text-accent dark:text-wm-light">
+                        <div className="w-8 h-8 rounded-lg bg-[#8BAFD4]/15 dark:bg-[#8BAFD4]/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-semibold text-[#8BAFD4]">
                             {klant.bedrijfsnaam.charAt(0).toUpperCase()}
                           </span>
                         </div>
@@ -672,7 +672,7 @@ export function ClientsLayout() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs font-mono">
                         {projectCounts[klant.id] || 0}
                       </Badge>
                     </td>
