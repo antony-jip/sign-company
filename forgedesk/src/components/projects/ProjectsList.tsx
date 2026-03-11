@@ -284,7 +284,7 @@ export function ProjectsList() {
             <FolderKanban className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-foreground truncate">Projecten</h1>
+            <h1 className="page-title text-foreground truncate">Projecten</h1>
             <p className="text-[12px] text-muted-foreground mt-0.5">
               {gefilterdeProjecten.length} van {projecten.length} projecten
             </p>
