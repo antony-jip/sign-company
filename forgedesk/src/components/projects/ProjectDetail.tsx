@@ -50,6 +50,7 @@ import {
   Wrench,
   MapPin,
   X,
+  Wallet,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -106,6 +107,8 @@ import {
   deleteProjectToewijzing,
   getWerkbonnenByProject,
   getFactuur,
+  getFacturenByProject,
+  getUitgavenByProject,
   getMontageAfsprakenByProject,
   createMontageAfspraak,
 } from '@/services/supabaseService'
@@ -120,7 +123,7 @@ import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { ProjectPortaalTab } from './ProjectPortaalTab'
 import { ProjectProgressIndicator } from './ProjectProgressIndicator'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, MontageAfspraak, ProjectFoto } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { logger } from '../../utils/logger'
@@ -256,6 +259,8 @@ export function ProjectDetail() {
   const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
   const [projectFotos, setProjectFotos] = useState<ProjectFoto[]>([])
   const [projectMontages, setProjectMontages] = useState<MontageAfspraak[]>([])
+  const [projectFacturen, setProjectFacturen] = useState<Factuur[]>([])
+  const [projectUitgaven, setProjectUitgaven] = useState<Uitgave[]>([])
   const [montageDialogOpen, setMontageDialogOpen] = useState(false)
   const [montageTitel, setMontageTitel] = useState('')
   const [montageDatum, setMontageDatum] = useState('')
@@ -535,7 +540,7 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, montageData, fotosData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, montageData, fotosData, facturenData, uitgavenData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
@@ -547,6 +552,8 @@ export function ProjectDetail() {
           getWerkbonnenByProject(id),
           getMontageAfsprakenByProject(id).catch(() => []),
           getProjectFotos(id).catch(() => []),
+          getFacturenByProject(id).catch(() => [] as Factuur[]),
+          getUitgavenByProject(id).catch(() => [] as Uitgave[]),
         ])
         if (!cancelled) {
           setProject(projectData)
@@ -560,6 +567,8 @@ export function ProjectDetail() {
           setProjectWerkbonnen(werkbonnenData || [])
           setProjectMontages(montageData || [])
           setProjectFotos(fotosData || [])
+          setProjectFacturen(facturenData || [])
+          setProjectUitgaven(uitgavenData || [])
         }
 
         // Fetch linked facturen for gefactureerde offertes
@@ -1456,7 +1465,7 @@ export function ProjectDetail() {
                 projectStatus={project.status}
                 offertes={projectOffertes}
                 werkbonnen={projectWerkbonnen}
-                facturen={Object.values(offerteFactuurMap)}
+                facturen={projectFacturen}
               />
             </CardContent>
           </Card>
@@ -1572,6 +1581,7 @@ export function ProjectDetail() {
           </Card>
 
           {/* ── Montage Planning ── */}
+          {projectMontages.length > 0 && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1592,14 +1602,7 @@ export function ProjectDetail() {
               </div>
             </CardHeader>
             <CardContent>
-              {projectMontages.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">Geen montages gepland</p>
-                  <Button variant="link" size="sm" className="text-accent dark:text-primary mt-1 h-auto p-0" onClick={handleOpenMontageDialog}>
-                    Montage inplannen
-                  </Button>
-                </div>
-              ) : (
+              {(
                 <div className="space-y-2">
                   {projectMontages.map((m) => (
                     <div
@@ -1635,8 +1638,10 @@ export function ProjectDetail() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* ── Werkbonnen ── */}
+          {projectWerkbonnen.length > 0 && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1656,12 +1661,7 @@ export function ProjectDetail() {
               </div>
             </CardHeader>
             <CardContent>
-              {projectWerkbonnen.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">Geen werkbonnen</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
+              <div className="space-y-2">
                   {projectWerkbonnen.map((wb) => (
                     <div
                       key={wb.id}
@@ -1683,9 +1683,9 @@ export function ProjectDetail() {
                     </div>
                   ))}
                 </div>
-              )}
             </CardContent>
           </Card>
+          )}
 
           {/* Werkbon aanmaken dialog */}
           {project && (
@@ -1699,6 +1699,92 @@ export function ProjectDetail() {
             />
           )}
 
+          {/* ── Facturen ── */}
+          {projectFacturen.length > 0 && (
+            <Card className="border-border/80 dark:border-border/80">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <div className="p-1 rounded-md bg-emerald-500/10">
+                      <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
+                    </div>
+                    Facturen
+                    <span className="text-xs text-muted-foreground font-normal">{projectFacturen.length}</span>
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {projectFacturen.map((factuur) => (
+                    <div
+                      key={factuur.id}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/facturen/${factuur.id}`)}
+                    >
+                      <div>
+                        <p className="text-sm font-medium font-mono">{factuur.nummer}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL')}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold font-mono">{formatCurrency(factuur.totaal)}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          factuur.status === 'betaald' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                          factuur.status === 'vervallen' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                          factuur.status === 'verzonden' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                          'bg-muted text-foreground/70'
+                        }`}>
+                          {factuur.status === 'betaald' ? 'Betaald' : factuur.status === 'verzonden' ? 'Verzonden' : factuur.status === 'vervallen' ? 'Verlopen' : factuur.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Uitgaven ── */}
+          {projectUitgaven.length > 0 && (
+            <Card className="border-border/80 dark:border-border/80">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <div className="p-1 rounded-md bg-orange-500/10">
+                      <Wallet className="h-3.5 w-3.5 text-orange-600" />
+                    </div>
+                    Uitgaven
+                    <span className="text-xs text-muted-foreground font-normal">{projectUitgaven.length}</span>
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {projectUitgaven.map((uitgave) => (
+                    <div
+                      key={uitgave.id}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      onClick={() => navigate('/uitgaven')}
+                    >
+                      <div>
+                        <p className="text-sm font-medium font-mono">{uitgave.uitgave_nummer}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(uitgave.datum).toLocaleDateString('nl-NL')}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold font-mono">{formatCurrency(uitgave.bedrag_incl_btw)}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          uitgave.status === 'betaald' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                          uitgave.status === 'verlopen' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                          'bg-muted text-foreground/70'
+                        }`}>
+                          {uitgave.status === 'betaald' ? 'Betaald' : uitgave.status === 'verlopen' ? 'Verlopen' : 'Open'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* ── Signing Visualisaties ── */}
           <Card className="border-border/80 dark:border-border/80">
@@ -1708,6 +1794,7 @@ export function ProjectDetail() {
           </Card>
 
           {/* ── Offertes ── */}
+          {projectOffertes.length > 0 && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1730,19 +1817,7 @@ export function ProjectDetail() {
               </div>
             </CardHeader>
             <CardContent>
-              {projectOffertes.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">Geen offertes</p>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="text-accent dark:text-primary mt-1 h-auto p-0"
-                    onClick={openNieuweOfferte}
-                  >
-                    Eerste offerte aanmaken
-                  </Button>
-                </div>
-              ) : (
+              {(
                 <div className="space-y-2">
                   {projectOffertes.map((offerte) => {
                     const linkedFactuur = offerteFactuurMap[offerte.id]
@@ -1873,6 +1948,7 @@ export function ProjectDetail() {
               )}
             </CardContent>
           </Card>
+          )}
 
 
           {/* Email offerte dialog */}
@@ -2082,6 +2158,27 @@ export function ProjectDetail() {
               )}
             </CardContent>
           </Card>
+
+          {/* ── Snelle toevoeg-links voor lege categorieën ── */}
+          {(projectOffertes.length === 0 || projectWerkbonnen.length === 0 || projectMontages.length === 0) && (
+            <div className="flex flex-wrap gap-2">
+              {projectOffertes.length === 0 && (
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={openNieuweOfferte}>
+                  <Plus className="h-3 w-3 mr-1" /> Offerte
+                </Button>
+              )}
+              {projectWerkbonnen.length === 0 && (
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowWerkbonDialog(true)}>
+                  <Plus className="h-3 w-3 mr-1" /> Werkbon
+                </Button>
+              )}
+              {projectMontages.length === 0 && (
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleOpenMontageDialog}>
+                  <Plus className="h-3 w-3 mr-1" /> Montage
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
