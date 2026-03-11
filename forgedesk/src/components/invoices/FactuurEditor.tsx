@@ -328,6 +328,18 @@ export function FactuurEditor() {
               const allOffertes = await getOffertes().catch(() => [])
               const offerte = allOffertes.find((o) => o.id === paramOfferteId)
               if (offerte) {
+                // Waarschuwing bij dubbele facturatie
+                if (offerte.status === 'gefactureerd' || offerte.geconverteerd_naar_factuur_id) {
+                  const doorgaan = window.confirm(
+                    `Let op: offerte ${offerte.nummer} is al eerder gefactureerd` +
+                    (offerte.geconverteerd_naar_factuur_op ? ` op ${new Date(offerte.geconverteerd_naar_factuur_op).toLocaleDateString('nl-NL')}` : '') +
+                    '.\n\nWil je toch een nieuwe factuur aanmaken?'
+                  )
+                  if (!doorgaan) {
+                    navigate('/facturen')
+                    return
+                  }
+                }
                 setOfferteId(offerte.id)
                 setKlantId(offerte.klant_id)
                 setShowKlantSelector(false)
@@ -547,9 +559,14 @@ export function FactuurEditor() {
         // Update offerte met factuur link (bidirectioneel) en zet status op gefactureerd
         if (offerteId) {
           try {
+            // Haal bestaande offerte op voor factuur_ids array
+            const bestaandeOfferte = allOffertes.find((o) => o.id === offerteId)
+            const bestaandeFactuurIds = bestaandeOfferte?.factuur_ids || []
             await updateOfferte(offerteId, {
               geconverteerd_naar_factuur_id: newFactuur.id,
               status: 'gefactureerd',
+              factuur_ids: [...bestaandeFactuurIds, newFactuur.id],
+              geconverteerd_naar_factuur_op: bestaandeOfferte?.geconverteerd_naar_factuur_op || new Date().toISOString(),
             })
           } catch (err) {
             logger.error('Kon offerte status niet bijwerken:', err)

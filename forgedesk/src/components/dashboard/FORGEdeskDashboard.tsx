@@ -13,8 +13,8 @@ import { PriorityTasks } from './PriorityTasks'
 import { MontagePlanningWidget } from './MontagePlanningWidget'
 import { VisualizerDashboardWidget } from './VisualizerDashboardWidget'
 import { AlertTriangle } from 'lucide-react'
-import { getFacturen } from '@/services/supabaseService'
-import type { Factuur } from '@/types'
+import { getFacturen, getOffertes } from '@/services/supabaseService'
+import type { Factuur, Offerte } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
@@ -54,6 +54,8 @@ export function FORGEdeskDashboard() {
 
   // Verlopen facturen for alert bar
   const [verlopenFacturen, setVerlopenFacturen] = useState<{ count: number; bedrag: number }>({ count: 0, bedrag: 0 })
+  // Offertes wachtend op reactie
+  const [wachtOpReactie, setWachtOpReactie] = useState<{ count: number; bedrag: number }>({ count: 0, bedrag: 0 })
 
   useEffect(() => {
     let cancelled = false
@@ -67,6 +69,18 @@ export function FORGEdeskDashboard() {
         setVerlopenFacturen({
           count: verlopen.length,
           bedrag: verlopen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0),
+        })
+      })
+      .catch(logger.error)
+    getOffertes()
+      .then((offertes: Offerte[]) => {
+        if (cancelled) return
+        const wachtend = offertes.filter(
+          o => o.status === 'verzonden' || o.status === 'bekeken'
+        )
+        setWachtOpReactie({
+          count: wachtend.length,
+          bedrag: wachtend.reduce((sum, o) => sum + (o.totaal_incl_btw || 0), 0),
         })
       })
       .catch(logger.error)
@@ -114,6 +128,22 @@ export function FORGEdeskDashboard() {
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           <span className="text-[13.5px] font-medium">
             <strong>{verlopenFacturen.count} facturen verlopen</strong> — {formatCurrency(verlopenFacturen.bedrag)} openstaand
+          </span>
+          <span className="ml-auto text-[13px] font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
+            Bekijk →
+          </span>
+        </div>
+      )}
+
+      {/* Alert bar — offertes wachtend op reactie */}
+      {wachtOpReactie.count > 0 && (
+        <div
+          onClick={() => navigate('/offertes')}
+          className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[var(--color-cream-bg)] text-[var(--color-cream-fg)] cursor-pointer hover:bg-[var(--color-cream-border)]/30 transition-colors"
+        >
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span className="text-[13.5px] font-medium">
+            <strong>{wachtOpReactie.count} {wachtOpReactie.count === 1 ? 'offerte wacht' : 'offertes wachten'} op reactie</strong> — {formatCurrency(wachtOpReactie.bedrag)} totaal
           </span>
           <span className="ml-auto text-[13px] font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
             Bekijk →

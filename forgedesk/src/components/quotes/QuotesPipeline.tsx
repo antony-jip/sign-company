@@ -67,7 +67,7 @@ import { SkeletonTable } from '@/components/ui/skeleton'
 type ViewMode = 'pipeline' | 'lijst'
 type SortOption = 'newest' | 'oldest' | 'highest' | 'expiring'
 type PriorityFilter = 'alle' | 'laag' | 'medium' | 'hoog' | 'urgent'
-type StatusFilter = 'alle' | 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd'
+type StatusFilter = 'alle' | 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd' | 'wacht_op_reactie'
 
 const DEFAULT_STATUS_COLUMNS = [
   { key: 'concept', label: 'Concept', color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
@@ -123,6 +123,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
+  { value: 'wacht_op_reactie', label: 'Wacht op reactie' },
   { value: 'concept', label: 'Concept' },
   { value: 'verzonden', label: 'Verstuurd' },
   { value: 'bekeken', label: 'Bekeken' },
@@ -367,7 +368,9 @@ export function QuotesPipeline() {
       result = result.filter((o) => o.prioriteit === priorityFilter)
     }
 
-    if (statusFilter !== 'alle') {
+    if (statusFilter === 'wacht_op_reactie') {
+      result = result.filter((o) => o.status === 'verzonden' || o.status === 'bekeken')
+    } else if (statusFilter !== 'alle') {
       result = result.filter((o) => o.status === statusFilter)
     }
 
@@ -790,6 +793,8 @@ export function QuotesPipeline() {
           {statusOpties.map((optie) => {
             const count = optie.value === 'alle'
               ? offertes.length
+              : optie.value === 'wacht_op_reactie'
+              ? offertes.filter((o) => o.status === 'verzonden' || o.status === 'bekeken').length
               : offertes.filter((o) => o.status === optie.value).length
             if (optie.value !== 'alle' && count === 0) return null
             return (

@@ -710,6 +710,13 @@ function DocumentenTab() {
   const [herinnering2, setHerinnering2] = useState('')
   const [aanmaningTekst, setAanmaningTekst] = useState('')
   const [standaardUurtarief, setStandaardUurtarief] = useState('75')
+  // Offerte herinnering instellingen
+  const [offerteHerinnering1Actief, setOfferteHerinnering1Actief] = useState(true)
+  const [offerteHerinnering1Dagen, setOfferteHerinnering1Dagen] = useState('7')
+  const [offerteHerinnering1Tekst, setOfferteHerinnering1Tekst] = useState('Beste {contactpersoon_naam},\n\nOp {verstuurd_op} hebben wij u offerte {offerte_nummer} toegestuurd ter waarde van {offerte_bedrag}.\n\nGraag vernemen wij of u nog vragen heeft of dat wij de offerte mogen omzetten naar een opdracht.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
+  const [offerteHerinnering2Actief, setOfferteHerinnering2Actief] = useState(true)
+  const [offerteHerinnering2Dagen, setOfferteHerinnering2Dagen] = useState('14')
+  const [offerteHerinnering2Tekst, setOfferteHerinnering2Tekst] = useState('Beste {contactpersoon_naam},\n\nWij willen u er graag aan herinneren dat offerte {offerte_nummer} van {verstuurd_op} nog openstaat. De offerte vervalt op {vervaldatum}.\n\nMocht u vragen hebben of willen bespreken, dan horen wij het graag.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
@@ -959,6 +966,44 @@ function DocumentenTab() {
                 <div className="space-y-2">
                   <Label htmlFor="aanmaning">Aanmaning</Label>
                   <Textarea id="aanmaning" value={aanmaningTekst} onChange={(e) => setAanmaningTekst(e.target.value)} placeholder="Bijv. Indien wij binnen 7 dagen geen betaling ontvangen, zijn wij genoodzaakt verdere stappen te ondernemen." rows={2} />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Offerte Herinneringen */}
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-foreground dark:text-white">Offerte herinneringen</p>
+                <p className="text-xs text-muted-foreground">Herinneringen voor verstuurde offertes zonder reactie. Merge velden: {'{'}klant_naam{'}'}, {'{'}contactpersoon_naam{'}'}, {'{'}offerte_nummer{'}'}, {'{'}offerte_bedrag{'}'}, {'{'}verstuurd_op{'}'}, {'{'}vervaldatum{'}'}, {'{'}bedrijfsnaam{'}'}</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Herinnering 1</Label>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={offerteHerinnering1Actief} onChange={(e) => setOfferteHerinnering1Actief(e.target.checked)} className="rounded" />
+                      Actief
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Na</Label>
+                    <Input type="number" value={offerteHerinnering1Dagen} onChange={(e) => setOfferteHerinnering1Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
+                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
+                  </div>
+                  <Textarea value={offerteHerinnering1Tekst} onChange={(e) => setOfferteHerinnering1Tekst(e.target.value)} rows={3} className="text-xs" />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Herinnering 2</Label>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={offerteHerinnering2Actief} onChange={(e) => setOfferteHerinnering2Actief(e.target.checked)} className="rounded" />
+                      Actief
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Na</Label>
+                    <Input type="number" value={offerteHerinnering2Dagen} onChange={(e) => setOfferteHerinnering2Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
+                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
+                  </div>
+                  <Textarea value={offerteHerinnering2Tekst} onChange={(e) => setOfferteHerinnering2Tekst(e.target.value)} rows={3} className="text-xs" />
                 </div>
               </div>
             </CardContent>
