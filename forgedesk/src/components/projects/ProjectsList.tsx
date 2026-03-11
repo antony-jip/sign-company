@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Card, CardContent } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -409,22 +410,22 @@ export function ProjectsList() {
 
       {/* ── Table ── */}
       {gefilterdeProjecten.length === 0 ? (
-        <Card className="border-dashed border-black/[0.06] rounded-xl">
-          <CardContent className="py-16 text-center">
-            <FolderKanban className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <h3 className="text-base font-medium text-foreground">Nog geen projecten</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">
-              {zoekterm || statusFilter !== 'alle'
-                ? 'Pas je filters aan of maak een nieuw project aan.'
-                : 'Start je eerste project.'}
-            </p>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/projecten/nieuw">
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Nieuw project
-              </Link>
-            </Button>
-          </CardContent>
+        <Card className="border-dashed border-black/[0.06]">
+          <EmptyState
+            module="projecten"
+            title="Nog geen projecten"
+            description={zoekterm || statusFilter !== 'alle'
+              ? 'Pas je filters aan of maak een nieuw project aan.'
+              : 'Start je eerste project en houd alles bij.'}
+            action={
+              <Button asChild variant="outline" size="sm">
+                <Link to="/projecten/nieuw">
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Nieuw project
+                </Link>
+              </Button>
+            }
+          />
         </Card>
       ) : (
         <div className="rounded-xl border border-black/[0.06] bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0 shadow-sm">
