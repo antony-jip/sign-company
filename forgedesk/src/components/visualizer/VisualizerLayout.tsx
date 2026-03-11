@@ -715,34 +715,36 @@ export function VisualizerLayout() {
   // START SCHERM — Generator formulier
   // ═══════════════════════════════════════════════════════════════════
   return (
-    <div className="space-y-8 mod-strip mod-strip-visualizer">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-sage/20 rounded-lg">
-          <Palette className="w-6 h-6 text-sage-deep" />
+    <div className="h-full flex flex-col mod-strip mod-strip-visualizer">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #7EB5A6, #5A9A88)' }}>
+            <Palette className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="page-title text-foreground truncate">Signing Visualizer</h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              Upload een foto of ontwerp, beschrijf het gewenste resultaat — AI doet de rest
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground font-display">
-            Signing Visualizer
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Upload een foto of ontwerp, beschrijf het gewenste resultaat — AI doet de rest
-          </p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => setShowCreditsPakket(true)}
-            className={cn(
-              'text-sm font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer',
-              creditSaldo < 5
-                ? 'bg-blush/20 text-blush-deep hover:bg-blush/30'
-                : 'bg-sage/20 text-sage-deep hover:bg-sage/30',
-            )}
-          >
-            {creditSaldo} credits {creditSaldo < 5 ? '— bijkopen' : ''}
-          </button>
-        </div>
+        <button
+          onClick={() => setShowCreditsPakket(true)}
+          className={cn(
+            'text-sm font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer flex-shrink-0',
+            creditSaldo < 5
+              ? 'bg-blush/20 text-blush-deep hover:bg-blush/30'
+              : 'bg-sage/20 text-sage-deep hover:bg-sage/30',
+          )}
+        >
+          {creditSaldo} credits {creditSaldo < 5 ? '— bijkopen' : ''}
+        </button>
       </div>
+
+      {/* Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="space-y-8 p-4 sm:p-6">
 
       {/* Generator form */}
       <div className="border rounded-2xl bg-card p-6">
@@ -1015,6 +1017,8 @@ export function VisualizerLayout() {
         onClose={() => setShowCreditsPakket(false)}
         onCreditsToegevoegd={(nieuwSaldo) => setCreditSaldo(nieuwSaldo)}
       />
+      </div>
+      </div>
     </div>
   )
 }

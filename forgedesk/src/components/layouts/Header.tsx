@@ -39,6 +39,7 @@ const routeMeta: Record<string, { title: string; subtitle?: string }> = {
   '/nieuwsbrieven': { title: 'Nieuwsbrieven', subtitle: 'Klantcommunicatie' },
   '/importeren': { title: 'Importeren', subtitle: 'Data importeren' },
   '/booking': { title: 'Booking', subtitle: 'Afspraken & planning' },
+  '/visualizer': { title: 'Visualizer', subtitle: 'AI signing mockups' },
 }
 
 function getPageMeta(pathname: string): { title: string; subtitle?: string } {
