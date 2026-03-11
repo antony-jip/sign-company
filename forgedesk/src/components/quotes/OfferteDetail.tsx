@@ -60,6 +60,7 @@ import { KlantStatusBadgeInline, KlantStatusWarning } from '@/components/shared/
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
+import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -132,6 +133,7 @@ export function OfferteDetail() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
+  const [showPdfPreview, setShowPdfPreview] = useState(false)
   const [portaalToken, setPortaalToken] = useState<string | null>(null)
 
   // Fetch data
@@ -597,6 +599,10 @@ export function OfferteDetail() {
               >
                 <FileText className="h-4 w-4 mr-1" />
                 Calculatie bewerken
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowPdfPreview(true)}>
+                <Eye className="h-4 w-4 mr-1" />
+                PDF Preview
               </Button>
               <Button size="sm" onClick={openSendDialog}>
                 <Send className="h-4 w-4 mr-1" />
@@ -1237,6 +1243,25 @@ export function OfferteDetail() {
           offerte={offerte}
           items={items}
           klant={klant}
+        />
+      )}
+
+      {/* PDF Preview Dialog */}
+      {offerte && (
+        <PdfPreviewDialog
+          open={showPdfPreview}
+          onOpenChange={setShowPdfPreview}
+          title={`Offerte ${offerte.nummer}`}
+          generatePdf={async () => {
+            const doc = generateOffertePDF(
+              offerte,
+              items,
+              klant || {},
+              { ...profile, primaireKleur: primaireKleur || '#2563eb' },
+              documentStyle,
+            )
+            return doc.output('blob')
+          }}
         />
       )}
     </div>
