@@ -60,6 +60,7 @@ import {
   getFacturen,
   createFactuur,
   updateFactuur,
+  updateFactuurStatus,
   deleteFactuur,
   getKlanten,
   getOffertes,
@@ -584,7 +585,7 @@ export function FacturenLayout() {
       }
 
       try {
-        const updated = await updateFactuur(factuur.id, updates)
+        const updated = await updateFactuurStatus(factuur.id, updates)
         setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
       } catch {
         toast.error('Kon status niet bijwerken')

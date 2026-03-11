@@ -1937,6 +1937,36 @@ export async function updateFactuur(id: string, updates: Partial<Factuur>): Prom
   return items[index]
 }
 
+/**
+ * Update factuur status met cascade side-effects.
+ * Bij status 'betaald': update gekoppelde werkbon en check of project afgerond kan worden.
+ */
+export async function updateFactuurStatus(id: string, updates: Partial<Factuur>): Promise<Factuur> {
+  const factuur = await updateFactuur(id, updates)
+
+  if (updates.status === 'betaald') {
+    // Cascade: update gekoppelde werkbon naar 'gefactureerd'
+    if (factuur.werkbon_id) {
+      try {
+        await updateWerkbon(factuur.werkbon_id, { status: 'gefactureerd' })
+      } catch { /* werkbon update is best-effort */ }
+    }
+
+    // Cascade: check of alle facturen van het project betaald zijn → project afgerond
+    if (factuur.project_id) {
+      try {
+        const projectFacturen = await getFacturenByProject(factuur.project_id)
+        const alleBetaald = projectFacturen.length > 0 && projectFacturen.every(f => f.status === 'betaald')
+        if (alleBetaald) {
+          await updateProject(factuur.project_id, { status: 'afgerond' })
+        }
+      } catch { /* project update is best-effort */ }
+    }
+  }
+
+  return factuur
+}
+
 export async function deleteFactuur(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {

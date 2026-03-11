@@ -67,6 +67,7 @@ import {
   createFactuur,
   createFactuurItem,
   updateFactuur,
+  updateFactuurStatus,
   deleteFactuur,
   getOffertes,
   getOfferteItems,
@@ -721,7 +722,7 @@ export function FactuurEditor() {
         betaald_bedrag: existingFactuur.totaal,
         betaaldatum: getTodayString(),
       }
-      const updated = await updateFactuur(existingFactuur.id, updates)
+      const updated = await updateFactuurStatus(existingFactuur.id, updates)
       setExistingFactuur({ ...existingFactuur, ...updated, ...updates })
       if (user?.id) {
         const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
