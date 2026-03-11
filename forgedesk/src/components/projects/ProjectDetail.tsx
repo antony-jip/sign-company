@@ -1447,7 +1447,7 @@ export function ProjectDetail() {
         </div>
 
         {/* ────────────── Rechter Sidebar ────────────── */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto scrollbar-thin">
           {/* ── Klant & Contact ── */}
           {klant && (
             <Card className="border-blush/40 bg-blush/5">
