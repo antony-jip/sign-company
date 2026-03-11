@@ -9,6 +9,10 @@ import {
   createOfferte,
   createOfferteItem,
   deleteOfferte,
+  createPortaal,
+  createPortaalItem,
+  getPortaalByProject,
+  getPortaalItems,
 } from '@/services/supabaseService'
 import type { Offerte, OfferteItem, Klant, OfferteActiviteit } from '@/types'
 import { cn, formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
@@ -125,6 +129,7 @@ export function OfferteDetail() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
+  const [portaalToken, setPortaalToken] = useState<string | null>(null)
 
   // Fetch data
   useEffect(() => {
@@ -150,6 +155,13 @@ export function OfferteDetail() {
         if (cancelled) return
         setKlant(fetchedKlant)
         setItems(fetchedItems)
+
+        // Zoek portaal token op als de offerte aan een project gekoppeld is
+        if (fetchedOfferte.project_id) {
+          getPortaalByProject(fetchedOfferte.project_id)
+            .then(p => { if (p && !cancelled) setPortaalToken(p.token) })
+            .catch(() => {})
+        }
       } catch (err) {
         logger.error('Failed to load offerte:', err)
         toast.error('Kon offerte niet laden')
@@ -258,17 +270,51 @@ export function OfferteDetail() {
 
   // Send offerte
   const handleSend = useCallback(async () => {
-    if (!offerte) return
+    if (!offerte || !user?.id) return
     setIsSending(true)
     try {
-      // Genereer publiek_token als die nog niet bestaat
-      let publiekToken = offerte.publiek_token
-      if (!publiekToken) {
-        publiekToken = crypto.randomUUID()
-        await updateOfferte(offerte.id, { publiek_token: publiekToken })
-        setOfferte({ ...offerte, publiek_token: publiekToken })
+      // Gebruik portaal-systeem als de offerte aan een project gekoppeld is
+      let publiekeUrl = ''
+
+      if (offerte.project_id) {
+        // Maak portaal aan of hergebruik bestaand portaal
+        const portaal = await createPortaal(offerte.project_id, user.id)
+
+        // Check of er al een portaal_item bestaat voor deze offerte
+        const bestaandeItems = await getPortaalItems(portaal.id)
+        const bestaandOfferteItem = bestaandeItems.find(
+          (i) => i.type === 'offerte' && i.offerte_id === offerte.id
+        )
+
+        if (!bestaandOfferteItem) {
+          await createPortaalItem({
+            user_id: user.id,
+            project_id: offerte.project_id,
+            portaal_id: portaal.id,
+            type: 'offerte',
+            offerte_id: offerte.id,
+            titel: `Offerte ${offerte.nummer}`,
+            omschrijving: offerte.titel,
+            label: formatCurrency(offerte.totaal),
+            status: 'verstuurd',
+            zichtbaar_voor_klant: true,
+            bedrag: offerte.totaal,
+            volgorde: 0,
+          })
+        }
+
+        publiekeUrl = `${window.location.origin}/portaal/${portaal.token}`
+        setPortaalToken(portaal.token)
+      } else {
+        // Fallback: offerte zonder project → gebruik oude publieke link
+        let publiekToken = offerte.publiek_token
+        if (!publiekToken) {
+          publiekToken = crypto.randomUUID()
+          await updateOfferte(offerte.id, { publiek_token: publiekToken })
+          setOfferte({ ...offerte, publiek_token: publiekToken })
+        }
+        publiekeUrl = `${window.location.origin}/offerte-bekijken/${publiekToken}`
       }
-      const publiekeUrl = `${window.location.origin}/offerte-bekijken/${publiekToken}`
 
       // Actually send the email
       const sendCp = offerte.contactpersoon_id
@@ -548,12 +594,14 @@ export function OfferteDetail() {
                 <Send className="h-4 w-4 mr-1" />
                 Versturen
               </Button>
-              {offerte.publiek_token && (
+              {(portaalToken || offerte.publiek_token) && (
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    const url = `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
+                    const url = portaalToken
+                      ? `${window.location.origin}/portaal/${portaalToken}`
+                      : `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
                     navigator.clipboard.writeText(url)
                     toast.success('Offerte link gekopieerd naar klembord')
                   }}
@@ -1096,20 +1144,24 @@ export function OfferteDetail() {
               <FileText className="h-4 w-4 flex-shrink-0" />
               <span>Bijlage: {offerte.nummer}.pdf (wordt automatisch gegenereerd)</span>
             </div>
-            {offerte.publiek_token && (
+            {(portaalToken || offerte.publiek_token) && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Publieke link</label>
                 <div className="flex items-center gap-2">
                   <Input
                     readOnly
-                    value={`${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`}
+                    value={portaalToken
+                      ? `${window.location.origin}/portaal/${portaalToken}`
+                      : `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`}
                     className="text-xs font-mono bg-muted/30"
                   />
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const url = `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
+                      const url = portaalToken
+                        ? `${window.location.origin}/portaal/${portaalToken}`
+                        : `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
                       navigator.clipboard.writeText(url)
                       toast.success('Link gekopieerd')
                     }}
@@ -1120,7 +1172,10 @@ export function OfferteDetail() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      window.open(`/offerte-bekijken/${offerte.publiek_token}`, '_blank')
+                      const path = portaalToken
+                        ? `/portaal/${portaalToken}`
+                        : `/offerte-bekijken/${offerte.publiek_token}`
+                      window.open(path, '_blank')
                     }}
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
