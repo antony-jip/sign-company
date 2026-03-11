@@ -44,6 +44,13 @@ interface AppSettingsContextType {
   factuurOutroTekst: string
   // Offerte layout
   offerteToonM2: boolean
+  // Werkbon instellingen
+  werkbonMonteurUren: boolean
+  werkbonMonteurOpmerkingen: boolean
+  werkbonMonteurFotos: boolean
+  werkbonKlantHandtekening: boolean
+  werkbonBriefpapier: boolean
+  werkbonPrefix: string
   // Email
   emailFetchLimit: number
   // Forgie
@@ -161,6 +168,13 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     factuurOutroTekst: settings.factuur_outro_tekst || '',
     // Offerte layout
     offerteToonM2: settings.offerte_toon_m2 ?? true,
+    // Werkbon instellingen
+    werkbonMonteurUren: settings.werkbon_monteur_uren ?? true,
+    werkbonMonteurOpmerkingen: settings.werkbon_monteur_opmerkingen ?? true,
+    werkbonMonteurFotos: settings.werkbon_monteur_fotos ?? false,
+    werkbonKlantHandtekening: settings.werkbon_klant_handtekening ?? false,
+    werkbonBriefpapier: settings.werkbon_briefpapier ?? true,
+    werkbonPrefix: settings.werkbon_prefix || 'WB',
     // Email
     emailFetchLimit: settings.email_fetch_limit ?? 200,
     // Forgie

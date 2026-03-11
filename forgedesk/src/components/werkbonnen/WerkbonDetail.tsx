@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, Save, Send, FileText, Receipt, Plus, Trash2,
-  Pen, RotateCcw, Camera, MapPin, Clock, Car
+  ArrowLeft, Save, FileText, Plus, Trash2, GripVertical,
+  Camera, MapPin, ChevronUp, ChevronDown, ImagePlus, X,
+  Maximize2, Pen, RotateCcw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,24 +18,23 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Werkbon, WerkbonRegel, WerkbonFoto, Klant, Project, Medewerker } from '@/types'
-import {
-  getWerkbon, createWerkbon, updateWerkbon,
-  getWerkbonRegels, createWerkbonRegel, updateWerkbonRegel, deleteWerkbonRegel,
-  getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
-  getKlanten, getProjecten, getProjectenByKlant, getMedewerkers,
-  createFactuur, createFactuurItem, generateFactuurNummer,
-} from '@/services/supabaseService'
-import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
-import { generateWerkbonPDF } from '@/services/pdfService'
+import type { Werkbon, WerkbonItem, WerkbonAfbeelding, WerkbonFoto, Klant, Project, Offerte } from '@/types'
+import {
+  getWerkbon, createWerkbon, updateWerkbon,
+  getWerkbonItems, createWerkbonItem, updateWerkbonItem, deleteWerkbonItem,
+  createWerkbonAfbeelding, deleteWerkbonAfbeelding,
+  getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
+  getKlanten, getProjecten, getOffertes,
+} from '@/services/supabaseService'
+import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 
-// Resize image voor localStorage limiet (max breedte, JPEG 80% kwaliteit)
+// Resize image voor localStorage limiet
 function resizeImage(file: File, maxWidth: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -65,9 +65,8 @@ function resizeImage(file: File, maxWidth: number): Promise<Blob> {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   concept: { label: 'Concept', color: 'text-[var(--color-cream-text)]', bg: 'bg-[var(--color-cream)]' },
-  ingediend: { label: 'Ingediend', color: 'text-[var(--color-mist-text)]', bg: 'bg-[var(--color-mist)]' },
-  goedgekeurd: { label: 'Goedgekeurd', color: 'text-[var(--color-sage-text)]', bg: 'bg-[var(--color-sage)]' },
-  gefactureerd: { label: 'Gefactureerd', color: 'text-[var(--color-lavender-text)]', bg: 'bg-[var(--color-lavender)]' },
+  definitief: { label: 'Definitief', color: 'text-[var(--color-mist-text)]', bg: 'bg-[var(--color-mist)]' },
+  afgerond: { label: 'Afgerond', color: 'text-[var(--color-sage-text)]', bg: 'bg-[var(--color-sage)]' },
 }
 
 export function WerkbonDetail() {
@@ -75,7 +74,11 @@ export function WerkbonDetail() {
   const navigate = useNavigate()
   const { setDirty } = useTabDirtyState()
   const { user } = useAuth()
-  const { profile, primaireKleur, standaardBtw, factuurPrefix, factuurBetaaltermijnDagen } = useAppSettings()
+  const {
+    profile, primaireKleur,
+    werkbonMonteurUren, werkbonMonteurOpmerkingen,
+    werkbonMonteurFotos, werkbonKlantHandtekening, werkbonBriefpapier,
+  } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const isNew = id === 'nieuw'
   const userId = user?.id || ''
@@ -83,9 +86,8 @@ export function WerkbonDetail() {
   // Data
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
-  const [filteredProjecten, setFilteredProjecten] = useState<Project[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
-  const [regels, setRegels] = useState<WerkbonRegel[]>([])
+  const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [werkbonItems, setWerkbonItems] = useState<WerkbonItem[]>([])
   const [fotos, setFotos] = useState<WerkbonFoto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -93,47 +95,44 @@ export function WerkbonDetail() {
   // Form
   const [klantId, setKlantId] = useState('')
   const [projectId, setProjectId] = useState('')
+  const [offerteId, setOfferteId] = useState('')
+  const [titel, setTitel] = useState('')
   const [locatieAdres, setLocatieAdres] = useState('')
   const [locatieStad, setLocatieStad] = useState('')
   const [locatiePostcode, setLocatiePostcode] = useState('')
   const [datum, setDatum] = useState(new Date().toISOString().split('T')[0])
-  const [startTijd, setStartTijd] = useState('08:00')
-  const [eindTijd, setEindTijd] = useState('16:00')
-  const [pauzeMinuten, setPauzeMinuten] = useState(30)
-  const [kilometers, setKilometers] = useState(0)
-  const [kmTarief, setKmTarief] = useState(0.23)
-  const [omschrijving, setOmschrijving] = useState('')
-  const [interneNotitie, setInterneNotitie] = useState('')
   const [status, setStatus] = useState<Werkbon['status']>('concept')
   const [werkbonNummer, setWerkbonNummer] = useState('')
   const [werkbonId, setWerkbonId] = useState('')
+  const [toonBriefpapier, setToonBriefpapier] = useState(true)
 
-  // Handtekening
+  // Monteur secties
+  const [urenGewerkt, setUrenGewerkt] = useState<number | undefined>()
+  const [monteurOpmerkingen, setMonteurOpmerkingen] = useState('')
   const [klantNaamGetekend, setKlantNaamGetekend] = useState('')
   const [handtekeningData, setHandtekeningData] = useState<string | undefined>()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
-
-  // Handtekening editing mode (false = show saved image, true = show canvas)
   const [isEditingSignature, setIsEditingSignature] = useState(false)
 
-  // Factuur dialog
-  const [factureerDialogOpen, setFactureerDialogOpen] = useState(false)
+  // Lightbox
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
+  // Laad data
   useEffect(() => {
     let cancelled = false
     async function loadData() {
       try {
         setIsLoading(true)
-        const [kl, pr, mw] = await Promise.all([
+        const [kl, pr, off] = await Promise.all([
           getKlanten(),
           getProjecten(),
-          getMedewerkers(),
+          getOffertes(),
         ])
         if (cancelled) return
         setKlanten(kl)
         setProjecten(pr)
-        setMedewerkers(mw)
+        setOffertes(off)
 
         if (!isNew && id) {
           const wb = await getWerkbon(id)
@@ -146,33 +145,30 @@ export function WerkbonDetail() {
           setWerkbonId(wb.id)
           setWerkbonNummer(wb.werkbon_nummer)
           setKlantId(wb.klant_id)
-          setProjectId(wb.project_id)
-          setLocatieAdres(wb.locatie_adres)
+          setProjectId(wb.project_id || '')
+          setOfferteId(wb.offerte_id || '')
+          setTitel(wb.titel || '')
+          setLocatieAdres(wb.locatie_adres || '')
           setLocatieStad(wb.locatie_stad || '')
           setLocatiePostcode(wb.locatie_postcode || '')
           setDatum(wb.datum)
-          setStartTijd(wb.start_tijd || '08:00')
-          setEindTijd(wb.eind_tijd || '16:00')
-          setPauzeMinuten(wb.pauze_minuten ?? 30)
-          setKilometers(wb.kilometers || 0)
-          setKmTarief(wb.km_tarief || 0.23)
-          setOmschrijving(wb.omschrijving || '')
-          setInterneNotitie(wb.interne_notitie || '')
           setStatus(wb.status)
+          setToonBriefpapier(wb.toon_briefpapier ?? werkbonBriefpapier)
+          setUrenGewerkt(wb.uren_gewerkt)
+          setMonteurOpmerkingen(wb.monteur_opmerkingen || '')
           setKlantNaamGetekend(wb.klant_naam_getekend || '')
           setHandtekeningData(wb.klant_handtekening)
           setIsEditingSignature(!wb.klant_handtekening)
-          setFilteredProjecten(pr.filter((p) => p.klant_id === wb.klant_id))
 
-          const [wbRegels, wbFotos] = await Promise.all([
-            getWerkbonRegels(wb.id),
+          const [wbItems, wbFotos] = await Promise.all([
+            getWerkbonItems(wb.id),
             getWerkbonFotos(wb.id),
           ])
           if (cancelled) return
-          setRegels(wbRegels)
+          setWerkbonItems(wbItems)
           setFotos(wbFotos)
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) toast.error('Fout bij laden')
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -180,45 +176,40 @@ export function WerkbonDetail() {
     }
     loadData()
     return () => { cancelled = true }
-  }, [id, isNew, navigate])
+  }, [id, isNew, navigate, werkbonBriefpapier])
 
-  // Filter projecten bij klant selectie
+  // Klant change → prefill locatie
   const handleKlantChange = useCallback((newKlantId: string) => {
     setKlantId(newKlantId)
-    setProjectId('')
+    setDirty(true)
     const kl = klanten.find((k) => k.id === newKlantId)
     if (kl) {
       setLocatieAdres(kl.adres || '')
       setLocatieStad(kl.stad || '')
       setLocatiePostcode(kl.postcode || '')
     }
-    setFilteredProjecten(projecten.filter((p) => p.klant_id === newKlantId))
-  }, [klanten, projecten])
+  }, [klanten, setDirty])
 
-  // Save werkbon
+  // Save
   const handleSave = useCallback(async () => {
     if (!klantId) { toast.error('Selecteer een klant'); return }
-    if (!projectId) { toast.error('Selecteer een project'); return }
-    if (!datum) { toast.error('Vul een datum in'); return }
 
     try {
       setIsSaving(true)
       const data = {
         user_id: userId,
         klant_id: klantId,
-        project_id: projectId,
-        locatie_adres: locatieAdres,
+        project_id: projectId || undefined,
+        offerte_id: offerteId || undefined,
+        titel: titel || undefined,
+        locatie_adres: locatieAdres || undefined,
         locatie_stad: locatieStad || undefined,
         locatie_postcode: locatiePostcode || undefined,
         datum,
-        start_tijd: startTijd || undefined,
-        eind_tijd: eindTijd || undefined,
-        pauze_minuten: pauzeMinuten,
-        kilometers: kilometers || undefined,
-        km_tarief: kmTarief || undefined,
-        omschrijving: omschrijving || undefined,
-        interne_notitie: interneNotitie || undefined,
         status,
+        toon_briefpapier: toonBriefpapier,
+        uren_gewerkt: urenGewerkt,
+        monteur_opmerkingen: monteurOpmerkingen || undefined,
         klant_handtekening: handtekeningData,
         klant_naam_getekend: klantNaamGetekend || undefined,
         getekend_op: handtekeningData ? new Date().toISOString() : undefined,
@@ -235,87 +226,145 @@ export function WerkbonDetail() {
         toast.success('Werkbon opgeslagen')
       }
       setDirty(false)
-    } catch (err) {
+    } catch {
       toast.error('Fout bij opslaan werkbon')
     } finally {
       setIsSaving(false)
     }
   }, [
-    klantId, projectId, datum, userId, locatieAdres, locatieStad, locatiePostcode,
-    startTijd, eindTijd, pauzeMinuten, kilometers, kmTarief, omschrijving,
-    interneNotitie, status, handtekeningData, klantNaamGetekend, isNew, werkbonId, navigate,
+    klantId, projectId, offerteId, titel, datum, userId,
+    locatieAdres, locatieStad, locatiePostcode,
+    status, toonBriefpapier, urenGewerkt, monteurOpmerkingen,
+    handtekeningData, klantNaamGetekend, isNew, werkbonId, navigate, setDirty,
   ])
 
-  // Indienen
-  const handleIndienen = useCallback(async () => {
-    await handleSave()
-    if (werkbonId) {
-      await updateWerkbon(werkbonId, { status: 'ingediend' })
-      setStatus('ingediend')
-      toast.success('Werkbon ingediend')
-    }
-  }, [handleSave, werkbonId])
-
-  // Regel toevoegen
-  const handleRegelToevoegen = useCallback(async (type: WerkbonRegel['type']) => {
-    if (!werkbonId) {
-      toast.error('Sla de werkbon eerst op')
-      return
-    }
-    const newRegel = await createWerkbonRegel({
+  // Item toevoegen
+  const handleItemToevoegen = useCallback(async () => {
+    if (!werkbonId) { toast.error('Sla de werkbon eerst op'); return }
+    const newItem = await createWerkbonItem({
       user_id: userId,
       werkbon_id: werkbonId,
-      type,
-      omschrijving: type === 'arbeid' ? 'Arbeid' : type === 'materiaal' ? 'Materiaal' : 'Overig',
-      uren: type === 'arbeid' ? 1 : undefined,
-      uurtarief: type === 'arbeid' ? 55 : undefined,
-      aantal: type !== 'arbeid' ? 1 : undefined,
-      prijs_per_eenheid: type !== 'arbeid' ? 0 : undefined,
-      totaal: type === 'arbeid' ? 55 : 0,
-      factureerbaar: true,
+      volgorde: werkbonItems.length + 1,
+      omschrijving: 'Nieuw item',
     })
-    setRegels((prev) => [...prev, newRegel])
-  }, [werkbonId, userId])
+    setWerkbonItems((prev) => [...prev, newItem])
+    setDirty(true)
+  }, [werkbonId, userId, werkbonItems.length, setDirty])
 
-  // Regel bijwerken
-  const handleRegelUpdate = useCallback(async (regelId: string, field: string, value: string | number | boolean) => {
-    const regel = regels.find((r) => r.id === regelId)
-    if (!regel) return
+  // Item bijwerken
+  const handleItemUpdate = useCallback(async (itemId: string, updates: Partial<WerkbonItem>) => {
+    await updateWerkbonItem(itemId, updates)
+    setWerkbonItems((prev) => prev.map((i) => i.id === itemId ? { ...i, ...updates } : i))
+    setDirty(true)
+  }, [setDirty])
 
-    const updates: Partial<WerkbonRegel> = { [field]: value }
-
-    // Herbereken totaal
-    const uren = field === 'uren' ? Number(value) : (regel.uren || 0)
-    const uurtarief = field === 'uurtarief' ? Number(value) : (regel.uurtarief || 0)
-    const aantal = field === 'aantal' ? Number(value) : (regel.aantal || 0)
-    const prijs = field === 'prijs_per_eenheid' ? Number(value) : (regel.prijs_per_eenheid || 0)
-
-    if (regel.type === 'arbeid') {
-      updates.totaal = round2(uren * uurtarief)
-    } else {
-      updates.totaal = round2(aantal * prijs)
-    }
-
-    await updateWerkbonRegel(regelId, updates)
-    setRegels((prev) => prev.map((r) => r.id === regelId ? { ...r, ...updates } : r))
-  }, [regels])
-
-  // Regel verwijderen
-  const handleRegelVerwijderen = useCallback(async (regelId: string) => {
-    await deleteWerkbonRegel(regelId)
-    setRegels((prev) => prev.filter((r) => r.id !== regelId))
-    toast.success('Regel verwijderd')
+  // Item verwijderen
+  const handleItemVerwijderen = useCallback(async (itemId: string) => {
+    await deleteWerkbonItem(itemId)
+    setWerkbonItems((prev) => prev.filter((i) => i.id !== itemId))
+    toast.success('Item verwijderd')
   }, [])
 
-  // Totalen
-  const totalen = useMemo(() => {
-    const subtotaal = round2(regels.filter((r) => r.factureerbaar).reduce((sum, r) => sum + r.totaal, 0))
-    const kmKosten = round2((kilometers || 0) * (kmTarief || 0))
-    const totaalExcl = round2(subtotaal + kmKosten)
-    const btw = round2(totaalExcl * (standaardBtw / 100))
-    const totaalIncl = round2(totaalExcl + btw)
-    return { subtotaal, kmKosten, totaalExcl, btw, totaalIncl }
-  }, [regels, kilometers, kmTarief, standaardBtw])
+  // Item herordenen
+  const handleItemMove = useCallback(async (itemId: string, direction: 'up' | 'down') => {
+    setWerkbonItems((prev) => {
+      const idx = prev.findIndex((i) => i.id === itemId)
+      if (idx === -1) return prev
+      const newIdx = direction === 'up' ? idx - 1 : idx + 1
+      if (newIdx < 0 || newIdx >= prev.length) return prev
+      const next = [...prev]
+      const temp = next[idx]
+      next[idx] = next[newIdx]
+      next[newIdx] = temp
+      // Update volgorde
+      next.forEach((item, i) => {
+        if (item.volgorde !== i + 1) {
+          updateWerkbonItem(item.id, { volgorde: i + 1 })
+        }
+        item.volgorde = i + 1
+      })
+      return next
+    })
+  }, [])
+
+  // Afbeelding toevoegen aan item
+  const handleAfbeeldingToevoegen = useCallback(async (itemId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Alleen afbeeldingen toegestaan'); return }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Bestand te groot (max 10MB)'); return }
+
+    try {
+      const resized = await resizeImage(file, 1200)
+      const reader = new FileReader()
+      reader.onload = async (ev) => {
+        const url = ev.target?.result as string
+        const afb = await createWerkbonAfbeelding({
+          werkbon_item_id: itemId,
+          url,
+          type: 'overig',
+          omschrijving: file.name,
+        })
+        setWerkbonItems((prev) => prev.map((item) =>
+          item.id === itemId
+            ? { ...item, afbeeldingen: [...item.afbeeldingen, afb] }
+            : item
+        ))
+        toast.success('Afbeelding toegevoegd')
+      }
+      reader.readAsDataURL(resized)
+    } catch {
+      toast.error('Fout bij verwerken afbeelding')
+    }
+    e.target.value = ''
+  }, [])
+
+  // Afbeelding verwijderen
+  const handleAfbeeldingVerwijderen = useCallback(async (itemId: string, afbId: string) => {
+    await deleteWerkbonAfbeelding(afbId)
+    setWerkbonItems((prev) => prev.map((item) =>
+      item.id === itemId
+        ? { ...item, afbeeldingen: item.afbeeldingen.filter((a) => a.id !== afbId) }
+        : item
+    ))
+    toast.success('Afbeelding verwijderd')
+  }, [])
+
+  // Foto toevoegen (monteur voor/na)
+  const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
+    if (!werkbonId) { toast.error('Sla de werkbon eerst op'); return }
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Alleen afbeeldingen toegestaan'); return }
+
+    try {
+      const resized = await resizeImage(file, 1200)
+      const reader = new FileReader()
+      reader.onload = async (ev) => {
+        const url = ev.target?.result as string
+        const foto = await createWerkbonFoto({
+          user_id: userId,
+          werkbon_id: werkbonId,
+          type,
+          url,
+          omschrijving: file.name,
+        })
+        setFotos((prev) => [...prev, foto])
+        toast.success('Foto toegevoegd')
+      }
+      reader.readAsDataURL(resized)
+    } catch {
+      toast.error('Fout bij verwerken foto')
+    }
+    e.target.value = ''
+  }, [werkbonId, userId])
+
+  // Foto verwijderen
+  const handleFotoVerwijderen = useCallback(async (fotoId: string) => {
+    await deleteWerkbonFoto(fotoId)
+    setFotos((prev) => prev.filter((f) => f.id !== fotoId))
+    toast.success('Foto verwijderd')
+  }, [])
 
   // Handtekening canvas
   const startDraw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -350,9 +399,7 @@ export function WerkbonDetail() {
   const endDraw = useCallback(() => {
     setIsDrawing(false)
     const canvas = canvasRef.current
-    if (canvas) {
-      setHandtekeningData(canvas.toDataURL('image/png'))
-    }
+    if (canvas) setHandtekeningData(canvas.toDataURL('image/png'))
   }, [])
 
   const clearSignature = useCallback(() => {
@@ -365,177 +412,23 @@ export function WerkbonDetail() {
     setIsEditingSignature(true)
   }, [])
 
-  // Foto toevoegen (base64 met resize)
-  const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
-    if (!werkbonId) { toast.error('Sla de werkbon eerst op'); return }
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validatie
-    if (!file.type.startsWith('image/')) {
-      toast.error('Alleen afbeeldingen toegestaan')
-      return
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Bestand te groot (max 10MB)')
-      return
-    }
-
-    try {
-      // Resize voor opslag (max 1200px breed)
-      const resized = await resizeImage(file, 1200)
-      const reader = new FileReader()
-      reader.onload = async (ev) => {
-        const url = ev.target?.result as string
-        const foto = await createWerkbonFoto({
-          user_id: userId,
-          werkbon_id: werkbonId,
-          type,
-          url,
-          omschrijving: file.name,
-        })
-        setFotos((prev) => [...prev, foto])
-        toast.success('Foto toegevoegd')
-      }
-      reader.onerror = () => toast.error('Fout bij lezen foto')
-      reader.readAsDataURL(resized)
-    } catch {
-      toast.error('Fout bij verwerken foto')
-    }
-    // Reset input zodat dezelfde foto opnieuw gekozen kan worden
-    e.target.value = ''
-  }, [werkbonId, userId])
-
-  // Foto type wijzigen
-  const handleFotoTypeChange = useCallback(async (fotoId: string, newType: WerkbonFoto['type']) => {
-    setFotos((prev) => prev.map((f) => f.id === fotoId ? { ...f, type: newType } : f))
-    // Foto type opslaan door foto te verwijderen + opnieuw aan te maken (geen update endpoint beschikbaar)
-    // We updaten alleen lokaal - bij volgende save wordt het meegenomen
-  }, [])
-
-  // Foto verwijderen
-  const handleFotoVerwijderen = useCallback(async (fotoId: string) => {
-    await deleteWerkbonFoto(fotoId)
-    setFotos((prev) => prev.filter((f) => f.id !== fotoId))
-    toast.success('Foto verwijderd')
-  }, [])
-
-  // Werkbon → Factuur conversie
-  const handleFactureer = useCallback(async () => {
-    try {
-      const factureerRegels = regels.filter((r) => r.factureerbaar)
-      const klant = klanten.find((k) => k.id === klantId)
-      const project = projecten.find((p) => p.id === projectId)
-      const btwPct = standaardBtw
-
-      const factuurItems: { beschrijving: string; aantal: number; eenheidsprijs: number; btw_percentage: number; korting_percentage: number; totaal: number; volgorde: number }[] = []
-      let volgorde = 0
-
-      for (const regel of factureerRegels) {
-        volgorde++
-        if (regel.type === 'arbeid') {
-          factuurItems.push({
-            beschrijving: `${regel.omschrijving}${regel.medewerker_id ? ` - ${medewerkers.find((m) => m.id === regel.medewerker_id)?.naam || ''}` : ''}`,
-            aantal: regel.uren || 1,
-            eenheidsprijs: regel.uurtarief || 0,
-            btw_percentage: btwPct,
-            korting_percentage: 0,
-            totaal: round2(regel.totaal),
-            volgorde,
-          })
-        } else {
-          factuurItems.push({
-            beschrijving: regel.omschrijving,
-            aantal: regel.aantal || 1,
-            eenheidsprijs: regel.prijs_per_eenheid || 0,
-            btw_percentage: btwPct,
-            korting_percentage: 0,
-            totaal: round2(regel.totaal),
-            volgorde,
-          })
-        }
-      }
-
-      // Kilometers
-      if (kilometers > 0 && kmTarief > 0) {
-        volgorde++
-        factuurItems.push({
-          beschrijving: `Kilometervergoeding (${kilometers} km × €${round2(kmTarief).toFixed(2)})`,
-          aantal: kilometers,
-          eenheidsprijs: kmTarief,
-          btw_percentage: btwPct,
-          korting_percentage: 0,
-          totaal: round2(kilometers * kmTarief),
-          volgorde,
-        })
-      }
-
-      const subtotaal = round2(factuurItems.reduce((sum, i) => sum + i.totaal, 0))
-      const btw = round2(subtotaal * (btwPct / 100))
-      const nummer = await generateFactuurNummer(factuurPrefix)
-
-      const factuur = await createFactuur({
-        user_id: userId,
-        klant_id: klantId,
-        klant_naam: klant?.bedrijfsnaam,
-        project_id: projectId,
-        nummer,
-        titel: `Werkbon ${werkbonNummer} - ${project?.naam || ''}`,
-        status: 'concept',
-        subtotaal,
-        btw_bedrag: btw,
-        totaal: round2(subtotaal + btw),
-        betaald_bedrag: 0,
-        factuurdatum: new Date().toISOString().split('T')[0],
-        vervaldatum: new Date(Date.now() + factuurBetaaltermijnDagen * 86400000).toISOString().split('T')[0],
-        notities: `Werkbon: ${werkbonNummer}`,
-        voorwaarden: '',
-        bron_type: 'project',
-        bron_project_id: projectId,
-        werkbon_id: werkbonId,
-        factuur_type: 'standaard',
-        betaaltermijn_dagen: factuurBetaaltermijnDagen,
-      })
-
-      for (const item of factuurItems) {
-        await createFactuurItem({ ...item, user_id: userId, factuur_id: factuur.id })
-      }
-
-      await updateWerkbon(werkbonId, { status: 'gefactureerd', factuur_id: factuur.id })
-      setStatus('gefactureerd')
-      setFactureerDialogOpen(false)
-      toast.success('Factuur aangemaakt vanuit werkbon')
-      navigate(`/facturen`)
-    } catch (err) {
-      toast.error('Fout bij aanmaken factuur')
-    }
-  }, [regels, klantId, projectId, klanten, projecten, medewerkers, kilometers, kmTarief, userId, werkbonNummer, werkbonId, navigate])
-
   // PDF download
   const handleDownloadPDF = useCallback(() => {
     const klant = klanten.find((k) => k.id === klantId)
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
 
-    const doc = generateWerkbonPDF(
+    const doc = generateWerkbonInstructiePDF(
       {
         werkbon_nummer: werkbonNummer,
+        titel,
         datum,
-        start_tijd: startTijd,
-        eind_tijd: eindTijd,
-        pauze_minuten: pauzeMinuten,
         locatie_adres: locatieAdres,
         locatie_stad: locatieStad,
         locatie_postcode: locatiePostcode,
-        kilometers,
-        km_tarief: kmTarief,
-        omschrijving,
-        klant_handtekening: handtekeningData,
-        klant_naam_getekend: klantNaamGetekend,
-        getekend_op: handtekeningData ? new Date().toISOString() : undefined,
+        toon_briefpapier: toonBriefpapier,
       },
-      regels,
-      fotos,
+      werkbonItems,
       klant || {},
       project?.naam || '',
       bedrijfsProfiel,
@@ -546,9 +439,8 @@ export function WerkbonDetail() {
     toast.success('PDF gedownload')
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
-    werkbonNummer, datum, startTijd, eindTijd, pauzeMinuten,
-    locatieAdres, locatieStad, locatiePostcode, kilometers, kmTarief,
-    omschrijving, handtekeningData, klantNaamGetekend, regels, fotos,
+    werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
+    toonBriefpapier, werkbonItems,
   ])
 
   if (isLoading) {
@@ -572,27 +464,29 @@ export function WerkbonDetail() {
               {isNew ? 'Nieuwe werkbon' : `Werkbon ${werkbonNummer}`}
             </h1>
             {!isNew && (
-              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1', STATUS_CONFIG[status].bg, STATUS_CONFIG[status].color)}>
-                {STATUS_CONFIG[status].label}
+              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1', STATUS_CONFIG[status]?.bg, STATUS_CONFIG[status]?.color)}>
+                {STATUS_CONFIG[status]?.label || status}
               </span>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
           {!isNew && (
-            <Button variant="outline" onClick={handleDownloadPDF}>
-              <FileText className="h-4 w-4 mr-1" /> PDF
-            </Button>
-          )}
-          {status === 'concept' && (
-            <Button variant="outline" onClick={handleIndienen} disabled={isNew}>
-              <Send className="h-4 w-4 mr-1" /> Indienen
-            </Button>
-          )}
-          {status === 'goedgekeurd' && (
-            <Button variant="outline" onClick={() => setFactureerDialogOpen(true)}>
-              <Receipt className="h-4 w-4 mr-1" /> Maak factuur
-            </Button>
+            <>
+              <Button variant="outline" onClick={handleDownloadPDF}>
+                <FileText className="h-4 w-4 mr-1" /> PDF
+              </Button>
+              <Select value={status} onValueChange={(v) => { setStatus(v as Werkbon['status']); setDirty(true) }}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="concept">Concept</SelectItem>
+                  <SelectItem value="definitief">Definitief</SelectItem>
+                  <SelectItem value="afgerond">Afgerond</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
           )}
           <Button onClick={handleSave} disabled={isSaving}>
             <Save className="h-4 w-4 mr-1" /> {isSaving ? 'Opslaan...' : 'Opslaan'}
@@ -601,35 +495,54 @@ export function WerkbonDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Linker kolom: formulier */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Klant & Project */}
+        {/* Linker kolom: meta info */}
+        <div className="space-y-6">
+          {/* Klant & Koppeling */}
           <Card>
-            <CardHeader><CardTitle className="text-base">Klant & Project</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Klant & Koppeling</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Klant *</Label>
-                  <Select value={klantId} onValueChange={handleKlantChange}>
-                    <SelectTrigger><SelectValue placeholder="Selecteer klant" /></SelectTrigger>
-                    <SelectContent>
-                      {klanten.map((k) => (
-                        <SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Project *</Label>
-                  <Select value={projectId} onValueChange={setProjectId} disabled={!klantId}>
-                    <SelectTrigger><SelectValue placeholder="Selecteer project" /></SelectTrigger>
-                    <SelectContent>
-                      {filteredProjecten.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label>Klant *</Label>
+                <Select value={klantId} onValueChange={handleKlantChange}>
+                  <SelectTrigger><SelectValue placeholder="Selecteer klant" /></SelectTrigger>
+                  <SelectContent>
+                    {klanten.map((k) => (
+                      <SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Offerte (optioneel)</Label>
+                <Select value={offerteId} onValueChange={(v) => { setOfferteId(v); setDirty(true) }}>
+                  <SelectTrigger><SelectValue placeholder="Geen offerte" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Geen</SelectItem>
+                    {offertes.filter((o) => !klantId || o.klant_id === klantId).map((o) => (
+                      <SelectItem key={o.id} value={o.id}>{o.nummer} - {o.titel}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Project (optioneel)</Label>
+                <Select value={projectId} onValueChange={(v) => { setProjectId(v); setDirty(true) }}>
+                  <SelectTrigger><SelectValue placeholder="Geen project" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Geen</SelectItem>
+                    {projecten.filter((p) => !klantId || p.klant_id === klantId).map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Titel</Label>
+                <Input value={titel} onChange={(e) => { setTitel(e.target.value); setDirty(true) }} placeholder="Bijv. Montage gevelreclame" />
+              </div>
+              <div>
+                <Label>Datum</Label>
+                <Input type="date" value={datum} onChange={(e) => { setDatum(e.target.value); setDirty(true) }} />
               </div>
             </CardContent>
           </Card>
@@ -646,385 +559,319 @@ export function WerkbonDetail() {
                     rel="noopener noreferrer"
                     className="text-xs text-primary hover:underline flex items-center gap-1"
                   >
-                    <MapPin className="h-3 w-3" />
-                    Navigeer
+                    <MapPin className="h-3 w-3" /> Navigeer
                   </a>
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
                 <Label>Adres</Label>
-                <Input value={locatieAdres} onChange={(e) => setLocatieAdres(e.target.value)} placeholder="Straat + huisnummer" />
+                <Input value={locatieAdres} onChange={(e) => { setLocatieAdres(e.target.value); setDirty(true) }} placeholder="Straat + huisnummer" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Postcode</Label>
-                  <Input value={locatiePostcode} onChange={(e) => setLocatiePostcode(e.target.value)} placeholder="1234 AB" />
+                  <Input value={locatiePostcode} onChange={(e) => { setLocatiePostcode(e.target.value); setDirty(true) }} placeholder="1234 AB" />
                 </div>
                 <div>
                   <Label>Stad</Label>
-                  <Input value={locatieStad} onChange={(e) => setLocatieStad(e.target.value)} placeholder="Amsterdam" />
+                  <Input value={locatieStad} onChange={(e) => { setLocatieStad(e.target.value); setDirty(true) }} placeholder="Amsterdam" />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Datum & Tijd */}
-          <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Clock className="h-4 w-4" /> Datum & Tijd</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <Label>Datum *</Label>
-                  <Input type="date" value={datum} onChange={(e) => setDatum(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Starttijd</Label>
-                  <Input type="time" value={startTijd} onChange={(e) => setStartTijd(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Eindtijd</Label>
-                  <Input type="time" value={eindTijd} onChange={(e) => setEindTijd(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Pauze (min)</Label>
-                  <Input type="number" min={0} value={pauzeMinuten} onChange={(e) => setPauzeMinuten(Number(e.target.value))} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Kilometers */}
-          <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Car className="h-4 w-4" /> Kilometers</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Kilometers</Label>
-                  <Input type="number" min={0} value={kilometers} onChange={(e) => setKilometers(Number(e.target.value))} />
-                </div>
-                <div>
-                  <Label>Tarief per km</Label>
-                  <Input type="number" min={0} step={0.01} value={kmTarief} onChange={(e) => setKmTarief(Number(e.target.value))} />
-                </div>
-              </div>
-              {kilometers > 0 && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Totaal: {formatCurrency(round2(kilometers * kmTarief))}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Regels */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Regels</CardTitle>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="outline" onClick={() => handleRegelToevoegen('arbeid')} disabled={isNew}>
-                    <Plus className="h-3 w-3 mr-1" /> Arbeid
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleRegelToevoegen('materiaal')} disabled={isNew}>
-                    <Plus className="h-3 w-3 mr-1" /> Materiaal
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleRegelToevoegen('overig')} disabled={isNew}>
-                    <Plus className="h-3 w-3 mr-1" /> Overig
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {regels.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  {isNew ? 'Sla de werkbon eerst op, dan kun je regels toevoegen' : 'Nog geen regels. Voeg arbeid of materiaal toe.'}
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {regels.map((regel) => (
-                    <div key={regel.id} className="border rounded-lg p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className={cn(
-                          'text-xs font-medium px-2 py-0.5 rounded-full',
-                          regel.type === 'arbeid' ? 'bg-blue-100 text-blue-700' :
-                          regel.type === 'materiaal' ? 'bg-orange-100 text-orange-700' :
-                          'bg-muted text-foreground/70'
-                        )}>
-                          {regel.type === 'arbeid' ? 'Arbeid' : regel.type === 'materiaal' ? 'Materiaal' : 'Overig'}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <label className="flex items-center gap-1.5 text-xs cursor-pointer py-1 px-1">
-                            <input
-                              type="checkbox"
-                              checked={regel.factureerbaar}
-                              onChange={(e) => handleRegelUpdate(regel.id, 'factureerbaar', e.target.checked)}
-                              className="rounded h-4 w-4"
-                            />
-                            Factureerbaar
-                          </label>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
-                            onClick={() => handleRegelVerwijderen(regel.id)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <Input
-                        value={regel.omschrijving}
-                        onChange={(e) => handleRegelUpdate(regel.id, 'omschrijving', e.target.value)}
-                        placeholder="Omschrijving"
-                        className="h-8 text-sm"
-                      />
-
-                      {regel.type === 'arbeid' ? (
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <Label className="text-xs">Medewerker</Label>
-                            <Select value={regel.medewerker_id || ''} onValueChange={(v) => handleRegelUpdate(regel.id, 'medewerker_id', v)}>
-                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Kies" /></SelectTrigger>
-                              <SelectContent>
-                                {medewerkers.map((m) => (
-                                  <SelectItem key={m.id} value={m.id}>{m.naam}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="text-xs">Uren</Label>
-                            <Input type="number" min={0} step={0.25} value={regel.uren || 0}
-                              onChange={(e) => handleRegelUpdate(regel.id, 'uren', Number(e.target.value))}
-                              className="h-8 text-sm" />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Uurtarief</Label>
-                            <Input type="number" min={0} step={0.01} value={regel.uurtarief || 0}
-                              onChange={(e) => handleRegelUpdate(regel.id, 'uurtarief', Number(e.target.value))}
-                              className="h-8 text-sm" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <Label className="text-xs">Aantal</Label>
-                            <Input type="number" min={0} step={1} value={regel.aantal || 0}
-                              onChange={(e) => handleRegelUpdate(regel.id, 'aantal', Number(e.target.value))}
-                              className="h-8 text-sm" />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Eenheid</Label>
-                            <Input value={regel.eenheid || 'stuks'}
-                              onChange={(e) => handleRegelUpdate(regel.id, 'eenheid', e.target.value)}
-                              className="h-8 text-sm" />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Prijs/eenheid</Label>
-                            <Input type="number" min={0} step={0.01} value={regel.prijs_per_eenheid || 0}
-                              onChange={(e) => handleRegelUpdate(regel.id, 'prijs_per_eenheid', Number(e.target.value))}
-                              className="h-8 text-sm" />
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="text-right text-sm font-medium">
-                        Totaal: {formatCurrency(regel.totaal)}
-                        {!regel.factureerbaar && <span className="text-xs text-muted-foreground ml-1">(niet factureerbaar)</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Omschrijving */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Werkzaamheden</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Omschrijving (zichtbaar op werkbon/PDF)</Label>
-                <Textarea value={omschrijving} onChange={(e) => setOmschrijving(e.target.value)}
-                  placeholder="Wat is er gedaan?" rows={3} />
-              </div>
-              <div>
-                <Label>Interne notitie (niet op PDF)</Label>
-                <Textarea value={interneNotitie} onChange={(e) => setInterneNotitie(e.target.value)}
-                  placeholder="Interne opmerkingen..." rows={2} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Foto's */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2"><Camera className="h-4 w-4" /> Foto&apos;s</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2 mb-4 flex-wrap">
-                {(['voor', 'na', 'overig'] as const).map((type) => (
-                  <label key={type} className="cursor-pointer">
-                    <Button variant="outline" size="sm" asChild className="min-h-[44px]">
-                      <span><Plus className="h-3 w-3 mr-1" /> {type === 'voor' ? 'Voor' : type === 'na' ? 'Na' : 'Overig'}</span>
-                    </Button>
-                    <input type="file" accept="image/*" className="hidden"
-                      onChange={(e) => handleFotoToevoegen(e, type)} disabled={isNew} />
-                  </label>
-                ))}
-              </div>
-              {fotos.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Nog geen foto&apos;s</p>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {fotos.map((foto) => (
-                    <div key={foto.id} className="relative group border rounded-lg overflow-hidden">
-                      <img src={foto.url} alt={foto.omschrijving || ''} className="w-full h-32 object-cover" />
-                      <div className="absolute top-1 left-1">
-                        <select
-                          value={foto.type}
-                          onChange={(e) => handleFotoTypeChange(foto.id, e.target.value as WerkbonFoto['type'])}
-                          className="text-xs bg-black/60 text-white px-1.5 py-0.5 rounded border-none cursor-pointer"
-                        >
-                          <option value="voor">Voor</option>
-                          <option value="na">Na</option>
-                          <option value="overig">Overig</option>
-                        </select>
-                      </div>
-                      <Button
-                        variant="ghost" size="icon"
-                        className="absolute top-1 right-1 h-8 w-8 bg-black/40 text-white sm:opacity-0 sm:group-hover:opacity-100"
-                        onClick={() => handleFotoVerwijderen(foto.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Handtekening */}
-          <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Pen className="h-4 w-4" /> Handtekening klant</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label>Naam</Label>
-                <Input value={klantNaamGetekend} onChange={(e) => setKlantNaamGetekend(e.target.value)}
-                  placeholder="Naam van de ondertekenaar" />
-              </div>
-              <div className="border rounded-lg p-2">
-                {handtekeningData && !isEditingSignature ? (
-                  <div>
-                    <img src={handtekeningData} alt="Handtekening" className="w-full h-40 object-contain bg-white rounded" />
-                  </div>
-                ) : (
-                  <canvas
-                    ref={canvasRef}
-                    width={500}
-                    height={160}
-                    className="w-full h-40 cursor-crosshair bg-white rounded touch-none"
-                    onMouseDown={startDraw}
-                    onMouseMove={draw}
-                    onMouseUp={endDraw}
-                    onMouseLeave={endDraw}
-                    onTouchStart={(e) => { e.preventDefault(); startDraw(e) }}
-                    onTouchMove={(e) => { e.preventDefault(); draw(e) }}
-                    onTouchEnd={endDraw}
-                  />
-                )}
-              </div>
-              <div className="flex gap-2">
-                {handtekeningData && !isEditingSignature ? (
-                  <Button variant="outline" size="sm" onClick={() => { setIsEditingSignature(true); setHandtekeningData(undefined) }}>
-                    <Pen className="h-3 w-3 mr-1" /> Opnieuw tekenen
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={clearSignature}>
-                    <RotateCcw className="h-3 w-3 mr-1" /> Wissen
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Rechter kolom: sidebar */}
-        <div className="space-y-6">
-          {/* Totalen */}
-          <Card className="sticky top-6">
-            <CardHeader><CardTitle className="text-base">Totalen</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Subtotaal regels</span>
-                <span className="font-medium">{formatCurrency(totalen.subtotaal)}</span>
-              </div>
-              {totalen.kmKosten > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span>Kilometers</span>
-                  <span className="font-medium">{formatCurrency(totalen.kmKosten)}</span>
-                </div>
-              )}
-              <Separator />
-              <div className="flex justify-between text-sm">
-                <span>Totaal excl. BTW</span>
-                <span className="font-medium">{formatCurrency(totalen.totaalExcl)}</span>
-              </div>
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>BTW (21%)</span>
-                <span>{formatCurrency(totalen.btw)}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between text-lg font-bold">
-                <span>Totaal incl. BTW</span>
-                <span>{formatCurrency(totalen.totaalIncl)}</span>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Rechter kolom: items + monteur secties */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Items als kaarten */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Items ({werkbonItems.length})</h2>
+              <Button size="sm" onClick={handleItemToevoegen} disabled={isNew}>
+                <Plus className="h-4 w-4 mr-1" /> Item toevoegen
+              </Button>
+            </div>
 
-          {/* Status */}
-          {!isNew && (
+            {werkbonItems.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <p className="text-sm text-muted-foreground">
+                    {isNew ? 'Sla de werkbon eerst op om items toe te voegen' : 'Nog geen items. Voeg een item toe.'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              werkbonItems.map((item, idx) => (
+                <Card key={item.id} className="overflow-hidden">
+                  <CardContent className="p-4 space-y-4">
+                    {/* Item header */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <GripVertical className="h-4 w-4" />
+                        <Badge variant="outline" className="text-xs">#{idx + 1}</Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleItemMove(item.id, 'up')} disabled={idx === 0}>
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleItemMove(item.id, 'down')} disabled={idx === werkbonItems.length - 1}>
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleItemVerwijderen(item.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Omschrijving */}
+                    <div>
+                      <Label className="text-xs">Omschrijving</Label>
+                      <Textarea
+                        value={item.omschrijving}
+                        onChange={(e) => handleItemUpdate(item.id, { omschrijving: e.target.value })}
+                        className="text-base font-medium min-h-[60px]"
+                        placeholder="Omschrijving van het item"
+                      />
+                    </div>
+
+                    {/* Afmetingen */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Breedte (mm)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={item.afmeting_breedte_mm || ''}
+                          onChange={(e) => handleItemUpdate(item.id, { afmeting_breedte_mm: e.target.value ? Number(e.target.value) : undefined })}
+                          placeholder="bijv. 1200"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Hoogte (mm)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={item.afmeting_hoogte_mm || ''}
+                          onChange={(e) => handleItemUpdate(item.id, { afmeting_hoogte_mm: e.target.value ? Number(e.target.value) : undefined })}
+                          placeholder="bijv. 800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Afmetingen display */}
+                    {(item.afmeting_breedte_mm || item.afmeting_hoogte_mm) && (
+                      <div className="bg-muted/50 rounded-lg px-3 py-2">
+                        <span className="text-lg font-bold text-foreground">
+                          {item.afmeting_breedte_mm || '?'} &times; {item.afmeting_hoogte_mm || '?'} mm
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Afbeeldingen */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-xs">Afbeeldingen</Label>
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleAfbeeldingToevoegen(item.id, e)}
+                          />
+                          <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                            <ImagePlus className="h-3 w-3" /> Toevoegen
+                          </span>
+                        </label>
+                      </div>
+                      {item.afbeeldingen.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {item.afbeeldingen.map((afb) => (
+                            <div key={afb.id} className="relative group rounded-lg overflow-hidden border bg-muted/30">
+                              <img
+                                src={afb.url}
+                                alt={afb.omschrijving || 'Afbeelding'}
+                                className="w-full aspect-[4/3] object-cover cursor-pointer"
+                                onClick={() => setLightboxUrl(afb.url)}
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => setLightboxUrl(afb.url)}>
+                                  <Maximize2 className="h-3 w-3" />
+                                </Button>
+                                <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => handleAfbeeldingVerwijderen(item.id, afb.id)}>
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              {afb.omschrijving && (
+                                <p className="text-[10px] text-muted-foreground truncate px-1 py-0.5">{afb.omschrijving}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="border border-dashed rounded-lg p-6 text-center">
+                          <label className="cursor-pointer">
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleAfbeeldingToevoegen(item.id, e)} />
+                            <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                            <p className="text-xs text-muted-foreground">Klik om afbeelding toe te voegen</p>
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Interne notitie */}
+                    <div>
+                      <Label className="text-xs">Notitie voor monteur</Label>
+                      <Textarea
+                        value={item.interne_notitie || ''}
+                        onChange={(e) => handleItemUpdate(item.id, { interne_notitie: e.target.value || undefined })}
+                        placeholder="Bijv. Let op: rechts 5mm extra voor omslag"
+                        className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 min-h-[50px]"
+                        rows={2}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Monteur secties (op basis van instellingen) */}
+          {werkbonMonteurUren && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Status</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Uren gewerkt</CardTitle></CardHeader>
               <CardContent>
-                <Select value={status} onValueChange={(v) => setStatus(v as Werkbon['status'])}
-                  disabled={status === 'gefactureerd'}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="concept">Concept</SelectItem>
-                    <SelectItem value="ingediend">Ingediend</SelectItem>
-                    <SelectItem value="goedgekeurd">Goedgekeurd</SelectItem>
-                    <SelectItem value="gefactureerd" disabled>Gefactureerd</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.25}
+                  value={urenGewerkt ?? ''}
+                  onChange={(e) => { setUrenGewerkt(e.target.value ? Number(e.target.value) : undefined); setDirty(true) }}
+                  placeholder="Bijv. 4.5"
+                  className="max-w-[200px]"
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {werkbonMonteurOpmerkingen && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Opmerkingen monteur</CardTitle></CardHeader>
+              <CardContent>
+                <Textarea
+                  value={monteurOpmerkingen}
+                  onChange={(e) => { setMonteurOpmerkingen(e.target.value); setDirty(true) }}
+                  placeholder="Bijzonderheden, problemen, opmerkingen..."
+                  rows={3}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {werkbonMonteurFotos && (
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Camera className="h-4 w-4" /> Foto's monteur</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <label className="cursor-pointer">
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFotoToevoegen(e, 'voor')} />
+                    <Button variant="outline" size="sm" asChild><span><Camera className="h-4 w-4 mr-1" /> Voor foto</span></Button>
+                  </label>
+                  <label className="cursor-pointer">
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFotoToevoegen(e, 'na')} />
+                    <Button variant="outline" size="sm" asChild><span><Camera className="h-4 w-4 mr-1" /> Na foto</span></Button>
+                  </label>
+                </div>
+                {fotos.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {fotos.map((foto) => (
+                      <div key={foto.id} className="relative group rounded-lg overflow-hidden border">
+                        <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => setLightboxUrl(foto.url)} />
+                        <div className="absolute top-1 left-1">
+                          <Badge variant="secondary" className="text-[10px]">{foto.type === 'voor' ? 'Voor' : foto.type === 'na' ? 'Na' : 'Overig'}</Badge>
+                        </div>
+                        <Button
+                          variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
+                          onClick={() => handleFotoVerwijderen(foto.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {werkbonKlantHandtekening && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Handtekening klant</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label>Naam</Label>
+                  <Input
+                    value={klantNaamGetekend}
+                    onChange={(e) => { setKlantNaamGetekend(e.target.value); setDirty(true) }}
+                    placeholder="Naam ondertekenaar"
+                    className="max-w-[300px]"
+                  />
+                </div>
+                {handtekeningData && !isEditingSignature ? (
+                  <div className="space-y-2">
+                    <img src={handtekeningData} alt="Handtekening" className="border rounded-lg bg-white max-w-[300px]" />
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setIsEditingSignature(true)}>
+                        <Pen className="h-3 w-3 mr-1" /> Bewerken
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={clearSignature}>
+                        <RotateCcw className="h-3 w-3 mr-1" /> Wissen
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <canvas
+                      ref={canvasRef}
+                      width={300}
+                      height={150}
+                      className="border rounded-lg bg-white cursor-crosshair touch-none"
+                      onMouseDown={startDraw}
+                      onMouseMove={draw}
+                      onMouseUp={endDraw}
+                      onMouseLeave={endDraw}
+                      onTouchStart={startDraw}
+                      onTouchMove={draw}
+                      onTouchEnd={endDraw}
+                    />
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={clearSignature}>
+                        <RotateCcw className="h-3 w-3 mr-1" /> Wissen
+                      </Button>
+                      {handtekeningData && (
+                        <Button variant="outline" size="sm" onClick={() => setIsEditingSignature(false)}>
+                          Opslaan
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
         </div>
       </div>
 
-      {/* Factureer dialog */}
-      <Dialog open={factureerDialogOpen} onOpenChange={setFactureerDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Factuur aanmaken vanuit werkbon</DialogTitle>
-            <DialogDescription>
-              Er wordt een concept-factuur aangemaakt met alle factureerbare regels uit werkbon {werkbonNummer}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span>Factureerbare regels:</span><span className="font-medium">{regels.filter((r) => r.factureerbaar).length}</span></div>
-            <div className="flex justify-between"><span>Subtotaal:</span><span className="font-medium">{formatCurrency(totalen.subtotaal)}</span></div>
-            {totalen.kmKosten > 0 && (
-              <div className="flex justify-between"><span>Kilometers:</span><span className="font-medium">{formatCurrency(totalen.kmKosten)}</span></div>
-            )}
-            <Separator />
-            <div className="flex justify-between font-bold"><span>Totaal incl. BTW:</span><span>{formatCurrency(totalen.totaalIncl)}</span></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFactureerDialogOpen(false)}>Annuleren</Button>
-            <Button onClick={handleFactureer}>Factuur aanmaken</Button>
-          </DialogFooter>
+      {/* Lightbox */}
+      <Dialog open={!!lightboxUrl} onOpenChange={() => setLightboxUrl(null)}>
+        <DialogContent className="max-w-4xl p-2">
+          <DialogHeader className="sr-only"><DialogTitle>Afbeelding</DialogTitle></DialogHeader>
+          {lightboxUrl && (
+            <img src={lightboxUrl} alt="Volledig scherm" className="w-full h-auto rounded-lg" />
+          )}
         </DialogContent>
       </Dialog>
     </div>

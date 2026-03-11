@@ -541,6 +541,12 @@ export interface AppSettings {
   factuur_outro_tekst: string;
   creditnota_prefix: string;
   werkbon_prefix: string;
+  // Werkbon instellingen
+  werkbon_monteur_uren: boolean;
+  werkbon_monteur_opmerkingen: boolean;
+  werkbon_monteur_fotos: boolean;
+  werkbon_klant_handtekening: boolean;
+  werkbon_briefpapier: boolean;
   herinnering_1_tekst: string;
   herinnering_2_tekst: string;
   aanmaning_tekst: string;
@@ -1005,36 +1011,86 @@ export interface BookingAfspraak {
   updated_at?: string;
 }
 
-// ============ WERKBONNEN (Tier 1 Feature 1) ============
+// ============ WERKBONNEN — Instructieblad voor Monteurs ============
 
 export interface Werkbon {
   id: string;
   user_id?: string;
   werkbon_nummer: string;
-  project_id: string;
+  // Koppeling (minstens één)
+  offerte_id?: string;
+  project_id?: string;
   klant_id: string;
-  montage_afspraak_id?: string;
-  contactpersoon_id?: string;
-  locatie_adres: string;
+  // Meta
+  titel?: string;
+  datum: string;
+  status: 'concept' | 'definitief' | 'afgerond';
+  // Locatie
+  locatie_adres?: string;
   locatie_stad?: string;
   locatie_postcode?: string;
-  datum: string;
-  start_tijd?: string;
-  eind_tijd?: string;
-  pauze_minuten?: number;
-  status: 'concept' | 'ingediend' | 'goedgekeurd' | 'gefactureerd';
+  // Monteur feedback (optioneel, instelbaar)
+  uren_gewerkt?: number;
+  monteur_opmerkingen?: string;
   klant_handtekening?: string;
   klant_naam_getekend?: string;
   getekend_op?: string;
-  omschrijving?: string;
-  interne_notitie?: string;
-  factuur_id?: string;
-  kilometers?: number;
-  km_tarief?: number;
+  // PDF opties
+  toon_briefpapier: boolean;
   created_at: string;
   updated_at?: string;
 }
 
+export interface WerkbonItem {
+  id: string;
+  user_id?: string;
+  werkbon_id: string;
+  volgorde: number;
+  // Overgenomen uit offerte-item (of handmatig ingevuld)
+  omschrijving: string;
+  afmeting_breedte_mm?: number;
+  afmeting_hoogte_mm?: number;
+  // Afbeeldingen (tekeningen, renders, drukproeven, losse uploads)
+  afbeeldingen: WerkbonAfbeelding[];
+  // Notitie specifiek voor de monteur
+  interne_notitie?: string;
+  // Bron tracking
+  offerte_item_id?: string;
+  created_at: string;
+}
+
+export interface WerkbonAfbeelding {
+  id: string;
+  werkbon_item_id: string;
+  url: string;
+  type: 'tekening' | 'drukproef' | 'foto' | 'overig';
+  omschrijving?: string;
+  created_at: string;
+}
+
+// Foto's gemaakt door monteur op locatie (apart van item-afbeeldingen)
+export interface WerkbonFoto {
+  id: string;
+  user_id?: string;
+  werkbon_id: string;
+  type: 'voor' | 'na' | 'overig';
+  url: string;
+  omschrijving?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+// Werkbon instellingen (per bedrijf)
+export interface WerkbonInstellingen {
+  monteur_kan_uren_invullen: boolean;
+  monteur_kan_opmerkingen_toevoegen: boolean;
+  monteur_kan_fotos_maken: boolean;
+  klant_handtekening_tonen: boolean;
+  briefpapier_op_werkbon: boolean;
+  werkbon_prefix: string;
+}
+
+// Legacy types kept for backward compatibility with factuur conversie
 export interface WerkbonRegel {
   id: string;
   user_id?: string;
@@ -1049,17 +1105,6 @@ export interface WerkbonRegel {
   prijs_per_eenheid?: number;
   totaal: number;
   factureerbaar: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface WerkbonFoto {
-  id: string;
-  user_id?: string;
-  werkbon_id: string;
-  type: 'voor' | 'na' | 'overig';
-  url: string;
-  omschrijving?: string;
   created_at: string;
   updated_at?: string;
 }

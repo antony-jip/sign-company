@@ -49,8 +49,10 @@ import {
   ChevronDown,
   Receipt,
   Eye,
+  ClipboardList,
 } from 'lucide-react'
 import { logger } from '../../utils/logger'
+import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -122,6 +124,7 @@ export function OfferteDetail() {
   const [isDuplicating, setIsDuplicating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
 
   // Fetch data
   useEffect(() => {
@@ -575,6 +578,10 @@ export function OfferteDetail() {
               <Button size="sm" variant="outline" onClick={handleDuplicate} disabled={isDuplicating}>
                 {isDuplicating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Copy className="h-4 w-4 mr-1" />}
                 Dupliceren
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowWerkbonDialog(true)}>
+                <ClipboardList className="h-4 w-4 mr-1" />
+                Werkbon maken
               </Button>
               <Button
                 size="sm"
@@ -1078,6 +1085,16 @@ export function OfferteDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {offerte && (
+        <WerkbonAanmaakDialog
+          open={showWerkbonDialog}
+          onOpenChange={setShowWerkbonDialog}
+          offerte={offerte}
+          items={items}
+          klant={klant}
+        />
+      )}
     </div>
   )
 }
