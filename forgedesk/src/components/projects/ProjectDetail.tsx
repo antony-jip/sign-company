@@ -119,6 +119,7 @@ import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { ProjectPortaalTab } from './ProjectPortaalTab'
+import { ProjectProgressIndicator } from './ProjectProgressIndicator'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, MontageAfspraak, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
@@ -1448,6 +1449,18 @@ export function ProjectDetail() {
 
         {/* ────────────── Rechter Sidebar ────────────── */}
         <div className="space-y-6 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto scrollbar-thin">
+          {/* ── Projectvoortgang ── */}
+          <Card className="border-border/80 dark:border-border/80">
+            <CardContent className="pt-5 pb-4">
+              <ProjectProgressIndicator
+                projectStatus={project.status}
+                offertes={projectOffertes}
+                werkbonnen={projectWerkbonnen}
+                facturen={Object.values(offerteFactuurMap)}
+              />
+            </CardContent>
+          </Card>
+
           {/* ── Klant & Contact ── */}
           {klant && (
             <Card className="border-blush/40 bg-blush/5">
