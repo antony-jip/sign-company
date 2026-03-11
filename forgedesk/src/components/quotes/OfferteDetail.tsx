@@ -521,7 +521,7 @@ export function OfferteDetail() {
   )
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 mod-strip mod-strip-offertes">
+    <div className="max-w-5xl mx-auto space-y-4 mod-strip mod-strip-offertes">
       {/* Top bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -760,7 +760,7 @@ export function OfferteDetail() {
       {/* Client + Details grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Klant info */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5" />
@@ -800,7 +800,7 @@ export function OfferteDetail() {
         </div>
 
         {/* Details */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" />
@@ -857,7 +857,7 @@ export function OfferteDetail() {
 
         {/* Klant activiteit */}
         {(offerte.eerste_bekeken_op || offerte.geaccepteerd_door || offerte.wijziging_opmerking) && (
-          <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
             <div className="section-header-pastel">
               <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
                 <Eye className="h-3.5 w-3.5" />
@@ -924,7 +924,7 @@ export function OfferteDetail() {
 
       {/* Intro tekst */}
       {(isEditing || offerte.intro_tekst) && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Intro tekst
@@ -1030,7 +1030,7 @@ export function OfferteDetail() {
 
       {/* Outro tekst */}
       {(isEditing || offerte.outro_tekst) && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Outro tekst
@@ -1051,7 +1051,7 @@ export function OfferteDetail() {
 
       {/* Notities (edit mode) */}
       {isEditing && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Notities
@@ -1068,7 +1068,7 @@ export function OfferteDetail() {
 
       {/* Notities (view mode) */}
       {!isEditing && offerte.notities && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Notities
@@ -1079,7 +1079,7 @@ export function OfferteDetail() {
       )}
 
       {/* Activiteit log */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
         <div className="section-header-pastel">
           <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
             Activiteit
