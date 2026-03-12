@@ -373,6 +373,53 @@ export function ProjectsList() {
         )}
       </div>
 
+      {/* ── Bulk action bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-[#7EB5A6]/8 border border-[#7EB5A6]/20 rounded-xl">
+          <CheckSquare className="w-4 h-4 text-[#7EB5A6]" />
+          <span className="text-sm font-medium text-foreground">
+            {selectedIds.size} van {gefilterdeProjecten.length} geselecteerd
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={toggleSelectAll}
+          >
+            {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
+          </Button>
+          <div className="flex-1" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <ChevronDown className="w-3.5 h-3.5" />
+                Status wijzigen
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {statusOpties.filter(s => s.value !== 'alle').map((s) => (
+                <DropdownMenuItem
+                  key={s.value}
+                  onClick={() => handleBulkStatusChange(s.value as Project['status'])}
+                  className="flex items-center gap-2 text-xs"
+                >
+                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
+                  {s.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+
       {/* ── Search + Filters ── */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
@@ -615,7 +662,10 @@ export function ProjectsList() {
                     className={cn(
                       'border-b border-border/30 last:border-0 hover:bg-[#F4F3F0]/50 dark:hover:bg-muted/20 cursor-pointer transition-all duration-150 group border-l-2',
                       getStatusBorderColor(project.status),
-                      selectedIds.has(project.id) && 'bg-primary/5'
+
+
+                      selectedIds.has(project.id) && 'bg-[#7EB5A6]/5'
+
                     )}
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
