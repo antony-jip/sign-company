@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,8 +21,10 @@ import {
 import { createKlant, updateKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
+import { Building2, Loader2 } from 'lucide-react'
 import type { Klant, KvkResultaat } from '@/types'
 import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
+import supabase from '@/services/supabaseClient'
 
 interface AddEditClientProps {
   open: boolean
@@ -80,6 +82,99 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const [saving, setSaving] = useState(false)
+
+  // KVK inline autocomplete
+  const [kvkSuggesties, setKvkSuggesties] = useState<Array<{
+    kvkNummer: string; naam: string; adres: { straat: string; plaats: string }; postcode: string; type: string; vestigingsnummer?: string
+  }>>([])
+  const [kvkZoeken, setKvkZoeken] = useState(false)
+  const [kvkDropdownOpen, setKvkDropdownOpen] = useState(false)
+  const [kvkLoadingProfiel, setKvkLoadingProfiel] = useState(false)
+  const kvkDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bedrijfsnaamRef = useRef<HTMLDivElement>(null)
+
+  const zoekKvk = useCallback(async (naam: string) => {
+    if (naam.length < 3) { setKvkSuggesties([]); setKvkDropdownOpen(false); return }
+    setKvkZoeken(true)
+    try {
+      if (!supabase) throw new Error('no supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('no session')
+      const res = await fetch(`/api/kvk-zoeken?q=${encodeURIComponent(naam)}`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      })
+      if (!res.ok) throw new Error('KVK API error')
+      const data = await res.json() as { resultaten: typeof kvkSuggesties }
+      setKvkSuggesties(data.resultaten || [])
+      setKvkDropdownOpen((data.resultaten || []).length > 0)
+    } catch {
+      setKvkSuggesties([])
+      setKvkDropdownOpen(false)
+    } finally {
+      setKvkZoeken(false)
+    }
+  }, [])
+
+  const selectKvkSuggestie = useCallback(async (result: typeof kvkSuggesties[0]) => {
+    setKvkDropdownOpen(false)
+    setKvkSuggesties([])
+    setKvkLoadingProfiel(true)
+    try {
+      if (!supabase) throw new Error('no supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('no session')
+      const res = await fetch(`/api/kvk-basisprofiel?kvknummer=${result.kvkNummer}`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      })
+      if (res.ok) {
+        const profiel = await res.json() as { kvkNummer: string; naam: string; adres: { straat: string; huisnummer: string; postcode: string; stad: string } }
+        const adresStr = [profiel.adres.straat, profiel.adres.huisnummer].filter(Boolean).join(' ')
+        setFormData((prev: FormData) => ({
+          ...prev,
+          bedrijfsnaam: profiel.naam || prev.bedrijfsnaam,
+          kvk_nummer: profiel.kvkNummer,
+          adres: adresStr || prev.adres,
+          postcode: profiel.adres.postcode || prev.postcode,
+          stad: profiel.adres.stad || prev.stad,
+        }))
+        toast.success(`Gegevens ingevuld van ${profiel.naam}`, { duration: 2000 })
+      } else {
+        // Fallback: gebruik zoekresultaat
+        setFormData((prev: FormData) => ({
+          ...prev,
+          bedrijfsnaam: result.naam || prev.bedrijfsnaam,
+          kvk_nummer: result.kvkNummer,
+          adres: result.adres.straat || prev.adres,
+          stad: result.adres.plaats || prev.stad,
+          postcode: result.postcode || prev.postcode,
+        }))
+        toast.success(`Gegevens ingevuld van ${result.naam}`, { duration: 2000 })
+      }
+    } catch {
+      setFormData((prev: FormData) => ({
+        ...prev,
+        bedrijfsnaam: result.naam || prev.bedrijfsnaam,
+        kvk_nummer: result.kvkNummer,
+        adres: result.adres.straat || prev.adres,
+        stad: result.adres.plaats || prev.stad,
+        postcode: result.postcode || prev.postcode,
+      }))
+      toast.success(`Gegevens ingevuld van ${result.naam}`, { duration: 2000 })
+    } finally {
+      setKvkLoadingProfiel(false)
+    }
+  }, [])
+
+  // Sluit dropdown bij klikken buiten
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (bedrijfsnaamRef.current && !bedrijfsnaamRef.current.contains(e.target as Node)) {
+        setKvkDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const isEditing = !!klant
 
@@ -211,17 +306,73 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         <div className="grid gap-4 py-4">
           {/* Row 1: Bedrijfsnaam + Contactpersoon */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-2" ref={bedrijfsnaamRef}>
               <Label htmlFor="bedrijfsnaam">
                 Bedrijfsnaam <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="bedrijfsnaam"
-                value={formData.bedrijfsnaam}
-                onChange={(e) => handleChange('bedrijfsnaam', e.target.value)}
-                placeholder="Naam van het bedrijf"
-                className={errors.bedrijfsnaam ? 'border-red-500' : ''}
-              />
+              <div className="relative">
+                <Input
+                  id="bedrijfsnaam"
+                  value={formData.bedrijfsnaam}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    handleChange('bedrijfsnaam', val)
+                    // Debounced KVK zoeken bij typen (alleen bij nieuw aanmaken)
+                    if (!isEditing) {
+                      if (kvkDebounce.current) clearTimeout(kvkDebounce.current)
+                      if (val.length >= 3) {
+                        kvkDebounce.current = setTimeout(() => zoekKvk(val), 500)
+                      } else {
+                        setKvkSuggesties([])
+                        setKvkDropdownOpen(false)
+                      }
+                    }
+                  }}
+                  onFocus={() => {
+                    if (kvkSuggesties.length > 0) setKvkDropdownOpen(true)
+                  }}
+                  placeholder="Naam van het bedrijf"
+                  className={errors.bedrijfsnaam ? 'border-red-500' : ''}
+                  autoComplete="off"
+                />
+                {/* Subtiele KVK indicator */}
+                {kvkZoeken && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground/50" />
+                  </div>
+                )}
+                {kvkLoadingProfiel && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                    <span className="text-[10px] text-muted-foreground">Ophalen...</span>
+                  </div>
+                )}
+                {/* KVK suggesties dropdown */}
+                {kvkDropdownOpen && kvkSuggesties.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100">
+                    <div className="px-3 py-1.5 bg-muted/40 border-b border-border/50 flex items-center gap-1.5">
+                      <Building2 className="h-3 w-3 text-muted-foreground/60" />
+                      <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">KvK Resultaten</span>
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto">
+                      {kvkSuggesties.slice(0, 5).map((r) => (
+                        <button
+                          key={`${r.kvkNummer}-${r.vestigingsnummer || ''}`}
+                          type="button"
+                          onClick={() => selectKvkSuggestie(r)}
+                          className="w-full text-left px-3 py-2 hover:bg-muted/60 transition-colors border-b border-border/20 last:border-0"
+                        >
+                          <p className="text-[13px] font-medium text-foreground truncate">{r.naam}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {[r.adres.straat, r.postcode, r.adres.plaats].filter(Boolean).join(', ')}
+                            {r.kvkNummer && <span className="ml-2 text-muted-foreground/50">KvK {r.kvkNummer}</span>}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               {errors.bedrijfsnaam && (
                 <p className="text-xs text-red-500">{errors.bedrijfsnaam}</p>
               )}
