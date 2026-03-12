@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import type { Email } from '@/types'
-import type { EmailFolder, FilterType } from '../emailTypes'
+import type { EmailFolder, FilterType, NoReplyRange } from '../emailTypes'
 import { parseSearchQuery } from '../emailHelpers'
+import { extractSenderEmail } from '../emailHelpers'
 
 interface FolderTab {
   id: EmailFolder
@@ -10,11 +11,52 @@ interface FolderTab {
 
 const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak']
 
+function getNoReplyEmails(emails: Email[], allEmails: Email[], range: NoReplyRange): Email[] {
+  const now = new Date()
+  const rangeDays: Record<NoReplyRange, [number, number]> = {
+    '0-3': [0, 3],
+    '4-7': [4, 7],
+    '8-30': [8, 30],
+  }
+  const [minDays, maxDays] = rangeDays[range]
+
+  // Build a set of email addresses we've sent emails to
+  const sentToAddresses = new Set<string>()
+  allEmails.filter(e => e.map === 'verzonden').forEach(e => {
+    const addr = extractSenderEmail(e.aan).toLowerCase()
+    if (addr) sentToAddresses.add(addr)
+  })
+
+  // Build a set of addresses that have replied (inbox emails from those addresses)
+  const repliedAddresses = new Map<string, Date>()
+  allEmails.filter(e => e.map === 'inbox').forEach(e => {
+    const addr = extractSenderEmail(e.van).toLowerCase()
+    const existing = repliedAddresses.get(addr)
+    const emailDate = new Date(e.datum)
+    if (!existing || emailDate > existing) {
+      repliedAddresses.set(addr, emailDate)
+    }
+  })
+
+  return emails.filter(e => {
+    if (e.map !== 'verzonden') return false
+    const sentDate = new Date(e.datum)
+    const daysSinceSent = Math.floor((now.getTime() - sentDate.getTime()) / (1000 * 60 * 60 * 24))
+    if (daysSinceSent < minDays || daysSinceSent > maxDays) return false
+
+    const toAddr = extractSenderEmail(e.aan).toLowerCase()
+    const lastReply = repliedAddresses.get(toAddr)
+    // No reply at all, or last reply was before we sent
+    return !lastReply || lastReply < sentDate
+  })
+}
+
 export function useEmailFilters(
   emails: Email[],
   selectedFolder: EmailFolder,
   searchQuery: string,
   filter: FilterType,
+  noReplyRange?: NoReplyRange,
 ) {
   // Folder counts
   const folderCounts = useMemo(() => {
@@ -46,8 +88,9 @@ export function useEmailFilters(
       'met-ster': folderEmails.filter((e) => e.starred).length,
       vastgepind: folderEmails.filter((e) => e.pinned).length,
       bijlagen: folderEmails.filter((e) => e.bijlagen > 0).length,
+      'geen-antwoord': getNoReplyEmails(emails, emails, noReplyRange || '0-3').length,
     }
-  }, [emails, selectedFolder])
+  }, [emails, selectedFolder, noReplyRange])
 
   // Filtered + sorted emails with advanced search operators
   const filteredEmails = useMemo(() => {
@@ -115,6 +158,7 @@ export function useEmailFilters(
       case 'met-ster': filtered = filtered.filter((e) => e.starred); break
       case 'vastgepind': filtered = filtered.filter((e) => e.pinned); break
       case 'bijlagen': filtered = filtered.filter((e) => e.bijlagen > 0); break
+      case 'geen-antwoord': filtered = getNoReplyEmails(filtered, emails, noReplyRange || '0-3'); break
     }
 
     // Sort: pinned first, then by date
@@ -123,7 +167,7 @@ export function useEmailFilters(
       if (!a.pinned && b.pinned) return 1
       return new Date(b.datum).getTime() - new Date(a.datum).getTime()
     })
-  }, [emails, selectedFolder, searchQuery, filter])
+  }, [emails, selectedFolder, searchQuery, filter, noReplyRange])
 
   // Thread grouping
   const threadedEmails = useMemo(() => {

@@ -8,7 +8,7 @@ import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2, Star,
   Loader2, Clock, Archive, Mail, MailOpen, CheckCheck, X,
   Pin, AlarmClock, RefreshCw, Keyboard, Eye, Zap, BarChart3,
-  Users, Tag, ChevronDown, Info, Paperclip,
+  Users, Tag, ChevronDown, Info, Paperclip, Timer, Check,
 } from 'lucide-react'
 import { createEmail, createKlant, createTaak, createProject, createDeal } from '@/services/supabaseService'
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
@@ -33,7 +33,7 @@ import { useEmailActions } from './hooks/useEmailActions'
 import { useEmailSelection } from './hooks/useEmailSelection'
 import { useEmailFilters } from './hooks/useEmailFilters'
 import { useEmailKeyboard } from './hooks/useEmailKeyboard'
-import type { EmailFolder, FilterType, FontSize, EmailTab, ViewMode } from './emailTypes'
+import type { EmailFolder, FilterType, FontSize, EmailTab, ViewMode, NoReplyRange } from './emailTypes'
 import {
   extractSenderName, extractSenderEmail, fontSizeClasses,
   KEYBOARD_SHORTCUTS, SEARCH_OPERATORS,
@@ -65,6 +65,8 @@ export function EmailLayout() {
   const [fontSize, setFontSize] = useState<FontSize>('medium')
   const [showSnoozeMenu, setShowSnoozeMenu] = useState<string | null>(null)
   const [showSearchHelp, setShowSearchHelp] = useState(false)
+  const [noReplyRange, setNoReplyRange] = useState<NoReplyRange>('0-3')
+  const [showNoReplyDropdown, setShowNoReplyDropdown] = useState(false)
 
   // Compose defaults (for reply/forward)
   const [composeDefaults, setComposeDefaults] = useState<{
@@ -89,7 +91,7 @@ export function EmailLayout() {
   })
 
   const { filteredEmails, folderCounts, filterCounts, threadedEmails } = useEmailFilters(
-    emails, selectedFolder, searchQuery, filter
+    emails, selectedFolder, searchQuery, filter, noReplyRange
   )
 
   const selection = useEmailSelection({
@@ -442,6 +444,14 @@ export function EmailLayout() {
     toast.info('Ga naar Offertes om een nieuwe offerte te maken')
   }, [])
 
+  // Close no-reply dropdown on outside click
+  useEffect(() => {
+    if (!showNoReplyDropdown) return
+    const handleClick = () => setShowNoReplyDropdown(false)
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [showNoReplyDropdown])
+
   // ── Computed ──
   const showSidebar = viewMode === 'reading' || viewMode === 'composing'
   const fs = fontSizeClasses[fontSize]
@@ -468,7 +478,7 @@ export function EmailLayout() {
       </div>
 
       {/* ── Top Tab Bar ── */}
-      <div className="flex items-center gap-1 px-4 sm:px-6 py-2 overflow-x-auto scrollbar-hide border-b border-border/20">
+      <div className="flex items-center gap-0.5 px-4 sm:px-6 py-1.5 overflow-x-auto scrollbar-hide border-b border-border/20 bg-muted/5">
         {([
           { id: 'email' as EmailTab, label: 'Email', icon: Mail },
           { id: 'gedeelde-inbox' as EmailTab, label: 'Team Inbox', icon: Users },
@@ -477,18 +487,19 @@ export function EmailLayout() {
           { id: 'analytics' as EmailTab, label: 'Analytics', icon: BarChart3 },
         ]).map((tab) => {
           const TabIcon = tab.icon
+          const isActive = activeTab === tab.id
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
-                activeTab === tab.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                'relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap',
+                isActive
+                  ? 'bg-foreground text-background shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
               )}
             >
-              <TabIcon className="w-4 h-4" />
+              <TabIcon className="w-3.5 h-3.5" />
               {tab.label}
             </button>
           )
@@ -556,13 +567,12 @@ export function EmailLayout() {
 
           {/* ═══ Column 1: Folder Sidebar (desktop only, sticky) ═══ */}
           <div className={cn(
-            'border-r flex-shrink-0 flex flex-col bg-muted/20 dark:bg-muted/10 sticky top-0 self-start h-full overflow-y-auto',
-            // Always visible on md+ screens, hidden on mobile
+            'border-r border-border/30 flex-shrink-0 flex flex-col bg-gradient-to-b from-muted/15 to-muted/5 dark:from-muted/10 dark:to-muted/5 sticky top-0 self-start h-full overflow-y-auto',
             'hidden md:flex w-[200px]'
           )}>
             {/* Compose button */}
             <div className="p-3">
-              <Button onClick={handleCompose} className="w-full gap-1.5 h-10 shadow-sm">
+              <Button onClick={handleCompose} className="w-full gap-1.5 h-10 shadow-sm font-semibold tracking-tight">
                 <Pencil className="w-4 h-4" />
                 Nieuw
               </Button>
@@ -579,20 +589,20 @@ export function EmailLayout() {
                     key={tab.id}
                     onClick={() => handleFolderChange(tab.id)}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors mb-0.5',
+                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150 mb-0.5',
                       isActive
-                        ? 'bg-primary/10 text-primary font-medium dark:bg-primary/20'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        ? 'bg-foreground/8 text-foreground font-semibold shadow-[inset_0_1px_0_rgba(0,0,0,0.04)]'
+                        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
                     )}
                   >
-                    <FolderIcon className="w-4 h-4 flex-shrink-0" />
+                    <FolderIcon className={cn('w-4 h-4 flex-shrink-0', isActive && 'text-primary')} />
                     <span className="flex-1 text-left">{tab.label}</span>
                     {count > 0 && (
                       <span className={cn(
-                        'text-[10px] font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center',
+                        'text-[10px] font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center tabular-nums',
                         isActive
                           ? 'bg-primary text-white'
-                          : 'bg-muted-foreground/15 text-muted-foreground'
+                          : 'bg-muted-foreground/10 text-muted-foreground/70'
                       )}>
                         {count}
                       </span>
@@ -603,21 +613,27 @@ export function EmailLayout() {
             </nav>
 
             {/* Label section */}
-            <div className="border-t px-3 py-4">
-              <div className="flex items-center gap-1.5 mb-2">
-                <Tag className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Labels</span>
+            <div className="border-t border-border/20 px-3 py-4">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <Tag className="w-3 h-3 text-muted-foreground/50" />
+                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.08em]">Labels</span>
               </div>
               {['offerte', 'klant', 'project', 'leverancier'].map((label) => {
                 const labelCount = emails.filter((e) => e.labels.includes(label)).length
+                const isActive = searchQuery === `label:${label}`
                 return (
                   <button
                     key={label}
-                    onClick={() => setSearchQuery(`label:${label}`)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    onClick={() => setSearchQuery(isActive ? '' : `label:${label}`)}
+                    className={cn(
+                      'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12px] transition-all duration-150',
+                      isActive
+                        ? 'bg-muted/60 text-foreground font-medium'
+                        : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                    )}
                   >
                     <span className={cn(
-                      'w-2.5 h-2.5 rounded-sm flex-shrink-0',
+                      'w-2 h-2 rounded-full flex-shrink-0',
                       label === 'offerte' && 'bg-blue-400',
                       label === 'klant' && 'bg-emerald-400',
                       label === 'project' && 'bg-primary',
@@ -625,7 +641,7 @@ export function EmailLayout() {
                     )} />
                     <span className="flex-1 text-left capitalize">{label}</span>
                     {labelCount > 0 && (
-                      <span className="text-[10px] text-muted-foreground/60">{labelCount}</span>
+                      <span className="text-[10px] text-muted-foreground/40 tabular-nums">{labelCount}</span>
                     )}
                   </button>
                 )
@@ -642,14 +658,14 @@ export function EmailLayout() {
             {/* Search + actions */}
             <div className="p-3 flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setShowSearchHelp(true)}
                   onBlur={() => setTimeout(() => setShowSearchHelp(false), 200)}
                   placeholder="Zoek emails... (probeer from: to: has: label:)"
-                  className="pl-10 pr-8 h-9"
+                  className="pl-10 pr-8 h-9 bg-muted/30 border-border/30 focus:bg-background focus:border-primary/30 transition-all"
                 />
                 {searchQuery && (
                   <button
@@ -661,38 +677,107 @@ export function EmailLayout() {
                 )}
                 {/* Search operators help dropdown */}
                 {showSearchHelp && !searchQuery && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-lg shadow-lg p-3 z-50">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border/40 rounded-xl shadow-lg p-3 z-50">
                     <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
                       <Info className="w-3.5 h-3.5" />
                       Geavanceerd zoeken
                     </p>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {SEARCH_OPERATORS.map((op) => (
                         <button
                           key={op.key}
                           onClick={() => { setSearchQuery(op.key); setShowSearchHelp(false) }}
-                          className="w-full flex items-center gap-2 px-2 py-1 rounded text-xs hover:bg-muted transition-colors text-left"
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs hover:bg-muted/60 transition-colors text-left"
                         >
-                          <code className="font-mono text-primary bg-primary/10 px-1 rounded">{op.key}</code>
+                          <code className="font-mono text-primary bg-primary/8 px-1.5 py-0.5 rounded-md text-[11px]">{op.key}</code>
                           <span className="text-muted-foreground">{op.description}</span>
-                          <span className="ml-auto text-muted-foreground/50 font-mono text-[10px]">{op.example}</span>
+                          <span className="ml-auto text-muted-foreground/40 font-mono text-[10px]">{op.example}</span>
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
               </div>
+
+              {/* Geen antwoord filter (right of search) */}
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={() => {
+                    if (filter === 'geen-antwoord') {
+                      setFilter('alle')
+                    } else {
+                      setFilter('geen-antwoord')
+                    }
+                  }}
+                  className={cn(
+                    'flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-medium transition-all border',
+                    filter === 'geen-antwoord'
+                      ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400 shadow-sm'
+                      : 'bg-background border-border/40 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  )}
+                >
+                  <Timer className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">
+                    {filter === 'geen-antwoord'
+                      ? `Geen antwoord (${noReplyRange === '0-3' ? '0-3' : noReplyRange === '4-7' ? '4-7' : '8-30'}d)`
+                      : 'Geen antwoord'}
+                  </span>
+                  {filter === 'geen-antwoord' ? (
+                    <ChevronDown
+                      className="w-3 h-3 opacity-60 cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); setShowNoReplyDropdown(!showNoReplyDropdown) }}
+                    />
+                  ) : null}
+                </button>
+                {filter === 'geen-antwoord' && (
+                  <button
+                    onClick={() => setFilter('alle')}
+                    className="ml-1 p-1 rounded-md hover:bg-muted/60 text-muted-foreground transition-colors"
+                    title="Filter verwijderen"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {/* No-reply range dropdown */}
+                {showNoReplyDropdown && filter === 'geen-antwoord' && (
+                  <div className="absolute top-full right-0 mt-1 bg-popover border border-border/40 rounded-xl shadow-lg p-1.5 z-50 min-w-[220px]">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-label px-2.5 py-1.5">
+                      Je hebt geen antwoord gestuurd:
+                    </p>
+                    {([
+                      { value: '0-3' as NoReplyRange, label: 'Gedurende 0-3 dagen' },
+                      { value: '4-7' as NoReplyRange, label: 'Gedurende 4-7 dagen' },
+                      { value: '8-30' as NoReplyRange, label: 'Gedurende 8-30 dagen' },
+                    ]).map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => { setNoReplyRange(option.value); setShowNoReplyDropdown(false) }}
+                        className={cn(
+                          'w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[13px] transition-colors text-left',
+                          noReplyRange === option.value
+                            ? 'font-semibold text-foreground bg-muted/40'
+                            : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                        )}
+                      >
+                        {option.label}
+                        {noReplyRange === option.value && <Check className="w-4 h-4 text-primary" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Button
                 onClick={() => handleRefresh(selectedFolder)}
                 size="sm"
                 variant="outline"
-                className="h-9 w-9 flex-shrink-0 p-0"
+                className="h-9 w-9 flex-shrink-0 p-0 border-border/30"
                 disabled={isRefreshing}
                 title="Vernieuwen"
               >
                 <RefreshCw className={cn('w-3.5 h-3.5', isRefreshing && 'animate-spin')} />
               </Button>
-              {/* Mobile compose button (visible when folder sidebar is hidden) */}
+              {/* Mobile compose button */}
               <Button onClick={handleCompose} size="sm" className="gap-1.5 h-9 flex-shrink-0 md:hidden">
                 <Pencil className="w-3.5 h-3.5" />
                 Nieuw
@@ -731,34 +816,34 @@ export function EmailLayout() {
             </div>
 
             {/* Filter chips + Font size */}
-            <div className="px-3 pb-2 flex items-center justify-between border-b">
+            <div className="px-3 pb-2 flex items-center justify-between border-b border-border/30">
               <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
                 {(['alle', 'ongelezen', 'met-ster', 'vastgepind', 'bijlagen'] as FilterType[]).map((f) => {
-                  const labels: Record<FilterType, string> = {
+                  const labels: Record<string, string> = {
                     alle: 'Alle',
                     ongelezen: 'Ongelezen',
                     'met-ster': 'Met ster',
                     vastgepind: 'Vastgepind',
                     bijlagen: 'Bijlagen',
                   }
-                  const count = filterCounts[f]
+                  const count = filterCounts[f] || 0
                   const isActive = filter === f
                   return (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
                       className={cn(
-                        'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors',
+                        'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-150',
                         isActive
-                          ? 'bg-foreground text-background'
-                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          ? 'bg-foreground text-background shadow-sm'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                       )}
                     >
                       {labels[f]}
                       {f !== 'alle' && count > 0 && (
                         <span className={cn(
-                          'text-[9px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center',
-                          isActive ? 'bg-background/20 text-background' : 'bg-muted-foreground/15 text-muted-foreground'
+                          'text-[9px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center tabular-nums',
+                          isActive ? 'bg-background/20 text-background' : 'bg-muted-foreground/12 text-muted-foreground'
                         )}>
                           {count}
                         </span>
@@ -768,17 +853,17 @@ export function EmailLayout() {
                 })}
               </div>
               {/* Font size control */}
-              <div className="flex items-center gap-0.5 ml-2">
+              <div className="flex items-center gap-0.5 ml-2 bg-muted/30 rounded-lg p-0.5">
                 {(['small', 'medium', 'large'] as FontSize[]).map((size) => (
                   <button
                     key={size}
                     onClick={() => setFontSize(size)}
                     className={cn(
-                      'w-6 h-6 rounded flex items-center justify-center font-bold transition-colors',
+                      'w-6 h-6 rounded-md flex items-center justify-center font-bold transition-all duration-150',
                       size === 'small' ? 'text-[10px]' : size === 'medium' ? 'text-xs' : 'text-sm',
                       fontSize === size
-                        ? 'bg-foreground text-background'
-                        : 'text-muted-foreground hover:bg-muted'
+                        ? 'bg-foreground text-background shadow-sm'
+                        : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/60'
                     )}
                     title={size === 'small' ? 'Klein' : size === 'medium' ? 'Normaal' : 'Groot'}
                   >
@@ -790,46 +875,45 @@ export function EmailLayout() {
 
             {/* Bulk action toolbar */}
             {selection.hasChecked ? (
-              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 dark:bg-primary/10 border-b">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/30" style={{ background: 'linear-gradient(135deg, var(--color-sage), #d4e8db)', borderColor: 'var(--color-sage-border)' }}>
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={selection.allChecked ? true : selection.someChecked ? 'indeterminate' : false}
                     onCheckedChange={selection.toggleCheckAll}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
-                  <span className="text-xs font-medium text-foreground">
+                  <span className="text-xs font-semibold" style={{ color: 'var(--color-sage-text)' }}>
                     {selection.checkedEmails.size} geselecteerd
                   </span>
                 </div>
-                <div className="h-4 w-px bg-border mx-1" />
-                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={selection.handleBulkMarkRead}>
+                <div className="h-4 w-px bg-white/20 mx-1" />
+                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs hover:bg-white/20" style={{ color: 'var(--color-sage-text)' }} onClick={selection.handleBulkMarkRead}>
                   <MailOpen className="w-3.5 h-3.5" /> Gelezen
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={selection.handleBulkMarkUnread}>
+                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs hover:bg-white/20" style={{ color: 'var(--color-sage-text)' }} onClick={selection.handleBulkMarkUnread}>
                   <Mail className="w-3.5 h-3.5" /> Ongelezen
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={selection.handleBulkArchive}>
+                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs hover:bg-white/20" style={{ color: 'var(--color-sage-text)' }} onClick={selection.handleBulkArchive}>
                   <Archive className="w-3.5 h-3.5" /> Archiveren
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20" onClick={selection.handleBulkDelete}>
+                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs hover:bg-red-500/10" style={{ color: '#c44040' }} onClick={selection.handleBulkDelete}>
                   <Trash2 className="w-3.5 h-3.5" /> Verwijderen
                 </Button>
                 <div className="flex-1" />
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground" onClick={selection.clearChecked}>
+                <button onClick={selection.clearChecked} className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors" style={{ color: 'var(--color-sage-text)' }}>
                   <X className="w-3.5 h-3.5" />
-                </Button>
+                </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-4 py-1.5 border-b bg-muted/10 dark:bg-muted/5">
+              <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border/20 bg-muted/5">
                 <Checkbox
                   checked={false}
                   onCheckedChange={selection.toggleCheckAll}
-                  className="transition-opacity"
+                  className="opacity-40 hover:opacity-100 transition-opacity"
                 />
-                <button onClick={selection.toggleCheckAll} className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                <button onClick={selection.toggleCheckAll} className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer">
                   Alles selecteren
                 </button>
-                <span className="text-[11px] text-muted-foreground/50 ml-auto">
+                <span className="text-[11px] text-muted-foreground/40 ml-auto tabular-nums">
                   {filteredEmails.length} email{filteredEmails.length !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -841,34 +925,42 @@ export function EmailLayout() {
                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                   {selectedFolder === 'gepland' ? (
                     <>
-                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                        <Clock className="w-7 h-7 text-primary/40" />
+                      <div className="w-16 h-16 rounded-2xl bg-primary/8 flex items-center justify-center mb-4">
+                        <Clock className="w-8 h-8 text-primary/30" />
                       </div>
-                      <p className="text-sm font-medium">Geen ingeplande emails</p>
-                      <p className="text-xs mt-1">Plan een email in bij het verzenden</p>
+                      <p className="text-sm font-semibold text-foreground/70">Geen ingeplande emails</p>
+                      <p className="text-xs mt-1.5 text-muted-foreground/60">Plan een email in bij het verzenden</p>
                     </>
                   ) : selectedFolder === 'gesnoozed' ? (
                     <>
-                      <div className="w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center mb-3">
-                        <AlarmClock className="w-7 h-7 text-amber-500/40" />
+                      <div className="w-16 h-16 rounded-2xl bg-amber-500/8 flex items-center justify-center mb-4">
+                        <AlarmClock className="w-8 h-8 text-amber-500/30" />
                       </div>
-                      <p className="text-sm font-medium">Geen gesnoozede emails</p>
-                      <p className="text-xs mt-1">Snooze een email om deze later terug te zien</p>
+                      <p className="text-sm font-semibold text-foreground/70">Geen gesnoozede emails</p>
+                      <p className="text-xs mt-1.5 text-muted-foreground/60">Snooze een email om deze later terug te zien</p>
+                    </>
+                  ) : filter === 'geen-antwoord' ? (
+                    <>
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/8 flex items-center justify-center mb-4">
+                        <CheckCheck className="w-8 h-8 text-emerald-500/30" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground/70">Alles beantwoord</p>
+                      <p className="text-xs mt-1.5 text-muted-foreground/60">Geen onbeantwoorde emails in dit bereik</p>
                     </>
                   ) : filter !== 'alle' ? (
                     <>
-                      <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
-                        <CheckCheck className="w-7 h-7 text-emerald-500/40" />
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/8 flex items-center justify-center mb-4">
+                        <CheckCheck className="w-8 h-8 text-emerald-500/30" />
                       </div>
-                      <p className="text-sm font-medium">Alles bijgewerkt</p>
-                      <p className="text-xs mt-1">Geen {filter === 'ongelezen' ? 'ongelezen' : filter === 'met-ster' ? 'emails met ster' : filter === 'vastgepind' ? 'vastgepinde emails' : 'emails met bijlagen'}</p>
+                      <p className="text-sm font-semibold text-foreground/70">Alles bijgewerkt</p>
+                      <p className="text-xs mt-1.5 text-muted-foreground/60">Geen {filter === 'ongelezen' ? 'ongelezen' : filter === 'met-ster' ? 'emails met ster' : filter === 'vastgepind' ? 'vastgepinde emails' : 'emails met bijlagen'}</p>
                     </>
                   ) : (
                     <>
-                      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
-                        <Inbox className="w-7 h-7 opacity-30" />
+                      <div className="w-16 h-16 rounded-2xl bg-muted/40 flex items-center justify-center mb-4">
+                        <Inbox className="w-8 h-8 opacity-20" />
                       </div>
-                      <p className="text-sm font-medium">Geen emails</p>
+                      <p className="text-sm font-semibold text-foreground/70">Geen emails</p>
                     </>
                   )}
                 </div>
