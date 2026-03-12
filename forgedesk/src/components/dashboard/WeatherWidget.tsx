@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Sun,
   Cloud,
@@ -59,15 +59,30 @@ const WMO_DESCRIPTIONS: Record<number, string> = {
 
 function getWeatherIcon(code: number, size: string = 'h-5 w-5') {
   if (code === 0 || code === 1) return <Sun className={`${size} text-amber-500`} />
-  if (code === 2 || code === 3) return <Cloud className={`${size} text-muted-foreground/60`} />
-  if (code === 45 || code === 48) return <CloudFog className={`${size} text-muted-foreground/60`} />
+  if (code === 2 || code === 3) return <Cloud className={`${size} text-slate-400`} />
+  if (code === 45 || code === 48) return <CloudFog className={`${size} text-slate-400`} />
   if (code >= 51 && code <= 55) return <CloudDrizzle className={`${size} text-blue-400`} />
   if (code >= 61 && code <= 65) return <CloudRain className={`${size} text-blue-500`} />
-  if (code >= 71 && code <= 77) return <CloudSnow className={`${size} text-blue-200`} />
+  if (code >= 71 && code <= 77) return <CloudSnow className={`${size} text-sky-300`} />
   if (code >= 80 && code <= 82) return <CloudRain className={`${size} text-blue-500`} />
-  if (code >= 85 && code <= 86) return <CloudSnow className={`${size} text-blue-200`} />
+  if (code >= 85 && code <= 86) return <CloudSnow className={`${size} text-sky-300`} />
   if (code >= 95) return <CloudLightning className={`${size} text-yellow-500`} />
   return <Sun className={`${size} text-amber-500`} />
+}
+
+function getWeatherGradient(code: number, isDay: boolean): string {
+  if (code === 0 || code === 1) {
+    return isDay
+      ? 'from-amber-400/20 via-orange-300/10 to-yellow-200/5'
+      : 'from-indigo-500/20 via-purple-400/10 to-slate-600/5'
+  }
+  if (code === 2 || code === 3) return 'from-slate-300/20 via-gray-200/10 to-slate-100/5'
+  if (code === 45 || code === 48) return 'from-gray-400/20 via-slate-300/10 to-gray-200/5'
+  if (code >= 51 && code <= 55) return 'from-blue-300/20 via-sky-200/10 to-blue-100/5'
+  if (code >= 61 && code <= 65) return 'from-blue-500/25 via-indigo-300/15 to-blue-200/5'
+  if (code >= 71 && code <= 86) return 'from-sky-200/30 via-blue-100/15 to-white/10'
+  if (code >= 95) return 'from-purple-500/25 via-slate-400/15 to-indigo-300/5'
+  return 'from-slate-200/15 via-gray-100/10 to-transparent'
 }
 
 function isGoodWorkWeather(code: number, windSpeed: number): 'goed' | 'matig' | 'slecht' {
@@ -121,7 +136,6 @@ export function WeatherWidget() {
       }
     }
 
-    // Try geolocation, fallback to Amsterdam
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -147,7 +161,7 @@ export function WeatherWidget() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-4">
+      <div className="flex items-center justify-center py-8">
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </div>
     )
@@ -159,69 +173,80 @@ export function WeatherWidget() {
 
   const workCondition = isGoodWorkWeather(current.weatherCode, current.windSpeed)
   const conditionColors = {
-    goed: 'text-[var(--color-sage-text)] bg-[var(--color-sage)]',
-    matig: 'text-[var(--color-cream-text)] bg-[var(--color-cream)]',
-    slecht: 'text-[var(--color-coral-text)] bg-[var(--color-coral)]',
+    goed: 'text-emerald-700 bg-emerald-100/80 dark:text-emerald-400 dark:bg-emerald-900/30',
+    matig: 'text-amber-700 bg-amber-100/80 dark:text-amber-400 dark:bg-amber-900/30',
+    slecht: 'text-red-700 bg-red-100/80 dark:text-red-400 dark:bg-red-900/30',
   }
   const conditionLabels = {
     goed: 'Goed werkweer',
     matig: 'Matig werkweer',
     slecht: 'Niet geschikt voor buitenwerk',
   }
+  const gradient = getWeatherGradient(current.weatherCode, current.isDay)
 
   return (
     <div className="space-y-3">
-      {/* Current weather */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          {getWeatherIcon(current.weatherCode, 'h-8 w-8')}
-          <div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-foreground font-mono">{current.temperature}°</span>
-              <span className="text-sm text-muted-foreground">
-                {WMO_DESCRIPTIONS[current.weatherCode] || 'Onbekend'}
-              </span>
+      {/* Hero section with gradient */}
+      <div className={`relative rounded-xl bg-gradient-to-br ${gradient} p-4 overflow-hidden`}>
+        {/* Decorative circle */}
+        <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br from-white/10 to-transparent" />
+
+        <div className="relative flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-background/60 dark:bg-background/30 backdrop-blur-sm shadow-sm">
+              {getWeatherIcon(current.weatherCode, 'h-10 w-10')}
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Thermometer className="h-3 w-3" />
-                Voelt als <span className="font-mono">{current.apparentTemperature}°</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <Wind className="h-3 w-3" />
-                <span className="font-mono">{current.windSpeed}</span> km/u
-              </span>
-              <span className="flex items-center gap-1">
-                <Droplets className="h-3 w-3" />
-                <span className="font-mono">{current.humidity}%</span>
-              </span>
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold text-foreground font-mono tracking-tight">{current.temperature}°</span>
+              </div>
+              <p className="text-sm font-medium text-foreground/70">
+                {WMO_DESCRIPTIONS[current.weatherCode] || 'Onbekend'}
+              </p>
             </div>
           </div>
+
+          <div className="flex flex-col items-end gap-1.5">
+            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${conditionColors[workCondition]}`}>
+              {conditionLabels[workCondition]}
+            </span>
+            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+              <MapPin className="h-2.5 w-2.5" />{location}
+            </span>
+          </div>
         </div>
-        <div className="ml-auto flex flex-col items-end gap-1">
-          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${conditionColors[workCondition]}`}>
-            {conditionLabels[workCondition]}
+
+        {/* Stats row */}
+        <div className="relative flex items-center gap-4 mt-3 pt-3 border-t border-foreground/5">
+          <span className="flex items-center gap-1.5 text-xs text-foreground/60">
+            <Thermometer className="h-3.5 w-3.5" />
+            Voelt als <span className="font-mono font-medium text-foreground/80">{current.apparentTemperature}°</span>
           </span>
-          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-            <MapPin className="h-2.5 w-2.5" />{location}
+          <span className="flex items-center gap-1.5 text-xs text-foreground/60">
+            <Wind className="h-3.5 w-3.5" />
+            <span className="font-mono font-medium text-foreground/80">{current.windSpeed}</span> km/u
+          </span>
+          <span className="flex items-center gap-1.5 text-xs text-foreground/60">
+            <Droplets className="h-3.5 w-3.5" />
+            <span className="font-mono font-medium text-foreground/80">{current.humidity}%</span>
           </span>
         </div>
       </div>
 
-      {/* 4-day forecast */}
-      <div className="grid grid-cols-4 gap-2">
+      {/* Forecast */}
+      <div className="grid grid-cols-4 gap-1.5">
         {forecast.map((day) => (
           <div
             key={day.date.toISOString()}
-            className="flex flex-col items-center gap-1 py-2 px-1 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+            className="flex flex-col items-center gap-1 py-2.5 px-1.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
           >
-            <span className="text-[11px] font-medium text-muted-foreground">
+            <span className="text-[11px] font-semibold text-muted-foreground">
               {DAY_NAMES[day.date.getDay()]}
             </span>
-            {getWeatherIcon(day.weatherCode, 'h-4 w-4')}
+            {getWeatherIcon(day.weatherCode, 'h-5 w-5')}
             <div className="flex items-center gap-1 text-xs">
-              <span className="font-semibold text-foreground font-mono">{day.maxTemp}°</span>
-              <span className="text-muted-foreground font-mono">{day.minTemp}°</span>
+              <span className="font-bold text-foreground font-mono">{day.maxTemp}°</span>
+              <span className="text-muted-foreground/60 font-mono">{day.minTemp}°</span>
             </div>
             {day.precipitationProbability > 20 && (
               <span className="text-[10px] text-blue-500 flex items-center gap-0.5">
