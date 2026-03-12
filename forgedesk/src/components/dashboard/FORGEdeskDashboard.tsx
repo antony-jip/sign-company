@@ -88,7 +88,7 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetId, WidgetDef> = {
   planning: { component: TodayPlanningWidget, label: 'Planning vandaag', icon: CalendarDays, defaultSize: 'medium', description: 'Taken, events en montages voor vandaag', noCard: true },
   taken: { component: PriorityTasks, label: 'Prioriteit taken', icon: CheckSquare, defaultSize: 'medium', description: 'Top 5 taken op prioriteit', noCard: true },
   offertes: { component: OpenstaandeOffertesWidget, label: 'Openstaande offertes', icon: FileText, defaultSize: 'medium', description: 'Recente openstaande offertes', noCard: true },
-  weer: { component: WeatherWidget, label: 'Weer', icon: Cloud, defaultSize: 'medium', description: 'Actueel weer en 4-daagse voorspelling' },
+  weer: { component: WeatherWidget, label: 'Weer', icon: Cloud, defaultSize: 'medium', description: 'Actueel weer en 4-daagse voorspelling', noCard: true },
   montage: { component: MontagePlanningWidget, label: 'Montage planning', icon: Wrench, defaultSize: 'large', description: 'Weekplanning montage-afspraken', noCard: true },
   visualizer: { component: VisualizerDashboardWidget, label: 'Visualizer', icon: Sparkles, defaultSize: 'large', description: 'AI visualizer statistieken', noCard: true },
   kalender: { component: CalendarMiniWidget, label: 'Mini kalender', icon: Calendar, defaultSize: 'medium', description: 'Compacte maandkalender met events', noCard: true },

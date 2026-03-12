@@ -104,6 +104,7 @@ import {
   createProjectToewijzing,
   deleteProjectToewijzing,
   getWerkbonnenByProject,
+  deleteWerkbon,
   getFactuur,
   getMontageAfsprakenByProject,
   createMontageAfspraak,
@@ -249,6 +250,7 @@ export function ProjectDetail() {
   const [projectToewijzingen, setProjectToewijzingen] = useState<ProjectToewijzing[]>([])
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
   const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
+  const [goedkeuringenOpen, setGoedkeuringenOpen] = useState(false)
   const [projectFotos, setProjectFotos] = useState<ProjectFoto[]>([])
   const [projectMontages, setProjectMontages] = useState<MontageAfspraak[]>([])
   const [montageDialogOpen, setMontageDialogOpen] = useState(false)
@@ -866,6 +868,17 @@ export function ProjectDetail() {
                 {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
               </Badge>
               <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
+              {projectOffertes.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/offertes/${projectOffertes[0].id}/bewerken`, { state: { from: location.pathname } })}
+                  className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <Pencil className="h-3.5 w-3.5 mr-1" />
+                  Offerte bewerken
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -1309,15 +1322,33 @@ export function ProjectDetail() {
           {/* ── Goedkeuringen Sectie ── */}
           {goedkeuringen.length > 0 && (
             <Card className="border-border/80 dark:border-border/80">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Klant Goedkeuringen
-                  <span className="text-xs text-muted-foreground font-normal">{goedkeuringen.length}</span>
-                </CardTitle>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    Klant Goedkeuringen
+                    <span className="text-xs text-muted-foreground font-normal">{goedkeuringen.length}</span>
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => setGoedkeuringenOpen(!goedkeuringenOpen)}
+                  >
+                    {goedkeuringenOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {!goedkeuringenOpen && (
+                  <p className="text-xs text-muted-foreground mt-1 ml-9">
+                    {goedkeuringen.filter(g => g.status === 'goedgekeurd').length} goedgekeurd
+                    {goedkeuringen.filter(g => g.status === 'revisie').length > 0 && `, ${goedkeuringen.filter(g => g.status === 'revisie').length} revisie`}
+                    {goedkeuringen.filter(g => g.status === 'verzonden' || g.status === 'bekeken').length > 0 && `, ${goedkeuringen.filter(g => g.status === 'verzonden' || g.status === 'bekeken').length} in afwachting`}
+                  </p>
+                )}
               </CardHeader>
+              {goedkeuringenOpen && (
               <CardContent className="space-y-3">
                 {goedkeuringen.map((gk) => (
                   <div
@@ -1398,6 +1429,7 @@ export function ProjectDetail() {
                   </div>
                 ))}
               </CardContent>
+              )}
             </Card>
           )}
 
@@ -1575,21 +1607,40 @@ export function ProjectDetail() {
                   {projectWerkbonnen.map((wb) => (
                     <div
                       key={wb.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      className="group flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
                       onClick={() => navigate(`/werkbonnen/${wb.id}`)}
                     >
                       <div>
                         <p className="text-sm font-medium font-mono">{wb.werkbon_nummer}</p>
                         <p className="text-xs text-muted-foreground">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        wb.status === 'concept' ? 'bg-muted text-foreground/70' :
-                        wb.status === 'definitief' ? 'bg-blue-100 text-blue-700' :
-                        wb.status === 'afgerond' ? 'bg-green-100 text-green-700' :
-                        'bg-muted text-foreground/70'
-                      }`}>
-                        {wb.status === 'concept' ? 'Concept' : wb.status === 'definitief' ? 'Definitief' : wb.status === 'afgerond' ? 'Afgerond' : wb.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          wb.status === 'concept' ? 'bg-muted text-foreground/70' :
+                          wb.status === 'definitief' ? 'bg-blue-100 text-blue-700' :
+                          wb.status === 'afgerond' ? 'bg-green-100 text-green-700' :
+                          'bg-muted text-foreground/70'
+                        }`}>
+                          {wb.status === 'concept' ? 'Concept' : wb.status === 'definitief' ? 'Definitief' : wb.status === 'afgerond' ? 'Afgerond' : wb.status}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (window.confirm(`Werkbon ${wb.werkbon_nummer} verwijderen?`)) {
+                              deleteWerkbon(wb.id)
+                                .then(() => {
+                                  setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id))
+                                  toast.success('Werkbon verwijderd')
+                                })
+                                .catch(() => toast.error('Kon werkbon niet verwijderen'))
+                            }
+                          }}
+                          className="p-1 rounded-md text-muted-foreground/30 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Verwijderen"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
