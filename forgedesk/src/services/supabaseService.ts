@@ -1200,6 +1200,28 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return profiles.find((p) => p.id === userId) || null
 }
 
+export async function uploadAvatar(userId: string, file: Blob): Promise<string> {
+  assertId(userId, 'user_id')
+  if (!isSupabaseConfigured() || !supabase) {
+    throw new Error('Supabase niet geconfigureerd')
+  }
+  const path = `${userId}.jpg`
+  const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, {
+    cacheControl: '3600',
+    upsert: true,
+    contentType: 'image/jpeg',
+  })
+  if (uploadError) throw uploadError
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  const avatarUrl = `${data.publicUrl}?t=${Date.now()}`
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: avatarUrl })
+    .eq('id', userId)
+  if (updateError) throw updateError
+  return avatarUrl
+}
+
 // ============ NIEUWSBRIEVEN ============
 
 export async function getNieuwsbrieven(): Promise<Nieuwsbrief[]> {

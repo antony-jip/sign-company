@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,10 +28,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Users, UserPlus, MoreHorizontal, Shield, UserCheck, UserX, Mail, Loader2, RefreshCw } from 'lucide-react'
+import { Users, UserPlus, MoreHorizontal, Shield, UserCheck, UserX, Mail, Loader2, RefreshCw, Camera } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { EmptyState } from '@/components/ui/empty-state'
 import supabase, { isSupabaseConfigured } from '@/services/supabaseClient'
+import { uploadAvatar } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { Profile, Uitnodiging, TeamRol } from '@/types'
@@ -72,6 +73,38 @@ async function getAuthToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) throw new Error('Niet ingelogd')
   return session.access_token
+}
+
+function resizeImage(file: File, maxSize = 200): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let w = img.width
+        let h = img.height
+        if (w > h) {
+          if (w > maxSize) { h = Math.round((h * maxSize) / w); w = maxSize }
+        } else {
+          if (h > maxSize) { w = Math.round((w * maxSize) / h); h = maxSize }
+        }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Canvas niet beschikbaar')); return }
+        ctx.drawImage(img, 0, 0, w, h)
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob)
+          else reject(new Error('Kon afbeelding niet verwerken'))
+        }, 'image/jpeg', 0.85)
+      }
+      img.onerror = reject
+      img.src = reader.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
 export function TeamledenTab() {
@@ -315,6 +348,16 @@ export function TeamledenTab() {
                         isCurrentUser={lid.id === user?.id}
                         onChangeRol={(rol) => handleManage(lid.id, 'update_rol', rol)}
                         onDeactiveer={() => handleManage(lid.id, 'deactiveer')}
+                        onAvatarUpload={lid.id === user?.id ? async (file: File) => {
+                          try {
+                            const resized = await resizeImage(file, 200)
+                            await uploadAvatar(lid.id, resized)
+                            toast.success('Profielfoto bijgewerkt')
+                            await loadData()
+                          } catch {
+                            toast.error('Kon profielfoto niet uploaden')
+                          }
+                        } : undefined}
                       />
                     ))}
                   </div>
@@ -377,21 +420,51 @@ interface TeamlidRowProps {
   onChangeRol?: (rol: TeamRol) => void
   onDeactiveer?: () => void
   onHeractiveer?: () => void
+  onAvatarUpload?: (file: File) => Promise<void>
 }
 
-function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeactiveer, onHeractiveer }: TeamlidRowProps) {
+function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeactiveer, onHeractiveer, onAvatarUpload }: TeamlidRowProps) {
   const rol = profile.rol || 'medewerker'
   const initials = getInitials(profile)
   const name = getDisplayName(profile)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && onAvatarUpload) {
+      await onAvatarUpload(file)
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   return (
     <div className="flex items-center gap-4 px-5 py-4">
-      <Avatar className="h-10 w-10 flex-shrink-0">
-        {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={name} />}
-        <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
-          {initials}
-        </AvatarFallback>
-      </Avatar>
+      <div className="relative flex-shrink-0">
+        <Avatar className="h-10 w-10">
+          {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={name} />}
+          <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        {onAvatarUpload && (
+          <>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 hover:opacity-100 transition-opacity"
+              title="Profielfoto wijzigen"
+            >
+              <Camera className="w-4 h-4 text-white" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </>
+        )}
+      </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
