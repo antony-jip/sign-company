@@ -77,6 +77,7 @@ import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
 import { PortaalTab } from './PortaalTab'
+import { TeamledenTab } from './TeamledenTab'
 import { Sparkles } from 'lucide-react'
 
 // Shared sub-tab navigation component
@@ -169,6 +170,7 @@ const settingsTabs = [
   { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
   { id: 'portaal', label: 'Portaal', icon: Link2, description: 'Klantportaal instellingen' },
   { id: 'forgie', label: 'Forgie AI', icon: Sparkles, description: 'AI assistent, visualizer en data import' },
+  { id: 'teamleden', label: 'Teamleden', icon: Users, description: 'Leden, rollen en uitnodigingen' },
 ] as const
 
 function renderTabContent(tabId: string) {
@@ -184,6 +186,7 @@ function renderTabContent(tabId: string) {
     case 'weergave': return <WeergaveTab />
     case 'portaal': return <PortaalTab />
     case 'forgie': return <ForgieTab />
+    case 'teamleden': return <TeamledenTab />
     default: return null
   }
 }
@@ -249,8 +252,8 @@ export function SettingsLayout() {
               >
                 <Users className="w-4 h-4 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <span className="text-sm block truncate font-medium">Teamleden</span>
-                  <span className="text-[11px] hidden md:block truncate text-muted-foreground/60 dark:text-muted-foreground">Medewerkers, rollen en verlof</span>
+                  <span className="text-sm block truncate font-medium">Team HR</span>
+                  <span className="text-[11px] hidden md:block truncate text-muted-foreground/60 dark:text-muted-foreground">Medewerkers, uurtarieven en verlof</span>
                 </div>
                 <ArrowRight className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
               </button>
