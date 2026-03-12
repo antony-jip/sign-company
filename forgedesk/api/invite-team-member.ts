@@ -98,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         organisatie_id,
         email: email.toLowerCase(),
         rol,
-        invited_by: uitgenodigd_door,
+        uitgenodigd_door,
         status: 'verstuurd'
       })
       .select()
