@@ -14,6 +14,11 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { NotFoundPage } from '@/components/shared/NotFoundPage'
 import { LoginPage } from '@/components/auth/LoginPage'
 import { RegisterPage } from '@/components/auth/RegisterPage'
+import { CheckInboxPage } from '@/components/auth/CheckInboxPage'
+import { ForgotPasswordPage } from '@/components/auth/ForgotPasswordPage'
+import { ResetPasswordPage } from '@/components/auth/ResetPasswordPage'
+import { WelkomPagina } from '@/components/onboarding/WelkomPagina'
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import { FORGEdeskDashboard } from '@/components/dashboard/FORGEdeskDashboard'
 import { ProjectsList } from '@/components/projects/ProjectsList'
 import { ProjectDetail } from '@/components/projects/ProjectDetail'
@@ -87,6 +92,10 @@ function AppContent() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/registreren" element={<RegisterPage />} />
+      <Route path="/check-inbox" element={<CheckInboxPage />} />
+      <Route path="/wachtwoord-vergeten" element={<ForgotPasswordPage />} />
+      <Route path="/wachtwoord-resetten" element={<ResetPasswordPage />} />
       {/* Publieke route - klant goedkeuring (geen login vereist) */}
       <Route path="/goedkeuring/:token" element={<ClientApprovalPage />} />
       {/* Publieke route - klant booking (geen login vereist) */}
@@ -101,6 +110,16 @@ function AppContent() {
       <Route path="/formulier/:token" element={<LeadFormulierPubliek />} />
       {/* Publieke route - klantportaal (geen login vereist) */}
       <Route path="/portaal/:token" element={<PortaalPagina />} />
+      <Route path="/welkom" element={
+        <ProtectedRoute>
+          <WelkomPagina />
+        </ProtectedRoute>
+      } />
+      <Route path="/onboarding" element={
+        <ProtectedRoute>
+          <OnboardingWizard />
+        </ProtectedRoute>
+      } />
       <Route path="/" element={
         <ProtectedRoute>
           <AppLayout />
