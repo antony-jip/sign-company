@@ -1734,6 +1734,7 @@ html {
 /* ── Module Color Strips — top accent bar per page ── */
 .mod-strip {
   position: relative;
+  border-radius: 16px;
 }
 .mod-strip::before {
   content: '';
@@ -1742,7 +1743,7 @@ html {
   left: -20px;
   right: -20px;
   height: 180px;
-  border-radius: 0 0 24px 24px;
+  border-radius: 16px 16px 24px 24px;
   opacity: 0.15;
   pointer-events: none;
   z-index: 0;

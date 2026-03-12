@@ -1209,7 +1209,7 @@ export function FacturenLayout() {
   return (
     <div className="h-full flex flex-col mod-strip mod-strip-facturen">
       {/* ── Header bar ────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #E8866A, #C4604A)' }}>
             <Receipt className="h-5 w-5 text-white" />

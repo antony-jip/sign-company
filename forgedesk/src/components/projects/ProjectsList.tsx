@@ -320,7 +320,7 @@ export function ProjectsList() {
       />
 
       {/* ── Header bar ── */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #7EB5A6, #5A9A88)' }}>
             <FolderKanban className="h-5 w-5 text-white" />
@@ -372,6 +372,53 @@ export function ProjectsList() {
           </div>
         )}
       </div>
+
+      {/* ── Bulk action bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-[#7EB5A6]/8 border border-[#7EB5A6]/20 rounded-xl">
+          <CheckSquare className="w-4 h-4 text-[#7EB5A6]" />
+          <span className="text-sm font-medium text-foreground">
+            {selectedIds.size} van {gefilterdeProjecten.length} geselecteerd
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={toggleSelectAll}
+          >
+            {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
+          </Button>
+          <div className="flex-1" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <ChevronDown className="w-3.5 h-3.5" />
+                Status wijzigen
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {statusOpties.filter(s => s.value !== 'alle').map((s) => (
+                <DropdownMenuItem
+                  key={s.value}
+                  onClick={() => handleBulkStatusChange(s.value as Project['status'])}
+                  className="flex items-center gap-2 text-xs"
+                >
+                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
+                  {s.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
 
       {/* ── Search + Filters ── */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -478,6 +525,13 @@ export function ProjectsList() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/60 bg-muted/30">
+                <th className="w-10 px-3 py-2.5">
+                  <Checkbox
+                    checked={gefilterdeProjecten.length > 0 && selectedIds.size === gefilterdeProjecten.length}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Selecteer alles"
+                  />
+                </th>
                 <th className="text-left py-2.5 px-4 w-[110px]">
                   <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
                 </th>
@@ -540,10 +594,20 @@ export function ProjectsList() {
                     key={project.id}
                     className={cn(
                       'border-b border-border/30 last:border-0 hover:bg-[#F4F3F0]/50 dark:hover:bg-muted/20 cursor-pointer transition-all duration-150 group border-l-2',
-                      getStatusBorderColor(project.status)
+                      getStatusBorderColor(project.status),
+                      selectedIds.has(project.id) && 'bg-[#7EB5A6]/5'
                     )}
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
+                    {/* Checkbox */}
+                    <td className="w-10 px-3 py-3">
+                      <Checkbox
+                        checked={selectedIds.has(project.id)}
+                        onCheckedChange={() => toggleSelect(project.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Selecteer ${project.naam}`}
+                      />
+                    </td>
                     {/* Status */}
                     <td className="py-0 px-0">
                       <DropdownMenu>
