@@ -1,3 +1,6 @@
+export type TeamRol = 'admin' | 'medewerker' | 'monteur'
+export type TeamStatus = 'actief' | 'uitgenodigd' | 'gedeactiveerd'
+
 export interface Profile {
   id: string;
   voornaam: string;
@@ -17,8 +20,31 @@ export interface Profile {
   iban?: string;
   taal: 'nl' | 'en';
   theme: 'light' | 'dark';
+  organisatie_id?: string;
+  rol?: TeamRol;
+  status?: TeamStatus;
+  uitgenodigd_door?: string;
+  uitgenodigd_op?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Organisatie {
+  id: string;
+  naam: string;
+  eigenaar_id: string;
+  created_at: string;
+}
+
+export interface Uitnodiging {
+  id: string;
+  organisatie_id: string;
+  email: string;
+  rol: TeamRol;
+  invited_by: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
 }
 
 export interface Contactpersoon {
