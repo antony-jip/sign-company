@@ -22,6 +22,8 @@ import {
   CalendarDays,
   Camera,
   Eye,
+  CheckSquare,
+  X,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -34,6 +36,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   cn,
   formatDate,
@@ -117,6 +120,7 @@ export function ProjectsList() {
   const photoInputRef = React.useRef<HTMLInputElement>(null)
   const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const handleQuickPhotoUpload = async (files: FileList) => {
     if (!photoUploadProjectId || !user) return
@@ -242,6 +246,43 @@ export function ProjectsList() {
     }
   }
 
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === gefilterdeProjecten.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(gefilterdeProjecten.map((p) => p.id)))
+    }
+  }
+
+  async function handleBulkStatusChange(newStatus: Project['status']) {
+    if (selectedIds.size === 0) return
+    try {
+      const updates = await Promise.all(
+        [...selectedIds].map((id) => updateProject(id, { status: newStatus }))
+      )
+      setProjecten((prev) =>
+        prev.map((p) => {
+          const updated = updates.find((u) => u.id === p.id)
+          return updated || p
+        })
+      )
+      toast.success(`${selectedIds.size} project${selectedIds.size === 1 ? '' : 'en'} gewijzigd naar ${statusLabels[newStatus]}`)
+      setSelectedIds(new Set())
+    } catch (error) {
+      logger.error('Fout bij bulk statuswijziging:', error)
+      toast.error('Kon status niet wijzigen')
+    }
+  }
+
   // Stats
   const stats = useMemo(() => {
     const actief = projecten.filter((p) => p.status === 'actief').length
@@ -279,7 +320,7 @@ export function ProjectsList() {
       />
 
       {/* ── Header bar ── */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #7EB5A6, #5A9A88)' }}>
             <FolderKanban className="h-5 w-5 text-white" />
@@ -412,6 +453,53 @@ export function ProjectsList() {
         </div>
       </div>
 
+      {/* ── Bulk action bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-lg">
+          <CheckSquare className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium text-foreground">
+            {selectedIds.size} van {gefilterdeProjecten.length} geselecteerd
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={toggleSelectAll}
+          >
+            {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
+          </Button>
+          <div className="flex-1" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                Status wijzigen
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {statusOpties.filter(s => s.value !== 'alle').map((s) => (
+                <DropdownMenuItem
+                  key={s.value}
+                  onClick={() => handleBulkStatusChange(s.value as Project['status'])}
+                  className="flex items-center gap-2 text-xs"
+                >
+                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
+                  {s.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+
       {/* ── Table ── */}
       {gefilterdeProjecten.length === 0 ? (
         <Card className="border-dashed border-black/[0.06]">
@@ -437,6 +525,13 @@ export function ProjectsList() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/60 bg-muted/30">
+                <th className="w-10 px-3 py-2.5">
+                  <Checkbox
+                    checked={gefilterdeProjecten.length > 0 && selectedIds.size === gefilterdeProjecten.length}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Selecteer alles"
+                  />
+                </th>
                 <th className="text-left py-2.5 px-4 w-[110px]">
                   <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
                 </th>
@@ -499,10 +594,20 @@ export function ProjectsList() {
                     key={project.id}
                     className={cn(
                       'border-b border-border/30 last:border-0 hover:bg-[#F4F3F0]/50 dark:hover:bg-muted/20 cursor-pointer transition-all duration-150 group border-l-2',
-                      getStatusBorderColor(project.status)
+                      getStatusBorderColor(project.status),
+                      selectedIds.has(project.id) && 'bg-primary/5'
                     )}
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
+                    {/* Checkbox */}
+                    <td className="w-10 px-3 py-3">
+                      <Checkbox
+                        checked={selectedIds.has(project.id)}
+                        onCheckedChange={() => toggleSelect(project.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Selecteer ${project.naam}`}
+                      />
+                    </td>
                     {/* Status */}
                     <td className="py-0 px-0">
                       <DropdownMenu>

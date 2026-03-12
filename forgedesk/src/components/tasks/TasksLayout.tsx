@@ -509,7 +509,7 @@ export function TasksLayout() {
     <>
       <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
         {/* === MODULE HEADER === */}
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-border/40 bg-background flex-shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #C4A882, #A88E66)' }}>
               <CheckSquare className="h-5 w-5 text-white" />
