@@ -22,6 +22,8 @@ import {
   CalendarDays,
   Camera,
   Eye,
+  CheckSquare,
+  X,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -34,6 +36,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   cn,
   formatDate,
@@ -117,6 +120,7 @@ export function ProjectsList() {
   const photoInputRef = React.useRef<HTMLInputElement>(null)
   const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const handleQuickPhotoUpload = async (files: FileList) => {
     if (!photoUploadProjectId || !user) return
@@ -238,6 +242,43 @@ export function ProjectsList() {
       toast.success(`Status gewijzigd naar ${statusLabels[newStatus]}`)
     } catch (error) {
       logger.error('Fout bij statuswijziging:', error)
+      toast.error('Kon status niet wijzigen')
+    }
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === gefilterdeProjecten.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(gefilterdeProjecten.map((p) => p.id)))
+    }
+  }
+
+  async function handleBulkStatusChange(newStatus: Project['status']) {
+    if (selectedIds.size === 0) return
+    try {
+      const updates = await Promise.all(
+        [...selectedIds].map((id) => updateProject(id, { status: newStatus }))
+      )
+      setProjecten((prev) =>
+        prev.map((p) => {
+          const updated = updates.find((u) => u.id === p.id)
+          return updated || p
+        })
+      )
+      toast.success(`${selectedIds.size} project${selectedIds.size === 1 ? '' : 'en'} gewijzigd naar ${statusLabels[newStatus]}`)
+      setSelectedIds(new Set())
+    } catch (error) {
+      logger.error('Fout bij bulk statuswijziging:', error)
       toast.error('Kon status niet wijzigen')
     }
   }
