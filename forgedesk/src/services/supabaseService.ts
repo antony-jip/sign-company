@@ -3764,6 +3764,9 @@ export async function getDocumentStyle(userId: string): Promise<DocumentStyle | 
 export async function upsertDocumentStyle(userId: string, style: Partial<DocumentStyle>): Promise<DocumentStyle> {
   assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
+    // Strip fields that should not be sent to Supabase
+    const { id: _id, user_id: _uid, created_at: _ca, ...payload } = style as DocumentStyle
+
     const { data: existing } = await supabase
       .from('document_styles')
       .select('id')
@@ -3773,7 +3776,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
     if (existing) {
       const { data, error } = await supabase
         .from('document_styles')
-        .update({ ...style, updated_at: now() })
+        .update({ ...payload, updated_at: now() })
         .eq('user_id', userId)
         .select()
         .single()
@@ -3782,7 +3785,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
     } else {
       const { data, error } = await supabase
         .from('document_styles')
-        .insert({ ...style, user_id: userId, created_at: now(), updated_at: now() })
+        .insert({ ...payload, user_id: userId, created_at: now(), updated_at: now() })
         .select()
         .single()
       if (error) throw error
