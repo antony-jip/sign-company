@@ -33,6 +33,21 @@ export interface Organisatie {
   id: string;
   naam: string;
   eigenaar_id: string;
+  logo_url?: string;
+  adres?: string;
+  postcode?: string;
+  plaats?: string;
+  telefoon?: string;
+  kvk_nummer?: string;
+  btw_nummer?: string;
+  trial_start?: string;
+  trial_einde?: string;
+  is_betaald?: boolean;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  abonnement_status?: 'trial' | 'actief' | 'verlopen' | 'opgezegd';
+  onboarding_compleet?: boolean;
+  onboarding_stap?: number;
   created_at: string;
 }
 

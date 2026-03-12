@@ -68,6 +68,7 @@ import type {
   PortaalReactie,
   AppNotificatie,
   PortaalInstellingen,
+  Organisatie,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -5335,4 +5336,67 @@ export async function getAllePortalen(userId: string): Promise<(ProjectPortaal &
   }
   const portalen = getLocalData<ProjectPortaal>('project_portalen')
   return portalen.filter((p) => p.user_id === userId).sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+// ============ ORGANISATIES ============
+
+export async function createOrganisatie(naam: string, eigenaarId: string): Promise<Organisatie> {
+  assertId(eigenaarId, 'eigenaar_id')
+  const record: Organisatie = {
+    id: generateId(),
+    naam,
+    eigenaar_id: eigenaarId,
+    abonnement_status: 'trial',
+    onboarding_compleet: false,
+    onboarding_stap: 0,
+    created_at: now(),
+  }
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('organisaties')
+      .insert(record)
+      .select()
+      .single()
+    if (error) throw error
+    return data as Organisatie
+  }
+  const orgs = getLocalData<Organisatie>('organisaties')
+  orgs.push(record)
+  safeSetItem('forgedesk_organisaties', JSON.stringify(orgs))
+  return record
+}
+
+export async function getOrganisatie(id: string): Promise<Organisatie | null> {
+  assertId(id, 'organisatie_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('organisaties')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw error
+    return data as Organisatie | null
+  }
+  const orgs = getLocalData<Organisatie>('organisaties')
+  return orgs.find((o) => o.id === id) || null
+}
+
+export async function updateOrganisatie(id: string, updates: Partial<Organisatie>): Promise<Organisatie> {
+  assertId(id, 'organisatie_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('organisaties')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data as Organisatie
+  }
+  const orgs = getLocalData<Organisatie>('organisaties')
+  const idx = orgs.findIndex((o) => o.id === id)
+  if (idx === -1) throw new Error('Organisatie niet gevonden')
+  orgs[idx] = { ...orgs[idx], ...updates }
+  safeSetItem('forgedesk_organisaties', JSON.stringify(orgs))
+  return orgs[idx]
 }
