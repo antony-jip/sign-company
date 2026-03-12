@@ -8,10 +8,11 @@ import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2, Star,
   Loader2, Clock, Archive, Mail, MailOpen, CheckCheck, X,
   Pin, AlarmClock, RefreshCw, Keyboard, Eye, Zap, BarChart3,
-  Users, Tag, ChevronDown, Info, Paperclip, Timer, Check,
+  Users, Tag, ChevronDown, Info, Paperclip, Sparkles,
 } from 'lucide-react'
 import { createEmail, createKlant, createTaak, createProject, createDeal } from '@/services/supabaseService'
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
+import { callForgie } from '@/services/forgieService'
 import { formatDateTime, cn, truncate, getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -33,7 +34,7 @@ import { useEmailActions } from './hooks/useEmailActions'
 import { useEmailSelection } from './hooks/useEmailSelection'
 import { useEmailFilters } from './hooks/useEmailFilters'
 import { useEmailKeyboard } from './hooks/useEmailKeyboard'
-import type { EmailFolder, FilterType, FontSize, EmailTab, ViewMode, NoReplyRange } from './emailTypes'
+import type { EmailFolder, FilterType, FontSize, EmailTab, ViewMode } from './emailTypes'
 import {
   extractSenderName, extractSenderEmail, fontSizeClasses,
   KEYBOARD_SHORTCUTS, SEARCH_OPERATORS,
@@ -65,8 +66,9 @@ export function EmailLayout() {
   const [fontSize, setFontSize] = useState<FontSize>('medium')
   const [showSnoozeMenu, setShowSnoozeMenu] = useState<string | null>(null)
   const [showSearchHelp, setShowSearchHelp] = useState(false)
-  const [noReplyRange, setNoReplyRange] = useState<NoReplyRange>('0-3')
-  const [showNoReplyDropdown, setShowNoReplyDropdown] = useState(false)
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
+  const [showAiSummary, setShowAiSummary] = useState(false)
 
   // Compose defaults (for reply/forward)
   const [composeDefaults, setComposeDefaults] = useState<{
@@ -91,7 +93,7 @@ export function EmailLayout() {
   })
 
   const { filteredEmails, folderCounts, filterCounts, threadedEmails } = useEmailFilters(
-    emails, selectedFolder, searchQuery, filter, noReplyRange
+    emails, selectedFolder, searchQuery, filter
   )
 
   const selection = useEmailSelection({
@@ -444,13 +446,55 @@ export function EmailLayout() {
     toast.info('Ga naar Offertes om een nieuwe offerte te maken')
   }, [])
 
-  // Close no-reply dropdown on outside click
+  // Close AI summary popover on outside click
+  const aiSummaryRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (!showNoReplyDropdown) return
-    const handleClick = () => setShowNoReplyDropdown(false)
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
-  }, [showNoReplyDropdown])
+    if (!showAiSummary) return
+    const handleClick = (e: MouseEvent) => {
+      if (aiSummaryRef.current && !aiSummaryRef.current.contains(e.target as Node)) {
+        setShowAiSummary(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showAiSummary])
+
+  const handleAiSummary = useCallback(async () => {
+    if (aiSummaryLoading) return
+    // If we already have a summary, just toggle the popover
+    if (aiSummary && !showAiSummary) {
+      setShowAiSummary(true)
+      return
+    }
+    setAiSummaryLoading(true)
+    setShowAiSummary(true)
+    try {
+      const unread = emails
+        .filter(e => e.map === 'inbox' && !e.gelezen)
+        .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+        .slice(0, 20)
+
+      if (unread.length === 0) {
+        setAiSummary('Je inbox is helemaal bijgewerkt! Geen ongelezen emails.')
+        return
+      }
+
+      const combined = unread.map(e => {
+        const plainText = e.inhoud.replace(/<[^>]*>/g, '').trim().slice(0, 200)
+        return `Van: ${e.van}\nOnderwerp: ${e.onderwerp}\n${plainText}`
+      }).join('\n---\n')
+
+      const prompt = `Je bent een slimme email-assistent. Geef een kort, helder overzicht van deze ${unread.length} ongelezen emails. Groepeer per urgentie/belang. Noem per email de afzender, het onderwerp, en wat er gevraagd/gemeld wordt in 1 zin. Gebruik bullet points. Schrijf in het Nederlands. Begin met de belangrijkste.\n\nEmails:\n${combined}`
+
+      const result = await callForgie('summarize', prompt)
+      setAiSummary(result.result)
+    } catch (err) {
+      logger.error('AI samenvatting mislukt:', err)
+      setAiSummary('Kon samenvatting niet genereren. Probeer het later opnieuw.')
+    } finally {
+      setAiSummaryLoading(false)
+    }
+  }, [emails, aiSummary, showAiSummary, aiSummaryLoading])
 
   // ── Computed ──
   const showSidebar = viewMode === 'reading' || viewMode === 'composing'
@@ -699,70 +743,83 @@ export function EmailLayout() {
                 )}
               </div>
 
-              {/* Geen antwoord filter (right of search) */}
-              <div className="relative flex-shrink-0">
+              {/* AI Inbox Samenvatting */}
+              <div className="relative flex-shrink-0" ref={aiSummaryRef}>
                 <button
-                  onClick={() => {
-                    if (filter === 'geen-antwoord') {
-                      setFilter('alle')
-                    } else {
-                      setFilter('geen-antwoord')
-                    }
-                  }}
+                  onClick={handleAiSummary}
+                  disabled={aiSummaryLoading}
                   className={cn(
-                    'flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-medium transition-all border',
-                    filter === 'geen-antwoord'
-                      ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400 shadow-sm'
-                      : 'bg-background border-border/40 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    'flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-medium transition-all border group',
+                    showAiSummary
+                      ? 'bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-950/30 dark:border-violet-800 dark:text-violet-400 shadow-sm'
+                      : 'bg-background border-border/40 text-muted-foreground hover:border-violet-200 hover:text-violet-600 hover:bg-violet-50/50 dark:hover:bg-violet-950/20'
                   )}
                 >
-                  <Timer className="w-3.5 h-3.5" />
+                  <Sparkles className={cn(
+                    'w-3.5 h-3.5 transition-all',
+                    aiSummaryLoading && 'animate-pulse',
+                    !showAiSummary && 'group-hover:text-violet-500'
+                  )} />
                   <span className="hidden sm:inline">
-                    {filter === 'geen-antwoord'
-                      ? `Geen antwoord (${noReplyRange === '0-3' ? '0-3' : noReplyRange === '4-7' ? '4-7' : '8-30'}d)`
-                      : 'Geen antwoord'}
+                    {aiSummaryLoading ? 'Analyseren...' : 'AI Overzicht'}
                   </span>
-                  {filter === 'geen-antwoord' ? (
-                    <ChevronDown
-                      className="w-3 h-3 opacity-60 cursor-pointer"
-                      onClick={(e) => { e.stopPropagation(); setShowNoReplyDropdown(!showNoReplyDropdown) }}
-                    />
-                  ) : null}
                 </button>
-                {filter === 'geen-antwoord' && (
-                  <button
-                    onClick={() => setFilter('alle')}
-                    className="ml-1 p-1 rounded-md hover:bg-muted/60 text-muted-foreground transition-colors"
-                    title="Filter verwijderen"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {/* No-reply range dropdown */}
-                {showNoReplyDropdown && filter === 'geen-antwoord' && (
-                  <div className="absolute top-full right-0 mt-1 bg-popover border border-border/40 rounded-xl shadow-lg p-1.5 z-50 min-w-[220px]">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-label px-2.5 py-1.5">
-                      Je hebt geen antwoord gestuurd:
-                    </p>
-                    {([
-                      { value: '0-3' as NoReplyRange, label: 'Gedurende 0-3 dagen' },
-                      { value: '4-7' as NoReplyRange, label: 'Gedurende 4-7 dagen' },
-                      { value: '8-30' as NoReplyRange, label: 'Gedurende 8-30 dagen' },
-                    ]).map((option) => (
+
+                {/* AI Summary popover */}
+                {showAiSummary && (
+                  <div className="absolute top-full right-0 mt-2 bg-popover border border-border/40 rounded-2xl shadow-xl z-50 w-[380px] max-h-[480px] flex flex-col overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border/20 bg-gradient-to-r from-violet-50/80 to-purple-50/50 dark:from-violet-950/20 dark:to-purple-950/10">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                          <Sparkles className="w-3 h-3 text-white" />
+                        </div>
+                        <div>
+                          <span className="text-[13px] font-semibold text-foreground">Inbox Overzicht</span>
+                          <span className="text-[10px] text-muted-foreground ml-2">
+                            {emails.filter(e => e.map === 'inbox' && !e.gelezen).length} ongelezen
+                          </span>
+                        </div>
+                      </div>
                       <button
-                        key={option.value}
-                        onClick={() => { setNoReplyRange(option.value); setShowNoReplyDropdown(false) }}
-                        className={cn(
-                          'w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[13px] transition-colors text-left',
-                          noReplyRange === option.value
-                            ? 'font-semibold text-foreground bg-muted/40'
-                            : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
-                        )}
+                        onClick={() => setShowAiSummary(false)}
+                        className="p-1 rounded-md hover:bg-muted/60 text-muted-foreground/60 hover:text-foreground transition-colors"
                       >
-                        {option.label}
-                        {noReplyRange === option.value && <Check className="w-4 h-4 text-primary" />}
+                        <X className="w-3.5 h-3.5" />
                       </button>
-                    ))}
+                    </div>
+
+                    {/* Body */}
+                    <div className="flex-1 overflow-y-auto px-4 py-3">
+                      {aiSummaryLoading ? (
+                        <div className="flex flex-col items-center justify-center py-8 gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 animate-spin text-violet-500" />
+                          </div>
+                          <p className="text-[12px] text-muted-foreground">Emails analyseren...</p>
+                        </div>
+                      ) : aiSummary ? (
+                        <div className="text-[13px] text-foreground/85 leading-relaxed whitespace-pre-wrap">
+                          {aiSummary}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/20 bg-muted/5">
+                      <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Gegenereerd met AI
+                      </span>
+                      {!aiSummaryLoading && (
+                        <button
+                          onClick={() => { setAiSummary(null); handleAiSummary() }}
+                          className="text-[10px] font-medium text-violet-500 hover:text-violet-600 transition-colors"
+                        >
+                          Vernieuw
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -938,14 +995,6 @@ export function EmailLayout() {
                       </div>
                       <p className="text-sm font-semibold text-foreground/70">Geen gesnoozede emails</p>
                       <p className="text-xs mt-1.5 text-muted-foreground/60">Snooze een email om deze later terug te zien</p>
-                    </>
-                  ) : filter === 'geen-antwoord' ? (
-                    <>
-                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/8 flex items-center justify-center mb-4">
-                        <CheckCheck className="w-8 h-8 text-emerald-500/30" />
-                      </div>
-                      <p className="text-sm font-semibold text-foreground/70">Alles beantwoord</p>
-                      <p className="text-xs mt-1.5 text-muted-foreground/60">Geen onbeantwoorde emails in dit bereik</p>
                     </>
                   ) : filter !== 'alle' ? (
                     <>
