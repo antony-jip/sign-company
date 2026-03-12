@@ -40,6 +40,7 @@ import {
   Trash2,
   Save,
 } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import {
   Select,
@@ -242,6 +243,7 @@ export function QuotesPipeline() {
   const [sortOption, setSortOption] = useState<SortOption>('newest')
   const [showClosed, setShowClosed] = useState(false)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   // Pipeline settings panel
   const [showPipelineSettings, setShowPipelineSettings] = useState(false)
@@ -583,6 +585,43 @@ export function QuotesPipeline() {
       toast.error('Kon status niet wijzigen')
     }
   }, [])
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filteredOffertes.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredOffertes.map((o) => o.id)))
+    }
+  }
+
+  async function handleBulkStatusChange(newStatus: string) {
+    if (selectedIds.size === 0) return
+    try {
+      const updates: Partial<Offerte> = { status: newStatus as Offerte['status'] }
+      if (newStatus === 'verzonden') updates.verstuurd_op = new Date().toISOString()
+      if (newStatus === 'goedgekeurd') updates.akkoord_op = new Date().toISOString()
+      await Promise.all(
+        [...selectedIds].map((id) => updateOfferte(id, updates))
+      )
+      setOffertes((prev) =>
+        prev.map((o) => selectedIds.has(o.id) ? { ...o, ...updates } : o)
+      )
+      toast.success(`${selectedIds.size} offerte${selectedIds.size === 1 ? '' : 's'} gewijzigd naar ${STATUS_LABELS[newStatus] || newStatus}`)
+      setSelectedIds(new Set())
+    } catch (err) {
+      logger.error('Fout bij bulk statuswijziging:', err)
+      toast.error('Kon status niet wijzigen')
+    }
+  }
 
   const sortedListOffertes = useMemo(() => {
     const sorted = [...filteredOffertes]
@@ -1215,6 +1254,64 @@ export function QuotesPipeline() {
         </>
       )}
 
+      {/* ── Bulk action bar (list view) ── */}
+      {viewMode === 'lijst' && selectedIds.size > 0 && (
+        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: 'linear-gradient(135deg, var(--color-sage), #d4e8db)', borderColor: 'var(--color-sage-border)' }}>
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'var(--wm-noise)' }} />
+          <div className="relative flex items-center gap-3 px-4 py-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: 'var(--color-sage-text)', color: 'white' }}>
+                <span className="text-[11px] font-bold">{selectedIds.size}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[13px] font-semibold" style={{ color: 'var(--color-sage-text)' }}>
+                  {selectedIds.size} offerte{selectedIds.size === 1 ? '' : 's'} geselecteerd
+                </span>
+                <span className="text-[10px] font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
+                  van {filteredOffertes.length} totaal
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={toggleSelectAll}
+              className="text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
+              style={{ color: 'var(--color-sage-text)' }}
+            >
+              {selectedIds.size === filteredOffertes.length ? 'Deselecteer alles' : 'Selecteer alles'}
+            </button>
+            <div className="flex-1" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[12px] font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                  <ArrowUpDown className="w-3 h-3" />
+                  Status wijzigen
+                  <ChevronDown className="w-3 h-3 opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {statusOpties.filter(s => s.value !== 'alle').map((s) => (
+                  <DropdownMenuItem
+                    key={s.value}
+                    onClick={() => handleBulkStatusChange(s.value)}
+                    className="flex items-center gap-2 text-xs"
+                  >
+                    <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getOfferteStatusDotColor(s.value))} />
+                    {s.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-white/40"
+              style={{ color: 'var(--color-sage-text)' }}
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── List View (matches ProjectsList design) ── */}
       {viewMode === 'lijst' && (
         <>
@@ -1242,6 +1339,13 @@ export function QuotesPipeline() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
+                    <th className="w-10 px-3 py-2.5">
+                      <Checkbox
+                        checked={sortedListOffertes.length > 0 && selectedIds.size === sortedListOffertes.length}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Selecteer alles"
+                      />
+                    </th>
                     <th className="text-left py-2.5 px-4 w-[110px]">
                       <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
                     </th>
@@ -1320,9 +1424,22 @@ export function QuotesPipeline() {
                     return (
                       <tr
                         key={offerte.id}
-                        className={`border-b border-border/50 last:border-0 hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2 ${getOfferteStatusBorderColor(offerte.status)}`}
+                        className={cn(
+                          'border-b border-border/50 last:border-0 hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2',
+                          getOfferteStatusBorderColor(offerte.status),
+                          selectedIds.has(offerte.id) && 'bg-primary/5'
+                        )}
                         onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                       >
+                        {/* Checkbox */}
+                        <td className="w-10 px-3 py-3">
+                          <Checkbox
+                            checked={selectedIds.has(offerte.id)}
+                            onCheckedChange={() => toggleSelect(offerte.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Selecteer ${offerte.nummer}`}
+                          />
+                        </td>
                         {/* Status */}
                         <td className="py-0 px-0">
                           <DropdownMenu>

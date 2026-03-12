@@ -55,7 +55,7 @@ export function ClientsLayout() {
   const { navigateWithTab } = useNavigateWithTab()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
-  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editingKlant, setEditingKlant] = useState<Klant | undefined>(undefined)
   const [klanten, setKlanten] = useState<Klant[]>([])

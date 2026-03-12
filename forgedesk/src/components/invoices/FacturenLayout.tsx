@@ -54,6 +54,7 @@ import {
   Globe,
   Copy,
   Receipt,
+  ChevronDown,
 } from 'lucide-react'
 import {
   getFacturen,
@@ -68,6 +69,7 @@ import {
   generateBetaalToken,
 } from '@/services/supabaseService'
 import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate } from '@/types'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { toast } from 'sonner'
@@ -263,6 +265,7 @@ export function FacturenLayout() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [sortField, setSortField] = useState<SortField>('datum')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -407,6 +410,44 @@ export function FacturenLayout() {
     }
     return counts
   }, [facturen])
+
+  // ============ BULK SELECTION ============
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filteredFacturen.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredFacturen.map((f) => f.id)))
+    }
+  }
+
+  async function handleBulkStatusChange(newStatus: FactuurStatus) {
+    if (selectedIds.size === 0) return
+    try {
+      const updates: Partial<Factuur> = { status: newStatus }
+      if (newStatus === 'betaald') updates.betaald_op = new Date().toISOString()
+      await Promise.all(
+        [...selectedIds].map((id) => updateFactuur(id, updates))
+      )
+      setFacturen((prev) =>
+        prev.map((f) => selectedIds.has(f.id) ? { ...f, ...updates } : f)
+      )
+      toast.success(`${selectedIds.size} factu${selectedIds.size === 1 ? 'ur' : 'ren'} gewijzigd naar ${STATUS_CONFIG[newStatus].label}`)
+      setSelectedIds(new Set())
+    } catch (err) {
+      logger.error('Fout bij bulk statuswijziging:', err)
+      toast.error('Kon status niet wijzigen')
+    }
+  }
 
   // ============ HANDLERS ============
 
@@ -1403,13 +1444,77 @@ export function FacturenLayout() {
         ))}
       </div>
 
+      {/* ── Bulk action bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: 'linear-gradient(135deg, var(--color-sage), #d4e8db)', borderColor: 'var(--color-sage-border)' }}>
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'var(--wm-noise)' }} />
+          <div className="relative flex items-center gap-3 px-4 py-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: 'var(--color-sage-text)', color: 'white' }}>
+                <span className="text-[11px] font-bold">{selectedIds.size}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[13px] font-semibold" style={{ color: 'var(--color-sage-text)' }}>
+                  {selectedIds.size} factu{selectedIds.size === 1 ? 'ur' : 'ren'} geselecteerd
+                </span>
+                <span className="text-[10px] font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
+                  van {filteredFacturen.length} totaal
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={toggleSelectAll}
+              className="text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
+              style={{ color: 'var(--color-sage-text)' }}
+            >
+              {selectedIds.size === filteredFacturen.length ? 'Deselecteer alles' : 'Selecteer alles'}
+            </button>
+            <div className="flex-1" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[12px] font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                  <ArrowUpDown className="w-3 h-3" />
+                  Status wijzigen
+                  <ChevronDown className="w-3 h-3 opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {(Object.keys(STATUS_CONFIG) as FactuurStatus[]).map((status) => (
+                  <DropdownMenuItem
+                    key={status}
+                    onClick={() => handleBulkStatusChange(status)}
+                    className="flex items-center gap-2 text-xs"
+                  >
+                    <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', STATUS_CONFIG[status].dot)} />
+                    {STATUS_CONFIG[status].label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-white/40"
+              style={{ color: 'var(--color-sage-text)' }}
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Table ─────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="w-1" />
+                <th className="w-10 px-3 py-2.5">
+                  <Checkbox
+                    checked={filteredFacturen.length > 0 && selectedIds.size === filteredFacturen.length}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Selecteer alles"
+                  />
+                </th>
                 {[
                   { key: 'nummer', label: 'Nummer', hide: '' },
                   { key: 'klant', label: 'Klant', hide: '' },
@@ -1434,7 +1539,7 @@ export function FacturenLayout() {
             <tbody className="divide-y divide-border/50 row-stagger">
               {filteredFacturen.length === 0 && (
                 <tr>
-                  <td colSpan={11}>
+                  <td colSpan={12}>
                     <EmptyState
                       module="facturen"
                       title="Nog geen facturen"
@@ -1459,10 +1564,17 @@ export function FacturenLayout() {
                       'border-l-2',
                       isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border,
                       factuur.status === 'betaald' && 'factuur-row-betaald',
-                      isOverdue && 'factuur-row-verlopen'
+                      isOverdue && 'factuur-row-verlopen',
+                      selectedIds.has(factuur.id) && 'bg-primary/5'
                     )}
                   >
-                    <td className="w-1" />
+                    <td className="w-10 px-3 py-3">
+                      <Checkbox
+                        checked={selectedIds.has(factuur.id)}
+                        onCheckedChange={() => toggleSelect(factuur.id)}
+                        aria-label={`Selecteer ${factuur.nummer}`}
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <button
