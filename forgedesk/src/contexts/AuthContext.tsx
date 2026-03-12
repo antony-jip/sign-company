@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { signIn, signUp, signOut, getSession, onAuthStateChange, type AuthSession } from '@/services/authService'
-import { getProfile } from '@/services/supabaseService'
-import type { TeamRol } from '@/types'
+import { getProfile, updateProfile, createOrganisatie, getOrganisatie } from '@/services/supabaseService'
+import { isSupabaseConfigured } from '@/services/supabaseClient'
+import type { TeamRol, Organisatie } from '@/types'
 
 interface User {
   id: string
@@ -12,6 +14,8 @@ interface User {
   }
 }
 
+type TrialStatus = 'trial' | 'actief' | 'verlopen' | 'opgezegd'
+
 interface AuthContextType {
   user: User | null
   session: AuthSession | null
@@ -20,6 +24,9 @@ interface AuthContextType {
   organisatieId: string | null
   userRol: TeamRol | null
   isAdmin: boolean
+  organisatie: Organisatie | null
+  trialDagenOver: number
+  trialStatus: TrialStatus
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, metadata?: { voornaam?: string; achternaam?: string }) => Promise<void>
   logout: () => Promise<void>
@@ -27,12 +34,101 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Public routes that should not trigger onboarding redirects
+const PUBLIC_ROUTES = ['/login', '/register', '/registreren', '/check-inbox', '/wachtwoord-vergeten', '/wachtwoord-resetten', '/welkom', '/onboarding']
+
+function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES.some((r) => pathname.startsWith(r)) ||
+    pathname.startsWith('/goedkeuring/') ||
+    pathname.startsWith('/boeken/') ||
+    pathname.startsWith('/betalen/') ||
+    pathname.startsWith('/offerte-bekijken/') ||
+    pathname.startsWith('/formulier/') ||
+    pathname.startsWith('/portaal/')
+}
+
+function computeTrialDagenOver(trialEinde?: string): number {
+  if (!trialEinde) return 30
+  const einde = new Date(trialEinde)
+  const nu = new Date()
+  const diff = einde.getTime() - nu.getTime()
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<AuthSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [organisatieId, setOrganisatieId] = useState<string | null>(null)
   const [userRol, setUserRol] = useState<TeamRol | null>(null)
+  const [organisatie, setOrganisatie] = useState<Organisatie | null>(null)
+  const [trialDagenOver, setTrialDagenOver] = useState(30)
+  const [trialStatus, setTrialStatus] = useState<TrialStatus>('trial')
+
+  let navigate: ReturnType<typeof useNavigate> | null = null
+  let location: ReturnType<typeof useLocation> | null = null
+  try {
+    navigate = useNavigate()
+    location = useLocation()
+  } catch {
+    // Outside router context — skip navigation
+  }
+
+  const handleOnboardingRedirect = async (userId: string, currentPath: string) => {
+    // Skip redirect for public/onboarding routes
+    if (isPublicRoute(currentPath)) return
+
+    // Demo mode — skip all redirects
+    if (!isSupabaseConfigured()) {
+      setOrganisatieId('demo-org')
+      setOrganisatie({
+        id: 'demo-org',
+        naam: 'Demo Bedrijf',
+        eigenaar_id: userId,
+        abonnement_status: 'trial',
+        onboarding_compleet: true,
+        onboarding_stap: 4,
+        created_at: new Date().toISOString(),
+      })
+      setTrialDagenOver(30)
+      setTrialStatus('trial')
+      return
+    }
+
+    try {
+      const profile = await getProfile(userId)
+      if (!profile) return
+
+      setOrganisatieId(profile.organisatie_id || null)
+      setUserRol(profile.rol || null)
+
+      if (!profile.organisatie_id) {
+        // New user without organisation — auto-create
+        const org = await createOrganisatie('Mijn Bedrijf', userId)
+        await updateProfile(userId, { organisatie_id: org.id, rol: 'admin' } as Parameters<typeof updateProfile>[1])
+        setOrganisatieId(org.id)
+        setUserRol('admin')
+        setOrganisatie(org)
+        setTrialDagenOver(30)
+        setTrialStatus('trial')
+        navigate?.('/welkom')
+      } else {
+        // Existing organisation — check onboarding state
+        const org = await getOrganisatie(profile.organisatie_id)
+        if (org) {
+          setOrganisatie(org)
+          setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
+          setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
+
+          if (!org.onboarding_compleet) {
+            navigate?.('/onboarding')
+          }
+        }
+      }
+    } catch {
+      // Silently fail — org data is not critical for auth
+    }
+  }
 
   const fetchOrgData = async (userId: string) => {
     try {
@@ -40,33 +136,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile) {
         setOrganisatieId(profile.organisatie_id || null)
         setUserRol(profile.rol || null)
+
+        if (profile.organisatie_id) {
+          const org = await getOrganisatie(profile.organisatie_id)
+          if (org) {
+            setOrganisatie(org)
+            setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
+            setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
+          }
+        }
       }
     } catch {
-      // Silently fail — org data is not critical for auth
+      // Silently fail
     }
   }
 
   useEffect(() => {
     // Check existing session
-    getSession().then(({ session, user }) => {
-      setSession(session)
-      setUser(user)
-      if (user?.id) {
-        fetchOrgData(user.id).then(() => setIsLoading(false))
+    getSession().then(({ session: sess, user: u }) => {
+      setSession(sess)
+      setUser(u)
+      if (u?.id) {
+        const currentPath = location?.pathname || window.location.pathname
+        handleOnboardingRedirect(u.id, currentPath).then(() => setIsLoading(false))
       } else {
         setIsLoading(false)
       }
     }).catch(() => setIsLoading(false))
 
     // Listen for auth changes
-    const { data } = onAuthStateChange((event, session) => {
-      setSession(session)
-      setUser(session?.user || null)
-      if (session?.user?.id) {
-        fetchOrgData(session.user.id)
+    const { data } = onAuthStateChange((event, sess) => {
+      setSession(sess)
+      setUser(sess?.user || null)
+      if (sess?.user?.id) {
+        fetchOrgData(sess.user.id)
       } else {
         setOrganisatieId(null)
         setUserRol(null)
+        setOrganisatie(null)
       }
       setIsLoading(false)
     })
@@ -74,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       data?.subscription?.unsubscribe()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const login = async (email: string, password: string) => {
@@ -81,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const u = data.user
     if (u) {
       setUser({ id: u.id, email: u.email ?? email, user_metadata: u.user_metadata })
-      await fetchOrgData(u.id)
+      await handleOnboardingRedirect(u.id, location?.pathname || '/')
     }
     setSession(data.session)
   }
@@ -104,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null)
       setOrganisatieId(null)
       setUserRol(null)
+      setOrganisatie(null)
     }
   }
 
@@ -116,6 +225,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       organisatieId,
       userRol,
       isAdmin: userRol === 'admin',
+      organisatie,
+      trialDagenOver,
+      trialStatus,
       login,
       register,
       logout,
