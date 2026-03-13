@@ -19,7 +19,7 @@ const rowStagger = {
 
 const rowFade = {
   hidden: { opacity: 0, y: 14 },
-  visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 150 } },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 25, stiffness: 150 } },
   exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
 };
 
@@ -28,7 +28,7 @@ const slideIn = {
   visible: (i: number) => ({
     opacity: 1,
     x: 0,
-    transition: { type: 'spring', damping: 25, stiffness: 150, delay: 0.05 + i * 0.08 },
+    transition: { type: 'spring' as const, damping: 25, stiffness: 150, delay: 0.05 + i * 0.08 },
   }),
 };
 
@@ -37,7 +37,7 @@ const photoFade = {
   visible: (i: number) => ({
     opacity: 1,
     scale: 1,
-    transition: { type: 'spring', damping: 20, stiffness: 120, delay: 0.2 + i * 0.08 },
+    transition: { type: 'spring' as const, damping: 20, stiffness: 120, delay: 0.2 + i * 0.08 },
   }),
 };
 
@@ -46,7 +46,7 @@ const cardUp = {
   visible: (delay: number) => ({
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', damping: 25, stiffness: 140, delay },
+    transition: { type: 'spring' as const, damping: 25, stiffness: 140, delay },
   }),
 };
 
@@ -55,7 +55,7 @@ const planItem = {
   visible: (d: number) => ({
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', damping: 22, stiffness: 130, delay: d },
+    transition: { type: 'spring' as const, damping: 22, stiffness: 130, delay: d },
   }),
 };
 
@@ -256,13 +256,13 @@ function KlantportaalView() {
       >
         <p className="font-mono text-[11px] text-ink-40 uppercase tracking-wide mb-3">Berichten</p>
         <div className="space-y-3">
-          <motion.div className="flex gap-3" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35, type: 'spring', damping: 25 }}>
+          <motion.div className="flex gap-3" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35, type: 'spring' as const, damping: 25 }}>
             <div className="w-7 h-7 rounded-full bg-ink flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">FD</div>
             <div className="bg-ink-05 rounded-xl px-3 py-2 text-[13px] text-ink-60 max-w-[80%]">
               Goedemiddag! De offerte voor de gevelletters staat klaar. Laat gerust weten als je vragen hebt.
             </div>
           </motion.div>
-          <motion.div className="flex gap-3 justify-end" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5, type: 'spring', damping: 25 }}>
+          <motion.div className="flex gap-3 justify-end" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5, type: 'spring' as const, damping: 25 }}>
             <div className="bg-sage-light rounded-xl px-3 py-2 text-[13px] text-sage-deep max-w-[80%]">
               Ziet er goed uit! Kunnen jullie maandag beginnen?
             </div>
@@ -278,7 +278,7 @@ function KlantportaalView() {
 
 const tabContentVariants = {
   enter: { opacity: 0, y: 12 },
-  center: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 150 } },
+  center: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 25, stiffness: 150 } },
   exit: { opacity: 0, y: -12, transition: { duration: 0.15 } },
 };
 
@@ -318,7 +318,7 @@ export default function AppPreview() {
           initial={{ opacity: 0, y: 40, scale: 0.96 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ type: 'spring', damping: 22, stiffness: 80 }}
+          transition={{ type: 'spring' as const, damping: 22, stiffness: 80 }}
           onViewportEnter={() => setIsInView(true)}
         >
           {/* Browser chrome with tabs */}
@@ -351,7 +351,7 @@ export default function AppPreview() {
                   <motion.span
                     className="absolute bottom-0 left-2 right-2 h-[2px] bg-ink rounded-full"
                     layoutId="activeTab"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    transition={{ type: 'spring' as const, stiffness: 400, damping: 30 }}
                   />
                 )}
               </button>
@@ -381,7 +381,7 @@ export default function AppPreview() {
         initial={{ opacity: 0, x: 40, scale: 0.9 }}
         whileInView={{ opacity: 1, x: 0, scale: 1 }}
         viewport={{ once: true }}
-        transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 0.8 }}
+        transition={{ type: 'spring' as const, damping: 20, stiffness: 100, delay: 0.8 }}
       >
         <motion.div
           className="bg-white rounded-xl shadow-lg border border-ink-10 p-3 flex items-center gap-3 max-w-[220px]"

@@ -14,7 +14,7 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', damping: 25, stiffness: 100 },
+    transition: { type: 'spring' as const, damping: 25, stiffness: 100 },
   },
 };
 
@@ -61,7 +61,7 @@ export default function SwitchSection() {
                   initial={{ opacity: 0, x: 20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 120, delay: 0.1 + i * 0.08 }}
+                  transition={{ type: 'spring' as const, damping: 25, stiffness: 120, delay: 0.1 + i * 0.08 }}
                 >
                   <div className="flex items-center gap-4">
                     <span className="font-mono text-[12px] text-ink-20 w-6">{String(i + 1).padStart(2, '0')}</span>

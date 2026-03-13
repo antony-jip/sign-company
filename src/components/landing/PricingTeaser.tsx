@@ -8,7 +8,7 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', damping: 25, stiffness: 100 },
+    transition: { type: 'spring' as const, damping: 25, stiffness: 100 },
   },
 };
 
@@ -101,7 +101,7 @@ export default function PricingTeaser() {
                   initial={{ opacity: 0, x: 12 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 120, delay: i * 0.04 }}
+                  transition={{ type: 'spring' as const, damping: 25, stiffness: 120, delay: i * 0.04 }}
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-sage-vivid shrink-0">
                     <path d="M4 8l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

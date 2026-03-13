@@ -18,7 +18,7 @@ const textVariant = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', damping: 25, stiffness: 120 },
+    transition: { type: 'spring' as const, damping: 25, stiffness: 120 },
   },
 };
 
@@ -28,7 +28,7 @@ const cardVariant = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: 'spring', damping: 22, stiffness: 100, delay: 0.15 },
+    transition: { type: 'spring' as const, damping: 22, stiffness: 100, delay: 0.15 },
   },
 };
 
