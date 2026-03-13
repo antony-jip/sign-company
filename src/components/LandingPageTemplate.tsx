@@ -4,7 +4,7 @@ import React from 'react';
 import { Metadata } from 'next';
 import { LandingPageData } from '@/types/landing-page';
 import { getSchemaOrg } from '@/lib/company-info';
-import { Header } from './Header';
+import Navbar from './landing/Navbar';
 import { Hero } from './Hero';
 import Services from './Services';
 import USPs from './USPs';
@@ -12,7 +12,7 @@ import Portfolio from './Portfolio';
 import { Location } from './Location';
 import FAQ from './FAQ';
 import CTA from './CTA';
-import { Footer } from './Footer';
+import LandingFooter from './landing/Footer';
 
 interface LandingPageTemplateProps {
   data: LandingPageData;
@@ -69,7 +69,7 @@ export const LandingPageTemplate: React.FC<LandingPageTemplateProps> = ({ data }
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
       />
-      <Header />
+      <Navbar />
       <main id="main-content">
         <Hero
           h1={data.h1}
@@ -114,7 +114,7 @@ export const LandingPageTemplate: React.FC<LandingPageTemplateProps> = ({ data }
           location={data.location.city}
         />
       </main>
-      <Footer />
+      <LandingFooter />
     </>
   );
 };

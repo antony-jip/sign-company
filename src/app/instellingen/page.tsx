@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+import Navbar from '@/components/landing/Navbar';
+import Footer from '@/components/landing/Footer';
 import { FontSelector } from '@/components/FontSelector';
 
 export const metadata: Metadata = {
@@ -12,11 +12,11 @@ export const metadata: Metadata = {
 export default function InstellingenPage() {
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Instellingen</h1>
-          <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
+      <Navbar />
+      <main id="main-content" className="min-h-screen bg-bg" style={{ paddingTop: 120 }}>
+        <div className="container">
+          <h1 className="font-heading step-title text-ink mb-8">Instellingen</h1>
+          <div className="bg-white rounded-[20px] border border-ink-10 p-6 md:p-8">
             <FontSelector />
           </div>
         </div>
