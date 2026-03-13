@@ -3,6 +3,49 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 
+/* ── Animated counter ─────────────────────────────────────────── */
+function Counter({ end, suffix = '', delay = 0 }: { end: number; suffix?: string; delay?: number }) {
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setStarted(true), delay);
+    return () => clearTimeout(timer);
+  }, [delay]);
+
+  useEffect(() => {
+    if (!started) return;
+    const duration = 1200;
+    const steps = 30;
+    const increment = end / steps;
+    let current = 0;
+    const interval = setInterval(() => {
+      current += increment;
+      if (current >= end) {
+        setCount(end);
+        clearInterval(interval);
+      } else {
+        setCount(Math.floor(current));
+      }
+    }, duration / steps);
+    return () => clearInterval(interval);
+  }, [started, end]);
+
+  return <>{count}{suffix}</>;
+}
+
+/* ── Floating mini-cards that show product features ────────────── */
+function FloatingCard({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  return (
+    <div
+      className={`absolute hidden lg:flex items-center gap-2.5 bg-white/80 backdrop-blur-md border border-ink-10 rounded-xl px-4 py-3 shadow-lg ${className || ''}`}
+      style={style}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
 
@@ -12,14 +55,13 @@ export default function Hero() {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-mesh-hero overflow-hidden noise-overlay">
-      {/* Background decorations */}
+      {/* Background glow orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        {/* Glow orbs */}
         <div
           className="absolute rounded-full"
           style={{
-            top: '15%', left: '10%', width: 300, height: 300,
-            background: 'radial-gradient(circle, rgba(232,169,144,0.18), transparent 70%)',
+            top: '10%', left: '15%', width: 350, height: 350,
+            background: 'radial-gradient(circle, rgba(232,169,144,0.2), transparent 70%)',
             filter: 'blur(60px)',
             opacity: mounted ? 1 : 0,
             transition: 'opacity 2s ease 0.3s',
@@ -28,8 +70,8 @@ export default function Hero() {
         <div
           className="absolute rounded-full"
           style={{
-            bottom: '20%', right: '8%', width: 250, height: 250,
-            background: 'radial-gradient(circle, rgba(164,139,191,0.14), transparent 70%)',
+            bottom: '15%', right: '10%', width: 300, height: 300,
+            background: 'radial-gradient(circle, rgba(164,139,191,0.15), transparent 70%)',
             filter: 'blur(50px)',
             opacity: mounted ? 1 : 0,
             transition: 'opacity 2s ease 0.6s',
@@ -38,31 +80,104 @@ export default function Hero() {
         <div
           className="absolute rounded-full"
           style={{
-            top: '50%', left: '50%', width: 400, height: 400,
-            transform: 'translate(-50%, -50%)',
-            background: 'radial-gradient(circle, rgba(125,184,138,0.08), transparent 70%)',
-            filter: 'blur(80px)',
+            top: '40%', right: '30%', width: 200, height: 200,
+            background: 'radial-gradient(circle, rgba(125,184,138,0.1), transparent 70%)',
+            filter: 'blur(60px)',
             opacity: mounted ? 1 : 0,
             transition: 'opacity 2s ease 0.9s',
           }}
         />
-
-        {/* Subtle grid */}
-        <div
-          className="absolute inset-0 hidden md:block"
-          style={{ opacity: mounted ? 0.025 : 0, transition: 'opacity 2s ease' }}
-        >
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#1A1A1A" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
       </div>
 
+      {/* Floating product hint cards */}
+      <FloatingCard
+        className="float-element"
+        style={{
+          top: '22%', left: '5%',
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateY(0) rotate(-2deg)' : 'translateY(30px) rotate(-2deg)',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 1.4s',
+        }}
+      >
+        <div className="w-8 h-8 rounded-lg bg-sage-light flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-sage-deep" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 12 2 2 4-4" />
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-[12px] font-bold text-ink">Werkbon afgerond</p>
+          <p className="text-[11px] text-ink-40">Montage LED letters — 3u 20m</p>
+        </div>
+      </FloatingCard>
+
+      <FloatingCard
+        className="float-element-slow"
+        style={{
+          top: '18%', right: '4%',
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateY(0) rotate(1deg)' : 'translateY(30px) rotate(1deg)',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 1.6s',
+        }}
+      >
+        <div className="w-8 h-8 rounded-lg bg-blush-light flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blush-deep" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+            <path d="M14 2v6h6" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-[12px] font-bold text-ink">Offerte geaccepteerd</p>
+          <p className="text-[11px] text-ink-40">Brouwer Reclame — &euro;4.250</p>
+        </div>
+      </FloatingCard>
+
+      <FloatingCard
+        className="float-element"
+        style={{
+          bottom: '22%', left: '6%',
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateY(0) rotate(1.5deg)' : 'translateY(30px) rotate(1.5deg)',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 1.8s',
+        }}
+      >
+        <div className="w-8 h-8 rounded-lg bg-lavender-light flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-lavender-deep" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M16 8h-5a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4H8" />
+            <path d="M12 18V6" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-[12px] font-bold text-ink">Factuur betaald</p>
+          <p className="text-[11px] text-sage-vivid font-semibold">&euro;1.890,00 ontvangen</p>
+        </div>
+      </FloatingCard>
+
+      <FloatingCard
+        className="float-element-slow"
+        style={{
+          bottom: '25%', right: '5%',
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateY(0) rotate(-1deg)' : 'translateY(30px) rotate(-1deg)',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 2s',
+        }}
+      >
+        <div className="w-8 h-8 rounded-lg bg-peach-light flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-peach-deep" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" />
+            <line x1="16" x2="16" y1="2" y2="6" />
+            <line x1="8" x2="8" y1="2" y2="6" />
+            <line x1="3" x2="21" y1="10" y2="10" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-[12px] font-bold text-ink">Morgen 09:00</p>
+          <p className="text-[11px] text-ink-40">Montage Van Dijk Interieur</p>
+        </div>
+      </FloatingCard>
+
+      {/* Main content */}
       <div className="max-w-[760px] mx-auto px-6 relative z-10 text-center" style={{ paddingTop: 140, paddingBottom: 100 }}>
         {/* Overline badge */}
         <div
@@ -97,7 +212,7 @@ export default function Hero() {
           </span>
         </h1>
 
-        {/* Sub — speaks to pain, not features */}
+        {/* Sub */}
         <p
           className="text-[20px] leading-[1.7] text-ink-60 max-w-[500px] mx-auto mb-10 transition-all duration-700"
           style={{
@@ -111,7 +226,7 @@ export default function Hero() {
 
         {/* CTA buttons */}
         <div
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 transition-all duration-700"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14 transition-all duration-700"
           style={{
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(24px)',
@@ -126,9 +241,9 @@ export default function Hero() {
           </Button>
         </div>
 
-        {/* Trust bar — visual stats instead of plain text */}
+        {/* Animated trust stats */}
         <div
-          className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 transition-all duration-700"
+          className="flex flex-wrap items-center justify-center gap-8 sm:gap-14 transition-all duration-700"
           style={{
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(24px)',
@@ -136,18 +251,24 @@ export default function Hero() {
           }}
         >
           <div className="text-center">
-            <p className="text-[22px] font-heading font-bold text-ink">40+</p>
-            <p className="text-[12px] text-ink-40 mt-0.5">jaar ervaring</p>
+            <p className="text-[28px] font-heading font-bold text-ink leading-none">
+              {mounted && <Counter end={40} suffix="+" delay={1400} />}
+            </p>
+            <p className="text-[12px] text-ink-40 mt-1">jaar ervaring</p>
           </div>
-          <div className="w-px h-8 bg-ink-10" />
+          <div className="w-px h-10 bg-ink-10" />
           <div className="text-center">
-            <p className="text-[22px] font-heading font-bold text-ink">&euro;49</p>
-            <p className="text-[12px] text-ink-40 mt-0.5">per maand, alles erin</p>
+            <p className="text-[28px] font-heading font-bold text-ink leading-none">
+              &euro;{mounted && <Counter end={49} delay={1600} />}
+            </p>
+            <p className="text-[12px] text-ink-40 mt-1">per maand, alles erin</p>
           </div>
-          <div className="w-px h-8 bg-ink-10" />
+          <div className="w-px h-10 bg-ink-10" />
           <div className="text-center">
-            <p className="text-[22px] font-heading font-bold text-ink">30</p>
-            <p className="text-[12px] text-ink-40 mt-0.5">dagen gratis proberen</p>
+            <p className="text-[28px] font-heading font-bold text-ink leading-none">
+              {mounted && <Counter end={30} delay={1800} />}
+            </p>
+            <p className="text-[12px] text-ink-40 mt-1">dagen gratis proberen</p>
           </div>
         </div>
       </div>
