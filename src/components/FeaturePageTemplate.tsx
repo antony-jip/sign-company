@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Header } from './Header';
-import { Footer } from './Footer';
+import Navbar from './landing/Navbar';
+import LandingFooter from './landing/Footer';
 import { useScrollAnimation } from './useScrollAnimation';
 
 type ColorTheme = 'peach' | 'lavender' | 'mist' | 'cream' | 'sage' | 'blush';
@@ -106,7 +106,7 @@ export const FeaturePageTemplate: React.FC<FeaturePageTemplateProps> = ({
 
   return (
     <>
-      <Header />
+      <Navbar />
       <main ref={ref} className="pt-24">
         {/* Hero */}
         <section className={`bg-gradient-to-b ${c.gradient} py-16 lg:py-24`}>
@@ -189,7 +189,7 @@ export const FeaturePageTemplate: React.FC<FeaturePageTemplateProps> = ({
           </div>
         </section>
       </main>
-      <Footer />
+      <LandingFooter />
     </>
   );
 };

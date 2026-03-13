@@ -1,32 +1,18 @@
-'use client';
+import Navbar from '@/components/landing/Navbar';
+import Hero from '@/components/landing/Hero';
+import AppPreview from '@/components/landing/AppPreview';
+import StepsSection from '@/components/landing/StepsSection';
+import CTASection from '@/components/landing/CTASection';
+import Footer from '@/components/landing/Footer';
 
-import { Header } from '@/components/Header';
-import { Hero } from '@/components/Hero';
-import { SocialProof } from '@/components/SocialProof';
-import { Features } from '@/components/Services';
-import { AIToolsShowcase } from '@/components/AIToolsShowcase';
-import { InteractiveModules } from '@/components/InteractiveModules';
-import { HowItWorks } from '@/components/USPs';
-import { Pricing } from '@/components/Portfolio';
-import { Testimonials } from '@/components/FAQ';
-import { AppLoginExperience } from '@/components/AppLoginExperience';
-import { CTASection } from '@/components/CTA';
-import { Footer } from '@/components/Footer';
-
-export default function HomePage() {
+export default function Home() {
   return (
     <>
-      <Header />
+      <Navbar />
       <main id="main-content">
         <Hero />
-        <SocialProof />
-        <Features />
-        <AIToolsShowcase />
-        <InteractiveModules />
-        <HowItWorks />
-        <Pricing />
-        <Testimonials />
-        <AppLoginExperience />
+        <AppPreview />
+        <StepsSection />
         <CTASection />
       </main>
       <Footer />
