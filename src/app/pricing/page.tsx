@@ -4,9 +4,9 @@ import Footer from '@/components/landing/Footer';
 import PricingContent from '@/components/landing/PricingContent';
 
 export const metadata: Metadata = {
-  title: 'Pricing — FORGEdesk',
+  title: 'Pricing | FORGEdesk',
   description:
-    'Eén simpel plan. €49/maand voor je hele team. Geen kosten per gebruiker, geen verborgen kosten.',
+    'Twee simpele plannen. Vanaf €49/maand. Geen verborgen kosten.',
 };
 
 export default function PricingPage() {

@@ -473,7 +473,7 @@ export const AIToolsShowcase: React.FC = () => {
             Slimmer werken met <span className="text-gradient-ai">AI-tools</span>
           </h2>
           <p className="fade-up stagger-2 text-lg text-gray-500 max-w-2xl mx-auto">
-            Van offerte tot gevel — onze AI-tools helpen je sneller, beter en creatiever werken. Probeer ze hieronder uit.
+            Van offerte tot gevel. Onze AI-tools helpen je sneller, beter en creatiever werken. Probeer ze hieronder uit.
           </p>
         </div>
 
@@ -552,7 +552,7 @@ export const AIToolsShowcase: React.FC = () => {
               <div className="module-panel">
                 <h3 className="text-2xl font-black mb-3">Zie het voor je</h3>
                 <p className="text-gray-500 leading-relaxed mb-4">
-                  Laat je klant zien hoe hun gevelreclame eruitziet — nog voor de productie begint.
+                  Laat je klant zien hoe hun gevelreclame eruitziet. Nog voor de productie begint.
                   Kies lettertype, stijl en kleur en deel de preview direct.
                 </p>
                 <ul className="space-y-2">

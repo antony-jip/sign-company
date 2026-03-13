@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/Button';
 
 const values = [
   {
-    title: 'Gebouwd voor de branche',
+    title: 'Door signmakers gebouwd',
     description:
-      'Geen generieke software. FORGEdesk is specifiek ontworpen voor signbedrijven, interieurbouwers en monteurs. Wij kennen de werkprocessen.',
+      'We komen zelf uit de branche. We weten hoe een offerte met calculatie eruitziet, hoe een werkbon op locatie werkt, en wat er achter een totaalprijs schuilgaat.',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M2 20h20" />
@@ -19,7 +19,7 @@ const values = [
   {
     title: 'Simpel. Geen training nodig',
     description:
-      'Software moet voor je werken, niet andersom. Onze monteurs, kantoormanagers en eigenaren beginnen zonder handleiding.',
+      'Software moet voor je werken, niet andersom. Eigenaren, kantoormanagers en monteurs beginnen zonder handleiding.',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -30,7 +30,7 @@ const values = [
   {
     title: 'Eerlijke prijs',
     description:
-      '€49/maand voor je hele team. Geen kosten per gebruiker, geen verborgen modules, geen verrassingen op de factuur.',
+      'Vanaf €49/maand. Geen kosten per gebruiker, geen verborgen modules, geen verrassingen op de factuur.',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <line x1="12" y1="1" x2="12" y2="23" />
@@ -63,10 +63,10 @@ export default function OverOnsContent() {
             Over ons
           </p>
           <h1 className="font-heading section-heading text-ink mb-6">
-            Software die begrijpt hoe jij werkt.
+            Gebouwd door mensen uit de branche.
           </h1>
           <p className="text-[19px] leading-[1.7] text-ink-60 max-w-[540px] mx-auto">
-            FORGEdesk is gebouwd door mensen die de signing- en montagebranches kennen. Geen Silicon Valley startup — gewoon Nederland.
+            FORGEdesk komt uit de sign- en printwereld. Geen startup uit het buitenland. Gewoon Nederland.
           </p>
         </div>
       </section>
@@ -115,13 +115,13 @@ export default function OverOnsContent() {
           </h2>
           <div className="space-y-5 text-[16px] leading-[1.7] text-ink-60">
             <p>
-              Te veel signbedrijven werken nog met Excel, WhatsApp en papieren werkbonnen. Dat kost tijd, veroorzaakt fouten en maakt groei lastig.
+              Er was geen goed alternatief. James Pro, Gripp, Salesredd: ze komen niet uit de creatieve branche. Ze snappen niet hoe een offerte met calculatie werkt als er veel schuilgaat achter de totaalprijs.
             </p>
             <p>
-              FORGEdesk verandert dat. Eén systeem voor alles: van offerte tot factuur, van kantoor tot busje. Met AI die helpt, niet in de weg zit.
+              Dus hebben we het zelf gebouwd. Eén systeem voor projecten, offertes, werkbonnen en facturen. Met AI die helpt, niet in de weg zit.
             </p>
             <p>
-              We bouwen software die aanvoelt als goed gereedschap — betrouwbaar, snel, en precies goed in de hand.
+              Nu kunnen andere creatieve bedrijven er ook van profiteren. Tegen een eerlijke prijs, zonder gedoe.
             </p>
           </div>
         </div>
@@ -139,10 +139,10 @@ export default function OverOnsContent() {
           }}
         >
           <h2 className="font-heading section-heading text-ink mb-6">
-            Klaar om te <span className="text-ember-gradient">smeden</span>?
+            Klaar om te <span className="text-ember-gradient">starten</span>?
           </h2>
           <p className="text-[19px] leading-[1.7] text-ink-60 mb-10 max-w-[480px] mx-auto">
-            Start vandaag gratis. Geen creditcard, geen contract, geen gedoe.
+            Probeer FORGEdesk 30 dagen gratis. Geen creditcard, geen contract.
           </p>
           <Button variant="ink" href="https://app.forgedesk.io">
             Start 30 dagen gratis &rarr;

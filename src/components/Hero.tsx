@@ -43,11 +43,11 @@ export const Hero: React.FC = () => {
             </div>
 
             <h1 className="text-[40px] lg:text-[52px] font-black tracking-tight leading-[1.08] max-w-md mb-6">
-              <span className="text-gradient-forge">Smeed</span> je bedrijf tot een geoliede machine.
+              <span className="text-gradient-forge">Alles-in-één</span> software voor de creatieve branche.
             </h1>
 
             <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-sm">
-              Van offerte tot factuur. Met AI-tools die je werk sneller, slimmer en mooier maken.
+              Projecten, offertes, werkbonnen en facturen. Met AI-tools die je werk sneller en slimmer maken.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -253,14 +253,14 @@ export const Hero: React.FC = () => {
                 <div className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-sage-vivid" />
-                    <span className="text-sm text-gray-900">Bakkerij Jansen — Lichtreclame</span>
+                    <span className="text-sm text-gray-900">Bakkerij Jansen · Lichtreclame</span>
                   </div>
                   <span className="text-xs text-gray-400">Vandaag</span>
                 </div>
                 <div className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-blush-vivid" />
-                    <span className="text-sm text-gray-900">Garage De Vries — Gevelreclame</span>
+                    <span className="text-sm text-gray-900">Garage De Vries · Gevelreclame</span>
                   </div>
                   <span className="text-xs text-gray-400">Gisteren</span>
                 </div>

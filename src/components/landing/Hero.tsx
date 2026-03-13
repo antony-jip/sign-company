@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 
-const headingWords = ['Smeed', 'je', 'bedrijf', 'tot', 'een', 'geoliede', 'machine.'];
+const headingWords = ['Alles-in-één', 'software', 'voor', 'de', 'creatieve', 'branche.'];
 
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
@@ -20,7 +20,7 @@ export default function Hero() {
           {headingWords.map((word, i) => (
             <span key={i} className="word-reveal mr-[0.25em]">
               <span
-                className={word === 'Smeed' ? 'text-ember-gradient' : ''}
+                className={word === 'Alles-in-één' ? 'text-ember-gradient' : ''}
                 style={{
                   animationDelay: mounted ? `${i * 0.12}s` : '0s',
                   opacity: mounted ? undefined : 0,
@@ -41,7 +41,7 @@ export default function Hero() {
             transitionDelay: '1s',
           }}
         >
-          Van offerte tot factuur in minuten. Gebouwd voor signmakers, interieurbouwers en monteurs.
+          Projecten, offertes, werkbonnen en facturen in één systeem. Gebouwd door signmakers, voor de creatieve branche.
         </p>
 
         {/* CTA buttons — section 15 */}
@@ -72,9 +72,9 @@ export default function Hero() {
         >
           <span>Geen creditcard</span>
           <span className="text-ink-20">&middot;</span>
-          <span>Onbeperkt gebruikers</span>
+          <span>Vanaf &euro;49/maand</span>
           <span className="text-ink-20">&middot;</span>
-          <span>&euro;49/maand voor het hele team</span>
+          <span>Stap over vanuit James, Gripp of Excel</span>
         </div>
       </div>
 
