@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +17,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import {
   UserPlus,
   Search,
-  LayoutGrid,
-  List,
-  ArrowUpDown,
   Download,
   Upload,
   FileText,
@@ -32,30 +29,73 @@ import {
   Mail,
   Trash2,
   CheckSquare,
+  CheckCircle2,
   X,
+  Pin,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  ChevronDown,
 } from 'lucide-react'
-import { cn, getStatusColor } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { getRowAccentClass } from '@/utils/statusColors'
 import { exportCSV, exportExcel } from '@/lib/export'
-import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
+import { getKlanten, getProjecten, deleteKlant, updateKlant } from '@/services/supabaseService'
 import type { Klant, Project } from '@/types'
-import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 
-type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
-type SortField = 'bedrijfsnaam' | 'contactpersoon' | 'stad' | 'status' | 'created_at'
+type SortField = 'bedrijfsnaam' | 'stad' | 'projecten'
 type SortDir = 'asc' | 'desc'
+
+const statusOpties: { value: StatusFilter; label: string }[] = [
+  { value: 'alle', label: 'Alle' },
+  { value: 'actief', label: 'Actief' },
+  { value: 'inactief', label: 'Inactief' },
+  { value: 'prospect', label: 'Prospect' },
+]
+
+const statusLabels: Record<string, string> = {
+  actief: 'Actief',
+  inactief: 'Inactief',
+  prospect: 'Prospect',
+}
+
+function getKlantStatusDotColor(status: string): string {
+  switch (status) {
+    case 'actief': return 'bg-[var(--color-sage-text)]'
+    case 'prospect': return 'bg-[var(--color-cream-text)]'
+    case 'inactief': return 'bg-[var(--color-blush-text)]'
+    default: return 'bg-[var(--color-cream-text)]'
+  }
+}
+
+function getKlantStatusBorderColor(status: string): string {
+  switch (status) {
+    case 'actief': return 'border-l-[var(--color-sage-border)]'
+    case 'prospect': return 'border-l-[var(--color-cream-border)]'
+    case 'inactief': return 'border-l-[var(--color-blush-border)]'
+    default: return 'border-l-[var(--color-cream-border)]'
+  }
+}
+
+function getKlantStatusCellBg(status: string): string {
+  switch (status) {
+    case 'actief': return 'bg-[var(--color-sage)]/50'
+    case 'prospect': return 'bg-[var(--color-cream)]/50'
+    case 'inactief': return 'bg-[var(--color-blush)]/50'
+    default: return 'bg-muted/30'
+  }
+}
 
 export function ClientsLayout() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editingKlant, setEditingKlant] = useState<Klant | undefined>(undefined)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -63,7 +103,6 @@ export function ClientsLayout() {
   const [loading, setLoading] = useState(true)
   const [sortField, setSortField] = useState<SortField>('bedrijfsnaam')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
-  const [labelFilter, setLabelFilter] = useState<string>('alle')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const fetchData = useCallback(() => {
@@ -92,7 +131,6 @@ export function ClientsLayout() {
     return () => { cancelled = true }
   }, [])
 
-  // Count projects per client
   const projectCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     projecten.forEach((p) => {
@@ -101,21 +139,13 @@ export function ClientsLayout() {
     return counts
   }, [projecten])
 
-  // Filtered + sorted clients
   const filteredKlanten = useMemo(() => {
     let result = [...klanten]
 
-    // Status filter
     if (statusFilter !== 'alle') {
       result = result.filter((k) => k.status === statusFilter)
     }
 
-    // Label filter
-    if (labelFilter !== 'alle') {
-      result = result.filter((k) => (k.klant_labels || []).includes(labelFilter))
-    }
-
-    // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
       result = result.filter(
@@ -129,38 +159,31 @@ export function ClientsLayout() {
       )
     }
 
-    // Sort
     result.sort((a, b) => {
       let cmp = 0
       switch (sortField) {
         case 'bedrijfsnaam':
           cmp = (a.bedrijfsnaam || '').localeCompare(b.bedrijfsnaam || '', 'nl')
           break
-        case 'contactpersoon':
-          cmp = (a.contactpersoon || '').localeCompare(b.contactpersoon || '', 'nl')
-          break
         case 'stad':
           cmp = (a.stad || '').localeCompare(b.stad || '', 'nl')
           break
-        case 'status':
-          cmp = (a.status || '').localeCompare(b.status || '', 'nl')
-          break
-        case 'created_at':
-          cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        case 'projecten':
+          cmp = (projectCounts[a.id] || 0) - (projectCounts[b.id] || 0)
           break
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
 
     return result
-  }, [klanten, searchQuery, statusFilter, labelFilter, sortField, sortDir])
+  }, [klanten, searchQuery, statusFilter, sortField, sortDir, projectCounts])
 
   function handleSort(field: SortField) {
     if (field === sortField) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
     } else {
       setSortField(field)
-      setSortDir('asc')
+      setSortDir(field === 'bedrijfsnaam' ? 'asc' : 'desc')
     }
   }
 
@@ -186,6 +209,17 @@ export function ClientsLayout() {
     } catch (error) {
       logger.error(error)
       toast.error('Fout bij verwijderen van klant')
+    }
+  }
+
+  async function handleStatusChange(klantId: string, newStatus: Klant['status']) {
+    try {
+      const updated = await updateKlant(klantId, { status: newStatus })
+      setKlanten((prev) => prev.map((k) => (k.id === updated.id ? updated : k)))
+      toast.success(`Status gewijzigd naar ${statusLabels[newStatus]}`)
+    } catch (error) {
+      logger.error('Fout bij statuswijziging:', error)
+      toast.error('Kon status niet wijzigen')
     }
   }
 
@@ -223,6 +257,26 @@ export function ClientsLayout() {
     }
   }
 
+  async function handleBulkStatusChange(newStatus: Klant['status']) {
+    if (selectedIds.size === 0) return
+    try {
+      const updates = await Promise.all(
+        [...selectedIds].map((id) => updateKlant(id, { status: newStatus }))
+      )
+      setKlanten((prev) =>
+        prev.map((k) => {
+          const updated = updates.find((u) => u.id === k.id)
+          return updated || k
+        })
+      )
+      toast.success(`${selectedIds.size} klant${selectedIds.size === 1 ? '' : 'en'} gewijzigd naar ${statusLabels[newStatus]}`)
+      setSelectedIds(new Set())
+    } catch (error) {
+      logger.error('Fout bij bulk statuswijziging:', error)
+      toast.error('Kon status niet wijzigen')
+    }
+  }
+
   const exportHeaders = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'KvK', 'BTW', 'Status', 'Tags']
   function getExportRows() {
     return filteredKlanten.map((k) => ({
@@ -241,60 +295,9 @@ export function ClientsLayout() {
     }))
   }
 
-  function renderRowActions(klant: Klant) {
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            onClick={(e) => e.stopPropagation()}
-            className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
-          >
-            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` }) }}>
-            <Eye className="w-3.5 h-3.5 mr-2" />
-            Bekijken
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditClient(klant) }}>
-            <Pencil className="w-3.5 h-3.5 mr-2" />
-            Bewerken
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projecten/nieuw?klant_id=${klant.id}`) }}>
-            <FolderPlus className="w-3.5 h-3.5 mr-2" />
-            Project aanmaken
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/offertes/nieuw?klant_id=${klant.id}`) }}>
-            <FileText className="w-3.5 h-3.5 mr-2" />
-            Offerte maken
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/facturen/nieuw?klant_id=${klant.id}`) }}>
-            <Receipt className="w-3.5 h-3.5 mr-2" />
-            Factuur aanmaken
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${klant.email}` }}>
-            <Mail className="w-3.5 h-3.5 mr-2" />
-            Klant mailen
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={(e) => { e.stopPropagation(); handleDeleteClient(klant.id) }}
-            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50"
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-2" />
-            Verwijderen
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    )
-  }
-
   return (
     <div className="h-full flex flex-col mod-strip mod-strip-klanten">
-      {/* Page header bar */}
+      {/* ── Header bar ── */}
       <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #8BAFD4, #6A8DB8)' }}>
@@ -313,223 +316,153 @@ export function ClientsLayout() {
         </Button>
       </div>
 
-      {/* Content */}
+      {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-6 p-4 sm:p-6">
+      <div className="space-y-5 p-4 sm:p-6">
 
-      {/* Toolbar: Search + Export + View toggle */}
+      {/* ── Bulk action bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: 'linear-gradient(135deg, var(--color-mist, #E6EAF0), #d4e0eb)', borderColor: 'var(--color-mist-border, #c4cdd6)' }}>
+          <div className="relative flex items-center gap-3 px-4 py-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: '#5D7A93', color: 'white' }}>
+                <span className="text-[11px] font-bold">{selectedIds.size}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[13px] font-semibold" style={{ color: '#5D7A93' }}>
+                  {selectedIds.size} {selectedIds.size === 1 ? 'klant' : 'klanten'} geselecteerd
+                </span>
+                <span className="text-[10px] font-medium" style={{ color: '#5D7A93', opacity: 0.6 }}>
+                  van {filteredKlanten.length} totaal
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={toggleSelectAll}
+              className="text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
+              style={{ color: '#5D7A93' }}
+            >
+              {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
+            </button>
+
+            <div className="flex-1" />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[12px] font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: '#5D7A93', borderColor: 'var(--color-mist-border, #c4cdd6)' }}>
+                  <ArrowUpDown className="w-3 h-3" />
+                  Status wijzigen
+                  <ChevronDown className="w-3 h-3 opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {statusOpties.filter(s => s.value !== 'alle').map((s) => (
+                  <DropdownMenuItem
+                    key={s.value}
+                    onClick={() => handleBulkStatusChange(s.value as Klant['status'])}
+                    className="flex items-center gap-2 text-xs"
+                  >
+                    <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getKlantStatusDotColor(s.value))} />
+                    {s.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1.5 h-8"
+              onClick={handleBulkDelete}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Verwijder ({selectedIds.size})
+            </Button>
+
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-white/40"
+              style={{ color: '#5D7A93' }}
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Search + Filters ── */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Zoek op naam, email, stad, tag..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-9 h-9 text-sm"
           />
         </div>
-        <div className="flex items-center gap-2">
-          {/* Import button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 h-9 hidden sm:flex"
-            onClick={() => navigate('/klanten/importeren')}
-          >
-            <Upload className="w-4 h-4" />
-            Importeren
-          </Button>
-          {/* Export buttons */}
-          <div className="hidden sm:flex items-center rounded-lg border border-border overflow-hidden">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 rounded-none border-0 border-r border-border h-9"
-              onClick={() => exportCSV(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows())}
-            >
-              <Download className="w-4 h-4" />
-              CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 rounded-none border-0 h-9"
-              onClick={() => exportExcel(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows(), 'Klanten')}
-            >
-              <FileText className="w-4 h-4" />
-              Excel
-            </Button>
-          </div>
-          {/* View toggle */}
-          <div className="inline-flex items-center rounded-xl border border-black/[0.06] bg-muted p-0.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                'h-8 w-8 rounded-lg transition-all',
-                viewMode === 'grid'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              onClick={() => setViewMode('grid')}
-              title="Rasterweergave"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                'h-8 w-8 rounded-lg transition-all',
-                viewMode === 'list'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              onClick={() => setViewMode('list')}
-              title="Lijstweergave"
-            >
-              <List className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
 
-      {/* Filter pills + Sort toolbar */}
-      <div className="flex flex-col gap-3">
-        {/* Status filter pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
-          {(['alle', 'actief', 'inactief', 'prospect'] as StatusFilter[]).map((f) => {
-            const labels: Record<StatusFilter, string> = {
-              alle: 'Alle',
-              actief: 'Actief',
-              inactief: 'Inactief',
-              prospect: 'Prospect',
-            }
-            const counts: Record<StatusFilter, number> = {
-              alle: klanten.length,
-              actief: klanten.filter((k) => k.status === 'actief').length,
-              inactief: klanten.filter((k) => k.status === 'inactief').length,
-              prospect: klanten.filter((k) => k.status === 'prospect').length,
-            }
+        <div className="flex items-center gap-1.5 flex-wrap flex-1 overflow-x-auto scrollbar-hide">
+          {statusOpties.map((optie) => {
+            const count = optie.value === 'alle'
+              ? klanten.length
+              : klanten.filter((k) => k.status === optie.value).length
+            if (optie.value !== 'alle' && count === 0) return null
             return (
               <button
-                key={f}
-                onClick={() => setStatusFilter(f)}
+                key={optie.value}
+                onClick={() => setStatusFilter(optie.value)}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200',
-                  statusFilter === f
-                    ? 'bg-primary/12 text-accent dark:bg-primary/20 dark:text-wm-light ring-1 ring-primary/25 shadow-sm'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  'px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all duration-150',
+                  statusFilter === optie.value
+                    ? 'bg-foreground text-background shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                 )}
               >
-                {labels[f]}
-                {counts[f] > 0 && (
-                  <span className="ml-1.5 text-[10px] opacity-70">{counts[f]}</span>
-                )}
+                {optie.label}
+                {count > 0 && <span className="ml-1 opacity-60">{count}</span>}
               </button>
             )
           })}
         </div>
 
-        <div className="h-4 w-px bg-border hidden sm:block" />
-
-        {/* Label filter */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
-          {[
-            { value: 'alle', label: 'Alle labels' },
-            { value: 'vooruit_betalen', label: 'Vooruit betalen' },
-            { value: 'niet_helpen', label: 'Niet helpen' },
-            { value: 'voorrang', label: 'Voorrang' },
-            { value: 'grote_klant', label: 'Grote klant' },
-            { value: 'wanbetaler', label: 'Wanbetaler' },
-          ].map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setLabelFilter(opt.value)}
-              className={cn(
-                'px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors',
-                labelFilter === opt.value
-                  ? 'bg-primary/10 text-primary border border-primary/30'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent'
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="h-4 w-px bg-border hidden sm:block" />
-
-        {/* Sort toolbar */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <ArrowUpDown className="w-3 h-3" />
-          <span>Sorteer:</span>
-          {([
-            { field: 'bedrijfsnaam' as SortField, label: 'Naam' },
-            { field: 'stad' as SortField, label: 'Stad' },
-            { field: 'status' as SortField, label: 'Status' },
-            { field: 'created_at' as SortField, label: 'Datum' },
-          ]).map(({ field, label }) => (
-            <button
-              key={field}
-              onClick={() => handleSort(field)}
-              className={cn(
-                'px-1.5 py-0.5 rounded transition-colors',
-                sortField === field
-                  ? 'text-accent dark:text-wm-light font-medium'
-                  : 'hover:text-foreground'
-              )}
-            >
-              {label}
-              {sortField === field && (
-                <span className="ml-0.5">{sortDir === 'asc' ? '↑' : '↓'}</span>
-              )}
-            </button>
-          ))}
+        <div className="hidden sm:flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs text-muted-foreground"
+            onClick={() => navigate('/klanten/importeren')}
+          >
+            <Upload className="w-3.5 h-3.5 mr-1" />
+            Import
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs text-muted-foreground"
+            onClick={() => exportCSV(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows())}
+          >
+            <Download className="w-3.5 h-3.5 mr-1" />
+            CSV
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs text-muted-foreground"
+            onClick={() => exportExcel(`klanten-${new Date().toISOString().split('T')[0]}`, exportHeaders, getExportRows(), 'Klanten')}
+          >
+            <FileText className="w-3.5 h-3.5 mr-1" />
+            Excel
+          </Button>
         </div>
       </div>
 
-      {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-lg">
-          <CheckSquare className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">
-            {selectedIds.size} van {filteredKlanten.length} geselecteerd
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs"
-            onClick={toggleSelectAll}
-          >
-            {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
-          </Button>
-          <div className="flex-1" />
-          <Button
-            variant="destructive"
-            size="sm"
-            className="gap-1.5"
-            onClick={handleBulkDelete}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Verwijder ({selectedIds.size})
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setSelectedIds(new Set())}
-          >
-            <X className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      )}
-
-      {/* Content */}
+      {/* ── Table ── */}
       {loading ? (
         <SkeletonTable rows={6} cols={4} />
       ) : filteredKlanten.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="border-dashed border-black/[0.06]">
           <EmptyState
             module="klanten"
             title={searchQuery || statusFilter !== 'alle' ? 'Geen klanten gevonden' : 'Nog geen klanten'}
@@ -556,151 +489,295 @@ export function ClientsLayout() {
             }
           />
         </Card>
-      ) : viewMode === 'grid' ? (
-        /* ==================== GRID VIEW ==================== */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-          {filteredKlanten.map((klant) => (
-            <ClientCard
-              key={klant.id}
-              klant={klant}
-              projectCount={projectCounts[klant.id] || 0}
-              onEdit={handleEditClient}
-              onDelete={handleDeleteClient}
-              selected={selectedIds.has(klant.id)}
-              onToggleSelect={() => toggleSelect(klant.id)}
-            />
-          ))}
-        </div>
       ) : (
-        /* ==================== LIST VIEW ==================== */
-        <Card className="rounded-xl border-black/[0.06]">
+        <div className="rounded-xl border border-black/[0.06] bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0 shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="w-10 px-3 py-3">
-                    <Checkbox
-                      checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
-                      onCheckedChange={toggleSelectAll}
-                      aria-label="Selecteer alles"
-                    />
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
-                    Bedrijfsnaam
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden md:table-cell">
-                    Contactpersoon
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden lg:table-cell">
-                    Email
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden xl:table-cell">
-                    Telefoon
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden lg:table-cell">
-                    Stad
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
-                    Status
-                  </th>
-                  <th className="text-center text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
-                    Projecten
-                  </th>
-                  <th className="text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-2 py-3 w-12">
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50 row-stagger">
-                {filteredKlanten.map((klant) => (
-                  <tr
-                    key={klant.id}
-                    className={cn(
-                      "hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2",
-                      selectedIds.has(klant.id) && "bg-primary/5",
-                      getRowAccentClass(klant.status)
-                    )}
-                    onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border/60 bg-muted/30">
+                <th className="w-10 px-3 py-2.5">
+                  <Checkbox
+                    checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Selecteer alles"
+                  />
+                </th>
+                <th className="text-left py-2.5 px-4 w-[110px]">
+                  <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
+                </th>
+                <th className="text-left py-2.5 px-4">
+                  <button
+                    onClick={() => handleSort('bedrijfsnaam')}
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors"
                   >
-                    <td className="w-10 px-3 py-3">
-                      <Checkbox
-                        checked={selectedIds.has(klant.id)}
-                        onCheckedChange={() => toggleSelect(klant.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label={`Selecteer ${klant.bedrijfsnaam}`}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#8BAFD4]/15 dark:bg-[#8BAFD4]/20 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-semibold text-[#8BAFD4]">
-                            {klant.bedrijfsnaam.charAt(0).toUpperCase()}
+                    Bedrijfsnaam
+                    {sortField === 'bedrijfsnaam' ? (
+                      sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 opacity-30" />
+                    )}
+                  </button>
+                </th>
+                <th className="text-left py-2.5 px-4 hidden md:table-cell">
+                  <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Contactpersoon</span>
+                </th>
+                <th className="text-left py-2.5 px-4 hidden lg:table-cell">
+                  <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Email</span>
+                </th>
+                <th className="text-left py-2.5 px-4 hidden lg:table-cell">
+                  <button
+                    onClick={() => handleSort('stad')}
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors"
+                  >
+                    Stad
+                    {sortField === 'stad' ? (
+                      sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 opacity-30" />
+                    )}
+                  </button>
+                </th>
+                <th className="text-center py-2.5 px-4 hidden xl:table-cell">
+                  <button
+                    onClick={() => handleSort('projecten')}
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors mx-auto"
+                  >
+                    Projecten
+                    {sortField === 'projecten' ? (
+                      sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 opacity-30" />
+                    )}
+                  </button>
+                </th>
+                <th className="w-10 py-2.5 px-2" />
+              </tr>
+            </thead>
+            <tbody className="row-stagger">
+              {filteredKlanten.map((klant) => (
+                <tr
+                  key={klant.id}
+                  className={cn(
+                    'border-b border-border/30 last:border-0 hover:bg-[#F4F3F0]/50 dark:hover:bg-muted/20 cursor-pointer transition-all duration-150 group border-l-2',
+                    getKlantStatusBorderColor(klant.status),
+                    selectedIds.has(klant.id) && 'bg-[#8BAFD4]/5'
+                  )}
+                  onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || 'Klant', id: `/klanten/${klant.id}` })}
+                >
+                  {/* Checkbox */}
+                  <td className="w-10 px-3 py-3">
+                    <Checkbox
+                      checked={selectedIds.has(klant.id)}
+                      onCheckedChange={() => toggleSelect(klant.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Selecteer ${klant.bedrijfsnaam}`}
+                    />
+                  </td>
+
+                  {/* Status — inline changeable */}
+                  <td className="py-0 px-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            'w-full h-full py-3 px-4 flex items-center gap-1.5 transition-colors border-l-[3px]',
+                            getKlantStatusBorderColor(klant.status),
+                            getKlantStatusCellBg(klant.status),
+                            'hover:brightness-95 dark:hover:brightness-110'
+                          )}
+                        >
+                          <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getKlantStatusDotColor(klant.status))} />
+                          <span className="text-xs font-medium text-foreground">
+                            {statusLabels[klant.status] || klant.status}
                           </span>
-                        </div>
-                        <div className="min-w-0">
-                          <span className="text-sm font-medium text-foreground truncate block">
+                          <ChevronDown className="w-3 h-3 text-muted-foreground/40 ml-auto" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-40">
+                        {statusOpties.filter(s => s.value !== 'alle').map((s) => (
+                          <DropdownMenuItem
+                            key={s.value}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (s.value !== klant.status) {
+                                handleStatusChange(klant.id, s.value as Klant['status'])
+                              }
+                            }}
+                            className={cn(
+                              'flex items-center gap-2 text-xs',
+                              s.value === klant.status && 'font-semibold'
+                            )}
+                          >
+                            <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getKlantStatusDotColor(s.value))} />
+                            {s.label}
+                            {s.value === klant.status && <CheckCircle2 className="w-3 h-3 ml-auto text-primary" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+
+                  {/* Bedrijfsnaam + labels + pin */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#8BAFD4]/15 dark:bg-[#8BAFD4]/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-semibold text-[#8BAFD4]">
+                          {klant.bedrijfsnaam.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] font-semibold text-foreground truncate block">
                             {klant.bedrijfsnaam}
                           </span>
-                          {(klant.klant_labels || []).length > 0 && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              {(klant.klant_labels || []).map((label) => {
-                                const dotColors: Record<string, string> = {
-                                  vooruit_betalen: 'bg-orange-500',
-                                  niet_helpen: 'bg-red-500',
-                                  voorrang: 'bg-green-500',
-                                  grote_klant: 'bg-blue-500',
-                                  wanbetaler: 'bg-red-500',
-                                }
-                                return (
-                                  <span
-                                    key={label}
-                                    className={`w-1.5 h-1.5 rounded-full ${dotColors[label] || 'bg-muted-foreground/40'}`}
-                                  />
-                                )
-                              })}
-                            </div>
+                          {klant.gepinde_notitie && (
+                            <Pin className="w-3 h-3 text-amber-500/60 flex-shrink-0" />
                           )}
                         </div>
+                        {(klant.klant_labels || []).length > 0 && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {(klant.klant_labels || []).map((label) => {
+                              const dotColors: Record<string, string> = {
+                                vooruit_betalen: 'bg-orange-500',
+                                niet_helpen: 'bg-red-500',
+                                voorrang: 'bg-green-500',
+                                grote_klant: 'bg-blue-500',
+                                wanbetaler: 'bg-red-500',
+                              }
+                              return (
+                                <span
+                                  key={label}
+                                  className={`w-1.5 h-1.5 rounded-full ${dotColors[label] || 'bg-muted-foreground/40'}`}
+                                />
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <span className="text-sm text-muted-foreground">
-                        {klant.contactpersoon}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <span className="text-sm text-muted-foreground">
-                        {klant.email}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
-                      <span className="text-sm text-muted-foreground">
-                        {klant.telefoon}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <span className="text-sm text-muted-foreground">
-                        {klant.stad}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge className={cn('capitalize text-xs', getStatusColor(klant.status))}>
-                        {klant.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <Badge variant="secondary" className="text-xs font-mono">
-                        {projectCounts[klant.id] || 0}
-                      </Badge>
-                    </td>
-                    <td className="px-2 py-3 text-right">
-                      {renderRowActions(klant)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </td>
+
+                  {/* Contactpersoon */}
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    <span className="text-[13px] text-muted-foreground">
+                      {klant.contactpersoon}
+                    </span>
+                  </td>
+
+                  {/* Email */}
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    <span className="text-[13px] text-muted-foreground">
+                      {klant.email}
+                    </span>
+                  </td>
+
+                  {/* Stad */}
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    <span className="text-[13px] text-muted-foreground">
+                      {klant.stad}
+                    </span>
+                  </td>
+
+                  {/* Projecten count */}
+                  <td className="px-4 py-3 text-center hidden xl:table-cell">
+                    <Badge variant="secondary" className="text-xs font-mono">
+                      {projectCounts[klant.id] || 0}
+                    </Badge>
+                  </td>
+
+                  {/* Quick actions + Menu */}
+                  <td className="py-3 px-2">
+                    <div className="flex items-center gap-0.5 justify-end">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || 'Klant', id: `/klanten/${klant.id}` })
+                        }}
+                        className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                        title="Bekijken"
+                      >
+                        <Eye className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/projecten/nieuw?klant_id=${klant.id}`)
+                        }}
+                        className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                        title="Project aanmaken"
+                      >
+                        <FolderPlus className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                      {klant.email && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.location.href = `mailto:${klant.email}`
+                          }}
+                          className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                          title="Klant mailen"
+                        >
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      )}
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || 'Klant', id: `/klanten/${klant.id}` }) }}>
+                            <Eye className="w-3.5 h-3.5 mr-2" />
+                            Bekijken
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditClient(klant) }}>
+                            <Pencil className="w-3.5 h-3.5 mr-2" />
+                            Bewerken
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projecten/nieuw?klant_id=${klant.id}`) }}>
+                            <FolderPlus className="w-3.5 h-3.5 mr-2" />
+                            Project aanmaken
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/offertes/nieuw?klant_id=${klant.id}`) }}>
+                            <FileText className="w-3.5 h-3.5 mr-2" />
+                            Offerte maken
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/facturen/nieuw?klant_id=${klant.id}`) }}>
+                            <Receipt className="w-3.5 h-3.5 mr-2" />
+                            Factuur aanmaken
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {klant.email && (
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${klant.email}` }}>
+                              <Mail className="w-3.5 h-3.5 mr-2" />
+                              Klant mailen
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClient(klant.id) }}
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-2" />
+                            Verwijderen
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Add/Edit client dialog */}
