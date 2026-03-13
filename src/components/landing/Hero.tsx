@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 
-const headingWords = ['Alles-in-één', 'software', 'voor', 'de', 'creatieve', 'branche.'];
-
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
 
@@ -14,71 +12,45 @@ export default function Hero() {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-mesh-hero overflow-hidden noise-overlay">
-      {/* Decorative floating elements — signmaking vibes */}
+      {/* Background decorations */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        {/* Floating neon letter "F" */}
-        <div
-          className="float-element absolute"
-          style={{ top: '12%', left: '8%', opacity: mounted ? 0.12 : 0, transition: 'opacity 1.5s ease 0.5s' }}
-        >
-          <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-            <text x="10" y="95" fontFamily="var(--font-madellin), serif" fontSize="100" fontWeight="900" fill="#E8A990">F</text>
-          </svg>
-        </div>
-
-        {/* Floating tools — ruler */}
-        <div
-          className="float-element-slow absolute"
-          style={{ top: '25%', right: '6%', opacity: mounted ? 0.08 : 0, transition: 'opacity 1.5s ease 0.8s' }}
-        >
-          <svg width="160" height="40" viewBox="0 0 160 40" fill="none" style={{ transform: 'rotate(-15deg)' }}>
-            <rect x="0" y="8" width="160" height="24" rx="2" stroke="#C49585" strokeWidth="1.5" fill="none" />
-            {[0, 20, 40, 60, 80, 100, 120, 140].map((x) => (
-              <line key={x} x1={x} y1="8" x2={x} y2="20" stroke="#C49585" strokeWidth="1" />
-            ))}
-          </svg>
-        </div>
-
-        {/* Glow orb — warm amber */}
+        {/* Glow orbs */}
         <div
           className="absolute rounded-full"
           style={{
-            top: '60%', left: '5%', width: 200, height: 200,
-            background: 'radial-gradient(circle, rgba(232,169,144,0.15), transparent 70%)',
-            filter: 'blur(40px)',
+            top: '15%', left: '10%', width: 300, height: 300,
+            background: 'radial-gradient(circle, rgba(232,169,144,0.18), transparent 70%)',
+            filter: 'blur(60px)',
             opacity: mounted ? 1 : 0,
             transition: 'opacity 2s ease 0.3s',
           }}
         />
-
-        {/* Glow orb — cool lavender */}
         <div
           className="absolute rounded-full"
           style={{
-            top: '20%', right: '10%', width: 180, height: 180,
-            background: 'radial-gradient(circle, rgba(164,139,191,0.12), transparent 70%)',
-            filter: 'blur(40px)',
+            bottom: '20%', right: '8%', width: 250, height: 250,
+            background: 'radial-gradient(circle, rgba(164,139,191,0.14), transparent 70%)',
+            filter: 'blur(50px)',
             opacity: mounted ? 1 : 0,
             transition: 'opacity 2s ease 0.6s',
           }}
         />
-
-        {/* Floating vinyl roll */}
         <div
-          className="float-element absolute hidden md:block"
-          style={{ bottom: '18%', right: '10%', opacity: mounted ? 0.1 : 0, transition: 'opacity 1.5s ease 1s', animationDelay: '2s' }}
-        >
-          <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-            <circle cx="40" cy="40" r="35" stroke="#8A8A85" strokeWidth="1" fill="none" />
-            <circle cx="40" cy="40" r="25" stroke="#8A8A85" strokeWidth="0.5" fill="none" />
-            <circle cx="40" cy="40" r="8" stroke="#8A8A85" strokeWidth="1" fill="none" />
-          </svg>
-        </div>
+          className="absolute rounded-full"
+          style={{
+            top: '50%', left: '50%', width: 400, height: 400,
+            transform: 'translate(-50%, -50%)',
+            background: 'radial-gradient(circle, rgba(125,184,138,0.08), transparent 70%)',
+            filter: 'blur(80px)',
+            opacity: mounted ? 1 : 0,
+            transition: 'opacity 2s ease 0.9s',
+          }}
+        />
 
-        {/* Grid lines — werkplaats raster */}
+        {/* Subtle grid */}
         <div
           className="absolute inset-0 hidden md:block"
-          style={{ opacity: mounted ? 0.03 : 0, transition: 'opacity 2s ease' }}
+          style={{ opacity: mounted ? 0.025 : 0, transition: 'opacity 2s ease' }}
         >
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -91,10 +63,10 @@ export default function Hero() {
         </div>
       </div>
 
-      <div className="max-w-[700px] mx-auto px-6 relative z-10 text-center" style={{ paddingTop: 140, paddingBottom: 140 }}>
+      <div className="max-w-[760px] mx-auto px-6 relative z-10 text-center" style={{ paddingTop: 140, paddingBottom: 100 }}>
         {/* Overline badge */}
         <div
-          className="inline-flex items-center gap-2 mb-6 transition-all duration-700"
+          className="inline-flex items-center gap-2 mb-8 transition-all duration-700"
           style={{
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(16px)',
@@ -107,66 +79,76 @@ export default function Hero() {
           </span>
         </div>
 
-        {/* Heading — word-by-word reveal with neon glow */}
-        <h1 className="font-heading hero-heading mb-8 neon-glow">
-          {headingWords.map((word, i) => (
-            <span key={i} className="word-reveal mr-[0.25em]">
-              <span
-                className={word === 'Alles-in-één' ? 'text-ember-gradient' : ''}
-                style={{
-                  animationDelay: mounted ? `${i * 0.12}s` : '0s',
-                  opacity: mounted ? undefined : 0,
-                }}
-              >
-                {word}
-              </span>
+        {/* Heading */}
+        <h1 className="font-heading hero-heading mb-6">
+          <span className="word-reveal mr-[0.25em]">
+            <span
+              className="text-ember-gradient"
+              style={{ animationDelay: mounted ? '0s' : '0s', opacity: mounted ? undefined : 0 }}
+            >
+              Eén systeem.
             </span>
-          ))}
+          </span>
+          <br />
+          <span className="word-reveal mr-[0.25em]">
+            <span style={{ animationDelay: mounted ? '0.15s' : '0s', opacity: mounted ? undefined : 0 }}>
+              Nul gedoe.
+            </span>
+          </span>
         </h1>
 
-        {/* Sub */}
+        {/* Sub — speaks to pain, not features */}
         <p
-          className="text-[19px] leading-[1.7] text-ink-60 max-w-[520px] mx-auto mb-10 transition-all duration-700"
+          className="text-[20px] leading-[1.7] text-ink-60 max-w-[500px] mx-auto mb-10 transition-all duration-700"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(24px)',
+            transitionDelay: '0.8s',
+          }}
+        >
+          Van offerte tot factuur, van werkbon tot planning. Alles op één plek — zodat jij kunt doen waar je goed in bent.
+        </p>
+
+        {/* CTA buttons */}
+        <div
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 transition-all duration-700"
           style={{
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(24px)',
             transitionDelay: '1s',
           }}
         >
-          Offertes, werkbonnen, facturen, planning, klantportaal, e-mail en AI. Alles in één systeem. Gebouwd door signmakers.
-        </p>
-
-        {/* CTA buttons */}
-        <div
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 transition-all duration-700"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(24px)',
-            transitionDelay: '1.2s',
-          }}
-        >
           <Button variant="ink" href="https://app.forgedesk.io" className="w-full sm:w-auto max-w-[300px]">
-            Start 30 dagen gratis &rarr;
+            Probeer 30 dagen gratis &rarr;
           </Button>
           <Button variant="soft" href="#stappen" className="w-full sm:w-auto max-w-[300px]">
             Bekijk hoe het werkt
           </Button>
         </div>
 
-        {/* Proof points */}
+        {/* Trust bar — visual stats instead of plain text */}
         <div
-          className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[13px] font-medium text-ink-40 transition-all duration-700"
+          className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 transition-all duration-700"
           style={{
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(24px)',
-            transitionDelay: '1.4s',
+            transitionDelay: '1.2s',
           }}
         >
-          <span>Geen creditcard</span>
-          <span className="text-ink-20">&middot;</span>
-          <span>Vanaf &euro;49/maand</span>
-          <span className="text-ink-20">&middot;</span>
-          <span>Stap over vanuit James, Gripp of Excel</span>
+          <div className="text-center">
+            <p className="text-[22px] font-heading font-bold text-ink">40+</p>
+            <p className="text-[12px] text-ink-40 mt-0.5">jaar ervaring</p>
+          </div>
+          <div className="w-px h-8 bg-ink-10" />
+          <div className="text-center">
+            <p className="text-[22px] font-heading font-bold text-ink">&euro;49</p>
+            <p className="text-[12px] text-ink-40 mt-0.5">per maand, alles erin</p>
+          </div>
+          <div className="w-px h-8 bg-ink-10" />
+          <div className="text-center">
+            <p className="text-[22px] font-heading font-bold text-ink">30</p>
+            <p className="text-[12px] text-ink-40 mt-0.5">dagen gratis proberen</p>
+          </div>
         </div>
       </div>
 
