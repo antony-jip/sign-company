@@ -5,8 +5,8 @@ import './globals.css';
 
 const madellin = localFont({
   src: [
-    { path: '../../public/fonts/Madellin-Regular.woff', weight: '400', style: 'normal' },
-    { path: '../../public/fonts/Madellin-Bold.woff', weight: '700', style: 'normal' },
+    { path: './fonts/Madellin-Regular.woff', weight: '400', style: 'normal' },
+    { path: './fonts/Madellin-Bold.woff', weight: '700', style: 'normal' },
   ],
   variable: '--font-madellin',
   display: 'swap',

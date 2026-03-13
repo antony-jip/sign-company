@@ -153,6 +153,34 @@
   @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-ink focus:text-white focus:px-4 focus:py-2 focus:rounded;
 }
 
+/* ===== Utility classes used by feature pages ===== */
+.text-gradient-pastel {
+  background: linear-gradient(135deg, #C49585, #A48BBF, #7DB88A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pastel-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.glass {
+  background: rgba(250, 250, 247, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ===== Stagger delays for scroll animations ===== */
+.stagger-1 { transition-delay: 0.1s; }
+.stagger-2 { transition-delay: 0.2s; }
+.stagger-3 { transition-delay: 0.3s; }
+
 /* ===== Mobile (styleguide section 9) ===== */
 @media (max-width: 899px) {
   .container {
