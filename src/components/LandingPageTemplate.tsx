@@ -4,12 +4,12 @@ import { LandingPageData } from '@/types/landing-page';
 import { getSchemaOrg } from '@/lib/company-info';
 import { Header } from './Header';
 import { Hero } from './Hero';
-import { Services } from './Services';
-import { USPs } from './USPs';
-import { Portfolio } from './Portfolio';
+import Services from './Services';
+import USPs from './USPs';
+import Portfolio from './Portfolio';
 import { Location } from './Location';
-import { FAQ } from './FAQ';
-import { CTA } from './CTA';
+import FAQ from './FAQ';
+import CTA from './CTA';
 import { Footer } from './Footer';
 
 interface LandingPageTemplateProps {
