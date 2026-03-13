@@ -26,6 +26,7 @@ import {
   Bell,
   Send,
   Reply,
+  Mail,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -121,6 +122,22 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   const [replyItemId, setReplyItemId] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
   const [replySending, setReplySending] = useState(false)
+
+  // Check if email is configured for portal notifications
+  const [emailConfigured, setEmailConfigured] = useState(true) // assume true to avoid flash
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('forgedesk_email_settings')
+      if (stored) {
+        const settings = JSON.parse(stored)
+        setEmailConfigured(!!settings.gmail_address && !!settings.app_password)
+      } else {
+        setEmailConfigured(false)
+      }
+    } catch {
+      setEmailConfigured(false)
+    }
+  }, [])
 
   const fetchPortaal = useCallback(async () => {
     try {
@@ -531,6 +548,28 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               </>
             )}
           </div>
+
+          {/* Email guidance banner */}
+          {isActief && !emailConfigured && (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
+              <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                  Koppel je e-mail account om klanten automatisch te notificeren
+                </p>
+                <p className="text-[11px] text-amber-600/80 dark:text-amber-400/60 mt-0.5">
+                  Zonder e-mailkoppeling werkt het portaal, maar ontvangt de klant geen melding bij nieuwe items.
+                </p>
+                <a
+                  href="/instellingen"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 hover:underline mt-1.5"
+                >
+                  Ga naar e-mailinstellingen
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </div>
+          )}
 
           {/* Item toevoegen knoppen */}
           {isActief && (
