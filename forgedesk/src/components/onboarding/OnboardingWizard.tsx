@@ -562,38 +562,44 @@ export function OnboardingWizard() {
 
   // Step 1 handler
   const handleStep1Next = async () => {
-    if (!organisatieId || !bedrijfsnaam.trim()) return
+    if (!bedrijfsnaam.trim()) return
+    if (!organisatieId) {
+      toast.error('Organisatie niet gevonden. Probeer opnieuw in te loggen.')
+      return
+    }
     setIsSaving(true)
     try {
       await updateOrganisatie(organisatieId, { naam: bedrijfsnaam.trim(), onboarding_stap: 1 })
-      goToStep(1)
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Opslaan mislukt')
+      // Try saving just the name without onboarding_stap (column may not exist yet)
+      try {
+        await updateOrganisatie(organisatieId, { naam: bedrijfsnaam.trim() })
+      } catch {
+        // Continue anyway — name save is not critical for flow
+      }
     } finally {
       setIsSaving(false)
+      goToStep(1)
     }
   }
 
   // Step 2 handlers
   const handleStep2Next = async () => {
-    if (!organisatieId) return
     setIsSaving(true)
     try {
-      await updateOrganisatie(organisatieId, { onboarding_stap: 2 })
-      goToStep(2)
+      if (organisatieId) await updateOrganisatie(organisatieId, { onboarding_stap: 2 })
     } catch {
-      // Continue anyway
-      goToStep(2)
+      // Continue anyway — step tracking is not critical
     } finally {
       setIsSaving(false)
+      goToStep(2)
     }
   }
 
   const handleStep2Skip = async () => {
-    if (!organisatieId) return
     setIsSaving(true)
     try {
-      await updateOrganisatie(organisatieId, { onboarding_stap: 2 })
+      if (organisatieId) await updateOrganisatie(organisatieId, { onboarding_stap: 2 })
     } catch {
       // Continue anyway
     } finally {
@@ -604,31 +610,45 @@ export function OnboardingWizard() {
 
   // Step 3 handlers
   const handleStep3Next = async () => {
-    if (!organisatieId) return
     setIsSaving(true)
     try {
-      await updateOrganisatie(organisatieId, {
-        adres: gegevens.adres,
-        postcode: gegevens.postcode,
-        plaats: gegevens.plaats,
-        telefoon: gegevens.telefoon,
-        kvk_nummer: gegevens.kvk_nummer,
-        btw_nummer: gegevens.btw_nummer,
-        onboarding_stap: 3,
-      })
-      goToStep(3)
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Opslaan mislukt')
+      if (organisatieId) {
+        await updateOrganisatie(organisatieId, {
+          adres: gegevens.adres,
+          postcode: gegevens.postcode,
+          plaats: gegevens.plaats,
+          telefoon: gegevens.telefoon,
+          kvk_nummer: gegevens.kvk_nummer,
+          btw_nummer: gegevens.btw_nummer,
+          onboarding_stap: 3,
+        })
+      }
+    } catch {
+      // Try saving just the business details without onboarding_stap
+      try {
+        if (organisatieId) {
+          await updateOrganisatie(organisatieId, {
+            adres: gegevens.adres,
+            postcode: gegevens.postcode,
+            plaats: gegevens.plaats,
+            telefoon: gegevens.telefoon,
+            kvk_nummer: gegevens.kvk_nummer,
+            btw_nummer: gegevens.btw_nummer,
+          })
+        }
+      } catch {
+        // Continue anyway
+      }
     } finally {
       setIsSaving(false)
+      goToStep(3)
     }
   }
 
   const handleStep3Skip = async () => {
-    if (!organisatieId) return
     setIsSaving(true)
     try {
-      await updateOrganisatie(organisatieId, { onboarding_stap: 3 })
+      if (organisatieId) await updateOrganisatie(organisatieId, { onboarding_stap: 3 })
     } catch {
       // Continue
     } finally {
