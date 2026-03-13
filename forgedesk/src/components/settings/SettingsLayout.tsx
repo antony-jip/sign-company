@@ -677,7 +677,100 @@ function BedrijfTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Demo data verwijderen */}
+      <DemoDataSection />
     </>
+  )
+}
+
+function DemoDataSection() {
+  const { user } = useAuth()
+  const [hasDemoData, setHasDemoData] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    if (!user?.id || !isSupabaseConfigured() || !supabase) {
+      setChecked(true)
+      return
+    }
+    supabase
+      .from('klanten')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_demo_data', true)
+      .then(({ count }) => {
+        setHasDemoData((count ?? 0) > 0)
+        setChecked(true)
+      })
+  }, [user?.id])
+
+  if (!checked || !hasDemoData) return null
+
+  const handleDelete = async () => {
+    if (!user?.id || !supabase) return
+    if (!window.confirm('Weet je zeker dat je alle voorbeelddata wilt verwijderen? Dit kan niet ongedaan worden.')) return
+
+    setIsDeleting(true)
+    try {
+      // 1. Verwijder taken
+      await supabase.from('taken').delete().eq('user_id', user.id).eq('is_demo_data', true)
+
+      // 2. Haal demo offerte IDs op voor offerte_items
+      const { data: demoOffertes } = await supabase
+        .from('offertes')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_demo_data', true)
+      const demoOfferteIds = (demoOffertes || []).map((o: { id: string }) => o.id)
+
+      // 3. Verwijder offerte_items van demo offertes
+      if (demoOfferteIds.length > 0) {
+        await supabase.from('offerte_items').delete().in('offerte_id', demoOfferteIds)
+      }
+
+      // 4. Verwijder offertes
+      await supabase.from('offertes').delete().eq('user_id', user.id).eq('is_demo_data', true)
+
+      // 5. Verwijder projecten
+      await supabase.from('projecten').delete().eq('user_id', user.id).eq('is_demo_data', true)
+
+      // 6. Verwijder klanten
+      await supabase.from('klanten').delete().eq('user_id', user.id).eq('is_demo_data', true)
+
+      toast.success('Voorbeelddata verwijderd')
+      setHasDemoData(false)
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Verwijderen mislukt')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  return (
+    <Card className="border-orange-200 dark:border-orange-800 mt-6">
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-1">Voorbeelddata</h3>
+            <p className="text-[13px] text-muted-foreground">
+              Er staat nog voorbeelddata in je account van de onboarding.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20 flex-shrink-0"
+          >
+            {isDeleting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-2 h-3.5 w-3.5" />}
+            Verwijderen
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
