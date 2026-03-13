@@ -245,8 +245,9 @@ function getLocalEmailCredentials(): { gmail_address: string; app_password: stri
 export async function fetchEmailsFromIMAP(
   folder?: string,
   limit?: number,
-  offset?: number
-): Promise<{ emails: IMAPEmailSummary[]; total: number }> {
+  offset?: number,
+  userId?: string
+): Promise<{ emails: IMAPEmailSummary[]; total: number; synced?: number }> {
   const credentials = getLocalEmailCredentials()
 
   const response = await fetch('/api/fetch-emails', {
@@ -257,6 +258,7 @@ export async function fetchEmailsFromIMAP(
       folder: folder || 'INBOX',
       limit: limit || 50,
       offset: offset || 0,
+      user_id: userId,
     }),
   })
 
@@ -270,7 +272,8 @@ export async function fetchEmailsFromIMAP(
 
 export async function readEmailFromIMAP(
   uid: number,
-  folder?: string
+  folder?: string,
+  userId?: string
 ): Promise<IMAPEmailDetail> {
   const credentials = getLocalEmailCredentials()
 
@@ -281,6 +284,7 @@ export async function readEmailFromIMAP(
       ...credentials,
       uid,
       folder: folder || 'INBOX',
+      user_id: userId,
     }),
   })
 

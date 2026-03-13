@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getEmails, getKlanten } from '@/services/supabaseService'
+import { getKlanten } from '@/services/supabaseService'
+import supabase from '@/services/supabaseClient'
 import { fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
 import type { Email, Klant } from '@/types'
@@ -9,6 +10,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+
+const PAGE_SIZE = 50
 
 export function useEmailData() {
   const { user } = useAuth()
@@ -21,6 +24,10 @@ export function useEmailData() {
   const [imapTotal, setImapTotal] = useState(0)
   const [isLoadingBody, setIsLoadingBody] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Track current offset for "load more" pagination
+  const offsetRef = useRef(0)
+  const hasMoreRef = useRef(true)
 
   // Email body cache for IMAP
   const bodyCacheRef = useRef<Map<string, string>>(new Map())
@@ -43,97 +50,144 @@ export function useEmailData() {
     updated_at: msg.date,
   }), [user?.id])
 
-  // SessionStorage cache for instant display while IMAP loads
-  const getCachedEmails = useCallback((folder: string): Email[] | null => {
-    try {
-      const cached = sessionStorage.getItem(`forgedesk_emails_${folder}`)
-      if (!cached) return null
-      const { emails: cachedEmails, timestamp } = JSON.parse(cached)
-      // Cache valid for 5 minutes
-      if (Date.now() - timestamp > 5 * 60 * 1000) return null
-      return cachedEmails
-    } catch { return null }
-  }, [])
+  /**
+   * Load emails from Supabase cache (instant).
+   * Returns cached emails for the given folder, sorted by datum DESC.
+   */
+  const loadFromSupabase = useCallback(async (folder: string, pageSize: number = PAGE_SIZE, offset: number = 0): Promise<Email[]> => {
+    if (!supabase || !user?.id) return []
 
-  const setCachedEmails = useCallback((folder: string, emailData: Email[]) => {
+    const mapFolder = folder === 'INBOX' ? 'inbox' : folder.toLowerCase()
+
+    const { data, error } = await supabase
+      .from('emails')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('map', mapFolder)
+      .order('datum', { ascending: false })
+      .range(offset, offset + pageSize - 1)
+
+    if (error) {
+      logger.error('Supabase emails laden mislukt:', error)
+      return []
+    }
+
+    return (data || []) as Email[]
+  }, [user?.id])
+
+  /**
+   * Trigger IMAP sync in background (writes to Supabase, returns sync count).
+   */
+  const syncViaIMAP = useCallback(async (folder: string) => {
+    if (!user?.id) return
     try {
-      sessionStorage.setItem(`forgedesk_emails_${folder}`, JSON.stringify({
-        emails: emailData,
-        timestamp: Date.now(),
-      }))
-    } catch { /* storage full, ignore */ }
-  }, [])
+      const result = await fetchEmailsFromIMAP(folder, emailFetchLimit || 200, 0, user.id)
+      setImapTotal(result.total)
+      setUseIMAP(true)
+      return result
+    } catch {
+      // IMAP sync failed — Supabase cache is still valid
+      logger.error('IMAP sync mislukt, gebruik Supabase cache')
+    }
+  }, [user?.id, emailFetchLimit])
 
   const fetchLimit = emailFetchLimit || 200
 
+  /**
+   * Main load: Supabase first, then background IMAP sync.
+   */
   const loadEmails = useCallback(async (folder?: string) => {
     const imapFolder = folder || 'INBOX'
+
+    // 1. Load from Supabase cache (instant)
+    const cached = await loadFromSupabase(imapFolder)
+
+    if (cached.length > 0) {
+      // Show cached emails immediately
+      setEmails(cached)
+      setIsLoading(false)
+      offsetRef.current = cached.length
+      hasMoreRef.current = cached.length >= PAGE_SIZE
+
+      // 2. Background IMAP sync
+      syncViaIMAP(imapFolder).then(async () => {
+        // After sync, reload from Supabase to pick up new emails
+        const fresh = await loadFromSupabase(imapFolder, Math.max(PAGE_SIZE, cached.length))
+        if (fresh.length > 0) {
+          setEmails(fresh)
+          offsetRef.current = fresh.length
+          hasMoreRef.current = fresh.length >= PAGE_SIZE
+        }
+      })
+
+      return cached
+    }
+
+    // No cache — try IMAP directly (first time)
     try {
+      await syncViaIMAP(imapFolder)
+      // After sync, load from Supabase
+      const fromDb = await loadFromSupabase(imapFolder)
+      if (fromDb.length > 0) {
+        offsetRef.current = fromDb.length
+        hasMoreRef.current = fromDb.length >= PAGE_SIZE
+        return fromDb
+      }
+
+      // Fallback: old IMAP flow (no Supabase caching, e.g. no user_id)
       const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, 0)
       setImapTotal(result.total)
       setUseIMAP(true)
       const emailData = result.emails.map((msg) => imapToEmail(msg, imapFolder))
-      setCachedEmails(imapFolder, emailData)
       return emailData
     } catch {
       setUseIMAP(false)
-      return await getEmails().catch(() => [])
+      return []
     }
-  }, [imapToEmail, setCachedEmails, fetchLimit])
+  }, [loadFromSupabase, syncViaIMAP, imapToEmail, fetchLimit])
 
+  /**
+   * Load more emails (pagination from Supabase).
+   */
   const loadMoreEmails = useCallback(async (folder: EmailFolder) => {
-    if (!useIMAP || isLoadingMore) return
+    if (isLoadingMore || !hasMoreRef.current) return
     const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
-    const currentCount = emails.length
-    if (currentCount >= imapTotal) return
     setIsLoadingMore(true)
     try {
-      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, currentCount)
-      const moreEmails = result.emails.map((msg) => imapToEmail(msg, imapFolder))
-      setEmails((prev) => [...prev, ...moreEmails])
-      setImapTotal(result.total)
+      const more = await loadFromSupabase(imapFolder, PAGE_SIZE, offsetRef.current)
+      if (more.length > 0) {
+        setEmails((prev) => [...prev, ...more])
+        offsetRef.current += more.length
+      }
+      if (more.length < PAGE_SIZE) {
+        hasMoreRef.current = false
+      }
     } catch {
       toast.error('Kon meer emails niet laden')
     } finally {
       setIsLoadingMore(false)
     }
-  }, [useIMAP, isLoadingMore, emails.length, imapTotal, imapToEmail, fetchLimit])
+  }, [isLoadingMore, loadFromSupabase])
 
-  // Initial load: show cached emails instantly, then refresh from IMAP
+  // Initial load
   useEffect(() => {
     let cancelled = false
 
-    // Show cached emails immediately (no loading spinner)
-    const cached = getCachedEmails('INBOX')
-    if (cached && cached.length > 0) {
-      setEmails(cached)
-      setIsLoading(false)
-      // Refresh in background
-      Promise.all([
-        loadEmails(),
-        getKlanten().catch(() => []),
-      ]).then(([emailData, klantData]) => {
+    setIsLoading(true)
+    Promise.all([
+      loadEmails(),
+      getKlanten().catch(() => []),
+    ])
+      .then(([emailData, klantData]) => {
         if (!cancelled) {
           setEmails(emailData)
           setKlanten(klantData)
         }
       })
-    } else {
-      setIsLoading(true)
-      Promise.all([
-        loadEmails(),
-        getKlanten().catch(() => []),
-      ])
-        .then(([emailData, klantData]) => {
-          if (!cancelled) {
-            setEmails(emailData)
-            setKlanten(klantData)
-          }
-        })
-        .finally(() => { if (!cancelled) setIsLoading(false) })
-    }
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+
     return () => { cancelled = true }
-  }, [loadEmails, getCachedEmails])
+  }, [loadEmails])
 
   // Unsnooze timer
   useEffect(() => {
@@ -157,19 +211,25 @@ export function useEmailData() {
   const handleRefresh = useCallback(async (selectedFolder: EmailFolder) => {
     setIsRefreshing(true)
     try {
-      const emailData = await loadEmails(IMAP_FOLDER_MAP[selectedFolder] || 'INBOX')
+      const imapFolder = IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'
+      // Force IMAP sync first
+      await syncViaIMAP(imapFolder)
+      // Then reload from Supabase
+      const emailData = await loadFromSupabase(imapFolder, Math.max(PAGE_SIZE, emails.length))
       setEmails(emailData)
+      offsetRef.current = emailData.length
       toast.success('Inbox vernieuwd')
     } catch {
       toast.error('Kon emails niet vernieuwen')
     } finally {
       setIsRefreshing(false)
     }
-  }, [loadEmails])
+  }, [syncViaIMAP, loadFromSupabase, emails.length])
 
   const handleFolderLoad = useCallback(async (folder: EmailFolder) => {
-    if (!useIMAP) return
     setIsLoading(true)
+    offsetRef.current = 0
+    hasMoreRef.current = true
     try {
       const emailData = await loadEmails(IMAP_FOLDER_MAP[folder] || 'INBOX')
       setEmails(emailData)
@@ -178,25 +238,29 @@ export function useEmailData() {
     } finally {
       setIsLoading(false)
     }
-  }, [useIMAP, loadEmails])
+  }, [loadEmails])
 
   const loadEmailBody = useCallback(async (email: Email, folder: EmailFolder): Promise<Email> => {
-    // Check cache first
+    // Check in-memory cache first
     const cached = bodyCacheRef.current.get(email.id)
     if (cached) {
       return { ...email, gelezen: true, inhoud: cached }
     }
 
-    if (!useIMAP || email.inhoud) return email
+    // Check if email already has body from Supabase cache
+    if (email.inhoud && email.inhoud.length > 0) {
+      bodyCacheRef.current.set(email.id, email.inhoud)
+      return { ...email, gelezen: true }
+    }
 
     setIsLoadingBody(true)
     try {
       const detail = await readEmailFromIMAP(
         Number(email.id),
-        IMAP_FOLDER_MAP[folder] || 'INBOX'
+        IMAP_FOLDER_MAP[folder] || 'INBOX',
+        user?.id
       )
       const body = detail.bodyHtml || detail.bodyText || ''
-      // Cache the body
       bodyCacheRef.current.set(email.id, body)
 
       return {
@@ -212,7 +276,7 @@ export function useEmailData() {
     } finally {
       setIsLoadingBody(false)
     }
-  }, [useIMAP])
+  }, [user?.id])
 
   return {
     emails,
