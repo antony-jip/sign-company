@@ -8,7 +8,7 @@ const sharedFeatures = [
   'Offertes, werkbonnen & facturen',
   'Projecten met marge-inzicht',
   'Klantportaal met goedkeurflow',
-  'AI-assistent (Forgie)',
+  'Forgie AI-assistent (€5 tegoed inbegrepen)',
   'E-mail gekoppeld aan projecten',
   'Foto-uploads op werkbonnen',
   'PDF-export & UBL-export',
@@ -182,8 +182,12 @@ export default function PricingContent() {
                 a: 'Na 30 dagen kies je zelf of je doorgaat. Geen automatische afschrijving.',
               },
               {
+                q: 'Hoe werkt het AI-tegoed?',
+                a: 'Forgie, de chatbot, zit inbegrepen met €5 AI-tegoed per maand. De Signing Visualiser draait op AI-tokens die je apart bijkoopt. Zo betaal je alleen voor wat je gebruikt.',
+              },
+              {
                 q: 'Zijn er extra kosten voor opslag of modules?',
-                a: 'Nee. Alles zit erin. Offertes, werkbonnen, facturen, AI, klantportaal, e-mail.',
+                a: 'Nee. Alles zit erin. Offertes, werkbonnen, facturen, klantportaal, e-mail. Alleen AI-tokens voor de Visualiser zijn apart.',
               },
             ].map((item) => (
               <div key={item.q}>
