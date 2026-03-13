@@ -1116,10 +1116,13 @@ function DayColumn({
     }
   }
 
+  const isDragOverThisColumn = draggingTaakId !== null && dropTarget?.dayIndex === dayIndex
+
   return (
     <div className={cn(
-      'flex-1 min-w-0 border-l border-border/40 relative',
-      isToday && 'bg-primary/[0.02]'
+      'flex-1 min-w-0 border-l border-border/40 relative transition-colors duration-150',
+      isToday && 'bg-primary/[0.02]',
+      isDragOverThisColumn && 'bg-primary/[0.05] ring-1 ring-inset ring-primary/20',
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
@@ -1374,6 +1377,7 @@ function TaskCard({
   onResizeStart?: (e: React.MouseEvent) => void
 }) {
   const isDone = taak.status === 'klaar'
+  const [isDragging, setIsDragging] = useState(false)
   const [justCompleted, setJustCompleted] = useState(false)
   const colors = PRIORITEIT_COLORS[taak.prioriteit]
   const hour = getHourFromDeadline(taak.deadline ?? "")
@@ -1395,7 +1399,25 @@ function TaskCard({
   function handleDragStart(e: React.DragEvent) {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', taak.id)
+    // Create a custom drag ghost
+    const el = e.currentTarget as HTMLElement
+    const ghost = el.cloneNode(true) as HTMLElement
+    ghost.style.width = `${el.offsetWidth}px`
+    ghost.style.opacity = '0.85'
+    ghost.style.transform = 'rotate(2deg)'
+    ghost.style.position = 'absolute'
+    ghost.style.top = '-9999px'
+    ghost.style.left = '-9999px'
+    document.body.appendChild(ghost)
+    e.dataTransfer.setDragImage(ghost, el.offsetWidth / 2, 20)
+    requestAnimationFrame(() => document.body.removeChild(ghost))
+    setIsDragging(true)
     onDragStart()
+  }
+
+  function handleDragEnd() {
+    setIsDragging(false)
+    onDragEnd()
   }
 
   // Duration label for resized tasks
@@ -1409,7 +1431,7 @@ function TaskCard({
     <div
       draggable={!isResizing}
       onDragStart={handleDragStart}
-      onDragEnd={onDragEnd}
+      onDragEnd={handleDragEnd}
       className={cn(
         'group relative rounded-lg border-l-[3px] px-2.5 py-2 transition-all duration-200',
         !isResizing && 'cursor-grab active:cursor-grabbing',
@@ -1420,7 +1442,8 @@ function TaskCard({
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-95 opacity-50',
         scheduled && 'shadow-sm',
-        isResizing && 'ring-2 ring-primary/30 shadow-xl'
+        isResizing && 'ring-2 ring-primary/30 shadow-xl',
+        isDragging && 'opacity-30 scale-95',
       )}
       style={heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : undefined}
       onClick={onEdit}
