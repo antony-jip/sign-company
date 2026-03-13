@@ -1,30 +1,22 @@
--- 030: Maak organisaties en uitnodigingen tabellen aan
+-- 030: Organisaties en uitnodigingen tabellen + eigenaar_id kolom
 -- DRAAI DIT HANDMATIG in de Supabase SQL Editor
+-- Veilig om meerdere keren uit te voeren (IF NOT EXISTS / IF EXISTS checks)
 
-CREATE TABLE IF NOT EXISTS organisaties (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  naam TEXT NOT NULL DEFAULT '',
-  eigenaar_id UUID NOT NULL,
-  logo_url TEXT,
-  adres TEXT,
-  postcode TEXT,
-  plaats TEXT,
-  telefoon TEXT,
-  kvk_nummer TEXT,
-  btw_nummer TEXT,
-  trial_start TIMESTAMPTZ DEFAULT NOW(),
-  trial_einde TIMESTAMPTZ DEFAULT NOW() + INTERVAL '30 days',
-  is_betaald BOOLEAN DEFAULT FALSE,
-  stripe_customer_id TEXT,
-  stripe_subscription_id TEXT,
-  abonnement_status TEXT DEFAULT 'trial',
-  onboarding_compleet BOOLEAN DEFAULT FALSE,
-  onboarding_stap INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Voeg eigenaar_id toe als die ontbreekt (tabel bestaat mogelijk al)
+ALTER TABLE organisaties
+  ADD COLUMN IF NOT EXISTS eigenaar_id UUID;
 
+-- Vul eigenaar_id in voor bestaande rijen (op basis van profiles)
+UPDATE organisaties o
+SET eigenaar_id = p.user_id
+FROM profiles p
+WHERE p.organisatie_id = o.id
+  AND o.eigenaar_id IS NULL;
+
+-- RLS policy voor organisaties
 ALTER TABLE organisaties ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Eigenaar ziet eigen organisatie" ON organisaties;
 CREATE POLICY "Eigenaar ziet eigen organisatie"
   ON organisaties FOR ALL
   USING (eigenaar_id = auth.uid());
@@ -44,6 +36,7 @@ CREATE TABLE IF NOT EXISTS uitnodigingen (
 
 ALTER TABLE uitnodigingen ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Org eigenaar beheert uitnodigingen" ON uitnodigingen;
 CREATE POLICY "Org eigenaar beheert uitnodigingen"
   ON uitnodigingen FOR ALL
   USING (
