@@ -190,13 +190,12 @@ export function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-[13px] font-medium text-foreground/70">Wachtwoord</Label>
-                <button
-                  type="button"
-                  onClick={() => toast.info('Neem contact op met de beheerder voor een wachtwoord reset.')}
+                <Link
+                  to="/wachtwoord-vergeten"
                   className="text-[12.5px] text-primary hover:underline font-medium"
                 >
                   Vergeten?
-                </button>
+                </Link>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -242,8 +241,8 @@ export function LoginPage() {
 
           <p className="text-center text-[13.5px] text-muted-foreground mt-8" style={{ fontFamily: 'Inter, sans-serif' }}>
             Nog geen account?{' '}
-            <Link to="/register" className="text-primary hover:underline font-semibold">
-              Gratis registreren
+            <Link to="/registreren" className="text-primary hover:underline font-semibold">
+              Gratis registreren →
             </Link>
           </p>
 
