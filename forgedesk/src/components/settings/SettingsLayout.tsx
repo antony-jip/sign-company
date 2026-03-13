@@ -67,7 +67,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { AppSettings, Medewerker } from '@/types'
 import { uploadFile, downloadFile } from '@/services/storageService'
 import { toast } from 'sonner'
@@ -78,6 +78,7 @@ import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
 import { PortaalTab } from './PortaalTab'
 import { TeamledenTab } from './TeamledenTab'
+import { AbonnementTab } from './AbonnementTab'
 import { Sparkles } from 'lucide-react'
 
 // Shared sub-tab navigation component
@@ -171,6 +172,7 @@ const settingsTabs = [
   { id: 'portaal', label: 'Portaal', icon: Link2, description: 'Klantportaal instellingen' },
   { id: 'forgie', label: 'Forgie AI', icon: Sparkles, description: 'AI assistent, visualizer en data import' },
   { id: 'teamleden', label: 'Teamleden', icon: Users, description: 'Leden, rollen en uitnodigingen' },
+  { id: 'abonnement', label: 'Abonnement', icon: CreditCard, description: 'Plan, trial en betaling' },
 ] as const
 
 function renderTabContent(tabId: string) {
@@ -187,12 +189,17 @@ function renderTabContent(tabId: string) {
     case 'portaal': return <PortaalTab />
     case 'forgie': return <ForgieTab />
     case 'teamleden': return <TeamledenTab />
+    case 'abonnement': return <AbonnementTab />
     default: return null
   }
 }
 
 export function SettingsLayout() {
-  const [activeTab, setActiveTab] = useState('profiel')
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') || 'profiel'
+  const [activeTab, setActiveTab] = useState(
+    settingsTabs.some((t) => t.id === initialTab) ? initialTab : 'profiel'
+  )
   const navigate = useNavigate()
 
   return (
