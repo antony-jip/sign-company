@@ -1,168 +1,153 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FeaturePageTemplate } from '@/components/FeaturePageTemplate';
+import FeaturePage from '@/components/landing/FeaturePage';
 
-/* ─── Klantportaal Simulator ─── */
-const PortalSimulator: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overzicht' | 'offertes' | 'projecten'>('overzicht');
-  const [comments, setComments] = useState([
-    { id: 1, author: 'Jan Jansen', text: 'Kunnen de letters iets groter?', time: '2 uur geleden', avatar: 'JJ' },
-    { id: 2, author: 'FORGEdesk', text: 'Ja, we passen het ontwerp aan. Nieuwe versie komt morgen.', time: '1 uur geleden', avatar: 'FD' },
-  ]);
-  const [newComment, setNewComment] = useState('');
+/* ─── Klantportaal Demo ─── */
+function KlantportaalDemo() {
+  const [tab, setTab] = useState<'offertes' | 'facturen' | 'tekeningen'>('offertes');
+  const [approved, setApproved] = useState<Record<string, boolean>>({});
 
-  const addComment = () => {
-    if (!newComment.trim()) return;
-    setComments(prev => [...prev, {
-      id: Date.now(),
-      author: 'Jan Jansen',
-      text: newComment.trim(),
-      time: 'Zojuist',
-      avatar: 'JJ',
-    }]);
-    setNewComment('');
-  };
+  const offertes = [
+    { nr: 'OFF-2026-089', titel: 'LED Lichtreclame', bedrag: '€2.450', status: 'Wacht op goedkeuring' },
+    { nr: 'OFF-2026-076', titel: 'Gevelreclame + montage', bedrag: '€4.800', status: 'Goedgekeurd' },
+  ];
+
+  const facturen = [
+    { nr: 'FAC-2026-041', titel: 'Factuur gevelletters', bedrag: '€1.200', status: 'Betaald', betaald: true },
+    { nr: 'FAC-2026-045', titel: 'Factuur LED montage', bedrag: '€3.800', status: 'Open', betaald: false },
+  ];
+
+  const tekeningen = [
+    { naam: 'Gevelontwerp v2.pdf', datum: '8 maart 2026', grootte: '2.4 MB' },
+    { naam: 'Lichtreclame_render.png', datum: '5 maart 2026', grootte: '1.8 MB' },
+    { naam: 'Plattegrond_montage.pdf', datum: '1 maart 2026', grootte: '540 KB' },
+  ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-mist/30 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.06)] border border-ink-10 overflow-hidden">
       {/* Portal Header */}
-      <div className="bg-gradient-to-r from-mist-light to-mist-light/50 px-6 py-4 border-b border-mist/20">
+      <div className="bg-mist-light/40 px-6 py-4 border-b border-ink-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-mist flex items-center justify-center text-mist-deep font-bold text-sm">
-              JJ
+            <div className="w-10 h-10 rounded-full bg-mist flex items-center justify-center text-mist-deep font-bold text-[13px]">
+              BJ
             </div>
             <div>
-              <p className="font-bold text-gray-900 text-sm">Bakkerij Jansen</p>
-              <p className="text-xs text-mist-deep">Klantportaal</p>
+              <p className="font-heading text-[15px] font-bold text-ink">Bakkerij Jansen</p>
+              <p className="text-[11px] text-ink-40">Klantportaal · 3 actieve projecten</p>
             </div>
           </div>
-          <span className="pastel-pill bg-mist-light text-mist-deep border border-mist/30">
-            3 actieve projecten
-          </span>
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-sage-vivid" />
+            <span className="text-[11px] text-ink-40">Online</span>
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-100">
+      <div className="flex border-b border-ink-10">
         {[
-          { key: 'overzicht' as const, label: 'Overzicht' },
-          { key: 'offertes' as const, label: 'Offertes' },
-          { key: 'projecten' as const, label: 'Projecten' },
-        ].map(tab => (
+          { key: 'offertes' as const, label: 'Offertes', count: 2 },
+          { key: 'facturen' as const, label: 'Facturen', count: 2 },
+          { key: 'tekeningen' as const, label: 'Tekeningen', count: 3 },
+        ].map(t => (
           <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-3 text-sm font-medium transition-all ${
-              activeTab === tab.key
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`flex-1 py-3.5 text-[13px] font-medium transition-all flex items-center justify-center gap-1.5 ${
+              tab === t.key
                 ? 'text-mist-deep border-b-2 border-mist-deep'
-                : 'text-gray-400 hover:text-gray-600'
+                : 'text-ink-40 hover:text-ink-60'
             }`}
           >
-            {tab.label}
+            {t.label}
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+              tab === t.key ? 'bg-mist-light text-mist-deep' : 'bg-ink-05 text-ink-40'
+            }`}>{t.count}</span>
           </button>
         ))}
       </div>
 
       <div className="p-5">
-        {activeTab === 'overzicht' && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-mist-light/40 rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-gray-900">3</p>
-                <p className="text-xs text-mist-deep">Projecten</p>
-              </div>
-              <div className="bg-lavender-light/40 rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-gray-900">2</p>
-                <p className="text-xs text-lavender-deep">Offertes</p>
-              </div>
-              <div className="bg-sage-light/40 rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-gray-900">1</p>
-                <p className="text-xs text-sage-deep">Afgerond</p>
-              </div>
-            </div>
-
-            {/* Comment pins */}
-            <div>
-              <p className="text-sm font-semibold text-gray-900 mb-3">Berichten</p>
-              <div className="space-y-3">
-                {comments.map(c => (
-                  <div key={c.id} className="flex gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                      c.avatar === 'FD' ? 'bg-sage-light text-sage-deep' : 'bg-mist-light text-mist-deep'
-                    }`}>
-                      {c.avatar}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm font-medium text-gray-900">{c.author}</span>
-                        <span className="text-xs text-gray-400">{c.time}</span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-0.5">{c.text}</p>
-                    </div>
+        {/* Offertes */}
+        {tab === 'offertes' && (
+          <div className="space-y-3">
+            {offertes.map(o => (
+              <div key={o.nr} className="p-4 rounded-xl border border-ink-10 hover:border-mist/40 transition-all">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-ink text-[14px]">{o.titel}</p>
+                    <p className="text-[12px] text-ink-40 font-mono">{o.nr}</p>
                   </div>
-                ))}
+                  <span className="text-[16px] font-bold font-mono text-ink">{o.bedrag}</span>
+                </div>
+                {o.status === 'Wacht op goedkeuring' && !approved[o.nr] ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setApproved(prev => ({ ...prev, [o.nr]: true }))}
+                      className="flex-1 bg-sage-vivid hover:bg-sage-deep text-white font-semibold py-2.5 rounded-xl text-[13px] transition-all hover:-translate-y-0.5"
+                    >
+                      ✓ Goedkeuren
+                    </button>
+                    <button className="flex-1 bg-ink-05 hover:bg-ink-10 text-ink-60 font-medium py-2.5 rounded-xl text-[13px] transition-colors">
+                      Vraag stellen
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-sage-light flex items-center justify-center">
+                      <svg className="w-3 h-3 text-sage-deep" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    <span className="text-[13px] text-sage-deep font-medium">Goedgekeurd</span>
+                  </div>
+                )}
               </div>
-              <div className="flex gap-2 mt-3">
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addComment()}
-                  placeholder="Schrijf een bericht..."
-                  className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-sm border border-gray-100 focus:outline-none focus:ring-2 focus:ring-mist/50"
-                />
-                <button
-                  onClick={addComment}
-                  className="bg-mist-deep hover:bg-mist-vivid text-white px-4 py-2.5 rounded-xl transition-colors text-sm font-medium"
-                >
-                  Verstuur
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         )}
 
-        {activeTab === 'offertes' && (
+        {/* Facturen */}
+        {tab === 'facturen' && (
           <div className="space-y-3">
-            {[
-              { nr: 'OFF-2026-089', titel: 'LED Lichtreclame', bedrag: '€2.450', status: 'Verstuurd', statusColor: 'bg-mist-light text-mist-deep' },
-              { nr: 'OFF-2026-076', titel: 'Gevelreclame + montage', bedrag: '€4.800', status: 'Goedgekeurd', statusColor: 'bg-sage-light text-sage-deep' },
-            ].map(o => (
-              <div key={o.nr} className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-mist/30 transition-colors">
+            {facturen.map(f => (
+              <div key={f.nr} className="p-4 rounded-xl border border-ink-10 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">{o.titel}</p>
-                  <p className="text-xs text-gray-400">{o.nr}</p>
+                  <p className="font-medium text-ink text-[14px]">{f.titel}</p>
+                  <p className="text-[12px] text-ink-40 font-mono">{f.nr}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-gray-900">{o.bedrag}</span>
-                  <span className={`pastel-pill ${o.statusColor}`}>{o.status}</span>
+                <div className="text-right">
+                  <span className="text-[16px] font-bold font-mono text-ink block">{f.bedrag}</span>
+                  <span className={`text-[11px] font-semibold ${f.betaald ? 'text-sage-deep' : 'text-blush-deep'}`}>
+                    {f.status}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {activeTab === 'projecten' && (
+        {/* Tekeningen */}
+        {tab === 'tekeningen' && (
           <div className="space-y-3">
-            {[
-              { naam: 'LED Lichtreclame', voortgang: 65, fase: 'Productie', color: 'bg-mist' },
-              { naam: 'Gevelletters kantoor', voortgang: 100, fase: 'Opgeleverd', color: 'bg-sage' },
-              { naam: 'Wrapping bedrijfsbus', voortgang: 20, fase: 'Ontwerp', color: 'bg-lavender' },
-            ].map(p => (
-              <div key={p.naam} className="p-4 rounded-xl border border-gray-100">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-medium text-gray-900 text-sm">{p.naam}</p>
-                  <span className="text-xs text-gray-400">{p.fase}</span>
+            {tekeningen.map(t => (
+              <div key={t.naam} className="p-4 rounded-xl border border-ink-10 flex items-center justify-between hover:border-mist/40 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-mist-light flex items-center justify-center">
+                    <svg className="w-5 h-5 text-mist-deep" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-ink text-[14px]">{t.naam}</p>
+                    <p className="text-[12px] text-ink-40">{t.datum} · {t.grootte}</p>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${p.color} transition-all duration-500`}
-                    style={{ width: `${p.voortgang}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-400 mt-1">{p.voortgang}% voltooid</p>
+                <button className="text-[12px] text-mist-deep font-medium hover:text-mist-vivid transition-colors">
+                  Download ↓
+                </button>
               </div>
             ))}
           </div>
@@ -170,55 +155,47 @@ const PortalSimulator: React.FC = () => {
       </div>
     </div>
   );
-};
-
-const usersIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-  </svg>
-);
-
-const chatIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
-  </svg>
-);
-
-const eyeIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-);
+}
 
 export default function KlantportaalFeaturePage() {
   return (
-    <FeaturePageTemplate
+    <FeaturePage
       color="mist"
-      badge="Klantportaal"
-      title="Jouw klanten, altijd"
-      titleHighlight="op de hoogte"
-      subtitle="Geef klanten een eigen portaal waar ze offertes bekijken, projectvoortgang volgen en berichten sturen. Professioneel en transparant."
+      overline="Klantportaal"
+      heading={<>Je klant keurt <span className="text-ember-gradient">direct</span> goed</>}
+      subtitle="Eigen portaal voor je klanten. Offertes goedkeuren, facturen bekijken, tekeningen downloaden."
       highlights={[
         {
-          icon: usersIcon,
-          title: 'Eigen Klantomgeving',
-          description: 'Elke klant krijgt een eigen portaal met login. Geen losse e-mails meer, alles op één plek.',
+          icon: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+            </svg>
+          ),
+          title: 'Online Goedkeurflow',
+          description: 'Klanten keuren offertes direct goed in hun portaal. Geen e-mail heen-en-weer, geen PDF\'s ondertekenen.',
         },
         {
-          icon: chatIcon,
-          title: 'Berichten & Feedback',
-          description: 'Klanten kunnen direct reageren op offertes en ontwerpen. Alle communicatie in één thread.',
+          icon: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+          ),
+          title: 'Documenten & Tekeningen',
+          description: 'Alle documenten op één plek. Tekeningen, renders en bestanden direct beschikbaar voor je klant.',
         },
         {
-          icon: eyeIcon,
-          title: 'Live Projectvoortgang',
-          description: 'Klanten zien real-time hoe hun project vordert. Van ontwerp tot montage — altijd transparant.',
+          icon: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+            </svg>
+          ),
+          title: 'Facturen Inzien',
+          description: 'Klanten zien hun facturen en betalingsstatus. Transparant en overzichtelijk.',
         },
       ]}
-      demo={<PortalSimulator />}
+      demo={<KlantportaalDemo />}
       demoTitle="Bekijk het klantportaal"
-      demoSubtitle="Zo ziet jouw klant het portaal. Navigeer tussen tabs en stuur een bericht."
+      demoSubtitle="Zo ziet jouw klant het. Keur een offerte goed en bekijk de tekeningen."
     />
   );
 }
