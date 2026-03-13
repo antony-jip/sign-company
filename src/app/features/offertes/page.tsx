@@ -233,7 +233,7 @@ function OfferteWizard() {
               <div className="space-y-2">
                 {uren.map(u => (
                   <div key={u.medewerker} className="flex justify-between text-[14px]">
-                    <span className="text-ink-60">{u.medewerker} — {u.uren}u × €{u.tarief}</span>
+                    <span className="text-ink-60">{u.medewerker} · {u.uren}u × €{u.tarief}</span>
                     <span className="font-mono text-ink">€{fmt(u.uren * u.tarief)}</span>
                   </div>
                 ))}

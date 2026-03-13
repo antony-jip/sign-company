@@ -6,7 +6,7 @@ import FeaturePage from '@/components/landing/FeaturePage';
 /* ─── Forgie Chat Demo ─── */
 function ForgieChat() {
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([
-    { role: 'assistant', text: 'Hoi! Ik ben Forgie, je AI-assistent. Ik ken je hele administratie — vraag maar raak.' },
+    { role: 'assistant', text: 'Hoi! Ik ben Forgie, je AI-assistent. Ik ken je hele administratie. Vraag maar raak.' },
   ]);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
@@ -18,9 +18,9 @@ function ForgieChat() {
     open: 'Er staat €8.420 aan open facturen en €34.250 aan openstaande offertes. Totaal uitstaand: €42.670. De meeste openstaande posten zijn van Matec Amsterdam.',
     planning: 'Volgende week: ma LED-montage bij Jansen (Joris+Mark), wo gevelletters Studio Bloom, vr wrapping Matec. Wil je de details?',
     omzet: 'Deze maand: €28.400 omzet, 23% hoger dan vorige maand. Marge gemiddeld 42%. Top-klant: Matec Amsterdam (€12.800).',
-    mail: 'Je hebt 3 ongelezen mails. Eén van Jan Jansen over offerte gevelreclame — hij vraagt om specificatie montagekosten. Zal ik een antwoord schrijven?',
+    mail: 'Je hebt 3 ongelezen mails. Eén van Jan Jansen over offerte gevelreclame. Hij vraagt om specificatie montagekosten. Zal ik een antwoord schrijven?',
     klant: 'Je hebt 47 actieve klanten. Top 3 op omzet: Matec Amsterdam (€52K), Van Dijk Installatie (€34K), Studio Bloom (€28K). Wil je een klantanalyse?',
-    default: 'Ik kan je helpen met offertes, facturen, planning, klantgegevens, e-mails en meer. Ik ken je hele administratie — vraag maar!',
+    default: 'Ik kan je helpen met offertes, facturen, planning, klantgegevens, e-mails en meer. Ik ken je hele administratie. Vraag maar!',
   };
 
   useEffect(() => {
@@ -209,7 +209,7 @@ export default function AIFeaturePage() {
       color="peach"
       overline="AI Tools"
       heading={<>Slimmer werken met <span className="text-ember-gradient">AI</span></>}
-      subtitle="Forgie, je AI-assistent. Gekoppeld aan je volledige administratie — open bedragen, offertestatus, klantdata en meer."
+      subtitle="Forgie, je AI-assistent. Gekoppeld aan je volledige administratie: open bedragen, offertestatus, klantdata en meer."
       highlights={[
         {
           icon: (

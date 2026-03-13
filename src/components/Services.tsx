@@ -15,7 +15,7 @@ const OfferteShowcase: React.FC = () => {
               Offertes die <span className="text-gradient-forge">indruk</span> maken
             </h2>
             <p className="slide-left stagger-1 text-lg text-gray-500 leading-relaxed">
-              Bouw je offerte op met regels, calculaties en materiaallijsten. Je klant ziet een strakke <strong className="text-gray-900">PDF</strong> — jij ziet je <strong className="text-gray-900">marge</strong>.
+              Bouw je offerte op met regels, calculaties en materiaallijsten. Je klant ziet een strakke <strong className="text-gray-900">PDF</strong>. Jij ziet je <strong className="text-gray-900">marge</strong>.
             </p>
           </div>
           <div className="lg:w-[55%]">
