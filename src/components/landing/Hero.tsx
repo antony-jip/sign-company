@@ -1,50 +1,131 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 
+/* ── Animation variants ───────────────────────────────────────── */
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (delay: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      damping: 25,
+      stiffness: 120,
+      delay,
+    },
+  }),
+};
+
+const floatCard = {
+  hidden: { opacity: 0, y: 40, scale: 0.95 },
+  visible: (delay: number) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      damping: 20,
+      stiffness: 100,
+      delay,
+    },
+  }),
+};
+
 /* ── Animated counter ─────────────────────────────────────────── */
+
 function Counter({ end, suffix = '', delay = 0 }: { end: number; suffix?: string; delay?: number }) {
   const [count, setCount] = useState(0);
-  const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setStarted(true), delay);
+    const timer = setTimeout(() => {
+      const duration = 1200;
+      const steps = 30;
+      const increment = end / steps;
+      let current = 0;
+      const interval = setInterval(() => {
+        current += increment;
+        if (current >= end) {
+          setCount(end);
+          clearInterval(interval);
+        } else {
+          setCount(Math.floor(current));
+        }
+      }, duration / steps);
+    }, delay);
     return () => clearTimeout(timer);
-  }, [delay]);
-
-  useEffect(() => {
-    if (!started) return;
-    const duration = 1200;
-    const steps = 30;
-    const increment = end / steps;
-    let current = 0;
-    const interval = setInterval(() => {
-      current += increment;
-      if (current >= end) {
-        setCount(end);
-        clearInterval(interval);
-      } else {
-        setCount(Math.floor(current));
-      }
-    }, duration / steps);
-    return () => clearInterval(interval);
-  }, [started, end]);
+  }, [delay, end]);
 
   return <>{count}{suffix}</>;
 }
 
-/* ── Floating mini-cards that show product features ────────────── */
-function FloatingCard({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+/* ── Floating card with mouse parallax ─────────────────────────── */
+
+function FloatingCard({
+  children,
+  className,
+  rotate = 0,
+  delay = 1.4,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  rotate?: number;
+  delay?: number;
+}) {
   return (
-    <div
+    <motion.div
       className={`absolute hidden lg:flex items-center gap-2.5 bg-white/80 backdrop-blur-md border border-ink-10 rounded-xl px-4 py-3 shadow-lg ${className || ''}`}
-      style={style}
+      variants={floatCard}
+      initial="hidden"
+      animate="visible"
+      custom={delay}
+      whileHover={{ scale: 1.05, rotate: 0, transition: { type: 'spring', stiffness: 300 } }}
+      style={{ rotate }}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }
+
+/* ── Glow orb that follows mouse subtly ─────────────────────────── */
+
+function MouseGlow() {
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+
+  const x = useSpring(useTransform(mouseX, [0, 1], [-100, 100]), { stiffness: 50, damping: 30 });
+  const y = useSpring(useTransform(mouseY, [0, 1], [-100, 100]), { stiffness: 50, damping: 30 });
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      mouseX.set(e.clientX / window.innerWidth);
+      mouseY.set(e.clientY / window.innerHeight);
+    };
+    window.addEventListener('mousemove', handler);
+    return () => window.removeEventListener('mousemove', handler);
+  }, [mouseX, mouseY]);
+
+  return (
+    <motion.div
+      className="absolute rounded-full pointer-events-none"
+      style={{
+        x,
+        y,
+        top: '30%',
+        left: '40%',
+        width: 500,
+        height: 500,
+        background: 'radial-gradient(circle, rgba(232,169,144,0.12), transparent 70%)',
+        filter: 'blur(80px)',
+      }}
+    />
+  );
+}
+
+/* ── Main Hero ─────────────────────────────────────────────────── */
 
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
@@ -55,50 +136,55 @@ export default function Hero() {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-mesh-hero overflow-hidden noise-overlay">
-      {/* Background glow orbs */}
+      {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div
+        {/* Static glow orbs */}
+        <motion.div
           className="absolute rounded-full"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 2, delay: 0.2 }}
           style={{
             top: '10%', left: '15%', width: 350, height: 350,
             background: 'radial-gradient(circle, rgba(232,169,144,0.2), transparent 70%)',
             filter: 'blur(60px)',
-            opacity: mounted ? 1 : 0,
-            transition: 'opacity 2s ease 0.3s',
           }}
         />
-        <div
+        <motion.div
           className="absolute rounded-full"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 2, delay: 0.5 }}
           style={{
             bottom: '15%', right: '10%', width: 300, height: 300,
             background: 'radial-gradient(circle, rgba(164,139,191,0.15), transparent 70%)',
             filter: 'blur(50px)',
-            opacity: mounted ? 1 : 0,
-            transition: 'opacity 2s ease 0.6s',
           }}
         />
-        <div
-          className="absolute rounded-full"
-          style={{
-            top: '40%', right: '30%', width: 200, height: 200,
-            background: 'radial-gradient(circle, rgba(125,184,138,0.1), transparent 70%)',
-            filter: 'blur(60px)',
-            opacity: mounted ? 1 : 0,
-            transition: 'opacity 2s ease 0.9s',
-          }}
-        />
+
+        {/* Mouse-following glow */}
+        {mounted && <MouseGlow />}
+
+        {/* Subtle grid */}
+        <motion.div
+          className="absolute inset-0 hidden md:block"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.025 }}
+          transition={{ duration: 2 }}
+        >
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#1A1A1A" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </motion.div>
       </div>
 
       {/* Floating product hint cards */}
-      <FloatingCard
-        className="float-element"
-        style={{
-          top: '22%', left: '5%',
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0) rotate(-2deg)' : 'translateY(30px) rotate(-2deg)',
-          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 1.4s',
-        }}
-      >
+      <FloatingCard className="float-element" style={{ top: '22%', left: '5%' }} rotate={-2} delay={1.4}>
         <div className="w-8 h-8 rounded-lg bg-sage-light flex items-center justify-center">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-sage-deep" strokeLinecap="round" strokeLinejoin="round">
             <path d="m9 12 2 2 4-4" />
@@ -111,15 +197,7 @@ export default function Hero() {
         </div>
       </FloatingCard>
 
-      <FloatingCard
-        className="float-element-slow"
-        style={{
-          top: '18%', right: '4%',
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0) rotate(1deg)' : 'translateY(30px) rotate(1deg)',
-          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 1.6s',
-        }}
-      >
+      <FloatingCard className="float-element-slow" style={{ top: '18%', right: '4%' }} rotate={1} delay={1.6}>
         <div className="w-8 h-8 rounded-lg bg-blush-light flex items-center justify-center">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blush-deep" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
@@ -132,15 +210,7 @@ export default function Hero() {
         </div>
       </FloatingCard>
 
-      <FloatingCard
-        className="float-element"
-        style={{
-          bottom: '22%', left: '6%',
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0) rotate(1.5deg)' : 'translateY(30px) rotate(1.5deg)',
-          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 1.8s',
-        }}
-      >
+      <FloatingCard className="float-element" style={{ bottom: '22%', left: '6%' }} rotate={1.5} delay={1.8}>
         <div className="w-8 h-8 rounded-lg bg-lavender-light flex items-center justify-center">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-lavender-deep" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
@@ -154,15 +224,7 @@ export default function Hero() {
         </div>
       </FloatingCard>
 
-      <FloatingCard
-        className="float-element-slow"
-        style={{
-          bottom: '25%', right: '5%',
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0) rotate(-1deg)' : 'translateY(30px) rotate(-1deg)',
-          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 2s',
-        }}
-      >
+      <FloatingCard className="float-element-slow" style={{ bottom: '25%', right: '5%' }} rotate={-1} delay={2}>
         <div className="w-8 h-8 rounded-lg bg-peach-light flex items-center justify-center">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-peach-deep" strokeLinecap="round" strokeLinejoin="round">
             <rect width="18" height="18" x="3" y="4" rx="2" />
@@ -180,105 +242,114 @@ export default function Hero() {
       {/* Main content */}
       <div className="max-w-[760px] mx-auto px-6 relative z-10 text-center" style={{ paddingTop: 140, paddingBottom: 100 }}>
         {/* Overline badge */}
-        <div
-          className="inline-flex items-center gap-2 mb-8 transition-all duration-700"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(16px)',
-            transitionDelay: '0.2s',
-          }}
+        <motion.div
+          className="inline-flex items-center gap-2 mb-8"
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={0.2}
         >
           <span className="inline-flex items-center gap-2 bg-white/60 backdrop-blur-sm border border-ink-10 rounded-full px-4 py-1.5 text-[12px] font-mono font-medium text-ink-60 tracking-wide">
             <span className="w-2 h-2 rounded-full bg-sage-vivid animate-pulse" />
             Gebouwd door signmakers, sinds 1983
           </span>
-        </div>
+        </motion.div>
 
-        {/* Heading */}
+        {/* Heading — staggered spring reveal */}
         <h1 className="font-heading hero-heading mb-6">
-          <span className="word-reveal mr-[0.25em]">
-            <span
-              className="text-ember-gradient"
-              style={{ animationDelay: mounted ? '0s' : '0s', opacity: mounted ? undefined : 0 }}
-            >
-              Eén systeem.
-            </span>
-          </span>
-          <br />
-          <span className="word-reveal mr-[0.25em]">
-            <span style={{ animationDelay: mounted ? '0.15s' : '0s', opacity: mounted ? undefined : 0 }}>
-              Nul gedoe.
-            </span>
-          </span>
+          <motion.span
+            className="block overflow-hidden"
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0.4}
+          >
+            <span className="text-ember-gradient">Eén systeem.</span>
+          </motion.span>
+          <motion.span
+            className="block overflow-hidden"
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0.55}
+          >
+            Nul gedoe.
+          </motion.span>
         </h1>
 
         {/* Sub */}
-        <p
-          className="text-[20px] leading-[1.7] text-ink-60 max-w-[500px] mx-auto mb-10 transition-all duration-700"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(24px)',
-            transitionDelay: '0.8s',
-          }}
+        <motion.p
+          className="text-[20px] leading-[1.7] text-ink-60 max-w-[500px] mx-auto mb-10"
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={0.7}
         >
           Van offerte tot factuur, van werkbon tot planning. Alles op één plek — zodat jij kunt doen waar je goed in bent.
-        </p>
+        </motion.p>
 
         {/* CTA buttons */}
-        <div
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14 transition-all duration-700"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(24px)',
-            transitionDelay: '1s',
-          }}
+        <motion.div
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14"
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={0.85}
         >
-          <Button variant="ink" href="https://app.forgedesk.io" className="w-full sm:w-auto max-w-[300px]">
-            Probeer 30 dagen gratis &rarr;
-          </Button>
-          <Button variant="soft" href="#stappen" className="w-full sm:w-auto max-w-[300px]">
-            Bekijk hoe het werkt
-          </Button>
-        </div>
+          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
+            <Button variant="ink" href="https://app.forgedesk.io" className="w-full sm:w-auto max-w-[300px]">
+              Probeer 30 dagen gratis &rarr;
+            </Button>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
+            <Button variant="soft" href="#stappen" className="w-full sm:w-auto max-w-[300px]">
+              Bekijk hoe het werkt
+            </Button>
+          </motion.div>
+        </motion.div>
 
         {/* Animated trust stats */}
-        <div
-          className="flex flex-wrap items-center justify-center gap-8 sm:gap-14 transition-all duration-700"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(24px)',
-            transitionDelay: '1.2s',
-          }}
+        <motion.div
+          className="flex flex-wrap items-center justify-center gap-8 sm:gap-14"
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={1}
         >
-          <div className="text-center">
-            <p className="text-[28px] font-heading font-bold text-ink leading-none">
-              {mounted && <Counter end={40} suffix="+" delay={1400} />}
-            </p>
-            <p className="text-[12px] text-ink-40 mt-1">jaar ervaring</p>
-          </div>
-          <div className="w-px h-10 bg-ink-10" />
-          <div className="text-center">
-            <p className="text-[28px] font-heading font-bold text-ink leading-none">
-              &euro;{mounted && <Counter end={49} delay={1600} />}
-            </p>
-            <p className="text-[12px] text-ink-40 mt-1">per maand, alles erin</p>
-          </div>
-          <div className="w-px h-10 bg-ink-10" />
-          <div className="text-center">
-            <p className="text-[28px] font-heading font-bold text-ink leading-none">
-              {mounted && <Counter end={30} delay={1800} />}
-            </p>
-            <p className="text-[12px] text-ink-40 mt-1">dagen gratis proberen</p>
-          </div>
-        </div>
+          {[
+            { value: 40, suffix: '+', label: 'jaar ervaring', delay: 1200 },
+            { value: 49, prefix: '€', label: 'per maand, alles erin', delay: 1400 },
+            { value: 30, label: 'dagen gratis proberen', delay: 1600 },
+          ].map((stat, i) => (
+            <div key={stat.label} className="flex items-center gap-8 sm:gap-14">
+              {i > 0 && <div className="w-px h-10 bg-ink-10" />}
+              <div className="text-center">
+                <p className="text-[28px] font-heading font-bold text-ink leading-none">
+                  {stat.prefix}{mounted && <Counter end={stat.value} suffix={stat.suffix} delay={stat.delay} />}
+                </p>
+                <p className="text-[12px] text-ink-40 mt-1">{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </motion.div>
       </div>
 
-      {/* Scroll chevron */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce-slow">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-20" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </div>
+      {/* Scroll indicator */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2.5 }}
+      >
+        <motion.div
+          animate={{ y: [0, 8, 0] }}
+          transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-20" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
