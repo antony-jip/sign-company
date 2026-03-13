@@ -8,23 +8,23 @@ import { OfferteCard, WerkbonCard, FactuurCard } from './StepCard';
 const steps = [
   {
     number: 1,
-    title: 'Maak een offerte die indruk maakt.',
-    description: 'Klant selecteren, regels toevoegen, marge automatisch berekend. Verstuur als PDF of deel een link \u2014 je klant keurt direct goed.',
+    title: 'Offerte met marge-inzicht.',
+    description: 'Klant selecteren, regels toevoegen, marge automatisch berekend. Verstuur als PDF of deel een link. Je klant keurt direct goed.',
     phase: 'offerte' as const,
     align: 'left' as const,
     card: <OfferteCard />,
   },
   {
     number: 2,
-    title: 'De monteur vult ter plekke in.',
-    description: "Foto\u2019s, uren, materiaal \u2014 alles op de telefoon. Geen papier. De kantoormanager ziet het direct.",
+    title: 'Werkbon op locatie invullen.',
+    description: "Foto's, uren, materiaal. Alles op de telefoon. Geen papier meer. De kantoormanager ziet het direct.",
     phase: 'werkbon' as const,
     align: 'right' as const,
     card: <WerkbonCard />,
   },
   {
     number: 3,
-    title: 'E\u00E9n klik: factuur betaald.',
+    title: 'Factuur in één klik.',
     description: 'Automatisch vanuit de offerte. Betaallink voor je klant, UBL-export voor je boekhouder. Geld sneller binnen.',
     phase: 'factuur' as const,
     align: 'left' as const,
@@ -38,7 +38,7 @@ export default function StepsSection() {
   return (
     <section id="stappen" className="relative" style={{ paddingTop: 140, paddingBottom: 140 }}>
       <div className="container">
-        {/* Section header — section 15 */}
+        {/* Section header */}
         <div
           ref={ref}
           className="text-center mb-24"
@@ -49,10 +49,10 @@ export default function StepsSection() {
           }}
         >
           <h2 className="font-heading section-heading text-ink">
-            Van offerte tot betaling. Zo simpel.
+            Van project tot betaling. Zo werkt het.
           </h2>
           <p className="text-[19px] leading-[1.7] text-ink-60 mt-5 max-w-[500px] mx-auto">
-            Drie stappen. Geen training. Gewoon beginnen.
+            Drie stappen. Geen training nodig. Gewoon beginnen.
           </p>
         </div>
 

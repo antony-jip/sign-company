@@ -303,7 +303,7 @@ export const InteractiveModules: React.FC = () => {
             Voel hoe het <span className="text-gradient-pastel">werkt</span>
           </h2>
           <p className="fade-up stagger-2 text-lg text-gray-500 max-w-2xl mx-auto">
-            Geen screenshots, geen video&apos;s — probeer de modules zelf uit. Bouw een offerte, versleep je planning,
+            Geen screenshots, geen video&apos;s. Probeer de modules zelf uit. Bouw een offerte, versleep je planning,
             of bekijk je dashboard. Precies zoals het in de app werkt.
           </p>
         </div>

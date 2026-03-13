@@ -19,10 +19,10 @@ export default function CTASection() {
           }}
         >
           <h2 className="font-heading section-heading text-ink mb-6">
-            Klaar om te <span className="text-ember-gradient">smeden</span>?
+            Klaar om te <span className="text-ember-gradient">starten</span>?
           </h2>
           <p className="text-[19px] leading-[1.7] text-ink-60 mb-10 max-w-[480px] mx-auto">
-            Start vandaag gratis. Geen creditcard, geen contract, geen gedoe.
+            Probeer FORGEdesk 30 dagen gratis. Geen creditcard, geen contract.
           </p>
           <Button variant="ink" href="https://app.forgedesk.io">
             Start 30 dagen gratis &rarr;
