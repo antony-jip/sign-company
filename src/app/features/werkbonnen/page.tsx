@@ -174,7 +174,7 @@ export default function WerkbonnenFeaturePage() {
     <FeaturePage
       color="sage"
       overline="Werkbonnen"
-      heading={<>Van offerte naar werkbon in <span className="text-ember-gradient">één klik</span></>}
+      heading={<>Van offerte naar werkbon in <span className="neon-text-glow">één klik</span></>}
       subtitle="Omschrijving wordt overgenomen uit de offerte. De monteur weet precies wat hij moet doen. Foto's uploaden ter plekke."
       highlights={[
         {

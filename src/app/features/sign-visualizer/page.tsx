@@ -232,7 +232,7 @@ export default function SignVisualizerPage() {
     <FeaturePage
       color="blush"
       overline="Sign Visualizer"
-      heading={<>Laat je klant het <span className="text-ember-gradient">resultaat</span> zien</>}
+      heading={<>Laat je klant het <span className="neon-text-glow">resultaat</span> zien</>}
       subtitle="Upload een foto en logo, maak een AI-visualisatie. Powered by Claude Sonnet 4.6. Koppel aan project of offerte."
       highlights={[
         {

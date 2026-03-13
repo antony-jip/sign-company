@@ -204,7 +204,7 @@ export default function EmailFeaturePage() {
     <FeaturePage
       color="cream"
       overline="E-mail"
-      heading={<>E-mail gekoppeld aan je <span className="text-ember-gradient">projecten</span></>}
+      heading={<>E-mail gekoppeld aan je <span className="neon-text-glow">projecten</span></>}
       subtitle="Volledig twee-weg Gmail koppeling via app password. Alles automatisch gekoppeld aan klanten en offertes."
       highlights={[
         {

@@ -277,7 +277,7 @@ export default function OffertesFeaturePage() {
     <FeaturePage
       color="lavender"
       overline="Offertes"
-      heading={<>Professionele offertes in <span className="text-ember-gradient">drie stappen</span></>}
+      heading={<>Professionele offertes in <span className="neon-text-glow">drie stappen</span></>}
       subtitle="Klant selecteren, regels toevoegen, versturen. Inkoop + marge wordt automatisch doorberekend."
       highlights={[
         {

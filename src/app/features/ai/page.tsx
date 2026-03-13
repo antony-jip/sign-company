@@ -208,7 +208,7 @@ export default function AIFeaturePage() {
     <FeaturePage
       color="peach"
       overline="AI Tools"
-      heading={<>Slimmer werken met <span className="text-ember-gradient">AI</span></>}
+      heading={<>Slimmer werken met <span className="neon-text-glow">AI</span></>}
       subtitle="Forgie, je AI-assistent. Gekoppeld aan je volledige administratie: open bedragen, offertestatus, klantdata en meer."
       highlights={[
         {

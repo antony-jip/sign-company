@@ -162,7 +162,7 @@ export default function KlantportaalFeaturePage() {
     <FeaturePage
       color="mist"
       overline="Klantportaal"
-      heading={<>Je klant keurt <span className="text-ember-gradient">direct</span> goed</>}
+      heading={<>Je klant keurt <span className="neon-text-glow">direct</span> goed</>}
       subtitle="Eigen portaal voor je klanten. Offertes goedkeuren, facturen bekijken, tekeningen downloaden."
       highlights={[
         {
