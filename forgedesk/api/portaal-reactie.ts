@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { buildPortalEmailHtml } from './_emailTemplate'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -187,6 +188,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           `\nBekijk in FORGEdesk: ${appUrl}/projecten/${portaal.project_id}`,
         ].filter(Boolean).join('\n')
 
+        const emailHtml = buildPortalEmailHtml({
+          heading: `${displayNaam} heeft ${actieLabel}`,
+          itemTitel: fullItem?.titel || 'Item',
+          beschrijving: `Project: ${project?.naam || 'Project'}`,
+          quote: bericht?.trim() || undefined,
+          ctaLabel: 'Bekijk in FORGEdesk \u2192',
+          ctaUrl: `${appUrl}/projecten/${portaal.project_id}`,
+        })
+
         // Fire-and-forget email
         fetch(`${appUrl}/api/send-email`, {
           method: 'POST',
@@ -199,6 +209,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             to: emailConfig.gmail_address, // Naar de gebruiker zelf
             subject: onderwerp,
             body: emailBody,
+            html: emailHtml,
           }),
         }).catch(err => console.warn('Email naar gebruiker mislukt:', err))
       }

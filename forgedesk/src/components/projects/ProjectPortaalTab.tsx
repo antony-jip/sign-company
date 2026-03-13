@@ -335,6 +335,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       try {
         const { getProject, getKlant } = await import('@/services/supabaseService')
         const { sendEmail } = await import('@/services/gmailService')
+        const { buildPortalEmailHtml } = await import('@/utils/emailTemplate')
         const project = await getProject(projectId)
         if (project?.klant_id) {
           const klant = await getKlant(project.klant_id)
@@ -342,17 +343,24 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
           if (klantEmail && portaal) {
             const bedrijfsnaam = profile?.bedrijfsnaam || ''
             const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
+            const plainBody = [
+              `Er is een nieuw item gedeeld voor project ${projectNaam}.`,
+              '', titel, itemOmschrijving || '', '',
+              `Bekijk het hier: ${portaalUrl}`,
+            ].filter(Boolean).join('\n')
+            const htmlBody = buildPortalEmailHtml({
+              heading: `Er is een update voor project ${projectNaam}`,
+              itemTitel: titel,
+              beschrijving: itemOmschrijving || undefined,
+              ctaLabel: 'Bekijk in portaal \u2192',
+              ctaUrl: portaalUrl,
+              bedrijfsnaam,
+            })
             sendEmail(
               klantEmail,
-              `${bedrijfsnaam || 'Nieuw item'} — ${titel}`,
-              [
-                `Er is een nieuw item gedeeld voor project ${projectNaam}.`,
-                '',
-                titel,
-                itemOmschrijving || '',
-                '',
-                `Bekijk het hier: ${portaalUrl}`,
-              ].filter(Boolean).join('\n')
+              `${bedrijfsnaam || 'Nieuw item'} \u2014 ${titel}`,
+              plainBody,
+              { html: htmlBody }
             ).catch(() => {}) // Niet-blokkerend
           }
         }
