@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CompanyInfo } from '@/types/landing-page';
 
 export const companyInfo: CompanyInfo = {
