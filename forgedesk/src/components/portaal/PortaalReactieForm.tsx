@@ -91,8 +91,15 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
         }),
       })
       if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || `Upload mislukt: ${file.name}`)
+        let errorMessage = `Upload mislukt: ${file.name}`
+        try {
+          const err = await response.json()
+          errorMessage = err.error || errorMessage
+        } catch {
+          const text = await response.text()
+          if (text) errorMessage = text
+        }
+        throw new Error(errorMessage)
       }
       const result = await response.json()
       urls.push(result.url)
@@ -134,8 +141,15 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
       })
 
       if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || 'Kon reactie niet versturen')
+        let errorMessage = 'Kon reactie niet versturen'
+        try {
+          const err = await response.json()
+          errorMessage = err.error || errorMessage
+        } catch {
+          const text = await response.text()
+          if (text) errorMessage = text
+        }
+        throw new Error(errorMessage)
       }
 
       // Succes — reset velden
