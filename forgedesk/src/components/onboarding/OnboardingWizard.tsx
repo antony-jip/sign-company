@@ -8,6 +8,9 @@ import { toast } from 'sonner'
 import {
   updateOrganisatie,
   getOrganisatie,
+  createOrganisatie,
+  getProfile,
+  updateProfile,
   createKlant,
   createProject,
   createOfferte,
@@ -514,6 +517,7 @@ function StepBeginnen({
 export function OnboardingWizard() {
   const navigate = useNavigate()
   const { organisatieId, user } = useAuth()
+  const [localOrgId, setLocalOrgId] = useState<string | null>(organisatieId)
   const [currentStep, setCurrentStep] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
   const [savingAction, setSavingAction] = useState<'klant' | 'demo' | null>(null)
@@ -530,50 +534,95 @@ export function OnboardingWizard() {
     bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: ''
   })
 
-  // Resume at correct step
+  // Keep localOrgId in sync with context
   useEffect(() => {
-    if (!organisatieId) { setIsLoaded(true); return }
-    getOrganisatie(organisatieId).then((org) => {
-      if (org) {
-        if (org.onboarding_stap && org.onboarding_stap > 0) {
-          setCurrentStep(Math.min(org.onboarding_stap, 3))
+    if (organisatieId) setLocalOrgId(organisatieId)
+  }, [organisatieId])
+
+  // Ensure organisation exists, then resume at correct step
+  useEffect(() => {
+    const init = async () => {
+      let orgId = organisatieId
+
+      // If no org yet but user exists, create one
+      if (!orgId && user?.id) {
+        try {
+          const profile = await getProfile(user.id)
+          if (profile?.organisatie_id) {
+            orgId = profile.organisatie_id
+          } else {
+            const org = await createOrganisatie('Mijn Bedrijf', user.id)
+            await updateProfile(user.id, { organisatie_id: org.id, rol: 'admin' } as Parameters<typeof updateProfile>[1])
+            orgId = org.id
+          }
+          setLocalOrgId(orgId)
+        } catch {
+          // Continue without org — user can still fill in the form
         }
-        if (org.naam && org.naam !== 'Mijn Bedrijf') setBedrijfsnaam(org.naam)
-        if (org.adres) setGegevens((prev) => ({ ...prev, adres: org.adres || '' }))
-        if (org.postcode) setGegevens((prev) => ({ ...prev, postcode: org.postcode || '' }))
-        if (org.plaats) setGegevens((prev) => ({ ...prev, plaats: org.plaats || '' }))
-        if (org.telefoon) setGegevens((prev) => ({ ...prev, telefoon: org.telefoon || '' }))
-        if (org.kvk_nummer) setGegevens((prev) => ({ ...prev, kvk_nummer: org.kvk_nummer || '' }))
-        if (org.btw_nummer) setGegevens((prev) => ({ ...prev, btw_nummer: org.btw_nummer || '' }))
+      }
+
+      if (!orgId) { setIsLoaded(true); return }
+
+      try {
+        const org = await getOrganisatie(orgId)
+        if (org) {
+          if (org.onboarding_stap && org.onboarding_stap > 0) {
+            setCurrentStep(Math.min(org.onboarding_stap, 3))
+          }
+          if (org.naam && org.naam !== 'Mijn Bedrijf') setBedrijfsnaam(org.naam)
+          if (org.adres) setGegevens((prev) => ({ ...prev, adres: org.adres || '' }))
+          if (org.postcode) setGegevens((prev) => ({ ...prev, postcode: org.postcode || '' }))
+          if (org.plaats) setGegevens((prev) => ({ ...prev, plaats: org.plaats || '' }))
+          if (org.telefoon) setGegevens((prev) => ({ ...prev, telefoon: org.telefoon || '' }))
+          if (org.kvk_nummer) setGegevens((prev) => ({ ...prev, kvk_nummer: org.kvk_nummer || '' }))
+          if (org.btw_nummer) setGegevens((prev) => ({ ...prev, btw_nummer: org.btw_nummer || '' }))
+        }
+      } catch {
+        // Continue anyway
       }
       setIsLoaded(true)
-    }).catch(() => setIsLoaded(true))
-  }, [organisatieId])
+    }
+    init()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organisatieId, user?.id])
+
+  // Use localOrgId (which may have been created by the wizard) instead of context organisatieId
+  const effectiveOrgId = localOrgId || organisatieId
 
   const goToStep = useCallback(async (step: number) => {
     setCurrentStep(step)
   }, [])
 
   const finishOnboarding = useCallback(async () => {
-    if (!organisatieId) return
-    await updateOrganisatie(organisatieId, { onboarding_compleet: true, onboarding_stap: 4 })
+    const orgId = localOrgId || organisatieId
+    if (!orgId) {
+      navigate('/')
+      return
+    }
+    try {
+      await updateOrganisatie(orgId, { onboarding_compleet: true, onboarding_stap: 4 })
+    } catch {
+      try {
+        await updateOrganisatie(orgId, { onboarding_compleet: true })
+      } catch {
+        // Continue to dashboard anyway
+      }
+    }
     navigate('/')
-  }, [organisatieId, navigate])
+  }, [localOrgId, organisatieId, navigate])
 
   // Step 1 handler
   const handleStep1Next = async () => {
     if (!bedrijfsnaam.trim()) return
-    if (!organisatieId) {
-      toast.error('Organisatie niet gevonden. Probeer opnieuw in te loggen.')
-      return
-    }
     setIsSaving(true)
     try {
-      await updateOrganisatie(organisatieId, { naam: bedrijfsnaam.trim(), onboarding_stap: 1 })
-    } catch (error: unknown) {
+      if (effectiveOrgId) {
+        await updateOrganisatie(effectiveOrgId, { naam: bedrijfsnaam.trim(), onboarding_stap: 1 })
+      }
+    } catch {
       // Try saving just the name without onboarding_stap (column may not exist yet)
       try {
-        await updateOrganisatie(organisatieId, { naam: bedrijfsnaam.trim() })
+        if (effectiveOrgId) await updateOrganisatie(effectiveOrgId, { naam: bedrijfsnaam.trim() })
       } catch {
         // Continue anyway — name save is not critical for flow
       }
@@ -587,7 +636,7 @@ export function OnboardingWizard() {
   const handleStep2Next = async () => {
     setIsSaving(true)
     try {
-      if (organisatieId) await updateOrganisatie(organisatieId, { onboarding_stap: 2 })
+      if (effectiveOrgId) await updateOrganisatie(effectiveOrgId, { onboarding_stap: 2 })
     } catch {
       // Continue anyway — step tracking is not critical
     } finally {
@@ -599,7 +648,7 @@ export function OnboardingWizard() {
   const handleStep2Skip = async () => {
     setIsSaving(true)
     try {
-      if (organisatieId) await updateOrganisatie(organisatieId, { onboarding_stap: 2 })
+      if (effectiveOrgId) await updateOrganisatie(effectiveOrgId, { onboarding_stap: 2 })
     } catch {
       // Continue anyway
     } finally {
@@ -612,8 +661,8 @@ export function OnboardingWizard() {
   const handleStep3Next = async () => {
     setIsSaving(true)
     try {
-      if (organisatieId) {
-        await updateOrganisatie(organisatieId, {
+      if (effectiveOrgId) {
+        await updateOrganisatie(effectiveOrgId, {
           adres: gegevens.adres,
           postcode: gegevens.postcode,
           plaats: gegevens.plaats,
@@ -626,8 +675,8 @@ export function OnboardingWizard() {
     } catch {
       // Try saving just the business details without onboarding_stap
       try {
-        if (organisatieId) {
-          await updateOrganisatie(organisatieId, {
+        if (effectiveOrgId) {
+          await updateOrganisatie(effectiveOrgId, {
             adres: gegevens.adres,
             postcode: gegevens.postcode,
             plaats: gegevens.plaats,
@@ -648,7 +697,7 @@ export function OnboardingWizard() {
   const handleStep3Skip = async () => {
     setIsSaving(true)
     try {
-      if (organisatieId) await updateOrganisatie(organisatieId, { onboarding_stap: 3 })
+      if (effectiveOrgId) await updateOrganisatie(effectiveOrgId, { onboarding_stap: 3 })
     } catch {
       // Continue
     } finally {
@@ -900,9 +949,9 @@ export function OnboardingWizard() {
               isSaving={isSaving}
             />
           )}
-          {currentStep === 1 && organisatieId && (
+          {currentStep === 1 && effectiveOrgId && (
             <StepLogo
-              organisatieId={organisatieId}
+              organisatieId={effectiveOrgId}
               onNext={handleStep2Next}
               onSkip={handleStep2Skip}
               isSaving={isSaving}
