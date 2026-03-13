@@ -1,10 +1,25 @@
 import type { Metadata } from 'next';
+import { DM_Sans, DM_Mono } from 'next/font/google';
 import './globals.css';
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
+
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-dm-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://forgedesk.io'),
   title: {
-    default: 'FORGEdesk | Je hele bedrijf. Eén app.',
+    default: 'FORGEdesk | Smeed je bedrijf tot een geoliede machine',
     template: '%s | FORGEdesk',
   },
   description:
@@ -28,15 +43,24 @@ export const metadata: Metadata = {
     locale: 'nl_NL',
     url: 'https://forgedesk.io',
     siteName: 'FORGEdesk',
-    title: 'FORGEdesk | Je hele bedrijf. Eén app.',
+    title: 'FORGEdesk | Smeed je bedrijf tot een geoliede machine',
     description:
       'Dé alles-in-één bedrijfssoftware voor creatieve bedrijven. Offertes, projecten, facturatie, CRM en meer.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'FORGEdesk — Smeed je bedrijf tot een geoliede machine',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FORGEdesk | Je hele bedrijf. Eén app.',
+    title: 'FORGEdesk | Smeed je bedrijf tot een geoliede machine',
     description:
       'Dé alles-in-één bedrijfssoftware voor creatieve bedrijven.',
+    images: ['/og-image.png'],
   },
   robots: {
     index: true,
@@ -57,17 +81,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="nl">
+    <html lang="nl" className={`${dmSans.variable} ${dmMono.variable}`}>
       <head>
         <link rel="canonical" href="https://forgedesk.io" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body className="font-sans">
+      <body className="font-sans bg-canvas text-gray-900 antialiased">
         <a href="#main-content" className="skip-link">
           Ga naar inhoud
         </a>

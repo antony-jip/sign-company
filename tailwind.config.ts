@@ -9,6 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        canvas: '#FAFAF7',
         blush: {
           DEFAULT: '#F0D9D0',
           light: '#F7ECE7',
@@ -45,17 +46,22 @@ const config: Config = {
           deep: '#D4856B',
           vivid: '#F0A080',
         },
+        ember: {
+          DEFAULT: '#E8A990',
+          light: '#F0D9D0',
+          deep: '#C49585',
+        },
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        heading: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-donatto)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-dm-mono)', 'monospace'],
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',
         'float-slow': 'float 8s ease-in-out infinite',
         'pulse-soft': 'pulseSoft 4s ease-in-out infinite',
         'gradient-x': 'gradientX 8s ease infinite',
-        'marquee': 'marquee 30s linear infinite',
         'bounce-slow': 'bounceChevron 2s ease-in-out infinite',
       },
       keyframes: {
@@ -70,10 +76,6 @@ const config: Config = {
         gradientX: {
           '0%, 100%': { backgroundPosition: '0% 50%' },
           '50%': { backgroundPosition: '100% 50%' },
-        },
-        marquee: {
-          '0%': { transform: 'translateX(0)' },
-          '100%': { transform: 'translateX(-50%)' },
         },
         bounceChevron: {
           '0%, 100%': { transform: 'translateY(0)' },
