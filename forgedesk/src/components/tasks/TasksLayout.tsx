@@ -145,6 +145,7 @@ export function TasksLayout() {
   const [showMontage, setShowMontage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
+  const [viewMode, setViewMode] = useState<'dag' | '3daags' | 'week' | 'maand'>('week')
 
   const [weekOffset, setWeekOffset] = useState(0)
   const [showCompleted, setShowCompleted] = useState(false)
@@ -246,6 +247,41 @@ export function TasksLayout() {
   }, [])
 
   const weekDays = useMemo(() => {
+    if (viewMode === 'dag') {
+      const d = new Date(today)
+      d.setDate(d.getDate() + weekOffset)
+      return [d]
+    }
+    if (viewMode === '3daags') {
+      const base = new Date(today)
+      base.setDate(base.getDate() + weekOffset)
+      return Array.from({ length: 3 }, (_, i) => {
+        const d = new Date(base)
+        d.setDate(d.getDate() + i)
+        return d
+      })
+    }
+    if (viewMode === 'maand') {
+      // Return all days of the month view (full weeks covering the month)
+      const base = new Date(today)
+      base.setMonth(base.getMonth() + weekOffset, 1)
+      const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1)
+      const startMonday = getMonday(firstOfMonth)
+      // 6 weeks to cover any month layout
+      const days: Date[] = []
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(startMonday)
+        d.setDate(d.getDate() + i)
+        days.push(d)
+      }
+      // Trim trailing week if it's entirely in the next month
+      const lastOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0)
+      if (days[35] && days[35].getMonth() !== base.getMonth() && days[35].getDate() > 7) {
+        days.splice(35, 7)
+      }
+      return days
+    }
+    // week (default)
     const monday = getMonday(today)
     monday.setDate(monday.getDate() + weekOffset * 7)
     return Array.from({ length: 7 }, (_, i) => {
@@ -253,7 +289,7 @@ export function TasksLayout() {
       d.setDate(d.getDate() + i)
       return d
     })
-  }, [today, weekOffset])
+  }, [today, weekOffset, viewMode])
 
   // Tasks grouped by day key
   const tasksByDay = useMemo(() => {
@@ -317,15 +353,24 @@ export function TasksLayout() {
     return map
   }, [montageAfspraken, weekDays, showMontage])
 
-  // Week range label
+  // Navigation label
   const weekLabel = useMemo(() => {
     const first = weekDays[0]
-    const last = weekDays[6]
+    const last = weekDays[weekDays.length - 1]
+    if (viewMode === 'dag') {
+      return `${DAY_LABELS[(first.getDay() + 6) % 7]} ${first.getDate()} ${MONTH_NAMES[first.getMonth()]}`
+    }
+    if (viewMode === 'maand') {
+      // Show the month of the first day of the actual month
+      const base = new Date(today)
+      base.setMonth(base.getMonth() + weekOffset, 1)
+      return `${MONTH_NAMES[base.getMonth()]} ${base.getFullYear()}`
+    }
     if (first.getMonth() === last.getMonth()) {
       return `${first.getDate()} – ${last.getDate()} ${MONTH_NAMES[first.getMonth()]}`
     }
     return `${first.getDate()} ${MONTH_NAMES[first.getMonth()]} – ${last.getDate()} ${MONTH_NAMES[last.getMonth()]}`
-  }, [weekDays])
+  }, [weekDays, viewMode, today, weekOffset])
 
   // Now-line position
   const nowLineTop = useMemo(() => {
@@ -523,12 +568,12 @@ export function TasksLayout() {
           </div>
         </div>
 
-        {/* === WEEK NAV + FILTERS === */}
+        {/* === NAV + VIEW MODE + FILTERS === */}
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2.5 border-b border-border/60 bg-card/50 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap">{weekLabel}</span>
             <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w - 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => viewMode === 'maand' ? w - 1 : viewMode === 'week' ? w - 1 : viewMode === '3daags' ? w - 3 : w - 1)}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
@@ -539,9 +584,26 @@ export function TasksLayout() {
               >
                 Vandaag
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w + 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => viewMode === 'maand' ? w + 1 : viewMode === 'week' ? w + 1 : viewMode === '3daags' ? w + 3 : w + 1)}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
+            </div>
+            {/* View mode toggle */}
+            <div className="inline-flex items-center rounded-xl border border-black/[0.06] bg-muted p-0.5 flex-shrink-0">
+              {([['dag', 'Dag'], ['3daags', '3 dagen'], ['week', 'Week'], ['maand', 'Maand']] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => { setViewMode(key); setWeekOffset(0) }}
+                  className={cn(
+                    'text-xs px-2.5 py-1 rounded-lg transition-all duration-200 whitespace-nowrap',
+                    viewMode === key
+                      ? 'bg-background text-foreground shadow-sm font-medium'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
@@ -587,6 +649,18 @@ export function TasksLayout() {
           </div>
         </div>
 
+        {viewMode === 'maand' ? (
+          /* === MONTH VIEW === */
+          <MonthView
+            days={weekDays}
+            today={today}
+            tasksByDay={tasksByDay}
+            montageByDay={montageByDay}
+            projectMap={projectMap}
+            onDayClick={(day) => { setViewMode('dag'); setWeekOffset(Math.round((day.getTime() - today.getTime()) / 86400000)) }}
+          />
+        ) : (
+          <>
         {/* === DAY HEADERS === */}
         <div className="flex border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           {/* Time gutter spacer */}
@@ -596,6 +670,7 @@ export function TasksLayout() {
             const isToday = isSameDay(day, today)
             const dayTasks = tasksByDay.get(day.toDateString()) || []
             const isPast = day < today && !isToday
+            const dayLabel = DAY_LABELS[(day.getDay() + 6) % 7]
             return (
               <div
                 key={i}
@@ -608,7 +683,7 @@ export function TasksLayout() {
                   'text-[11px] uppercase tracking-label font-bold',
                   isToday ? 'text-primary' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
                 )}>
-                  {DAY_LABELS[i]}
+                  {dayLabel}
                 </div>
                 <div className="flex items-center justify-center gap-1.5 mt-0.5">
                   <span className={cn(
@@ -684,6 +759,8 @@ export function TasksLayout() {
             })}
           </div>
         </div>
+          </>
+        )}
       </div>
 
       {/* === FLOATING ACTION BUTTON === */}
@@ -788,6 +865,95 @@ export function TasksLayout() {
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+// === MONTH VIEW ===
+
+function MonthView({
+  days, today, tasksByDay, montageByDay, projectMap, onDayClick,
+}: {
+  days: Date[]
+  today: Date
+  tasksByDay: Map<string, Taak[]>
+  montageByDay: Map<string, MontageAfspraak[]>
+  projectMap: Record<string, string>
+  onDayClick: (day: Date) => void
+}) {
+  const MAX_PILLS = 3
+  const weeks: Date[][] = []
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7))
+  }
+  const currentMonth = days.length > 15 ? days[15].getMonth() : days[0].getMonth()
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-background">
+      {/* Day of week headers */}
+      <div className="grid grid-cols-7 border-b border-border/60 bg-card/80">
+        {DAY_LABELS.map((label) => (
+          <div key={label} className="text-center py-2 text-[11px] uppercase tracking-label font-bold text-muted-foreground/70">
+            {label}
+          </div>
+        ))}
+      </div>
+      {/* Week rows */}
+      {weeks.map((week, wi) => (
+        <div key={wi} className="grid grid-cols-7 border-b border-border/30">
+          {week.map((day, di) => {
+            const isToday = isSameDay(day, today)
+            const isOtherMonth = day.getMonth() !== currentMonth
+            const dayTasks = tasksByDay.get(day.toDateString()) || []
+            const dayMontage = montageByDay.get(day.toDateString()) || []
+            const extra = Math.max(0, dayTasks.length + dayMontage.length - MAX_PILLS)
+            const visibleTasks = dayTasks.slice(0, MAX_PILLS)
+            const visibleMontage = dayMontage.slice(0, MAX_PILLS - visibleTasks.length)
+            return (
+              <div
+                key={di}
+                className={cn(
+                  'min-h-[90px] p-1.5 border-l border-border/30 cursor-pointer hover:bg-muted/30 transition-colors',
+                  isToday && 'bg-primary/[0.03]',
+                  isOtherMonth && 'opacity-40',
+                )}
+                onClick={() => onDayClick(day)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className={cn(
+                    'inline-flex items-center justify-center text-xs font-bold',
+                    isToday
+                      ? 'w-6 h-6 rounded-full bg-primary text-white shadow-sm'
+                      : 'text-foreground',
+                  )}>
+                    {day.getDate()}
+                  </span>
+                </div>
+                <div className="space-y-0.5">
+                  {visibleTasks.map((taak) => {
+                    const colors = PRIORITEIT_COLORS[taak.prioriteit]
+                    return (
+                      <div key={taak.id} className={cn('text-[10px] px-1.5 py-0.5 rounded truncate font-medium', colors.bg, colors.accent)}>
+                        {taak.titel}
+                      </div>
+                    )
+                  })}
+                  {visibleMontage.map((afspraak) => (
+                    <div key={`m-${afspraak.id}`} className="text-[10px] px-1.5 py-0.5 rounded truncate font-medium bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300">
+                      {afspraak.titel}
+                    </div>
+                  ))}
+                  {extra > 0 && (
+                    <div className="text-[9px] text-muted-foreground/60 px-1.5 font-medium">
+                      +{extra} meer
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
   )
 }
 
