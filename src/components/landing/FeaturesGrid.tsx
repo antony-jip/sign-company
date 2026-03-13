@@ -2,230 +2,71 @@
 
 import { useInView } from '@/hooks/useInView';
 
-/* ── Feature definitions with layout hints ─────────────────────── */
+/* ── 3 categorieën met features ────────────────────────────────── */
 
-interface Feature {
-  icon: JSX.Element;
-  title: string;
-  description: string;
-  iconBg: string;
-  iconColor: string;
-  gradient: string;
-  glowColor: string;
-  tag?: string;
-  tagColor?: string;
-  span?: 2;          // span 2 columns
-  accent?: boolean;   // highlighted card
-}
-
-const features: Feature[] = [
-  /* ─── ROW 1 : Kern-workflow ─────────────────────────────────── */
+const categories = [
   {
+    title: 'Verkoop & facturatie',
+    subtitle: 'Van offerte tot betaling',
+    color: 'blush',
+    iconBg: 'bg-blush-light',
+    iconColor: 'text-blush-deep',
+    borderColor: 'border-blush/20',
+    gradient: 'from-blush-light/20 via-white to-white',
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-        <path d="M14 2v6h6" />
-        <path d="M16 13H8" />
-        <path d="M16 17H8" />
-        <path d="M10 9H8" />
-      </svg>
-    ),
-    title: 'Offertes met marge-inzicht',
-    description: 'Inkoop, verkoop en marge direct zichtbaar. Verstuur als PDF of deel een link. Je weet precies wat je verdient voordat je verstuurt.',
-    iconBg: 'bg-lavender-light',
-    iconColor: 'text-lavender-deep',
-    gradient: 'from-lavender-light/40 via-white to-white',
-    glowColor: 'rgba(164,139,191,0.15)',
-    tag: 'Kern',
-    tagColor: 'bg-lavender-light text-lavender-deep',
-    span: 2,
-  },
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect width="18" height="18" x="3" y="3" rx="2" />
-        <path d="m9 12 2 2 4-4" />
-      </svg>
-    ),
-    title: 'Werkbonnen op locatie',
-    description: "Foto's, uren en materiaal. Op je telefoon. De kantoormanager ziet het direct.",
-    iconBg: 'bg-sage-light',
-    iconColor: 'text-sage-deep',
-    gradient: 'from-sage-light/40 via-white to-white',
-    glowColor: 'rgba(125,184,138,0.15)',
-    tag: 'Kern',
-    tagColor: 'bg-sage-light text-sage-deep',
-  },
-
-  /* ─── ROW 2 : Facturatie + USP ──────────────────────────────── */
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
         <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
         <path d="M12 17.5v-11" />
       </svg>
     ),
-    title: 'Facturen in één klik',
-    description: 'Automatisch vanuit de offerte. Betaallink erbij, UBL naar je boekhouder.',
-    iconBg: 'bg-peach-light',
-    iconColor: 'text-peach-deep',
-    gradient: 'from-peach-light/40 via-white to-white',
-    glowColor: 'rgba(240,160,128,0.15)',
-    tag: 'Kern',
-    tagColor: 'bg-peach-light text-peach-deep',
+    features: [
+      { name: 'Offertes met marge-inzicht', desc: 'Inkoop, verkoop en marge direct zichtbaar' },
+      { name: 'Facturen in één klik', desc: 'Automatisch vanuit de offerte' },
+      { name: 'PDF & UBL-export', desc: 'Professioneel met je logo, direct naar je boekhouder' },
+      { name: 'Betaallinks', desc: 'Je klant betaalt direct online' },
+    ],
   },
   {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M15 2H9a1 1 0 0 0-1 1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1Z" />
-        <path d="M12 12h4" />
-        <path d="M12 16h4" />
-        <circle cx="9" cy="12" r="1" />
-        <circle cx="9" cy="16" r="1" />
-        <path d="M5 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-1" />
-        <path d="M8 8H5" />
-      </svg>
-    ),
-    title: 'Sign Visualiser',
-    description: 'Upload een foto en logo, genereer een AI-visualisatie voor je klant. Laat zien hoe hun signing eruitziet voordat je begint.',
-    iconBg: 'bg-blush-light',
-    iconColor: 'text-blush-deep',
-    gradient: 'from-blush-light/40 via-white to-white',
-    glowColor: 'rgba(232,169,144,0.15)',
-    tag: 'Nieuw',
-    tagColor: 'bg-blush-light text-blush-deep',
-    span: 2,
-    accent: true,
-  },
-
-  /* ─── ROW 3 : Smart tools ───────────────────────────────────── */
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 8V4H8" />
-        <rect width="16" height="12" x="4" y="8" rx="2" />
-        <path d="M2 14h2" />
-        <path d="M20 14h2" />
-        <path d="M15 13v2" />
-        <path d="M9 13v2" />
-      </svg>
-    ),
-    title: 'AI-assistent Forgie',
-    description: 'Teksten schrijven, offertes verbeteren. €5 AI-tegoed inbegrepen.',
-    iconBg: 'bg-blush-light',
-    iconColor: 'text-blush-deep',
-    gradient: 'from-blush-light/30 via-white to-white',
-    glowColor: 'rgba(232,169,144,0.15)',
-    tag: 'AI',
-    tagColor: 'bg-blush-light text-blush-deep',
-  },
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-        <line x1="16" x2="16" y1="2" y2="6" />
-        <line x1="8" x2="8" y1="2" y2="6" />
-        <line x1="3" x2="21" y1="10" y2="10" />
-      </svg>
-    ),
-    title: 'Planning & agenda',
-    description: 'Wie doet wat, wanneer. Je team ziet het direct op hun telefoon.',
-    iconBg: 'bg-peach-light',
-    iconColor: 'text-peach-deep',
-    gradient: 'from-peach-light/30 via-white to-white',
-    glowColor: 'rgba(240,160,128,0.15)',
-  },
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-    title: 'Klantportaal',
-    description: 'Je klant logt in, keurt goed en stuurt berichten. Geen e-mails heen en weer.',
-    iconBg: 'bg-mist-light',
-    iconColor: 'text-mist-deep',
-    gradient: 'from-mist-light/30 via-white to-white',
-    glowColor: 'rgba(123,163,196,0.15)',
-  },
-
-  /* ─── ROW 4 : Overzicht & export ────────────────────────────── */
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect width="20" height="16" x="2" y="4" rx="2" />
-        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-      </svg>
-    ),
-    title: 'E-mail in je projecten',
-    description: 'Automatisch gekoppeld aan klanten en projecten. Nooit meer zoeken.',
-    iconBg: 'bg-cream-light',
-    iconColor: 'text-cream-deep',
-    gradient: 'from-cream-light/30 via-white to-white',
-    glowColor: 'rgba(196,184,138,0.15)',
-  },
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-        <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z" />
-      </svg>
-    ),
-    title: 'Projecten met overzicht',
-    description: 'Alles bij elkaar. Eén klik en je ziet je marge.',
+    title: 'Projecten & planning',
+    subtitle: 'Overzicht van kantoor tot bouwplaats',
+    color: 'sage',
     iconBg: 'bg-sage-light',
     iconColor: 'text-sage-deep',
-    gradient: 'from-sage-light/30 via-white to-white',
-    glowColor: 'rgba(125,184,138,0.15)',
-  },
-  {
+    borderColor: 'border-sage/20',
+    gradient: 'from-sage-light/20 via-white to-white',
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-        <polyline points="14 2 14 8 20 8" />
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect width="18" height="18" x="3" y="3" rx="2" />
+        <path d="m9 12 2 2 4-4" />
       </svg>
     ),
-    title: 'PDF & UBL-export',
-    description: 'Professionele offertes met je logo. UBL direct naar je boekhouder.',
-    iconBg: 'bg-mist-light',
-    iconColor: 'text-mist-deep',
-    gradient: 'from-mist-light/30 via-white to-white',
-    glowColor: 'rgba(123,163,196,0.15)',
+    features: [
+      { name: 'Werkbonnen op locatie', desc: "Foto's, uren en materiaal op je telefoon" },
+      { name: 'Planning & agenda', desc: 'Wie doet wat, wanneer' },
+      { name: 'Projecten met overzicht', desc: 'Eén klik en je ziet je marge' },
+      { name: 'E-mail in je projecten', desc: 'Automatisch gekoppeld, nooit meer zoeken' },
+    ],
   },
-
-  /* ─── ROW 5 : Extras ────────────────────────────────────────── */
   {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
-        <path d="M13 5v2" />
-        <path d="M13 17v2" />
-        <path d="M13 11v2" />
-      </svg>
-    ),
-    title: 'Betaallinks',
-    description: 'Betaallink mee met je factuur. Je klant betaalt direct online.',
+    title: 'Slim & uniek',
+    subtitle: 'Wat ons anders maakt',
+    color: 'lavender',
     iconBg: 'bg-lavender-light',
     iconColor: 'text-lavender-deep',
-    gradient: 'from-lavender-light/30 via-white to-white',
-    glowColor: 'rgba(164,139,191,0.15)',
-  },
-  {
+    borderColor: 'border-lavender/20',
+    gradient: 'from-lavender-light/20 via-white to-white',
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
       </svg>
     ),
-    title: 'Geen opslaglimiet',
-    description: 'Onbeperkt documenten en bestanden. Geen extra kosten.',
-    iconBg: 'bg-cream-light',
-    iconColor: 'text-cream-deep',
-    gradient: 'from-cream-light/30 via-white to-white',
-    glowColor: 'rgba(196,184,138,0.15)',
+    features: [
+      { name: 'Sign Visualiser', desc: 'AI-visualisatie van signing voor je klant' },
+      { name: 'AI-assistent Forgie', desc: 'Teksten schrijven, offertes verbeteren' },
+      { name: 'Klantportaal', desc: 'Je klant logt in, keurt goed en stuurt berichten' },
+      { name: 'Geen opslaglimiet', desc: 'Onbeperkt documenten en bestanden' },
+    ],
   },
 ];
 
@@ -259,64 +100,52 @@ export default function FeaturesGrid() {
           </p>
         </div>
 
-        {/* Bento Grid */}
+        {/* 3 Category boxes */}
         <div
           ref={gridRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[960px] mx-auto"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-[1000px] mx-auto"
         >
-          {features.map((feature, i) => {
-            const isWide = feature.span === 2;
-            const isAccent = feature.accent;
-
-            return (
-              <div
-                key={feature.title}
-                className={`
-                  group relative rounded-2xl border overflow-hidden cursor-default
-                  bg-gradient-to-br ${feature.gradient}
-                  ${isWide ? 'sm:col-span-2' : ''}
-                  ${isAccent
-                    ? 'border-blush/30 ring-1 ring-blush-vivid/10'
-                    : 'border-ink-10'
-                  }
-                  ${isWide ? 'p-7 sm:p-8' : 'p-6'}
-                  neon-card
-                `}
-                style={{
-                  opacity: gridVisible ? 1 : 0,
-                  transform: gridVisible ? 'translateY(0)' : 'translateY(24px)',
-                  transition: `all 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${0.06 * i}s`,
-                }}
-              >
-                {/* Hover glow */}
-                <div
-                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                  style={{ background: `radial-gradient(circle at 50% 0%, ${feature.glowColor}, transparent 70%)` }}
-                />
-
-                <div className="relative z-10">
-                  {/* Top row: icon + tag */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl ${feature.iconBg} ${feature.iconColor} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
-                      {feature.icon}
-                    </div>
-                    {feature.tag && (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide ${feature.tagColor}`}>
-                        {feature.tag}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className={`font-bold text-ink mb-1.5 ${isWide ? 'text-[17px]' : 'text-[15px]'}`}>
-                    {feature.title}
-                  </h3>
-                  <p className={`leading-[1.6] text-ink-60 ${isWide ? 'text-[15px] max-w-[480px]' : 'text-[14px]'}`}>
-                    {feature.description}
-                  </p>
+          {categories.map((cat, i) => (
+            <div
+              key={cat.title}
+              className={`
+                group relative rounded-2xl border ${cat.borderColor}
+                bg-gradient-to-br ${cat.gradient}
+                p-7 neon-card cursor-default
+              `}
+              style={{
+                opacity: gridVisible ? 1 : 0,
+                transform: gridVisible ? 'translateY(0)' : 'translateY(24px)',
+                transition: `all 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${0.12 * i}s`,
+              }}
+            >
+              {/* Category header */}
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-10 h-10 rounded-xl ${cat.iconBg} ${cat.iconColor} flex items-center justify-center`}>
+                  {cat.icon}
+                </div>
+                <div>
+                  <h3 className="text-[17px] font-bold text-ink leading-tight">{cat.title}</h3>
                 </div>
               </div>
-            );
-          })}
+              <p className="text-[13px] text-ink-40 mb-6">{cat.subtitle}</p>
+
+              {/* Feature list */}
+              <ul className="space-y-4">
+                {cat.features.map((feature) => (
+                  <li key={feature.name} className="flex items-start gap-3">
+                    <svg className={`w-4 h-4 mt-0.5 flex-shrink-0 ${cat.iconColor} opacity-60`} viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM7.28 10.22l-2-2a.75.75 0 0 1 1.06-1.06L7.78 8.6l2.88-2.88a.75.75 0 0 1 1.06 1.06l-3.41 3.41a.75.75 0 0 1-1.06 0l.03.03Z" />
+                    </svg>
+                    <div>
+                      <p className="text-[14px] font-semibold text-ink leading-tight">{feature.name}</p>
+                      <p className="text-[13px] text-ink-60 leading-snug mt-0.5">{feature.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
     </section>
