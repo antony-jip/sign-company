@@ -243,10 +243,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(503).json({ error: 'AI niet geconfigureerd', configured: false })
     }
 
-    const { action, question, history } = req.body as {
+    const { action, question, history, context: pageContext } = req.body as {
       action: 'chat' | 'get-history' | 'clear-history' | 'import-csv' | 'get-imports' | 'delete-import'
       question?: string
       history?: Array<{ role: string; content: string }>
+      context?: { huidige_pagina?: string; huidige_module?: string; entity_id?: string }
       // import-csv fields
       bestandsnaam?: string
       rows?: Array<Record<string, unknown>>
@@ -363,29 +364,184 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Get relevant data context
     const dataContext = await getRelevantContext(userId, question)
 
+    // Build page context info
+    const paginaContext = pageContext
+      ? `\nGEBRUIKER CONTEXT:\n- Huidige pagina: ${pageContext.huidige_pagina || 'onbekend'}\n- Module: ${pageContext.huidige_module || 'dashboard'}\n- Entity ID: ${pageContext.entity_id || 'geen'}`
+      : ''
+
+    // Resolve page context entity if on a specific item page
+    let entityContext = ''
+    if (pageContext?.entity_id && pageContext.huidige_module) {
+      try {
+        if (pageContext.huidige_module === 'klanten') {
+          const { data: klant } = await supabase
+            .from('klanten')
+            .select('id, bedrijfsnaam, contactpersoon')
+            .eq('id', pageContext.entity_id)
+            .single()
+          if (klant) entityContext = `\nDe gebruiker bekijkt klant: ${klant.bedrijfsnaam} (id: ${klant.id}, contactpersoon: ${klant.contactpersoon})`
+        } else if (pageContext.huidige_module === 'projecten') {
+          const { data: project } = await supabase
+            .from('projecten')
+            .select('id, naam, klant_id, klant_naam, status')
+            .eq('id', pageContext.entity_id)
+            .single()
+          if (project) entityContext = `\nDe gebruiker bekijkt project: ${project.naam} (id: ${project.id}, klant: ${project.klant_naam || ''}, klant_id: ${project.klant_id}, status: ${project.status})`
+        } else if (pageContext.huidige_module === 'offertes') {
+          const { data: offerte } = await supabase
+            .from('offertes')
+            .select('id, titel, klant_id, klant_naam, project_id, status')
+            .eq('id', pageContext.entity_id)
+            .single()
+          if (offerte) entityContext = `\nDe gebruiker bekijkt offerte: ${offerte.titel} (id: ${offerte.id}, klant: ${offerte.klant_naam || ''}, klant_id: ${offerte.klant_id}, project_id: ${offerte.project_id || 'geen'})`
+        }
+      } catch {
+        // Entity lookup failed, continue without
+      }
+    }
+
+    const today = new Date().toISOString().split('T')[0]
+
     // Build system prompt
-    const systemPrompt = `Je bent Forgie, de AI assistent van FORGEdesk. Je bent het bedrijfsgeheugen van de gebruiker. Je bent direct, behulpzaam en een beetje eigenwijs — net als de vakmensen die je helpt.
+    const systemPrompt = `Je bent Forgie, de slimme AI assistent van FORGEdesk. Je helpt gebruikers met hun bedrijfsvoering.
 
 ${bedrijfscontext ? `Over het bedrijf: ${bedrijfscontext}` : ''}
+${paginaContext}${entityContext}
+
+Vandaag is: ${today}
 
 Je hebt toegang tot de volgende bedrijfsdata:
-
 ${JSON.stringify(dataContext, null, 2)}
 
-REGELS:
+CONTEXT REGELS:
+- Als de gebruiker op een klantpagina zit en "maak een project" zegt → gebruik die klant automatisch (GEEN zoek_klant nodig)
+- Als de gebruiker op een projectpagina zit en "maak een offerte" zegt → gebruik dat project + klant automatisch
+- Op dashboard of geen context → vraag alleen door als het echt onduidelijk is
+
+ACTIE REGELS:
+1. Gebruik meegestuurde context als klant_id/project_id al bekend is
+2. Zoek met zoek_klant of zoek_project als een naam genoemd wordt die niet in de context zit
+3. Klant niet gevonden → toon fuzzy matches: "Bedoel je [X]?" Bij 0 matches: stel voor om klant aan te maken
+4. Project niet gevonden → idem
+5. Vul slim in op basis van context + gebruikersinput
+6. Gebruik ALTIJD stel_*_voor tools — maak NOOIT iets direct aan
+
+MEERDERE ACTIES:
+- "Maak een project én offerte" → twee stel_*_voor tools
+- "Nieuwe klant + project" → stel_klant_voor + stel_project_voor
+- Logische volgorde: klant → project → offerte/taak
+
+SLIM INVULLEN:
+- Projectnaam: leid af uit beschrijving ("gevelreclame voor 2MV" → "Gevelreclame")
+- Status: default "nieuw"
+- Prioriteit: default "normaal", "urgent"/"belangrijk" → "hoog"
+- Deadline: "morgen" → bereken datum, "volgende week vrijdag" → bereken
+
+FOLLOW-UP:
+Na project → "Offerte of taak erbij?"
+Na klant → "Project aanmaken?"
+Na offerte → "Naar de offerte om regels toe te voegen?"
+Na taak → "Nog een taak?"
+
+DATA REGELS:
 - Antwoord kort en bondig in het Nederlands
 - Gebruik concrete getallen, namen en datums uit de data
-- Als je het antwoord niet weet op basis van de beschikbare data, zeg dat eerlijk
-- Kijk ALTIJD ook in de geïmporteerde CSV data (type: geimporteerde_csv_data) — dit bevat historische klant-, project- en facturatiegegevens
-- Als data uit een CSV import komt, vermeld dat het historische/geïmporteerde data betreft
-- Geef bedragen altijd in euro's met twee decimalen
+- Als je het antwoord niet weet, zeg dat eerlijk
+- Kijk ALTIJD ook in geïmporteerde CSV data
+- Geef bedragen in euro's met twee decimalen
 - Bij opsommingen: maximaal 10 items, daarna "en nog X meer"
 - Gebruik **dikgedrukt** voor belangrijke getallen en namen`
 
+    // Tool definitions
+    const tools = [
+      {
+        name: 'zoek_klant',
+        description: 'Zoek een klant op naam, bedrijfsnaam of deel van de naam. Gebruik fuzzy matching. Geeft een lijst van matches terug.',
+        input_schema: {
+          type: 'object' as const,
+          properties: {
+            zoekterm: { type: 'string' as const, description: 'Naam of bedrijfsnaam (of deel ervan)' },
+          },
+          required: ['zoekterm'],
+        },
+      },
+      {
+        name: 'zoek_project',
+        description: 'Zoek een project op naam of beschrijving. Optioneel gefilterd op klant.',
+        input_schema: {
+          type: 'object' as const,
+          properties: {
+            zoekterm: { type: 'string' as const, description: 'Projectnaam of beschrijving (of deel ervan)' },
+            klant_id: { type: 'string' as const, description: 'Filter op klant UUID (optioneel)' },
+          },
+          required: ['zoekterm'],
+        },
+      },
+      {
+        name: 'stel_project_voor',
+        description: 'Stel een nieuw project voor om aan te maken. De gebruiker krijgt een bevestigingskaart te zien.',
+        input_schema: {
+          type: 'object' as const,
+          properties: {
+            naam: { type: 'string' as const, description: 'Projectnaam' },
+            klant_id: { type: 'string' as const, description: 'UUID van de klant' },
+            klant_naam: { type: 'string' as const, description: 'Klantnaam voor weergave' },
+            beschrijving: { type: 'string' as const, description: 'Korte beschrijving' },
+            status: { type: 'string' as const, enum: ['nieuw', 'actief', 'afgerond'], description: 'Default: nieuw' },
+          },
+          required: ['naam', 'klant_id', 'klant_naam'],
+        },
+      },
+      {
+        name: 'stel_offerte_voor',
+        description: 'Stel een nieuwe offerte voor. De gebruiker krijgt een bevestigingskaart.',
+        input_schema: {
+          type: 'object' as const,
+          properties: {
+            onderwerp: { type: 'string' as const, description: 'Offerte onderwerp' },
+            klant_id: { type: 'string' as const, description: 'UUID van de klant' },
+            klant_naam: { type: 'string' as const, description: 'Klantnaam voor weergave' },
+            project_id: { type: 'string' as const, description: 'UUID van het project (optioneel)' },
+            project_naam: { type: 'string' as const, description: 'Projectnaam voor weergave (optioneel)' },
+          },
+          required: ['onderwerp', 'klant_id', 'klant_naam'],
+        },
+      },
+      {
+        name: 'stel_taak_voor',
+        description: 'Stel een nieuwe taak voor.',
+        input_schema: {
+          type: 'object' as const,
+          properties: {
+            titel: { type: 'string' as const, description: 'Taak titel' },
+            beschrijving: { type: 'string' as const, description: 'Taak beschrijving' },
+            project_id: { type: 'string' as const, description: 'UUID van het project (optioneel)' },
+            project_naam: { type: 'string' as const, description: 'Projectnaam voor weergave (optioneel)' },
+            prioriteit: { type: 'string' as const, enum: ['laag', 'normaal', 'hoog', 'urgent'], description: 'Default: normaal' },
+            deadline: { type: 'string' as const, description: 'ISO datum string (optioneel)' },
+          },
+          required: ['titel'],
+        },
+      },
+      {
+        name: 'stel_klant_voor',
+        description: 'Stel een nieuwe klant voor om aan te maken wanneer de klant niet gevonden wordt.',
+        input_schema: {
+          type: 'object' as const,
+          properties: {
+            bedrijfsnaam: { type: 'string' as const, description: 'Bedrijfsnaam' },
+            contactpersoon: { type: 'string' as const, description: 'Naam contactpersoon (optioneel)' },
+            email: { type: 'string' as const, description: 'Email (optioneel)' },
+            telefoon: { type: 'string' as const, description: 'Telefoon (optioneel)' },
+          },
+          required: ['bedrijfsnaam'],
+        },
+      },
+    ]
+
     // Build messages with conversation history
-    const messages: Array<{ role: string; content: string }> = []
+    const messages: Array<{ role: string; content: unknown }> = []
     if (history && Array.isArray(history)) {
-      // Include last 4 messages for context
       const recentHistory = history.slice(-4)
       for (const msg of recentHistory) {
         messages.push({ role: msg.role === 'forgie' ? 'assistant' : msg.role, content: msg.content })
@@ -393,42 +549,164 @@ REGELS:
     }
     messages.push({ role: 'user', content: question })
 
-    // Call Anthropic API
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
-        system: systemPrompt,
-        messages,
-      }),
-    })
+    // Tool-use loop
+    const acties: Array<{
+      type: string
+      actie: string
+      data: Record<string, unknown>
+      navigeer_naar?: string
+      wacht_op?: string
+    }> = []
+    let totalInputTokens = 0
+    let totalOutputTokens = 0
+    let resultText = ''
+    const MAX_ITERATIONS = 5
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as Record<string, unknown>
-      console.error('Anthropic API fout:', response.status, errorData)
-      if (response.status === 429) {
-        return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
-      }
-      return res.status(response.status).json({
-        error: (errorData?.error as Record<string, string>)?.message || 'Anthropic API fout',
+    for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2048,
+          system: systemPrompt,
+          messages,
+          tools,
+        }),
       })
-    }
 
-    const data = await response.json() as {
-      content: Array<{ type: string; text: string }>
-      usage: { input_tokens: number; output_tokens: number }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({})) as Record<string, unknown>
+        console.error('Anthropic API fout:', response.status, errorData)
+        if (response.status === 429) {
+          return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+        }
+        return res.status(response.status).json({
+          error: (errorData?.error as Record<string, string>)?.message || 'Anthropic API fout',
+        })
+      }
+
+      const data = await response.json() as {
+        content: Array<{ type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> }>
+        usage: { input_tokens: number; output_tokens: number }
+        stop_reason: string
+      }
+
+      totalInputTokens += data.usage.input_tokens
+      totalOutputTokens += data.usage.output_tokens
+
+      // Extract text blocks
+      for (const block of data.content) {
+        if (block.type === 'text' && block.text) {
+          resultText += block.text
+        }
+      }
+
+      // If no tool use, we're done
+      if (data.stop_reason !== 'tool_use') break
+
+      // Process tool calls
+      const toolResults: Array<{ type: 'tool_result'; tool_use_id: string; content: string }> = []
+
+      for (const block of data.content) {
+        if (block.type !== 'tool_use' || !block.name || !block.id) continue
+
+        const toolInput = block.input || {}
+
+        if (block.name === 'zoek_klant') {
+          const zoekterm = String(toolInput.zoekterm || '')
+          const sanitized = zoekterm.replace(/[\\%_]/g, c => `\\${c}`)
+          const { data: klanten } = await supabase
+            .from('klanten')
+            .select('id, bedrijfsnaam, contactpersoon, email, telefoon')
+            .eq('user_id', userId)
+            .or(`bedrijfsnaam.ilike.%${sanitized}%,contactpersoon.ilike.%${sanitized}%`)
+            .limit(5)
+
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            content: JSON.stringify(klanten || []),
+          })
+        } else if (block.name === 'zoek_project') {
+          const zoekterm = String(toolInput.zoekterm || '')
+          const sanitized = zoekterm.replace(/[\\%_]/g, c => `\\${c}`)
+          let query = supabase
+            .from('projecten')
+            .select('id, naam, beschrijving, status, klant_id, klant_naam')
+            .eq('user_id', userId)
+            .ilike('naam', `%${sanitized}%`)
+            .limit(5)
+
+          if (toolInput.klant_id) {
+            query = query.eq('klant_id', String(toolInput.klant_id))
+          }
+
+          const { data: projecten } = await query
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            content: JSON.stringify(projecten || []),
+          })
+        } else if (block.name.startsWith('stel_')) {
+          // Proposal tools — collect as acties, don't execute
+          const typeMap: Record<string, string> = {
+            stel_project_voor: 'project',
+            stel_offerte_voor: 'offerte',
+            stel_taak_voor: 'taak',
+            stel_klant_voor: 'klant',
+          }
+          const actieType = typeMap[block.name] || 'onbekend'
+
+          const navMap: Record<string, string> = {
+            project: '/projecten/{id}',
+            offerte: '/offertes/{id}',
+            taak: '/taken',
+            klant: '/klanten/{id}',
+          }
+
+          // Determine dependencies
+          let wachtOp: string | undefined
+          if (actieType === 'project' && acties.some(a => a.type === 'klant')) {
+            wachtOp = 'klant'
+          } else if ((actieType === 'offerte' || actieType === 'taak') && acties.some(a => a.type === 'project')) {
+            wachtOp = 'project'
+          }
+
+          acties.push({
+            type: actieType,
+            actie: 'aanmaken',
+            data: toolInput,
+            navigeer_naar: navMap[actieType],
+            wacht_op: wachtOp,
+          })
+
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            content: JSON.stringify({ success: true, message: 'Voorstel wordt aan de gebruiker getoond' }),
+          })
+        } else {
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            content: JSON.stringify({ error: 'Onbekende tool' }),
+          })
+        }
+      }
+
+      // Add assistant message + tool results to conversation for next iteration
+      messages.push({ role: 'assistant', content: data.content })
+      messages.push({ role: 'user', content: toolResults })
     }
-    const resultText = data.content?.[0]?.text || ''
 
     // Update usage tracking
     try {
-      await updateUsage(userId, data.usage.input_tokens, data.usage.output_tokens)
+      await updateUsage(userId, totalInputTokens, totalOutputTokens)
     } catch {
       // Usage tracking is niet-kritiek
     }
@@ -447,6 +725,7 @@ REGELS:
 
     return res.status(200).json({
       answer: resultText,
+      acties: acties.length > 0 ? acties : undefined,
       usage: currentUsage.geschatte_kosten,
       limiet: MONTHLY_LIMIT,
     })

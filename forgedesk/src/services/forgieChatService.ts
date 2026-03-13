@@ -1,15 +1,31 @@
 import supabase from './supabaseClient'
 
+export interface ForgieActie {
+  type: 'project' | 'offerte' | 'taak' | 'klant'
+  actie: 'aanmaken'
+  data: Record<string, unknown>
+  navigeer_naar?: string
+  wacht_op?: string
+}
+
 export interface ForgieChatMessage {
   role: 'user' | 'forgie'
   content: string
+  acties?: ForgieActie[]
   created_at?: string
 }
 
 export interface ForgieChatResult {
   answer: string
+  acties?: ForgieActie[]
   usage: number
   limiet: number
+}
+
+export interface ForgieContext {
+  huidige_pagina: string
+  huidige_module: string
+  entity_id?: string
 }
 
 export interface ForgieImport {
@@ -42,9 +58,10 @@ async function chatRequest(body: Record<string, unknown>): Promise<Response> {
 
 export async function sendForgieChat(
   question: string,
-  history: ForgieChatMessage[]
+  history: ForgieChatMessage[],
+  context?: ForgieContext
 ): Promise<ForgieChatResult> {
-  const response = await chatRequest({ action: 'chat', question, history })
+  const response = await chatRequest({ action: 'chat', question, history, context })
   if (!response.ok) {
     const error = await response.json().catch(() => ({})) as { message?: string; error?: string }
     throw new Error(error?.message || error?.error || `Forgie fout: ${response.status}`)

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Sparkles, Send, X, RotateCcw, Loader2, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -7,16 +8,19 @@ import {
   getForgieHistory,
   clearForgieHistory,
   type ForgieChatMessage,
+  type ForgieActie,
+  type ForgieContext,
 } from '@/services/forgieChatService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
 import { ForgieAvatar } from './ForgieAvatar'
+import { ForgieActieKaart } from './ForgieActieKaart'
 
 const SUGGESTIE_CHIPS = [
   'Wat staat er open?',
   'Omzet deze maand',
-  'Openstaande facturen',
-  'Projecten in uitvoering',
+  'Maak een project aan',
+  'Nieuwe offerte',
 ]
 
 /** Cute fox mascot SVG for Forgie */
@@ -60,6 +64,8 @@ const FORGIE_INTRO_SEEN_KEY = 'forgie-intro-seen'
 
 export function ForgieChatWidget() {
   const { forgieEnabled } = useAppSettings()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ForgieChatMessage[]>([])
   const [input, setInput] = useState('')
@@ -67,8 +73,20 @@ export function ForgieChatWidget() {
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
   const [showIntroBubble, setShowIntroBubble] = useState(false)
+  const [completedActies, setCompletedActies] = useState<Record<string, string>>({})
+  const [navigateCountdown, setNavigateCountdown] = useState<{ url: string; seconds: number } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const context: ForgieContext = useMemo(() => {
+    const path = location.pathname
+    const parts = path.split('/').filter(Boolean)
+    return {
+      huidige_pagina: path,
+      huidige_module: parts[0] || 'dashboard',
+      entity_id: parts[1] || undefined,
+    }
+  }, [location.pathname])
 
   // Show intro bubble once for new users
   useEffect(() => {
@@ -113,13 +131,19 @@ export function ForgieChatWidget() {
     if (!question || loading) return
 
     setInput('')
+    setCompletedActies({})
+    setNavigateCountdown(null)
     const userMsg: ForgieChatMessage = { role: 'user', content: question }
     setMessages(prev => [...prev, userMsg])
     setLoading(true)
 
     try {
-      const result = await sendForgieChat(question, messages)
-      const forgieMsg: ForgieChatMessage = { role: 'forgie', content: result.answer }
+      const result = await sendForgieChat(question, messages, context)
+      const forgieMsg: ForgieChatMessage = {
+        role: 'forgie',
+        content: result.answer,
+        acties: result.acties,
+      }
       setMessages(prev => [...prev, forgieMsg])
       if (!isOpen) setHasUnread(true)
     } catch (err) {
@@ -132,7 +156,38 @@ export function ForgieChatWidget() {
       setLoading(false)
       inputRef.current?.focus()
     }
-  }, [input, loading, messages, isOpen])
+  }, [input, loading, messages, isOpen, context])
+
+  const handleActieCreated = useCallback((type: string, id: string, navigeerNaar?: string) => {
+    setCompletedActies(prev => ({ ...prev, [type]: id }))
+    // If navigeerNaar provided, start countdown
+    if (navigeerNaar) {
+      const url = navigeerNaar.replace('{id}', id)
+      setNavigateCountdown({ url, seconds: 2 })
+    }
+  }, [])
+
+  const handleActieCancel = useCallback((type: string) => {
+    // Add cancel message
+    setMessages(prev => [
+      ...prev,
+      { role: 'forgie', content: 'Oké, laat maar weten als je iets anders nodig hebt.' },
+    ])
+  }, [])
+
+  // Auto-navigate countdown
+  useEffect(() => {
+    if (!navigateCountdown) return
+    if (navigateCountdown.seconds <= 0) {
+      navigate(navigateCountdown.url)
+      setNavigateCountdown(null)
+      return
+    }
+    const timer = setTimeout(() => {
+      setNavigateCountdown(prev => prev ? { ...prev, seconds: prev.seconds - 1 } : null)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [navigateCountdown, navigate])
 
   const handleClear = useCallback(async () => {
     await clearForgieHistory().catch(() => {})
@@ -213,26 +268,53 @@ export function ForgieChatWidget() {
 
             {/* Messages */}
             {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'flex gap-2.5',
-                  msg.role === 'user' ? 'justify-end' : 'justify-start'
-                )}
-              >
-                {msg.role === 'forgie' && (
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep flex-shrink-0 mt-1" />
-                )}
+              <div key={i}>
                 <div
                   className={cn(
-                    'max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap',
-                    msg.role === 'user'
-                      ? 'bg-mist/20 text-foreground'
-                      : 'bg-background border text-foreground'
+                    'flex gap-2.5',
+                    msg.role === 'user' ? 'justify-end' : 'justify-start'
                   )}
                 >
-                  {msg.role === 'forgie' ? renderForgieMarkdown(msg.content) : msg.content}
+                  {msg.role === 'forgie' && (
+                    <Sparkles className="w-3.5 h-3.5 text-blush-deep flex-shrink-0 mt-1" />
+                  )}
+                  <div
+                    className={cn(
+                      'max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap',
+                      msg.role === 'user'
+                        ? 'bg-mist/20 text-foreground'
+                        : 'bg-background border text-foreground'
+                    )}
+                  >
+                    {msg.role === 'forgie' ? renderForgieMarkdown(msg.content) : msg.content}
+                  </div>
                 </div>
+                {/* Actie kaarten */}
+                {msg.acties && msg.acties.length > 0 && (
+                  <div className="mt-2 space-y-2 pl-6">
+                    {msg.acties.map((actie, j) => (
+                      <ForgieActieKaart
+                        key={`${i}-${j}`}
+                        actie={actie}
+                        onCreated={(type, id) => handleActieCreated(type, id, actie.navigeer_naar)}
+                        onCancel={() => handleActieCancel(actie.type)}
+                        disabled={!!actie.wacht_op && !completedActies[actie.wacht_op]}
+                        pendingProjectId={actie.wacht_op === 'klant' ? completedActies['klant'] : completedActies['project']}
+                      />
+                    ))}
+                    {navigateCountdown && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground pl-1">
+                        <span>Je wordt doorgestuurd in {navigateCountdown.seconds}s...</span>
+                        <button
+                          onClick={() => setNavigateCountdown(null)}
+                          className="underline hover:text-foreground"
+                        >
+                          Blijf hier
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
 
