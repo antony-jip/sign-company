@@ -41,7 +41,7 @@ export default function Hero() {
             transitionDelay: '1s',
           }}
         >
-          Projecten, offertes, werkbonnen en facturen in één systeem. Gebouwd door signmakers, voor de creatieve branche.
+          Offertes, werkbonnen, facturen, planning, klantportaal, e-mail en AI. Alles in één systeem. Gebouwd door signmakers.
         </p>
 
         {/* CTA buttons — section 15 */}
