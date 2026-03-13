@@ -87,7 +87,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         setFetchedOfferte(offerte)
 
         const [klant, items] = await Promise.all([
-          getKlant(offerte.klant_id),
+          offerte.klant_id ? getKlant(offerte.klant_id).catch(() => null) : Promise.resolve(null),
           getOfferteItems(offerte.id),
         ])
 
@@ -332,18 +332,18 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               Offertes
             </button>
             <ChevronRight className="h-3.5 w-3.5" />
-            {fetchedKlant && (
+            {fetchedKlant && fetchedKlant.bedrijfsnaam && (
               <>
                 <button
                   onClick={() => navigate(`/klanten/${fetchedKlant.id}`)}
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
-                  {fetchedKlant.bedrijfsnaam}
+                  {String(fetchedKlant.bedrijfsnaam)}
                 </button>
                 <ChevronRight className="h-3.5 w-3.5" />
               </>
             )}
-            <span className="text-foreground dark:text-white font-medium">{offerteData.nummer}</span>
+            <span className="text-foreground dark:text-white font-medium">{offerteData.nummer ?? ''}</span>
           </div>
 
           {/* Row 2: Title + Status + Actions */}
@@ -357,7 +357,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               </button>
               <div className="min-w-0">
                 <h1 className="text-lg font-bold tracking-[-0.02em] text-foreground dark:text-white truncate">
-                  {offerteData.titel}
+                  {offerteData.titel ?? ''}
                 </h1>
                 <div className="flex items-center gap-2 mt-0.5">
                   <select
@@ -506,12 +506,14 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               </h3>
               {klant ? (
                 <div className="space-y-1">
-                  <p className="font-medium text-foreground dark:text-white">{klant.bedrijfsnaam}</p>
-                  <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">t.a.v. {klant.contactpersoon}</p>
-                  <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">{klant.adres}</p>
-                  <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
-                    {klant.postcode} {klant.stad}
-                  </p>
+                  <p className="font-medium text-foreground dark:text-white">{klant.bedrijfsnaam ?? ''}</p>
+                  {klant.contactpersoon && <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">t.a.v. {klant.contactpersoon}</p>}
+                  {klant.adres && <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">{klant.adres}</p>}
+                  {(klant.postcode || klant.stad) && (
+                    <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
+                      {klant.postcode ?? ''} {klant.stad ?? ''}
+                    </p>
+                  )}
                   {klant.btw_nummer && (
                     <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-2">
                       BTW: {klant.btw_nummer}
@@ -519,7 +521,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Klant niet gevonden</p>
+                <p className="text-sm text-muted-foreground">Particulier / geen klant gekoppeld</p>
               )}
             </div>
 
