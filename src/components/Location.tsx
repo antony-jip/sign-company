@@ -21,7 +21,7 @@ export const Location: React.FC<LocationProps> = ({
               {title}
             </h2>
             <p className="text-lg text-gray-600 mb-6">
-              Sign Company is gevestigd in Enkhuizen en bedient {location.city} en omgeving.
+              FORGEdesk is gevestigd in Enkhuizen en bedient {location.city} en omgeving.
               {location.distanceFromEnkhuizen && (
                 <span> Wij zijn op slechts {location.distanceFromEnkhuizen} van uw locatie.</span>
               )}
@@ -100,7 +100,7 @@ export const Location: React.FC<LocationProps> = ({
                   Interactieve kaart komt hier
                 </p>
                 <p className="text-sm text-primary-500 mt-2">
-                  Sign Company - {location.city}
+                  FORGEdesk - {location.city}
                 </p>
               </div>
             </div>

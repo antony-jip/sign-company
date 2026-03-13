@@ -5,7 +5,7 @@ export const gevelreclameEnkhuizen: LandingPageData = {
   phase: 1,
   priority: 5,
 
-  metaTitle: 'Gevelreclame Enkhuizen | Lichtreclame & Doosletters | Sign Company',
+  metaTitle: 'Gevelreclame Enkhuizen | Lichtreclame & Doosletters | FORGEdesk',
   metaDescription:
     'Gevelreclame in Enkhuizen door uw lokale specialist. Doosletters, freesletters en LED lichtreclame. Gevestigd in Enkhuizen. ✓ Gratis advies ✓ Eigen montage',
   h1: 'Gevelreclame Enkhuizen',

@@ -5,9 +5,9 @@ export const gevelreclameHoorn: LandingPageData = {
   phase: 2,
   priority: 4,
 
-  metaTitle: 'Gevelreclame Hoorn | Lichtreclame & Doosletters | Sign Company',
+  metaTitle: 'Gevelreclame Hoorn | Lichtreclame & Doosletters | FORGEdesk',
   metaDescription:
-    'Gevelreclame in Hoorn door Sign Company Enkhuizen. Doosletters, freesletters en LED lichtreclame. ✓ 42 jaar ervaring ✓ Eigen montageploeg ✓ Gratis advies',
+    'Gevelreclame in Hoorn door FORGEdesk Enkhuizen. Doosletters, freesletters en LED lichtreclame. ✓ 42 jaar ervaring ✓ Eigen montageploeg ✓ Gratis advies',
   h1: 'Gevelreclame Hoorn',
 
   primaryKeywords: [
@@ -143,7 +143,7 @@ export const gevelreclameHoorn: LandingPageData = {
     {
       question: 'Wat onderscheidt jullie van andere signbedrijven in Hoorn?',
       answer:
-        'Sign Company is een familiebedrijf met 42 jaar ervaring in West-Friesland. We doen alles in-house, van ontwerp tot montage. Dat garandeert kwaliteit en snelle service.',
+        'FORGEdesk is een familiebedrijf met 42 jaar ervaring in West-Friesland. We doen alles in-house, van ontwerp tot montage. Dat garandeert kwaliteit en snelle service.',
     },
     {
       question: 'Bieden jullie ook onderhoud aan gevelreclame?',

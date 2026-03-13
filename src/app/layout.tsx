@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://forgedesk.nl'),
+  metadataBase: new URL('https://forgedesk.io'),
   title: {
     default: 'FORGEdesk | Je hele bedrijf. Eén app.',
     template: '%s | FORGEdesk',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'nl_NL',
-    url: 'https://forgedesk.nl',
+    url: 'https://forgedesk.io',
     siteName: 'FORGEdesk',
     title: 'FORGEdesk | Je hele bedrijf. Eén app.',
     description:
@@ -59,7 +59,7 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <head>
-        <link rel="canonical" href="https://forgedesk.nl" />
+        <link rel="canonical" href="https://forgedesk.io" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

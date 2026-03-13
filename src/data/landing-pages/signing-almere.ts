@@ -7,7 +7,7 @@ export const signingAlmere: LandingPageData = {
 
   metaTitle: 'Signing Almere | Gevelreclame & Autobelettering',
   metaDescription:
-    'Signing en reclame in Almere. Van gevelreclame tot voertuigbelettering. Sign Company brengt ambachtelijk vakmanschap naar de Flevopolder.',
+    'Signing en reclame in Almere. Van gevelreclame tot voertuigbelettering. FORGEdesk brengt ambachtelijk vakmanschap naar de Flevopolder.',
   h1: 'Signing & Reclame Almere',
 
   primaryKeywords: [
@@ -23,7 +23,7 @@ export const signingAlmere: LandingPageData = {
   ],
 
   heroIntro:
-    'Sign Company brengt ambachtelijk vakmanschap naar Almere. Van gevelreclame tot autobelettering, uw complete signing partner in Flevoland.',
+    'FORGEdesk brengt ambachtelijk vakmanschap naar Almere. Van gevelreclame tot autobelettering, uw complete signing partner in Flevoland.',
 
   contentFocus: [
     'Grootste stad in Flevoland',
@@ -104,9 +104,9 @@ export const signingAlmere: LandingPageData = {
 
   faqs: [
     {
-      question: 'Waarom kiezen voor Sign Company in plaats van een Almere bedrijf?',
+      question: 'Waarom kiezen voor FORGEdesk in plaats van een Almere bedrijf?',
       answer:
-        'Sign Company biedt 42 jaar ervaring, volledige in-house productie en persoonlijke service van een familiebedrijf. U krijgt ambachtelijk vakmanschap tegen eerlijke prijzen.',
+        'FORGEdesk biedt 42 jaar ervaring, volledige in-house productie en persoonlijke service van een familiebedrijf. U krijgt ambachtelijk vakmanschap tegen eerlijke prijzen.',
     },
     {
       question: 'Hoe snel kunnen jullie in Almere zijn?',

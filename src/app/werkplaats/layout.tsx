@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Werkplaats | Sign Company',
-  description: 'Sign Company interne werkplaats - CRM, email en projectbeheer',
+  title: 'Werkplaats | FORGEdesk',
+  description: 'FORGEdesk interne werkplaats - CRM, email en projectbeheer',
   robots: { index: false, follow: false },
 };
 
@@ -45,7 +45,7 @@ export default function WerkplaatsLayout({
       <header className="h-14 bg-primary-900 flex items-center justify-between px-4 flex-shrink-0">
         <div className="flex items-center gap-4">
           <a href="/" className="text-white font-bold text-lg tracking-tight">
-            Sign Company
+            FORGEdesk
           </a>
           <span className="text-primary-300 text-sm hidden sm:inline">|</span>
           <span className="text-primary-300 text-sm font-medium hidden sm:inline">Werkplaats</span>

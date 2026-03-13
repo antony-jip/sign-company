@@ -7,7 +7,7 @@ export const gevelreclameSchagen: LandingPageData = {
 
   metaTitle: 'Gevelreclame Schagen | Lichtreclame & Gevelbelettering',
   metaDescription:
-    'Gevelreclame in Schagen door Sign Company. Doosletters, freesletters en LED lichtreclame. Vakmanschap uit West-Friesland. ✓ 42 jaar ervaring',
+    'Gevelreclame in Schagen door FORGEdesk. Doosletters, freesletters en LED lichtreclame. Vakmanschap uit West-Friesland. ✓ 42 jaar ervaring',
   h1: 'Gevelreclame Schagen',
 
   primaryKeywords: [

@@ -5,7 +5,7 @@ export const carwrappingLelystad: LandingPageData = {
   phase: 3,
   priority: 3,
 
-  metaTitle: 'Carwrapping Lelystad | Auto Wrappen | Sign Company',
+  metaTitle: 'Carwrapping Lelystad | Auto Wrappen | FORGEdesk',
   metaDescription:
     'Carwrapping in Lelystad. Full wraps, deelwraps en kleurwraps met premium 3M en Avery folies. ✓ Gecertificeerde wrappers ✓ Volledig verwijderbaar',
   h1: 'Carwrapping Lelystad',

@@ -72,7 +72,7 @@ export const AppLoginExperience: React.FC = () => {
                 <div className="w-3 h-3 rounded-full bg-mist/60" />
               </div>
               <div className="flex-1 bg-white/5 rounded-lg px-4 py-1 text-xs text-gray-500 text-center ml-4">
-                app.forgedesk.nl
+                app.forgedesk.io
               </div>
             </div>
 

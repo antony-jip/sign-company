@@ -5,8 +5,8 @@ import { FeaturePageTemplate } from '@/components/FeaturePageTemplate';
 
 /* ─── Forgie Chat Demo ─── */
 const ForgieChat: React.FC = () => {
-  const [messages, setMessages] = useState([
-    { role: 'assistant' as const, text: 'Hoi! Ik ben Forgie, je AI-assistent. Hoe kan ik je helpen?' },
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([
+    { role: 'assistant', text: 'Hoi! Ik ben Forgie, je AI-assistent. Hoe kan ik je helpen?' },
   ]);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);

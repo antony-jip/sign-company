@@ -7,7 +7,7 @@ export const autobeletteringHoorn: LandingPageData = {
 
   metaTitle: 'Autobelettering Hoorn | Voertuigreclame & Carwrapping',
   metaDescription:
-    'Autobelettering in Hoorn. Van logo\'s tot full wraps met premium 3M en Avery folies. Sign Company Enkhuizen. ✓ 5-7 jaar garantie ✓ Gecertificeerde wrappers',
+    'Autobelettering in Hoorn. Van logo\'s tot full wraps met premium 3M en Avery folies. FORGEdesk Enkhuizen. ✓ 5-7 jaar garantie ✓ Gecertificeerde wrappers',
   h1: 'Autobelettering Hoorn',
 
   primaryKeywords: [
@@ -105,7 +105,7 @@ export const autobeletteringHoorn: LandingPageData = {
     {
       question: 'Waar kan ik terecht voor autobelettering in Hoorn?',
       answer:
-        'Sign Company in Enkhuizen is op 15 minuten van Hoorn. Wij hebben een professionele werkplaats met gecontroleerde omstandigheden voor perfecte resultaten.',
+        'FORGEdesk in Enkhuizen is op 15 minuten van Hoorn. Wij hebben een professionele werkplaats met gecontroleerde omstandigheden voor perfecte resultaten.',
     },
     {
       question: 'Kunnen jullie ook bij ons bedrijf in Hoorn komen?',

@@ -7,7 +7,7 @@ export const autobeletteringSchagen: LandingPageData = {
 
   metaTitle: 'Autobelettering Schagen | Voertuigreclame & Wrapping',
   metaDescription:
-    'Autobelettering in Schagen. Premium folies met garantie. Sign Company is uw specialist voor Noord-Holland Noord. ✓ Gratis ontwerpadvies',
+    'Autobelettering in Schagen. Premium folies met garantie. FORGEdesk is uw specialist voor Noord-Holland Noord. ✓ Gratis ontwerpadvies',
   h1: 'Autobelettering Schagen',
 
   primaryKeywords: [

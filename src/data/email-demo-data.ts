@@ -1,5 +1,5 @@
 // ============================================================================
-// Email Demo Data - Sign Company Werkplaats
+// Email Demo Data - FORGEdesk Werkplaats
 // ============================================================================
 
 export interface EmailAddress {
@@ -223,9 +223,9 @@ export const demoContacts: Contact[] = [
 // ============================================================================
 
 const signCompany: EmailAddress = {
-  name: 'Sign Company',
-  email: 'info@signcompany.nl',
-  company: 'Sign Company',
+  name: 'FORGEdesk',
+  email: 'info@forgedesk.io',
+  company: 'FORGEdesk',
 };
 
 export const demoEmails: Email[] = [
@@ -428,8 +428,8 @@ Supermarkt Plus Enkhuizen`,
     from: { name: 'Kees Jansen', email: 'k.jansen@gmail.com' },
     to: [signCompany],
     subject: 'Klacht bootbelettering - letters laten los',
-    preview: 'Geachte Sign Company, Twee weken geleden heeft u belettering aangebracht op mijn boot...',
-    body: `Geachte Sign Company,
+    preview: 'Geachte FORGEdesk, Twee weken geleden heeft u belettering aangebracht op mijn boot...',
+    body: `Geachte FORGEdesk,
 
 Twee weken geleden heeft u belettering aangebracht op mijn boot (Bayliner VR5, "Zeemeermin"). Helaas moet ik constateren dat er al 3 letters los zitten aan de bakboord kant.
 
@@ -459,8 +459,8 @@ T: +31 6 77889900`,
     from: { name: 'Marieke Bakker', email: 'm.bakker@cafetdorphuis.nl', company: "Café 't Dorphuis" },
     to: [signCompany],
     subject: 'Offerte aanvraag uithangbord en lichtreclame',
-    preview: 'Beste Sign Company, Wij zijn een nieuw café in Schagen en zoeken een mooi uithangbord...',
-    body: `Beste Sign Company,
+    preview: 'Beste FORGEdesk, Wij zijn een nieuw café in Schagen en zoeken een mooi uithangbord...',
+    body: `Beste FORGEdesk,
 
 Wij zijn een nieuw café in Schagen en zoeken een mooi uithangbord en lichtreclame voor ons pand. We hebben jullie werk gezien bij een paar andere horeca zaken in de buurt en dat sprak ons erg aan.
 
@@ -530,7 +530,7 @@ Amstelveenseweg 100, Amsterdam`,
 
 Betreft: Aanvraag omgevingsvergunning lichtreclame
 Locatie: Westerstraat 88, Enkhuizen
-Aanvrager: Sign Company namens Supermarkt Plus Enkhuizen
+Aanvrager: FORGEdesk namens Supermarkt Plus Enkhuizen
 Zaaknummer: OV-2026-0234
 
 Hierbij delen wij u mede dat uw aanvraag voor een omgevingsvergunning voor het plaatsen van lichtreclame op bovengenoemd adres is GOEDGEKEURD.
@@ -642,7 +642,7 @@ Laat me weten of je akkoord bent, dan ga ik direct aan de slag met het ontwerp!
 
 Met vriendelijke groet,
 Mark de Jong
-Sign Company
+FORGEdesk
 T: +31 228 123 456`,
     date: '2026-02-15T09:30:00Z',
     read: true,
@@ -687,7 +687,7 @@ Ik hoor graag van je!
 
 Met vriendelijke groet,
 Mark de Jong
-Sign Company`,
+FORGEdesk`,
     date: '2026-02-08T14:15:00Z',
     read: true,
     starred: false,
@@ -718,7 +718,7 @@ Bijgevoegd vindt u:
 5. Technische specificaties lichtreclame
 
 Met vriendelijke groet,
-Sign Company`,
+FORGEdesk`,
     date: '2026-01-20T10:00:00Z',
     read: true,
     starred: false,
@@ -789,8 +789,8 @@ Bedankt voor het interessante voorstel. Wij staan zeker open voor een samenwerki
     from: { name: 'Willem Hoekstra', email: 'willem@jachthavenenkhuizen.nl', company: 'Jachthaven Enkhuizen' },
     to: [signCompany],
     subject: 'Bedankt voor de mooie havenborden!',
-    preview: 'Beste Sign Company, De nieuwe havenborden zijn fantastisch geworden! Alle...',
-    body: `Beste Sign Company,
+    preview: 'Beste FORGEdesk, De nieuwe havenborden zijn fantastisch geworden! Alle...',
+    body: `Beste FORGEdesk,
 
 De nieuwe havenborden zijn fantastisch geworden! Alle complimenten. De ligplaatshouders reageren ook erg positief.
 

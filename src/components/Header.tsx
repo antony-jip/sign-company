@@ -113,13 +113,13 @@ export const Header: React.FC = () => {
 
           <div className="hidden md:flex items-center gap-3">
             <a
-              href="https://app.forgedesk.nl"
+              href="https://app.forgedesk.io"
               className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors px-4 py-2"
             >
               Inloggen
             </a>
             <a
-              href="https://app.forgedesk.nl/registreren"
+              href="https://app.forgedesk.io/registreren"
               className="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-sm"
             >
               Gratis proberen
@@ -162,8 +162,8 @@ export const Header: React.FC = () => {
               <a href="#pricing" onClick={() => setIsOpen(false)} className="text-base font-medium text-gray-700 hover:text-gray-900 py-2">Pricing</a>
               <a href="#over-ons" onClick={() => setIsOpen(false)} className="text-base font-medium text-gray-700 hover:text-gray-900 py-2">Over ons</a>
               <hr className="border-gray-100" />
-              <a href="https://app.forgedesk.nl" className="text-base font-medium text-gray-600 py-2">Inloggen</a>
-              <a href="https://app.forgedesk.nl/registreren" onClick={() => setIsOpen(false)} className="bg-gradient-to-r from-gray-900 to-gray-800 text-white font-semibold px-6 py-3 rounded-xl text-center">
+              <a href="https://app.forgedesk.io" className="text-base font-medium text-gray-600 py-2">Inloggen</a>
+              <a href="https://app.forgedesk.io/registreren" onClick={() => setIsOpen(false)} className="bg-gradient-to-r from-gray-900 to-gray-800 text-white font-semibold px-6 py-3 rounded-xl text-center">
                 Gratis proberen
               </a>
             </nav>

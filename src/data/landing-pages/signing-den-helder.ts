@@ -7,7 +7,7 @@ export const signingDenHelder: LandingPageData = {
 
   metaTitle: 'Signing Den Helder | Gevelreclame & Autobelettering',
   metaDescription:
-    'Signing en reclame in Den Helder. Van gevelreclame tot autobelettering. Sign Company bedient heel Noord-Holland Noord. ✓ 42 jaar ervaring',
+    'Signing en reclame in Den Helder. Van gevelreclame tot autobelettering. FORGEdesk bedient heel Noord-Holland Noord. ✓ 42 jaar ervaring',
   h1: 'Signing & Reclame Den Helder',
 
   primaryKeywords: [
