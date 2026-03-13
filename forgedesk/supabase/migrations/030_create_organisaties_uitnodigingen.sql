@@ -8,7 +8,7 @@ ALTER TABLE organisaties
 
 -- Vul eigenaar_id in voor bestaande rijen (op basis van profiles)
 UPDATE organisaties o
-SET eigenaar_id = p.user_id
+SET eigenaar_id = p.id
 FROM profiles p
 WHERE p.organisatie_id = o.id
   AND o.eigenaar_id IS NULL;
