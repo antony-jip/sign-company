@@ -224,7 +224,7 @@ export const demoContacts: Contact[] = [
 
 const signCompany: EmailAddress = {
   name: 'FORGEdesk',
-  email: 'info@forgedesk.nl',
+  email: 'info@forgedesk.io',
   company: 'FORGEdesk',
 };
 

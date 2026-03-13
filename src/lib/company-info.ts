@@ -12,7 +12,7 @@ export const companyInfo: CompanyInfo = {
   },
   phone: '+31 (0)228 123 456',
   whatsapp: '+31 6 12345678',
-  email: 'info@forgedesk.nl',
+  email: 'info@forgedesk.io',
   yearsExperience: 42,
   foundedYear: 1983,
 };
@@ -26,10 +26,10 @@ export const getSchemaOrg = (pageData: {
   const baseSchema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    '@id': 'https://forgedesk.nl/#organization',
+    '@id': 'https://forgedesk.io/#organization',
     name: companyInfo.name,
     description: companyInfo.slogan,
-    url: 'https://forgedesk.nl',
+    url: 'https://forgedesk.io',
     telephone: companyInfo.phone,
     email: companyInfo.email,
     address: {
@@ -75,10 +75,10 @@ export const getSchemaOrg = (pageData: {
     description: pageData.description,
     url: pageData.url,
     isPartOf: {
-      '@id': 'https://forgedesk.nl/#website',
+      '@id': 'https://forgedesk.io/#website',
     },
     about: {
-      '@id': 'https://forgedesk.nl/#organization',
+      '@id': 'https://forgedesk.io/#organization',
     },
   };
 

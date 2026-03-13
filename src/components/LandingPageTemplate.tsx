@@ -26,12 +26,12 @@ export const generateLandingPageMetadata = (data: LandingPageData): Metadata => 
     openGraph: {
       title: data.metaTitle,
       description: data.metaDescription,
-      url: `https://forgedesk.nl/${data.slug}/`,
+      url: `https://forgedesk.io/${data.slug}/`,
       type: 'website',
       locale: 'nl_NL',
     },
     alternates: {
-      canonical: `https://forgedesk.nl/${data.slug}/`,
+      canonical: `https://forgedesk.io/${data.slug}/`,
     },
   };
 };
@@ -40,7 +40,7 @@ export const LandingPageTemplate: React.FC<LandingPageTemplateProps> = ({ data }
   const schemaOrg = getSchemaOrg({
     title: data.metaTitle,
     description: data.metaDescription,
-    url: `https://forgedesk.nl/${data.slug}/`,
+    url: `https://forgedesk.io/${data.slug}/`,
     faqs: data.faqs,
   });
 

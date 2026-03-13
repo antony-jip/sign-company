@@ -174,7 +174,7 @@ export const FeaturePageTemplate: React.FC<FeaturePageTemplateProps> = ({
             </p>
             <div className="fade-up stagger-2 flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="https://app.forgedesk.nl/registreren"
+                href="https://app.forgedesk.io/registreren"
                 className="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-bold px-8 py-4 rounded-2xl transition-all hover:scale-105 shadow-sm"
               >
                 Gratis proberen

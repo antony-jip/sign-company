@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/api/', '/admin/'],
     },
-    sitemap: 'https://forgedesk.nl/sitemap.xml',
+    sitemap: 'https://forgedesk.io/sitemap.xml',
   };
 }

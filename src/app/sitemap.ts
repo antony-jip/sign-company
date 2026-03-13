@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { allLandingPages } from '@/data/landing-pages';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://forgedesk.nl';
+  const baseUrl = 'https://forgedesk.io';
 
   // Static pages
   const staticPages = [
