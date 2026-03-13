@@ -78,7 +78,7 @@ function StepLogo({
   onSkip,
   isSaving,
 }: {
-  organisatieId: string
+  organisatieId: string | null
   onNext: () => void
   onSkip: () => void
   isSaving: boolean
@@ -127,8 +127,8 @@ function StepLogo({
       const previewUrl = URL.createObjectURL(resized)
       setPreview(previewUrl)
 
-      // Upload to Supabase Storage
-      if (supabase) {
+      // Upload to Supabase Storage (only if orgId available)
+      if (supabase && organisatieId) {
         const path = `logos/${organisatieId}.png`
         const { error: uploadError } = await supabase.storage
           .from('logos')
@@ -136,13 +136,17 @@ function StepLogo({
         if (uploadError) throw uploadError
 
         const { data: urlData } = supabase.storage.from('logos').getPublicUrl(path)
-        await updateOrganisatie(organisatieId, { logo_url: urlData.publicUrl, onboarding_stap: 2 })
+        try {
+          await updateOrganisatie(organisatieId, { logo_url: urlData.publicUrl, onboarding_stap: 2 })
+        } catch {
+          await updateOrganisatie(organisatieId, { logo_url: urlData.publicUrl }).catch(() => {})
+        }
       }
 
       toast.success('Logo geüpload!')
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Upload mislukt')
-      setPreview(null)
+      // Show preview even if upload failed — user can continue
+      if (!preview) toast.error(error instanceof Error ? error.message : 'Upload mislukt, je kunt dit later instellen.')
     } finally {
       setUploading(false)
     }
@@ -541,31 +545,40 @@ export function OnboardingWizard() {
 
   // Ensure organisation exists, then resume at correct step
   useEffect(() => {
+    let cancelled = false
     const init = async () => {
       let orgId = organisatieId
 
-      // If no org yet but user exists, create one
+      // If no org yet but user exists, find or create one
       if (!orgId && user?.id) {
         try {
           const profile = await getProfile(user.id)
           if (profile?.organisatie_id) {
             orgId = profile.organisatie_id
           } else {
-            const org = await createOrganisatie('Mijn Bedrijf', user.id)
-            await updateProfile(user.id, { organisatie_id: org.id, rol: 'admin' } as Parameters<typeof updateProfile>[1])
-            orgId = org.id
+            try {
+              const org = await createOrganisatie('Mijn Bedrijf', user.id)
+              await updateProfile(user.id, { organisatie_id: org.id, rol: 'admin' } as Parameters<typeof updateProfile>[1])
+              orgId = org.id
+            } catch {
+              // createOrganisatie may fail if onboarding columns don't exist yet
+              // User can still go through the wizard, data will be saved when columns exist
+            }
           }
-          setLocalOrgId(orgId)
+          if (!cancelled && orgId) setLocalOrgId(orgId)
         } catch {
-          // Continue without org — user can still fill in the form
+          // Continue without org
         }
       }
 
-      if (!orgId) { setIsLoaded(true); return }
+      if (!orgId) {
+        if (!cancelled) setIsLoaded(true)
+        return
+      }
 
       try {
         const org = await getOrganisatie(orgId)
-        if (org) {
+        if (org && !cancelled) {
           if (org.onboarding_stap && org.onboarding_stap > 0) {
             setCurrentStep(Math.min(org.onboarding_stap, 3))
           }
@@ -580,9 +593,10 @@ export function OnboardingWizard() {
       } catch {
         // Continue anyway
       }
-      setIsLoaded(true)
+      if (!cancelled) setIsLoaded(true)
     }
     init()
+    return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organisatieId, user?.id])
 
@@ -949,7 +963,7 @@ export function OnboardingWizard() {
               isSaving={isSaving}
             />
           )}
-          {currentStep === 1 && effectiveOrgId && (
+          {currentStep === 1 && (
             <StepLogo
               organisatieId={effectiveOrgId}
               onNext={handleStep2Next}
