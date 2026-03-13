@@ -2097,11 +2097,6 @@ function IntegratiesTab() {
   const [subTab, setSubTab] = useState('koppelingen')
   const { user } = useAuth()
   const { refreshSettings } = useAppSettings()
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-  const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
-  // Anthropic key is server-side only (configured via ANTHROPIC_API_KEY env var on Vercel)
-  const anthropicConfigured = supabaseConnected
-
   // Mollie state
   const [mollieEnabled, setMollieEnabled] = useState(false)
   const [mollieApiKey, setMollieApiKey] = useState('')
@@ -2171,90 +2166,10 @@ function IntegratiesTab() {
     }
   }
 
-  const integrations = [
-    {
-      id: 'supabase',
-      name: 'Supabase',
-      description: 'Database en authenticatie backend',
-      connected: supabaseConnected,
-      icon: (
-        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-          <span className="text-green-700 dark:text-green-400 font-bold text-sm">SB</span>
-        </div>
-      ),
-      details: supabaseConnected ? `URL: ${supabaseUrl.substring(0, 30)}...` : 'Demo modus actief - data wordt lokaal opgeslagen',
-    },
-    {
-      id: 'anthropic',
-      name: 'Anthropic (Forgie)',
-      description: 'AI-functionaliteit aangedreven door Claude',
-      connected: anthropicConfigured,
-      icon: (
-        <div className="w-10 h-10 bg-blush/30 dark:bg-blush-deep/30 rounded-lg flex items-center justify-center">
-          <span className="text-blush-deep font-bold text-sm">AI</span>
-        </div>
-      ),
-    },
-  ]
-
   return (
     <>
     <SubTabNav tabs={INTEGRATIES_TABS} active={subTab} onChange={setSubTab} />
     <div className="space-y-4">
-      {integrations.map((integration) => (
-        <Card
-          key={integration.id}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              {integration.icon}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-1">
-                  <h3 className="text-base font-semibold text-foreground dark:text-white">
-                    {integration.name}
-                  </h3>
-                  <Badge
-                    className={
-                      integration.connected
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                        : 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
-                    }
-                  >
-                    {integration.connected ? (
-                      <span className="flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Verbonden
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1">
-                        <XCircle className="w-3 h-3" />
-                        Niet verbonden
-                      </span>
-                    )}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
-                  {integration.description}
-                </p>
-                {integration.details && (
-                  <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mt-1 font-mono">
-                    {integration.details}
-                  </p>
-                )}
-
-                {/* Anthropic - server-side configured */}
-                {integration.id === 'anthropic' && (
-                  <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mt-2">
-                    De Anthropic API key wordt veilig op de server geconfigureerd (ANTHROPIC_API_KEY environment variable). Forgie gebruikt Claude voor AI-functies.
-                  </p>
-                )}
-
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-
       {/* ── Mollie Instellingen ── */}
       <Card>
         <CardContent className="p-6 space-y-4">
