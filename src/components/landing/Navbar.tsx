@@ -1,8 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+
+const featureLinks = [
+  { label: 'AI Tools', href: '/features/ai', color: 'bg-peach-light text-peach-deep' },
+  { label: 'Offertes', href: '/features/offertes', color: 'bg-lavender-light text-lavender-deep' },
+  { label: 'Klantportaal', href: '/features/klantportaal', color: 'bg-mist-light text-mist-deep' },
+  { label: 'E-mail', href: '/features/email', color: 'bg-cream-light text-cream-deep' },
+  { label: 'Sign Visualizer', href: '/features/sign-visualizer', color: 'bg-blush-light text-blush-deep' },
+  { label: 'Werkbonnen', href: '/features/werkbonnen', color: 'bg-sage-light text-sage-deep' },
+];
 
 const navLinks = [
   { label: 'Hoe het werkt', href: '/#stappen' },
@@ -13,11 +22,24 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
+  const [mobileFeaturesOpen, setMobileFeaturesOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setFeaturesOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   return (
@@ -38,7 +60,46 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-1">
+          {/* Features dropdown */}
+          <div ref={dropdownRef} className="relative">
+            <button
+              onClick={() => setFeaturesOpen(!featuresOpen)}
+              className={`px-4 py-2 text-[13px] font-medium rounded-full transition-colors flex items-center gap-1 ${
+                featuresOpen ? 'text-ink bg-ink-05' : 'text-ink-40 hover:text-ink-60'
+              }`}
+            >
+              Features
+              <svg
+                className={`w-3.5 h-3.5 transition-transform ${featuresOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+
+            {featuresOpen && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] bg-white rounded-2xl border border-ink-10 shadow-[0_16px_40px_rgba(0,0,0,0.08)] p-2 animate-in">
+                {featureLinks.map(f => (
+                  <Link
+                    key={f.href}
+                    href={f.href}
+                    onClick={() => setFeaturesOpen(false)}
+                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-ink-05 transition-colors group"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${f.color.split(' ')[0]}`} />
+                    <span className="text-[13px] font-medium text-ink-60 group-hover:text-ink transition-colors">
+                      {f.label}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -90,6 +151,38 @@ export default function Navbar() {
       {/* Mobile dropdown */}
       {mobileOpen && (
         <div className="md:hidden border-t border-ink-10 px-6 pb-6 pt-4 space-y-1">
+          {/* Features section */}
+          <button
+            onClick={() => setMobileFeaturesOpen(!mobileFeaturesOpen)}
+            className="w-full flex items-center justify-between px-4 py-3 text-[15px] font-medium text-ink-60 hover:text-ink rounded-xl transition-colors"
+          >
+            Features
+            <svg
+              className={`w-4 h-4 transition-transform ${mobileFeaturesOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+          {mobileFeaturesOpen && (
+            <div className="pl-4 space-y-0.5 mb-2">
+              {featureLinks.map(f => (
+                <Link
+                  key={f.href}
+                  href={f.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-[14px] text-ink-40 hover:text-ink rounded-xl transition-colors"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${f.color.split(' ')[0]}`} />
+                  {f.label}
+                </Link>
+              ))}
+            </div>
+          )}
+
           {navLinks.map((link) => (
             <Link
               key={link.href}
