@@ -1,6 +1,6 @@
 'use client';
 
-import { useInView } from '@/hooks/useInView';
+import { motion } from 'framer-motion';
 import FlowLine from './FlowLine';
 import Step from './Step';
 import { OfferteCard, WerkbonCard, FactuurCard } from './StepCard';
@@ -32,21 +32,26 @@ const steps = [
   },
 ];
 
-export default function StepsSection() {
-  const { ref, isInView } = useInView();
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', damping: 25, stiffness: 120 },
+  },
+};
 
+export default function StepsSection() {
   return (
     <section id="stappen" className="relative" style={{ paddingTop: 140, paddingBottom: 140 }}>
       <div className="container">
         {/* Section header */}
-        <div
-          ref={ref}
+        <motion.div
           className="text-center mb-24"
-          style={{
-            opacity: isInView ? 1 : 0,
-            transform: isInView ? 'translateY(0)' : 'translateY(32px)',
-            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={fadeUp}
         >
           <h2 className="font-heading section-heading text-ink">
             Van project tot betaling. Zo werkt het.
@@ -54,7 +59,7 @@ export default function StepsSection() {
           <p className="text-[19px] leading-[1.7] text-ink-60 mt-5 max-w-[500px] mx-auto">
             Drie stappen. Geen training nodig. Gewoon beginnen.
           </p>
-        </div>
+        </motion.div>
 
         {/* Steps + flow line */}
         <div className="relative">

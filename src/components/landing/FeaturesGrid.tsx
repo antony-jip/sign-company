@@ -1,6 +1,6 @@
 'use client';
 
-import { useInView } from '@/hooks/useInView';
+import { motion } from 'framer-motion';
 
 /* ── SVG Icon components (Lucide-stijl, 24x24, strokeWidth 1.5) ── */
 
@@ -184,24 +184,56 @@ const categories = [
   },
 ];
 
+/* ── Animation variants ────────────────────────────────────────── */
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', damping: 25, stiffness: 120 },
+  },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.12 },
+  },
+};
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 30, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring', damping: 22, stiffness: 100 },
+  },
+};
+
+const featureItem = {
+  hidden: { opacity: 0, x: -12 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { type: 'spring', damping: 25, stiffness: 150 },
+  },
+};
+
 /* ── Component ─────────────────────────────────────────────────── */
 
 export default function FeaturesGrid() {
-  const { ref: headerRef, isInView: headerVisible } = useInView();
-  const { ref: gridRef, isInView: gridVisible } = useInView();
-
   return (
     <section className="relative bg-mesh-features noise-overlay" style={{ paddingTop: 120, paddingBottom: 120 }}>
       <div className="container relative z-10">
         {/* Header */}
-        <div
-          ref={headerRef}
+        <motion.div
           className="text-center mb-16"
-          style={{
-            opacity: headerVisible ? 1 : 0,
-            transform: headerVisible ? 'translateY(0)' : 'translateY(32px)',
-            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={fadeUp}
         >
           <p className="font-mono text-[12px] font-medium text-ink-40 uppercase tracking-[0.06em] mb-4">
             Alles inbegrepen
@@ -212,26 +244,26 @@ export default function FeaturesGrid() {
           <p className="text-[19px] leading-[1.7] text-ink-60 max-w-[540px] mx-auto">
             Geen losse modules of verborgen kosten. E&eacute;n prijs, alles erin. Vanaf &euro;49 per maand.
           </p>
-        </div>
+        </motion.div>
 
         {/* 3 Category boxes */}
-        <div
-          ref={gridRef}
+        <motion.div
           className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-[1000px] mx-auto"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          variants={staggerContainer}
         >
-          {categories.map((cat, i) => (
-            <div
+          {categories.map((cat) => (
+            <motion.div
               key={cat.title}
               className={`
                 group relative rounded-2xl border ${cat.borderColor}
                 bg-gradient-to-br ${cat.gradient}
                 p-7 neon-card cursor-default
               `}
-              style={{
-                opacity: gridVisible ? 1 : 0,
-                transform: gridVisible ? 'translateY(0)' : 'translateY(24px)',
-                transition: `all 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${0.12 * i}s`,
-              }}
+              variants={cardVariant}
+              whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
             >
               {/* Category header */}
               <div className="flex items-center gap-3 mb-2">
@@ -242,10 +274,16 @@ export default function FeaturesGrid() {
               </div>
               <p className="text-[13px] text-ink-40 mb-6">{cat.subtitle}</p>
 
-              {/* Feature list */}
-              <ul className="space-y-5">
+              {/* Feature list — staggered */}
+              <motion.ul
+                className="space-y-5"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={{ visible: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } } }}
+              >
                 {cat.features.map((feature) => (
-                  <li key={feature.name} className="flex items-start gap-3">
+                  <motion.li key={feature.name} className="flex items-start gap-3" variants={featureItem}>
                     <div className={`${cat.accentColor} opacity-50 flex-shrink-0 mt-0.5`}>
                       {feature.icon}
                     </div>
@@ -253,12 +291,12 @@ export default function FeaturesGrid() {
                       <p className="text-[14px] font-semibold text-ink leading-tight">{feature.name}</p>
                       <p className="text-[13px] text-ink-60 leading-snug mt-0.5">{feature.desc}</p>
                     </div>
-                  </li>
+                  </motion.li>
                 ))}
-              </ul>
-            </div>
+              </motion.ul>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
