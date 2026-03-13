@@ -254,9 +254,15 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
     // Laad data voor dropdowns
     if (type === 'offerte') {
-      getOffertesByProject(projectId).then(setOffertes)
+      getOffertesByProject(projectId).then(setOffertes).catch((err) => {
+        console.error('Fout bij ophalen offertes:', err)
+        toast.error('Kon offertes niet ophalen')
+      })
     } else if (type === 'factuur') {
-      getFacturenByProject(projectId).then(setFacturen)
+      getFacturenByProject(projectId).then(setFacturen).catch((err) => {
+        console.error('Fout bij ophalen facturen:', err)
+        toast.error('Kon facturen niet ophalen')
+      })
     }
 
     setItemDialogOpen(true)
@@ -801,9 +807,12 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                     <SelectValue placeholder="Selecteer offerte..." />
                   </SelectTrigger>
                   <SelectContent>
+                    {offertes.length === 0 && (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">Geen offertes gevonden voor dit project</div>
+                    )}
                     {offertes.map(o => (
                       <SelectItem key={o.id} value={o.id}>
-                        {o.offerte_nummer} — {o.titel || 'Geen titel'} ({formatCurrency(o.totaal_incl_btw || 0)})
+                        {o.offerte_nummer} — {o.titel || 'Geen titel'} ({formatCurrency(o.totaal_incl_btw || 0)}) · {o.status || 'concept'}
                       </SelectItem>
                     ))}
                   </SelectContent>
