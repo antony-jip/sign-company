@@ -7,7 +7,7 @@ export const signingWestFriesland: LandingPageData = {
 
   metaTitle: 'Signing West-Friesland | Uw Lokale Reclamespecialist sinds 1983',
   metaDescription:
-    'Sign Company is dé signing-specialist van West-Friesland. Gevelreclame, autobelettering, interieur en events. Gevestigd in Enkhuizen. ✓ 42 jaar ervaring',
+    'FORGEdesk is dé signing-specialist van West-Friesland. Gevelreclame, autobelettering, interieur en events. Gevestigd in Enkhuizen. ✓ 42 jaar ervaring',
   h1: 'Signing & Reclame in West-Friesland',
 
   primaryKeywords: [
@@ -24,7 +24,7 @@ export const signingWestFriesland: LandingPageData = {
   ],
 
   heroIntro:
-    'Sign Company is dé signing-specialist van West-Friesland. Al meer dan 40 jaar transformeren wij bedrijven met hoogwaardige gevelreclame, autobelettering en interieur signing.',
+    'FORGEdesk is dé signing-specialist van West-Friesland. Al meer dan 40 jaar transformeren wij bedrijven met hoogwaardige gevelreclame, autobelettering en interieur signing.',
 
   contentFocus: [
     'Overzichtspagina voor hele regio',
@@ -135,7 +135,7 @@ export const signingWestFriesland: LandingPageData = {
         'Wij bedienen alle gemeenten in West-Friesland: Hoorn, Enkhuizen, Medemblik, Drechterland, Koggenland, Stede Broec en Opmeer. Vanuit Enkhuizen zijn we binnen 20 minuten op elke locatie in de regio.',
     },
     {
-      question: 'Wat onderscheidt Sign Company van andere signbedrijven?',
+      question: 'Wat onderscheidt FORGEdesk van andere signbedrijven?',
       answer:
         'Wij zijn een echt familiebedrijf met 42 jaar ervaring in West-Friesland. Alles gebeurt in-house: ontwerp, productie en montage. Daardoor hebben we volledige controle over kwaliteit en kunnen we snel schakelen.',
     },
@@ -145,9 +145,9 @@ export const signingWestFriesland: LandingPageData = {
         'Zeker! Wij verzorgen totaalprojecten: gevelreclame, interieur signing, bewegwijzering en voertuigbelettering. Eén aanspreekpunt voor alle signing, een consistente huisstijl overal.',
     },
     {
-      question: 'Hoe lang bestaat Sign Company al?',
+      question: 'Hoe lang bestaat FORGEdesk al?',
       answer:
-        'Sign Company is opgericht in 1983 en bestaat dus al meer dan 40 jaar. In die tijd hebben we duizenden bedrijven in West-Friesland en daarbuiten van signing voorzien.',
+        'FORGEdesk is opgericht in 1983 en bestaat dus al meer dan 40 jaar. In die tijd hebben we duizenden bedrijven in West-Friesland en daarbuiten van signing voorzien.',
     },
     {
       question: 'Werken jullie ook voor overheden en instellingen?',

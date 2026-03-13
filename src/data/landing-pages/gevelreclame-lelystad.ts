@@ -7,7 +7,7 @@ export const gevelreclameLelystad: LandingPageData = {
 
   metaTitle: 'Gevelreclame Lelystad | Lichtreclame & Doosletters',
   metaDescription:
-    'Gevelreclame in Lelystad door Sign Company. Doosletters, freesletters en LED lichtreclame. West-Fries vakmanschap in Flevoland. ✓ Eigen montage',
+    'Gevelreclame in Lelystad door FORGEdesk. Doosletters, freesletters en LED lichtreclame. West-Fries vakmanschap in Flevoland. ✓ Eigen montage',
   h1: 'Gevelreclame Lelystad',
 
   primaryKeywords: [

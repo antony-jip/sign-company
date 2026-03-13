@@ -5,9 +5,9 @@ export const signingLelystad: LandingPageData = {
   phase: 3,
   priority: 3,
 
-  metaTitle: 'Signing Lelystad | Gevelreclame & Autobelettering | Sign Company',
+  metaTitle: 'Signing Lelystad | Gevelreclame & Autobelettering | FORGEdesk',
   metaDescription:
-    'Signing en reclame in Lelystad. Van gevelreclame tot voertuigbelettering. Sign Company brengt 42 jaar vakmanschap naar Flevoland. ✓ Gratis advies',
+    'Signing en reclame in Lelystad. Van gevelreclame tot voertuigbelettering. FORGEdesk brengt 42 jaar vakmanschap naar Flevoland. ✓ Gratis advies',
   h1: 'Signing & Reclame Lelystad',
 
   primaryKeywords: [
@@ -23,7 +23,7 @@ export const signingLelystad: LandingPageData = {
   ],
 
   heroIntro:
-    'Sign Company brengt 42 jaar vakmanschap naar Lelystad en Flevoland. Van gevelreclame tot autobelettering, uw complete signing partner.',
+    'FORGEdesk brengt 42 jaar vakmanschap naar Lelystad en Flevoland. Van gevelreclame tot autobelettering, uw complete signing partner.',
 
   contentFocus: [
     'Nieuwe markt, dus introduceren',
@@ -111,7 +111,7 @@ export const signingLelystad: LandingPageData = {
     {
       question: 'Wat zijn de voordelen van een signbedrijf uit Noord-Holland?',
       answer:
-        'Sign Company heeft 42 jaar ervaring en een volledig in-house productie. U krijgt West-Fries vakmanschap zonder de drukte van de Randstad.',
+        'FORGEdesk heeft 42 jaar ervaring en een volledig in-house productie. U krijgt West-Fries vakmanschap zonder de drukte van de Randstad.',
     },
     {
       question: 'Komen jullie ook langs voor advies in Lelystad?',

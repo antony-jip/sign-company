@@ -5,7 +5,7 @@ export const bootbeletteringIjsselmeer: LandingPageData = {
   phase: 1,
   priority: 5,
 
-  metaTitle: 'Bootbelettering IJsselmeer & Markermeer | Sign Company Enkhuizen',
+  metaTitle: 'Bootbelettering IJsselmeer & Markermeer | FORGEdesk Enkhuizen',
   metaDescription:
     'Specialist in bootbelettering voor IJsselmeer en Markermeer. Gevestigd in Enkhuizen, direct aan de haven. Bootstickers, registratienummers en decoratieve striping.',
   h1: 'Bootbelettering voor het IJsselmeer & Markermeer',

@@ -7,7 +7,7 @@ export const autobeletteringAlkmaar: LandingPageData = {
 
   metaTitle: 'Autobelettering Alkmaar | Voertuigreclame & Carwrapping',
   metaDescription:
-    'Autobelettering in Alkmaar. Premium 3M en Avery folies met 5-7 jaar garantie. Sign Company is uw specialist. ✓ Gecertificeerde wrappers',
+    'Autobelettering in Alkmaar. Premium 3M en Avery folies met 5-7 jaar garantie. FORGEdesk is uw specialist. ✓ Gecertificeerde wrappers',
   h1: 'Autobelettering Alkmaar',
 
   primaryKeywords: [
@@ -96,7 +96,7 @@ export const autobeletteringAlkmaar: LandingPageData = {
     {
       question: 'Waar kan ik terecht voor autobelettering in Alkmaar?',
       answer:
-        'Sign Company in Enkhuizen is op 35 minuten van Alkmaar. Wij bieden professionele autobelettering met premium folies.',
+        'FORGEdesk in Enkhuizen is op 35 minuten van Alkmaar. Wij bieden professionele autobelettering met premium folies.',
     },
     {
       question: 'Komen jullie ook naar Alkmaar voor wagenparken?',

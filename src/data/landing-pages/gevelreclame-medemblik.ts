@@ -7,7 +7,7 @@ export const gevelreclameMedemblik: LandingPageData = {
 
   metaTitle: 'Gevelreclame Medemblik | Lichtreclame & Doosletters',
   metaDescription:
-    'Gevelreclame in Medemblik door Sign Company. Doosletters, freesletters en LED lichtreclame. Op 10 minuten van uw deur. ✓ 42 jaar ervaring ✓ Eigen montage',
+    'Gevelreclame in Medemblik door FORGEdesk. Doosletters, freesletters en LED lichtreclame. Op 10 minuten van uw deur. ✓ 42 jaar ervaring ✓ Eigen montage',
   h1: 'Gevelreclame Medemblik',
 
   primaryKeywords: [

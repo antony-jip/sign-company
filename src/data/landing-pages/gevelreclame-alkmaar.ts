@@ -7,7 +7,7 @@ export const gevelreclameAlkmaar: LandingPageData = {
 
   metaTitle: 'Gevelreclame Alkmaar | Lichtreclame & Doosletters',
   metaDescription:
-    'Gevelreclame in Alkmaar door Sign Company. Doosletters, freesletters en LED lichtreclame. ✓ 42 jaar ervaring ✓ Gratis advies ✓ Eigen montageploeg',
+    'Gevelreclame in Alkmaar door FORGEdesk. Doosletters, freesletters en LED lichtreclame. ✓ 42 jaar ervaring ✓ Gratis advies ✓ Eigen montageploeg',
   h1: 'Gevelreclame Alkmaar',
 
   primaryKeywords: [
@@ -115,7 +115,7 @@ export const gevelreclameAlkmaar: LandingPageData = {
     {
       question: 'Wat onderscheidt jullie van signbedrijven in Alkmaar?',
       answer:
-        'Sign Company is een familiebedrijf met 42 jaar ervaring. Alles gebeurt in-house, van ontwerp tot montage. U krijgt persoonlijke service en ambachtelijk vakmanschap.',
+        'FORGEdesk is een familiebedrijf met 42 jaar ervaring. Alles gebeurt in-house, van ontwerp tot montage. U krijgt persoonlijke service en ambachtelijk vakmanschap.',
     },
   ],
 

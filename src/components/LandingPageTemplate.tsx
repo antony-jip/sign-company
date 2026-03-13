@@ -26,12 +26,12 @@ export const generateLandingPageMetadata = (data: LandingPageData): Metadata => 
     openGraph: {
       title: data.metaTitle,
       description: data.metaDescription,
-      url: `https://signcompany.nl/${data.slug}/`,
+      url: `https://forgedesk.nl/${data.slug}/`,
       type: 'website',
       locale: 'nl_NL',
     },
     alternates: {
-      canonical: `https://signcompany.nl/${data.slug}/`,
+      canonical: `https://forgedesk.nl/${data.slug}/`,
     },
   };
 };
@@ -40,7 +40,7 @@ export const LandingPageTemplate: React.FC<LandingPageTemplateProps> = ({ data }
   const schemaOrg = getSchemaOrg({
     title: data.metaTitle,
     description: data.metaDescription,
-    url: `https://signcompany.nl/${data.slug}/`,
+    url: `https://forgedesk.nl/${data.slug}/`,
     faqs: data.faqs,
   });
 
@@ -79,12 +79,12 @@ export const LandingPageTemplate: React.FC<LandingPageTemplateProps> = ({ data }
 
         <Services
           title={`Onze diensten in ${data.location.city}`}
-          subtitle={`Sign Company biedt complete signing-oplossingen in ${data.location.city} en omgeving`}
+          subtitle={`FORGEdesk biedt complete signing-oplossingen in ${data.location.city} en omgeving`}
           services={data.services}
         />
 
         <USPs
-          title="Waarom Sign Company?"
+          title="Waarom FORGEdesk?"
           subtitle="Al meer dan 40 jaar uw betrouwbare partner"
           usps={data.usps.length > 0 ? data.usps : defaultUSPs}
         />
@@ -98,7 +98,7 @@ export const LandingPageTemplate: React.FC<LandingPageTemplateProps> = ({ data }
         )}
 
         <Location
-          title={`Sign Company in ${data.location.city}`}
+          title={`FORGEdesk in ${data.location.city}`}
           location={data.location}
           relatedPages={data.relatedPages}
         />

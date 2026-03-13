@@ -5,7 +5,7 @@ export const autobeletteringEnkhuizen: LandingPageData = {
   phase: 1,
   priority: 5,
 
-  metaTitle: 'Autobelettering Enkhuizen | Voertuigreclame | Sign Company',
+  metaTitle: 'Autobelettering Enkhuizen | Voertuigreclame | FORGEdesk',
   metaDescription:
     'Autobelettering in Enkhuizen. Van logo\'s tot full wraps. Premium 3M en Avery folies met 5-7 jaar garantie. ✓ Lokaal gevestigd ✓ Gratis ontwerpadvies',
   h1: 'Autobelettering Enkhuizen',

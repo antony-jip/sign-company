@@ -2,8 +2,8 @@
 import { CompanyInfo } from '@/types/landing-page';
 
 export const companyInfo: CompanyInfo = {
-  name: 'Sign Company',
-  slogan: 'Van idee naar icoon',
+  name: 'FORGEdesk',
+  slogan: 'Je hele bedrijf. Eén app.',
   address: {
     street: 'Havenweg 1',
     city: 'Enkhuizen',
@@ -12,7 +12,7 @@ export const companyInfo: CompanyInfo = {
   },
   phone: '+31 (0)228 123 456',
   whatsapp: '+31 6 12345678',
-  email: 'info@signcompany.nl',
+  email: 'info@forgedesk.nl',
   yearsExperience: 42,
   foundedYear: 1983,
 };
@@ -26,10 +26,10 @@ export const getSchemaOrg = (pageData: {
   const baseSchema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    '@id': 'https://signcompany.nl/#organization',
+    '@id': 'https://forgedesk.nl/#organization',
     name: companyInfo.name,
     description: companyInfo.slogan,
-    url: 'https://signcompany.nl',
+    url: 'https://forgedesk.nl',
     telephone: companyInfo.phone,
     email: companyInfo.email,
     address: {
@@ -62,9 +62,9 @@ export const getSchemaOrg = (pageData: {
       { '@type': 'AdministrativeArea', name: 'Noord-Holland' },
     ],
     sameAs: [
-      'https://www.facebook.com/signcompany',
-      'https://www.instagram.com/signcompany',
-      'https://www.linkedin.com/company/signcompany',
+      'https://www.facebook.com/forgedesk',
+      'https://www.instagram.com/forgedesk',
+      'https://www.linkedin.com/company/forgedesk',
     ],
   };
 
@@ -75,10 +75,10 @@ export const getSchemaOrg = (pageData: {
     description: pageData.description,
     url: pageData.url,
     isPartOf: {
-      '@id': 'https://signcompany.nl/#website',
+      '@id': 'https://forgedesk.nl/#website',
     },
     about: {
-      '@id': 'https://signcompany.nl/#organization',
+      '@id': 'https://forgedesk.nl/#organization',
     },
   };
 

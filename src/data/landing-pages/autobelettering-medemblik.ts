@@ -7,7 +7,7 @@ export const autobeletteringMedemblik: LandingPageData = {
 
   metaTitle: 'Autobelettering Medemblik | Voertuigreclame & Carwrapping',
   metaDescription:
-    'Autobelettering in Medemblik. Premium folies met 5-7 jaar garantie. Sign Company is uw specialist op 10 minuten rijden. ✓ Gratis ontwerpadvies',
+    'Autobelettering in Medemblik. Premium folies met 5-7 jaar garantie. FORGEdesk is uw specialist op 10 minuten rijden. ✓ Gratis ontwerpadvies',
   h1: 'Autobelettering Medemblik',
 
   primaryKeywords: [
@@ -96,7 +96,7 @@ export const autobeletteringMedemblik: LandingPageData = {
     {
       question: 'Waar kan ik mijn auto laten beletteren in Medemblik?',
       answer:
-        'Sign Company in Enkhuizen is op 10 minuten van Medemblik. Breng uw auto bij ons en rijd met professionele belettering weer naar huis.',
+        'FORGEdesk in Enkhuizen is op 10 minuten van Medemblik. Breng uw auto bij ons en rijd met professionele belettering weer naar huis.',
     },
     {
       question: 'Hoelang duurt autobelettering?',

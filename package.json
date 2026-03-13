@@ -1,8 +1,8 @@
 {
-  "name": "sign-company",
+  "name": "forgedesk",
   "version": "1.0.0",
   "private": true,
-  "description": "Sign Company - Specialist in signing en reclame sinds 1983",
+  "description": "FORGEdesk - De alles-in-één bedrijfssoftware voor creatieve bedrijven",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
