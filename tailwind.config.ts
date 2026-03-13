@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['var(--font-donatto)', 'Outfit', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-madellin)', 'Outfit', 'system-ui', 'sans-serif'],
         sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-dm-mono)', 'monospace'],
       },

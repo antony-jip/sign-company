@@ -3,12 +3,12 @@ import localFont from 'next/font/local';
 import { DM_Sans, DM_Mono } from 'next/font/google';
 import './globals.css';
 
-const donatto = localFont({
+const madellin = localFont({
   src: [
-    { path: '../../public/fonts/Donatto-Regular.woff2', weight: '400', style: 'normal' },
-    { path: '../../public/fonts/Donatto-Italic.woff2', weight: '400', style: 'italic' },
+    { path: '../../public/fonts/Madellin-Regular.woff', weight: '400', style: 'normal' },
+    { path: '../../public/fonts/Madellin-Bold.woff', weight: '700', style: 'normal' },
   ],
-  variable: '--font-donatto',
+  variable: '--font-madellin',
   display: 'swap',
 });
 
@@ -72,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="nl" className={`${donatto.variable} ${dmSans.variable} ${dmMono.variable}`}>
+    <html lang="nl" className={`${madellin.variable} ${dmSans.variable} ${dmMono.variable}`}>
       <head>
         <link rel="canonical" href="https://forgedesk.io" />
       </head>
