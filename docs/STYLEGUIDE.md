@@ -12,7 +12,7 @@ Dit is NIET de app-styleguide. De FORGEdesk app (app.forgedesk.io) draait op Vit
 **Technisch:**
 - Next.js project in de root van `sign-company/` (met `src/app/`, `src/components/`)
 - De Vite app staat apart in `sign-company/forgedesk/`
-- Donatto font bestanden staan in `public/fonts/`
+- Madellin font bestanden staan in `public/fonts/`
 
 **Taal:** De hele site is Nederlands. Geen Engelse termen in UI-teksten behalve "AI" en "PDF". Geen "Get started", geen "Learn more" — altijd Nederlands.
 
@@ -39,7 +39,7 @@ Dit is NIET de app-styleguide. De FORGEdesk app (app.forgedesk.io) draait op Vit
 - Eén visueel idee per sectie, niet drie
 - De flow offerte→werkbon→factuur is het verhaal. De site vertelt dat verhaal visueel
 - Info is punchy: korte headings, korte beschrijvingen. Niet meer dan 2-3 zinnen per blok
-- Donatto font voor headings = de identiteit. Alles andere wijkt
+- Madellin font voor headings = de identiteit. Alles andere wijkt
 
 ---
 
@@ -58,7 +58,7 @@ Niet "leuk" of "cool" — dat is voor een ander publiek. Het gevoel is: "deze me
 ### Hoe bereik je dat gevoel?
 
 **Gewicht en rust.**
-De Donatto heading is zwaar. Dat geeft autoriteit. Maar het staat op een lichte, warme achtergrond met veel lucht. Dat geeft rust. Die combinatie — zwaar op licht — zegt: "wij zijn stevig, maar niet overweldigend." Elke sectie heeft maar één ding te zeggen. Geen drie kolommen met features, geen bullet lists, geen "en ook nog dit!". Eén boodschap, goed gezegd, klaar. De gebruiker mag ademen.
+De Madellin heading is zwaar. Dat geeft autoriteit. Maar het staat op een lichte, warme achtergrond met veel lucht. Dat geeft rust. Die combinatie — zwaar op licht — zegt: "wij zijn stevig, maar niet overweldigend." Elke sectie heeft maar één ding te zeggen. Geen drie kolommen met features, geen bullet lists, geen "en ook nog dit!". Eén boodschap, goed gezegd, klaar. De gebruiker mag ademen.
 
 **Warmte, geen koelte.**
 De pastel gradients zijn warm — blush, peach, sage. Geen blauw-grijs corporate gevoel. De achtergrond (#FAFAF7) is niet wit maar crème, alsof het papier een beetje vergeeld is van de zon. De site voelt niet als een tech-product maar als een werkplaats met grote ramen en natuurlijk licht. Dat maakt het toegankelijk voor mensen die niet in tech zitten.
@@ -170,7 +170,7 @@ Gefactureerd:     lavender-light bg + lavender-deep tekst
 
 ```
 Headings:  Donatto (via next/font/local)
-           Bestanden: public/fonts/Donatto-Regular.woff2, Donatto-Italic.woff2
+           Bestanden: public/fonts/Madellin-Regular.woff, Madellin-Bold.woff
            Fallback: 'Outfit', system-ui, sans-serif
 
 Body:      DM Sans (via next/font/google)
@@ -190,10 +190,10 @@ import { DM_Sans, DM_Mono } from 'next/font/google'
 
 const donatto = localFont({
   src: [
-    { path: '../public/fonts/Donatto-Regular.woff2', weight: '400', style: 'normal' },
-    { path: '../public/fonts/Donatto-Italic.woff2', weight: '400', style: 'italic' },
+    { path: '../public/fonts/Madellin-Regular.woff', weight: '400', style: 'normal' },
+    { path: '../public/fonts/Madellin-Bold.woff', weight: '400', style: 'italic' },
   ],
-  variable: '--font-donatto',
+  variable: '--font-madellin',
   display: 'swap',
 })
 
@@ -520,7 +520,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['var(--font-donatto)', 'Outfit', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-madellin)', 'Outfit', 'system-ui', 'sans-serif'],
         sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-dm-mono)', 'monospace'],
       },
@@ -682,5 +682,5 @@ Framer Motion voor: word reveals, scroll-triggered section reveals, SVG line dra
 Na elke component: `npx tsc --noEmit`
 Aan het eind: `npm run build`
 
-Git: `feat: landing page v1 — Donatto font, pastel gradients, flow line`
+Git: `feat: landing page v1 — Madellin font, pastel gradients, flow line`
 Branch: `feature/landing-page`
