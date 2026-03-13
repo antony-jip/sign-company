@@ -1,132 +1,204 @@
 'use client';
 
-import React from 'react';
-import { FeaturePageTemplate } from '@/components/features/FeaturePageTemplate';
-import { EmailPageDemo } from '@/components/features/EmailPageDemo';
+import React, { useState } from 'react';
+import { FeaturePageTemplate } from '@/components/FeaturePageTemplate';
 
-export default function EmailFeaturesPage() {
-  return (
-    <FeaturePageTemplate
-      colorKey="mist"
-      badge="Email & Communicatie"
-      headline={
-        <>
-          Eén inbox voor je hele{' '}
-          <span className="text-gradient-forge">team</span>
-        </>
+/* ─── Inbox Simulator ─── */
+const InboxSimulator: React.FC = () => {
+  const [selectedEmail, setSelectedEmail] = useState<number | null>(null);
+  const [aiReply, setAiReply] = useState('');
+  const [generating, setGenerating] = useState(false);
+
+  const emails = [
+    {
+      id: 1,
+      from: 'Jan Jansen',
+      subject: 'Offerte gevelreclame',
+      preview: 'Goedemiddag, ik heb de offerte ontvangen maar heb nog een vraag over...',
+      body: 'Goedemiddag,\n\nIk heb de offerte ontvangen maar heb nog een vraag over de montagekosten. Kunnen jullie dit specificeren per uur? En is de levertijd nog steeds 3 weken?\n\nMet vriendelijke groet,\nJan Jansen\nBakkerij Jansen',
+      time: '10:24',
+      unread: true,
+      tag: 'Offerte',
+      tagColor: 'bg-lavender-light text-lavender-deep',
+    },
+    {
+      id: 2,
+      from: 'Lisa de Vries',
+      subject: 'Planning aanpassen?',
+      preview: 'Hi, is het mogelijk om de montage te verplaatsen naar volgende week...',
+      body: 'Hi,\n\nIs het mogelijk om de montage te verplaatsen naar volgende week donderdag? We hebben nog wat vertraging bij de verbouwing.\n\nGr,\nLisa de Vries\nMatec Amsterdam',
+      time: '09:15',
+      unread: true,
+      tag: 'Planning',
+      tagColor: 'bg-sage-light text-sage-deep',
+    },
+    {
+      id: 3,
+      from: 'Tom van Dijk',
+      subject: 'Re: Factuur FV-2026-041',
+      preview: 'Bedankt voor de herinnering. De betaling is onderweg...',
+      body: 'Bedankt voor de herinnering. De betaling is onderweg en zou morgen op jullie rekening moeten staan.\n\nMet vriendelijke groet,\nTom van Dijk',
+      time: 'Gisteren',
+      unread: false,
+      tag: 'Factuur',
+      tagColor: 'bg-blush-light text-blush-deep',
+    },
+  ];
+
+  const selectedMail = emails.find(e => e.id === selectedEmail);
+
+  const generateReply = () => {
+    if (!selectedMail) return;
+    setGenerating(true);
+    setAiReply('');
+
+    const replies: Record<number, string> = {
+      1: 'Beste heer Jansen,\n\nBedankt voor uw reactie. De montagekosten zijn berekend op basis van €65 per uur, geschat op 4 uur totaal. De levertijd is inderdaad 3 weken vanaf akkoord.\n\nIk stuur u graag een aangepaste specificatie toe. Heeft u verder nog vragen?\n\nMet vriendelijke groet,\nTeam FORGEdesk',
+      2: 'Hi Lisa,\n\nGeen probleem! Ik heb de planning aangepast naar donderdag 20 maart. Ons team (Joris en Mark) is dan beschikbaar van 09:00 tot 14:00.\n\nKun je bevestigen dat de locatie dan toegankelijk is?\n\nGroet,\nTeam FORGEdesk',
+      3: 'Beste Tom,\n\nBedankt voor de snelle reactie. Ik houd de betaling in de gaten en markeer de factuur als \'in behandeling\'.\n\nFijne dag!\n\nMet vriendelijke groet,\nTeam FORGEdesk',
+    };
+
+    const reply = replies[selectedMail.id] || '';
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < reply.length) {
+        setAiReply(reply.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(interval);
+        setGenerating(false);
       }
-      subtext="Verbind je Gmail, wijs emails toe aan collega's, en laat AI je antwoorden schrijven. Nooit meer zoeken in je mailbox."
-      heroVisual={
-        <div className="relative">
-          <div className="bg-gradient-to-br from-mist-light via-mist/20 to-white rounded-3xl p-8 border border-mist/20 shadow-2xl">
-            <div className="space-y-3">
-              {/* Email preview cards */}
-              {[
-                { sender: 'Mark Jansen', subject: 'Re: Offerte lichtreclame', time: '10:23', color: 'bg-mist-vivid', initials: 'MJ', unread: true },
-                { sender: 'Lisa de Vries', subject: 'Vraag over montage datum', time: '09:15', color: 'bg-lavender-vivid', initials: 'LV', unread: false },
-                { sender: 'Garage De Wit', subject: 'Factuur ontvangen, dank!', time: 'gisteren', color: 'bg-sage-vivid', initials: 'GW', unread: false },
-              ].map((email, i) => (
-                <div
-                  key={email.sender}
-                  className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                    i === 0
-                      ? 'bg-mist-light/60 border border-mist/30 shadow-sm'
-                      : 'bg-white/80 border border-gray-100'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-full ${email.color} flex items-center justify-center flex-shrink-0`}>
-                    <span className="text-white text-[10px] font-bold">{email.initials}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs truncate ${email.unread ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
-                      {email.sender}
-                    </p>
-                    <p className="text-[11px] text-gray-400 truncate">{email.subject}</p>
-                  </div>
-                  <span className="text-[10px] text-gray-400 flex-shrink-0">{email.time}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+    }, 15);
+  };
 
-          {/* Floating notification badges */}
-          <div className="absolute -top-3 -right-3 bg-white rounded-xl shadow-lg px-3 py-2 border border-mist/20 animate-float">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-xs font-medium text-gray-700">3 nieuw</span>
-            </div>
+  return (
+    <div className="bg-white rounded-2xl shadow-lg border border-cream/30 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-5">
+        {/* Email list */}
+        <div className="md:col-span-2 border-r border-gray-100">
+          <div className="px-4 py-3 border-b border-gray-100 bg-cream-light/30">
+            <p className="font-bold text-gray-900 text-sm">Inbox</p>
+            <p className="text-xs text-gray-400">{emails.filter(e => e.unread).length} ongelezen</p>
           </div>
-          <div className="absolute -bottom-3 -left-3 bg-white rounded-xl shadow-lg px-3 py-2 border border-mist/20 animate-float-slow">
-            <div className="flex items-center gap-2">
-              <svg className="w-3.5 h-3.5 text-mist-vivid" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
-              <span className="text-xs font-medium text-gray-700">AI-antwoord klaar</span>
-            </div>
-          </div>
-          <div className="absolute top-1/2 -right-5 bg-white rounded-xl shadow-lg px-3 py-2 border border-mist/20 animate-float">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-orange-400" />
-              <span className="text-xs font-medium text-gray-700">2 in behandeling</span>
-            </div>
+          <div className="divide-y divide-gray-50">
+            {emails.map(email => (
+              <button
+                key={email.id}
+                onClick={() => { setSelectedEmail(email.id); setAiReply(''); }}
+                className={`w-full text-left px-4 py-3 transition-colors ${
+                  selectedEmail === email.id
+                    ? 'bg-cream-light/40'
+                    : 'hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-sm ${email.unread ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+                    {email.from}
+                  </span>
+                  <span className="text-xs text-gray-400">{email.time}</span>
+                </div>
+                <p className={`text-sm truncate ${email.unread ? 'text-gray-800' : 'text-gray-500'}`}>{email.subject}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${email.tagColor}`}>{email.tag}</span>
+                  <p className="text-xs text-gray-400 truncate">{email.preview}</p>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
-      }
-      demo={<EmailPageDemo />}
-      demoLabel="Je gedeelde inbox"
-      features={[
+
+        {/* Email detail */}
+        <div className="md:col-span-3">
+          {selectedMail ? (
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-bold text-gray-900">{selectedMail.subject}</h3>
+                  <p className="text-sm text-gray-500">Van: {selectedMail.from}</p>
+                </div>
+                <span className={`pastel-pill ${selectedMail.tagColor}`}>{selectedMail.tag}</span>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-700 whitespace-pre-line mb-4">
+                {selectedMail.body}
+              </div>
+
+              {/* AI Reply */}
+              <div className="border-t border-gray-100 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-gray-900">Antwoord</p>
+                  <button
+                    onClick={generateReply}
+                    disabled={generating}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-cream-deep hover:text-cream-vivid transition-colors disabled:opacity-50"
+                  >
+                    <svg className="w-3.5 h-3.5 ai-sparkle" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                    </svg>
+                    {generating ? 'Bezig...' : 'AI Antwoord genereren'}
+                  </button>
+                </div>
+                <div className="bg-cream-light/20 rounded-xl p-4 text-sm text-gray-700 min-h-[100px] border border-cream/20 whitespace-pre-line">
+                  {aiReply || <span className="text-gray-400 italic">Klik op &quot;AI Antwoord genereren&quot; voor een concept...</span>}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full min-h-[300px] text-gray-400 text-sm">
+              Selecteer een e-mail om te lezen
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const inboxIcon = (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z" />
+  </svg>
+);
+
+const sparkleIcon = (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+  </svg>
+);
+
+const linkIcon = (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-1.135a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L4.5 8.627" />
+  </svg>
+);
+
+export default function EmailFeaturePage() {
+  return (
+    <FeaturePageTemplate
+      color="cream"
+      badge="E-mail"
+      title="E-mail direct gekoppeld aan je"
+      titleHighlight="projecten"
+      subtitle="Geen losse e-mails meer zoeken. FORGEdesk koppelt inkomende mail automatisch aan klanten, offertes en projecten. Met AI-gegenereerde antwoorden."
+      highlights={[
         {
-          icon: (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-            </svg>
-          ),
-          title: 'Gedeelde Inbox',
-          description: 'Alle teamcommunicatie op één plek. Verbind je Gmail of Outlook en beheer alle emails centraal.',
+          icon: inboxIcon,
+          title: 'Slimme Inbox',
+          description: 'Alle zakelijke e-mail op één plek. Automatisch gekoppeld aan de juiste klant en het juiste project.',
         },
         {
-          icon: (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-          ),
+          icon: sparkleIcon,
           title: 'AI Antwoorden',
-          description: 'Laat AI je emails schrijven in de juiste toon. Van formeel tot informeel — altijd professioneel.',
+          description: 'Laat AI een concept-antwoord schrijven op basis van de context. Pas aan en verstuur in seconden.',
         },
         {
-          icon: (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" />
-            </svg>
-          ),
-          title: 'Email Sequences',
-          description: 'Automatische follow-up reeksen instellen. Nooit meer vergeten om een herinnering te sturen.',
-        },
-        {
-          icon: (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          ),
-          title: 'Tracking',
-          description: 'Zie wanneer je email geopend wordt. Weet precies wanneer je klant je offerte heeft bekeken.',
+          icon: linkIcon,
+          title: 'Automatisch Koppelen',
+          description: 'E-mails worden automatisch gekoppeld aan klanten, offertes en projecten. Niets gaat verloren.',
         },
       ]}
-      useCases={[
-        {
-          title: 'Klant stuurt een vraag over montage',
-          description: 'De email komt binnen in de gedeelde inbox. Je wijst hem toe aan de juiste monteur, die direct kan antwoorden. De klant krijgt snel een professioneel antwoord — zonder dat iemand hoeft te zoeken in zijn eigen mailbox.',
-        },
-        {
-          title: 'Follow-up na verzonden offerte',
-          description: 'Je stuurt een offerte en stelt een automatische follow-up in na 3 dagen. Als de klant de offerte opent maar niet reageert, krijg je een notificatie. Zo mis je nooit meer een kans.',
-        },
-        {
-          title: 'Snel professioneel reageren met AI',
-          description: 'Een leverancier stuurt een orderbevestiging. Met één klik schrijft AI een passend antwoord in de juiste toon. Je hoeft alleen nog te controleren en te verzenden — scheelt je minuten per email.',
-        },
-      ]}
+      demo={<InboxSimulator />}
+      demoTitle="Probeer de inbox uit"
+      demoSubtitle="Klik op een e-mail en laat AI een antwoord genereren. Precies zoals het in de app werkt."
     />
   );
 }
