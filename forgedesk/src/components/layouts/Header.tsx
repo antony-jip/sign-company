@@ -20,7 +20,7 @@ const routeMeta: Record<string, { title: string; subtitle?: string }> = {
   '/facturen': { title: 'Facturen', subtitle: 'Facturatie & betalingen' },
   '/documenten': { title: 'Documenten' },
   '/email': { title: 'Email', subtitle: 'Klantcommunicatie' },
-  '/planning': { title: 'Planning', subtitle: 'Kalender & montage planning' },
+  '/planning': { title: '' },
   '/tijdregistratie': { title: 'Tijdregistratie', subtitle: 'Uren per project' },
   '/financieel': { title: 'Financieel', subtitle: 'Omzet & kosten' },
   '/rapportages': { title: 'Rapportages' },
