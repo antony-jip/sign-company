@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
-  Eye, Download, Trash2, Plus, Palette, ImageIcon,
+  Eye, Download, Trash2, Plus, Palette, ImageIcon, Link2, FolderKanban, X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -15,8 +15,10 @@ import {
   getSigningVisualisatiesByProject,
   getSigningVisualisatiesByKlant,
   deleteSigningVisualisatie,
+  updateSigningVisualisatie,
+  getProjecten,
 } from '@/services/supabaseService'
-import type { SigningVisualisatie } from '@/types'
+import type { SigningVisualisatie, Project } from '@/types'
 import { SigningVisualizerDialog } from './SigningVisualizerDialog'
 import { VisualisatieLightbox } from './VisualisatieLightbox'
 
@@ -41,6 +43,9 @@ export function VisualisatieGallery({
   const [dialogOpen, setDialogOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [linkOpenId, setLinkOpenId] = useState<string | null>(null)
+  const [projecten, setProjecten] = useState<Project[]>([])
+  const [projectenLoaded, setProjectenLoaded] = useState(false)
 
   const laden = useCallback(async () => {
     if (!user?.id) return
@@ -70,6 +75,18 @@ export function VisualisatieGallery({
     return () => { cancelled = true }
   }, [laden])
 
+  // Load projecten alleen als we ze nodig hebben (link dropdown geopend)
+  const loadProjecten = useCallback(async () => {
+    if (projectenLoaded) return
+    try {
+      const data = await getProjecten()
+      setProjecten(data)
+      setProjectenLoaded(true)
+    } catch {
+      toast.error('Fout bij laden projecten')
+    }
+  }, [projectenLoaded])
+
   const handleDelete = useCallback(async (id: string) => {
     if (!user?.id) return
     try {
@@ -89,6 +106,29 @@ export function VisualisatieGallery({
     a.target = '_blank'
     a.click()
   }, [])
+
+  const handleLinkProject = useCallback(async (visualisatieId: string, newProjectId: string | null) => {
+    try {
+      const project = newProjectId ? projecten.find(p => p.id === newProjectId) : null
+      const updated = await updateSigningVisualisatie(visualisatieId, {
+        project_id: newProjectId || undefined,
+        klant_id: project?.klant_id || undefined,
+      })
+      setVisualisaties(prev => prev.map(v => v.id === visualisatieId ? { ...v, ...updated } : v))
+      setLinkOpenId(null)
+      toast.success(newProjectId ? 'Gekoppeld aan project' : 'Koppeling verwijderd')
+    } catch {
+      toast.error('Koppeling mislukt')
+    }
+  }, [projecten])
+
+  const handleOpenLink = useCallback((id: string) => {
+    setLinkOpenId(prev => prev === id ? null : id)
+    loadProjecten()
+  }, [loadProjecten])
+
+  // Standalone modus = geen project_id/offerte_id prop → toon link-knop
+  const isStandalone = !project_id && !offerte_id
 
   if (isLoading) {
     return (
@@ -133,82 +173,130 @@ export function VisualisatieGallery({
         </div>
       ) : (
         <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'grid-cols-2')}>
-          {visualisaties.map((v, index) => (
-            <div
-              key={v.id}
-              className="group relative border rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow"
-            >
-              {/* Thumbnail */}
+          {visualisaties.map((v, index) => {
+            const linkedProject = v.project_id ? projecten.find(p => p.id === v.project_id) : null
+
+            return (
               <div
-                className="aspect-[16/10] cursor-pointer overflow-hidden"
-                onClick={() => setLightboxIndex(index)}
+                key={v.id}
+                className="group relative border rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow"
               >
-                <img
-                  src={v.resultaat_url}
-                  alt={`${SIGNING_TYPE_LABELS[v.signing_type]} mockup`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-
-              {/* Info */}
-              <div className="p-2.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Badge variant="outline" className="text-xs">
-                    {SIGNING_TYPE_LABELS[v.signing_type] || v.signing_type}
-                  </Badge>
-                  <span
-                    className="w-3 h-3 rounded-full border border-gray-300"
-                    style={{ backgroundColor: v.kleur_instelling.startsWith('#') ? v.kleur_instelling : undefined }}
-                    title={v.kleur_instelling}
-                  />
-                  <span className="text-xs text-muted-foreground">{v.kleur_instelling}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{new Date(v.created_at).toLocaleDateString('nl-NL')}</span>
-                  <span>€{round2(v.api_kosten_eur)}</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="h-7 w-7 p-0"
+                {/* Thumbnail */}
+                <div
+                  className="aspect-[16/10] cursor-pointer overflow-hidden"
                   onClick={() => setLightboxIndex(index)}
                 >
-                  <Eye className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="h-7 w-7 p-0"
-                  onClick={() => handleDownload(v)}
-                >
-                  <Download className="h-3.5 w-3.5" />
-                </Button>
-                {deleteConfirmId === v.id ? (
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => handleDelete(v.id)}
-                  >
-                    Bevestig
-                  </Button>
-                ) : (
+                  <img
+                    src={v.resultaat_url}
+                    alt={`${SIGNING_TYPE_LABELS[v.signing_type]} mockup`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+
+                {/* Linked project badge */}
+                {isStandalone && v.project_id && (
+                  <div className="absolute top-2 left-2">
+                    <button
+                      onClick={() => handleOpenLink(v.id)}
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-white text-[10px] font-medium hover:bg-black/70 transition-colors"
+                    >
+                      <FolderKanban className="w-3 h-3" />
+                      {linkedProject?.naam || 'Project'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Info */}
+                <div className="p-2.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Badge variant="outline" className="text-xs">
+                      {SIGNING_TYPE_LABELS[v.signing_type] || v.signing_type}
+                    </Badge>
+                    <span
+                      className="w-3 h-3 rounded-full border border-gray-300"
+                      style={{ backgroundColor: v.kleur_instelling.startsWith('#') ? v.kleur_instelling : undefined }}
+                      title={v.kleur_instelling}
+                    />
+                    <span className="text-xs text-muted-foreground">{v.kleur_instelling}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{new Date(v.created_at).toLocaleDateString('nl-NL')}</span>
+                    <span>€{round2(v.api_kosten_eur)}</span>
+                  </div>
+                </div>
+
+                {/* Link to project panel */}
+                {linkOpenId === v.id && (
+                  <div className="border-t border-border p-2.5 bg-muted/30 animate-in slide-in-from-top-1 duration-150">
+                    <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-muted-foreground">
+                      <Link2 className="w-3 h-3" />
+                      Koppel aan project
+                    </div>
+                    <select
+                      value={v.project_id || ''}
+                      onChange={(e) => handleLinkProject(v.id, e.target.value || null)}
+                      className="w-full text-xs bg-background border border-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      <option value="">Geen project</option>
+                      {projecten.map(p => (
+                        <option key={p.id} value={p.id}>{p.naam}{p.klant_naam ? ` — ${p.klant_naam}` : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {isStandalone && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className={cn('h-7 w-7 p-0', v.project_id && 'text-primary')}
+                      onClick={() => handleOpenLink(v.id)}
+                      title="Koppel aan project"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="secondary"
                     className="h-7 w-7 p-0"
-                    onClick={() => setDeleteConfirmId(v.id)}
+                    onClick={() => setLightboxIndex(index)}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Eye className="h-3.5 w-3.5" />
                   </Button>
-                )}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleDownload(v)}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                  {deleteConfirmId === v.id ? (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => handleDelete(v.id)}
+                    >
+                      Bevestig
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setDeleteConfirmId(v.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
