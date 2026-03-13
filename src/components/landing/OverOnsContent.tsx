@@ -1,153 +1,307 @@
 'use client';
 
-import { useInView } from '@/hooks/useInView';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 
-const values = [
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, damping: 25, stiffness: 100 },
+  },
+};
+
+const benefits = [
   {
-    title: 'Door signmakers gebouwd',
-    description:
-      'We komen zelf uit de branche. We weten hoe een offerte met calculatie eruitziet, hoe een werkbon op locatie werkt, en wat er achter een totaalprijs schuilgaat.',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 20h20" />
-        <path d="M5 20V8l7-5 7 5v12" />
-        <path d="M9 20v-6h6v6" />
-      </svg>
-    ),
+    number: '01',
+    title: 'Offerte tot factuur in één lijn',
+    description: 'Maak een offerte, zet hem om in een werkbon, factureer in één klik. Geen overtypen, geen losse documenten. Alles zit aan elkaar vast.',
   },
   {
-    title: 'Simpel. Geen training nodig',
-    description:
-      'Software moet voor je werken, niet andersom. Eigenaren, kantoormanagers en monteurs beginnen zonder handleiding.',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="8 12 11 15 16 9" />
-      </svg>
-    ),
+    number: '02',
+    title: 'Altijd weten waar je staat',
+    description: 'Zie per project je marge, uren en kosten. Niet achteraf, maar terwijl je bezig bent. Geen verrassingen meer bij de eindafrekening.',
   },
   {
-    title: 'Eerlijke prijs',
-    description:
-      'Vanaf €49/maand. Geen kosten per gebruiker, geen verborgen modules, geen verrassingen op de factuur.',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="1" x2="12" y2="23" />
-        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-      </svg>
-    ),
+    number: '03',
+    title: 'Werkbonnen op locatie',
+    description: "Je monteurs vullen ter plekke hun uren, materiaal en foto's in. Op hun telefoon. Het kantoor ziet het direct. Geen papier meer kwijt.",
+  },
+  {
+    number: '04',
+    title: 'Planning die iedereen snapt',
+    description: 'Wie doet wat, wanneer. Eén agenda voor het hele team. Geen WhatsApp-groepen meer om te vragen wie er morgen op locatie staat.',
+  },
+  {
+    number: '05',
+    title: 'Je klant regelt het zelf',
+    description: 'Via het klantportaal keurt je klant offertes goed, bekijkt facturen en stuurt berichten. Minder bellen, sneller akkoord.',
+  },
+  {
+    number: '06',
+    title: 'AI die voor je werkt',
+    description: 'Laat AI je teksten verbeteren, signing visualiseren voor je klant, of stel een vraag over je administratie. Gebouwd voor jouw dagelijkse werk.',
   },
 ];
 
-export default function OverOnsContent() {
-  const { ref: heroRef, isInView: heroVisible } = useInView();
-  const { ref: valuesRef, isInView: valuesVisible } = useInView();
-  const { ref: storyRef, isInView: storyVisible } = useInView();
-  const { ref: ctaRef, isInView: ctaVisible } = useInView();
+const audiences = [
+  'Signbedrijven & reclamemakers',
+  'Interieurbouwers',
+  'Print & wrapping bedrijven',
+  'Belettering & montage',
+  'Gevelreclame & lichtreclame',
+  'Creatieve maakbedrijven',
+];
 
+const painPoints = [
+  { label: 'Gedateerde software', detail: 'Tools die eruitzien alsof ze in 2005 zijn gemaakt' },
+  { label: 'Geen overzicht', detail: 'Bij grotere projecten weet je niet meer waar je staat' },
+  { label: 'Uren kwijt', detail: 'Werkbonnen op papier, uren die nooit worden ingevoerd' },
+  { label: 'Alles apart', detail: 'Offerte hier, factuur daar, planning in WhatsApp' },
+];
+
+export default function OverOnsContent() {
   return (
     <>
-      {/* Hero */}
-      <section className="relative bg-mesh-hero overflow-hidden" style={{ paddingTop: 160, paddingBottom: 100 }}>
+      {/* ── Hero — dark, direct ──────────────────────────────── */}
+      <section className="relative bg-forge-dark overflow-hidden noise-overlay-dark">
         <div
-          ref={heroRef}
-          className="container text-center max-w-[700px]"
-          style={{
-            opacity: heroVisible ? 1 : 0,
-            transform: heroVisible ? 'translateY(0)' : 'translateY(32px)',
-            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
-        >
-          <p className="font-mono text-[12px] font-medium text-ink-40 uppercase tracking-[0.06em] mb-4">
-            Over ons
-          </p>
-          <h1 className="font-heading section-heading text-ink mb-6">
-            Gebouwd door mensen uit de branche.
-          </h1>
-          <p className="text-[19px] leading-[1.7] text-ink-60 max-w-[540px] mx-auto">
-            FORGEdesk komt uit de sign- en printwereld. Geen startup uit het buitenland. Gewoon Nederland.
-          </p>
+          className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(232,169,144,0.07), transparent 65%)', filter: 'blur(100px)' }}
+        />
+
+        <div className="container relative z-10" style={{ paddingTop: 160, paddingBottom: 100 }}>
+          <div className="max-w-[750px]">
+            <motion.p
+              className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-8"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ type: 'spring' as const, damping: 25, stiffness: 100, delay: 0.2 }}
+            >
+              <span className="inline-block w-8 h-px bg-blush-vivid mr-3 align-middle" />
+              Onze oplossing
+            </motion.p>
+
+            <motion.h1
+              className="font-heading text-white leading-tight mb-6"
+              style={{ fontSize: 'clamp(40px, 5.5vw, 72px)', fontWeight: 900, letterSpacing: '-3px', lineHeight: 0.95 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: 'spring' as const, damping: 20, stiffness: 80, delay: 0.4 }}
+            >
+              Eén systeem voor{' '}
+              <span className="neon-text-glow">je hele bedrijf.</span>
+            </motion.h1>
+
+            <motion.p
+              className="text-[20px] leading-[1.7] text-ink-40 max-w-[520px]"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: 'spring' as const, damping: 25, stiffness: 100, delay: 0.6 }}
+            >
+              Van offerte tot factuur, van werkbon tot planning. Alles op één plek — zodat jij kunt doen waar je goed in bent.
+            </motion.p>
+          </div>
         </div>
       </section>
 
-      {/* Values */}
-      <section style={{ paddingTop: 100, paddingBottom: 100 }}>
-        <div ref={valuesRef} className="container">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {values.map((value, i) => (
-              <div
-                key={value.title}
-                style={{
-                  opacity: valuesVisible ? 1 : 0,
-                  transform: valuesVisible ? 'translateY(0)' : 'translateY(32px)',
-                  transition: `all 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.12}s`,
-                }}
+      {/* ── Het probleem — herkenbaar ────────────────────────── */}
+      <section className="bg-bg border-b border-ink-10" style={{ paddingTop: 100, paddingBottom: 100 }}>
+        <div className="container">
+          <motion.div
+            className="max-w-[600px] mb-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={fadeUp}
+          >
+            <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-4">
+              <span className="inline-block w-8 h-px bg-ink-20 mr-3 align-middle" />
+              Herkenbaar?
+            </p>
+            <h2
+              className="font-heading text-ink leading-tight"
+              style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, letterSpacing: '-1.5px' }}
+            >
+              Je weet dat het beter kan. Maar de tools werken niet mee.
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+            {painPoints.map((point, i) => (
+              <motion.div
+                key={point.label}
+                className="border-t border-ink-10 py-6 pr-8"
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ type: 'spring' as const, damping: 25, stiffness: 120, delay: i * 0.06 }}
               >
-                <div className="w-12 h-12 rounded-xl bg-blush-light flex items-center justify-center text-blush-deep mb-5">
-                  {value.icon}
-                </div>
-                <h3 className="font-heading text-[18px] font-bold text-ink mb-2">
-                  {value.title}
-                </h3>
-                <p className="text-[15px] leading-[1.7] text-ink-60">
-                  {value.description}
-                </p>
-              </div>
+                <p className="text-[17px] font-bold text-ink mb-1">{point.label}</p>
+                <p className="text-[14px] text-ink-40 leading-relaxed">{point.detail}</p>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Story */}
-      <section className="border-t border-ink-10" style={{ paddingTop: 100, paddingBottom: 100 }}>
-        <div
-          ref={storyRef}
-          className="container max-w-[640px]"
-          style={{
-            opacity: storyVisible ? 1 : 0,
-            transform: storyVisible ? 'translateY(0)' : 'translateY(32px)',
-            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
-        >
-          <h2 className="font-heading step-title text-ink mb-6">
-            Waarom we dit bouwen
-          </h2>
-          <div className="space-y-5 text-[16px] leading-[1.7] text-ink-60">
-            <p>
-              Er was geen goed alternatief. James Pro, Gripp, Salesredd: ze komen niet uit de creatieve branche. Ze snappen niet hoe een offerte met calculatie werkt als er veel schuilgaat achter de totaalprijs.
+      {/* ── Wat je krijgt — concrete benefits ────────────────── */}
+      <section className="bg-bg" style={{ paddingTop: 100, paddingBottom: 100 }}>
+        <div className="container">
+          <motion.div
+            className="max-w-[600px] mb-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={fadeUp}
+          >
+            <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-4">
+              <span className="inline-block w-8 h-px bg-ink-20 mr-3 align-middle" />
+              Wat je krijgt
             </p>
-            <p>
-              Dus hebben we het zelf gebouwd. Eén systeem voor projecten, offertes, werkbonnen en facturen. Met AI die helpt, niet in de weg zit.
-            </p>
-            <p>
-              Nu kunnen andere creatieve bedrijven er ook van profiteren. Tegen een eerlijke prijs, zonder gedoe.
-            </p>
+            <h2
+              className="font-heading text-ink leading-tight"
+              style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, letterSpacing: '-1.5px' }}
+            >
+              Alles wat je nodig hebt. Niets wat je niet nodig hebt.
+            </h2>
+          </motion.div>
+
+          <div className="space-y-0">
+            {benefits.map((benefit) => (
+              <motion.div
+                key={benefit.number}
+                className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 border-t border-ink-10 items-start"
+                style={{ paddingTop: 48, paddingBottom: 48 }}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+                variants={fadeUp}
+              >
+                <div className="lg:col-span-1">
+                  <span className="font-mono text-[13px] font-bold text-blush-vivid">
+                    {benefit.number}
+                  </span>
+                </div>
+                <div className="lg:col-span-4">
+                  <h3
+                    className="font-heading text-ink leading-tight"
+                    style={{ fontSize: 'clamp(22px, 2.5vw, 30px)', fontWeight: 900, letterSpacing: '-1px' }}
+                  >
+                    {benefit.title}
+                  </h3>
+                </div>
+                <div className="lg:col-span-7">
+                  <p className="text-[16px] leading-[1.7] text-ink-60 max-w-[460px]">
+                    {benefit.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="relative bg-mesh-cta overflow-hidden" style={{ paddingTop: 120, paddingBottom: 120 }}>
-        <div
-          ref={ctaRef}
-          className="container text-center"
-          style={{
-            opacity: ctaVisible ? 1 : 0,
-            transform: ctaVisible ? 'translateY(0)' : 'translateY(32px)',
-            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
-        >
-          <h2 className="font-heading section-heading text-ink mb-6">
-            Klaar om te <span className="text-ember-gradient">starten</span>?
-          </h2>
-          <p className="text-[19px] leading-[1.7] text-ink-60 mb-10 max-w-[480px] mx-auto">
-            Probeer FORGEdesk 30 dagen gratis. Geen creditcard, geen contract.
-          </p>
-          <Button variant="ink" href="https://app.forgedesk.io">
-            Start 30 dagen gratis &rarr;
-          </Button>
+      {/* ── Voor wie ─────────────────────────────────────────── */}
+      <section className="bg-bg border-t border-ink-10" style={{ paddingTop: 100, paddingBottom: 100 }}>
+        <div className="container">
+          <motion.div
+            className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeUp}
+          >
+            <div className="lg:col-span-5">
+              <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-4">
+                <span className="inline-block w-8 h-px bg-ink-20 mr-3 align-middle" />
+                Voor wie
+              </p>
+              <h2
+                className="font-heading text-ink leading-tight mb-5"
+                style={{ fontSize: 'clamp(28px, 3vw, 40px)', fontWeight: 900, letterSpacing: '-1.5px' }}
+              >
+                Gemaakt voor bedrijven die maken.
+              </h2>
+              <p className="text-[16px] leading-[1.7] text-ink-60 max-w-[380px]">
+                FORGEdesk is gebouwd voor creatieve maakbedrijven. Bedrijven die met hun handen werken en software nodig hebben die daarbij past.
+              </p>
+            </div>
+            <div className="lg:col-span-7 lg:pt-10">
+              {audiences.map((audience, i) => (
+                <motion.div
+                  key={audience}
+                  className="flex items-center justify-between py-4 border-b border-ink-10"
+                  initial={{ opacity: 0, x: 16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ type: 'spring' as const, damping: 25, stiffness: 120, delay: i * 0.06 }}
+                >
+                  <span className="text-[16px] font-semibold text-ink">{audience}</span>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-sage-vivid">
+                    <path d="M4 8l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </div>
+      </section>
+
+      {/* ── Ons verhaal — kort, vertrouwen ───────────────────── */}
+      <section className="relative bg-forge-dark overflow-hidden noise-overlay-dark" style={{ paddingTop: 100, paddingBottom: 100 }}>
+        <div className="container relative z-10">
+          <motion.div
+            className="max-w-[650px]"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={fadeUp}
+          >
+            <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-8">
+              <span className="inline-block w-8 h-px bg-blush-vivid mr-3 align-middle" />
+              Waarom wij
+            </p>
+            <blockquote
+              className="font-heading text-white/90 leading-tight mb-6"
+              style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 900, letterSpacing: '-1.5px', lineHeight: 1.15 }}
+            >
+              &ldquo;We hebben 40 jaar signing gemaakt. We weten precies waar het wringt — want wij hadden dezelfde problemen.&rdquo;
+            </blockquote>
+            <p className="text-[16px] text-ink-40 leading-[1.7] mb-10 max-w-[500px]">
+              FORGEdesk is geboren uit frustratie. Niet door een softwarebedrijf dat interviews deed, maar door een signbedrijf dat sinds 1983 elke dag met dezelfde problemen worstelde. We bouwden het systeem dat wij zelf nodig hadden. Nu is het er ook voor jou.
+            </p>
+
+            <div className="flex flex-wrap gap-12 mb-10">
+              {[
+                { number: '1983', label: 'In de branche sinds' },
+                { number: '40+', label: 'Jaar ervaring' },
+                { number: '€49', label: 'Per maand, alles erin' },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <p className="font-heading text-[28px] font-black text-white tracking-tight leading-none">
+                    {stat.number}
+                  </p>
+                  <p className="text-[12px] text-ink-40 mt-1 font-mono tracking-wide">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
+              <Button variant="warm" href="https://app.forgedesk.io">
+                Probeer 30 dagen gratis &rarr;
+              </Button>
+            </motion.div>
+          </motion.div>
+        </div>
+
+        <div
+          className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(232,169,144,0.06), transparent 70%)', filter: 'blur(80px)' }}
+        />
       </section>
     </>
   );
