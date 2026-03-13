@@ -3,15 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 
-const headingWords = ['Smeed', 'je', 'bedrijf', 'tot', 'een', 'geoliede', 'machine'];
-
-const proofPoints = [
-  { label: 'Offertes', color: 'bg-blush-light text-blush-deep' },
-  { label: 'Werkbonnen', color: 'bg-sage-light text-sage-deep' },
-  { label: 'Facturatie', color: 'bg-lavender-light text-lavender-deep' },
-  { label: 'Projecten', color: 'bg-mist-light text-mist-deep' },
-  { label: 'CRM', color: 'bg-peach-light text-peach-deep' },
-];
+const headingWords = ['Smeed', 'je', 'bedrijf', 'tot', 'een', 'geoliede', 'machine.'];
 
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
@@ -21,14 +13,14 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-mesh-hero overflow-hidden pt-16">
-      <div className="container relative z-10 text-center py-20 md:py-32">
-        {/* Heading with word-by-word reveal */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6">
+    <section className="relative min-h-screen flex items-center justify-center bg-mesh-hero overflow-hidden">
+      <div className="max-w-[700px] mx-auto px-6 relative z-10 text-center" style={{ paddingTop: 140, paddingBottom: 140 }}>
+        {/* Heading — word-by-word reveal */}
+        <h1 className="font-heading hero-heading mb-8">
           {headingWords.map((word, i) => (
-            <span key={i} className="word-reveal inline-block mr-[0.3em]">
+            <span key={i} className="word-reveal mr-[0.25em]">
               <span
-                className={word === 'Smeed' ? 'text-ember-gradient text-ember-glow' : ''}
+                className={word === 'Smeed' ? 'text-ember-gradient' : ''}
                 style={{
                   animationDelay: mounted ? `${i * 0.12}s` : '0s',
                   opacity: mounted ? undefined : 0,
@@ -40,66 +32,55 @@ export default function Hero() {
           ))}
         </h1>
 
-        {/* Subtitle */}
+        {/* Sub — section 15 */}
         <p
-          className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-10 transition-all duration-700"
+          className="text-[19px] leading-[1.7] text-ink-60 max-w-[520px] mx-auto mb-10 transition-all duration-700"
           style={{
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(24px)',
             transitionDelay: '1s',
           }}
         >
-          De alles-in-één bedrijfssoftware voor creatieve bedrijven.
-          Offertes, werkbonnen, facturen en projecten — in één overzichtelijk platform.
+          Van offerte tot factuur in minuten. Gebouwd voor signmakers, interieurbouwers en monteurs.
         </p>
 
-        {/* CTA Buttons */}
+        {/* CTA buttons — section 15 */}
         <div
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 transition-all duration-700"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 transition-all duration-700"
           style={{
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(24px)',
             transitionDelay: '1.2s',
           }}
         >
-          <Button variant="primary" size="lg" href="https://app.forgedesk.io" className="w-full sm:w-auto">
-            Start gratis
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14" />
-              <path d="m12 5 7 7-7 7" />
-            </svg>
+          <Button variant="ink" href="https://app.forgedesk.io" className="w-full sm:w-auto max-w-[300px]">
+            Start 30 dagen gratis &rarr;
           </Button>
-          <Button variant="secondary" size="lg" href="#stappen" className="w-full sm:w-auto">
+          <Button variant="soft" href="#stappen" className="w-full sm:w-auto max-w-[300px]">
             Bekijk hoe het werkt
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
           </Button>
         </div>
 
-        {/* Proof points */}
+        {/* Proof points — section 15 */}
         <div
-          className="flex flex-wrap items-center justify-center gap-2 transition-all duration-700"
+          className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[13px] font-medium text-ink-40 transition-all duration-700"
           style={{
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(24px)',
             transitionDelay: '1.4s',
           }}
         >
-          {proofPoints.map((point) => (
-            <span
-              key={point.label}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${point.color}`}
-            >
-              {point.label}
-            </span>
-          ))}
+          <span>Geen creditcard</span>
+          <span className="text-ink-20">&middot;</span>
+          <span>Onbeperkt gebruikers</span>
+          <span className="text-ink-20">&middot;</span>
+          <span>&euro;49/maand voor het hele team</span>
         </div>
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll chevron */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce-slow">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-20" strokeLinecap="round" strokeLinejoin="round">
           <path d="m6 9 6 6 6-6" />
         </svg>
       </div>

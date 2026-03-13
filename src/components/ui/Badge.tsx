@@ -1,27 +1,22 @@
 import React from 'react';
 
-type BadgeColor = 'blush' | 'sage' | 'mist' | 'lavender' | 'peach' | 'cream';
-
 interface BadgeProps {
-  color?: BadgeColor;
+  variant: 'goedgekeurd' | 'verstuurd' | 'concept' | 'gefactureerd' | 'betaald' | 'in-uitvoering';
   children: React.ReactNode;
-  className?: string;
 }
 
-const colorMap: Record<BadgeColor, string> = {
-  blush: 'bg-blush-light text-blush-deep',
-  sage: 'bg-sage-light text-sage-deep',
-  mist: 'bg-mist-light text-mist-deep',
-  lavender: 'bg-lavender-light text-lavender-deep',
-  peach: 'bg-peach-light text-peach-deep',
-  cream: 'bg-cream-light text-cream-deep',
+const styles: Record<BadgeProps['variant'], string> = {
+  goedgekeurd: 'bg-sage-light text-sage-deep',
+  betaald: 'bg-sage-light text-sage-deep',
+  verstuurd: 'bg-[#FEF3C7] text-[#92400E]',
+  concept: 'bg-mist-light text-mist-deep',
+  gefactureerd: 'bg-lavender-light text-lavender-deep',
+  'in-uitvoering': 'bg-mist-light text-mist-deep',
 };
 
-export function Badge({ color = 'blush', children, className = '' }: BadgeProps) {
+export function Badge({ variant, children }: BadgeProps) {
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${colorMap[color]} ${className}`}
-    >
+    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold ${styles[variant]}`}>
       {children}
     </span>
   );

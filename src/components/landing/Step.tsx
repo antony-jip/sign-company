@@ -2,22 +2,26 @@
 
 import React from 'react';
 import { useInView } from '@/hooks/useInView';
+import { StepCircle } from '@/components/ui/StepCircle';
 
 interface StepProps {
   number: number;
   title: string;
   description: string;
-  accentColor: string;
+  phase: 'offerte' | 'werkbon' | 'factuur';
   align: 'left' | 'right';
   children: React.ReactNode;
 }
 
-export default function Step({ number, title, description, accentColor, align, children }: StepProps) {
+export default function Step({ number, title, description, phase, align, children }: StepProps) {
   const { ref, isInView } = useInView();
 
   return (
-    <div ref={ref} className="relative py-12 md:py-20">
-      <div className={`flex flex-col ${align === 'right' ? 'lg:flex-row-reverse' : 'lg:flex-row'} items-center gap-8 lg:gap-16`}>
+    <div ref={ref} className="relative" style={{ paddingTop: 70, paddingBottom: 70 }}>
+      <div
+        className={`flex flex-col ${align === 'right' ? 'lg:flex-row-reverse' : 'lg:flex-row'} items-center`}
+        style={{ gap: 80 }}
+      >
         {/* Text side */}
         <div
           className="flex-1 text-center lg:text-left"
@@ -27,16 +31,13 @@ export default function Step({ number, title, description, accentColor, align, c
             transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          <div
-            className={`inline-flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold text-white mb-4`}
-            style={{ backgroundColor: accentColor }}
-          >
-            {number}
+          <div className="mb-5">
+            <StepCircle number={number} phase={phase} />
           </div>
-          <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+          <h3 className="font-heading step-title text-ink mb-3">
             {title}
           </h3>
-          <p className="text-gray-500 text-base md:text-lg leading-relaxed max-w-md mx-auto lg:mx-0">
+          <p className="text-[16px] leading-[1.7] text-ink-60 max-w-[400px] mx-auto lg:mx-0">
             {description}
           </p>
         </div>

@@ -8,25 +8,25 @@ import { OfferteCard, WerkbonCard, FactuurCard } from './StepCard';
 const steps = [
   {
     number: 1,
-    title: 'Maak een offerte',
-    description: 'Stel professionele offertes op in minuten. Kies producten, pas prijzen aan en verstuur direct naar je klant.',
-    accentColor: '#E8A990',
+    title: 'Maak een offerte die indruk maakt.',
+    description: 'Klant selecteren, regels toevoegen, marge automatisch berekend. Verstuur als PDF of deel een link \u2014 je klant keurt direct goed.',
+    phase: 'offerte' as const,
     align: 'left' as const,
     card: <OfferteCard />,
   },
   {
     number: 2,
-    title: 'Plan het werk',
-    description: 'Zet een akkoord automatisch om in werkbonnen. Plan taken, wijs medewerkers toe en houd de voortgang bij.',
-    accentColor: '#A48BBF',
+    title: 'De monteur vult ter plekke in.',
+    description: "Foto\u2019s, uren, materiaal \u2014 alles op de telefoon. Geen papier. De kantoormanager ziet het direct.",
+    phase: 'werkbon' as const,
     align: 'right' as const,
     card: <WerkbonCard />,
   },
   {
     number: 3,
-    title: 'Factureer en klaar',
-    description: 'Genereer facturen vanuit je werkbonnen met één klik. Automatische BTW-berekening en betaalherinneringen.',
-    accentColor: '#7DB88A',
+    title: 'E\u00E9n klik: factuur betaald.',
+    description: 'Automatisch vanuit de offerte. Betaallink voor je klant, UBL-export voor je boekhouder. Geld sneller binnen.',
+    phase: 'factuur' as const,
     align: 'left' as const,
     card: <FactuurCard />,
   },
@@ -36,30 +36,27 @@ export default function StepsSection() {
   const { ref, isInView } = useInView();
 
   return (
-    <section id="stappen" className="relative py-20 md:py-32">
+    <section id="stappen" className="relative" style={{ paddingTop: 140, paddingBottom: 140 }}>
       <div className="container">
-        {/* Section header */}
+        {/* Section header — section 15 */}
         <div
           ref={ref}
-          className="text-center mb-16 md:mb-24"
+          className="text-center mb-24"
           style={{
             opacity: isInView ? 1 : 0,
             transform: isInView ? 'translateY(0)' : 'translateY(32px)',
             transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sage-light text-sage-deep mb-4">
-            Hoe het werkt
-          </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-            Van offerte tot factuur
+          <h2 className="font-heading section-heading text-ink">
+            Van offerte tot betaling. Zo simpel.
           </h2>
-          <p className="text-gray-500 text-lg mt-4 max-w-xl mx-auto">
-            Drie stappen. Nul gedoe.
+          <p className="text-[19px] leading-[1.7] text-ink-60 mt-5 max-w-[500px] mx-auto">
+            Drie stappen. Geen training. Gewoon beginnen.
           </p>
         </div>
 
-        {/* Steps with flow line */}
+        {/* Steps + flow line */}
         <div className="relative">
           <FlowLine />
           {steps.map((step) => (
@@ -68,7 +65,7 @@ export default function StepsSection() {
               number={step.number}
               title={step.title}
               description={step.description}
-              accentColor={step.accentColor}
+              phase={step.phase}
               align={step.align}
             >
               {step.card}

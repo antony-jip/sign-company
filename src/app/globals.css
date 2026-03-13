@@ -10,55 +10,64 @@
 
 @layer components {
   .container {
-    @apply max-w-7xl mx-auto px-5;
+    @apply max-w-[1100px] mx-auto;
+    padding-left: 48px;
+    padding-right: 48px;
   }
 }
 
-/* ===== Gradient mesh backgrounds ===== */
+/* ===== Gradient mesh backgrounds (styleguide section 5) ===== */
 .bg-mesh-hero {
   background:
-    radial-gradient(ellipse at 15% 30%, rgba(240, 217, 208, 0.5) 0%, transparent 50%),
-    radial-gradient(ellipse at 75% 15%, rgba(200, 213, 204, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 55% 75%, rgba(221, 213, 232, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 60%, rgba(245, 213, 200, 0.3) 0%, transparent 50%),
-    radial-gradient(ellipse at 30% 80%, rgba(205, 213, 222, 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 20%, rgba(221,213,232,0.5) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 25%, rgba(232,169,144,0.35) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 80%, rgba(200,213,204,0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 70%, rgba(205,213,222,0.3) 0%, transparent 45%),
+    radial-gradient(ellipse at 75% 65%, rgba(245,213,200,0.3) 0%, transparent 40%),
     #FAFAF7;
 }
 
 .bg-mesh-cta {
   background:
-    radial-gradient(ellipse at 80% 30%, rgba(221, 213, 232, 0.5) 0%, transparent 50%),
-    radial-gradient(ellipse at 20% 70%, rgba(200, 213, 204, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 20%, rgba(240, 217, 208, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 80%, rgba(205, 213, 222, 0.3) 0%, transparent 50%),
-    radial-gradient(ellipse at 10% 40%, rgba(245, 213, 200, 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(205,213,222,0.5) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 30%, rgba(232,169,144,0.4) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 90%, rgba(221,213,232,0.35) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 70%, rgba(245,213,200,0.3) 0%, transparent 40%),
     #FAFAF7;
 }
 
-/* ===== Ember gradient text (for "Smeed") ===== */
+/* ===== "Smeed" ember gradient (styleguide section 4) ===== */
 .text-ember-gradient {
-  background: linear-gradient(135deg, #E8A990 0%, #D4856B 50%, #C49585 100%);
+  background: linear-gradient(135deg, #C49585, #E8A990, #F4C49A);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  filter: drop-shadow(0 2px 20px rgba(232, 169, 144, 0.25));
 }
 
-.text-ember-glow {
-  filter: drop-shadow(0 0 20px rgba(232, 169, 144, 0.4));
+/* ===== Type scale (styleguide section 4) ===== */
+.hero-heading {
+  font-size: clamp(44px, 5.8vw, 80px);
+  font-weight: 900;
+  letter-spacing: -3px;
+  line-height: 0.95;
 }
 
-/* ===== SVG flow line ===== */
-.flow-line-path {
-  stroke-dasharray: 2000;
-  stroke-dashoffset: 2000;
-  transition: stroke-dashoffset 2.5s ease-out;
+.section-heading {
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1.0;
 }
 
-.flow-line-path.visible {
-  stroke-dashoffset: 0;
+.step-title {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1.1;
 }
 
-/* ===== Word reveal animation ===== */
+/* ===== Word reveal animation (styleguide section 8) ===== */
 @keyframes wordReveal {
   from {
     opacity: 0;
@@ -75,7 +84,7 @@
   overflow: hidden;
 }
 
-.word-reveal span {
+.word-reveal > span {
   display: inline-block;
   opacity: 0;
   transform: translateY(100%);
@@ -94,55 +103,66 @@
   transform: translateY(0);
 }
 
-/* ===== Stagger delays ===== */
-.stagger-1 { transition-delay: 0.12s; }
-.stagger-2 { transition-delay: 0.24s; }
-.stagger-3 { transition-delay: 0.36s; }
-
-/* ===== Navbar blur ===== */
+/* ===== Navbar (styleguide section 6) ===== */
 .navbar-blur {
-  background: rgba(250, 250, 247, 0.8);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(250, 250, 247, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 1px 0 #E8E8E3;
+}
+
+/* ===== Flow line (styleguide section 7) ===== */
+.flow-line-path {
+  stroke-dasharray: 1800;
+  stroke-dashoffset: 1800;
+  transition: stroke-dashoffset 3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flow-line-path.visible {
+  stroke-dashoffset: 0;
 }
 
 /* ===== Browser frame ===== */
 .browser-frame {
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.12),
     0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
-/* ===== Step card gradients ===== */
-.step-card-blush {
-  background: linear-gradient(135deg, #F7ECE7 0%, #FAE8E0 100%);
+/* ===== Step card gradients (styleguide section 6) ===== */
+.step-card-offerte {
+  background: linear-gradient(145deg, rgba(240,217,208,0.6), rgba(247,236,231,0.8), rgba(250,232,224,0.5));
 }
 
-.step-card-sage {
-  background: linear-gradient(135deg, #E4EBE6 0%, #E6EAF0 100%);
+.step-card-werkbon {
+  background: linear-gradient(145deg, rgba(221,213,232,0.5), rgba(237,233,243,0.7), rgba(205,213,222,0.4));
 }
 
-.step-card-lavender {
-  background: linear-gradient(135deg, #EDE9F3 0%, #E6EAF0 100%);
+.step-card-factuur {
+  background: linear-gradient(145deg, rgba(200,213,204,0.5), rgba(228,235,230,0.7), rgba(237,232,216,0.4));
 }
 
-/* ===== Focus styles ===== */
+/* ===== Focus & skip ===== */
 :focus-visible {
-  @apply outline-none ring-2 ring-gray-900 ring-offset-2;
+  @apply outline-none ring-2 ring-ink ring-offset-2;
 }
 
 .skip-link {
-  @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-gray-900 focus:text-white focus:px-4 focus:py-2 focus:rounded;
+  @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-ink focus:text-white focus:px-4 focus:py-2 focus:rounded;
 }
 
-/* ===== Flow line dot pulse ===== */
-@keyframes dotPulse {
-  0%, 100% { r: 5; opacity: 0.6; }
-  50% { r: 8; opacity: 1; }
+/* ===== Mobile (styleguide section 9) ===== */
+@media (max-width: 899px) {
+  .container {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }
 
-.flow-dot {
-  animation: dotPulse 2s ease-in-out infinite;
+@media (max-width: 479px) {
+  .hero-heading {
+    letter-spacing: -2px;
+  }
 }

@@ -1,39 +1,27 @@
 import React from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonVariant = 'ink' | 'soft' | 'warm';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps {
   variant?: ButtonVariant;
-  size?: ButtonSize;
   href?: string;
   children: React.ReactNode;
+  className?: string;
 }
 
 const variants: Record<ButtonVariant, string> = {
-  primary:
-    'bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-950',
-  secondary:
-    'bg-white text-gray-900 border border-gray-200 hover:border-gray-300 hover:bg-gray-50',
-  ghost:
-    'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50',
-};
-
-const sizes: Record<ButtonSize, string> = {
-  sm: 'px-4 py-2 text-sm',
-  md: 'px-6 py-2.5 text-sm',
-  lg: 'px-8 py-3.5 text-base',
+  ink: 'bg-ink text-white hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.15)]',
+  soft: 'bg-white/60 text-ink border border-black/[0.06] hover:bg-white/90',
+  warm: 'bg-blush-light text-blush-deep border border-blush hover:bg-blush',
 };
 
 export function Button({
-  variant = 'primary',
-  size = 'md',
+  variant = 'ink',
   href,
   children,
   className = '',
-  ...props
 }: ButtonProps) {
-  const classes = `inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 ${variants[variant]} ${sizes[size]} ${className}`;
+  const classes = `inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 text-sm font-semibold transition-all duration-200 ${variants[variant]} ${className}`;
 
   if (href) {
     return (
@@ -44,7 +32,7 @@ export function Button({
   }
 
   return (
-    <button className={classes} {...props}>
+    <button className={classes}>
       {children}
     </button>
   );
