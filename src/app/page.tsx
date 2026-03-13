@@ -1,5 +1,6 @@
 import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
+import Marquee from '@/components/landing/Marquee';
 import AppPreview from '@/components/landing/AppPreview';
 import FeaturesGrid from '@/components/landing/FeaturesGrid';
 import StepsSection from '@/components/landing/StepsSection';
@@ -15,6 +16,7 @@ export default function Home() {
       <Navbar />
       <main id="main-content">
         <Hero />
+        <Marquee />
         <AppPreview />
         <FeaturesGrid />
         <StepsSection />

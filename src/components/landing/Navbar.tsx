@@ -42,19 +42,26 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  // Text colors adapt: white on dark hero, dark when scrolled
+  const textBase = scrolled || mobileOpen ? 'text-ink-40' : 'text-white/50';
+  const textHover = scrolled || mobileOpen ? 'hover:text-ink-60' : 'hover:text-white/80';
+  const textActive = scrolled || mobileOpen ? 'text-ink' : 'text-white';
+  const logoColor = scrolled || mobileOpen ? 'text-ink' : 'text-white';
+  const logoDim = scrolled || mobileOpen ? 'text-ink-40' : 'text-white/50';
+
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled || mobileOpen ? 'navbar-blur' : 'bg-transparent'
       }`}
     >
       <div className="container flex items-center justify-between" style={{ height: 72 }}>
         {/* Logo */}
         <Link href="/" className="flex items-baseline gap-0">
-          <span className="font-heading text-[22px] font-black text-ink tracking-tight">
+          <span className={`font-heading text-[22px] font-black tracking-tight transition-colors duration-500 ${logoColor}`}>
             FORGE
           </span>
-          <span className="font-sans text-[22px] font-normal text-ink-40">
+          <span className={`font-sans text-[22px] font-normal transition-colors duration-500 ${logoDim}`}>
             desk
           </span>
         </Link>
@@ -66,7 +73,7 @@ export default function Navbar() {
             <button
               onClick={() => setFeaturesOpen(!featuresOpen)}
               className={`px-4 py-2 text-[13px] font-medium rounded-full transition-colors flex items-center gap-1 ${
-                featuresOpen ? 'text-ink bg-ink-05' : 'text-ink-40 hover:text-ink-60'
+                featuresOpen ? `${textActive} bg-white/10` : `${textBase} ${textHover}`
               }`}
             >
               Features
@@ -104,20 +111,29 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="px-4 py-2 text-[13px] font-medium text-ink-40 hover:text-ink-60 rounded-full transition-colors"
+              className={`px-4 py-2 text-[13px] font-medium rounded-full transition-colors duration-500 ${textBase} ${textHover}`}
             >
               {link.label}
             </Link>
           ))}
           <a
             href="https://app.forgedesk.io/login"
-            className="px-5 py-2.5 text-[13px] font-medium text-ink-60 hover:text-ink rounded-full transition-colors"
+            className={`px-5 py-2.5 text-[13px] font-medium rounded-full transition-colors duration-500 ${textBase} ${textHover}`}
           >
             Inloggen
           </a>
-          <Button variant="ink" href="https://app.forgedesk.io">
-            Start gratis &rarr;
-          </Button>
+          {scrolled ? (
+            <Button variant="ink" href="https://app.forgedesk.io">
+              Start gratis &rarr;
+            </Button>
+          ) : (
+            <a
+              href="https://app.forgedesk.io"
+              className="px-5 py-2.5 text-[13px] font-semibold text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors border border-white/10"
+            >
+              Start gratis &rarr;
+            </a>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -127,7 +143,7 @@ export default function Navbar() {
           </Button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 text-ink-40 hover:text-ink transition-colors"
+            className={`p-2 transition-colors ${scrolled ? 'text-ink-40 hover:text-ink' : 'text-white/50 hover:text-white'}`}
             aria-label="Menu"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -151,7 +167,6 @@ export default function Navbar() {
       {/* Mobile dropdown */}
       {mobileOpen && (
         <div className="md:hidden border-t border-ink-10 px-6 pb-6 pt-4 space-y-1">
-          {/* Features section */}
           <button
             onClick={() => setMobileFeaturesOpen(!mobileFeaturesOpen)}
             className="w-full flex items-center justify-between px-4 py-3 text-[15px] font-medium text-ink-60 hover:text-ink rounded-xl transition-colors"

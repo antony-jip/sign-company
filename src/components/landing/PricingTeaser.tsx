@@ -8,114 +8,109 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', damping: 25, stiffness: 120 },
+    transition: { type: 'spring', damping: 25, stiffness: 100 },
   },
 };
 
-const priceCard = {
-  hidden: { opacity: 0, y: 24, scale: 0.96 },
-  visible: (delay: number) => ({
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: 'spring', damping: 22, stiffness: 110, delay },
-  }),
-};
+const included = [
+  'Onbeperkt offertes & facturen',
+  'Werkbonnen op locatie',
+  'Planning & agenda',
+  'Klantportaal',
+  'AI-assistent Forgie',
+  'Sign Visualiser',
+  'Onbeperkte opslag',
+  'Nederlandse support',
+];
 
 export default function PricingTeaser() {
   return (
-    <section className="relative bg-mesh-hero overflow-hidden" style={{ paddingTop: 100, paddingBottom: 100 }}>
-      <div className="container max-w-[700px] text-center">
+    <section className="relative bg-bg border-t border-ink-10" style={{ paddingTop: 120, paddingBottom: 120 }}>
+      <div className="container">
         <motion.div
+          className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start"
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
+          viewport={{ once: true, amount: 0.2 }}
           variants={fadeUp}
         >
-          <p className="font-mono text-[12px] font-medium text-ink-40 uppercase tracking-[0.06em] mb-4">
-            Pricing
-          </p>
-          <h2 className="font-heading section-heading text-ink mb-6">
-            Eén prijs. Alles erin.
-          </h2>
-        </motion.div>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
-          <motion.div
-            className="rounded-2xl border border-ink-10 bg-white px-8 py-6 text-center min-w-[200px]"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            custom={0.15}
-            variants={priceCard}
-            whileHover={{ y: -4, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
-          >
-            <p className="text-[13px] font-bold text-ink-40 uppercase tracking-wide mb-1">Starter</p>
-            <div className="flex items-baseline justify-center gap-1">
-              <span className="font-heading text-ink" style={{ fontSize: 40, fontWeight: 900, letterSpacing: '-1px', lineHeight: 1 }}>
-                &euro;49
-              </span>
-              <span className="text-ink-40 text-[15px]">/maand</span>
-            </div>
-            <p className="text-[13px] text-ink-40 mt-1">Tot 3 gebruikers</p>
-          </motion.div>
-
-          <motion.div
-            className="rounded-2xl border border-ink-20 bg-white px-8 py-6 text-center min-w-[200px] shadow-lg relative"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            custom={0.25}
-            variants={priceCard}
-            whileHover={{ y: -6, scale: 1.02, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
-          >
-            <motion.span
-              className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-ink text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.5 }}
+          {/* Left — pricing */}
+          <div className="lg:col-span-5">
+            <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-4">
+              <span className="inline-block w-8 h-px bg-ink-20 mr-3 align-middle" />
+              Pricing
+            </p>
+            <h2
+              className="font-heading text-ink leading-tight mb-8"
+              style={{ fontSize: 'clamp(28px, 3vw, 40px)', fontWeight: 900, letterSpacing: '-1.5px' }}
             >
-              Populair
-            </motion.span>
-            <p className="text-[13px] font-bold text-ink-40 uppercase tracking-wide mb-1">Team</p>
-            <div className="flex items-baseline justify-center gap-1">
-              <span className="font-heading text-ink" style={{ fontSize: 40, fontWeight: 900, letterSpacing: '-1px', lineHeight: 1 }}>
-                &euro;69
-              </span>
-              <span className="text-ink-40 text-[15px]">/maand</span>
+              Eén prijs.<br />Alles erin.
+            </h2>
+
+            {/* Price blocks — raw, no fancy cards */}
+            <div className="space-y-6 mb-10">
+              <div className="flex items-baseline gap-4">
+                <span className="font-heading text-ink font-black tracking-tight" style={{ fontSize: 48, lineHeight: 1 }}>
+                  &euro;49
+                </span>
+                <div>
+                  <p className="text-[14px] font-semibold text-ink">/maand &middot; Starter</p>
+                  <p className="text-[13px] text-ink-40">Tot 3 gebruikers</p>
+                </div>
+              </div>
+
+              <div className="flex items-baseline gap-4">
+                <span className="font-heading text-ink font-black tracking-tight" style={{ fontSize: 48, lineHeight: 1 }}>
+                  &euro;69
+                </span>
+                <div>
+                  <p className="text-[14px] font-semibold text-ink">/maand &middot; Team</p>
+                  <p className="text-[13px] text-ink-40">Onbeperkt gebruikers</p>
+                </div>
+              </div>
             </div>
-            <p className="text-[13px] text-ink-40 mt-1">Onbeperkt gebruikers</p>
-          </motion.div>
-        </div>
 
-        <motion.p
-          className="text-[15px] text-ink-60 mb-6"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-        >
-          Geen kosten per gebruiker. Geen verborgen modules. 30 dagen gratis proberen.
-        </motion.p>
+            <p className="text-[14px] text-ink-40 mb-6">
+              Geen kosten per gebruiker. 30 dagen gratis.
+            </p>
 
-        <motion.div
-          className="flex flex-col sm:flex-row items-center justify-center gap-3"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ type: 'spring', damping: 25, stiffness: 120, delay: 0.5 }}
-        >
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
-            <Button variant="ink" href="https://app.forgedesk.io">
-              Start 30 dagen gratis &rarr;
-            </Button>
-          </motion.div>
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
-            <Button variant="soft" href="/pricing">
-              Bekijk alle details
-            </Button>
-          </motion.div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
+                <Button variant="ink" href="https://app.forgedesk.io">
+                  Start gratis &rarr;
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
+                <Button variant="soft" href="/pricing">
+                  Alle details
+                </Button>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Right — what's included, simple list */}
+          <div className="lg:col-span-7 lg:pt-12">
+            <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-6">
+              Alles inbegrepen
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+              {included.map((item, i) => (
+                <motion.div
+                  key={item}
+                  className="flex items-center gap-3 py-3 border-b border-ink-10"
+                  initial={{ opacity: 0, x: 12 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 120, delay: i * 0.04 }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-sage-vivid shrink-0">
+                    <path d="M4 8l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span className="text-[14px] text-ink">{item}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>
