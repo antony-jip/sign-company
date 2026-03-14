@@ -55,33 +55,45 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-foreground">
+    <div className="min-h-screen flex">
       {/* Left: Branding panel */}
-      <div className="hidden lg:flex flex-col justify-between flex-1 p-12 relative overflow-hidden">
-        {/* Background effects */}
+      <div
+        className="hidden lg:flex flex-col justify-between flex-1 p-12 relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg,
+            #E8866A 0%,
+            #C4A882 18%,
+            #9B8EC4 38%,
+            #8BAFD4 58%,
+            #7EB5A6 78%,
+            #6B9FCC 100%
+          )`,
+        }}
+      >
+        {/* Soft light overlays for depth */}
         <div className="absolute inset-0">
           <motion.div
             className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px]"
-            style={{ background: 'rgba(126, 181, 166, 0.12)' }}
+            style={{ background: 'rgba(255, 255, 255, 0.15)' }}
             animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
             transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
             className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[100px]"
-            style={{ background: 'rgba(232, 134, 106, 0.1)' }}
+            style={{ background: 'rgba(255, 255, 255, 0.1)' }}
             animate={{ x: [0, -20, 0], y: [0, 25, 0] }}
             transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
             className="absolute top-1/2 left-1/2 w-[300px] h-[300px] rounded-full blur-[90px]"
-            style={{ background: 'rgba(155, 142, 196, 0.08)' }}
+            style={{ background: 'rgba(255, 255, 255, 0.08)' }}
             animate={{ x: [0, 25, 0], y: [0, -15, 0] }}
             transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
           />
           <div
-            className="absolute inset-0 opacity-[0.02]"
+            className="absolute inset-0 opacity-[0.04]"
             style={{
-              backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+              backgroundImage: `linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)`,
               backgroundSize: '60px 60px',
             }}
           />
@@ -95,7 +107,7 @@ export function LoginPage() {
           transition={{ duration: 0.5 }}
         >
           <a href={MARKETING_URL} className="inline-flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-lg" style={{ boxShadow: '0 4px 14px hsl(var(--primary) / 0.3)' }}>
+            <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.1)' }}>
               <svg className="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="4" width="20" height="12" rx="2" />
                 <path d="M8 20h8" />
@@ -113,22 +125,22 @@ export function LoginPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.2 }}
         >
-          <svg width="320" height="230" viewBox="0 0 320 230" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-90">
+          <svg width="320" height="230" viewBox="0 0 320 230" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* Desk */}
-            <motion.rect x="40" y="155" width="240" height="8" rx="4" fill="#7EB5A6" opacity="0.3"
+            <motion.rect x="40" y="155" width="240" height="8" rx="4" fill="white" opacity="0.25"
               initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} style={{ originX: 0.5 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             />
             {/* Monitor */}
-            <motion.rect x="100" y="40" width="120" height="85" rx="10" stroke="#8BAFD4" strokeWidth="2" fill="#8BAFD4" fillOpacity="0.06"
+            <motion.rect x="100" y="40" width="120" height="85" rx="10" stroke="white" strokeWidth="2" fill="white" fillOpacity="0.08"
               initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.4 }}
             />
-            <rect x="108" y="48" width="104" height="68" rx="5" fill="#8BAFD4" fillOpacity="0.04" />
+            <rect x="108" y="48" width="104" height="68" rx="5" fill="white" fillOpacity="0.05" />
             {/* Chart line */}
             <motion.polyline
               points="118,96 132,82 148,88 162,72 176,78 190,62 200,66"
-              fill="none" stroke="#7EB5A6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"
+              fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"
               initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
               transition={{ duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
             />
@@ -139,17 +151,17 @@ export function LoginPage() {
               { cx: 176, cy: 78, delay: 1.1 },
               { cx: 200, cy: 66, delay: 1.2 },
             ].map((dot, i) => (
-              <motion.circle key={i} cx={dot.cx} cy={dot.cy} r="3" fill="#7EB5A6"
+              <motion.circle key={i} cx={dot.cx} cy={dot.cy} r="3" fill="white"
                 initial={{ scale: 0 }} animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 15, delay: dot.delay }}
               />
             ))}
             {/* Monitor stand */}
-            <motion.rect x="145" y="125" width="30" height="20" rx="3" fill="#8BAFD4" opacity="0.15"
+            <motion.rect x="145" y="125" width="30" height="20" rx="3" fill="white" opacity="0.15"
               initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} style={{ originY: 0 }}
               transition={{ duration: 0.3, delay: 0.5 }}
             />
-            <motion.rect x="130" y="143" width="60" height="5" rx="2.5" fill="#8BAFD4" opacity="0.2"
+            <motion.rect x="130" y="143" width="60" height="5" rx="2.5" fill="white" opacity="0.2"
               initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} style={{ originX: 0.5 }}
               transition={{ duration: 0.3, delay: 0.55 }}
             />
@@ -158,17 +170,17 @@ export function LoginPage() {
               initial={{ opacity: 0, rotate: -60 }} animate={{ opacity: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 150, damping: 15, delay: 0.8 }}
             >
-              <rect x="0" y="8" width="6" height="45" rx="3" fill="#D4836A" opacity="0.5" />
-              <circle cx="3" cy="6" r="9" stroke="#D4836A" strokeWidth="2" fill="none" opacity="0.4" />
+              <rect x="0" y="8" width="6" height="45" rx="3" fill="white" opacity="0.4" />
+              <circle cx="3" cy="6" r="9" stroke="white" strokeWidth="2" fill="none" opacity="0.35" />
             </motion.g>
             {/* Ruler — right */}
             <motion.g transform="translate(255, 55) rotate(15)"
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
               transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.9 }}
             >
-              <rect x="0" y="0" width="12" height="70" rx="3" fill="#C4A882" opacity="0.35" />
+              <rect x="0" y="0" width="12" height="70" rx="3" fill="white" opacity="0.3" />
               {[0, 1, 2, 3, 4, 5, 6].map(i => (
-                <line key={i} x1="0" y1={8 + i * 9} x2={i % 2 === 0 ? 7 : 5} y2={8 + i * 9} stroke="#C4A882" strokeWidth="1" opacity="0.5" />
+                <line key={i} x1="0" y1={8 + i * 9} x2={i % 2 === 0 ? 7 : 5} y2={8 + i * 9} stroke="white" strokeWidth="1" opacity="0.4" />
               ))}
             </motion.g>
             {/* Document — left bottom */}
@@ -176,9 +188,9 @@ export function LoginPage() {
               initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 1.0 }}
             >
-              <rect x="48" y="100" width="32" height="42" rx="4" fill="#E8866A" fillOpacity="0.1" stroke="#E8866A" strokeWidth="1.5" opacity="0.45" />
+              <rect x="48" y="100" width="32" height="42" rx="4" fill="white" fillOpacity="0.08" stroke="white" strokeWidth="1.5" opacity="0.4" />
               {[0, 1, 2].map(i => (
-                <line key={i} x1="55" y1={113 + i * 8} x2={73 - i * 4} y2={113 + i * 8} stroke="#E8866A" strokeWidth="1.2" strokeLinecap="round" opacity={0.3 - i * 0.05} />
+                <line key={i} x1="55" y1={113 + i * 8} x2={73 - i * 4} y2={113 + i * 8} stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity={0.3 - i * 0.05} />
               ))}
             </motion.g>
             {/* Euro coin */}
@@ -186,18 +198,18 @@ export function LoginPage() {
               initial={{ scale: 0 }} animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 1.1 }}
             >
-              <circle cx="80" cy="175" r="14" stroke="#C4A882" strokeWidth="1.5" opacity="0.4" />
-              <text x="74" y="180" fill="#C4A882" opacity="0.5" fontSize="14" fontWeight="700">€</text>
+              <circle cx="80" cy="175" r="14" stroke="white" strokeWidth="1.5" opacity="0.35" />
+              <text x="74" y="180" fill="white" opacity="0.45" fontSize="14" fontWeight="700">€</text>
             </motion.g>
             {/* Floating particles */}
             {[
-              { cx: 220, cy: 35, r: 3, color: '#9B8EC4', delay: 1.2 },
-              { cx: 245, cy: 50, r: 2, color: '#7EB5A6', delay: 1.3 },
-              { cx: 60, cy: 50, r: 2.5, color: '#E8866A', delay: 1.4 },
-              { cx: 285, cy: 100, r: 2, color: '#8BAFD4', delay: 1.5 },
-              { cx: 50, cy: 170, r: 2, color: '#9B8EC4', delay: 1.6 },
+              { cx: 220, cy: 35, r: 3, delay: 1.2 },
+              { cx: 245, cy: 50, r: 2, delay: 1.3 },
+              { cx: 60, cy: 50, r: 2.5, delay: 1.4 },
+              { cx: 285, cy: 100, r: 2, delay: 1.5 },
+              { cx: 50, cy: 170, r: 2, delay: 1.6 },
             ].map((p, i) => (
-              <motion.circle key={i} cx={p.cx} cy={p.cy} r={p.r} fill={p.color} opacity="0.3"
+              <motion.circle key={i} cx={p.cx} cy={p.cy} r={p.r} fill="white" opacity="0.3"
                 initial={{ scale: 0 }} animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 15, delay: p.delay }}
               />
@@ -218,7 +230,7 @@ export function LoginPage() {
           >
             Van idee tot
             <br />
-            <span style={{ color: '#7EB5A6' }}>
+            <span className="text-white/90">
               oplevering. Geregeld.
             </span>
           </motion.h2>
@@ -229,9 +241,9 @@ export function LoginPage() {
             Offertes, werkbonnen, planning en facturatie — alles voor creatief projectmatig werk vanuit één werkplek.
           </motion.p>
           <motion.div className="flex flex-wrap gap-3" variants={staggerItem}>
-            {features.map(({ icon: Icon, label, color }) => (
-              <div key={label} className="flex items-center gap-2 text-[13px] text-white/60 bg-white/5 border border-white/10 rounded-full px-4 py-2 hover:bg-white/8 transition-colors">
-                <Icon className="w-3.5 h-3.5" style={{ color }} />
+            {features.map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-2 text-[13px] text-white/90 bg-white/15 border border-white/20 rounded-full px-4 py-2 hover:bg-white/20 transition-colors backdrop-blur-sm">
+                <Icon className="w-3.5 h-3.5 text-white/80" />
                 {label}
               </div>
             ))}
@@ -248,7 +260,7 @@ export function LoginPage() {
       </div>
 
       {/* Right: Login form */}
-      <div className="flex items-center justify-center flex-1 p-5 sm:p-8 bg-background lg:rounded-l-[2rem]">
+      <div className="flex items-center justify-center flex-1 p-5 sm:p-8 bg-background lg:rounded-l-[2rem] relative z-10">
         <motion.div
           className="w-full max-w-[400px]"
           variants={staggerContainer}
