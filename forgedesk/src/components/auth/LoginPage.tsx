@@ -56,7 +56,7 @@ export function LoginPage() {
         </div>
 
         <div className="relative z-10">
-          <Link to="/" className="inline-flex items-center gap-2.5 group">
+          <a href={import.meta.env.VITE_MARKETING_URL || 'https://forgedesk.io'} className="inline-flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-lg" style={{ boxShadow: '0 4px 14px hsl(var(--primary) / 0.3)' }}>
               <svg className="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="4" width="20" height="12" rx="2" />
@@ -65,7 +65,7 @@ export function LoginPage() {
               </svg>
             </div>
             <span className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>FORGEdesk</span>
-          </Link>
+          </a>
         </div>
 
         {/* Visual illustration — tools + digital, pastel */}
@@ -150,7 +150,7 @@ export function LoginPage() {
       <div className="flex items-center justify-center flex-1 p-5 sm:p-8 bg-background lg:rounded-l-[2rem]">
         <div className="w-full max-w-[400px]">
           <div className="flex items-center gap-2.5 mb-10 lg:hidden">
-            <Link to="/" className="flex items-center gap-2.5">
+            <a href={import.meta.env.VITE_MARKETING_URL || 'https://forgedesk.io'} className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
                 <svg className="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="4" width="20" height="12" rx="2" />
@@ -159,7 +159,7 @@ export function LoginPage() {
                 </svg>
               </div>
               <span className="text-lg font-bold text-foreground" style={{ fontFamily: 'Manrope, sans-serif' }}>FORGEdesk</span>
-            </Link>
+            </a>
           </div>
 
           <h1 className="text-2xl font-bold text-foreground mb-1.5" style={{ fontFamily: 'Manrope, sans-serif' }}>

@@ -182,7 +182,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-    const host = (req.headers['x-forwarded-host'] || req.headers.host || 'forgedesk-ten.vercel.app') as string
+    const host = (req.headers['x-forwarded-host'] || req.headers.host || 'app.forgedesk.io') as string
     const protocol = (req.headers['x-forwarded-proto'] || 'https') as string
 
     // 1. Haal factuur + items op

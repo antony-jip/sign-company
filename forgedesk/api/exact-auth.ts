@@ -5,7 +5,7 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL |
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const EXACT_AUTH_URL = 'https://start.exactonline.nl/api/oauth2/auth'
-const REDIRECT_URI = 'https://forgedesk-ten.vercel.app/api/exact-callback'
+const REDIRECT_URI = process.env.VITE_APP_URL ? `${process.env.VITE_APP_URL}/api/exact-callback` : 'https://app.forgedesk.io/api/exact-callback'
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 

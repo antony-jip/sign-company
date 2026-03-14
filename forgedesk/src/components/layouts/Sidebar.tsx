@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText,
   Mail, Calendar, PiggyBank, Settings, ChevronLeft,
@@ -249,9 +249,10 @@ export function Sidebar() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div
+      <Link
+        to="/"
         className={cn(
-          'flex items-center h-16 px-4 flex-shrink-0',
+          'flex items-center h-16 px-4 flex-shrink-0 hover:opacity-80 transition-opacity',
           isCollapsed ? 'justify-center' : 'gap-[10px]'
         )}
       >
@@ -263,7 +264,7 @@ export function Sidebar() {
             FORGE<span className="font-medium text-muted-foreground">desk</span>
           </span>
         )}
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 py-3 px-2 overflow-y-auto scrollbar-thin">

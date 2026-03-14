@@ -23,6 +23,14 @@ import {
   Building2, MapPin, Phone, FileText, Users, Package, Rocket, SkipForward
 } from 'lucide-react'
 
+// Step accent colors matching the marketing palette
+const STEP_COLORS = [
+  { bg: 'rgba(126, 181, 166, 0.12)', text: '#7EB5A6' }, // sage
+  { bg: 'rgba(232, 134, 106, 0.12)', text: '#E8866A' }, // coral
+  { bg: 'rgba(139, 175, 212, 0.12)', text: '#8BAFD4' }, // blue
+  { bg: 'rgba(155, 142, 196, 0.12)', text: '#9B8EC4' }, // purple
+]
+
 // ============ STEP 1: Company Name ============
 
 function StepBedrijfsnaam({
@@ -38,20 +46,23 @@ function StepBedrijfsnaam({
 }) {
   return (
     <div className="text-center max-w-md mx-auto">
-      <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-6">
-        <Building2 className="w-6 h-6 text-neutral-700" />
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
+        style={{ backgroundColor: STEP_COLORS[0].bg }}
+      >
+        <Building2 className="w-6 h-6" style={{ color: STEP_COLORS[0].text }} />
       </div>
-      <h2 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+      <h2 className="text-2xl font-bold text-foreground mb-2 font-display">
         Hoe heet je bedrijf?
       </h2>
-      <p className="text-[14px] text-neutral-500 mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <p className="text-[14px] text-muted-foreground mb-8">
         Dit verschijnt op je offertes en facturen.
       </p>
       <Input
         value={naam}
         onChange={(e) => setNaam(e.target.value)}
         placeholder="Bijv. Sign Solutions B.V."
-        className="h-12 rounded-xl border-neutral-200 bg-white text-center text-[16px] font-medium focus:border-black focus:ring-black mb-6"
+        className="h-12 rounded-xl text-center text-[16px] font-medium mb-6"
         autoFocus
         onKeyDown={(e) => {
           if (e.key === 'Enter' && naam.trim()) onNext()
@@ -60,7 +71,7 @@ function StepBedrijfsnaam({
       <Button
         onClick={onNext}
         disabled={!naam.trim() || isSaving}
-        className="h-11 bg-black text-white hover:bg-neutral-800 rounded-xl font-semibold text-[14px] px-8 group"
+        className="h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-[14px] px-8 group"
       >
         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         Volgende
@@ -127,7 +138,6 @@ function StepLogo({
       const previewUrl = URL.createObjectURL(resized)
       setPreview(previewUrl)
 
-      // Upload to Supabase Storage (only if orgId available)
       if (supabase && organisatieId) {
         const path = `logos/${organisatieId}.png`
         const { error: uploadError } = await supabase.storage
@@ -145,7 +155,6 @@ function StepLogo({
 
       toast.success('Logo geüpload!')
     } catch (error: unknown) {
-      // Show preview even if upload failed — user can continue
       if (!preview) toast.error(error instanceof Error ? error.message : 'Upload mislukt, je kunt dit later instellen.')
     } finally {
       setUploading(false)
@@ -160,36 +169,39 @@ function StepLogo({
 
   return (
     <div className="text-center max-w-md mx-auto">
-      <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-6">
-        <Image className="w-6 h-6 text-neutral-700" />
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
+        style={{ backgroundColor: STEP_COLORS[1].bg }}
+      >
+        <Image className="w-6 h-6" style={{ color: STEP_COLORS[1].text }} />
       </div>
-      <h2 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+      <h2 className="text-2xl font-bold text-foreground mb-2 font-display">
         Upload je bedrijfslogo
       </h2>
-      <p className="text-[14px] text-neutral-500 mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <p className="text-[14px] text-muted-foreground mb-8">
         Dit wordt getoond op je offertes en facturen.
       </p>
 
       {/* Drop zone */}
       <div
         className={`relative border-2 border-dashed rounded-2xl p-8 mb-6 transition-colors cursor-pointer ${
-          preview ? 'border-emerald-300 bg-emerald-50/50' : 'border-neutral-300 hover:border-neutral-400 bg-white'
+          preview ? 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-500/10' : 'border-border hover:border-muted-foreground/40 bg-card'
         }`}
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
         onClick={() => fileRef.current?.click()}
       >
         {uploading ? (
-          <Loader2 className="w-8 h-8 text-neutral-400 animate-spin mx-auto" />
+          <Loader2 className="w-8 h-8 text-muted-foreground animate-spin mx-auto" />
         ) : preview ? (
           <img src={preview} alt="Logo preview" className="w-24 h-24 object-contain mx-auto rounded-lg" />
         ) : (
           <>
-            <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-3" />
-            <p className="text-[13px] text-neutral-600" style={{ fontFamily: 'Inter, sans-serif' }}>
-              Sleep je logo hierheen of <span className="text-black font-semibold">klik om te uploaden</span>
+            <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+            <p className="text-[13px] text-muted-foreground">
+              Sleep je logo hierheen of <span className="text-foreground font-semibold">klik om te uploaden</span>
             </p>
-            <p className="text-[11px] text-neutral-400 mt-1">PNG, JPG, SVG — max 400×400px</p>
+            <p className="text-[11px] text-muted-foreground/60 mt-1">PNG, JPG, SVG — max 400×400px</p>
           </>
         )}
         <input
@@ -208,7 +220,7 @@ function StepLogo({
         <Button
           onClick={onSkip}
           variant="outline"
-          className="h-11 rounded-xl border-neutral-300 text-[14px] px-6"
+          className="h-11 rounded-xl text-[14px] px-6"
           disabled={isSaving}
         >
           Overslaan
@@ -216,7 +228,7 @@ function StepLogo({
         <Button
           onClick={onNext}
           disabled={!preview || isSaving}
-          className="h-11 bg-black text-white hover:bg-neutral-800 rounded-xl font-semibold text-[14px] px-8 group"
+          className="h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-[14px] px-8 group"
         >
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Volgende
@@ -255,16 +267,21 @@ function StepBedrijfsgegevens({
     setGegevens({ ...gegevens, [field]: value })
   }
 
+  const inputClassName = "h-11 rounded-xl text-[13.5px]"
+
   return (
     <div className="max-w-lg mx-auto">
       <div className="text-center mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-6">
-          <MapPin className="w-6 h-6 text-neutral-700" />
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
+          style={{ backgroundColor: STEP_COLORS[2].bg }}
+        >
+          <MapPin className="w-6 h-6" style={{ color: STEP_COLORS[2].text }} />
         </div>
-        <h2 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <h2 className="text-2xl font-bold text-foreground mb-2 font-display">
           Bedrijfsgegevens
         </h2>
-        <p className="text-[14px] text-neutral-500" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <p className="text-[14px] text-muted-foreground">
           Deze gegevens komen op je offertes en facturen.
         </p>
       </div>
@@ -272,36 +289,36 @@ function StepBedrijfsgegevens({
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-1 space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">Adres</Label>
+            <Label className="text-[12.5px] font-medium text-foreground/70">Adres</Label>
             <Input
               value={gegevens.adres}
               onChange={(e) => update('adres', e.target.value)}
               placeholder="Straat + nr"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className={inputClassName}
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">Postcode</Label>
+            <Label className="text-[12.5px] font-medium text-foreground/70">Postcode</Label>
             <Input
               value={gegevens.postcode}
               onChange={(e) => update('postcode', e.target.value)}
               placeholder="1234 AB"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className={inputClassName}
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">Plaats</Label>
+            <Label className="text-[12.5px] font-medium text-foreground/70">Plaats</Label>
             <Input
               value={gegevens.plaats}
               onChange={(e) => update('plaats', e.target.value)}
               placeholder="Amsterdam"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className={inputClassName}
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-[12.5px] font-medium text-neutral-700">
+          <Label className="text-[12.5px] font-medium text-foreground/70">
             <Phone className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
             Telefoon
           </Label>
@@ -309,31 +326,31 @@ function StepBedrijfsgegevens({
             value={gegevens.telefoon}
             onChange={(e) => update('telefoon', e.target.value)}
             placeholder="06-12345678"
-            className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+            className={inputClassName}
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">
-              KvK-nummer <span className="text-neutral-400 font-normal">Optioneel</span>
+            <Label className="text-[12.5px] font-medium text-foreground/70">
+              KvK-nummer <span className="text-muted-foreground font-normal">Optioneel</span>
             </Label>
             <Input
               value={gegevens.kvk_nummer}
               onChange={(e) => update('kvk_nummer', e.target.value)}
               placeholder="12345678"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className={inputClassName}
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">
-              BTW-nummer <span className="text-neutral-400 font-normal">Optioneel</span>
+            <Label className="text-[12.5px] font-medium text-foreground/70">
+              BTW-nummer <span className="text-muted-foreground font-normal">Optioneel</span>
             </Label>
             <Input
               value={gegevens.btw_nummer}
               onChange={(e) => update('btw_nummer', e.target.value)}
               placeholder="NL123456789B01"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className={inputClassName}
             />
           </div>
         </div>
@@ -343,7 +360,7 @@ function StepBedrijfsgegevens({
         <Button
           onClick={onSkip}
           variant="outline"
-          className="h-11 rounded-xl border-neutral-300 text-[14px] px-6"
+          className="h-11 rounded-xl text-[14px] px-6"
           disabled={isSaving}
         >
           Overslaan
@@ -351,7 +368,7 @@ function StepBedrijfsgegevens({
         <Button
           onClick={onNext}
           disabled={isSaving}
-          className="h-11 bg-black text-white hover:bg-neutral-800 rounded-xl font-semibold text-[14px] px-8 group"
+          className="h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-[14px] px-8 group"
         >
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Volgende
@@ -392,64 +409,69 @@ function StepBeginnen({
     setKlant({ ...klant, [field]: value })
   }
 
+  const inputClassName = "h-9 rounded-lg text-[13px]"
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="text-center mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-6">
-          <Rocket className="w-6 h-6 text-neutral-700" />
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
+          style={{ backgroundColor: STEP_COLORS[3].bg }}
+        >
+          <Rocket className="w-6 h-6" style={{ color: STEP_COLORS[3].text }} />
         </div>
-        <h2 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <h2 className="text-2xl font-bold text-foreground mb-2 font-display">
           Hoe wil je beginnen?
         </h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Card 1: Zelf beginnen */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-6">
+        <div className="bg-card rounded-2xl border border-border p-6">
           <div className="flex items-center gap-2 mb-3">
-            <Users className="w-5 h-5 text-neutral-700" />
-            <h3 className="text-[15px] font-bold text-black" style={{ fontFamily: 'Manrope, sans-serif' }}>Zelf beginnen</h3>
+            <Users className="w-5 h-5" style={{ color: '#7EB5A6' }} />
+            <h3 className="text-[15px] font-bold text-foreground font-display">Zelf beginnen</h3>
           </div>
-          <p className="text-[13px] text-neutral-500 mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-[13px] text-muted-foreground mb-5">
             Voeg je eerste klant toe en ga direct aan de slag.
           </p>
 
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-[11.5px] font-medium text-neutral-600">Bedrijfsnaam</Label>
+              <Label className="text-[11.5px] font-medium text-foreground/60">Bedrijfsnaam</Label>
               <Input
                 value={klant.bedrijfsnaam}
                 onChange={(e) => updateKlant('bedrijfsnaam', e.target.value)}
                 placeholder="Naam van je klant"
-                className="h-9 rounded-lg border-neutral-200 bg-white text-[13px] focus:border-black focus:ring-black"
+                className={inputClassName}
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[11.5px] font-medium text-neutral-600">Contactpersoon</Label>
+              <Label className="text-[11.5px] font-medium text-foreground/60">Contactpersoon</Label>
               <Input
                 value={klant.contactpersoon}
                 onChange={(e) => updateKlant('contactpersoon', e.target.value)}
                 placeholder="Naam contactpersoon"
-                className="h-9 rounded-lg border-neutral-200 bg-white text-[13px] focus:border-black focus:ring-black"
+                className={inputClassName}
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-[11.5px] font-medium text-neutral-600">Email</Label>
+                <Label className="text-[11.5px] font-medium text-foreground/60">Email</Label>
                 <Input
                   value={klant.email}
                   onChange={(e) => updateKlant('email', e.target.value)}
                   placeholder="email@klant.nl"
-                  className="h-9 rounded-lg border-neutral-200 bg-white text-[13px] focus:border-black focus:ring-black"
+                  className={inputClassName}
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[11.5px] font-medium text-neutral-600">Telefoon</Label>
+                <Label className="text-[11.5px] font-medium text-foreground/60">Telefoon</Label>
                 <Input
                   value={klant.telefoon}
                   onChange={(e) => updateKlant('telefoon', e.target.value)}
                   placeholder="06-..."
-                  className="h-9 rounded-lg border-neutral-200 bg-white text-[13px] focus:border-black focus:ring-black"
+                  className={inputClassName}
                 />
               </div>
             </div>
@@ -458,7 +480,7 @@ function StepBeginnen({
           <Button
             onClick={onKlantToevoegen}
             disabled={!klant.bedrijfsnaam.trim() || isSaving}
-            className="w-full h-10 mt-4 bg-black text-white hover:bg-neutral-800 rounded-xl font-semibold text-[13px]"
+            className="w-full h-10 mt-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-[13px]"
           >
             {savingAction === 'klant' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Klant toevoegen & afronden
@@ -466,26 +488,29 @@ function StepBeginnen({
         </div>
 
         {/* Card 2: Met voorbeelddata */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-6">
+        <div className="bg-card rounded-2xl border border-border p-6">
           <div className="flex items-center gap-2 mb-3">
-            <Package className="w-5 h-5 text-neutral-700" />
-            <h3 className="text-[15px] font-bold text-black" style={{ fontFamily: 'Manrope, sans-serif' }}>Met voorbeelddata</h3>
+            <Package className="w-5 h-5" style={{ color: '#E8866A' }} />
+            <h3 className="text-[15px] font-bold text-foreground font-display">Met voorbeelddata</h3>
           </div>
-          <p className="text-[13px] text-neutral-500 mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-[13px] text-muted-foreground mb-5">
             We vullen de app met 3 klanten, een offerte en een project zodat je kunt rondkijken.
           </p>
 
           <div className="space-y-2 mb-5">
             {[
-              { icon: Users, text: '3 voorbeeldklanten' },
-              { icon: FileText, text: '1 offerte met regelitems' },
-              { icon: Building2, text: '1 project' },
-            ].map(({ icon: Icon, text }) => (
+              { icon: Users, text: '3 voorbeeldklanten', color: '#8BAFD4' },
+              { icon: FileText, text: '1 offerte met regelitems', color: '#9B8EC4' },
+              { icon: Building2, text: '1 project', color: '#7EB5A6' },
+            ].map(({ icon: Icon, text, color }) => (
               <div key={text} className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-3.5 h-3.5 text-neutral-600" />
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: `${color}15` }}
+                >
+                  <Icon className="w-3.5 h-3.5" style={{ color }} />
                 </div>
-                <span className="text-[13px] text-neutral-600" style={{ fontFamily: 'Inter, sans-serif' }}>{text}</span>
+                <span className="text-[13px] text-muted-foreground">{text}</span>
               </div>
             ))}
           </div>
@@ -494,7 +519,7 @@ function StepBeginnen({
             onClick={onDemoData}
             disabled={isSaving}
             variant="outline"
-            className="w-full h-10 rounded-xl border-neutral-300 font-semibold text-[13px]"
+            className="w-full h-10 rounded-xl font-semibold text-[13px]"
           >
             {savingAction === 'demo' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Voorbeelddata laden
@@ -506,8 +531,7 @@ function StepBeginnen({
       <button
         onClick={onSkip}
         disabled={isSaving}
-        className="block mx-auto mt-6 text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
-        style={{ fontFamily: 'Inter, sans-serif' }}
+        className="block mx-auto mt-6 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
       >
         <SkipForward className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
         Overslaan — ik kijk later wel rond
@@ -549,7 +573,6 @@ export function OnboardingWizard() {
     const init = async () => {
       let orgId = organisatieId
 
-      // If no org yet but user exists, find or create one
       if (!orgId && user?.id) {
         try {
           const profile = await getProfile(user.id)
@@ -562,7 +585,6 @@ export function OnboardingWizard() {
               orgId = org.id
             } catch {
               // createOrganisatie may fail if onboarding columns don't exist yet
-              // User can still go through the wizard, data will be saved when columns exist
             }
           }
           if (!cancelled && orgId) setLocalOrgId(orgId)
@@ -600,7 +622,6 @@ export function OnboardingWizard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organisatieId, user?.id])
 
-  // Use localOrgId (which may have been created by the wizard) instead of context organisatieId
   const effectiveOrgId = localOrgId || organisatieId
 
   const goToStep = useCallback(async (step: number) => {
@@ -634,11 +655,10 @@ export function OnboardingWizard() {
         await updateOrganisatie(effectiveOrgId, { naam: bedrijfsnaam.trim(), onboarding_stap: 1 })
       }
     } catch {
-      // Try saving just the name without onboarding_stap (column may not exist yet)
       try {
         if (effectiveOrgId) await updateOrganisatie(effectiveOrgId, { naam: bedrijfsnaam.trim() })
       } catch {
-        // Continue anyway — name save is not critical for flow
+        // Continue anyway
       }
     } finally {
       setIsSaving(false)
@@ -652,7 +672,7 @@ export function OnboardingWizard() {
     try {
       if (effectiveOrgId) await updateOrganisatie(effectiveOrgId, { onboarding_stap: 2 })
     } catch {
-      // Continue anyway — step tracking is not critical
+      // Continue anyway
     } finally {
       setIsSaving(false)
       goToStep(2)
@@ -687,7 +707,6 @@ export function OnboardingWizard() {
         })
       }
     } catch {
-      // Try saving just the business details without onboarding_stap
       try {
         if (effectiveOrgId) {
           await updateOrganisatie(effectiveOrgId, {
@@ -752,7 +771,6 @@ export function OnboardingWizard() {
     setIsSaving(true)
     setSavingAction('demo')
     try {
-      // Create 3 demo clients
       const klant1 = await createKlant({
         user_id: user.id,
         bedrijfsnaam: 'Bakkerij De Gouden Korenaar',
@@ -789,7 +807,6 @@ export function OnboardingWizard() {
         is_demo_data: true,
       } as Parameters<typeof createKlant>[0])
 
-      // Create 1 project linked to first client
       await createProject({
         user_id: user.id,
         klant_id: klant1.id,
@@ -804,7 +821,6 @@ export function OnboardingWizard() {
         is_demo_data: true,
       } as Parameters<typeof createProject>[0])
 
-      // Create 1 offerte linked to first client
       const offerte = await createOfferte({
         user_id: user.id,
         klant_id: klant1.id,
@@ -821,7 +837,6 @@ export function OnboardingWizard() {
         is_demo_data: true,
       } as Parameters<typeof createOfferte>[0])
 
-      // Create 3 offerte items
       await createOfferteItem({
         user_id: user.id,
         offerte_id: offerte.id,
@@ -858,7 +873,6 @@ export function OnboardingWizard() {
         volgorde: 3,
       })
 
-      // Create 3 taken
       const taakBase = {
         user_id: user.id,
         prioriteit: 'medium' as const,
@@ -884,15 +898,14 @@ export function OnboardingWizard() {
     }
   }
 
-  // Skip step 4
   const handleStep4Skip = async () => {
     await finishOnboarding()
   }
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F4F3F0' }}>
-        <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -900,22 +913,39 @@ export function OnboardingWizard() {
   const steps = ['Bedrijfsnaam', 'Logo', 'Gegevens', 'Beginnen']
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F3F0' }}>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
+      {/* Decorative gradient orbs */}
+      <div className="absolute top-[-200px] right-[-100px] w-[400px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none" style={{ background: STEP_COLORS[currentStep].text }} />
+      <div className="absolute bottom-[-150px] left-[-100px] w-[300px] h-[300px] rounded-full blur-[100px] opacity-15 pointer-events-none" style={{ background: '#E8866A' }} />
 
-      {/* Progress bar */}
-      <div className="px-5 pt-6 pb-4">
+      {/* Header with logo + progress */}
+      <div className="px-5 pt-6 pb-4 relative z-10">
         <div className="max-w-2xl mx-auto">
+          {/* Logo */}
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <svg className="w-4 h-4 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="12" rx="2" />
+                <path d="M8 20h8" />
+                <path d="M12 16v4" />
+              </svg>
+            </div>
+            <span className="text-[15px] font-extrabold tracking-[-0.04em] font-display">
+              FORGE<span className="font-medium text-muted-foreground">desk</span>
+            </span>
+          </div>
+
           {/* Step indicators */}
           <div className="flex items-center gap-2 mb-2">
             {steps.map((label, idx) => (
               <div key={label} className="flex-1">
                 <div
-                  className={`h-1.5 rounded-full transition-all duration-500 ${
-                    idx <= currentStep ? 'bg-black' : 'bg-neutral-200'
-                  }`}
+                  className="h-1.5 rounded-full transition-all duration-500"
+                  style={{
+                    backgroundColor: idx <= currentStep
+                      ? STEP_COLORS[currentStep].text
+                      : 'hsl(var(--muted))'
+                  }}
                 />
               </div>
             ))}
@@ -925,9 +955,8 @@ export function OnboardingWizard() {
               <span
                 key={label}
                 className={`text-[11px] font-medium transition-colors ${
-                  idx <= currentStep ? 'text-black' : 'text-neutral-400'
+                  idx <= currentStep ? 'text-foreground' : 'text-muted-foreground'
                 }`}
-                style={{ fontFamily: 'Inter, sans-serif' }}
               >
                 {label}
               </span>
@@ -938,11 +967,11 @@ export function OnboardingWizard() {
 
       {/* Back button */}
       {currentStep > 0 && (
-        <div className="px-5">
+        <div className="px-5 relative z-10">
           <div className="max-w-2xl mx-auto">
             <button
               onClick={() => goToStep(currentStep - 1)}
-              className="flex items-center gap-1 text-[13px] text-neutral-500 hover:text-black transition-colors"
+              className="flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
               disabled={isSaving}
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -953,7 +982,7 @@ export function OnboardingWizard() {
       )}
 
       {/* Step content */}
-      <div className="flex-1 flex items-center justify-center p-5">
+      <div className="flex-1 flex items-center justify-center p-5 relative z-10">
         <div className="w-full transition-opacity duration-300">
           {currentStep === 0 && (
             <StepBedrijfsnaam

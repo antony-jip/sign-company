@@ -6,8 +6,8 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const EXACT_TOKEN_URL = 'https://start.exactonline.nl/api/oauth2/token'
 const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
-const REDIRECT_URI = 'https://forgedesk-ten.vercel.app/api/exact-callback'
-const APP_URL = 'https://forgedesk-ten.vercel.app'
+const REDIRECT_URI = process.env.VITE_APP_URL ? `${process.env.VITE_APP_URL}/api/exact-callback` : 'https://app.forgedesk.io/api/exact-callback'
+const APP_URL = process.env.VITE_APP_URL || 'https://app.forgedesk.io'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
