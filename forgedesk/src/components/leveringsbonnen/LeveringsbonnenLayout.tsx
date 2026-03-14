@@ -211,20 +211,22 @@ export function LeveringsbonnenLayout() {
       </div>
 
       {/* Table */}
+      {gefilterd.length === 0 ? (
+        <Card className="border-dashed">
+          <EmptyState
+            module="default"
+            title="Nog geen leveringsbonnen"
+            description="Maak een leveringsbon aan vanuit een bestelbon."
+            action={
+              <Button variant="outline" size="sm" onClick={() => navigate('/leveringsbonnen/nieuw')}>
+                <Plus className="h-4 w-4 mr-2" /> Nieuwe leveringsbon
+              </Button>
+            }
+          />
+        </Card>
+      ) : (
       <Card>
         <div className="overflow-x-auto">
-          {gefilterd.length === 0 ? (
-            <EmptyState
-              module="default"
-              title="Nog geen leveringsbonnen"
-              description="Maak een leveringsbon aan vanuit een bestelbon."
-              action={
-                <Button variant="outline" size="sm" onClick={() => navigate('/leveringsbonnen/nieuw')}>
-                  <Plus className="h-4 w-4 mr-2" /> Eerste leveringsbon aanmaken
-                </Button>
-              }
-            />
-          ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
@@ -265,9 +267,9 @@ export function LeveringsbonnenLayout() {
                 })}
               </tbody>
             </table>
-          )}
         </div>
       </Card>
+      )}
 
       {/* Delete dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

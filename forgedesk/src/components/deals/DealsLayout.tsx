@@ -434,15 +434,22 @@ export function DealsLayout() {
 
       {/* TABLE VIEW */}
       {viewMode === 'tabel' && (
+        gefilterd.length === 0 ? (
+          <Card className="border-dashed">
+            <EmptyState
+              module="default"
+              title="Nog geen deals"
+              description="Start je sales pipeline door een deal aan te maken."
+              action={
+                <Button onClick={() => setNewDealOpen(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" /> Nieuwe deal
+                </Button>
+              }
+            />
+          </Card>
+        ) : (
         <Card>
           <div className="overflow-x-auto">
-            {gefilterd.length === 0 ? (
-              <EmptyState
-                module="default"
-                title="Nog geen deals"
-                description="Start je sales pipeline door een deal aan te maken."
-              />
-            ) : (
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
@@ -484,9 +491,9 @@ export function DealsLayout() {
                   ))}
                 </tbody>
               </table>
-            )}
           </div>
         </Card>
+        )
       )}
 
       {/* New Deal Dialog */}

@@ -230,20 +230,22 @@ export function BestelbonnenLayout() {
       </div>
 
       {/* Table */}
+      {gefilterd.length === 0 ? (
+        <Card className="border-dashed">
+          <EmptyState
+            module="default"
+            title="Nog geen bestelbonnen"
+            description="Maak een bestelbon aan vanuit een offerte of handmatig."
+            action={
+              <Button variant="outline" size="sm" onClick={() => navigate('/bestelbonnen/nieuw')}>
+                <Plus className="h-4 w-4 mr-2" /> Nieuwe bestelbon
+              </Button>
+            }
+          />
+        </Card>
+      ) : (
       <Card>
         <div className="overflow-x-auto">
-          {gefilterd.length === 0 ? (
-            <EmptyState
-              module="default"
-              title="Nog geen bestelbonnen"
-              description="Maak een bestelbon aan vanuit een offerte of handmatig."
-              action={
-                <Button variant="outline" size="sm" onClick={() => navigate('/bestelbonnen/nieuw')}>
-                  <Plus className="h-4 w-4 mr-2" /> Eerste bestelbon aanmaken
-                </Button>
-              }
-            />
-          ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
@@ -284,9 +286,9 @@ export function BestelbonnenLayout() {
                 })}
               </tbody>
             </table>
-          )}
         </div>
       </Card>
+      )}
 
       {/* Delete dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
