@@ -7,7 +7,7 @@ const supabase = createClient(
 )
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
-const MONTHLY_LIMIT = 5.0
+const MONTHLY_LIMIT = 20.0
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
