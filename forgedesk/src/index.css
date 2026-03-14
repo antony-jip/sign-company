@@ -1494,6 +1494,19 @@ html, body {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* Ensure minimum touch targets on mobile */
+@media (max-width: 640px) {
+  button:not([class*="w-"]):not([class*="h-"]):not([class*="size-"]) {
+    min-height: 44px;
+  }
+  /* Full-width inputs on mobile */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    min-height: 44px;
+  }
+}
+
 /* Hide scrollbar but keep scrolling functional */
 .scrollbar-hide {
   -ms-overflow-style: none;
