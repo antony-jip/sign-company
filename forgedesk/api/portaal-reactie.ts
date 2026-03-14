@@ -171,6 +171,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const emailConfig = emailSettings?.email_instellingen as { gmail_address?: string; app_password?: string; smtp_host?: string; smtp_port?: number } | null
 
+      // Haal branding info op voor email
+      const { data: profileData } = await supabaseAdmin
+        .from('profiles')
+        .select('logo_url, bedrijfsnaam')
+        .eq('id', portaal.user_id)
+        .maybeSingle()
+
+      const { data: docStyleData } = await supabaseAdmin
+        .from('document_styles')
+        .select('primaire_kleur')
+        .eq('user_id', portaal.user_id)
+        .maybeSingle()
+
       if (emailConfig?.gmail_address && emailConfig?.app_password) {
         const onderwerp = type === 'goedkeuring'
           ? `Goedgekeurd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
@@ -195,6 +208,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           quote: bericht?.trim() || undefined,
           ctaLabel: 'Bekijk in FORGEdesk \u2192',
           ctaUrl: `${appUrl}/projecten/${portaal.project_id}`,
+          logoUrl: profileData?.logo_url || undefined,
+          primaireKleur: docStyleData?.primaire_kleur || undefined,
         })
 
         // Fire-and-forget email

@@ -91,7 +91,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 
 export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabProps) {
   const { user } = useAuth()
-  const { profile } = useAppSettings()
+  const { profile, primaireKleur } = useAppSettings()
   const [portaal, setPortaal] = useState<ProjectPortaal | null>(null)
   const [items, setItems] = useState<PortaalItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -378,6 +378,8 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               ctaLabel: 'Bekijk in portaal \u2192',
               ctaUrl: portaalUrl,
               bedrijfsnaam,
+              logoUrl: profile?.logo_url || undefined,
+              primaireKleur: primaireKleur || undefined,
             })
             sendEmail(
               klantEmail,

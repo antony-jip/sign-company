@@ -18,6 +18,10 @@ interface PortalEmailParams {
   bedrijfsnaam?: string
   /** Optional extra line below description (e.g. customer reaction quote) */
   quote?: string
+  /** URL van bedrijfslogo (wordt bovenaan email getoond) */
+  logoUrl?: string
+  /** Primaire merkkleur, bijv. '#5A8264'. Fallback: sage groen */
+  primaireKleur?: string
 }
 
 export function buildPortalEmailHtml(params: PortalEmailParams): string {
@@ -29,10 +33,12 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     ctaUrl,
     bedrijfsnaam,
     quote,
+    logoUrl,
+    primaireKleur,
   } = params
 
-  const sage = '#5A8264'
-  const sageLight = '#E4EBE6'
+  const sage = primaireKleur || '#5A8264'
+  const sageLight = primaireKleur ? `${primaireKleur}18` : '#E4EBE6'
   const bgOuter = '#F4F3F0'
   const bgCard = '#FFFFFF'
   const textDark = '#1A1A1A'
@@ -55,7 +61,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
 
   const quoteBlock = quote
     ? `<tr><td style="padding: 0 0 20px 0;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${sageLight}; border-radius: 8px; border-left: 4px solid ${sage};">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${primaireKleur ? sageLight : '#E4EBE6'}; border-radius: 8px; border-left: 4px solid ${sage};">
           <tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textDark}; font-style: italic; line-height: 1.6;">
             &ldquo;${escapeHtml(quote)}&rdquo;
           </td></tr>
@@ -84,9 +90,12 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     <!-- Logo -->
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
       <tr><td style="padding: 0 0 24px 0; text-align: center;">
-        <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;">
-          <strong>FORGE</strong><span style="font-weight: 300;">desk</span>
-        </span>
+        ${logoUrl
+          ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
+          : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;">
+              <strong>FORGE</strong><span style="font-weight: 300;">desk</span>
+            </span>`
+        }
       </td></tr>
     </table>
     <!-- Card -->

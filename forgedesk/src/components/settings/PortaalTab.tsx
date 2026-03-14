@@ -13,14 +13,21 @@ import {
   MessageSquare,
   Mail,
   Palette,
+  Eye,
+  CheckCircle2,
+  Image,
+  Phone,
+  Globe,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getPortaalInstellingen, updatePortaalInstellingen, getDefaultPortaalInstellingen } from '@/services/supabaseService'
 import type { PortaalInstellingen } from '@/types'
 import { toast } from 'sonner'
 
 export function PortaalTab() {
   const { user } = useAuth()
+  const { profile, primaireKleur } = useAppSettings()
   const [settings, setSettings] = useState<PortaalInstellingen>(getDefaultPortaalInstellingen())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -239,7 +246,7 @@ export function PortaalTab() {
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm font-medium">Bedrijfslogo tonen</Label>
-              <p className="text-xs text-muted-foreground">Toon uw logo op het klantportaal</p>
+              <p className="text-xs text-muted-foreground">Toon uw logo op het klantportaal en in emails</p>
             </div>
             <Switch
               checked={settings.bedrijfslogo_op_portaal}
@@ -250,7 +257,7 @@ export function PortaalTab() {
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm font-medium">Bedrijfskleuren gebruiken</Label>
-              <p className="text-xs text-muted-foreground">Gebruik uw primaire kleur op het portaal</p>
+              <p className="text-xs text-muted-foreground">Gebruik uw primaire kleur op het portaal en in emails</p>
             </div>
             <Switch
               checked={settings.bedrijfskleuren_gebruiken}
@@ -267,6 +274,102 @@ export function PortaalTab() {
               checked={settings.contactgegevens_tonen}
               onCheckedChange={(v) => update('contactgegevens_tonen', v)}
             />
+          </div>
+
+          {/* Live Preview */}
+          <Separator />
+          <div>
+            <Label className="text-sm font-medium flex items-center gap-1.5 mb-3">
+              <Eye className="h-3.5 w-3.5" />
+              Preview
+            </Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Portaal Preview */}
+              <div className="rounded-xl border border-border overflow-hidden bg-[#FAFAF7]">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1.5 bg-muted/50 border-b">Klantportaal</p>
+                {/* Mini header */}
+                <div className="px-3 py-2 bg-white/90 border-b border-[#E8E8E3] flex items-center gap-2">
+                  {settings.bedrijfslogo_op_portaal && profile?.logo_url ? (
+                    <img src={profile.logo_url} alt="" className="h-5 w-auto max-w-[80px] object-contain" />
+                  ) : (
+                    <div
+                      className="w-5 h-5 rounded flex items-center justify-center text-white text-[8px] font-bold"
+                      style={{ backgroundColor: settings.bedrijfskleuren_gebruiken ? primaireKleur : '#1a1a1a' }}
+                    >
+                      {(profile?.bedrijfsnaam || 'B').charAt(0)}
+                    </div>
+                  )}
+                  <span className="text-[10px] font-semibold text-[#1A1A1A] truncate">{profile?.bedrijfsnaam || 'Uw bedrijf'}</span>
+                </div>
+                {/* Mini item card */}
+                <div className="p-3 space-y-2">
+                  <div className="bg-white rounded-lg border border-[#E8E8E3] p-2.5">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div
+                        className="w-5 h-5 rounded flex items-center justify-center"
+                        style={{
+                          backgroundColor: (settings.bedrijfskleuren_gebruiken ? primaireKleur : '#1a1a1a') + '12',
+                          color: settings.bedrijfskleuren_gebruiken ? primaireKleur : '#1a1a1a',
+                        }}
+                      >
+                        <Image className="w-2.5 h-2.5" />
+                      </div>
+                      <span className="text-[10px] font-semibold text-[#1A1A1A]">Tekeningen v2</span>
+                      <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#E4EBE6] text-[#5A8264] font-medium ml-auto">Goedgekeurd</span>
+                    </div>
+                    <div className="bg-[#F2F2ED] rounded h-12 mb-1.5" />
+                    <button
+                      className="w-full text-[9px] font-semibold text-white rounded py-1"
+                      style={{ backgroundColor: settings.bedrijfskleuren_gebruiken ? primaireKleur : '#1a1a1a' }}
+                    >
+                      <CheckCircle2 className="w-2.5 h-2.5 inline mr-0.5" /> Goedkeuren
+                    </button>
+                  </div>
+                  {settings.contactgegevens_tonen && (
+                    <div className="bg-white rounded-lg border border-[#E8E8E3] p-2 flex gap-3">
+                      <span className="text-[8px] text-[#8A8A85] flex items-center gap-0.5"><Phone className="w-2 h-2" /> 06-1234</span>
+                      <span className="text-[8px] text-[#8A8A85] flex items-center gap-0.5"><Mail className="w-2 h-2" /> info@...</span>
+                      <span className="text-[8px] text-[#8A8A85] flex items-center gap-0.5"><Globe className="w-2 h-2" /> website</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email Preview */}
+              <div className="rounded-xl border border-border overflow-hidden bg-[#F4F3F0]">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1.5 bg-muted/50 border-b">Uitgaande email</p>
+                <div className="p-3 flex flex-col items-center">
+                  {/* Logo in email */}
+                  <div className="mb-2">
+                    {settings.bedrijfslogo_op_portaal && profile?.logo_url ? (
+                      <img src={profile.logo_url} alt="" className="h-6 w-auto max-w-[100px] object-contain" />
+                    ) : (
+                      <span className="text-[11px] text-[#1A1A1A]"><strong>FORGE</strong><span className="font-light">desk</span></span>
+                    )}
+                  </div>
+                  {/* Email card */}
+                  <div className="w-full bg-white rounded-lg shadow-sm p-3 space-y-2">
+                    <p className="text-[10px] font-bold text-[#1A1A1A]">Er is een update voor uw project</p>
+                    <div className="border border-[#E8E8E3] rounded p-2">
+                      <p className="text-[9px] font-semibold text-[#1A1A1A]">Tekeningen v2</p>
+                      <p className="text-[8px] text-[#5A5A55]">Bekijk de nieuwe tekeningen</p>
+                    </div>
+                    <div className="flex justify-center">
+                      <span
+                        className="text-[9px] font-semibold text-white rounded py-1 px-4 inline-block"
+                        style={{ backgroundColor: settings.bedrijfskleuren_gebruiken ? primaireKleur : '#5A8264' }}
+                      >
+                        Bekijk in portaal &rarr;
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[8px] text-[#8A8A85] mt-2">Verzonden via FORGEdesk{profile?.bedrijfsnaam ? ` namens ${profile.bedrijfsnaam}` : ''}</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Logo en kleur worden ingesteld bij <strong>Huisstijl</strong> en <strong>Profiel</strong>.
+            </p>
           </div>
         </CardContent>
       </Card>
