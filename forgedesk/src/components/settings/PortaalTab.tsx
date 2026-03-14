@@ -18,6 +18,7 @@ import {
   Image,
   Phone,
   Globe,
+  FileText,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -229,6 +230,80 @@ export function PortaalTab() {
             />
             <p className="text-[11px] text-muted-foreground mt-1">0 = geen herinnering</p>
           </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-medium">Herinneringen ook voor facturen</Label>
+              <p className="text-xs text-muted-foreground">Stuur ook herinneringen voor onbeantwoorde facturen</p>
+            </div>
+            <Switch
+              checked={settings.herinnering_ook_voor_factuur}
+              onCheckedChange={(v) => update('herinnering_ook_voor_factuur', v)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Email teksten */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Email teksten
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Nieuw item email */}
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold">Nieuw item email</Label>
+            <div>
+              <Label className="text-sm font-medium">Onderwerp</Label>
+              <Input
+                value={settings.email_nieuw_item_onderwerp}
+                onChange={(e) => update('email_nieuw_item_onderwerp', e.target.value)}
+                placeholder="{bedrijfsnaam} — {itemtitel}"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Berichttekst</Label>
+              <Textarea
+                value={settings.email_nieuw_item_tekst}
+                onChange={(e) => update('email_nieuw_item_tekst', e.target.value)}
+                placeholder="Er is een nieuw item gedeeld voor project {projectnaam}."
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Herinnering email */}
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold">Herinnering email</Label>
+            <div>
+              <Label className="text-sm font-medium">Onderwerp</Label>
+              <Input
+                value={settings.email_herinnering_onderwerp}
+                onChange={(e) => update('email_herinnering_onderwerp', e.target.value)}
+                placeholder="Herinnering: {itemtitel} wacht op uw reactie"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Berichttekst</Label>
+              <Textarea
+                value={settings.email_herinnering_tekst}
+                onChange={(e) => update('email_herinnering_tekst', e.target.value)}
+                placeholder="U heeft nog niet gereageerd op {itemtitel} voor project {projectnaam}."
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground">
+            Variabelen: <code className="bg-muted px-1 rounded">{'{projectnaam}'}</code> <code className="bg-muted px-1 rounded">{'{itemtitel}'}</code> <code className="bg-muted px-1 rounded">{'{klantNaam}'}</code> <code className="bg-muted px-1 rounded">{'{bedrijfsnaam}'}</code> <code className="bg-muted px-1 rounded">{'{portaalUrl}'}</code>
+          </p>
         </CardContent>
       </Card>
 

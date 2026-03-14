@@ -354,39 +354,56 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       toast.success('Item toegevoegd aan portaal')
       setItemDialogOpen(false)
 
-      // Email naar klant (niet-blokkerend)
+      // Email naar klant (niet-blokkerend, respecteert toggle)
       try {
-        const { getProject, getKlant } = await import('@/services/supabaseService')
-        const { sendEmail } = await import('@/services/gmailService')
-        const { buildPortalEmailHtml } = await import('@/utils/emailTemplate')
-        const project = await getProject(projectId)
-        if (project?.klant_id) {
-          const klant = await getKlant(project.klant_id)
-          const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
-          if (klantEmail && portaal) {
-            const bedrijfsnaam = profile?.bedrijfsnaam || ''
-            const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
-            const plainBody = [
-              `Er is een nieuw item gedeeld voor project ${projectNaam}.`,
-              '', titel, itemOmschrijving || '', '',
-              `Bekijk het hier: ${portaalUrl}`,
-            ].filter(Boolean).join('\n')
-            const htmlBody = buildPortalEmailHtml({
-              heading: `Er is een update voor project ${projectNaam}`,
-              itemTitel: titel,
-              beschrijving: itemOmschrijving || undefined,
-              ctaLabel: 'Bekijk in portaal \u2192',
-              ctaUrl: portaalUrl,
-              bedrijfsnaam,
-              logoUrl: profile?.logo_url || undefined,
-              primaireKleur: primaireKleur || undefined,
-            })
-            sendEmail(
-              klantEmail,
-              `${bedrijfsnaam || 'Nieuw item'} \u2014 ${titel}`,
-              plainBody,
-              { html: htmlBody }
-            ).catch(() => {}) // Niet-blokkerend
+        const { getProject, getKlant, getPortaalInstellingen } = await import('@/services/supabaseService')
+        const portaalSettings = await getPortaalInstellingen(user!.id)
+
+        if (portaalSettings.email_naar_klant_bij_nieuw_item) {
+          const { sendEmail } = await import('@/services/gmailService')
+          const { buildPortalEmailHtml, replaceEmailVariables } = await import('@/utils/emailTemplate')
+          const project = await getProject(projectId)
+          if (project?.klant_id) {
+            const klant = await getKlant(project.klant_id)
+            const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
+            if (klantEmail && portaal) {
+              const bedrijfsnaam = profile?.bedrijfsnaam || ''
+              const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
+              const klantNaam = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || 'klant'
+
+              const vars: Record<string, string> = {
+                projectnaam: projectNaam,
+                itemtitel: titel,
+                klantNaam,
+                bedrijfsnaam: bedrijfsnaam || 'Nieuw item',
+                portaalUrl,
+              }
+
+              const onderwerp = replaceEmailVariables(portaalSettings.email_nieuw_item_onderwerp, vars)
+              const heading = replaceEmailVariables(portaalSettings.email_nieuw_item_tekst, vars)
+
+              const plainBody = [
+                heading,
+                '', titel, itemOmschrijving || '', '',
+                `Bekijk het hier: ${portaalUrl}`,
+              ].filter(Boolean).join('\n')
+              const htmlBody = buildPortalEmailHtml({
+                heading,
+                itemTitel: titel,
+                beschrijving: itemOmschrijving || undefined,
+                ctaLabel: 'Bekijk in portaal \u2192',
+                ctaUrl: portaalUrl,
+                bedrijfsnaam,
+                logoUrl: profile?.logo_url || undefined,
+                primaireKleur: primaireKleur || undefined,
+              })
+              sendEmail(
+                klantEmail,
+                onderwerp,
+                plainBody,
+                { html: htmlBody }
+              ).catch(() => {}) // Niet-blokkerend
+            }
           }
         }
       } catch {

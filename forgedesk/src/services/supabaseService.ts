@@ -4952,6 +4952,11 @@ const DEFAULT_PORTAAL_INSTELLINGEN: PortaalInstellingen = {
   bedrijfslogo_op_portaal: true,
   bedrijfskleuren_gebruiken: true,
   contactgegevens_tonen: true,
+  herinnering_ook_voor_factuur: false,
+  email_nieuw_item_onderwerp: '{bedrijfsnaam} — {itemtitel}',
+  email_nieuw_item_tekst: 'Er is een nieuw item gedeeld voor project {projectnaam}.',
+  email_herinnering_onderwerp: 'Herinnering: {itemtitel} wacht op uw reactie',
+  email_herinnering_tekst: 'U heeft nog niet gereageerd op {itemtitel} voor project {projectnaam}.',
 }
 
 export function getDefaultPortaalInstellingen(): PortaalInstellingen {

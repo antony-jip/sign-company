@@ -124,6 +124,14 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
 </html>`
 }
 
+/**
+ * Replace {variabele} placeholders in email templates.
+ * Supported: {projectnaam}, {itemtitel}, {klantNaam}, {bedrijfsnaam}, {portaalUrl}
+ */
+export function replaceEmailVariables(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match)
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
