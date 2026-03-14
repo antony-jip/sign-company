@@ -22,14 +22,14 @@ import {
   ArrowRight, ArrowLeft, Upload, Image, Loader2,
   Building2, MapPin, Phone, FileText, Users, Package, Rocket, SkipForward
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { STEP_COLORS, snappySpring, staggerContainer, staggerItem, scaleIn } from './constants'
 
-// Step accent colors matching the marketing palette
-const STEP_COLORS = [
-  { bg: 'rgba(126, 181, 166, 0.12)', text: '#7EB5A6' }, // sage
-  { bg: 'rgba(232, 134, 106, 0.12)', text: '#E8866A' }, // coral
-  { bg: 'rgba(139, 175, 212, 0.12)', text: '#8BAFD4' }, // blue
-  { bg: 'rgba(155, 142, 196, 0.12)', text: '#9B8EC4' }, // purple
-]
+const stepTransitionVariants = {
+  enter: (dir: number) => ({ x: dir > 0 ? 200 : -200, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -200 : 200, opacity: 0 }),
+}
 
 // ============ STEP 1: Company Name ============
 
@@ -45,39 +45,44 @@ function StepBedrijfsnaam({
   isSaving: boolean
 }) {
   return (
-    <div className="text-center max-w-md mx-auto">
-      <div
+    <motion.div className="text-center max-w-md mx-auto" variants={staggerContainer} initial="hidden" animate="show">
+      <motion.div
         className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
         style={{ backgroundColor: STEP_COLORS[0].bg }}
+        variants={scaleIn}
       >
         <Building2 className="w-6 h-6" style={{ color: STEP_COLORS[0].text }} />
-      </div>
-      <h2 className="text-2xl font-bold text-foreground mb-2 font-display">
+      </motion.div>
+      <motion.h2 className="text-2xl font-bold text-foreground mb-2 font-display" variants={staggerItem}>
         Hoe heet je bedrijf?
-      </h2>
-      <p className="text-[14px] text-muted-foreground mb-8">
+      </motion.h2>
+      <motion.p className="text-[14px] text-muted-foreground mb-8" variants={staggerItem}>
         Dit verschijnt op je offertes en facturen.
-      </p>
-      <Input
-        value={naam}
-        onChange={(e) => setNaam(e.target.value)}
-        placeholder="Bijv. Sign Solutions B.V."
-        className="h-12 rounded-xl text-center text-[16px] font-medium mb-6"
-        autoFocus
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && naam.trim()) onNext()
-        }}
-      />
-      <Button
-        onClick={onNext}
-        disabled={!naam.trim() || isSaving}
-        className="h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-[14px] px-8 group"
-      >
-        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-        Volgende
-        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-      </Button>
-    </div>
+      </motion.p>
+      <motion.div variants={staggerItem}>
+        <Input
+          value={naam}
+          onChange={(e) => setNaam(e.target.value)}
+          placeholder="Bijv. Sign Solutions B.V."
+          className="h-12 rounded-xl text-center text-[16px] font-medium mb-6"
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && naam.trim()) onNext()
+          }}
+        />
+      </motion.div>
+      <motion.div variants={staggerItem}>
+        <Button
+          onClick={onNext}
+          disabled={!naam.trim() || isSaving}
+          className="h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-[14px] px-8 group"
+        >
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Volgende
+          <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+        </Button>
+      </motion.div>
+    </motion.div>
   )
 }
 
@@ -168,21 +173,23 @@ function StepLogo({
   }
 
   return (
-    <div className="text-center max-w-md mx-auto">
-      <div
+    <motion.div className="text-center max-w-md mx-auto" variants={staggerContainer} initial="hidden" animate="show">
+      <motion.div
         className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
         style={{ backgroundColor: STEP_COLORS[1].bg }}
+        variants={scaleIn}
       >
         <Image className="w-6 h-6" style={{ color: STEP_COLORS[1].text }} />
-      </div>
-      <h2 className="text-2xl font-bold text-foreground mb-2 font-display">
+      </motion.div>
+      <motion.h2 className="text-2xl font-bold text-foreground mb-2 font-display" variants={staggerItem}>
         Upload je bedrijfslogo
-      </h2>
-      <p className="text-[14px] text-muted-foreground mb-8">
+      </motion.h2>
+      <motion.p className="text-[14px] text-muted-foreground mb-8" variants={staggerItem}>
         Dit wordt getoond op je offertes en facturen.
-      </p>
+      </motion.p>
 
       {/* Drop zone */}
+      <motion.div variants={staggerItem}>
       <div
         className={`relative border-2 border-dashed rounded-2xl p-8 mb-6 transition-colors cursor-pointer ${
           preview ? 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-500/10' : 'border-border hover:border-muted-foreground/40 bg-card'
@@ -215,8 +222,9 @@ function StepLogo({
           }}
         />
       </div>
+      </motion.div>
 
-      <div className="flex gap-3 justify-center">
+      <motion.div className="flex gap-3 justify-center" variants={staggerItem}>
         <Button
           onClick={onSkip}
           variant="outline"
@@ -234,8 +242,8 @@ function StepLogo({
           Volgende
           <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
         </Button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 
@@ -270,23 +278,24 @@ function StepBedrijfsgegevens({
   const inputClassName = "h-11 rounded-xl text-[13.5px]"
 
   return (
-    <div className="max-w-lg mx-auto">
+    <motion.div className="max-w-lg mx-auto" variants={staggerContainer} initial="hidden" animate="show">
       <div className="text-center mb-8">
-        <div
+        <motion.div
           className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
           style={{ backgroundColor: STEP_COLORS[2].bg }}
+          variants={scaleIn}
         >
           <MapPin className="w-6 h-6" style={{ color: STEP_COLORS[2].text }} />
-        </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2 font-display">
+        </motion.div>
+        <motion.h2 className="text-2xl font-bold text-foreground mb-2 font-display" variants={staggerItem}>
           Bedrijfsgegevens
-        </h2>
-        <p className="text-[14px] text-muted-foreground">
+        </motion.h2>
+        <motion.p className="text-[14px] text-muted-foreground" variants={staggerItem}>
           Deze gegevens komen op je offertes en facturen.
-        </p>
+        </motion.p>
       </div>
 
-      <div className="space-y-4">
+      <motion.div className="space-y-4" variants={staggerItem}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-1 space-y-1.5">
             <Label className="text-[12.5px] font-medium text-foreground/70">Adres</Label>
@@ -354,9 +363,9 @@ function StepBedrijfsgegevens({
             />
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex gap-3 justify-center mt-8">
+      <motion.div className="flex gap-3 justify-center mt-8" variants={staggerItem}>
         <Button
           onClick={onSkip}
           variant="outline"
@@ -374,8 +383,8 @@ function StepBedrijfsgegevens({
           Volgende
           <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
         </Button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 
@@ -412,17 +421,18 @@ function StepBeginnen({
   const inputClassName = "h-9 rounded-lg text-[13px]"
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <motion.div className="max-w-3xl mx-auto" variants={staggerContainer} initial="hidden" animate="show">
       <div className="text-center mb-8">
-        <div
+        <motion.div
           className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
           style={{ backgroundColor: STEP_COLORS[3].bg }}
+          variants={scaleIn}
         >
           <Rocket className="w-6 h-6" style={{ color: STEP_COLORS[3].text }} />
-        </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2 font-display">
+        </motion.div>
+        <motion.h2 className="text-2xl font-bold text-foreground mb-2 font-display" variants={staggerItem}>
           Hoe wil je beginnen?
-        </h2>
+        </motion.h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -528,15 +538,16 @@ function StepBeginnen({
       </div>
 
       {/* Skip link */}
-      <button
+      <motion.button
         onClick={onSkip}
         disabled={isSaving}
         className="block mx-auto mt-6 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+        variants={staggerItem}
       >
         <SkipForward className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
         Overslaan — ik kijk later wel rond
-      </button>
-    </div>
+      </motion.button>
+    </motion.div>
   )
 }
 
@@ -547,6 +558,7 @@ export function OnboardingWizard() {
   const { organisatieId, user } = useAuth()
   const [localOrgId, setLocalOrgId] = useState<string | null>(organisatieId)
   const [currentStep, setCurrentStep] = useState(0)
+  const [direction, setDirection] = useState(1)
   const [isSaving, setIsSaving] = useState(false)
   const [savingAction, setSavingAction] = useState<'klant' | 'demo' | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
@@ -625,8 +637,9 @@ export function OnboardingWizard() {
   const effectiveOrgId = localOrgId || organisatieId
 
   const goToStep = useCallback(async (step: number) => {
+    setDirection(step > currentStep ? 1 : -1)
     setCurrentStep(step)
-  }, [])
+  }, [currentStep])
 
   const finishOnboarding = useCallback(async () => {
     const orgId = localOrgId || organisatieId
@@ -994,43 +1007,55 @@ export function OnboardingWizard() {
 
       {/* Step content */}
       <div className="flex-1 flex items-center justify-center p-5 relative z-10">
-        <div className="w-full transition-opacity duration-300 bg-card/60 backdrop-blur-xl rounded-3xl border border-border/50 shadow-[0_8px_40px_rgba(0,0,0,0.04)] max-w-3xl mx-auto p-8 sm:p-12">
-          {currentStep === 0 && (
-            <StepBedrijfsnaam
-              naam={bedrijfsnaam}
-              setNaam={setBedrijfsnaam}
-              onNext={handleStep1Next}
-              isSaving={isSaving}
-            />
-          )}
-          {currentStep === 1 && (
-            <StepLogo
-              organisatieId={effectiveOrgId}
-              onNext={handleStep2Next}
-              onSkip={handleStep2Skip}
-              isSaving={isSaving}
-            />
-          )}
-          {currentStep === 2 && (
-            <StepBedrijfsgegevens
-              gegevens={gegevens}
-              setGegevens={setGegevens}
-              onNext={handleStep3Next}
-              onSkip={handleStep3Skip}
-              isSaving={isSaving}
-            />
-          )}
-          {currentStep === 3 && (
-            <StepBeginnen
-              klant={eersteKlant}
-              setKlant={setEersteKlant}
-              onKlantToevoegen={handleAddKlant}
-              onDemoData={handleDemoData}
-              onSkip={handleStep4Skip}
-              isSaving={isSaving}
-              savingAction={savingAction}
-            />
-          )}
+        <div className="w-full bg-card/60 backdrop-blur-xl rounded-3xl border border-border/50 shadow-[0_8px_40px_rgba(0,0,0,0.04)] max-w-3xl mx-auto p-8 sm:p-12 overflow-hidden">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={stepTransitionVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={snappySpring}
+            >
+              {currentStep === 0 && (
+                <StepBedrijfsnaam
+                  naam={bedrijfsnaam}
+                  setNaam={setBedrijfsnaam}
+                  onNext={handleStep1Next}
+                  isSaving={isSaving}
+                />
+              )}
+              {currentStep === 1 && (
+                <StepLogo
+                  organisatieId={effectiveOrgId}
+                  onNext={handleStep2Next}
+                  onSkip={handleStep2Skip}
+                  isSaving={isSaving}
+                />
+              )}
+              {currentStep === 2 && (
+                <StepBedrijfsgegevens
+                  gegevens={gegevens}
+                  setGegevens={setGegevens}
+                  onNext={handleStep3Next}
+                  onSkip={handleStep3Skip}
+                  isSaving={isSaving}
+                />
+              )}
+              {currentStep === 3 && (
+                <StepBeginnen
+                  klant={eersteKlant}
+                  setKlant={setEersteKlant}
+                  onKlantToevoegen={handleAddKlant}
+                  onDemoData={handleDemoData}
+                  onSkip={handleStep4Skip}
+                  isSaving={isSaving}
+                  savingAction={savingAction}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
