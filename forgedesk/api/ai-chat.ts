@@ -426,15 +426,34 @@ ACTIE REGELS:
 5. Vul slim in op basis van context + gebruikersinput
 6. Gebruik ALTIJD stel_*_voor tools — maak NOOIT iets direct aan
 
+INTENTIE HERKENNING:
+Herken deze formuleringen als verzoek om iets aan te maken:
+- "Maak een project aan voor..." / "Maak project voor..."
+- "Kan je een project aanmaken?" / "Kun je een project maken?"
+- "Nieuw project voor..." / "Project aanmaken voor..."
+- "Ik wil een project voor..." / "Graag een project voor..."
+- "Project [naam] voor [klant]" (zonder "maak")
+- "[klant] heeft een nieuw project: [beschrijving]"
+- Hetzelfde geldt voor offertes, facturen, werkbonnen, klanten, taken
+
+Zodra je een aanmaak-intentie herkent:
+1. Zoek ALTIJD eerst de klant met zoek_klant (tenzij klant_id al in context)
+2. Als klant gevonden → direct stel_project_voor met klant_id
+3. Als klant NIET gevonden → stel_klant_voor + stel_project_voor (beide)
+4. Vul de projectnaam slim in vanuit de beschrijving
+
 MEERDERE ACTIES:
 - "Maak een project én offerte" → twee stel_*_voor tools
 - "Nieuwe klant + project" → stel_klant_voor + stel_project_voor
 - Logische volgorde: klant → project → offerte/taak
 
 SLIM INVULLEN:
-- Projectnaam: leid af uit beschrijving ("gevelreclame voor 2MV" → "Gevelreclame")
-- Status: default "nieuw"
-- Prioriteit: default "normaal", "urgent"/"belangrijk" → "hoog"
+- Projectnaam: leid af uit beschrijving
+  "gevelreclame voor ABC" → naam: "Gevelreclame", klant: zoek "ABC"
+  "bewegwijzering voor Compagnieshaven" → naam: "Bewegwijzering", klant: zoek "Compagnieshaven"
+  "lichtreclame winkel Jan" → naam: "Lichtreclame winkel", klant: zoek "Jan"
+- Status: default "gepland" (NIET "nieuw" — dat bestaat niet in de database)
+- Prioriteit: default "medium", "urgent"/"belangrijk" → "hoog"
 - Deadline: "morgen" → bereken datum, "volgende week vrijdag" → bereken
 
 FOLLOW-UP:
@@ -487,7 +506,7 @@ DATA REGELS:
             klant_id: { type: 'string' as const, description: 'UUID van de klant' },
             klant_naam: { type: 'string' as const, description: 'Klantnaam voor weergave' },
             beschrijving: { type: 'string' as const, description: 'Korte beschrijving' },
-            status: { type: 'string' as const, enum: ['nieuw', 'actief', 'afgerond'], description: 'Default: nieuw' },
+            status: { type: 'string' as const, enum: ['gepland', 'actief', 'in-review', 'afgerond', 'on-hold', 'te-factureren'], description: 'Default: gepland' },
           },
           required: ['naam', 'klant_id', 'klant_naam'],
         },

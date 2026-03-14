@@ -299,7 +299,8 @@ export function ForgieChatWidget() {
                         onCreated={(type, id) => handleActieCreated(type, id, actie.navigeer_naar)}
                         onCancel={() => handleActieCancel(actie.type)}
                         disabled={!!actie.wacht_op && !completedActies[actie.wacht_op]}
-                        pendingProjectId={actie.wacht_op === 'klant' ? completedActies['klant'] : completedActies['project']}
+                        pendingKlantId={completedActies['klant']}
+                        pendingProjectId={completedActies['project']}
                       />
                     ))}
                     {navigateCountdown && (

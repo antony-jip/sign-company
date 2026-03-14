@@ -235,7 +235,8 @@ export function ForgieChatPage() {
                     onCreated={(type, id) => handleActieCreated(type, id, actie.navigeer_naar)}
                     onCancel={() => handleActieCancel()}
                     disabled={!!actie.wacht_op && !completedActies[actie.wacht_op]}
-                    pendingProjectId={actie.wacht_op === 'klant' ? completedActies['klant'] : completedActies['project']}
+                    pendingKlantId={completedActies['klant']}
+                    pendingProjectId={completedActies['project']}
                   />
                 ))}
                 {navigateCountdown && (

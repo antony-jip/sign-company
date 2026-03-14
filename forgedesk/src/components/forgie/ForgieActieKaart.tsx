@@ -73,11 +73,14 @@ const DISPLAY_FIELDS: Record<string, string[]> = {
   klant: ['bedrijfsnaam', 'contactpersoon', 'email', 'telefoon'],
 }
 
+const VALID_PROJECT_STATUSES = ['gepland', 'actief', 'in-review', 'afgerond', 'on-hold', 'te-factureren']
+
 interface ForgieActieKaartProps {
   actie: ForgieActie
   onCreated: (type: string, id: string) => void
   onCancel: () => void
   disabled?: boolean
+  pendingKlantId?: string
   pendingProjectId?: string
 }
 
@@ -86,6 +89,7 @@ export function ForgieActieKaart({
   onCreated,
   onCancel,
   disabled = false,
+  pendingKlantId,
   pendingProjectId,
 }: ForgieActieKaartProps) {
   const [editedData, setEditedData] = useState<Record<string, unknown>>({ ...actie.data })
@@ -127,17 +131,20 @@ export function ForgieActieKaart({
         })
         createdId = result.id
       } else if (actie.type === 'project') {
-        const klantId = String(editedData.klant_id || pendingProjectId || '')
+        const klantId = String(editedData.klant_id || pendingKlantId || '')
         if (!klantId) {
           setError('Klant is verplicht voor een project')
           setStatus('idle')
           return
         }
+        const statusValue = VALID_PROJECT_STATUSES.includes(String(editedData.status || ''))
+          ? String(editedData.status)
+          : 'gepland'
         const result = await createProject({
           klant_id: klantId,
           naam: String(editedData.naam || 'Nieuw project'),
           beschrijving: String(editedData.beschrijving || ''),
-          status: (editedData.status as 'gepland' | 'actief') || 'gepland',
+          status: statusValue as 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren',
           prioriteit: 'medium',
           budget: 0,
           besteed: 0,
@@ -190,7 +197,7 @@ export function ForgieActieKaart({
       setError(err instanceof Error ? err.message : 'Aanmaken mislukt')
       setStatus('idle')
     }
-  }, [actie.type, editedData, pendingProjectId, onCreated])
+  }, [actie.type, editedData, pendingKlantId, pendingProjectId, onCreated])
 
   const handleCancel = useCallback(() => {
     setStatus('cancelled')
