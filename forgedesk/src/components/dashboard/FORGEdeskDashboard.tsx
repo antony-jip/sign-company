@@ -85,7 +85,7 @@ export function FORGEdeskDashboard() {
   const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 widget-stagger">
       {/* Welcome header */}
       <div className="flex items-start justify-between">
         <div>
@@ -98,7 +98,7 @@ export function FORGEdeskDashboard() {
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/offertes/nieuw')}
-            className="hidden sm:inline-flex items-center gap-1.5 text-[13px] font-bold px-5 py-2.5 rounded-[12px] bg-foreground text-background hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-[0.96]"
+            className="hidden sm:inline-flex items-center gap-1.5 text-[13px] font-bold px-5 py-2.5 rounded-[12px] bg-foreground text-background hover:shadow-lg hover:-translate-y-0.5 transition-all interactive-button"
           >
             + Nieuwe offerte
           </button>
@@ -113,7 +113,7 @@ export function FORGEdeskDashboard() {
         >
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           <span className="text-[13.5px] font-medium">
-            <strong>{verlopenFacturen.count} facturen verlopen</strong> — {formatCurrency(verlopenFacturen.bedrag)} openstaand
+            <strong>{verlopenFacturen.count} facturen verlopen</strong> — <span className="font-tabular">{formatCurrency(verlopenFacturen.bedrag)}</span> openstaand
           </span>
           <span className="ml-auto text-[13px] font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
             Bekijk →

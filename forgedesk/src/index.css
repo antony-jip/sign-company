@@ -2117,3 +2117,118 @@ html {
   background: currentColor;
   opacity: 0.6;
 }
+
+/* ================================================================
+   UX POLISH — Reusable interaction utilities
+   ================================================================ */
+
+/* Interactive card: subtle lift on hover */
+@layer components {
+  .interactive-card {
+    @apply transition-all duration-200 ease-out;
+  }
+  .interactive-card:hover {
+    @apply shadow-md -translate-y-[1px];
+  }
+
+  /* Interactive table/list row */
+  .interactive-row {
+    @apply transition-colors duration-150 cursor-pointer;
+  }
+  .interactive-row:hover {
+    background: hsl(var(--background));
+  }
+
+  /* Interactive button: press feedback */
+  .interactive-button {
+    @apply transition-all duration-150 ease-out;
+  }
+  .interactive-button:active:not(:disabled) {
+    @apply scale-[0.98];
+  }
+}
+
+/* Delete / destructive button warning glow */
+.btn-destructive-glow {
+  transition: all 0.2s ease;
+}
+.btn-destructive-glow:hover {
+  box-shadow: 0 0 16px rgba(196, 91, 79, 0.25), 0 0 6px rgba(196, 91, 79, 0.15);
+}
+.dark .btn-destructive-glow:hover {
+  box-shadow: 0 0 16px rgba(218, 123, 112, 0.20), 0 0 6px rgba(218, 123, 112, 0.12);
+}
+
+/* Dropdown menu slide-down animation */
+@keyframes dropdownSlideDown {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+[data-radix-popper-content-wrapper] > [data-state="open"] {
+  animation: dropdownSlideDown 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Dialog backdrop fade */
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+[data-state="open"][class*="fixed"][class*="inset-0"][class*="bg-black"] {
+  animation: backdropFadeIn 0.2s ease-out forwards;
+}
+
+/* Number/currency display — always tabular */
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Module-specific input focus rings */
+.focus-ring-sage:focus, .focus-ring-sage:focus-within {
+  border-color: var(--color-sage-border) !important;
+  box-shadow: 0 0 0 3px var(--color-sage) !important;
+}
+.focus-ring-mist:focus, .focus-ring-mist:focus-within {
+  border-color: var(--color-mist-border) !important;
+  box-shadow: 0 0 0 3px var(--color-mist) !important;
+}
+.focus-ring-lavender:focus, .focus-ring-lavender:focus-within {
+  border-color: var(--color-lavender-border) !important;
+  box-shadow: 0 0 0 3px var(--color-lavender) !important;
+}
+.focus-ring-blush:focus, .focus-ring-blush:focus-within {
+  border-color: var(--color-blush-border) !important;
+  box-shadow: 0 0 0 3px var(--color-blush) !important;
+}
+.focus-ring-coral:focus, .focus-ring-coral:focus-within {
+  border-color: var(--color-coral-border) !important;
+  box-shadow: 0 0 0 3px var(--color-coral) !important;
+}
+.focus-ring-cream:focus, .focus-ring-cream:focus-within {
+  border-color: var(--color-cream-border) !important;
+  box-shadow: 0 0 0 3px var(--color-cream) !important;
+}
+
+/* Staggered widget entrance for dashboard */
+.widget-stagger > * {
+  opacity: 0;
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.widget-stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.widget-stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.widget-stagger > *:nth-child(3) { animation-delay: 0.13s; }
+.widget-stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.widget-stagger > *:nth-child(5) { animation-delay: 0.23s; }
+.widget-stagger > *:nth-child(6) { animation-delay: 0.28s; }
+.widget-stagger > *:nth-child(7) { animation-delay: 0.33s; }
+.widget-stagger > *:nth-child(8) { animation-delay: 0.38s; }
+
+/* Value flash — subtle highlight when a number updates */
+@keyframes valueFlash {
+  0% { background-color: var(--color-sage); }
+  100% { background-color: transparent; }
+}
+.value-flash {
+  animation: valueFlash 0.6s ease-out;
+  border-radius: 4px;
+}

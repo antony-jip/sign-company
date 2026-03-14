@@ -372,7 +372,7 @@ export function Sidebar() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden" aria-hidden="true" />
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden" aria-hidden="true" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Mobile sidebar */}
@@ -387,7 +387,7 @@ export function Sidebar() {
       </aside>
 
       {/* Desktop sidebar */}
-      <div className="hidden md:flex flex-shrink-0 relative" style={{ width: isCollapsed ? collapsedWidth : sidebarWidth }}>
+      <div className="hidden md:flex flex-shrink-0 relative transition-[width] duration-200 ease-in-out" style={{ width: isCollapsed ? collapsedWidth : sidebarWidth }}>
         <aside
           className="flex flex-col h-screen wm-sidebar w-full transition-[width] duration-200 ease-in-out"
         >
