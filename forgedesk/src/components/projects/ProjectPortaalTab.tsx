@@ -430,6 +430,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
   async function handleReply(itemId: string) {
     if (!replyText.trim() || !portaal) return
+    const replyContent = replyText.trim()
     setReplySending(true)
     try {
       // Maak een nieuw bericht-item als reactie op het portaal
@@ -455,6 +456,57 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       setReplyItemId(null)
       toast.success('Reactie verstuurd')
       await fetchPortaal()
+
+      // Email naar klant (niet-blokkerend)
+      try {
+        const { getProject, getKlant, getPortaalInstellingen } = await import('@/services/supabaseService')
+        const portaalSettings = await getPortaalInstellingen(user!.id)
+
+        if (portaalSettings.email_naar_klant_bij_nieuw_item) {
+          const { sendEmail } = await import('@/services/gmailService')
+          const { buildPortalEmailHtml, replaceEmailVariables } = await import('@/utils/emailTemplate')
+          const project = await getProject(projectId)
+          if (project?.klant_id) {
+            const klant = await getKlant(project.klant_id)
+            const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
+            if (klantEmail && portaal) {
+              const bedrijfsnaam = profile?.bedrijfsnaam || ''
+              const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
+              const klantNaam = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || 'klant'
+
+              const vars: Record<string, string> = {
+                projectnaam: projectNaam,
+                itemtitel: 'Nieuw bericht',
+                klantNaam,
+                bedrijfsnaam: bedrijfsnaam || 'Update',
+                portaalUrl,
+              }
+
+              const onderwerp = replaceEmailVariables(portaalSettings.email_nieuw_item_onderwerp, vars)
+              const heading = replaceEmailVariables(portaalSettings.email_nieuw_item_tekst, vars)
+
+              const htmlBody = buildPortalEmailHtml({
+                heading,
+                itemTitel: 'Reactie',
+                beschrijving: replyContent,
+                ctaLabel: 'Bekijk in portaal \u2192',
+                ctaUrl: portaalUrl,
+                bedrijfsnaam,
+                logoUrl: profile?.logo_url || undefined,
+                primaireKleur: primaireKleur || undefined,
+              })
+              sendEmail(
+                klantEmail,
+                onderwerp,
+                `${heading}\n\n${replyContent}\n\nBekijk het hier: ${portaalUrl}`,
+                { html: htmlBody }
+              ).catch(() => {})
+            }
+          }
+        }
+      } catch {
+        // Email faalt silently
+      }
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
