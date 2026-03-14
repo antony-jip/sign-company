@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getAppSettings, updateAppSettings, getProfile, updateProfile } from '@/services/supabaseService'
 import type { AppSettings, Profile, PipelineStap } from '@/types'
@@ -134,7 +134,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   // Anthropic key is server-side only (ANTHROPIC_API_KEY in env, not exposed to frontend)
   const anthropicApiKey = ''
 
-  const value: AppSettingsContextType = {
+  const value: AppSettingsContextType = useMemo(() => ({
     settings,
     profile,
     isLoading,
@@ -188,7 +188,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setForgieChatOpen,
     // Quick Actions
     quickActionItems: settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant'],
-  }
+  }), [settings, profile, isLoading, handleUpdateSettings, handleUpdateProfile, refreshSettings, refreshProfile, forgieChatOpen])
 
   return (
     <AppSettingsContext.Provider value={value}>
