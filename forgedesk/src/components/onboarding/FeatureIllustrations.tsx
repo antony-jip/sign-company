@@ -251,7 +251,61 @@ export function IllustratiePlanning() {
   )
 }
 
-// ─── 6. AI Forgie — Chat met sparkles ───────────────────────
+// ─── 6. Email — Inbox met berichten ─────────────────────────
+
+export function IllustratieEmail() {
+  const emails = [
+    { y: 55, from: 'AB', subject: 95, color: '#8BAFD4', delay: 0.25 },
+    { y: 100, from: 'PJ', subject: 75, color: '#9B8EC4', delay: 0.35 },
+    { y: 145, from: 'LV', subject: 85, color: '#E8866A', delay: 0.45 },
+  ]
+
+  return (
+    <svg width="280" height="260" viewBox="0 0 280 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Inbox frame */}
+      <motion.rect
+        x="40" y="25" width="200" height="210" rx="12"
+        fill="currentColor" className="text-card" stroke="#8BAFD4" strokeWidth="1.5" opacity="0.9"
+        initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 0.9 }}
+        transition={{ ...spring, delay: 0.1 }}
+      />
+      {/* Header */}
+      <motion.rect
+        x="60" y="40" width="50" height="7" rx="3.5" fill="#8BAFD4" opacity="0.3"
+        initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} style={{ originX: 0 }}
+        transition={{ ...spring, delay: 0.2 }}
+      />
+      {/* Email rows */}
+      {emails.map((e, i) => (
+        <motion.g key={i}
+          initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+          transition={{ ...spring, delay: e.delay }}
+        >
+          {/* Row bg */}
+          <rect x="50" y={e.y} width="180" height="35" rx="8" fill={e.color} opacity="0.06" />
+          {/* Avatar */}
+          <circle cx={70} cy={e.y + 17} r="10" fill={e.color} opacity="0.2" />
+          <text x={70} y={e.y + 21} textAnchor="middle" fill={e.color} fontSize="8" fontWeight="700">{e.from}</text>
+          {/* Subject line */}
+          <rect x={88} y={e.y + 11} width={e.subject} height="5" rx="2.5" fill={e.color} opacity="0.2" />
+          {/* Preview */}
+          <rect x={88} y={e.y + 21} width={e.subject - 20} height="4" rx="2" fill={e.color} opacity="0.1" />
+        </motion.g>
+      ))}
+      {/* Compose button */}
+      <motion.g
+        initial={{ scale: 0 }} animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.7 }}
+      >
+        <circle cx="210" cy="205" r="18" fill="#8BAFD4" opacity="0.9" />
+        <line x1="203" y1="205" x2="217" y2="205" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        <line x1="210" y1="198" x2="210" y2="212" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      </motion.g>
+    </svg>
+  )
+}
+
+// ─── 7. AI Forgie — Chat met sparkles ───────────────────────
 
 export function IllustratieForgie() {
   return (
@@ -318,5 +372,6 @@ export const FeatureIllustrations = [
   IllustratieKlanten,
   IllustratieWerkbonnen,
   IllustratiePlanning,
+  IllustratieEmail,
   IllustratieForgie,
 ]

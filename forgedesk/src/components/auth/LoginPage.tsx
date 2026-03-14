@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, FileText, CalendarDays, BarChart3 } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, FileText, CalendarDays, BarChart3, ClipboardList, Users } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 const MARKETING_URL = import.meta.env.VITE_MARKETING_URL || 'https://forgedesk.io'
@@ -21,7 +21,9 @@ const staggerItem = {
 
 const features = [
   { icon: FileText, label: 'Offertes & Facturen', color: '#E8866A' },
+  { icon: ClipboardList, label: 'Werkbonnen', color: '#C4A882' },
   { icon: CalendarDays, label: 'Planning', color: '#9B8EC4' },
+  { icon: Users, label: 'Klantenbeheer', color: '#8BAFD4' },
   { icon: BarChart3, label: 'Rapportages', color: '#7EB5A6' },
 ]
 
@@ -214,17 +216,17 @@ export function LoginPage() {
             className="text-4xl font-extrabold text-white leading-tight mb-4 font-display"
             variants={staggerItem}
           >
-            Van offerte tot
+            Van idee tot
             <br />
             <span style={{ color: '#7EB5A6' }}>
-              montage op locatie.
+              oplevering. Geregeld.
             </span>
           </motion.h2>
           <motion.p
             className="text-[15px] text-white/50 leading-relaxed mb-8"
             variants={staggerItem}
           >
-            Beheer je sign-projecten, plan montages, stuur offertes en factureer — alles vanuit één werkplek.
+            Offertes, werkbonnen, planning en facturatie — alles voor creatief projectmatig werk vanuit één werkplek.
           </motion.p>
           <motion.div className="flex flex-wrap gap-3" variants={staggerItem}>
             {features.map(({ icon: Icon, label, color }) => (

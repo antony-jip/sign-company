@@ -1,4 +1,4 @@
-import { FileText, Receipt, Users, ClipboardList, Calendar, Sparkles, type LucideIcon } from 'lucide-react'
+import { FileText, Receipt, Users, ClipboardList, Calendar, Sparkles, Mail, type LucideIcon } from 'lucide-react'
 
 // ─── Feature Data ───────────────────────────────────────────
 
@@ -29,7 +29,7 @@ export const FEATURES: Feature[] = [
     icon: Users,
     title: 'Klanten & projecten',
     description: 'Beheer al je klanten, contactpersonen en projecten op één plek. Volledige historie per klant.',
-    detail: 'CRM speciaal voor sign-bedrijven',
+    detail: 'Alles per klant op één plek',
     color: '#8BAFD4',
   },
   {
@@ -45,6 +45,13 @@ export const FEATURES: Feature[] = [
     description: 'Plan montages en afspraken visueel. Sleep en plan met een interactieve kalender voor je hele team.',
     detail: 'Visuele planning voor je hele team',
     color: '#9B8EC4',
+  },
+  {
+    icon: Mail,
+    title: 'Professionele email',
+    description: 'Verstuur en ontvang emails vanuit FORGEdesk. Gedeelde inbox, templates en automatische opvolging.',
+    detail: 'Gedeelde inbox met slimme opvolging',
+    color: '#8BAFD4',
   },
   {
     icon: Sparkles,
