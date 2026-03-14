@@ -56,6 +56,7 @@ interface AppSettingsContextType {
   // Forgie
   forgieEnabled: boolean
   // Quick Actions
+  quickActionsEnabled: boolean
   quickActionItems: string[]
 }
 
@@ -182,7 +183,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     // Forgie
     forgieEnabled: settings.forgie_enabled ?? true,
     // Quick Actions
-    quickActionItems: settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant'],
+    quickActionsEnabled: settings.quick_actions_enabled ?? true,
+    quickActionItems: Array.isArray(settings.quick_action_items) ? settings.quick_action_items : ['project', 'mail', 'offerte', 'klant'],
   }
 
   return (

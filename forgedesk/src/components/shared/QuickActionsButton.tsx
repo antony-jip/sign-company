@@ -13,7 +13,7 @@ const ALL_ACTIONS = [
 
 export function QuickActionsButton() {
   const navigate = useNavigate()
-  const { forgieEnabled, quickActionItems } = useAppSettings()
+  const { forgieEnabled, quickActionsEnabled, quickActionItems } = useAppSettings()
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -41,7 +41,7 @@ export function QuickActionsButton() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [isOpen])
 
-  if (visibleActions.length === 0) return null
+  if (!quickActionsEnabled || visibleActions.length === 0) return null
 
   const bottomPosition = forgieEnabled ? 100 : 24
 

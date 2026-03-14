@@ -3303,45 +3303,59 @@ function WeergaveTab() {
     {/* Snelkoppelingen */}
     <Card className="mt-4">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="w-5 h-5" />
-          Snelkoppelingen (+)
-        </CardTitle>
-        <CardDescription>Kies welke snelkoppelingen zichtbaar zijn in de + knop rechtsonder</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Snelkoppelingen (+)
+            </CardTitle>
+            <CardDescription className="mt-1.5">Toon de + knop rechtsonder voor snelle acties</CardDescription>
+          </div>
+          <Switch
+            checked={settings.quick_actions_enabled ?? true}
+            onCheckedChange={(checked) => {
+              updateSettings({ quick_actions_enabled: checked })
+              toast.success(checked ? 'Snelkoppelingen ingeschakeld' : 'Snelkoppelingen uitgeschakeld')
+            }}
+          />
+        </div>
       </CardHeader>
+      {(settings.quick_actions_enabled ?? true) && (
       <CardContent className="space-y-3">
-        {[
-          { id: 'project', label: 'Nieuw project', icon: FolderKanban, color: '#8BAFD4' },
-          { id: 'mail', label: 'Nieuwe mail', icon: Mail, color: '#7BABC7' },
-          { id: 'offerte', label: 'Nieuwe offerte', icon: FileText, color: '#E8866A' },
-          { id: 'klant', label: 'Nieuwe klant', icon: Users, color: '#6B9FCC' },
-        ].map((item) => {
-          const Icon = item.icon
-          const items = settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant']
-          const enabled = items.includes(item.id)
-          return (
-            <div key={item.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${item.color}18` }}>
-                  <Icon className="w-4 h-4" style={{ color: item.color }} />
+        {(() => {
+          const activeItems: string[] = Array.isArray(settings.quick_action_items) ? settings.quick_action_items : ['project', 'mail', 'offerte', 'klant']
+          return [
+            { id: 'project', label: 'Nieuw project', icon: FolderKanban, color: '#8BAFD4' },
+            { id: 'mail', label: 'Nieuwe mail', icon: Mail, color: '#7BABC7' },
+            { id: 'offerte', label: 'Nieuwe offerte', icon: FileText, color: '#E8866A' },
+            { id: 'klant', label: 'Nieuwe klant', icon: Users, color: '#6B9FCC' },
+          ].map((item) => {
+            const Icon = item.icon
+            const enabled = activeItems.includes(item.id)
+            return (
+              <div key={item.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${item.color}18` }}>
+                    <Icon className="w-4 h-4" style={{ color: item.color }} />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{item.label}</span>
                 </div>
-                <span className="text-sm font-medium text-foreground">{item.label}</span>
+                <Switch
+                  checked={enabled}
+                  onCheckedChange={(checked) => {
+                    const updated = checked
+                      ? [...activeItems, item.id]
+                      : activeItems.filter((i: string) => i !== item.id)
+                    updateSettings({ quick_action_items: updated })
+                    toast.success(checked ? `${item.label} toegevoegd` : `${item.label} verwijderd`)
+                  }}
+                />
               </div>
-              <Switch
-                checked={enabled}
-                onCheckedChange={(checked) => {
-                  const current = settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant']
-                  const updated = checked
-                    ? [...current, item.id]
-                    : current.filter((i: string) => i !== item.id)
-                  updateSettings({ quick_action_items: updated })
-                  toast.success(checked ? `${item.label} toegevoegd` : `${item.label} verwijderd`)
-                }}
-              />
-            </div>
-          )
-        })}
+            )
+          })
+        })()}
       </CardContent>
+      )}
     </Card>
     </>
     )}

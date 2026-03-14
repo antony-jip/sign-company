@@ -1751,6 +1751,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     email_fetch_limit: 200,
     forgie_enabled: true,
     forgie_bedrijfscontext: '',
+    quick_actions_enabled: true,
     quick_action_items: ['project', 'mail', 'offerte', 'klant'],
     ai_tone_of_voice: '',
     mollie_api_key: '',
