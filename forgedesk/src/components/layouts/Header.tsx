@@ -2,12 +2,13 @@ import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   User, Settings, LogOut,
-  ChevronDown, Monitor, Search, X,
+  ChevronDown, Monitor, Search, X, Sun, Moon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useSidebar } from '@/contexts/SidebarContext'
+import { usePalette } from '@/contexts/PaletteContext'
 import { Button } from '@/components/ui/button'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
@@ -52,6 +53,7 @@ export function Header() {
   const { user, logout } = useAuth()
   const { language, setLanguage } = useLanguage()
   const { setLayoutMode } = useSidebar()
+  const { appTheme, setAppThemeId } = usePalette()
   const location = useLocation()
   const navigate = useNavigate()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -137,6 +139,17 @@ export function Header() {
           aria-label="Zoeken"
         >
           <Search className="w-4 h-4" />
+        </Button>
+        {/* Dark mode toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden sm:flex w-8 h-8 md:w-9 md:h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
+          onClick={() => setAppThemeId(appTheme.isDark ? 'normaal' : 'dark')}
+          title={appTheme.isDark ? 'Licht thema' : 'Donker thema'}
+          aria-label={appTheme.isDark ? 'Schakel naar licht thema' : 'Schakel naar donker thema'}
+        >
+          {appTheme.isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </Button>
         {/* Language toggle (hidden on small mobile) */}
         <Button
