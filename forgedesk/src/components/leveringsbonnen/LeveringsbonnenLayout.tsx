@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
+import { SkeletonTable } from '@/components/ui/skeleton'
 import { cn, formatDate } from '@/lib/utils'
 import type { Leveringsbon, Klant, Project } from '@/types'
 import {
@@ -135,11 +136,16 @@ export function LeveringsbonnenLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
-          <p className="text-sm text-muted-foreground">Leveringsbonnen laden...</p>
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+            <PackageCheck className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground font-display">Leveringsbonnen</h1>
+          </div>
         </div>
+        <SkeletonTable rows={6} cols={4} />
       </div>
     )
   }

@@ -17,6 +17,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { SkeletonTable } from '@/components/ui/skeleton'
 import { cn, formatCurrency, formatDate, getInitials } from '@/lib/utils'
 import type { Deal, Klant, Medewerker } from '@/types'
 import {
@@ -269,11 +270,16 @@ export function DealsLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Deals laden...</p>
+      <div className="space-y-5">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
+            <Briefcase className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-foreground font-display truncate">Sales Pipeline</h1>
+          </div>
         </div>
+        <SkeletonTable rows={6} cols={4} />
       </div>
     )
   }

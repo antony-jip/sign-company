@@ -4,7 +4,7 @@ import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
 import {
   Plus, Search, ClipboardCheck, Trash2, Eye, FileText,
-  Download, Loader2
+  Download,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/empty-state'
+import { SkeletonTable } from '@/components/ui/skeleton'
 import type { Werkbon, Klant, Project, Offerte } from '@/types'
 import {
   getWerkbonnen, deleteWerkbon, getKlanten, getProjecten, getOffertes, getWerkbonItems,
@@ -151,8 +152,21 @@ export function WerkbonnenLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="h-full flex flex-col mod-strip mod-strip-werkbonnen">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
+          <div className="flex items-center gap-3.5">
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #D4836A, #B8654E)' }}>
+              <ClipboardCheck className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="page-title text-foreground truncate">Werkbonnen</h1>
+              <p className="text-[12px] text-muted-foreground mt-0.5">Instructiebladen voor monteurs</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-4 sm:p-6">
+          <SkeletonTable rows={6} cols={5} />
+        </div>
       </div>
     )
   }
