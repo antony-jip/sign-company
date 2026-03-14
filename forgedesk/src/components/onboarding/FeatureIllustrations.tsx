@@ -145,7 +145,58 @@ export function IllustratieKlanten() {
   )
 }
 
-// ─── 4. Werkbonnen — Clipboard met checks ───────────────────
+// ─── 4. Projecten — Kanban bord ──────────────────────────────
+
+export function IllustratieProjecten() {
+  const columns = [
+    { x: 42, label: 'Todo', color: '#8BAFD4', cards: [{ h: 30, delay: 0.3 }, { h: 22, delay: 0.4 }] },
+    { x: 112, label: 'Bezig', color: '#E8866A', cards: [{ h: 35, delay: 0.35 }, { h: 25, delay: 0.45 }, { h: 20, delay: 0.55 }] },
+    { x: 182, label: 'Klaar', color: '#7EB5A6', cards: [{ h: 28, delay: 0.5 }] },
+  ]
+
+  return (
+    <svg width="280" height="260" viewBox="0 0 280 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Board bg */}
+      <motion.rect
+        x="30" y="25" width="220" height="210" rx="12"
+        fill="currentColor" className="text-card" stroke="#8BAFD4" strokeWidth="1.5" opacity="0.9"
+        initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 0.9 }}
+        transition={{ ...spring, delay: 0.1 }}
+      />
+      {/* Columns */}
+      {columns.map((col, ci) => (
+        <motion.g key={ci}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ ...spring, delay: 0.15 + ci * 0.08 }}
+        >
+          {/* Column header */}
+          <rect x={col.x} y="42" width="58" height="6" rx="3" fill={col.color} opacity="0.35" />
+          {/* Divider */}
+          <line x1={col.x} y1="58" x2={col.x + 58} y2="58" stroke={col.color} strokeWidth="0.5" opacity="0.2" />
+          {/* Cards */}
+          {col.cards.map((card, i) => {
+            const y = 66 + i * (card.h + 8)
+            return (
+              <motion.g key={i}
+                initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                transition={{ ...spring, delay: card.delay }}
+              >
+                <rect x={col.x} y={y} width="58" height={card.h} rx="6"
+                  fill={col.color} opacity="0.1" stroke={col.color} strokeWidth="0.8" />
+                <rect x={col.x + 8} y={y + 8} width="30" height="4" rx="2" fill={col.color} opacity="0.25" />
+                {card.h > 24 && (
+                  <rect x={col.x + 8} y={y + 16} width="20" height="3" rx="1.5" fill={col.color} opacity="0.12" />
+                )}
+              </motion.g>
+            )
+          })}
+        </motion.g>
+      ))}
+    </svg>
+  )
+}
+
+// ─── 5. Werkbonnen — Clipboard met checks ───────────────────
 
 export function IllustratieWerkbonnen() {
   return (
@@ -251,7 +302,83 @@ export function IllustratiePlanning() {
   )
 }
 
-// ─── 6. Email — Inbox met berichten ─────────────────────────
+// ─── 7. Visualizer — Canvas met design tools ────────────────
+
+export function IllustratieVisualizer() {
+  return (
+    <svg width="280" height="260" viewBox="0 0 280 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Canvas frame */}
+      <motion.rect
+        x="45" y="25" width="190" height="200" rx="12"
+        fill="currentColor" className="text-card" stroke="#B8A076" strokeWidth="1.5" opacity="0.9"
+        initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 0.9 }}
+        transition={{ ...spring, delay: 0.1 }}
+      />
+      {/* Design preview area */}
+      <motion.rect
+        x="60" y="45" width="120" height="80" rx="8"
+        fill="#B8A076" opacity="0.06" stroke="#B8A076" strokeWidth="1" strokeDasharray="4 3"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ delay: 0.25 }}
+      />
+      {/* Shape 1 - rectangle */}
+      <motion.rect
+        x="75" y="60" width="40" height="30" rx="4" fill="#E8866A" opacity="0.2"
+        initial={{ scale: 0 }} animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.35 }}
+      />
+      {/* Shape 2 - circle */}
+      <motion.circle
+        cx="145" cy="85" r="18" fill="#9B8EC4" opacity="0.2"
+        initial={{ scale: 0 }} animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.45 }}
+      />
+      {/* Pen tool path */}
+      <motion.path
+        d="M80 100 Q100 70 130 90 Q155 110 165 80"
+        stroke="#B8A076" strokeWidth="2" fill="none" opacity="0.5" strokeLinecap="round"
+        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+        transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      />
+      {/* Color palette */}
+      {[
+        { cx: 72, color: '#E8866A', delay: 0.6 },
+        { cx: 92, color: '#7EB5A6', delay: 0.65 },
+        { cx: 112, color: '#8BAFD4', delay: 0.7 },
+        { cx: 132, color: '#9B8EC4', delay: 0.75 },
+        { cx: 152, color: '#B8A076', delay: 0.8 },
+      ].map((dot, i) => (
+        <motion.circle key={i}
+          cx={dot.cx} cy="150" r="8" fill={dot.color} opacity="0.4"
+          initial={{ scale: 0 }} animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 15, delay: dot.delay }}
+        />
+      ))}
+      {/* Tool icons area */}
+      <motion.g
+        initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+        transition={{ ...spring, delay: 0.85 }}
+      >
+        <rect x="195" y="50" width="28" height="28" rx="6" fill="#B8A076" opacity="0.12" />
+        <rect x="195" y="86" width="28" height="28" rx="6" fill="#B8A076" opacity="0.08" />
+        <rect x="195" y="122" width="28" height="28" rx="6" fill="#B8A076" opacity="0.05" />
+      </motion.g>
+      {/* Layers hint */}
+      <motion.rect
+        x="60" y="175" width="160" height="8" rx="4" fill="#B8A076" opacity="0.1"
+        initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} style={{ originX: 0 }}
+        transition={{ ...spring, delay: 0.9 }}
+      />
+      <motion.rect
+        x="60" y="190" width="100" height="6" rx="3" fill="#B8A076" opacity="0.07"
+        initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} style={{ originX: 0 }}
+        transition={{ ...spring, delay: 0.95 }}
+      />
+    </svg>
+  )
+}
+
+// ─── 8. Email — Inbox met berichten ─────────────────────────
 
 export function IllustratieEmail() {
   const emails = [
@@ -370,8 +497,10 @@ export const FeatureIllustrations = [
   IllustratieOffertes,
   IllustratieFacturen,
   IllustratieKlanten,
+  IllustratieProjecten,
   IllustratieWerkbonnen,
   IllustratiePlanning,
+  IllustratieVisualizer,
   IllustratieEmail,
   IllustratieForgie,
 ]

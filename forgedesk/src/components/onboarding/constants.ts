@@ -1,4 +1,4 @@
-import { FileText, Receipt, Users, ClipboardList, Calendar, Sparkles, Mail, type LucideIcon } from 'lucide-react'
+import { FileText, Receipt, Users, ClipboardList, Calendar, Sparkles, Mail, FolderKanban, PenTool, type LucideIcon } from 'lucide-react'
 
 // ─── Feature Data ───────────────────────────────────────────
 
@@ -27,9 +27,16 @@ export const FEATURES: Feature[] = [
   },
   {
     icon: Users,
-    title: 'Klanten & projecten',
-    description: 'Beheer al je klanten, contactpersonen en projecten op één plek. Volledige historie per klant.',
+    title: 'Klantenbeheer',
+    description: 'Beheer al je klanten, contactpersonen en historie op één plek. Altijd inzicht in wie wat wanneer.',
     detail: 'Alles per klant op één plek',
+    color: '#6B9FCC',
+  },
+  {
+    icon: FolderKanban,
+    title: 'Projecten',
+    description: 'Houd grip op al je projecten met status tracking, deadlines en teamtoewijzing. Van intake tot oplevering.',
+    detail: 'Van intake tot oplevering in beeld',
     color: '#8BAFD4',
   },
   {
@@ -47,11 +54,18 @@ export const FEATURES: Feature[] = [
     color: '#9B8EC4',
   },
   {
+    icon: PenTool,
+    title: 'Visualizer',
+    description: 'Ontwerp en presenteer je creatieve concepten. Toon klanten direct hoe het eindresultaat eruitziet.',
+    detail: 'Presenteer ontwerpen aan je klant',
+    color: '#B8A076',
+  },
+  {
     icon: Mail,
     title: 'Professionele email',
     description: 'Verstuur en ontvang emails vanuit FORGEdesk. Gedeelde inbox, templates en automatische opvolging.',
     detail: 'Gedeelde inbox met slimme opvolging',
-    color: '#8BAFD4',
+    color: '#7BABC7',
   },
   {
     icon: Sparkles,
