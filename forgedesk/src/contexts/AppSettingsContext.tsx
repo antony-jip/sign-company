@@ -55,6 +55,8 @@ interface AppSettingsContextType {
   emailFetchLimit: number
   // Forgie
   forgieEnabled: boolean
+  forgieChatOpen: boolean
+  setForgieChatOpen: (open: boolean) => void
   // Quick Actions
   quickActionItems: string[]
 }
@@ -66,6 +68,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(() => getDefaultAppSettings(''))
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [forgieChatOpen, setForgieChatOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -181,6 +184,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     emailFetchLimit: settings.email_fetch_limit ?? 200,
     // Forgie
     forgieEnabled: settings.forgie_enabled ?? true,
+    forgieChatOpen,
+    setForgieChatOpen,
     // Quick Actions
     quickActionItems: settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant'],
   }

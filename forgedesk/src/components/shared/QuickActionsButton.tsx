@@ -13,7 +13,7 @@ const ALL_ACTIONS = [
 
 export function QuickActionsButton() {
   const navigate = useNavigate()
-  const { forgieEnabled, quickActionItems } = useAppSettings()
+  const { forgieEnabled, forgieChatOpen, quickActionItems } = useAppSettings()
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -42,6 +42,7 @@ export function QuickActionsButton() {
   }, [isOpen])
 
   if (visibleActions.length === 0) return null
+  if (forgieEnabled && forgieChatOpen) return null
 
   const bottomPosition = forgieEnabled ? 100 : 24
 

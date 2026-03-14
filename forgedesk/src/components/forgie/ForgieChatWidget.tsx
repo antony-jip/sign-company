@@ -63,10 +63,9 @@ function ForgieMascot({ size = 40, className }: { size?: number; className?: str
 const FORGIE_INTRO_SEEN_KEY = 'forgie-intro-seen'
 
 export function ForgieChatWidget() {
-  const { forgieEnabled } = useAppSettings()
+  const { forgieEnabled, forgieChatOpen: isOpen, setForgieChatOpen: setIsOpen } = useAppSettings()
   const location = useLocation()
   const navigate = useNavigate()
-  const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ForgieChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
