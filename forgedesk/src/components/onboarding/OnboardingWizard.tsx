@@ -913,10 +913,21 @@ export function OnboardingWizard() {
   const steps = ['Bedrijfsnaam', 'Logo', 'Gegevens', 'Beginnen']
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
-      {/* Decorative gradient orbs */}
-      <div className="absolute top-[-200px] right-[-100px] w-[400px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none" style={{ background: STEP_COLORS[currentStep].text }} />
-      <div className="absolute bottom-[-150px] left-[-100px] w-[300px] h-[300px] rounded-full blur-[100px] opacity-15 pointer-events-none" style={{ background: '#E8866A' }} />
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{
+      background: `
+        radial-gradient(ellipse 80% 60% at 20% 10%, ${STEP_COLORS[currentStep].text}18 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 85% 30%, #E8866A14 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 50% 90%, #9B8EC412 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 10% 70%, #7EB5A610 0%, transparent 50%),
+        radial-gradient(ellipse 40% 35% at 75% 80%, #C4A88210 0%, transparent 45%),
+        hsl(var(--background))
+      `,
+      transition: 'background 0.8s ease'
+    }}>
+      {/* Animated accent orbs */}
+      <div className="absolute top-[-120px] right-[-60px] w-[500px] h-[500px] rounded-full blur-[100px] opacity-25 pointer-events-none transition-all duration-1000" style={{ background: `linear-gradient(135deg, ${STEP_COLORS[currentStep].text}, ${STEP_COLORS[(currentStep + 1) % 4].text})` }} />
+      <div className="absolute bottom-[-100px] left-[-80px] w-[400px] h-[400px] rounded-full blur-[90px] opacity-20 pointer-events-none transition-all duration-1000" style={{ background: `linear-gradient(225deg, #E8866A, #9B8EC4)` }} />
+      <div className="absolute top-[40%] left-[60%] w-[250px] h-[250px] rounded-full blur-[80px] opacity-15 pointer-events-none transition-all duration-1000" style={{ background: STEP_COLORS[(currentStep + 2) % 4].text }} />
 
       {/* Header with logo + progress */}
       <div className="px-5 pt-6 pb-4 relative z-10">
@@ -983,7 +994,7 @@ export function OnboardingWizard() {
 
       {/* Step content */}
       <div className="flex-1 flex items-center justify-center p-5 relative z-10">
-        <div className="w-full transition-opacity duration-300">
+        <div className="w-full transition-opacity duration-300 bg-card/60 backdrop-blur-xl rounded-3xl border border-border/50 shadow-[0_8px_40px_rgba(0,0,0,0.04)] max-w-3xl mx-auto p-8 sm:p-12">
           {currentStep === 0 && (
             <StepBedrijfsnaam
               naam={bedrijfsnaam}
