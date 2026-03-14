@@ -601,6 +601,8 @@ export interface AppSettings {
   // Forgie
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;
+  // Quick Actions
+  quick_action_items: string[];
   // AI schrijfstijl per gebruiker
   ai_tone_of_voice: string;
   // Mollie betaalintegratie

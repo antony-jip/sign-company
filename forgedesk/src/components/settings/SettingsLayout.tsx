@@ -58,6 +58,7 @@ import {
   Loader2,
   Package,
   Link2,
+  FolderKanban,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -3295,6 +3296,50 @@ function WeergaveTab() {
             }}
           />
         </div>
+      </CardContent>
+    </Card>
+
+    {/* Snelkoppelingen */}
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Plus className="w-5 h-5" />
+          Snelkoppelingen (+)
+        </CardTitle>
+        <CardDescription>Kies welke snelkoppelingen zichtbaar zijn in de + knop rechtsonder</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {[
+          { id: 'project', label: 'Nieuw project', icon: FolderKanban, color: '#8BAFD4' },
+          { id: 'mail', label: 'Nieuwe mail', icon: Mail, color: '#7BABC7' },
+          { id: 'offerte', label: 'Nieuwe offerte', icon: FileText, color: '#E8866A' },
+          { id: 'klant', label: 'Nieuwe klant', icon: Users, color: '#6B9FCC' },
+        ].map((item) => {
+          const Icon = item.icon
+          const items = settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant']
+          const enabled = items.includes(item.id)
+          return (
+            <div key={item.id} className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${item.color}18` }}>
+                  <Icon className="w-4 h-4" style={{ color: item.color }} />
+                </div>
+                <span className="text-sm font-medium text-foreground">{item.label}</span>
+              </div>
+              <Switch
+                checked={enabled}
+                onCheckedChange={(checked) => {
+                  const current = settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant']
+                  const updated = checked
+                    ? [...current, item.id]
+                    : current.filter((i: string) => i !== item.id)
+                  updateSettings({ quick_action_items: updated })
+                  toast.success(checked ? `${item.label} toegevoegd` : `${item.label} verwijderd`)
+                }}
+              />
+            </div>
+          )
+        })}
       </CardContent>
     </Card>
     )}
