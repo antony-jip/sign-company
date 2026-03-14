@@ -7,7 +7,7 @@ const supabase = createClient(
 )
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
-const MONTHLY_LIMIT = 20.0
+const MONTHLY_LIMIT = 5.0
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -343,12 +343,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Action "chat" en question zijn verplicht' })
     }
 
-    // Check usage limit
+    // Check usage limit — vriendelijk bericht, geen harde blokkade
     const withinLimit = await checkUsageLimit(userId)
     if (!withinLimit) {
-      return res.status(429).json({
-        error: 'Forgie limiet bereikt',
-        message: 'Je hebt het maximum van \u20AC5 aan Forgie-gebruik bereikt deze maand.',
+      return res.status(200).json({
+        answer: 'Je Forgie-tegoed voor deze maand is op! \u{1F98A}\n\nJe kunt extra tegoed bijkopen in je **[Forgie-instellingen](/instellingen/forgie)**.\n\nIk sta weer voor je klaar zodra je tegoed hebt aangevuld!',
+        acties: [],
+        usage: MONTHLY_LIMIT,
+        limiet: MONTHLY_LIMIT,
       })
     }
 
@@ -602,7 +604,13 @@ DATA REGELS:
         const errorData = await response.json().catch(() => ({})) as Record<string, unknown>
         console.error('Anthropic API fout:', response.status, errorData)
         if (response.status === 429) {
-          return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+          const currentUsage = await getUsage(userId).catch(() => ({ geschatte_kosten: 0 }))
+          return res.status(200).json({
+            answer: 'Even geduld! \u{1F98A} Ik ben even druk bezet. Probeer het over een paar seconden nog eens.',
+            acties: [],
+            usage: currentUsage.geschatte_kosten,
+            limiet: MONTHLY_LIMIT,
+          })
         }
         return res.status(response.status).json({
           error: (errorData?.error as Record<string, string>)?.message || 'Anthropic API fout',
