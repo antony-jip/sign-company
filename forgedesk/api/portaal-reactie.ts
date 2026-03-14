@@ -200,11 +200,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
 
       // Stuur email naar gebruiker via user_email_settings (encrypted credentials)
-      const { data: emailSettings } = await supabaseAdmin
+      const { data: emailSettings, error: emailSettingsError } = await supabaseAdmin
         .from('user_email_settings')
         .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
         .eq('user_id', portaal.user_id)
         .maybeSingle()
+
+      console.log('[portaal-reactie] email lookup:', {
+        user_id: portaal.user_id,
+        found: !!emailSettings,
+        has_gmail: !!emailSettings?.gmail_address,
+        has_password: !!emailSettings?.encrypted_app_password,
+        has_encryption_key: !!ENCRYPTION_KEY,
+        error: emailSettingsError?.message || null,
+      })
 
       // Haal branding info op voor email
       const { data: profileData } = await supabaseAdmin
@@ -257,16 +266,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           auth: { user: emailSettings.gmail_address, pass: password },
         })
 
+        console.log('[portaal-reactie] sending email to:', emailSettings.gmail_address, 'subject:', onderwerp)
         transporter.sendMail({
           from: emailSettings.gmail_address,
           to: emailSettings.gmail_address,
           subject: onderwerp,
           text: emailBody,
           html: emailHtml,
-        }).catch(err => console.warn('Email naar gebruiker mislukt:', err))
+        }).then(() => {
+          console.log('[portaal-reactie] email sent successfully')
+        }).catch(err => console.warn('[portaal-reactie] email send failed:', err))
+      } else {
+        console.log('[portaal-reactie] skipping email — missing credentials or encryption key')
       }
     } catch (notifErr) {
-      console.warn('Notificatie/email bij reactie mislukt:', notifErr)
+      console.error('[portaal-reactie] notificatie/email error:', notifErr)
     }
 
     return res.status(201).json({ reactie })
