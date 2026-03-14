@@ -14,6 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { SkeletonTable } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn, formatDate } from '@/lib/utils'
 import type { Leveringsbon, Klant, Project } from '@/types'
 import {
@@ -213,13 +214,16 @@ export function LeveringsbonnenLayout() {
       <Card>
         <div className="overflow-x-auto">
           {gefilterd.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-              <PackageCheck className="h-10 w-10 opacity-30" />
-              <p className="text-sm font-medium">Geen leveringsbonnen gevonden</p>
-              <Button variant="outline" size="sm" onClick={() => navigate('/leveringsbonnen/nieuw')}>
-                <Plus className="h-4 w-4 mr-2" /> Eerste leveringsbon aanmaken
-              </Button>
-            </div>
+            <EmptyState
+              module="default"
+              title="Nog geen leveringsbonnen"
+              description="Maak een leveringsbon aan vanuit een bestelbon."
+              action={
+                <Button variant="outline" size="sm" onClick={() => navigate('/leveringsbonnen/nieuw')}>
+                  <Plus className="h-4 w-4 mr-2" /> Eerste leveringsbon aanmaken
+                </Button>
+              }
+            />
           ) : (
             <table className="w-full">
               <thead>

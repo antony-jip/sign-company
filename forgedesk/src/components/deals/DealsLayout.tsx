@@ -18,6 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { SkeletonTable } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn, formatCurrency, formatDate, getInitials } from '@/lib/utils'
 import type { Deal, Klant, Medewerker } from '@/types'
 import {
@@ -436,10 +437,11 @@ export function DealsLayout() {
         <Card>
           <div className="overflow-x-auto">
             {gefilterd.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-                <Briefcase className="h-10 w-10 opacity-30" />
-                <p className="text-sm font-medium">Geen deals gevonden</p>
-              </div>
+              <EmptyState
+                module="default"
+                title="Nog geen deals"
+                description="Start je sales pipeline door een deal aan te maken."
+              />
             ) : (
               <table className="w-full">
                 <thead>

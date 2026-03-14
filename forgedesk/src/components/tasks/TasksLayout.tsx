@@ -48,6 +48,8 @@ import {
   Wrench,
 } from 'lucide-react'
 import { SkeletonTable } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
@@ -560,6 +562,40 @@ export function TasksLayout() {
         </div>
         <div className="p-4">
           <SkeletonTable rows={6} cols={4} />
+        </div>
+      </div>
+    )
+  }
+
+  if (taken.length === 0) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
+        <div className="flex items-center px-4 sm:px-5 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #C4A882, #A88E66)' }}>
+              <CheckSquare className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="page-title text-foreground truncate">Taken</h1>
+              <p className="text-[12px] text-muted-foreground mt-0.5">
+                Productie &amp; oplevering
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="p-4">
+          <Card className="border-dashed">
+            <EmptyState
+              module="taken"
+              title="Nog geen taken"
+              description="Maak een taak aan of koppel taken aan een project."
+              action={
+                <Button onClick={() => setFabOpen(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" /> Nieuwe taak
+                </Button>
+              }
+            />
+          </Card>
         </div>
       </div>
     )
