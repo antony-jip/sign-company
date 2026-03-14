@@ -135,7 +135,7 @@ export function WelkomPagina() {
                     style={{ backgroundColor: `${currentFeature!.color}18` }}
                     variants={scaleIn}
                   >
-                    <currentFeature!.icon className="w-6 h-6" style={{ color: currentFeature!.color }} />
+                    {currentFeature && <currentFeature.icon className="w-6 h-6" style={{ color: currentFeature.color }} />}
                   </motion.div>
 
                   <motion.h2
