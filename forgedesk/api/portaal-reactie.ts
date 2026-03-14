@@ -1,5 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { createTransport } from 'nodemailer'
+import crypto from 'crypto'
+
+const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
+
+function decrypt(encrypted: string): string {
+  if (!ENCRYPTION_KEY) throw new Error('No encryption key')
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
+  const [ivHex, encHex] = encrypted.split(':')
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
+  let decrypted = decipher.update(encHex, 'hex', 'utf8')
+  decrypted += decipher.final('utf8')
+  return decrypted
+}
 
 // ---- Inline email template (Vercel bundelt geen lokale imports in api/) ----
 function escapeHtml(str: string): string {
@@ -185,14 +199,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gelezen: false,
       })
 
-      // Stuur email naar gebruiker
+      // Stuur email naar gebruiker via user_email_settings (encrypted credentials)
       const { data: emailSettings } = await supabaseAdmin
-        .from('app_settings')
-        .select('email_instellingen')
+        .from('user_email_settings')
+        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
         .eq('user_id', portaal.user_id)
         .maybeSingle()
-
-      const emailConfig = emailSettings?.email_instellingen as { gmail_address?: string; app_password?: string; smtp_host?: string; smtp_port?: number } | null
 
       // Haal branding info op voor email
       const { data: profileData } = await supabaseAdmin
@@ -207,7 +219,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('user_id', portaal.user_id)
         .maybeSingle()
 
-      if (emailConfig?.gmail_address && emailConfig?.app_password) {
+      if (emailSettings?.gmail_address && emailSettings?.encrypted_app_password && ENCRYPTION_KEY) {
+        const password = decrypt(emailSettings.encrypted_app_password)
+
         const onderwerp = type === 'goedkeuring'
           ? `Goedgekeurd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
           : type === 'revisie'
@@ -235,20 +249,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           primaireKleur: docStyleData?.primaire_kleur || undefined,
         })
 
-        // Fire-and-forget email
-        fetch(`${appUrl}/api/send-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            gmail_address: emailConfig.gmail_address,
-            app_password: emailConfig.app_password,
-            smtp_host: emailConfig.smtp_host,
-            smtp_port: emailConfig.smtp_port,
-            to: emailConfig.gmail_address, // Naar de gebruiker zelf
-            subject: onderwerp,
-            body: emailBody,
-            html: emailHtml,
-          }),
+        // Stuur direct via nodemailer
+        const transporter = createTransport({
+          host: emailSettings.smtp_host || 'smtp.gmail.com',
+          port: emailSettings.smtp_port || 587,
+          secure: (emailSettings.smtp_port || 587) === 465,
+          auth: { user: emailSettings.gmail_address, pass: password },
+        })
+
+        transporter.sendMail({
+          from: emailSettings.gmail_address,
+          to: emailSettings.gmail_address,
+          subject: onderwerp,
+          text: emailBody,
+          html: emailHtml,
         }).catch(err => console.warn('Email naar gebruiker mislukt:', err))
       }
     } catch (notifErr) {
