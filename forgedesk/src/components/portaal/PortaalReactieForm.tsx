@@ -93,11 +93,11 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
       if (!response.ok) {
         let errorMessage = `Upload mislukt: ${file.name}`
         try {
-          const err = await response.json()
-          errorMessage = err.error || errorMessage
-        } catch {
           const text = await response.text()
-          if (text) errorMessage = text
+          const parsed = JSON.parse(text)
+          errorMessage = parsed.error || errorMessage
+        } catch {
+          // ignore parse errors
         }
         throw new Error(errorMessage)
       }
@@ -143,11 +143,11 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
       if (!response.ok) {
         let errorMessage = 'Kon reactie niet versturen'
         try {
-          const err = await response.json()
-          errorMessage = err.error || errorMessage
-        } catch {
           const text = await response.text()
-          if (text) errorMessage = text
+          const parsed = JSON.parse(text)
+          errorMessage = parsed.error || errorMessage
+        } catch {
+          // ignore parse errors
         }
         throw new Error(errorMessage)
       }
