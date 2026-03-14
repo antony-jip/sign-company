@@ -4,20 +4,14 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-// Rate limiting: 20 per uur per IP
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 20
-const RATE_WINDOW_MS = 3_600_000
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
-    return false
-  }
-  entry.count++
-  return entry.count > RATE_LIMIT
+async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const { data } = await supabase.rpc('check_rate_limit', {
+    p_key: `${endpoint}:${ip}`,
+    p_max_count: maxCount,
+    p_window_seconds: windowSeconds,
+  })
+  return data === true
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -25,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
-  if (isRateLimited(clientIp)) {
+  if (await isRateLimited(clientIp, 'portaal-bekeken', 20, 60)) {
     return res.status(429).json({ error: 'Te veel verzoeken' })
   }
 

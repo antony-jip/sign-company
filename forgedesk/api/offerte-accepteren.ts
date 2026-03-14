@@ -9,20 +9,14 @@ const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
 if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY environment variable is required')
 const APP_URL = process.env.VITE_APP_URL || 'https://app.forgedesk.io'
 
-// Rate limiting: 10 requests per minuut per IP
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 10
-const RATE_WINDOW_MS = 60_000
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
-    return false
-  }
-  entry.count++
-  return entry.count > RATE_LIMIT
+async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const { data } = await supabase.rpc('check_rate_limit', {
+    p_key: `${endpoint}:${ip}`,
+    p_max_count: maxCount,
+    p_window_seconds: windowSeconds,
+  })
+  return data === true
 }
 
 function decrypt(encrypted: string): string {
@@ -48,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
-  if (isRateLimited(clientIp)) {
+  if (await isRateLimited(clientIp, 'offerte-accepteren', 10, 3600)) {
     return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
   }
 

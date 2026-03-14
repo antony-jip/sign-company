@@ -19,20 +19,14 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   return user.id
 }
 
-// Rate limiting: 20 requests per minuut per user
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 20
-const RATE_WINDOW_MS = 60_000
-
-function isRateLimited(userId: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(userId)
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS })
-    return false
-  }
-  entry.count++
-  return entry.count > RATE_LIMIT
+async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const { data } = await supabase.rpc('check_rate_limit', {
+    p_key: `${endpoint}:${ip}`,
+    p_max_count: maxCount,
+    p_window_seconds: windowSeconds,
+  })
+  return data === true
 }
 
 interface KvkApiResultaat {
@@ -61,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const userId = await verifyUser(req)
 
-    if (isRateLimited(userId)) {
+    if (await isRateLimited(userId, 'kvk-zoeken', 20, 60)) {
       return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
     }
 

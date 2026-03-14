@@ -118,9 +118,10 @@ async function checkEnStuurHerinneringen(
   const { sendEmail } = await import('@/services/gmailService')
   const { buildPortalEmailHtml, replaceEmailVariables } = await import('@/utils/emailTemplate')
 
-  for (const item of teVersturen) {
+  // Parallel versturen voor betere performance bij veel items
+  await Promise.all(teVersturen.map(async (item) => {
     const portaal = portaalMap.get(item.portaal_id)
-    if (!portaal) continue
+    if (!portaal) return
 
     const project = projectMap.get(item.project_id)
     const klant = project ? klantMap.get(project.klant_id) : undefined
@@ -187,5 +188,5 @@ async function checkEnStuurHerinneringen(
       gelezen: false,
       actie_genomen: false,
     })
-  }
+  }))
 }

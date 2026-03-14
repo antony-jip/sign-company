@@ -24,20 +24,14 @@ const ITEM_VELDEN = [
   'prijs_varianten', 'actieve_variant_id',
 ] as const
 
-// Eenvoudige in-memory rate limiting
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 10
-const RATE_WINDOW_MS = 60_000
-
-function isRateLimited(token: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(token)
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(token, { count: 1, resetAt: now + RATE_WINDOW_MS })
-    return false
-  }
-  entry.count++
-  return entry.count > RATE_LIMIT
+async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const { data } = await supabase.rpc('check_rate_limit', {
+    p_key: `${endpoint}:${ip}`,
+    p_max_count: maxCount,
+    p_window_seconds: windowSeconds,
+  })
+  return data === true
 }
 
 function pick<T extends Record<string, unknown>>(obj: T, keys: readonly string[]): Partial<T> {
@@ -56,7 +50,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const token = req.query.token as string
     if (!token) return res.status(400).json({ error: 'Token is verplicht' })
 
-    if (isRateLimited(token)) {
+    const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
+    if (await isRateLimited(clientIp, 'offerte-publiek', 10, 60)) {
       return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
     }
 
