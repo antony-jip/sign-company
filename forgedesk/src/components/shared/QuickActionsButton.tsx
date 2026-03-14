@@ -48,6 +48,7 @@ export function QuickActionsButton() {
   return (
     <div
       ref={containerRef}
+      className="hidden md:block"
       style={{ position: 'fixed', bottom: bottomPosition, right: 24, zIndex: 9998 }}
     >
       {/* Fan-out menu items */}

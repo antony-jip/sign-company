@@ -1998,10 +1998,15 @@ html {
   letter-spacing: -0.04em;
   line-height: 1;
 }
-.display-number-xl { font-size: 38px; }
-.display-number-lg { font-size: 30px; }
-.display-number-md { font-size: 24px; }
+.display-number-xl { font-size: 28px; }
+.display-number-lg { font-size: 24px; }
+.display-number-md { font-size: 20px; }
 @media (min-width: 640px) {
+  .display-number-xl { font-size: 38px; }
+  .display-number-lg { font-size: 30px; }
+  .display-number-md { font-size: 24px; }
+}
+@media (min-width: 1280px) {
   .display-number-xl { font-size: 44px; }
   .display-number-lg { font-size: 34px; }
 }

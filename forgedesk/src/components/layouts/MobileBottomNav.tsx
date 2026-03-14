@@ -23,14 +23,14 @@ interface MobileNavItem {
 
 const PRIMARY_ITEMS: MobileNavItem[] = [
   { label: 'Home', icon: LayoutDashboard, path: '/' },
-  { label: 'Klanten', icon: Users, path: '/klanten' },
+  { label: 'Werkbonnen', icon: ClipboardList, path: '/werkbonnen' },
   { label: 'Offertes', icon: FileText, path: '/offertes' },
   { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
 ]
 
 const MORE_ITEMS: MobileNavItem[] = [
+  { label: 'Klanten', icon: Users, path: '/klanten' },
   { label: 'Facturen', icon: Receipt, path: '/facturen' },
-  { label: 'Werkbonnen', icon: ClipboardList, path: '/werkbonnen' },
   { label: 'Planning', icon: Calendar, path: '/planning' },
   { label: 'Tijdregistratie', icon: Clock, path: '/tijdregistratie' },
 ]
