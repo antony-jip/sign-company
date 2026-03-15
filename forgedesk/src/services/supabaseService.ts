@@ -1641,7 +1641,7 @@ export async function getTekeningGoedkeuringByToken(token: string): Promise<Teke
       .from('tekening_goedkeuringen')
       .select('*')
       .eq('token', token)
-      .single()
+      .maybeSingle()
     if (error) return null
     return data
   }
@@ -3021,7 +3021,7 @@ export function generateBetaalToken(): string {
 export async function getFactuurByBetaalToken(token: string): Promise<Factuur | null> {
   assertId(token, 'betaal_token')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('facturen').select('*').eq('betaal_token', token).single()
+    const { data, error } = await supabase.from('facturen').select('*').eq('betaal_token', token).maybeSingle()
     if (error) return null
     return data
   }
@@ -3053,7 +3053,7 @@ export async function markFactuurBekeken(token: string): Promise<void> {
 export async function getOfferteByPubliekToken(token: string): Promise<Offerte | null> {
   assertId(token, 'publiek_token')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('offertes').select('*').eq('publiek_token', token).single()
+    const { data, error } = await supabase.from('offertes').select('*').eq('publiek_token', token).maybeSingle()
     if (error) return null
     return data
   }

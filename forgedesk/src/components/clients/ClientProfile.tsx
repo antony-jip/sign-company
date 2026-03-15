@@ -169,7 +169,7 @@ export function ClientProfile() {
       setClientProjecten(projecten)
       setNotitie(klantData?.notities || '')
       if (klantData) {
-        const email = klantData.email.toLowerCase()
+        const email = (klantData.email || '').toLowerCase()
         setClientEmails(
           allEmails.filter(
             (e) =>
@@ -916,11 +916,11 @@ export function ClientProfile() {
 
                               {/* PM */}
                               <td className="py-3 px-4 hidden md:table-cell">
-                                {project.team_leden.length > 0 ? (
+                                {project.team_leden?.length > 0 ? (
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-wm-pale/30 dark:bg-accent/30 flex items-center justify-center flex-shrink-0">
                                       <span className="text-[10px] font-semibold text-accent dark:text-primary">
-                                        {project.team_leden[0].charAt(0).toUpperCase()}
+                                        {project.team_leden[0]?.charAt(0)?.toUpperCase()}
                                       </span>
                                     </div>
                                     <span className="text-sm text-foreground truncate max-w-[120px]">
