@@ -143,7 +143,7 @@ export function ForgieTab() {
     getForgieGebruik(user.id).then(setForgieGebruik).catch(() => {})
   }, [user?.id])
 
-  useEffect(() => { loadImports() }, [])
+  useEffect(() => { if (user?.id) loadImports() }, [user?.id])
 
   const loadImports = useCallback(async () => {
     setLoadingImports(true)

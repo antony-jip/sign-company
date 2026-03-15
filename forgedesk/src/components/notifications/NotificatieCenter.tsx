@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Bell,
   Eye,
@@ -296,6 +297,7 @@ function NotificatieToast({
 }
 
 export function NotificatieCenter() {
+  const { user } = useAuth();
   const [notificaties, setNotificaties] = useState<Notificatie[]>([]);
   const [open, setOpen] = useState(false);
   const [laden, setLaden] = useState(false);
@@ -370,15 +372,11 @@ export function NotificatieCenter() {
 
   // Real-time Supabase subscription voor instant notificaties (gefilterd op user)
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !user?.id) return;
 
-    let userId: string | undefined;
+    const userId = user.id;
 
     const setupChannel = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      userId = user.id;
-
       const channel = supabase
         .channel(`notificaties-${userId}`)
         .on(
@@ -417,7 +415,7 @@ export function NotificatieCenter() {
     return () => {
       if (channelRef) supabase.removeChannel(channelRef);
     };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     function handleBuitenKlik(event: MouseEvent) {

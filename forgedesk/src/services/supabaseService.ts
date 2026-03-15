@@ -114,6 +114,19 @@ const UUID_FIELDS = [
   'offerte_id', 'document_id', 'contact_id', 'leverancier_id',
 ] as const
 
+/**
+ * Zorgt dat user_id aanwezig is in het object.
+ * Als user_id al in het object zit, wordt het behouden.
+ * Anders wordt het opgehaald uit de huidige Supabase auth sessie.
+ */
+async function withUserId<T extends Record<string, unknown>>(data: T): Promise<T & { user_id: string }> {
+  if (data.user_id && typeof data.user_id === 'string') return data as T & { user_id: string }
+  if (!supabase) return data as T & { user_id: string }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Niet ingelogd — kan user_id niet bepalen')
+  return { ...data, user_id: user.id }
+}
+
 function sanitizeDates<T extends Record<string, unknown>>(data: T): T {
   const result = { ...data } as Record<string, unknown>
   for (const field of DATE_FIELDS) {
@@ -312,7 +325,7 @@ export async function createProject(project: Omit<Project, 'id' | 'created_at' |
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('projecten')
-      .insert(sanitizeDates(project))
+      .insert(await withUserId(sanitizeDates(project)))
       .select()
       .single()
     if (error) throw error
@@ -410,7 +423,7 @@ export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('taken')
-      .insert(sanitizeDates(taak))
+      .insert(await withUserId(sanitizeDates(taak)))
       .select()
       .single()
     if (error) throw error
@@ -547,7 +560,7 @@ export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' |
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offertes')
-      .insert(sanitizeDates(offerte))
+      .insert(await withUserId(sanitizeDates(offerte)))
       .select()
       .single()
     if (error) throw error
@@ -619,7 +632,7 @@ export async function createOfferteItem(item: Omit<OfferteItem, 'id' | 'created_
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offerte_items')
-      .insert(item)
+      .insert(await withUserId(item))
       .select()
       .single()
     if (error) throw error
@@ -690,7 +703,7 @@ export async function createOfferteVersie(versie: Omit<OfferteVersie, 'id' | 'cr
     created_at: now(),
   }
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('offerte_versies').insert(record).select().single()
+    const { data, error } = await supabase.from('offerte_versies').insert(await withUserId(record)).select().single()
     if (error) throw error
     return data
   }
@@ -733,7 +746,7 @@ export async function createDocument(document: Omit<Document, 'id' | 'created_at
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('documenten')
-      .insert(document)
+      .insert(await withUserId(document))
       .select()
       .single()
     if (error) throw error
@@ -816,7 +829,7 @@ export async function createEmail(email: Omit<Email, 'id' | 'created_at'>): Prom
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('emails')
-      .insert(email)
+      .insert(await withUserId(email))
       .select()
       .single()
     if (error) throw error
@@ -897,7 +910,7 @@ export async function createEvent(event: Omit<CalendarEvent, 'id' | 'created_at'
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('events')
-      .insert(sanitizeDates(event))
+      .insert(await withUserId(sanitizeDates(event)))
       .select()
       .single()
     if (error) throw error
@@ -964,7 +977,7 @@ export async function createGrootboekRekening(rekening: Omit<Grootboek, 'id' | '
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('grootboek')
-      .insert(rekening)
+      .insert(await withUserId(rekening))
       .select()
       .single()
     if (error) throw error
@@ -1030,7 +1043,7 @@ export async function createBtwCode(btwCode: Omit<BtwCode, 'id' | 'created_at'>)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('btw_codes')
-      .insert(btwCode)
+      .insert(await withUserId(btwCode))
       .select()
       .single()
     if (error) throw error
@@ -1096,7 +1109,7 @@ export async function createKorting(korting: Omit<Korting, 'id' | 'created_at'>)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('kortingen')
-      .insert(korting)
+      .insert(await withUserId(korting))
       .select()
       .single()
     if (error) throw error
@@ -1162,7 +1175,7 @@ export async function createAIChat(chat: Omit<AIChat, 'id' | 'created_at'>): Pro
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('ai_chats')
-      .insert(chat)
+      .insert(await withUserId(chat))
       .select()
       .single()
     if (error) throw error
@@ -1260,7 +1273,7 @@ export async function createNieuwsbrief(nieuwsbrief: Omit<Nieuwsbrief, 'id' | 'c
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('nieuwsbrieven')
-      .insert(nieuwsbrief)
+      .insert(await withUserId(nieuwsbrief))
       .select()
       .single()
     if (error) throw error
@@ -1327,7 +1340,7 @@ export async function createCalculatieProduct(product: Omit<CalculatieProduct, '
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('calculatie_producten')
-      .insert(product)
+      .insert(await withUserId(product))
       .select()
       .single()
     if (error) throw error
@@ -1394,7 +1407,7 @@ export async function createCalculatieTemplate(template: Omit<CalculatieTemplate
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('calculatie_templates')
-      .insert(template)
+      .insert(await withUserId(template))
       .select()
       .single()
     if (error) throw error
@@ -1524,7 +1537,7 @@ export async function createOfferteTemplate(template: Omit<OfferteTemplate, 'id'
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('offerte_templates')
-      .insert(template)
+      .insert(await withUserId(template))
       .select()
       .single()
     if (error) throw error
@@ -1618,7 +1631,7 @@ export async function createTekeningGoedkeuring(
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('tekening_goedkeuringen')
-      .insert({ ...goedkeuring, token })
+      .insert(await withUserId({ ...goedkeuring, token }))
       .select()
       .single()
     if (error) throw error
@@ -1908,7 +1921,7 @@ export async function getFactuur(id: string): Promise<Factuur> {
 export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'>): Promise<Factuur> {
   const newFactuur: Factuur = { ...sanitizeDates(factuur), id: generateId(), created_at: now(), updated_at: now() } as Factuur
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('facturen').insert(newFactuur).select().single()
+    const { data, error } = await supabase.from('facturen').insert(await withUserId(newFactuur)).select().single()
     if (error) throw error
     return data
   }
@@ -1957,7 +1970,7 @@ export async function getFactuurItems(factuurId: string): Promise<FactuurItem[]>
 export async function createFactuurItem(item: Omit<FactuurItem, 'id' | 'created_at'>): Promise<FactuurItem> {
   const newItem: FactuurItem = { ...item, id: generateId(), created_at: now() } as FactuurItem
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('factuur_items').insert(newItem).select().single()
+    const { data, error } = await supabase.from('factuur_items').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return data
   }
@@ -1981,7 +1994,7 @@ export async function getTijdregistraties(): Promise<Tijdregistratie[]> {
 export async function createTijdregistratie(entry: Omit<Tijdregistratie, 'id' | 'created_at' | 'updated_at'>): Promise<Tijdregistratie> {
   const newEntry: Tijdregistratie = { ...sanitizeDates(entry), id: generateId(), created_at: now(), updated_at: now() } as Tijdregistratie
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('tijdregistraties').insert(newEntry).select().single()
+    const { data, error } = await supabase.from('tijdregistraties').insert(await withUserId(newEntry)).select().single()
     if (error) throw error
     return data
   }
@@ -2031,7 +2044,7 @@ export async function getMedewerkers(): Promise<Medewerker[]> {
 export async function createMedewerker(mw: Omit<Medewerker, 'id' | 'created_at' | 'updated_at'>): Promise<Medewerker> {
   const newMw: Medewerker = { ...mw, id: generateId(), created_at: now(), updated_at: now() } as Medewerker
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('medewerkers').insert(newMw).select().single()
+    const { data, error } = await supabase.from('medewerkers').insert(await withUserId(newMw)).select().single()
     if (error) throw error
     return data
   }
@@ -2085,7 +2098,7 @@ export async function getNotificaties(limit = 100): Promise<Notificatie[]> {
 export async function createNotificatie(notif: Omit<Notificatie, 'id' | 'created_at'>): Promise<Notificatie> {
   const newNotif: Notificatie = { ...notif, id: generateId(), created_at: now() } as Notificatie
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('notificaties').insert(newNotif).select().single()
+    const { data, error } = await supabase.from('notificaties').insert(await withUserId(newNotif)).select().single()
     if (error) throw error
     return data
   }
@@ -2133,7 +2146,7 @@ export async function getMontageAfspraken(): Promise<MontageAfspraak[]> {
 export async function createMontageAfspraak(afspraak: Omit<MontageAfspraak, 'id' | 'created_at' | 'updated_at'>): Promise<MontageAfspraak> {
   const newAfspraak: MontageAfspraak = { ...sanitizeDates(afspraak), id: generateId(), created_at: now(), updated_at: now() } as MontageAfspraak
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('montage_afspraken').insert(newAfspraak).select().single()
+    const { data, error } = await supabase.from('montage_afspraken').insert(await withUserId(newAfspraak)).select().single()
     if (error) throw error
     return data
   }
@@ -2205,7 +2218,7 @@ export async function getVerlofByMedewerker(medewerkerId: string): Promise<Verlo
 export async function createVerlof(verlof: Omit<Verlof, 'id' | 'created_at'>): Promise<Verlof> {
   const newVerlof: Verlof = { ...sanitizeDates(verlof), id: generateId(), created_at: now() } as Verlof
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('verlof').insert(newVerlof).select().single()
+    const { data, error } = await supabase.from('verlof').insert(await withUserId(newVerlof)).select().single()
     if (error) throw error
     return data
   }
@@ -2253,7 +2266,7 @@ export async function getBedrijfssluitingsdagen(): Promise<Bedrijfssluitingsdag[
 export async function createBedrijfssluitingsdag(dag: Omit<Bedrijfssluitingsdag, 'id' | 'created_at'>): Promise<Bedrijfssluitingsdag> {
   const newDag: Bedrijfssluitingsdag = { ...sanitizeDates(dag), id: generateId(), created_at: now() } as Bedrijfssluitingsdag
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('bedrijfssluitingsdagen').insert(newDag).select().single()
+    const { data, error } = await supabase.from('bedrijfssluitingsdagen').insert(await withUserId(newDag)).select().single()
     if (error) throw error
     return data
   }
@@ -2299,7 +2312,7 @@ export async function getProjectToewijzingenVoorMedewerker(medewerkerId: string)
 export async function createProjectToewijzing(toewijzing: Omit<ProjectToewijzing, 'id' | 'created_at'>): Promise<ProjectToewijzing> {
   const newToewijzing: ProjectToewijzing = { ...toewijzing, id: generateId(), created_at: now() } as ProjectToewijzing
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('project_toewijzingen').insert(newToewijzing).select().single()
+    const { data, error } = await supabase.from('project_toewijzingen').insert(await withUserId(newToewijzing)).select().single()
     if (error) throw error
     return data
   }
@@ -2334,7 +2347,7 @@ export async function getBookingSlots(): Promise<BookingSlot[]> {
 export async function createBookingSlot(slot: Omit<BookingSlot, 'id' | 'created_at'>): Promise<BookingSlot> {
   const newSlot: BookingSlot = { ...slot, id: generateId(), created_at: now() } as BookingSlot
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('booking_slots').insert(newSlot).select().single()
+    const { data, error } = await supabase.from('booking_slots').insert(await withUserId(newSlot)).select().single()
     if (error) throw error
     return data
   }
@@ -2393,7 +2406,7 @@ export async function getBookingAfspraakByToken(token: string): Promise<BookingA
 export async function createBookingAfspraak(afspraak: Omit<BookingAfspraak, 'id' | 'token' | 'created_at'>): Promise<BookingAfspraak> {
   const newAfspraak: BookingAfspraak = { ...afspraak, id: generateId(), token: generateToken(), created_at: now() } as BookingAfspraak
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('booking_afspraken').insert(newAfspraak).select().single()
+    const { data, error } = await supabase.from('booking_afspraken').insert(await withUserId(newAfspraak)).select().single()
     if (error) throw error
     return data
   }
@@ -2486,7 +2499,7 @@ export async function createWerkbon(werkbon: Omit<Werkbon, 'id' | 'werkbon_numme
   const werkbon_nummer = await generateWerkbonNummer()
   const newWerkbon: Werkbon = { ...sanitizeDates(werkbon), id: generateId(), werkbon_nummer, created_at: now(), updated_at: now() } as Werkbon
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbonnen').insert(newWerkbon).select().single()
+    const { data, error } = await supabase.from('werkbonnen').insert(await withUserId(newWerkbon)).select().single()
     if (error) throw error
     return data
   }
@@ -2537,7 +2550,7 @@ export async function getWerkbonRegels(werkbonId: string): Promise<WerkbonRegel[
 export async function createWerkbonRegel(regel: Omit<WerkbonRegel, 'id' | 'created_at'>): Promise<WerkbonRegel> {
   const newRegel: WerkbonRegel = { ...regel, id: generateId(), created_at: now() } as WerkbonRegel
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbon_regels').insert(newRegel).select().single()
+    const { data, error } = await supabase.from('werkbon_regels').insert(await withUserId(newRegel)).select().single()
     if (error) throw error
     return data
   }
@@ -2588,7 +2601,7 @@ export async function getWerkbonFotos(werkbonId: string): Promise<WerkbonFoto[]>
 export async function createWerkbonFoto(foto: Omit<WerkbonFoto, 'id' | 'created_at'>): Promise<WerkbonFoto> {
   const newFoto: WerkbonFoto = { ...foto, id: generateId(), created_at: now() } as WerkbonFoto
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbon_fotos').insert(newFoto).select().single()
+    const { data, error } = await supabase.from('werkbon_fotos').insert(await withUserId(newFoto)).select().single()
     if (error) throw error
     return data
   }
@@ -2635,7 +2648,7 @@ export async function createWerkbonItem(item: Omit<WerkbonItem, 'id' | 'created_
   const newItem: WerkbonItem = { ...item, id: generateId(), afbeeldingen: [], created_at: now() } as WerkbonItem
   if (isSupabaseConfigured() && supabase) {
     const { afbeeldingen: _afb, ...dbItem } = newItem
-    const { data, error } = await supabase.from('werkbon_items').insert(dbItem).select().single()
+    const { data, error } = await supabase.from('werkbon_items').insert(await withUserId(dbItem)).select().single()
     if (error) throw error
     return { ...data, afbeeldingen: [] }
   }
@@ -2694,7 +2707,7 @@ export async function getWerkbonAfbeeldingen(werkbonItemId: string): Promise<Wer
 export async function createWerkbonAfbeelding(afbeelding: Omit<WerkbonAfbeelding, 'id' | 'created_at'>): Promise<WerkbonAfbeelding> {
   const newAfb: WerkbonAfbeelding = { ...afbeelding, id: generateId(), created_at: now() } as WerkbonAfbeelding
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbon_afbeeldingen').insert(newAfb).select().single()
+    const { data, error } = await supabase.from('werkbon_afbeeldingen').insert(await withUserId(newAfb)).select().single()
     if (error) throw error
     return data
   }
@@ -2764,7 +2777,7 @@ export function getDefaultHerinneringTemplates(userId: string): HerinneringTempl
 export async function createHerinneringTemplate(template: Omit<HerinneringTemplate, 'id' | 'created_at'>): Promise<HerinneringTemplate> {
   const newTemplate: HerinneringTemplate = { ...template, id: generateId(), created_at: now() } as HerinneringTemplate
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('herinnering_templates').insert(newTemplate).select().single()
+    const { data, error } = await supabase.from('herinnering_templates').insert(await withUserId(newTemplate)).select().single()
     if (error) throw error
     return data
   }
@@ -2830,7 +2843,7 @@ export async function getLeverancier(id: string): Promise<Leverancier | null> {
 export async function createLeverancier(lev: Omit<Leverancier, 'id' | 'created_at'>): Promise<Leverancier> {
   const newLev: Leverancier = { ...lev, id: generateId(), created_at: now() } as Leverancier
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('leveranciers').insert(newLev).select().single()
+    const { data, error } = await supabase.from('leveranciers').insert(await withUserId(newLev)).select().single()
     if (error) throw error
     return data
   }
@@ -2922,7 +2935,7 @@ export async function createUitgave(uitgave: Omit<Uitgave, 'id' | 'uitgave_numme
   const uitgave_nummer = await generateUitgaveNummer()
   const newUitgave: Uitgave = { ...sanitizeDates(uitgave), id: generateId(), uitgave_nummer, created_at: now(), updated_at: now() } as Uitgave
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('uitgaven').insert(newUitgave).select().single()
+    const { data, error } = await supabase.from('uitgaven').insert(await withUserId(newUitgave)).select().single()
     if (error) throw error
     return data
   }
@@ -3116,7 +3129,7 @@ export async function createBestelbon(data: Omit<Bestelbon, 'id' | 'bestelbon_nu
   const bestelbon_nummer = await generateBestelbonNummer()
   const newItem: Bestelbon = { ...sanitizeDates(data), id: generateId(), bestelbon_nummer, created_at: now(), updated_at: now() } as Bestelbon
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('bestelbonnen').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('bestelbonnen').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return saved
   }
@@ -3165,7 +3178,7 @@ export async function getBestelbonRegels(bestelbonId: string): Promise<Bestelbon
 export async function createBestelbonRegel(data: Omit<BestelbonRegel, 'id' | 'created_at'>): Promise<BestelbonRegel> {
   const newItem: BestelbonRegel = { ...data, id: generateId(), created_at: now() } as BestelbonRegel
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('bestelbon_regels').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('bestelbon_regels').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return saved
   }
@@ -3257,7 +3270,7 @@ export async function createLeveringsbon(data: Omit<Leveringsbon, 'id' | 'leveri
   const leveringsbon_nummer = await generateLeveringsbonNummer()
   const newItem: Leveringsbon = { ...sanitizeDates(data), id: generateId(), leveringsbon_nummer, created_at: now(), updated_at: now() } as Leveringsbon
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('leveringsbonnen').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('leveringsbonnen').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return saved
   }
@@ -3306,7 +3319,7 @@ export async function getLeveringsbonRegels(leveringsbonId: string): Promise<Lev
 export async function createLeveringsbonRegel(data: Omit<LeveringsbonRegel, 'id' | 'created_at'>): Promise<LeveringsbonRegel> {
   const newItem: LeveringsbonRegel = { ...data, id: generateId(), created_at: now() } as LeveringsbonRegel
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('leveringsbon_regels').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('leveringsbon_regels').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return saved
   }
@@ -3371,7 +3384,7 @@ export async function getVoorraadArtikelenBijMinimum(): Promise<VoorraadArtikel[
 export async function createVoorraadArtikel(data: Omit<VoorraadArtikel, 'id' | 'created_at' | 'updated_at'>): Promise<VoorraadArtikel> {
   const newItem: VoorraadArtikel = { ...data, id: generateId(), created_at: now(), updated_at: now() } as VoorraadArtikel
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('voorraad_artikelen').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('voorraad_artikelen').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return saved
   }
@@ -3433,7 +3446,7 @@ export async function createVoorraadMutatie(data: Omit<VoorraadMutatie, 'id' | '
   const nieuwSaldo = round2(artikel.huidige_voorraad + data.aantal)
   const newItem: VoorraadMutatie = { ...data, id: generateId(), saldo_na_mutatie: nieuwSaldo, created_at: now() } as VoorraadMutatie
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('voorraad_mutaties').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('voorraad_mutaties').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     await supabase.from('voorraad_artikelen').update({ huidige_voorraad: nieuwSaldo, updated_at: now() }).eq('id', data.artikel_id)
     return saved
@@ -3531,7 +3544,7 @@ export async function getDealsByMedewerker(medewerkerId: string): Promise<Deal[]
 export async function createDeal(data: Omit<Deal, 'id' | 'created_at' | 'updated_at'>): Promise<Deal> {
   const newItem: Deal = { ...sanitizeDates(data), id: generateId(), created_at: now(), updated_at: now() } as Deal
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('deals').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('deals').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return saved
   }
@@ -3582,7 +3595,7 @@ export async function getDealActiviteiten(dealId: string): Promise<DealActivitei
 export async function createDealActiviteit(data: Omit<DealActiviteit, 'id' | 'created_at'>): Promise<DealActiviteit> {
   const newItem: DealActiviteit = { ...sanitizeDates(data), id: generateId(), created_at: now() } as DealActiviteit
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('deal_activiteiten').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('deal_activiteiten').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return saved
   }
@@ -3641,7 +3654,7 @@ export async function createLeadFormulier(data: Omit<LeadFormulier, 'id' | 'publ
   const publiek_token = generateLeadToken()
   const newItem: LeadFormulier = { ...data, id: generateId(), publiek_token, created_at: now(), updated_at: now() } as LeadFormulier
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('lead_formulieren').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('lead_formulieren').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return saved
   }
@@ -3710,7 +3723,7 @@ export async function getLeadInzendingenNieuw(): Promise<LeadInzending[]> {
 export async function createLeadInzending(data: Omit<LeadInzending, 'id' | 'created_at'>): Promise<LeadInzending> {
   const newItem: LeadInzending = { ...data, id: generateId(), created_at: now() } as LeadInzending
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('lead_inzendingen').insert(newItem).select().single()
+    const { data: saved, error } = await supabase.from('lead_inzendingen').insert(await withUserId(newItem)).select().single()
     if (error) throw error
     return saved
   }
@@ -4507,7 +4520,7 @@ export async function logVisualizerActie(
   if (isSupabaseConfigured() && supabase) {
     const { error } = await supabase
       .from('visualizer_api_log')
-      .insert(data)
+      .insert(await withUserId(data))
     if (error) throw error
     return
   }
@@ -4864,7 +4877,7 @@ export async function createInkoopOfferte(data: Omit<InkoopOfferte, 'id' | 'crea
   if (isSupabaseConfigured() && supabase) {
     const { data: row, error } = await supabase
       .from('inkoop_offertes')
-      .insert({ ...data, totaal: round2(data.totaal) })
+      .insert(await withUserId({ ...data, totaal: round2(data.totaal) }))
       .select()
       .single()
     if (error) throw error
@@ -4892,7 +4905,7 @@ export async function createInkoopRegel(data: Omit<InkoopRegel, 'id' | 'created_
   if (isSupabaseConfigured() && supabase) {
     const { data: row, error } = await supabase
       .from('inkoop_regels')
-      .insert(regelData)
+      .insert(await withUserId(regelData))
       .select()
       .single()
     if (error) throw error
@@ -5189,7 +5202,7 @@ export async function createPortaalItem(
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('portaal_items')
-      .insert(item)
+      .insert(await withUserId(item))
       .select()
       .single()
     if (error) throw error
@@ -5230,7 +5243,7 @@ export async function createPortaalBestand(bestand: Omit<PortaalBestand, 'id' | 
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('portaal_bestanden')
-      .insert(bestand)
+      .insert(await withUserId(bestand))
       .select()
       .single()
     if (error) throw error
@@ -5247,7 +5260,7 @@ export async function createPortaalReactie(reactie: Omit<PortaalReactie, 'id' | 
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('portaal_reacties')
-      .insert(reactie)
+      .insert(await withUserId(reactie))
       .select()
       .single()
     if (error) throw error
@@ -5286,7 +5299,7 @@ export async function createAppNotificatie(notificatie: Omit<AppNotificatie, 'id
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('app_notificaties')
-      .insert(notificatie)
+      .insert(await withUserId(notificatie))
       .select()
       .single()
     if (error) throw error
