@@ -195,7 +195,7 @@ export async function getKlant(id: string): Promise<Klant | null> {
       .from('klanten')
       .select('*')
       .eq('id', id)
-      .single()
+      .maybeSingle()
     if (error) throw error
     return data ? normalizeKlant(data) : null
   }
@@ -257,11 +257,22 @@ export async function updateKlant(id: string, updates: Partial<Klant>): Promise<
 export async function deleteKlant(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    const { count } = await supabase
+      .from('projecten')
+      .select('id', { count: 'exact', head: true })
+      .eq('klant_id', id)
+    if (count && count > 0) {
+      throw new Error(`Klant heeft nog ${count} project(en). Verwijder of ontkoppel deze eerst.`)
+    }
     const { error } = await supabase.from('klanten').delete().eq('id', id)
     if (error) throw error
     return
   }
   const klanten = getLocalData<Klant>('klanten')
+  const projecten = getLocalData<Project>('projecten')
+  if (projecten.some((p) => p.klant_id === id)) {
+    throw new Error('Klant heeft nog gekoppelde projecten.')
+  }
   setLocalData('klanten', klanten.filter((k) => k.id !== id))
 }
 
@@ -295,7 +306,7 @@ export async function getProject(id: string): Promise<Project | null> {
       .from('projecten')
       .select('*, klanten(bedrijfsnaam)')
       .eq('id', id)
-      .single()
+      .maybeSingle()
     if (error) throw error
     return data ? { ...data, klant_naam: data.klanten?.bedrijfsnaam || '' } : null
   }
@@ -366,6 +377,15 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
 export async function deleteProject(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Check op gekoppelde werkbonnen en offertes
+    const [werkbonnen, offertes] = await Promise.all([
+      supabase.from('werkbonnen').select('id', { count: 'exact', head: true }).eq('project_id', id),
+      supabase.from('offertes').select('id', { count: 'exact', head: true }).eq('project_id', id),
+    ])
+    const totaal = (werkbonnen.count || 0) + (offertes.count || 0)
+    if (totaal > 0) {
+      throw new Error(`Project heeft nog ${werkbonnen.count || 0} werkbon(nen) en ${offertes.count || 0} offerte(s). Verwijder deze eerst.`)
+    }
     const { error } = await supabase.from('projecten').delete().eq('id', id)
     if (error) throw error
     return
@@ -396,7 +416,7 @@ export async function getTaak(id: string): Promise<Taak | null> {
       .from('taken')
       .select('*')
       .eq('id', id)
-      .single()
+      .maybeSingle()
     if (error) throw error
     return data
   }
@@ -506,7 +526,7 @@ export async function getOfferte(id: string): Promise<Offerte | null> {
       .from('offertes')
       .select('*, klanten(bedrijfsnaam)')
       .eq('id', id)
-      .single()
+      .maybeSingle()
     if (error) throw error
     return data ? { ...data, klant_naam: data.klanten?.bedrijfsnaam || '' } : null
   }
@@ -601,6 +621,11 @@ export async function updateOfferte(id: string, updates: Partial<Offerte>): Prom
 export async function deleteOfferte(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Verwijder child records (items, versies) eerst
+    await Promise.all([
+      supabase.from('offerte_items').delete().eq('offerte_id', id),
+      supabase.from('offerte_versies').delete().eq('offerte_id', id),
+    ])
     const { error } = await supabase.from('offertes').delete().eq('id', id)
     if (error) throw error
     return
@@ -734,7 +759,7 @@ export async function getDocument(id: string): Promise<Document | null> {
       .from('documenten')
       .select('*')
       .eq('id', id)
-      .single()
+      .maybeSingle()
     if (error) throw error
     return data
   }
@@ -817,7 +842,7 @@ export async function getEmail(id: string): Promise<Email | null> {
       .from('emails')
       .select('*')
       .eq('id', id)
-      .single()
+      .maybeSingle()
     if (error) throw error
     return data
   }
@@ -898,7 +923,7 @@ export async function getEvent(id: string): Promise<CalendarEvent | null> {
       .from('events')
       .select('*')
       .eq('id', id)
-      .single()
+      .maybeSingle()
     if (error) throw error
     return data
   }
@@ -1261,7 +1286,7 @@ export async function getNieuwsbrief(id: string): Promise<Nieuwsbrief | null> {
       .from('nieuwsbrieven')
       .select('*')
       .eq('id', id)
-      .single()
+      .maybeSingle()
     if (error) throw error
     return data
   }
@@ -1905,17 +1930,15 @@ export async function getFacturen(limit = 500): Promise<Factuur[]> {
   return getLocalData<Factuur>('facturen')
 }
 
-export async function getFactuur(id: string): Promise<Factuur> {
+export async function getFactuur(id: string): Promise<Factuur | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('facturen').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('facturen').select('*').eq('id', id).maybeSingle()
     if (error) throw error
     return data
   }
   const items = getLocalData<Factuur>('facturen')
-  const item = items.find((f) => f.id === id)
-  if (!item) throw new Error('Factuur niet gevonden')
-  return item
+  return items.find((f) => f.id === id) || null
 }
 
 export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'>): Promise<Factuur> {
@@ -1949,6 +1972,8 @@ export async function updateFactuur(id: string, updates: Partial<Factuur>): Prom
 export async function deleteFactuur(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Verwijder factuur_items eerst
+    await supabase.from('factuur_items').delete().eq('factuur_id', id)
     const { error } = await supabase.from('facturen').delete().eq('id', id)
     if (error) throw error
     return
@@ -2437,13 +2462,17 @@ export async function updateBookingAfspraak(id: string, updates: Partial<Booking
 
 async function generateWerkbonNummer(): Promise<string> {
   const jaar = new Date().getFullYear()
-  const werkbonnen = await getWerkbonnen()
-  const ditJaar = werkbonnen.filter((w) => w.werkbon_nummer.startsWith(`WB-${jaar}-`))
-  const maxNr = ditJaar.reduce((max, w) => {
-    const nr = parseInt(w.werkbon_nummer.split('-')[2], 10)
-    return nr > max ? nr : max
-  }, 0)
-  return `WB-${jaar}-${String(maxNr + 1).padStart(3, '0')}`
+  const prefix = `WB-${jaar}-`
+  let maxNr = await getMaxNummer('werkbonnen', 'werkbon_nummer', prefix)
+  if (maxNr === 0) {
+    const werkbonnen = isSupabaseConfigured() ? [] : getLocalData<Werkbon>('werkbonnen')
+    const ditJaar = werkbonnen.filter((w) => w.werkbon_nummer.startsWith(prefix))
+    maxNr = ditJaar.reduce((max, w) => {
+      const nr = parseInt(w.werkbon_nummer.split('-')[2], 10)
+      return nr > max ? nr : max
+    }, 0)
+  }
+  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 export async function getWerkbonnen(limit = 500): Promise<Werkbon[]> {
@@ -2458,7 +2487,7 @@ export async function getWerkbonnen(limit = 500): Promise<Werkbon[]> {
 export async function getWerkbon(id: string): Promise<Werkbon | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbonnen').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('werkbonnen').select('*').eq('id', id).maybeSingle()
     if (error) return null
     return data
   }
@@ -2527,6 +2556,13 @@ export async function updateWerkbon(id: string, updates: Partial<Werkbon>): Prom
 export async function deleteWerkbon(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Verwijder eerst child records (regels, fotos, items)
+    await Promise.all([
+      supabase.from('werkbon_regels').delete().eq('werkbon_id', id),
+      supabase.from('werkbon_fotos').delete().eq('werkbon_id', id),
+      supabase.from('werkbon_items').delete().eq('werkbon_id', id),
+      supabase.from('werkbon_afbeeldingen').delete().eq('werkbon_id', id),
+    ])
     const { error } = await supabase.from('werkbonnen').delete().eq('id', id)
     if (error) throw error
     return
@@ -2833,7 +2869,7 @@ export async function getLeveranciers(): Promise<Leverancier[]> {
 export async function getLeverancier(id: string): Promise<Leverancier | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('leveranciers').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('leveranciers').select('*').eq('id', id).maybeSingle()
     if (error) return null
     return data
   }
@@ -2904,7 +2940,7 @@ export async function getUitgaven(): Promise<Uitgave[]> {
 export async function getUitgave(id: string): Promise<Uitgave | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('uitgaven').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('uitgaven').select('*').eq('id', id).maybeSingle()
     if (error) return null
     return data
   }
@@ -3098,7 +3134,7 @@ export async function getBestelbonnen(limit = 500): Promise<Bestelbon[]> {
 export async function getBestelbon(id: string): Promise<Bestelbon | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('bestelbonnen').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('bestelbonnen').select('*').eq('id', id).maybeSingle()
     if (error) return null
     return data
   }
@@ -3239,7 +3275,7 @@ export async function getLeveringsbonnen(limit = 500): Promise<Leveringsbon[]> {
 export async function getLeveringsbon(id: string): Promise<Leveringsbon | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('leveringsbonnen').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('leveringsbonnen').select('*').eq('id', id).maybeSingle()
     if (error) return null
     return data
   }
@@ -3369,7 +3405,7 @@ export async function getVoorraadArtikelen(limit = 500): Promise<VoorraadArtikel
 export async function getVoorraadArtikel(id: string): Promise<VoorraadArtikel | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('voorraad_artikelen').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('voorraad_artikelen').select('*').eq('id', id).maybeSingle()
     if (error) return null
     return data
   }
@@ -3505,7 +3541,7 @@ export async function getDeals(limit = 500): Promise<Deal[]> {
 export async function getDeal(id: string): Promise<Deal | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('deals').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('deals').select('*').eq('id', id).maybeSingle()
     if (error) return null
     return data
   }
@@ -3634,7 +3670,7 @@ export async function getLeadFormulieren(): Promise<LeadFormulier[]> {
 export async function getLeadFormulier(id: string): Promise<LeadFormulier | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('lead_formulieren').select('*').eq('id', id).single()
+    const { data, error } = await supabase.from('lead_formulieren').select('*').eq('id', id).maybeSingle()
     if (error) return null
     return data
   }
@@ -3643,7 +3679,7 @@ export async function getLeadFormulier(id: string): Promise<LeadFormulier | null
 
 export async function getLeadFormulierByToken(token: string): Promise<LeadFormulier | null> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('lead_formulieren').select('*').eq('publiek_token', token).eq('actief', true).single()
+    const { data, error } = await supabase.from('lead_formulieren').select('*').eq('publiek_token', token).eq('actief', true).maybeSingle()
     if (error) return null
     return data
   }
@@ -4076,44 +4112,78 @@ export async function deleteProjectFoto(id: string): Promise<void> {
 }
 
 // ============ NUMMER GENERATOREN (GECENTRALISEERD) ============
+// NB: Deze generatoren gebruiken MAX()+1 patroon. Bij gelijktijdig gebruik door
+// meerdere gebruikers bestaat een klein risico op duplicate nummers.
+// Ideale oplossing: database sequences via Supabase RPC. Queries zijn geoptimaliseerd
+// om alleen het hoogste nummer op te halen ipv alle records.
+
+async function getMaxNummer(table: string, field: string, prefix: string): Promise<number> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data } = await supabase
+      .from(table)
+      .select(field)
+      .like(field, `${prefix}%`)
+      .order(field, { ascending: false })
+      .limit(1)
+    if (data && data.length > 0) {
+      const nr = parseInt(String(data[0][field]).replace(prefix, ''), 10)
+      return isNaN(nr) ? 0 : nr
+    }
+    return 0
+  }
+  return 0
+}
 
 export async function generateOfferteNummer(prefix: string = 'OFF'): Promise<string> {
   const jaar = new Date().getFullYear()
-  const offertes = await getOffertes()
   const jaarPrefix = `${prefix}-${jaar}-`
-  const maxNr = offertes
-    .filter((o) => o.nummer.startsWith(jaarPrefix))
-    .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+  let maxNr = await getMaxNummer('offertes', 'nummer', jaarPrefix)
+  if (maxNr === 0) {
+    // Fallback voor localStorage
+    const offertes = isSupabaseConfigured() ? [] : getLocalData<Offerte>('offertes')
+    maxNr = offertes
+      .filter((o) => o.nummer.startsWith(jaarPrefix))
+      .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+  }
   return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 export async function generateFactuurNummer(prefix: string = 'FAC'): Promise<string> {
   const jaar = new Date().getFullYear()
-  const facturen = await getFacturen()
   const jaarPrefix = `${prefix}-${jaar}-`
-  const maxNr = facturen
-    .filter((f) => f.nummer.startsWith(jaarPrefix))
-    .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+  let maxNr = await getMaxNummer('facturen', 'nummer', jaarPrefix)
+  if (maxNr === 0) {
+    const facturen = isSupabaseConfigured() ? [] : getLocalData<Factuur>('facturen')
+    maxNr = facturen
+      .filter((f) => f.nummer.startsWith(jaarPrefix))
+      .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+  }
   return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 export async function generateCreditnotaNummer(): Promise<string> {
   const jaar = new Date().getFullYear()
-  const facturen = await getFacturen()
   const prefix = `CN-${jaar}-`
-  const maxNr = facturen
-    .filter((f) => f.nummer.startsWith(prefix))
-    .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(prefix, ''), 10) || 0), 0)
+  let maxNr = await getMaxNummer('facturen', 'nummer', prefix)
+  if (maxNr === 0) {
+    const facturen = isSupabaseConfigured() ? [] : getLocalData<Factuur>('facturen')
+    maxNr = facturen
+      .filter((f) => f.nummer.startsWith(prefix))
+      .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(prefix, ''), 10) || 0), 0)
+  }
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 export async function generateProjectNummer(): Promise<string> {
   const jaar = new Date().getFullYear()
-  const projecten = await getProjecten()
   const prefix = `PRJ-${jaar}-`
-  const maxNr = projecten
-    .filter((p) => (p.naam || '').startsWith(prefix))
-    .reduce((max, p) => Math.max(max, parseInt((p.naam || '').replace(prefix, ''), 10) || 0), 0)
+  let maxNr = await getMaxNummer('projecten', 'naam', prefix)
+  if (maxNr === 0) {
+    const projecten = isSupabaseConfigured() ? [] : getLocalData<Project>('projecten')
+    maxNr = projecten
+      .filter((p) => (p.naam || '').startsWith(prefix))
+      .reduce((max, p) => Math.max(max, parseInt((p.naam || '').replace(prefix, ''), 10) || 0), 0)
+  }
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 

@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    // Verifieer webhook signature als MOLLIE_WEBHOOK_SECRET is geconfigureerd
+    // Verifieer webhook signature — verplicht als MOLLIE_WEBHOOK_SECRET is ingesteld
     if (MOLLIE_WEBHOOK_SECRET) {
       const signature = req.headers['x-mollie-signature'] as string | undefined
       const expectedSignature = crypto
@@ -26,10 +26,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // Valideer altijd dat het een geldig Mollie payment ID formaat is
+    const paymentIdPattern = /^tr_[a-zA-Z0-9]+$/
+
     const { id: paymentId } = req.body as { id?: string }
 
-    if (!paymentId) {
-      return res.status(400).json({ error: 'Payment ID ontbreekt' })
+    if (!paymentId || !paymentIdPattern.test(paymentId)) {
+      return res.status(400).json({ error: 'Ongeldig of ontbrekend Payment ID' })
     }
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {

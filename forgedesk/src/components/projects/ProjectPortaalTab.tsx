@@ -402,12 +402,14 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 onderwerp,
                 plainBody,
                 { html: htmlBody }
-              ).catch(() => {}) // Niet-blokkerend
+              ).catch(() => {
+                toast.error('E-mail naar klant kon niet verstuurd worden')
+              })
             }
           }
         }
       } catch {
-        // Email faalt silently
+        toast.error('E-mailnotificatie naar klant is mislukt')
       }
 
       await fetchPortaal()
@@ -500,12 +502,14 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 onderwerp,
                 `${heading}\n\n${replyContent}\n\nBekijk het hier: ${portaalUrl}`,
                 { html: htmlBody }
-              ).catch(() => {})
+              ).catch(() => {
+                toast.error('E-mail naar klant kon niet verstuurd worden')
+              })
             }
           }
         }
       } catch {
-        // Email faalt silently
+        toast.error('E-mailnotificatie naar klant is mislukt')
       }
     } catch (err) {
       toast.error((err as Error).message)

@@ -143,6 +143,7 @@ export function TeamledenTab() {
       if (uitnRes.data) setUitnodigingen(uitnRes.data)
     } catch (err) {
       console.error('Error loading team data:', err)
+      toast.error('Teamgegevens konden niet geladen worden')
     } finally {
       setIsLoading(false)
     }

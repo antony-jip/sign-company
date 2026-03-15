@@ -36,6 +36,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'factuur_id en bedrag zijn verplicht' })
     }
 
+    // Verifieer dat de factuur toebehoort aan de ingelogde gebruiker
+    if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+      const supabaseCheck = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+      const { data: eigenFactuur } = await supabaseCheck
+        .from('facturen')
+        .select('id')
+        .eq('id', factuur_id)
+        .eq('user_id', user_id)
+        .maybeSingle()
+      if (!eigenFactuur) {
+        return res.status(403).json({ error: 'Factuur niet gevonden of geen toegang' })
+      }
+    }
+
     // Haal mollie_api_key op uit app_settings voor de user_id
     let mollieApiKey = ''
 
@@ -109,6 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           betaal_link: payment._links?.checkout?.href || '',
         })
         .eq('id', factuur_id)
+        .eq('user_id', user_id)
     }
 
     return res.status(200).json({
