@@ -1,21 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+import { supabaseAdmin, isRateLimited } from './_shared'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
-
-async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  const { data } = await supabase.rpc('check_rate_limit', {
-    p_key: `${endpoint}:${ip}`,
-    p_max_count: maxCount,
-    p_window_seconds: windowSeconds,
-  })
-  return data === true
-}
 
 export const config = {
   api: {
@@ -57,12 +44,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (buffer.length > MAX_FILE_SIZE) {
       return res.status(400).json({ error: 'Bestand is te groot (max 10MB)' })
     }
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      return res.status(500).json({ error: 'Server configuratie onvolledig' })
-    }
-
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
     // Valideer token
     const { data: portaal } = await supabaseAdmin

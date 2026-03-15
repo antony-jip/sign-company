@@ -1,14 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+import { supabaseAdmin, isRateLimited } from './_shared'
 
 const KVK_TEST_KEY = 'l7xx1f2691f2520d487b902f4e0b57a0b197'
 const KVK_PROD_BASE = 'https://api.kvk.nl/api/v2/zoeken'
 const KVK_TEST_BASE = 'https://api.kvk.nl/test/api/v2/zoeken'
-
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -17,16 +12,6 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
-}
-
-async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  const { data } = await supabase.rpc('check_rate_limit', {
-    p_key: `${endpoint}:${ip}`,
-    p_max_count: maxCount,
-    p_window_seconds: windowSeconds,
-  })
-  return data === true
 }
 
 interface KvkApiResultaat {

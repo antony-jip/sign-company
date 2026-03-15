@@ -1,23 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
 import { createTransport } from 'nodemailer'
 import crypto from 'crypto'
+import { supabaseAdmin, isRateLimited } from './_shared'
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
 if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY environment variable is required')
 const APP_URL = process.env.VITE_APP_URL || 'https://app.forgedesk.io'
-
-async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  const { data } = await supabase.rpc('check_rate_limit', {
-    p_key: `${endpoint}:${ip}`,
-    p_max_count: maxCount,
-    p_window_seconds: windowSeconds,
-  })
-  return data === true
-}
 
 function decrypt(encrypted: string): string {
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
@@ -54,13 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Naam is verplicht (minimaal 2 tekens)' })
     }
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      return res.status(500).json({ error: 'Server configuratie ontbreekt' })
-    }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-    const { data: offerte, error } = await supabase
+    const { data: offerte, error } = await supabaseAdmin
       .from('offertes')
       .select('*')
       .eq('publiek_token', token)
@@ -84,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const nu = new Date().toISOString()
 
     // Update offerte status
-    await supabase.from('offertes').update({
+    await supabaseAdmin.from('offertes').update({
       status: 'goedgekeurd',
       geaccepteerd_door: naam.trim(),
       geaccepteerd_op: nu,
@@ -93,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }).eq('id', offerte.id)
 
     // Maak notificatie aan
-    await supabase.from('notificaties').insert({
+    await supabaseAdmin.from('notificaties').insert({
       id: crypto.randomUUID(),
       user_id: offerte.user_id,
       type: 'offerte_geaccepteerd',
@@ -104,19 +86,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       created_at: nu,
     })
 
-    // Probeer email te sturen naar bedrijfseigenaar
-    try {
-      const { data: emailSettings } = await supabase
-        .from('user_email_settings')
-        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
-        .eq('user_id', offerte.user_id)
-        .single()
+    // Stuur response direct terug — email async (fire-and-forget)
+    res.status(200).json({
+      success: true,
+      bericht: 'Offerte succesvol geaccepteerd',
+    })
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('bedrijfsnaam, email, logo_url')
-        .eq('id', offerte.user_id)
-        .single()
+    // Email na response — blokkeert de klant niet
+    try {
+      const [{ data: emailSettings }, { data: profile }] = await Promise.all([
+        supabaseAdmin.from('user_email_settings')
+          .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
+          .eq('user_id', offerte.user_id).single(),
+        supabaseAdmin.from('profiles')
+          .select('bedrijfsnaam, email, logo_url')
+          .eq('id', offerte.user_id).single(),
+      ])
 
       if (emailSettings?.gmail_address && emailSettings?.encrypted_app_password) {
         const password = decrypt(emailSettings.encrypted_app_password)
@@ -135,7 +120,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await transporter.sendMail({
           from: emailSettings.gmail_address,
           to: emailSettings.gmail_address,
-          subject: `✅ Offerte ${offerte.nummer} geaccepteerd — ${offerte.klant_naam || 'Klant'}`,
+          subject: `Offerte ${offerte.nummer} geaccepteerd — ${offerte.klant_naam || 'Klant'}`,
           html: `
             <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
               ${logoHtml}
@@ -157,11 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (emailErr) {
       console.error('Email notificatie mislukt (niet blokkerend):', emailErr)
     }
-
-    return res.status(200).json({
-      success: true,
-      bericht: 'Offerte succesvol geaccepteerd',
-    })
+    return
   } catch (error: unknown) {
     console.error('offerte-accepteren error:', error)
     const msg = error instanceof Error ? error.message : 'Er ging iets mis'

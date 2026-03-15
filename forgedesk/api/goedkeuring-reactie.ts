@@ -1,18 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
-async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  const { data } = await supabase.rpc('check_rate_limit', {
-    p_key: `${endpoint}:${ip}`,
-    p_max_count: maxCount,
-    p_window_seconds: windowSeconds,
-  })
-  return data === true
-}
+import { supabaseAdmin, isRateLimited } from './_shared'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -46,12 +33,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (status === 'revisie' && (!revisie_opmerkingen || !revisie_opmerkingen.trim())) {
       return res.status(400).json({ error: 'Opmerkingen zijn verplicht bij revisie' })
     }
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      return res.status(500).json({ error: 'Server configuratie onvolledig' })
-    }
-
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
     // Haal goedkeuring op
     const { data: gk, error: gkError } = await supabaseAdmin

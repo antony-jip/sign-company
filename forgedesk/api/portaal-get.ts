@@ -1,18 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
-async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  const { data } = await supabase.rpc('check_rate_limit', {
-    p_key: `${endpoint}:${ip}`,
-    p_max_count: maxCount,
-    p_window_seconds: windowSeconds,
-  })
-  return data === true
-}
+import { supabaseAdmin, isRateLimited } from './_shared'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -27,11 +14,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const token = req.query.token as string
     if (!token) return res.status(400).json({ error: 'Token is verplicht' })
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    if (!supabaseAdmin) {
       return res.status(500).json({ error: 'Server configuratie onvolledig' })
     }
-
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
     // Haal portaal op
     const { data: portaal, error: portaalError } = await supabaseAdmin
@@ -76,41 +61,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Haal project info
-    const { data: project } = await supabaseAdmin
-      .from('projecten')
-      .select('id, naam, klant_id, status, adres, postcode, plaats')
-      .eq('id', portaal.project_id)
-      .single()
-
-    // Haal bedrijfsprofiel
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('bedrijfsnaam, logo_url, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website')
-      .eq('id', portaal.user_id)
-      .single()
-
-    // Haal document style voor primaire kleur
-    const { data: docStyle } = await supabaseAdmin
-      .from('document_styles')
-      .select('primaire_kleur')
-      .eq('user_id', portaal.user_id)
-      .maybeSingle()
-
-    // Haal portaal instellingen
-    const { data: appSettings } = await supabaseAdmin
-      .from('app_settings')
-      .select('portaal_instellingen')
-      .eq('user_id', portaal.user_id)
-      .maybeSingle()
-
-    // Haal items met bestanden en reacties (alleen zichtbaar voor klant)
-    const { data: items } = await supabaseAdmin
-      .from('portaal_items')
-      .select('id, type, titel, omschrijving, label, status, bekeken_op, mollie_payment_url, bedrag, volgorde, created_at, portaal_bestanden(*), portaal_reacties(*)')
-      .eq('portaal_id', portaal.id)
-      .eq('zichtbaar_voor_klant', true)
-      .order('created_at', { ascending: false })
+    // Haal alle data parallel op (5 queries tegelijk ipv sequentieel)
+    const [
+      { data: project },
+      { data: profile },
+      { data: docStyle },
+      { data: appSettings },
+      { data: items },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from('projecten')
+        .select('id, naam, klant_id, status, adres, postcode, plaats')
+        .eq('id', portaal.project_id)
+        .single(),
+      supabaseAdmin
+        .from('profiles')
+        .select('bedrijfsnaam, logo_url, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website')
+        .eq('id', portaal.user_id)
+        .single(),
+      supabaseAdmin
+        .from('document_styles')
+        .select('primaire_kleur')
+        .eq('user_id', portaal.user_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('user_id', portaal.user_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('portaal_items')
+        .select('id, type, titel, omschrijving, label, status, bekeken_op, mollie_payment_url, bedrag, volgorde, created_at, portaal_bestanden(*), portaal_reacties(*)')
+        .eq('portaal_id', portaal.id)
+        .eq('zichtbaar_voor_klant', true)
+        .order('created_at', { ascending: false }),
+    ])
 
     // Genereer publieke URLs voor bestanden die als storage-pad zijn opgeslagen
     const DOCUMENTEN_BUCKET = 'documenten'

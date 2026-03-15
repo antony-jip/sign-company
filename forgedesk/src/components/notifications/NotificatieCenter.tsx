@@ -368,39 +368,54 @@ export function NotificatieCenter() {
     };
   }, [laadNotificaties]);
 
-  // Real-time Supabase subscription voor instant notificaties
+  // Real-time Supabase subscription voor instant notificaties (gefilterd op user)
   useEffect(() => {
     if (!supabase) return;
 
-    const channel = supabase
-      .channel('notificaties-realtime')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notificaties' },
-        (payload) => {
-          const nieuw = payload.new as Notificatie;
-          setNotificaties((prev) => {
-            // Voorkom duplicaten
-            if (prev.some((n) => n.id === nieuw.id)) return prev;
-            return [nieuw, ...prev];
-          });
-          // Toon toast melding
-          setToast(nieuw);
-          // Speel notificatie geluid af (als browser het toelaat)
-          try {
-            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' +
-              'oGAACBhYqFbF1fdH2LkZGMhHpxam51gIuUl5ORiH54cnBze4WOk5KPiIJ7dnR1eoKKkJCOioWAfHl4eXyDiY2NjImFgn98e3t9gIWJi4qIhoOBf39+f4KFiImIh4WDgYB/f3+BhIaHh4aFg4KBgH+AgYOFhoaGhYSDgoGAgIGChIWFhYWEg4KBgYCBgoOEhYWEhIOCgoGBgYGCg4SEhISEg4OCgoGBgYKDg4SEhIODgoKBgYGBgoODhISDg4OCgoKBgYGCgoODg4ODg4KCgoKBgYGCgoODg4ODgoKCgoKBgYGCgoODg4OCgoKCgoKBgQ==');
-            audio.volume = 0.3;
-            audio.play().catch(() => {});
-          } catch {
-            // Negeer audio fouten
+    let userId: string | undefined;
+
+    const setupChannel = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      userId = user.id;
+
+      const channel = supabase
+        .channel(`notificaties-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notificaties',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const nieuw = payload.new as Notificatie;
+            setNotificaties((prev) => {
+              if (prev.some((n) => n.id === nieuw.id)) return prev;
+              return [nieuw, ...prev];
+            });
+            setToast(nieuw);
+            try {
+              const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' +
+                'oGAACBhYqFbF1fdH2LkZGMhHpxam51gIuUl5ORiH54cnBze4WOk5KPiIJ7dnR1eoKKkJCOioWAfHl4eXyDiY2NjImFgn98e3t9gIWJi4qIhoOBf39+f4KFiImIh4WDgYB/f3+BhIaHh4aFg4KBgH+AgYOFhoaGhYSDgoGAgIGChIWFhYWEg4KBgYCBgoOEhYWEhIOCgoGBgYGCg4SEhISEg4OCgoGBgYKDg4SEhIODgoKBgYGBgoODhISDg4OCgoKBgYGCgoODg4ODg4KCgoKBgYGCgoODg4ODgoKCgoKBgYGCgoODg4OCgoKCgoKBgQ==');
+              audio.volume = 0.3;
+              audio.play().catch(() => {});
+            } catch {
+              // Negeer audio fouten
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+
+      return channel;
+    };
+
+    let channelRef: ReturnType<typeof supabase.channel> | undefined;
+    setupChannel().then((ch) => { channelRef = ch; });
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef) supabase.removeChannel(channelRef);
     };
   }, []);
 

@@ -1,8 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+import { supabaseAdmin, isRateLimited } from './_shared'
 
 // Whitelist: velden die de klant mag zien
 const OFFERTE_VELDEN = [
@@ -23,16 +20,6 @@ const ITEM_VELDEN = [
   'foto_url', 'foto_op_offerte', 'bijlage_url', 'bijlage_type', 'bijlage_naam',
   'prijs_varianten', 'actieve_variant_id',
 ] as const
-
-async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  const { data } = await supabase.rpc('check_rate_limit', {
-    p_key: `${endpoint}:${ip}`,
-    p_max_count: maxCount,
-    p_window_seconds: windowSeconds,
-  })
-  return data === true
-}
 
 function pick<T extends Record<string, unknown>>(obj: T, keys: readonly string[]): Partial<T> {
   const result: Record<string, unknown> = {}
@@ -55,14 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
     }
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      return res.status(500).json({ error: 'Server configuratie ontbreekt' })
-    }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
     // Zoek offerte op publiek_token
-    const { data: offerte, error: offerteError } = await supabase
+    const { data: offerte, error: offerteError } = await supabaseAdmin
       .from('offertes')
       .select('*')
       .eq('publiek_token', token)
@@ -90,10 +71,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       updates.status = 'bekeken'
     }
 
-    await supabase.from('offertes').update(updates).eq('id', offerte.id)
+    await supabaseAdmin.from('offertes').update(updates).eq('id', offerte.id)
 
     // Haal items op
-    const { data: rawItems } = await supabase
+    const { data: rawItems } = await supabaseAdmin
       .from('offerte_items')
       .select('*')
       .eq('offerte_id', offerte.id)
@@ -102,14 +83,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const items = (rawItems || []).map((item: Record<string, unknown>) => pick(item, ITEM_VELDEN))
 
     // Haal bedrijfsgegevens op via user_id
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('bedrijfsnaam, bedrijfs_adres, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website, kvk_nummer, btw_nummer, iban, logo_url')
       .eq('id', offerte.user_id)
       .single()
 
     // Haal klant gegevens
-    const { data: klant } = await supabase
+    const { data: klant } = await supabaseAdmin
       .from('klanten')
       .select('bedrijfsnaam, contactpersoon, email, adres, postcode, stad')
       .eq('id', offerte.klant_id)

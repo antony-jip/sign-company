@@ -162,12 +162,13 @@ function normalizeKlant(raw: unknown): Klant {
   } as Klant
 }
 
-export async function getKlanten(): Promise<Klant[]> {
+export async function getKlanten(limit = 500): Promise<Klant[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('klanten')
       .select('*')
       .order('bedrijfsnaam')
+      .limit(limit)
     if (error) throw error
     return (data || []).map(normalizeKlant)
   }
@@ -253,12 +254,13 @@ export async function deleteKlant(id: string): Promise<void> {
 
 // ============ PROJECTEN ============
 
-export async function getProjecten(): Promise<Project[]> {
+export async function getProjecten(limit = 500): Promise<Project[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('projecten')
       .select('*, klanten(bedrijfsnaam)')
       .order('created_at', { ascending: false })
+      .limit(limit)
     if (error) throw error
     return (data || []).map((p: Project & { klanten?: { bedrijfsnaam?: string } }) => ({
       ...p,
@@ -361,12 +363,13 @@ export async function deleteProject(id: string): Promise<void> {
 
 // ============ TAKEN ============
 
-export async function getTaken(): Promise<Taak[]> {
+export async function getTaken(limit = 500): Promise<Taak[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('taken')
       .select('*')
       .order('created_at', { ascending: false })
+      .limit(limit)
     if (error) throw error
     return data || []
   }
@@ -458,20 +461,20 @@ export async function deleteTaak(id: string): Promise<void> {
 
 // ============ OFFERTES ============
 
-export async function getOffertes(): Promise<Offerte[]> {
+export async function getOffertes(limit = 500): Promise<Offerte[]> {
   if (isSupabaseConfigured() && supabase) {
     try {
       const { data, error } = await supabase
         .from('offertes')
         .select('*, klanten(bedrijfsnaam)')
         .order('created_at', { ascending: false })
+        .limit(limit)
       if (error) throw error
       return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
         ...o,
         klant_naam: o.klanten?.bedrijfsnaam || '',
       }))
     } catch (err) {
-      // Supabase failed — fall back to localStorage
       console.warn('Supabase getOffertes failed, falling back to localStorage:', err)
     }
   }
@@ -781,12 +784,13 @@ export async function deleteDocument(id: string): Promise<void> {
 
 // ============ EMAILS ============
 
-export async function getEmails(): Promise<Email[]> {
+export async function getEmails(limit = 200): Promise<Email[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('emails')
-      .select('*')
+      .select('id, user_id, message_id, uid, imap_folder, map, from_address, from_name, van, aan, to_addresses, cc_addresses, onderwerp, datum, gelezen, bijlagen, has_attachments, attachment_meta, inhoud, gmail_id, inbox_type, toegewezen_aan, created_at')
       .order('datum', { ascending: false })
+      .limit(limit)
     if (error) throw error
     return data || []
   }
@@ -1879,9 +1883,9 @@ export async function updateProfile(userId: string, updates: Partial<Profile>): 
 
 // ============ FACTUREN ============
 
-export async function getFacturen(): Promise<Factuur[]> {
+export async function getFacturen(limit = 500): Promise<Factuur[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('facturen').select('*').order('factuurdatum', { ascending: false })
+    const { data, error } = await supabase.from('facturen').select('*').order('factuurdatum', { ascending: false }).limit(limit)
     if (error) throw error
     return data || []
   }
@@ -2065,9 +2069,13 @@ export async function deleteMedewerker(id: string): Promise<void> {
 
 // ============ NOTIFICATIES ============
 
-export async function getNotificaties(): Promise<Notificatie[]> {
+export async function getNotificaties(limit = 100): Promise<Notificatie[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('notificaties').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('notificaties')
+      .select('id, user_id, type, titel, bericht, link, gelezen, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit)
     if (error) throw error
     return data || []
   }
@@ -2425,9 +2433,9 @@ async function generateWerkbonNummer(): Promise<string> {
   return `WB-${jaar}-${String(maxNr + 1).padStart(3, '0')}`
 }
 
-export async function getWerkbonnen(): Promise<Werkbon[]> {
+export async function getWerkbonnen(limit = 500): Promise<Werkbon[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbonnen').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('werkbonnen').select('*').order('created_at', { ascending: false }).limit(limit)
     if (error) throw error
     return data || []
   }
@@ -3065,9 +3073,9 @@ export async function generateBestelbonNummer(): Promise<string> {
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
-export async function getBestelbonnen(): Promise<Bestelbon[]> {
+export async function getBestelbonnen(limit = 500): Promise<Bestelbon[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('bestelbonnen').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('bestelbonnen').select('*').order('created_at', { ascending: false }).limit(limit)
     if (error) throw error
     return data || []
   }
@@ -3206,9 +3214,9 @@ async function generateLeveringsbonNummer(): Promise<string> {
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
-export async function getLeveringsbonnen(): Promise<Leveringsbon[]> {
+export async function getLeveringsbonnen(limit = 500): Promise<Leveringsbon[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('leveringsbonnen').select('*').order('datum', { ascending: false })
+    const { data, error } = await supabase.from('leveringsbonnen').select('*').order('datum', { ascending: false }).limit(limit)
     if (error) throw error
     return data || []
   }
@@ -3336,9 +3344,9 @@ export async function deleteLeveringsbonRegel(id: string): Promise<void> {
 
 // ============ VOORRAADBEHEER (Tier 2 Feature 5) ============
 
-export async function getVoorraadArtikelen(): Promise<VoorraadArtikel[]> {
+export async function getVoorraadArtikelen(limit = 500): Promise<VoorraadArtikel[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('voorraad_artikelen').select('*').order('naam')
+    const { data, error } = await supabase.from('voorraad_artikelen').select('*').order('naam').limit(limit)
     if (error) throw error
     return data || []
   }
@@ -3472,9 +3480,9 @@ export async function deleteVoorraadMutatie(id: string): Promise<void> {
 
 // ============ DEALS / SALES PIPELINE (Tier 3 Feature 1) ============
 
-export async function getDeals(): Promise<Deal[]> {
+export async function getDeals(limit = 500): Promise<Deal[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('deals').select('*').order('updated_at', { ascending: false })
+    const { data, error } = await supabase.from('deals').select('*').order('updated_at', { ascending: false }).limit(limit)
     if (error) throw error
     return data || []
   }
@@ -3729,9 +3737,14 @@ export async function updateLeadInzending(id: string, updates: Partial<LeadInzen
 
 // ============ GEDEELDE INBOX (Tier 3 Feature 3) ============
 
-export async function getGedeeldeEmails(): Promise<Email[]> {
+export async function getGedeeldeEmails(limit = 200): Promise<Email[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('emails').select('*').eq('inbox_type', 'gedeeld').order('datum', { ascending: false })
+    const { data, error } = await supabase
+      .from('emails')
+      .select('id, user_id, from_address, from_name, van, aan, to_addresses, onderwerp, datum, gelezen, bijlagen, has_attachments, inbox_type, toegewezen_aan, created_at')
+      .eq('inbox_type', 'gedeeld')
+      .order('datum', { ascending: false })
+      .limit(limit)
     if (error) throw error
     return data || []
   }

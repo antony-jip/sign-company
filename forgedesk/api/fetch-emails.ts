@@ -121,25 +121,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         name: c.name || '',
       }))
 
-      // Parse body from source
+      // Parse body from source — skip large messages to prevent memory issues
       let bodyHtml = ''
       let bodyText = ''
       let attachmentMeta: Array<{ filename: string; size: number; content_type: string }> = []
       let messageId = message.envelope.messageId || ''
 
       if (message.source) {
-        try {
-          const parsed = await simpleParser(message.source as Buffer)
-          bodyHtml = (typeof parsed.html === 'string' ? parsed.html : '') || ''
-          bodyText = parsed.text || ''
-          messageId = parsed.messageId || messageId
-          attachmentMeta = (parsed.attachments || []).map((a) => ({
-            filename: a.filename || 'bijlage',
-            size: a.size || 0,
-            content_type: a.contentType || 'application/octet-stream',
-          }))
-        } catch {
-          // Parse failed, continue with empty body
+        // Skip parsing messages larger than 2MB to prevent serverless memory issues
+        const sourceBuffer = message.source as Buffer
+        if (sourceBuffer.length > 2 * 1024 * 1024) {
+          // For large messages, only extract messageId from headers
+          const headerEnd = sourceBuffer.indexOf('\r\n\r\n')
+          const headerStr = sourceBuffer.subarray(0, headerEnd > 0 ? headerEnd : 1024).toString('utf8')
+          const msgIdMatch = headerStr.match(/Message-ID:\s*<?([^>\r\n]+)>?/i)
+          if (msgIdMatch) messageId = msgIdMatch[1]
+          bodyText = '[Bericht te groot om in te laden — open in je email client]'
+        } else {
+          try {
+            const parsed = await simpleParser(sourceBuffer)
+            bodyHtml = (typeof parsed.html === 'string' ? parsed.html : '') || ''
+            bodyText = parsed.text || ''
+            messageId = parsed.messageId || messageId
+            attachmentMeta = (parsed.attachments || []).map((a) => ({
+              filename: a.filename || 'bijlage',
+              size: a.size || 0,
+              content_type: a.contentType || 'application/octet-stream',
+            }))
+          } catch {
+            // Parse failed, continue with empty body
+          }
         }
       }
 
