@@ -688,20 +688,20 @@ export function EmailCompose({
     >
       {/* Drag overlay */}
       {isDragging && (
-        <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none">
-          <div className="bg-background rounded-lg p-6 shadow-lg text-center">
-            <Paperclip className="w-8 h-8 text-primary mx-auto mb-2" />
-            <p className="text-sm font-medium">Sleep bestanden hier om toe te voegen</p>
+        <div className="absolute inset-0 z-50 bg-[#8BAFD4]/10 border-2 border-dashed border-[#8BAFD4] rounded-[6px] flex items-center justify-center pointer-events-none">
+          <div className="bg-white dark:bg-stone-900 rounded-[6px] p-6 shadow-lg text-center">
+            <Paperclip className="w-8 h-8 text-[#8BAFD4] mx-auto mb-2" />
+            <p className="text-sm font-medium text-[#1a1a1a] dark:text-stone-100">Sleep bestanden hier om toe te voegen</p>
           </div>
         </div>
       )}
 
       {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/20 dark:bg-muted/10">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={resetAndClose}>
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <h2 className="text-base font-semibold">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-stone-200/60 dark:border-stone-800/40">
+        <button onClick={resetAndClose} className="p-2 rounded-md text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
+          <X className="w-4 h-4" />
+        </button>
+        <h2 className="text-base font-semibold text-[#1a1a1a] dark:text-stone-100">
           {defaultTo ? (defaultSubject?.startsWith('Re:') ? 'Beantwoorden' : defaultSubject?.startsWith('Fwd:') ? 'Doorsturen' : 'Nieuwe email') : 'Nieuwe email'}
         </h2>
         <div className="ml-auto flex items-center gap-2">
@@ -718,27 +718,27 @@ export function EmailCompose({
               <ChevronDown className="w-3 h-3" />
             </Button>
             {showForgieMenu && (
-              <div className="absolute right-0 top-full mt-1 w-56 bg-card border rounded-xl shadow-lg py-1 z-50">
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('rewrite-professional')}>
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Herschrijf professioneler
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-stone-900 border border-stone-200/60 dark:border-stone-800 rounded-[6px] shadow-lg py-1 z-50">
+                <button className="w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center gap-2" onClick={() => handleForgieAction('rewrite-professional')}>
+                  <Sparkles className="w-3.5 h-3.5 text-[#8BAFD4]" /> Herschrijf professioneler
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('rewrite-shorter')}>
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Maak korter
+                <button className="w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center gap-2" onClick={() => handleForgieAction('rewrite-shorter')}>
+                  <Sparkles className="w-3.5 h-3.5 text-[#8BAFD4]" /> Maak korter
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('formalize')}>
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Formaliseer
+                <button className="w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center gap-2" onClick={() => handleForgieAction('formalize')}>
+                  <Sparkles className="w-3.5 h-3.5 text-[#8BAFD4]" /> Formaliseer
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('write-followup')}>
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Schrijf follow-up
+                <button className="w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center gap-2" onClick={() => handleForgieAction('write-followup')}>
+                  <Sparkles className="w-3.5 h-3.5 text-[#8BAFD4]" /> Schrijf follow-up
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('translate-en')}>
-                  <Globe className="w-3.5 h-3.5 text-blush-deep" /> Vertaal naar Engels
+                <button className="w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center gap-2" onClick={() => handleForgieAction('translate-en')}>
+                  <Globe className="w-3.5 h-3.5 text-[#8BAFD4]" /> Vertaal naar Engels
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('translate-nl')}>
-                  <Globe className="w-3.5 h-3.5 text-blush-deep" /> Vertaal naar Nederlands
+                <button className="w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center gap-2" onClick={() => handleForgieAction('translate-nl')}>
+                  <Globe className="w-3.5 h-3.5 text-[#8BAFD4]" /> Vertaal naar Nederlands
                 </button>
-                <div className="border-t my-1" />
-                <div className="px-3 py-2 text-xs text-muted-foreground">
+                <div className="border-t border-stone-100 dark:border-stone-800 my-1" />
+                <div className="px-3 py-2 text-xs text-stone-400">
                   Gebruikt: €{forgieUsage ? forgieUsage.usage.toFixed(2) : '...'} / €{forgieUsage ? forgieUsage.limiet.toFixed(2) : '5.00'}
                 </div>
               </div>
@@ -810,7 +810,7 @@ export function EmailCompose({
                 className="h-9"
               />
               {showSuggestions && contactSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 rounded-lg border bg-popover shadow-lg z-50 max-h-48 overflow-y-auto">
+                <div className="absolute left-0 right-0 top-full mt-1 rounded-[6px] border border-stone-200/60 dark:border-stone-800 bg-white dark:bg-stone-900 shadow-lg z-50 max-h-48 overflow-y-auto">
                   {contactSuggestions.map((klant) => {
                     const contact = klant.contactpersonen?.[0]
                     const email = contact?.email || ''
@@ -819,14 +819,14 @@ export function EmailCompose({
                       <button
                         key={klant.id}
                         onClick={() => handleSelectContact(klant)}
-                        className="w-full text-left px-3 py-2 hover:bg-accent transition-colors flex items-center gap-3"
+                        className="w-full text-left px-3 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors flex items-center gap-3"
                       >
-                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-[#8BAFD4]/15 flex items-center justify-center text-xs font-semibold text-[#6A8DB8] flex-shrink-0">
                           {getInitials(naam)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{naam}</p>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="text-sm font-medium text-[#1a1a1a] dark:text-stone-100 truncate">{naam}</p>
+                          <p className="text-xs text-stone-400 truncate">
                             {klant.bedrijfsnaam}{email ? ` — ${email}` : ''}
                           </p>
                         </div>
@@ -863,9 +863,9 @@ export function EmailCompose({
           <Separator />
 
           {/* Body - Rich Editor */}
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border border-stone-200/60 dark:border-stone-800 rounded-[6px] overflow-hidden">
             {/* Merge fields toolbar */}
-            <div className="flex items-center gap-0.5 px-2 py-1.5 border-b bg-muted/20">
+            <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-stone-100 dark:border-stone-800 bg-stone-50/40 dark:bg-stone-900/40">
               <div className="relative" ref={mergeFieldRef}>
                 <button
                   onClick={() => setShowMergeFields(!showMergeFields)}
@@ -879,12 +879,12 @@ export function EmailCompose({
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 {showMergeFields && (
-                  <div className="absolute left-0 top-full mt-1 w-52 rounded-lg border bg-popover p-1 shadow-lg z-50">
+                  <div className="absolute left-0 top-full mt-1 w-52 rounded-[6px] border border-stone-200/60 dark:border-stone-800 bg-white dark:bg-stone-900 p-1 shadow-lg z-50">
                     {mergeFields.map(f => (
                       <button
                         key={f.id}
                         onClick={() => insertMergeField(f.value)}
-                        className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors flex items-center justify-between"
+                        className="w-full text-left px-3 py-2 text-sm rounded-[4px] text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors flex items-center justify-between"
                       >
                         <span>{f.label}</span>
                         <span className="text-[10px] text-muted-foreground font-mono">{f.value}</span>
@@ -919,10 +919,10 @@ export function EmailCompose({
 
             {/* Attachments */}
             {attachments.length > 0 && (
-              <div className="px-3 py-2 border-t bg-muted/10">
+              <div className="px-3 py-2 border-t border-stone-100 dark:border-stone-800 bg-stone-50/30">
                 <div className="flex flex-wrap gap-2">
                   {attachments.map((file, i) => (
-                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-muted rounded-lg text-xs">
+                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-stone-100/60 dark:bg-stone-800/60 rounded-[4px] text-xs">
                       <div className={`w-6 h-6 rounded flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0 ${getFileTypeColor(file.name)}`}>
                         {getFileExt(file.name)}
                       </div>
@@ -938,7 +938,7 @@ export function EmailCompose({
             )}
 
             {/* Formatting toolbar */}
-            <div className="flex items-center gap-0.5 px-2 py-1 border-t bg-muted/30 flex-wrap">
+            <div className="flex items-center gap-0.5 px-2 py-1 border-t border-stone-100 dark:border-stone-800 bg-stone-50/30 dark:bg-stone-900/30 flex-wrap">
               <button onClick={() => execFormat('undo')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Ongedaan maken">
                 <Undo2 className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
@@ -1012,7 +1012,7 @@ export function EmailCompose({
       </ScrollArea>
 
       {/* ── Footer / Actions ── */}
-      <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/10">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-stone-200/60 dark:border-stone-800 bg-stone-50/30 dark:bg-stone-900/30">
         <div className="flex items-center gap-2">
           <input
             type="file"
@@ -1050,17 +1050,17 @@ export function EmailCompose({
               <ChevronDown className="w-3 h-3" />
             </Button>
             {showSignatureDropdown && !editingSignature && (
-              <div className="absolute left-0 bottom-full mb-2 w-64 rounded-lg border bg-popover p-1 shadow-lg z-50">
+              <div className="absolute left-0 bottom-full mb-2 w-64 rounded-[6px] border border-stone-200/60 dark:border-stone-800 bg-white dark:bg-stone-900 p-1 shadow-lg z-50">
                 <button
                   onClick={() => { setSelectedSignature('none'); setShowSignatureDropdown(false) }}
-                  className={cn('w-full text-left px-3 py-2 text-sm rounded hover:bg-accent', selectedSignature === 'none' && 'bg-accent font-medium')}
+                  className={cn('w-full text-left px-3 py-2 text-sm rounded-[4px] text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800', selectedSignature === 'none' && 'bg-stone-50 dark:bg-stone-800 font-medium')}
                 >
                   Geen handtekening
                 </button>
                 {allSignatures.map((sig) => {
                   const isSaved = savedSignatures.some(s => s.id === sig.id)
                   return (
-                    <div key={sig.id} className={cn('flex items-center rounded hover:bg-accent group', selectedSignature === sig.id && 'bg-accent font-medium')}>
+                    <div key={sig.id} className={cn('flex items-center rounded-[4px] hover:bg-stone-50 dark:hover:bg-stone-800 group', selectedSignature === sig.id && 'bg-stone-50 dark:bg-stone-800 font-medium')}>
                       <button
                         onClick={() => handleSignatureChange(sig.id)}
                         className="flex-1 text-left px-3 py-2 text-sm"
@@ -1102,8 +1102,8 @@ export function EmailCompose({
               </div>
             )}
             {editingSignature && (
-              <div className="absolute left-0 bottom-full mb-2 w-72 rounded-lg border bg-popover p-3 shadow-lg z-50">
-                <h4 className="text-sm font-semibold mb-2">{editingSignature.id ? 'Handtekening bewerken' : 'Nieuwe handtekening'}</h4>
+              <div className="absolute left-0 bottom-full mb-2 w-72 rounded-[6px] border border-stone-200/60 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 shadow-lg z-50">
+                <h4 className="text-sm font-semibold text-[#1a1a1a] dark:text-stone-100 mb-2">{editingSignature.id ? 'Handtekening bewerken' : 'Nieuwe handtekening'}</h4>
                 <input
                   value={editSigNaam}
                   onChange={(e) => setEditSigNaam(e.target.value)}
@@ -1127,7 +1127,7 @@ export function EmailCompose({
                   <button
                     onClick={handleSaveSignature}
                     disabled={!editSigNaam.trim() || !editSigInhoud.trim()}
-                    className="text-xs bg-primary text-primary-foreground rounded px-3 py-1 font-medium disabled:opacity-50"
+                    className="text-xs bg-[#1a1a1a] text-white rounded-[4px] px-3 py-1 font-medium disabled:opacity-50"
                   >
                     Opslaan
                   </button>
@@ -1137,7 +1137,7 @@ export function EmailCompose({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={resetAndClose}>
+          <Button variant="outline" size="sm" onClick={resetAndClose} className="border-stone-200/60 text-stone-500 hover:text-stone-700 hover:bg-stone-50">
             Annuleren
           </Button>
           <div className="relative" ref={scheduleDropdownRef}>
@@ -1146,7 +1146,7 @@ export function EmailCompose({
                 onClick={handleSend}
                 disabled={!to.trim() || !subject.trim() || isSending}
                 size="sm"
-                className="gap-2 rounded-r-none"
+                className="gap-2 rounded-r-none bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white rounded-l-[6px]"
               >
                 {scheduledAt ? (
                   <><Clock className="w-4 h-4" />{isSending ? 'Inplannen...' : 'Inplannen'}</>
@@ -1155,9 +1155,8 @@ export function EmailCompose({
                 )}
               </Button>
               <Button
-                variant="default"
                 size="sm"
-                className="rounded-l-none border-l border-l-primary-foreground/20 px-2"
+                className="rounded-l-none border-l border-l-white/20 px-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white rounded-r-[6px]"
                 onClick={() => setShowScheduleDropdown(!showScheduleDropdown)}
                 type="button"
               >
@@ -1165,40 +1164,40 @@ export function EmailCompose({
               </Button>
             </div>
             {showScheduleDropdown && (
-              <div className="absolute right-0 bottom-full mb-2 w-72 rounded-lg border bg-popover p-2 shadow-md z-50">
+              <div className="absolute right-0 bottom-full mb-2 w-72 rounded-[6px] border border-stone-200/60 dark:border-stone-800 bg-white dark:bg-stone-900 p-2 shadow-lg z-50">
                 <div className="space-y-1">
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'now' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 rounded-[4px] hover:bg-stone-50 dark:hover:bg-stone-800', scheduleOption === 'now' && 'bg-stone-50 dark:bg-stone-800 font-medium')}
                     onClick={() => handleScheduleSelect('now')}
                   >
                     <div className="flex items-center gap-2"><Send className="w-4 h-4" /> Nu verzenden</div>
                   </button>
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'tomorrow-9' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 rounded-[4px] hover:bg-stone-50 dark:hover:bg-stone-800', scheduleOption === 'tomorrow-9' && 'bg-stone-50 dark:bg-stone-800 font-medium')}
                     onClick={() => handleScheduleSelect('tomorrow-9')}
                   >
                     <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 09:00</div>
                   </button>
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'tomorrow-14' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 rounded-[4px] hover:bg-stone-50 dark:hover:bg-stone-800', scheduleOption === 'tomorrow-14' && 'bg-stone-50 dark:bg-stone-800 font-medium')}
                     onClick={() => handleScheduleSelect('tomorrow-14')}
                   >
                     <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 14:00</div>
                   </button>
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'next-monday' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 rounded-[4px] hover:bg-stone-50 dark:hover:bg-stone-800', scheduleOption === 'next-monday' && 'bg-stone-50 dark:bg-stone-800 font-medium')}
                     onClick={() => handleScheduleSelect('next-monday')}
                   >
                     <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Volgende week maandag 09:00</div>
                   </button>
-                  <div className="border-t my-1" />
+                  <div className="border-t border-stone-100 dark:border-stone-800 my-1" />
                   <button
                     type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'custom' && 'bg-accent font-medium')}
+                    className={cn('w-full text-left px-3 py-2 text-sm text-stone-700 dark:text-stone-300 rounded-[4px] hover:bg-stone-50 dark:hover:bg-stone-800', scheduleOption === 'custom' && 'bg-stone-50 dark:bg-stone-800 font-medium')}
                     onClick={() => handleScheduleSelect('custom')}
                   >
                     <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Aangepaste datum/tijd</div>
@@ -1240,20 +1239,20 @@ export function EmailCompose({
 
       {/* ── AI Suggestie Popup ── */}
       {forgieSuggestion && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px] rounded-xl">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px] rounded-[6px]">
           <div
-            className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl flex flex-col"
+            className="bg-white dark:bg-stone-900 rounded-[6px] shadow-xl flex flex-col border border-stone-200/60 dark:border-stone-800"
             style={{ minWidth: 420, minHeight: 200, maxHeight: '60vh', width: '80%', maxWidth: 600 }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-100 dark:border-stone-800 flex-shrink-0">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blush-deep" />
-                <span className="text-sm font-semibold text-foreground">AI Suggestie</span>
+                <Sparkles className="w-4 h-4 text-[#8BAFD4]" />
+                <span className="text-sm font-semibold text-[#1a1a1a] dark:text-stone-100">AI Suggestie</span>
               </div>
               <button
                 onClick={handleForgieDismiss}
-                className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-muted-foreground hover:text-foreground transition-colors"
+                className="p-1 rounded-[4px] hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1261,21 +1260,21 @@ export function EmailCompose({
 
             {/* Content — scrollbaar */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
-              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+              <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed whitespace-pre-wrap">
                 {forgieSuggestion}
               </p>
             </div>
 
             {/* Sticky footer knoppen */}
-            <div className="flex items-center gap-2 px-5 py-3.5 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
-              <Button size="sm" className="gap-1.5" onClick={handleForgieApply}>
+            <div className="flex items-center gap-2 px-5 py-3.5 border-t border-stone-100 dark:border-stone-800 flex-shrink-0">
+              <Button size="sm" className="gap-1.5 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white" onClick={handleForgieApply}>
                 Toepassen
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleForgieRetry} disabled={forgieLoading}>
+              <Button variant="outline" size="sm" className="gap-1.5 border-stone-200/60 text-stone-600 hover:bg-stone-50" onClick={handleForgieRetry} disabled={forgieLoading}>
                 {forgieLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                 Opnieuw
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+              <Button variant="outline" size="sm" className="gap-1.5 border-stone-200/60 text-stone-600 hover:bg-stone-50" onClick={() => {
                 setForgieSuggestion(null)
                 setShowForgieMenu(true)
               }}>

@@ -76,7 +76,7 @@ export function EmailListItem({
     <div className="flex flex-col">
       <div
         className={cn(
-          'relative flex gap-3 px-4 py-3 cursor-pointer transition-all duration-100 group min-h-[72px]',
+          'relative flex gap-3 px-4 py-4 md:py-3 cursor-pointer transition-all duration-100 group min-h-[72px]',
           isActive && 'bg-stone-100/80 dark:bg-stone-800/30 border-l-2 border-l-[#8BAFD4]',
           !isActive && isChecked && 'bg-stone-50/60 dark:bg-stone-800/20',
           isFocused && !isActive && !isChecked && 'bg-stone-50/40 dark:bg-stone-800/10',

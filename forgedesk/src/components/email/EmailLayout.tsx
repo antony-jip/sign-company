@@ -167,17 +167,32 @@ export function EmailLayout() {
       .map((e) => ({ id: e.id, onderwerp: e.onderwerp, datum: e.datum, map: e.map, van: e.van, aan: e.aan }))
   }, [emails, currentSenderEmail])
 
-  // ── Email selection handler ──
+  // ── Email selection handler (delayed mark-as-read: 1.5s) ──
+  const markAsReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const handleSelectEmail = useCallback(async (email: Email) => {
+    // Clear any pending mark-as-read timer
+    if (markAsReadTimerRef.current) {
+      clearTimeout(markAsReadTimerRef.current)
+      markAsReadTimerRef.current = null
+    }
+
     setSelectedEmail(email)
     setViewMode('reading')
     selection.setCheckedEmails(new Set())
 
-    // Mark as read locally
+    // Delayed mark as read (1.5s) — only if still unread
     if (!email.gelezen) {
-      setEmails((prev) =>
-        prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
-      )
+      markAsReadTimerRef.current = setTimeout(() => {
+        setEmails((prev) =>
+          prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
+        )
+        if (!useIMAP) {
+          import('@/services/supabaseService').then(({ updateEmail: ue }) => {
+            ue(email.id, { gelezen: true }).catch(() => {})
+          })
+        }
+      }, 1500)
     }
 
     // Load body if IMAP
@@ -187,9 +202,6 @@ export function EmailLayout() {
       setEmails((prev) =>
         prev.map((e) => (e.id === email.id ? updated : e))
       )
-    } else if (!useIMAP && !email.gelezen) {
-      const { updateEmail } = await import('@/services/supabaseService')
-      updateEmail(email.id, { gelezen: true }).catch(() => {})
     }
   }, [loadEmailBody, selectedFolder, useIMAP, setEmails, selection])
 
@@ -984,8 +996,8 @@ export function EmailLayout() {
             // Mobile: only show when reading
             mobileShowReader ? 'flex' : 'hidden md:flex'
           )}>
-            {/* Reader content */}
-            <div className="flex-1 min-w-0 flex flex-col">
+            {/* Reader content — crossfade transition */}
+            <div className="flex-1 min-w-0 flex flex-col transition-opacity duration-150 ease-in-out">
               {viewMode === 'composing' ? (
                 <EmailCompose
                   open={viewMode === 'composing'}

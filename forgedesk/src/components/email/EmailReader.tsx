@@ -100,11 +100,11 @@ function getAvatarColor(name: string): string {
 
 function getLabelColor(label: string): string {
   switch (label) {
-    case 'offerte': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-    case 'klant': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
-    case 'project': return 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-light'
-    case 'leverancier': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
-    default: return 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
+    case 'offerte': return 'bg-[#D5CCE6]/40 text-[#6B5B8A] dark:bg-[#D5CCE6]/20 dark:text-[#D5CCE6]'
+    case 'klant': return 'bg-[#BCCAD6]/40 text-[#4A6E8A] dark:bg-[#BCCAD6]/20 dark:text-[#BCCAD6]'
+    case 'project': return 'bg-[#B8CCBE]/40 text-[#4E7A58] dark:bg-[#B8CCBE]/20 dark:text-[#B8CCBE]'
+    case 'leverancier': return 'bg-[#E8866A]/20 text-[#C4735A] dark:bg-[#E8866A]/15 dark:text-[#E8866A]'
+    default: return 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
   }
 }
 
@@ -671,16 +671,15 @@ export function EmailReader({
 
   return (
     <div className="flex flex-col h-full">
-      {/* ── Top Toolbar ── */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-stone-100 dark:border-stone-800/40 flex-shrink-0">
+      {/* ── Top Toolbar (sticky) ── */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-stone-100 dark:border-stone-800/40 flex-shrink-0 sticky top-0 bg-white/95 dark:bg-stone-950/95 backdrop-blur-sm z-10">
         <div className="flex items-center gap-1">
           {onBack && (
             <button
               onClick={onBack}
-              className="flex items-center gap-1 mr-2 text-sm font-medium text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 transition-colors md:hidden"
+              className="flex items-center gap-1 mr-2 p-2 -ml-2 text-sm font-medium text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-md transition-colors md:hidden min-w-[44px] min-h-[44px] justify-center"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Terug
+              <ArrowLeft className="w-5 h-5" />
             </button>
           )}
           <button
@@ -954,8 +953,8 @@ export function EmailReader({
                         &lt;{msgSenderEmail}&gt;
                       </span>
                     </div>
-                    <div className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">Aan: {msg.aan}</div>
-                    {msg.cc && <div className="text-sm text-stone-500 dark:text-stone-400">CC: {msg.cc}</div>}
+                    <div className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">Aan: <span className="font-mono text-xs">{msg.aan}</span></div>
+                    {msg.cc && <div className="text-sm text-stone-500 dark:text-stone-400">CC: <span className="font-mono text-xs">{msg.cc}</span></div>}
                     <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mt-1">{formatDateTime(msg.datum)}</div>
                     {!isExpanded && (
                       <p className="text-sm text-stone-400 truncate mt-1.5">
