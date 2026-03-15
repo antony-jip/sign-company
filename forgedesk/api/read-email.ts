@@ -124,12 +124,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       return res.status(200).json(result)
     }
-
-    // No Supabase — direct IMAP fetch (original behavior)
-    const result = await fetchFromIMAP({
-      gmail_address, app_password, uid, imapFolder, imap_host, imap_port,
-    })
-    return res.status(200).json(result)
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Email ophalen mislukt'
     if (msg === 'Niet geautoriseerd' || msg === 'Ongeldige sessie') {

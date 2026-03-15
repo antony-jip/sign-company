@@ -1425,7 +1425,7 @@ function EmailTab() {
   const [emailConnected, setEmailConnected] = useState(false)
   const checkEmailStatus = useCallback(() => {
     const localSettings = getLocalEmailSettings()
-    setEmailConnected(!!(localSettings?.gmail_address && localSettings?.app_password))
+    setEmailConnected(!!localSettings?.gmail_address)
   }, [])
   useEffect(() => { checkEmailStatus() }, [checkEmailStatus])
 
