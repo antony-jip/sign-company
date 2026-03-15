@@ -95,10 +95,13 @@ export async function sendEmail(
 ): Promise<{ success: boolean; message: string }> {
   const credentials = getLocalEmailCredentials()
 
+  const token = await getAuthToken()
+
   const response = await fetch('/api/send-email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({
       ...credentials,
@@ -250,15 +253,19 @@ export async function fetchEmailsFromIMAP(
 ): Promise<{ emails: IMAPEmailSummary[]; total: number; synced?: number }> {
   const credentials = getLocalEmailCredentials()
 
+  const token = await getAuthToken()
+
   const response = await fetch('/api/fetch-emails', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
     body: JSON.stringify({
       ...credentials,
       folder: folder || 'INBOX',
       limit: limit || 50,
       offset: offset || 0,
-      user_id: userId,
     }),
   })
 
@@ -277,14 +284,18 @@ export async function readEmailFromIMAP(
 ): Promise<IMAPEmailDetail> {
   const credentials = getLocalEmailCredentials()
 
+  const token = await getAuthToken()
+
   const response = await fetch('/api/read-email', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
     body: JSON.stringify({
       ...credentials,
       uid,
       folder: folder || 'INBOX',
-      user_id: userId,
     }),
   })
 

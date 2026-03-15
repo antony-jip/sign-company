@@ -6,6 +6,16 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
+async function verifyUser(req: VercelRequest): Promise<string | null> {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) return null
+  const token = authHeader.split(' ')[1]
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+  if (error || !user) return null
+  return user.id
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -18,8 +28,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       folder = 'INBOX',
       imap_host = 'imap.gmail.com',
       imap_port = 993,
-      user_id,
     } = req.body
+
+    // Haal user_id uit JWT — negeer user_id uit request body
+    const user_id = await verifyUser(req)
 
     if (!gmail_address || !app_password) {
       return res.status(400).json({ error: 'E-mailadres en app-wachtwoord zijn verplicht' })
