@@ -8,7 +8,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const user_id = await verifyUser(req)
-    const { gmail_address, app_password, smtp_host, smtp_port } = await getEmailCredentials(user_id)
+    let gmail_address: string, app_password: string, smtp_host: string, smtp_port: number
+    try {
+      const creds = await getEmailCredentials(user_id)
+      gmail_address = creds.gmail_address
+      app_password = creds.app_password
+      smtp_host = creds.smtp_host
+      smtp_port = creds.smtp_port
+    } catch {
+      gmail_address = req.body.gmail_address
+      app_password = req.body.app_password
+      smtp_host = req.body.smtp_host || 'smtp.gmail.com'
+      smtp_port = req.body.smtp_port || 587
+      if (!gmail_address || !app_password) {
+        return res.status(400).json({ error: 'Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.' })
+      }
+    }
 
     const {
       to,
