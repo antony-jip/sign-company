@@ -154,6 +154,7 @@ export function ClientProfile() {
 
   useEffect(() => {
     if (!id) return
+    let cancelled = false
     setIsLoading(true)
     Promise.all([
       getKlant(id),
@@ -165,6 +166,7 @@ export function ClientProfile() {
       getDealsByKlant(id).catch(() => []),
       getTijdregistraties().catch(() => []),
     ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals, allTijd]) => {
+      if (cancelled) return
       setKlant(klantData)
       setClientProjecten(projecten)
       setNotitie(klantData?.notities || '')
@@ -190,6 +192,7 @@ export function ClientProfile() {
       setImportedContacts(getImportedContactpersonen(id))
       setIsLoading(false)
     })
+    return () => { cancelled = true }
   }, [id])
 
   async function handleSaveNotitie() {

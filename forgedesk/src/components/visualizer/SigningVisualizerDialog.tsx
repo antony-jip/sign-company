@@ -91,7 +91,9 @@ export function SigningVisualizerDialog({
 
   useEffect(() => {
     if (!user?.id || !isOpen) return
-    getVisualizerCredits(user.id).then(c => setCreditSaldo(c.saldo)).catch(() => {})
+    let cancelled = false
+    getVisualizerCredits(user.id).then(c => { if (!cancelled) setCreditSaldo(c.saldo) }).catch(() => {})
+    return () => { cancelled = true }
   }, [user?.id, isOpen])
 
   // Auto-scroll chat

@@ -130,18 +130,19 @@ export function CalculatieModal({
 
   // Laden bij openen
   useEffect(() => {
-    if (open) {
-      if (initialRegels && initialRegels.length > 0) {
-        setRegels(initialRegels)
-      } else {
-        // Start met 1 lege regel zodat de gebruiker meteen kan beginnen
-        setRegels([createEmptyRegel({ marge: standaardMarge, btw: standaardBtw })])
-      }
-      setBeschrijving(itemBeschrijving || '')
-      // Laad catalogus producten en templates
-      getCalculatieProducten().then(setProducten).catch(logger.error)
-      getCalculatieTemplates().then(setTemplates).catch(logger.error)
+    if (!open) return
+    let cancelled = false
+    if (initialRegels && initialRegels.length > 0) {
+      setRegels(initialRegels)
+    } else {
+      // Start met 1 lege regel zodat de gebruiker meteen kan beginnen
+      setRegels([createEmptyRegel({ marge: standaardMarge, btw: standaardBtw })])
     }
+    setBeschrijving(itemBeschrijving || '')
+    // Laad catalogus producten en templates
+    getCalculatieProducten().then(p => { if (!cancelled) setProducten(p) }).catch(logger.error)
+    getCalculatieTemplates().then(t => { if (!cancelled) setTemplates(t) }).catch(logger.error)
+    return () => { cancelled = true }
   }, [open, initialRegels, itemBeschrijving, standaardMarge, standaardBtw])
 
   // ---- Regel CRUD ----

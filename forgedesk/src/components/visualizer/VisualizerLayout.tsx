@@ -110,18 +110,22 @@ export function VisualizerLayout() {
 
   useEffect(() => {
     if (!user?.id) return
+    let cancelled = false
     ladenBibliotheek()
-    getVisualizerCredits(user.id).then(c => setCreditSaldo(c.saldo)).catch(() => {})
-    getProjecten().then(setProjecten).catch(() => {})
-    getOffertes().then(setOffertes).catch(() => {})
+    getVisualizerCredits(user.id).then(c => { if (!cancelled) setCreditSaldo(c.saldo) }).catch(() => {})
+    getProjecten().then(p => { if (!cancelled) setProjecten(p) }).catch(() => {})
+    getOffertes().then(o => { if (!cancelled) setOffertes(o) }).catch(() => {})
 
     // Handle Stripe payment return
     const params = new URLSearchParams(window.location.search)
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
     if (params.get('betaling') === 'succes') {
       toast.success('Betaling geslaagd! Credits worden bijgeschreven.')
       // Refresh credits after short delay (webhook needs time to process)
-      setTimeout(() => {
-        getVisualizerCredits(user.id).then(c => setCreditSaldo(c.saldo)).catch(() => {})
+      timeoutId = setTimeout(() => {
+        if (!cancelled) {
+          getVisualizerCredits(user.id).then(c => { if (!cancelled) setCreditSaldo(c.saldo) }).catch(() => {})
+        }
       }, 2000)
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname)
@@ -129,6 +133,7 @@ export function VisualizerLayout() {
       toast.info('Betaling geannuleerd')
       window.history.replaceState({}, '', window.location.pathname)
     }
+    return () => { cancelled = true; if (timeoutId) clearTimeout(timeoutId) }
   }, [user?.id, ladenBibliotheek])
 
   const filteredOffertes = selectedProject
