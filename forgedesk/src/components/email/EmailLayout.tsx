@@ -980,38 +980,95 @@ export function EmailLayout() {
 
           {/* ═══ Panel 3: Reader — ALWAYS visible on desktop ═══ */}
           <div className={cn(
-            'flex-1 min-w-0 flex flex-col',
+            'flex-1 min-w-0 flex',
             // Mobile: only show when reading
             mobileShowReader ? 'flex' : 'hidden md:flex'
           )}>
-            {viewMode === 'composing' ? (
-              <EmailCompose
-                open={viewMode === 'composing'}
-                onOpenChange={(isOpen) => { if (!isOpen) handleCancelCompose() }}
-                defaultTo={composeDefaults.to}
-                defaultSubject={composeDefaults.subject}
-                defaultBody={composeDefaults.body}
-                onSend={handleSendEmail}
-              />
-            ) : viewMode === 'reading' && selectedEmail ? (
-              <EmailReader
-                email={selectedEmail}
-                isLoadingBody={isLoadingBody}
-                onToggleStar={emailActions.handleToggleStar}
-                onToggleRead={emailActions.handleToggleRead}
-                onDelete={emailActions.handleDelete}
-                onReply={handleReply}
-                onForward={handleForward}
-                onArchive={emailActions.handleArchive}
-                onBack={handleBackMobile}
-                onCreateTask={handleCreateTaskFromEmail}
-              />
-            ) : (
-              /* Empty state — no email selected */
-              <div className="flex-1 flex flex-col items-center justify-center text-stone-400 dark:text-stone-500">
-                <Mail className="w-16 h-16 text-stone-300 dark:text-stone-600 mb-4" />
-                <p className="text-base">Selecteer een email</p>
-                <p className="text-sm mt-1 text-stone-400/60">of druk <kbd className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-xs font-mono font-medium text-stone-500">c</kbd> voor een nieuwe email</p>
+            {/* Reader content */}
+            <div className="flex-1 min-w-0 flex flex-col">
+              {viewMode === 'composing' ? (
+                <EmailCompose
+                  open={viewMode === 'composing'}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleCancelCompose() }}
+                  defaultTo={composeDefaults.to}
+                  defaultSubject={composeDefaults.subject}
+                  defaultBody={composeDefaults.body}
+                  onSend={handleSendEmail}
+                />
+              ) : viewMode === 'reading' && selectedEmail ? (
+                <>
+                  {/* Compact CRM card — only if contact matched */}
+                  {currentContact && (
+                    <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800/40 bg-stone-50/40 dark:bg-stone-900/20 flex-shrink-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#8BAFD4]/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-semibold text-[#6A8DB8]">
+                            {getInitials(currentContact.company || currentContact.name)}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-[#1a1a1a] dark:text-stone-100 truncate">
+                            {currentContact.company || currentContact.name}
+                          </div>
+                          <div className="text-xs text-stone-500 dark:text-stone-400 truncate">
+                            {currentContact.name}{currentContact.phone ? ` · ${currentContact.phone}` : ''}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (currentContact.klantId) {
+                              window.location.hash = `#/klanten/${currentContact.klantId}`
+                            }
+                          }}
+                          className="text-xs text-[#8BAFD4] hover:text-[#6A8DB8] font-medium transition-colors flex-shrink-0"
+                        >
+                          Bekijk klant →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <EmailReader
+                    email={selectedEmail}
+                    isLoadingBody={isLoadingBody}
+                    onToggleStar={emailActions.handleToggleStar}
+                    onToggleRead={emailActions.handleToggleRead}
+                    onDelete={emailActions.handleDelete}
+                    onReply={handleReply}
+                    onForward={handleForward}
+                    onArchive={emailActions.handleArchive}
+                    onBack={handleBackMobile}
+                    onCreateTask={handleCreateTaskFromEmail}
+                  />
+                </>
+              ) : (
+                /* Empty state — no email selected */
+                <div className="flex-1 flex flex-col items-center justify-center text-stone-400 dark:text-stone-500">
+                  <Mail className="w-16 h-16 text-stone-300 dark:text-stone-600 mb-4" />
+                  <p className="text-base">Selecteer een email</p>
+                  <p className="text-sm mt-1 text-stone-400/60">of druk <kbd className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-xs font-mono font-medium text-stone-500">c</kbd> voor een nieuwe email</p>
+                </div>
+              )}
+            </div>
+
+            {/* CRM Contact Sidebar — only on xl screens when reading */}
+            {viewMode === 'reading' && selectedEmail && (
+              <div className="border-l border-stone-200/60 dark:border-stone-800/40 hidden xl:block flex-shrink-0 overflow-y-auto">
+                <ContactSidebar
+                  contact={currentContact}
+                  senderName={currentSenderName}
+                  senderEmail={currentSenderEmail}
+                  senderCompany={currentContact?.company}
+                  emailSubject={selectedEmail?.onderwerp}
+                  contactEmails={contactEmails}
+                  onAddCustomer={handleAddCustomer}
+                  onSubscribeNewsletter={handleSubscribeNewsletter}
+                  onCreateProject={handleCreateProjectFromEmail}
+                  onCreateTask={handleQuickTaskFromEmail}
+                  onCreateDeal={handleCreateDealFromEmail}
+                  onNavigateToOfferte={handleNavigateToOfferte}
+                  recentlyCreatedKlantId={recentlyCreatedKlantId}
+                  width={260}
+                />
               </div>
             )}
           </div>
