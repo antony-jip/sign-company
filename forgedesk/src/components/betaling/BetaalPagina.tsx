@@ -188,7 +188,7 @@ export function BetaalPagina() {
           bedrag: openBedrag,
           omschrijving: `Factuur ${factuur.nummer}`,
           redirect_url: `${window.location.origin}/betaald?factuur_id=${factuur.id}`,
-          user_id: factuur.user_id,
+          betaal_token: token,
         }),
       })
       const data = await response.json()
