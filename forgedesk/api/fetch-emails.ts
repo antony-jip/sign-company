@@ -6,13 +6,13 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-async function verifyUser(req: VercelRequest): Promise<string | null> {
+async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer ')) return null
+  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
   const token = authHeader.split(' ')[1]
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
   const { data: { user }, error } = await supabase.auth.getUser(token)
-  if (error || !user) return null
+  if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
 }
 
@@ -38,8 +38,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'E-mailadres en app-wachtwoord zijn verplicht' })
     }
 
-    // If no Supabase config or no user_id, fall back to old IMAP-only behavior
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !user_id) {
+    // If no Supabase config, fall back to old IMAP-only behavior
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
       return fallbackImapOnly(req, res)
     }
 
@@ -224,6 +224,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ synced, total })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Emails sync mislukt'
+    if (msg === 'Niet geautoriseerd' || msg === 'Ongeldige sessie') {
+      return res.status(401).json({ synced: 0, total: 0, error: msg })
+    }
     console.error('Emails sync mislukt:', error)
     return res.status(500).json({ synced: 0, total: 0, error: msg })
   }

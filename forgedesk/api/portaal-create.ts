@@ -37,6 +37,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Server configuratie onvolledig' })
     }
 
+    // Verify user owns this project
+    const { data: project } = await supabaseAdmin
+      .from('projecten')
+      .select('id')
+      .eq('id', project_id)
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (!project) {
+      return res.status(403).json({ error: 'Geen toegang tot dit project' })
+    }
+
     // Check of er al een actief portaal bestaat voor dit project
     const { data: bestaand } = await supabaseAdmin
       .from('project_portalen')

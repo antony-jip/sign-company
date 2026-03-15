@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { verifyState } from './exact-auth'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -14,10 +15,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const code = req.query.code as string
-    const user_id = req.query.state as string
+    const state = req.query.state as string
 
-    if (!code || !user_id) {
+    if (!code || !state) {
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=missing_params`)
+    }
+
+    // Verify HMAC-signed state to prevent CSRF/state manipulation
+    const user_id = verifyState(state)
+    if (!user_id) {
+      return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=invalid_state`)
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)

@@ -51,6 +51,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Server configuratie onvolledig' })
     }
 
+    // Verify user belongs to org and is admin
+    const { data: requesterProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id, rol')
+      .eq('id', userId)
+      .single()
+
+    if (!requesterProfile || requesterProfile.organisatie_id !== organisatie_id) {
+      return res.status(403).json({ error: 'Geen toegang tot deze organisatie' })
+    }
+
+    if (requesterProfile.rol !== 'admin') {
+      return res.status(403).json({ error: 'Alleen admins kunnen teamleden uitnodigen' })
+    }
+
     // Check of email al in de organisatie zit (bestaand profiel)
     const { data: bestaandProfiel } = await supabaseAdmin
       .from('profiles')

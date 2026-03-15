@@ -1,12 +1,27 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ImapFlow } from 'imapflow'
 import { createTransport } from 'nodemailer'
+import { createClient } from '@supabase/supabase-js'
+
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
+async function verifyUser(req: VercelRequest): Promise<string> {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
+  const token = authHeader.split(' ')[1]
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+  if (error || !user) throw new Error('Ongeldige sessie')
+  return user.id
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
+    await verifyUser(req)
     const {
       gmail_address,
       app_password,
@@ -63,6 +78,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Verbindingstest mislukt'
+    if (msg === 'Niet geautoriseerd' || msg === 'Ongeldige sessie') {
+      return res.status(401).json({ imap_ok: false, smtp_ok: false, error: msg })
+    }
     console.error('Email verbindingstest mislukt:', error)
     return res.status(500).json({ imap_ok: false, smtp_ok: false, error: msg })
   }

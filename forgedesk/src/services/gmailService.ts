@@ -205,9 +205,13 @@ export async function testEmailConnection(
     imap_port?: number
   }
 ): Promise<{ imap_ok: boolean; smtp_ok: boolean; error?: string }> {
+  const token = await getAuthToken()
   const response = await fetch('/api/test-email-connection', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
     body: JSON.stringify({
       gmail_address,
       app_password,
