@@ -130,7 +130,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       const stored = localStorage.getItem('forgedesk_email_settings')
       if (stored) {
         const settings = JSON.parse(stored)
-        setEmailConfigured(!!settings.gmail_address && !!settings.app_password)
+        setEmailConfigured(!!settings.gmail_address)
       } else {
         setEmailConfigured(false)
       }

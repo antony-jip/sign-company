@@ -1,33 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createTransport } from 'nodemailer'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
-
-async function verifyUser(req: VercelRequest): Promise<string> {
-  const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
-  const token = authHeader.split(' ')[1]
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
-  if (error || !user) throw new Error('Ongeldige sessie')
-  return user.id
-}
+import { verifyUser, getEmailCredentials } from './_shared'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    await verifyUser(req)
+    const user_id = await verifyUser(req)
+    const { gmail_address, app_password, smtp_host, smtp_port } = await getEmailCredentials(user_id)
 
     const {
-      gmail_address,
-      app_password,
-      smtp_host = 'smtp.gmail.com',
-      smtp_port = 587,
       to,
       cc,
       subject,
@@ -35,20 +18,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       html,
       attachments,
     } = req.body as {
-      gmail_address: string
-      app_password: string
-      smtp_host?: string
-      smtp_port?: number
       to: string
       cc?: string
       subject: string
       body?: string
       html?: string
       attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
-    }
-
-    if (!gmail_address || !app_password) {
-      return res.status(400).json({ error: 'E-mailadres en app-wachtwoord zijn verplicht' })
     }
 
     if (!to || !subject) {

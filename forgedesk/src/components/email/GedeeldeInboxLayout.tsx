@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import DOMPurify from 'dompurify'
 import { toast } from 'sonner'
 import {
   Loader2, Users, UserPlus, MessageSquare, Send, AlertCircle,
@@ -361,7 +362,7 @@ export function GedeeldeInboxLayout() {
                   <span>{formatDateTime(selectedEmail.datum)}</span>
                 </div>
                 <div className="p-3 bg-muted/50 rounded-lg text-sm max-h-[200px] overflow-y-auto"
-                  dangerouslySetInnerHTML={{ __html: selectedEmail.inhoud || '' }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedEmail.inhoud || '', { ADD_ATTR: ['target'] }) }}
                 />
               </div>
 

@@ -13,17 +13,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    // Verifieer webhook signature — verplicht als MOLLIE_WEBHOOK_SECRET is ingesteld
-    if (MOLLIE_WEBHOOK_SECRET) {
-      const signature = req.headers['x-mollie-signature'] as string | undefined
-      const expectedSignature = crypto
-        .createHmac('sha256', MOLLIE_WEBHOOK_SECRET)
-        .update(JSON.stringify(req.body))
-        .digest('hex')
-      if (signature !== expectedSignature) {
-        console.warn('Mollie webhook: ongeldige signature')
-        return res.status(401).json({ error: 'Ongeldige webhook signature' })
-      }
+    // Verifieer webhook signature — verplicht (fail-closed)
+    if (!MOLLIE_WEBHOOK_SECRET) {
+      console.error('MOLLIE_WEBHOOK_SECRET is niet geconfigureerd — webhook geweigerd')
+      return res.status(500).json({ error: 'Webhook verificatie niet geconfigureerd' })
+    }
+    const signature = req.headers['x-mollie-signature'] as string | undefined
+    const expectedSignature = crypto
+      .createHmac('sha256', MOLLIE_WEBHOOK_SECRET)
+      .update(JSON.stringify(req.body))
+      .digest('hex')
+    if (!signature || signature !== expectedSignature) {
+      console.warn('Mollie webhook: ongeldige signature')
+      return res.status(401).json({ error: 'Ongeldige webhook signature' })
     }
 
     // Valideer altijd dat het een geldig Mollie payment ID formaat is

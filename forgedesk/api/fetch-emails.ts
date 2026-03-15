@@ -1,20 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
-async function verifyUser(req: VercelRequest): Promise<string> {
-  const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
-  const token = authHeader.split(' ')[1]
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  const { data: { user }, error } = await supabase.auth.getUser(token)
-  if (error || !user) throw new Error('Ongeldige sessie')
-  return user.id
-}
+import { supabaseAdmin, verifyUser, getEmailCredentials } from './_shared'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -22,28 +9,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const {
-      gmail_address,
-      app_password,
       folder = 'INBOX',
       limit = 50,
       offset = 0,
-      imap_host = 'imap.gmail.com',
-      imap_port = 993,
     } = req.body
 
-    // Haal user_id uit JWT — negeer user_id uit request body
+    // Haal user_id uit JWT en credentials uit database
     const user_id = await verifyUser(req)
-
-    if (!gmail_address || !app_password) {
-      return res.status(400).json({ error: 'E-mailadres en app-wachtwoord zijn verplicht' })
-    }
-
-    // If no Supabase config, fall back to old IMAP-only behavior
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      return fallbackImapOnly(req, res)
-    }
-
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    const { gmail_address, app_password, imap_host, imap_port } = await getEmailCredentials(user_id)
 
     // Map folder names
     const folderMap: Record<string, string> = {

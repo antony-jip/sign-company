@@ -93,8 +93,6 @@ export async function sendEmail(
   body: string,
   options?: { cc?: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }
 ): Promise<{ success: boolean; message: string }> {
-  const credentials = getLocalEmailCredentials()
-
   const token = await getAuthToken()
 
   const response = await fetch('/api/send-email', {
@@ -104,7 +102,6 @@ export async function sendEmail(
       'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({
-      ...credentials,
       to,
       subject,
       body,
@@ -229,25 +226,8 @@ export async function testEmailConnection(
   return response.json()
 }
 
-function getLocalEmailCredentials(): { gmail_address: string; app_password: string; smtp_host?: string; smtp_port?: number; imap_host?: string; imap_port?: number } {
-  try {
-    const stored = localStorage.getItem('forgedesk_email_settings')
-    if (stored) {
-      const settings = JSON.parse(stored)
-      if (settings.gmail_address && settings.app_password) {
-        return {
-          gmail_address: settings.gmail_address,
-          app_password: settings.app_password,
-          smtp_host: settings.smtp_host,
-          smtp_port: settings.smtp_port,
-          imap_host: settings.imap_host,
-          imap_port: settings.imap_port,
-        }
-      }
-    }
-  } catch { /* ignore */ }
-  throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
-}
+// Email credentials worden nu server-side opgehaald via getEmailCredentials() in _shared.ts
+// Geen wachtwoorden meer in localStorage
 
 export async function fetchEmailsFromIMAP(
   folder?: string,
@@ -255,8 +235,6 @@ export async function fetchEmailsFromIMAP(
   offset?: number,
   userId?: string
 ): Promise<{ emails: IMAPEmailSummary[]; total: number; synced?: number }> {
-  const credentials = getLocalEmailCredentials()
-
   const token = await getAuthToken()
 
   const response = await fetch('/api/fetch-emails', {
@@ -266,7 +244,6 @@ export async function fetchEmailsFromIMAP(
       'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({
-      ...credentials,
       folder: folder || 'INBOX',
       limit: limit || 50,
       offset: offset || 0,
@@ -286,8 +263,6 @@ export async function readEmailFromIMAP(
   folder?: string,
   userId?: string
 ): Promise<IMAPEmailDetail> {
-  const credentials = getLocalEmailCredentials()
-
   const token = await getAuthToken()
 
   const response = await fetch('/api/read-email', {
@@ -297,7 +272,6 @@ export async function readEmailFromIMAP(
       'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({
-      ...credentials,
       uid,
       folder: folder || 'INBOX',
     }),

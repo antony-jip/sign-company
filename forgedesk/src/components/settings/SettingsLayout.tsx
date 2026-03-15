@@ -1737,7 +1737,9 @@ function getLocalEmailSettings(): EmailSettings | null {
 }
 
 function saveLocalEmailSettings(settings: EmailSettings): void {
-  localStorage.setItem(EMAIL_SETTINGS_KEY, JSON.stringify(settings))
+  // Sla alleen niet-gevoelige instellingen op in localStorage (geen wachtwoord)
+  const { app_password: _pw, ...safeSettings } = settings
+  localStorage.setItem(EMAIL_SETTINGS_KEY, JSON.stringify(safeSettings))
 }
 
 function removeLocalEmailSettings(): void {

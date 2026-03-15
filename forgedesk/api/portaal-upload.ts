@@ -68,8 +68,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Item niet gevonden' })
     }
 
+    // Sanitize bestandsnaam tegen directory traversal
+    const safeName = bestandsnaam.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.{2,}/g, '.')
+
     // Upload naar Supabase Storage
-    const filePath = `portaal-bestanden/${portaal.id}/${Date.now()}_${bestandsnaam}`
+    const filePath = `portaal-bestanden/${portaal.id}/${Date.now()}_${safeName}`
     const { error: uploadError } = await supabaseAdmin.storage
       .from('portaal-bestanden')
       .upload(filePath, buffer, {
