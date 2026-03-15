@@ -2,8 +2,8 @@
 Datum: 2026-03-15
 
 ## Statistieken
-- 23 bugs gevonden
-- 19 bugs gefixt
+- 32 bugs gevonden
+- 28 bugs gefixt
 - 4 known limitations gedocumenteerd
 
 ## Gefixt
@@ -24,11 +24,20 @@ Datum: 2026-03-15
 | 12 | UX | `ProjectPortaalTab.tsx:405,505` | E-mail naar klant faalde stil zonder feedback | Gebruiker wist niet dat klant geen notificatie kreeg |
 | 13 | UX | `PortalenOverzicht.tsx:122` | Portalen laden faalde stil (alleen console.error) | Lege pagina zonder uitleg |
 | 14 | UX | `TeamledenTab.tsx:145` | Teamleden laden faalde stil | Instellingen leken leeg zonder error |
-| 15 | Supabase | `supabaseService.ts` (13 functies) | `getXxx(id)` gebruikte `.single()` — throwt bij 0 resultaten | Crash bij verwijderd record ipv graceful null |
-| 16 | Performance | `generateOfferteNummer` | Haalde ALLE offertes op voor 1 nummer | O(n) query ipv O(1) — onacceptabel bij 5000+ offertes |
-| 17 | Performance | `generateFactuurNummer` | Idem — haalde alle facturen op | Idem |
-| 18 | Performance | `generateCreditnotaNummer` | Idem | Idem |
-| 19 | Performance | `generateWerkbonNummer` | Idem — haalde alle werkbonnen op | Idem |
+| 15 | Supabase | `supabaseService.ts` (13 get-by-ID functies) | `getXxx(id)` gebruikte `.single()` — throwt bij 0 resultaten | Crash bij verwijderd record ipv graceful null |
+| 16 | Supabase | `supabaseService.ts` (3 token lookups) | Token-based lookups gebruikten `.single()` ipv `.maybeSingle()` | Crash bij onbekend/verlopen token |
+| 17 | Performance | `generateOfferteNummer` | Haalde ALLE offertes op voor 1 nummer | O(n) query ipv O(1) — onacceptabel bij 5000+ offertes |
+| 18 | Performance | `generateFactuurNummer` | Idem — haalde alle facturen op | Idem |
+| 19 | Performance | `generateCreditnotaNummer` | Idem | Idem |
+| 20 | Performance | `generateWerkbonNummer` | Idem — haalde alle werkbonnen op | Idem |
+| 21 | Null safety | `ClientProfile.tsx:923` | `team_leden[0].charAt(0)` zonder optional chaining | Crash als array leeg of undefined |
+| 22 | Null safety | `ClientProfile.tsx:172` | `klantData.email.toLowerCase()` zonder null check | Crash als email undefined |
+| 23 | Race condition | `ClientProfile.tsx:155` | Promise.all() zonder cancelled flag | setState op unmounted component bij snelle navigatie |
+| 24 | Race condition | `FinancialLayout.tsx:47` | Promise.all() zonder cancelled flag | Memory leak bij navigatie |
+| 25 | Race condition | `VisualizerLayout.tsx:111` | 3 parallelle fetches + setTimeout zonder cleanup | Memory leak + stale state |
+| 26 | Race condition | `ForgieTab.tsx:135` | 4 parallelle fetches zonder cancelled flag | setState op unmounted component |
+| 27 | Race condition | `CalculatieModal.tsx:132` | Catalogus laden bij modal open zonder cleanup | Stale data bij snel open/close |
+| 28 | Race condition | `FORGEdeskAIChat.tsx:448` | Facturen laden zonder cancelled flag | Memory leak |
 
 ## Known Limitations (niet gefixt, wel gedocumenteerd)
 
