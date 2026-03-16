@@ -37,7 +37,7 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring' as const, damping: 25, stiffness: 120 },
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
   },
 };
 
@@ -53,8 +53,11 @@ export default function StepsSection() {
           viewport={{ once: true, amount: 0.3 }}
           variants={fadeUp}
         >
-          <h2 className="font-heading section-heading text-ink">
-            Van project tot betaling. Zo werkt het.
+          <h2
+            className="font-heading text-ink"
+            style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, letterSpacing: '-3px', lineHeight: 0.95 }}
+          >
+            Van project tot betaling.
           </h2>
           <p className="text-[19px] leading-[1.7] text-ink-60 mt-5 max-w-[500px] mx-auto">
             Drie stappen. Geen training nodig. Gewoon beginnen.
