@@ -52,8 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Maak nieuw portaal aan
     const token = generateToken()
+    const linkGeldigheidDagen = (instellingen as { link_geldigheid_dagen?: number }).link_geldigheid_dagen || 30
     const verlooptOp = new Date()
-    verlooptOp.setDate(verlooptOp.getDate() + 30)
+    verlooptOp.setDate(verlooptOp.getDate() + linkGeldigheidDagen)
 
     // Haal portaal instellingen op voor instructietekst
     const { data: appSettings } = await supabaseAdmin
@@ -72,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         token,
         actief: true,
         verloopt_op: verlooptOp.toISOString(),
-        instructie_tekst: instellingen.standaard_instructie_tekst || '',
+        instructie_tekst: (instellingen as { instructie_tekst?: string }).instructie_tekst || '',
       })
       .select()
       .single()

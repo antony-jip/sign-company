@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
+// NB: Base64 encoding adds ~33% overhead. With bodyParser 12mb, max raw file ~9MB.
+// Vercel free tier has 4.5MB body limit — practical max ~3MB for free plans.
+// TODO: Migrate to multipart/form-data for larger files.
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
 
@@ -58,6 +61,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Alleen JPG, PNG en PDF bestanden zijn toegestaan' })
     }
 
+    // Sanitize bestandsnaam: verwijder pad-componenten en speciale tekens
+    const sanitizedBestandsnaam = bestandsnaam
+      .replace(/[/\\]/g, '_')
+      .replace(/\.\./g, '_')
+      .replace(/[^\w.\- ]/g, '_')
+      .substring(0, 200)
+
     // Valideer grootte (base64 is ~33% groter dan het origineel)
     const buffer = Buffer.from(fileData, 'base64')
     if (buffer.length > MAX_FILE_SIZE) {
@@ -73,12 +83,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Valideer token
     const { data: portaal } = await supabaseAdmin
       .from('project_portalen')
-      .select('id, actief, verloopt_op')
+      .select('id, actief, verloopt_op, user_id')
       .eq('token', token)
       .single()
 
     if (!portaal || !portaal.actief || new Date(portaal.verloopt_op) < new Date()) {
       return res.status(403).json({ error: 'Portaal niet beschikbaar' })
+    }
+
+    // Check max bestandsgrootte uit portaal instellingen
+    const { data: appSettings } = await supabaseAdmin
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('user_id', portaal.user_id)
+      .maybeSingle()
+
+    const maxMb = (appSettings?.portaal_instellingen as { max_bestandsgrootte_mb?: number } | null)?.max_bestandsgrootte_mb || 10
+    if (buffer.length > maxMb * 1024 * 1024) {
+      return res.status(400).json({ error: `Bestand is te groot (max ${maxMb}MB)` })
     }
 
     // Valideer item
@@ -94,7 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Upload naar Supabase Storage
-    const filePath = `portaal-bestanden/${portaal.id}/${Date.now()}_${bestandsnaam}`
+    const filePath = `portaal-bestanden/${portaal.id}/${Date.now()}_${sanitizedBestandsnaam}`
     const { error: uploadError } = await supabaseAdmin.storage
       .from('portaal-bestanden')
       .upload(filePath, buffer, {
@@ -123,7 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('portaal_bestanden')
       .insert({
         portaal_item_id,
-        bestandsnaam,
+        bestandsnaam: sanitizedBestandsnaam,
         mime_type,
         grootte: buffer.length,
         url,

@@ -21,42 +21,52 @@ export function PortaalChatBubble({ message, isOwnMessage, onImageClick }: Porta
     minute: '2-digit',
   }).format(new Date(message.timestamp))
 
+  // Internal notes have special styling
+  if (message.isInternalNote) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[65%] md:max-w-[65%] max-[768px]:max-w-[85%]">
+          <div className="mb-1 flex items-center justify-end gap-2 text-xs text-muted-foreground">
+            <span>Jij</span>
+            <span>{time}</span>
+          </div>
+          <div className="rounded-2xl rounded-br-md border-l-[3px] border-amber-400 bg-amber-50/80 px-4 py-2.5 shadow-sm">
+            <div className="mb-1 flex items-center gap-1 text-xs font-medium text-amber-700">
+              🔒 Intern
+            </div>
+            <p className="text-sm italic whitespace-pre-wrap text-foreground">{message.text}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-      <div className="max-w-[70%]">
-        <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-          {message.senderName && <span>{message.senderName}</span>}
+      <div className="max-w-[65%] md:max-w-[65%] max-[768px]:max-w-[85%]">
+        <div className={`mb-1 flex items-center gap-2 text-xs text-muted-foreground ${isOwnMessage ? 'justify-end' : ''}`}>
+          <span>{isOwnMessage ? 'Jij' : (message.senderName || 'Klant')}</span>
           <span>{time}</span>
         </div>
 
         <div
-          className={[
-            'rounded-lg px-3 py-2',
-            isOwnMessage ? 'rounded-br-sm bg-[#f0f5f3]' : 'rounded-bl-sm bg-muted',
-            message.isInternalNote
-              ? 'border-l-[3px] border-amber-300 bg-amber-50 italic'
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
+          className={
+            isOwnMessage
+              ? 'rounded-2xl rounded-br-md bg-[#E8F2EC] px-4 py-2.5 shadow-sm'
+              : 'rounded-2xl rounded-bl-md border border-border bg-white px-4 py-2.5'
+          }
         >
-          {message.isInternalNote && (
-            <div className="mb-1 text-xs text-amber-600">
-              🔒 Interne notitie
-            </div>
-          )}
-
           {message.fotoUrl && (
             <img
               src={message.fotoUrl}
               alt=""
-              className="max-w-[300px] cursor-pointer rounded"
+              className="max-w-[300px] cursor-pointer rounded-lg"
               onClick={() => onImageClick?.(message.fotoUrl!)}
             />
           )}
 
           {message.text && (
-            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+            <p className="text-sm whitespace-pre-wrap text-foreground">{message.text}</p>
           )}
         </div>
       </div>

@@ -90,7 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         type: 'herinnering',
         titel: 'Nieuwe portaallink aangevraagd',
         bericht: `Een klant (${email}) heeft een nieuwe portaallink aangevraagd.`,
-        link: `/projecten/${portaal.project_id}`,
+        link: `/projecten/${portaal.project_id}?tab=portaal`,
         project_id: portaal.project_id,
       })
 

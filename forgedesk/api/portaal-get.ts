@@ -51,12 +51,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Portaal niet gevonden' })
     }
 
+    // Haal portaal instellingen op (nodig voor gesloten/verlopen pagina's ook)
+    const { data: appSettingsEarly } = await supabaseAdmin
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('user_id', portaal.user_id)
+      .maybeSingle()
+
+    const instellingenData = appSettingsEarly?.portaal_instellingen || {}
+
     // Check gedeactiveerd
     if (!portaal.actief) {
-      // Haal bedrijfsnaam op voor de gesloten pagina
       const { data: profile } = await supabaseAdmin
         .from('profiles')
-        .select('bedrijfsnaam, bedrijfs_telefoon, bedrijfs_email')
+        .select('bedrijfsnaam, bedrijfs_telefoon, bedrijfs_email, logo_url')
         .eq('id', portaal.user_id)
         .single()
       return res.status(200).json({
@@ -64,6 +72,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bedrijfsnaam: profile?.bedrijfsnaam || '',
         bedrijfs_telefoon: profile?.bedrijfs_telefoon || '',
         bedrijfs_email: profile?.bedrijfs_email || '',
+        logo_url: profile?.logo_url || '',
+        instellingen: instellingenData,
       })
     }
 
@@ -71,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (new Date(portaal.verloopt_op) < new Date()) {
       const { data: profile } = await supabaseAdmin
         .from('profiles')
-        .select('bedrijfsnaam, bedrijfs_telefoon, bedrijfs_email')
+        .select('bedrijfsnaam, bedrijfs_telefoon, bedrijfs_email, logo_url')
         .eq('id', portaal.user_id)
         .single()
       return res.status(200).json({
@@ -80,6 +90,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bedrijfsnaam: profile?.bedrijfsnaam || '',
         bedrijfs_telefoon: profile?.bedrijfs_telefoon || '',
         bedrijfs_email: profile?.bedrijfs_email || '',
+        logo_url: profile?.logo_url || '',
+        instellingen: instellingenData,
       })
     }
 
@@ -101,13 +113,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: docStyle } = await supabaseAdmin
       .from('document_styles')
       .select('primaire_kleur')
-      .eq('user_id', portaal.user_id)
-      .maybeSingle()
-
-    // Haal portaal instellingen
-    const { data: appSettings } = await supabaseAdmin
-      .from('app_settings')
-      .select('portaal_instellingen')
       .eq('user_id', portaal.user_id)
       .maybeSingle()
 
@@ -192,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         website: profile?.bedrijfs_website || '',
         primaire_kleur: docStyle?.primaire_kleur || '#1a1a1a',
       },
-      instellingen: appSettings?.portaal_instellingen || {},
+      instellingen: instellingenData,
       items: safeItems,
     })
   } catch (error) {

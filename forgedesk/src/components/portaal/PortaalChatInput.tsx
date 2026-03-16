@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, type KeyboardEvent, type ChangeEvent } from 'react'
-import { Plus, Send, Paperclip, FileText, Image, Receipt, Lock, Camera, X } from 'lucide-react'
+import { Plus, ArrowUp, Paperclip, FileText, Image, Receipt, Lock, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Offerte, Factuur } from '@/types'
@@ -22,6 +22,8 @@ interface PortaalChatInputProps {
   facturen?: Factuur[]
   onSend: (payload: SendPayload) => Promise<void>
   disabled?: boolean
+  kanBestandenUploaden?: boolean
+  kanBerichtenSturen?: boolean
 }
 
 type MenuMode = null | 'offerte' | 'factuur' | 'tekening' | 'notitie'
@@ -47,6 +49,8 @@ export function PortaalChatInput({
   facturen = [],
   onSend,
   disabled = false,
+  kanBestandenUploaden = true,
+  kanBerichtenSturen = true,
 }: PortaalChatInputProps) {
   // --- state ---------------------------------------------------------------
   const [tekst, setTekst] = useState('')
@@ -246,9 +250,14 @@ export function PortaalChatInput({
     }
   }
 
+  // If public and berichten sturen is disabled, don't render
+  if (isPublic && !kanBerichtenSturen) {
+    return null
+  }
+
   // --- render --------------------------------------------------------------
   return (
-    <div className="border-t border-border bg-background px-4 py-3">
+    <div className="border-t border-border bg-white p-3">
       {/* Pending foto preview */}
       {pendingFoto && (
         <div className="mb-2 flex items-center gap-2">
@@ -292,7 +301,25 @@ export function PortaalChatInput({
         </div>
       )}
 
-      {/* Main input row */}
+      {/* Notitie mode indicator */}
+      {notitieMode && (
+        <div className="mb-2 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-700">
+          <Lock className="h-3.5 w-3.5" />
+          <span className="font-medium">Interne notitie</span>
+          <button
+            type="button"
+            onClick={() => {
+              setNotitieMode(false)
+              setTekst('')
+            }}
+            className="ml-auto"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Main input row: [+] [pill input] [📎] [➤] */}
       <div className="flex items-end gap-2">
         {/* + menu button (internal only) */}
         {!isPublic && (
@@ -305,14 +332,14 @@ export function PortaalChatInput({
                 setMenuMode(null)
               }}
               className={cn(
-                'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90',
-                'disabled:opacity-50',
+                'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors',
+                'bg-gray-100 hover:bg-gray-200 disabled:opacity-50',
               )}
             >
               <Plus className="h-5 w-5" />
             </button>
 
-            {/* Popup menu */}
+            {/* Popup menu — opens UPWARD */}
             {menuOpen && (
               <div className="absolute bottom-full left-0 mb-2 min-w-[240px] rounded-lg border bg-popover p-2 shadow-lg">
                 {menuMode === null && (
@@ -320,41 +347,41 @@ export function PortaalChatInput({
                     <button
                       type="button"
                       onClick={handleMenuOfferte}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+                      className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
-                      <FileText className="h-4 w-4" />
-                      Offerte
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      Offerte delen
                     </button>
                     <button
                       type="button"
                       onClick={handleMenuTekening}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+                      className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
-                      <Image className="h-4 w-4" />
-                      Tekening
+                      <Image className="h-4 w-4 text-muted-foreground" />
+                      Tekening uploaden
                     </button>
                     <button
                       type="button"
                       onClick={handleMenuFactuur}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+                      className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
-                      <Receipt className="h-4 w-4" />
-                      Factuur
+                      <Receipt className="h-4 w-4 text-muted-foreground" />
+                      Factuur delen
                     </button>
                     <button
                       type="button"
                       onClick={handleMenuFoto}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+                      className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
-                      <Camera className="h-4 w-4" />
-                      Foto
+                      <Camera className="h-4 w-4 text-muted-foreground" />
+                      Foto uploaden
                     </button>
                     <button
                       type="button"
                       onClick={handleMenuNotitie}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+                      className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
-                      <Lock className="h-4 w-4" />
+                      <Lock className="h-4 w-4 text-muted-foreground" />
                       Interne notitie
                     </button>
                   </>
@@ -376,10 +403,10 @@ export function PortaalChatInput({
                           key={o.id}
                           type="button"
                           onClick={() => void handleOfferteSelect(o.id)}
-                          className="flex w-full flex-col items-start rounded-md px-3 py-2 text-sm hover:bg-accent"
+                          className="flex w-full flex-col items-start rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                         >
                           <span className="font-medium">{o.nummer} – {o.titel}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="font-mono text-xs text-muted-foreground">
                             {currencyFmt.format(o.totaal)}
                           </span>
                         </button>
@@ -411,10 +438,10 @@ export function PortaalChatInput({
                           key={f.id}
                           type="button"
                           onClick={() => void handleFactuurSelect(f.id)}
-                          className="flex w-full flex-col items-start rounded-md px-3 py-2 text-sm hover:bg-accent"
+                          className="flex w-full flex-col items-start rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                         >
                           <span className="font-medium">{f.nummer}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="font-mono text-xs text-muted-foreground">
                             {currencyFmt.format(f.totaal)}
                           </span>
                         </button>
@@ -430,7 +457,7 @@ export function PortaalChatInput({
                   </div>
                 )}
 
-                {/* Tekening: handled via file input, show loading state */}
+                {/* Tekening: handled via file input */}
                 {menuMode === 'tekening' && (
                   <div className="px-3 py-2 text-sm text-muted-foreground">
                     Bestanden selecteren...
@@ -441,7 +468,7 @@ export function PortaalChatInput({
           </div>
         )}
 
-        {/* Textarea */}
+        {/* Pill-shaped textarea */}
         <textarea
           ref={textareaRef}
           value={tekst}
@@ -451,40 +478,25 @@ export function PortaalChatInput({
           disabled={disabled || sending}
           rows={1}
           className={cn(
-            'flex-1 resize-none rounded-lg border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50',
-            notitieMode && 'border-amber-200 bg-amber-50',
+            'flex-1 resize-none rounded-full border border-border px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50',
+            notitieMode && 'border-amber-300 bg-amber-50/50',
           )}
         />
 
-        {/* Notitie mode indicator + cancel */}
-        {notitieMode && (
-          <button
-            type="button"
-            onClick={() => {
-              setNotitieMode(false)
-              setTekst('')
-            }}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-accent"
-            title="Notitie annuleren"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-
-        {/* Attachment button (photo shortcut) */}
-        {!notitieMode && (
+        {/* Attachment button (📎) — hide if public and uploads disabled */}
+        {(!isPublic || kanBestandenUploaden) && !notitieMode && (
           <button
             type="button"
             disabled={disabled}
             onClick={() => attachInputRef.current?.click()}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-accent disabled:opacity-50"
-            title="Foto bijvoegen"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50"
+            title="Bijlage toevoegen"
           >
-            <Paperclip className="h-4 w-4" />
+            <Paperclip className="h-4 w-4 text-muted-foreground" />
           </button>
         )}
 
-        {/* Send button */}
+        {/* Send button (➤) */}
         <button
           type="button"
           disabled={!canSend || disabled || sending}
@@ -495,12 +507,12 @@ export function PortaalChatInput({
           )}
           title="Verstuur"
         >
-          <Send className="h-4 w-4" />
+          <ArrowUp className="h-4 w-4" />
         </button>
       </div>
 
       {/* Email notification toggle (internal only) */}
-      {!isPublic && (
+      {!isPublic && !notitieMode && (
         <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
           <input
             type="checkbox"
@@ -508,7 +520,7 @@ export function PortaalChatInput({
             onChange={(e) => setEmailNotify(e.target.checked)}
             className="h-3.5 w-3.5 rounded border-border"
           />
-          <span>📧 Klant notificeren</span>
+          <span>Klant notificeren</span>
         </label>
       )}
 
@@ -523,7 +535,7 @@ export function PortaalChatInput({
       <input
         ref={attachInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.pdf"
         className="hidden"
         onChange={handleAttachChange}
       />

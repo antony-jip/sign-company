@@ -270,19 +270,54 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   // ── Email notification (fire-and-forget) ────────────────────────────────
   async function sendEmailNotification(content: string, titel: string) {
     try {
-      const { getProject, getKlant } = await import('@/services/supabaseService')
+      const { getProject, getKlant, getPortaalInstellingen } = await import('@/services/supabaseService')
       const { sendEmail } = await import('@/services/gmailService')
+
+      // Check setting: email_naar_klant_bij_nieuw_item
+      if (user?.id) {
+        const instellingen = await getPortaalInstellingen(user.id)
+        if (instellingen.email_naar_klant_bij_nieuw_item === false) return
+      }
+
       const project = await getProject(projectId)
       if (!project?.klant_id || !portaal) return
       const klant = await getKlant(project.klant_id)
       const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
       if (!klantEmail) return
       const bedrijfsnaam = profile?.bedrijfsnaam || ''
+      const logoUrl = profile?.logo_url || ''
       const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
+      const klantNaam = klant?.contactpersoon || klant?.bedrijfsnaam || 'klant'
+
+      const plainBody = [
+        `Beste ${klantNaam},`,
+        '',
+        `Er is een nieuw item gedeeld voor project ${projectNaam}.`,
+        '',
+        content,
+        '',
+        `Bekijk het hier: ${portaalUrl}`,
+        '',
+        `Met vriendelijke groet,`,
+        bedrijfsnaam || 'Het team',
+      ].join('\n')
+
+      const logoHtml = logoUrl
+        ? `<img src="${logoUrl}" alt="${bedrijfsnaam}" style="max-height:40px;margin-bottom:16px;" /><br/>`
+        : ''
+
+      const htmlBody = `${logoHtml}
+        <p>Beste ${klantNaam},</p>
+        <p>Er is een nieuw item gedeeld voor project <strong>${projectNaam}</strong>.</p>
+        <p>${content}</p>
+        <p><a href="${portaalUrl}" style="display:inline-block;padding:10px 20px;background:#1a1a1a;color:#fff;border-radius:6px;text-decoration:none;">Bekijk in portaal</a></p>
+        <p>Met vriendelijke groet,<br/>${bedrijfsnaam || 'Het team'}</p>`
+
       await sendEmail(
         klantEmail,
         `${bedrijfsnaam || 'Nieuw item'} — ${titel}`,
-        `Er is een nieuw item gedeeld voor project ${projectNaam}.\n\n${content}\n\nBekijk het hier: ${portaalUrl}`
+        plainBody,
+        { html: htmlBody }
       )
     } catch {
       // Email faalt silently

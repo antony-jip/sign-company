@@ -39,6 +39,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Token is verplicht' })
     }
 
+    // Beperk item_ids array om misbruik te voorkomen
+    if (item_ids && item_ids.length > 50) {
+      return res.status(400).json({ error: 'Maximaal 50 items per verzoek' })
+    }
+
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
       return res.status(500).json({ error: 'Server configuratie onvolledig' })
     }
@@ -98,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             type: 'portaal_bekeken',
             titel: `Klant heeft ${onbekekenItems.length === 1 ? 'een item' : `${onbekekenItems.length} items`} bekeken`,
             bericht: `${itemTitels} — ${project?.naam || 'Project'}`,
-            link: `/projecten/${portaal.project_id}`,
+            link: `/projecten/${portaal.project_id}?tab=portaal`,
             project_id: portaal.project_id,
             klant_id: project?.klant_id || null,
             gelezen: false,

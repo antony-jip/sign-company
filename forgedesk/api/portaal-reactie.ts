@@ -88,14 +88,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Item niet gevonden' })
     }
 
+    // Sanitize klant_naam: strip HTML tags en control characters
+    const sanitizedNaam = klant_naam
+      ? klant_naam.trim().replace(/<[^>]*>/g, '').replace(/[\r\n\t]/g, ' ').substring(0, 100)
+      : null
+
+    // Valideer bestanden URLs (alleen bekende URL-patronen)
+    if (bestanden && bestanden.length > 0) {
+      const invalidUrl = bestanden.find(u => !u.startsWith('http') && !u.startsWith('portaal-bestanden/') && !u.startsWith('data:'))
+      if (invalidUrl) {
+        return res.status(400).json({ error: 'Ongeldig bestand URL formaat' })
+      }
+    }
+
     // Sla reactie op
     const { data: reactie, error: reactieError } = await supabaseAdmin
       .from('portaal_reacties')
       .insert({
         portaal_item_id,
         type,
-        bericht: bericht?.trim() || null,
-        klant_naam: klant_naam?.trim() || null,
+        bericht: bericht?.trim()?.substring(0, 5000) || null,
+        klant_naam: sanitizedNaam,
       })
       .select()
       .single()
@@ -128,7 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // --- Notificatie + Email naar gebruiker (niet-blokkerend) ---
     try {
-      const displayNaam = klant_naam?.trim() || 'Klant'
+      const displayNaam = sanitizedNaam || 'Klant'
       const notifType = type === 'goedkeuring' ? 'portaal_goedkeuring' : type === 'revisie' ? 'portaal_revisie' : 'portaal_bericht'
       const actieLabel = type === 'goedkeuring' ? 'goedgekeurd' : type === 'revisie' ? 'revisie gevraagd' : 'een bericht gestuurd'
 
@@ -154,23 +167,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bericht: bericht?.trim()
           ? `"${bericht.trim()}" — ${fullItem?.titel || 'Item'} (${project?.naam || 'Project'})`
           : `${fullItem?.titel || 'Item'} — ${project?.naam || 'Project'}`,
-        link: `/projecten/${portaal.project_id}`,
+        link: `/projecten/${portaal.project_id}?tab=portaal`,
         project_id: portaal.project_id,
         klant_id: project?.klant_id || null,
         actie_genomen: false,
         gelezen: false,
       })
 
-      // Stuur email naar gebruiker
-      const { data: emailSettings } = await supabaseAdmin
+      // Stuur email naar gebruiker (alleen als email_bij_reactie aan staat)
+      const { data: appSettings } = await supabaseAdmin
         .from('app_settings')
-        .select('email_instellingen')
+        .select('email_instellingen, portaal_instellingen')
         .eq('user_id', portaal.user_id)
         .maybeSingle()
 
-      const emailConfig = emailSettings?.email_instellingen as { gmail_address?: string; app_password?: string; smtp_host?: string; smtp_port?: number } | null
+      const emailConfig = appSettings?.email_instellingen as { gmail_address?: string; app_password?: string; smtp_host?: string; smtp_port?: number } | null
+      const portaalInstellingen = appSettings?.portaal_instellingen as { email_naar_mij_bij_reactie?: boolean } | null
+      const emailBijReactie = portaalInstellingen?.email_naar_mij_bij_reactie !== false // default true
 
-      if (emailConfig?.gmail_address && emailConfig?.app_password) {
+      if (emailBijReactie && emailConfig?.gmail_address && emailConfig?.app_password) {
         const onderwerp = type === 'goedkeuring'
           ? `Goedgekeurd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
           : type === 'revisie'

@@ -12,8 +12,7 @@ import {
   ExternalLink,
   Download,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { getStatusBadgeClass } from '@/utils/statusColors'
 import type { PortaalItem, PortaalReactie } from '@/types'
 
 interface PortaalChatRichCardProps {
@@ -22,15 +21,16 @@ interface PortaalChatRichCardProps {
   onApprove?: (itemId: string) => void
   onRevisie?: (itemId: string) => void
   onImageClick?: (url: string) => void
+  instellingen?: Record<string, unknown>
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Eye }> = {
-  verstuurd: { label: 'Verstuurd', color: 'bg-blue-50 text-blue-700', icon: Clock },
-  bekeken: { label: 'Bekeken', color: 'bg-gray-100 text-gray-700', icon: Eye },
-  goedgekeurd: { label: 'Goedgekeurd', color: 'bg-green-50 text-green-700', icon: CheckCircle2 },
-  revisie: { label: 'Revisie gevraagd', color: 'bg-amber-50 text-amber-700', icon: RotateCcw },
-  betaald: { label: 'Betaald', color: 'bg-green-50 text-green-700', icon: CreditCard },
-  vervangen: { label: 'Vervangen', color: 'bg-gray-100 text-gray-500', icon: AlertCircle },
+const STATUS_LABELS: Record<string, string> = {
+  verstuurd: 'Verstuurd',
+  bekeken: 'Bekeken',
+  goedgekeurd: 'Goedgekeurd',
+  revisie: 'Revisie gevraagd',
+  betaald: 'Betaald',
+  vervangen: 'Vervangen',
 }
 
 const TYPE_ICONS: Record<string, typeof FileText> = {
@@ -89,189 +89,220 @@ function ReactionBubble({ reactie }: { reactie: PortaalReactie }) {
   )
 }
 
+// Check if item has been approved or revisied
+function getApprovalIndicator(item: PortaalItem): { type: 'goedgekeurd' | 'revisie'; naam: string } | null {
+  if (item.status === 'goedgekeurd') {
+    const r = item.reacties?.find(r => r.type === 'goedkeuring')
+    return { type: 'goedgekeurd', naam: r?.klant_naam || 'Klant' }
+  }
+  if (item.status === 'revisie') {
+    const r = item.reacties?.find(r => r.type === 'revisie')
+    return { type: 'revisie', naam: r?.klant_naam || 'Klant' }
+  }
+  return null
+}
+
 export function PortaalChatRichCard({
   item,
   isPublic,
   onApprove,
   onRevisie,
   onImageClick,
+  instellingen,
 }: PortaalChatRichCardProps) {
-  const statusConfig = STATUS_CONFIG[item.status] || STATUS_CONFIG.verstuurd
-  const StatusIcon = statusConfig.icon
   const TypeIcon = TYPE_ICONS[item.type] || FileText
+  const statusLabel = STATUS_LABELS[item.status] || item.status
+  const badgeClass = getStatusBadgeClass(item.status)
+  const approval = getApprovalIndicator(item)
 
   const images = item.bestanden.filter((b) => isImageFile(b.mime_type, b.bestandsnaam))
   const files = item.bestanden.filter((b) => !isImageFile(b.mime_type, b.bestandsnaam))
 
-  // Foto bericht type
+  // Determine if approve/revise buttons should show
+  const canApproveOfferte = isPublic && item.type === 'offerte' && item.status !== 'goedgekeurd' && item.status !== 'revisie' && instellingen?.klant_kan_offerte_goedkeuren !== false
+  const canApproveTekening = isPublic && item.type === 'tekening' && item.status !== 'goedgekeurd' && item.status !== 'revisie' && instellingen?.klant_kan_tekening_goedkeuren !== false
+
+  // Foto bericht type — inline image
   if (item.bericht_type === 'foto') {
+    const afzender = item.afzender || 'bedrijf'
+    const isOwn = isPublic ? afzender === 'klant' : afzender === 'bedrijf'
     return (
-      <div className="mx-auto max-w-md">
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+        <div className="max-w-[300px] md:max-w-[300px] max-[768px]:max-w-full">
           {item.foto_url && (
             <img
               src={item.foto_url}
               alt={item.titel}
-              className="max-w-[300px] cursor-pointer rounded"
+              className="cursor-pointer rounded-lg"
               onClick={() => onImageClick?.(item.foto_url!)}
             />
           )}
           {item.bericht_tekst && (
-            <div className="px-3 py-2">
-              <p className="text-sm">{item.bericht_tekst}</p>
-            </div>
+            <p className="mt-1 text-sm whitespace-pre-wrap">{item.bericht_tekst}</p>
           )}
-          <div className="px-3 pb-2 text-right">
+          <div className="mt-1 text-right">
             <span className="text-xs text-muted-foreground">{formatTime(item.created_at)}</span>
           </div>
         </div>
-
-        {item.reacties && item.reacties.length > 0 && (
-          <div className="mt-2 flex flex-col gap-1.5">
-            {item.reacties.map((r) => (
-              <ReactionBubble key={r.id} reactie={r} />
-            ))}
-          </div>
-        )}
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-lg">
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        {/* Header */}
-        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-          <TypeIcon className="h-4 w-4 text-muted-foreground" />
-          <span className="flex-1 text-sm font-medium">{item.titel}</span>
-          <Badge className={statusConfig.color}>
-            <StatusIcon className="mr-1 h-3 w-3" />
-            {statusConfig.label}
-          </Badge>
+    <div className="w-full">
+      <div className="rounded-xl border border-border bg-white p-4">
+        {/* Header row: icon + title + status badge */}
+        <div className="flex items-start gap-3">
+          {/* Icon in sage circle */}
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8F2EC]">
+            <TypeIcon className="h-5 w-5 text-[#4a7c5f]" />
+          </div>
+
+          {/* Title + number + amount */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h4 className="truncate text-sm font-medium">{item.titel}</h4>
+              {item.label && (
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">{item.label}</span>
+              )}
+            </div>
+            {item.bedrag != null && (
+              <p className="font-mono text-base font-semibold">{formatCurrency(item.bedrag)}</p>
+            )}
+            {item.omschrijving && (
+              <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{item.omschrijving}</p>
+            )}
+          </div>
+
+          {/* Status badge */}
+          <span className={`badge shrink-0 ${badgeClass}`}>{statusLabel}</span>
         </div>
 
-        {/* Content area */}
-        <div className="px-4 py-3">
-          {/* Offerte */}
-          {item.type === 'offerte' && (
-            <div className="space-y-2">
-              {item.bedrag != null && (
-                <p className="font-mono text-lg font-semibold">{formatCurrency(item.bedrag)}</p>
-              )}
-              {item.omschrijving && (
-                <p className="text-sm text-muted-foreground">{item.omschrijving}</p>
-              )}
-              {isPublic && item.status !== 'goedgekeurd' && (
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={() => onApprove?.(item.id)}
-                  >
-                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                    Goedkeuren
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Eye className="mr-1.5 h-4 w-4" />
-                    Bekijk
-                  </Button>
-                </div>
-              )}
-            </div>
+        {/* Images (tekening) */}
+        {images.length > 0 && (
+          <div className="mt-3">
+            {images.slice(0, 1).map((img) => (
+              <img
+                key={img.id}
+                src={img.thumbnail_url || img.url}
+                alt={img.bestandsnaam}
+                className="max-h-[200px] cursor-pointer rounded-lg object-cover"
+                onClick={() => onImageClick?.(img.url)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Files (PDF/documents) */}
+        {files.length > 0 && (
+          <div className="mt-3 space-y-1">
+            {files.map((f) => (
+              <a
+                key={f.id}
+                href={f.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-xs hover:bg-gray-100"
+              >
+                <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="flex-1 truncate">{f.bestandsnaam}</span>
+                {f.grootte && (
+                  <span className="shrink-0 text-muted-foreground">
+                    {(f.grootte / 1024).toFixed(0)} KB
+                  </span>
+                )}
+                <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Approval indicator */}
+        {approval && (
+          <div className={`mt-3 flex items-center gap-1.5 text-xs ${approval.type === 'goedgekeurd' ? 'text-green-700' : 'text-amber-700'}`}>
+            {approval.type === 'goedgekeurd' ? (
+              <><CheckCircle2 className="h-3.5 w-3.5" /> Goedgekeurd door {approval.naam}</>
+            ) : (
+              <><RotateCcw className="h-3.5 w-3.5" /> Revisie gevraagd door {approval.naam}</>
+            )}
+          </div>
+        )}
+
+        {/* Action buttons — compact text links */}
+        <div className="mt-3 flex items-center gap-4">
+          {/* Public: Approve/Revise for offerte */}
+          {canApproveOfferte && (
+            <>
+              <button
+                type="button"
+                onClick={() => onApprove?.(item.id)}
+                className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-800"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Goedkeuren
+              </button>
+              <button
+                type="button"
+                onClick={() => onRevisie?.(item.id)}
+                className="flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Revisie vragen
+              </button>
+            </>
           )}
 
-          {/* Tekening */}
-          {item.type === 'tekening' && (
-            <div className="space-y-2">
-              {images.length > 0 && (
-                <div className="grid grid-cols-2 gap-2">
-                  {images.slice(0, 1).map((img) => (
-                    <img
-                      key={img.id}
-                      src={img.thumbnail_url || img.url}
-                      alt={img.bestandsnaam}
-                      className="max-h-48 w-full cursor-pointer rounded object-cover"
-                      onClick={() => onImageClick?.(img.url)}
-                    />
-                  ))}
-                </div>
-              )}
-              {files.length > 0 && (
-                <div className="space-y-1">
-                  {files.map((f) => (
-                    <a
-                      key={f.id}
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded bg-muted px-2 py-1.5 text-xs hover:bg-muted/80"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      <span className="truncate">{f.bestandsnaam}</span>
-                      <ExternalLink className="ml-auto h-3 w-3 text-muted-foreground" />
-                    </a>
-                  ))}
-                </div>
-              )}
-              {isPublic && item.status !== 'goedgekeurd' && (
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={() => onApprove?.(item.id)}
-                  >
-                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                    Goedkeuren
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => onRevisie?.(item.id)}>
-                    <RotateCcw className="mr-1.5 h-4 w-4" />
-                    Revisie vragen
-                  </Button>
-                </div>
-              )}
-            </div>
+          {/* Public: Approve/Revise for tekening */}
+          {canApproveTekening && (
+            <>
+              <button
+                type="button"
+                onClick={() => onApprove?.(item.id)}
+                className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-800"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Goedkeuren
+              </button>
+              <button
+                type="button"
+                onClick={() => onRevisie?.(item.id)}
+                className="flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Revisie vragen
+              </button>
+            </>
           )}
 
-          {/* Factuur */}
-          {item.type === 'factuur' && (
-            <div className="space-y-2">
-              {item.bedrag != null && (
-                <p className="font-mono text-lg font-semibold">{formatCurrency(item.bedrag)}</p>
-              )}
-              {item.mollie_payment_url && isPublic && item.status !== 'betaald' && (
-                <div className="pt-2">
-                  <Button
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700"
-                    asChild
-                  >
-                    <a href={item.mollie_payment_url} target="_blank" rel="noopener noreferrer">
-                      <CreditCard className="mr-1.5 h-4 w-4" />
-                      Betalen
-                    </a>
-                  </Button>
-                </div>
-              )}
-            </div>
+          {/* Public: Pay for factuur */}
+          {isPublic && item.type === 'factuur' && item.mollie_payment_url && item.status !== 'betaald' && (
+            <a
+              href={item.mollie_payment_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-800"
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              Betalen
+            </a>
           )}
 
-          {/* Bericht (non-foto, already handled by early return) */}
-          {item.type === 'bericht' && (
-            <div>
-              {item.bericht_tekst && (
-                <p className="text-sm whitespace-pre-wrap">{item.bericht_tekst}</p>
-              )}
-            </div>
+          {/* Internal: View/Edit */}
+          {!isPublic && (
+            <>
+              <button type="button" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                <Eye className="h-3.5 w-3.5" />
+                Bekijk
+              </button>
+            </>
           )}
-        </div>
 
-        {/* Timestamp */}
-        <div className="px-4 pb-2 text-right">
-          <span className="text-xs text-muted-foreground">{formatTime(item.created_at)}</span>
+          {/* Timestamp right-aligned */}
+          <span className="ml-auto text-xs text-muted-foreground">{formatTime(item.created_at)}</span>
         </div>
       </div>
 
-      {/* Reactions */}
+      {/* Reactions below the card */}
       {item.reacties && item.reacties.length > 0 && (
         <div className="mt-2 flex flex-col gap-1.5">
           {item.reacties.map((r) => (

@@ -7,9 +7,10 @@ interface PortaalVerlopenProps {
   bedrijfsnaam: string
   telefoon?: string
   email?: string
+  logoUrl?: string
 }
 
-export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email }: PortaalVerlopenProps) {
+export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl }: PortaalVerlopenProps) {
   const [aanvraagEmail, setAanvraagEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [verzonden, setVerzonden] = useState(false)
@@ -46,13 +47,16 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email }: Portaa
   return (
     <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center space-y-6">
+        {logoUrl && (
+          <img src={logoUrl} alt={bedrijfsnaam} className="h-10 w-auto mx-auto object-contain" />
+        )}
         <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto">
           <Clock className="w-8 h-8 text-amber-500" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Link verlopen</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Deze link is verlopen</h1>
           <p className="text-gray-600">
-            Deze portaallink is verlopen. U kunt hieronder een nieuwe link aanvragen.
+            Neem contact op met {bedrijfsnaam || 'het bedrijf'} voor een nieuwe link, of vraag er hieronder een aan.
           </p>
         </div>
 
