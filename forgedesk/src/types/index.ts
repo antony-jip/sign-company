@@ -1609,6 +1609,7 @@ export interface PortaalBestand {
 export interface PortaalReactie {
   id: string;
   portaal_item_id: string;
+  portaal_bestand_id?: string;
   type: 'goedkeuring' | 'revisie' | 'bericht';
   bericht?: string;
   klant_naam?: string;

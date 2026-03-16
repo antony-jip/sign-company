@@ -8,12 +8,14 @@ import {
   Phone,
   Mail,
   Globe,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react'
 import { PortaalVerlopen } from './PortaalVerlopen'
 import { PortaalGesloten } from './PortaalGesloten'
-import { PortaalChat } from './PortaalChat'
-import type { SendPayload } from './PortaalChatInput'
-import type { PortaalItem, PortaalReactie } from '@/types'
+import { PortaalOfferteSection } from './PortaalOfferteSection'
+import { PortaalDrukproevenSection } from './PortaalDrukproevenSection'
+import { PortaalBerichtenSection } from './PortaalBerichtenSection'
 
 // ── API Response Types ────────────────────────────────────────────────────
 
@@ -33,6 +35,7 @@ interface PortaalReactieData {
   type: string
   bericht: string | null
   klant_naam: string | null
+  portaal_bestand_id: string | null
   created_at: string
 }
 
@@ -50,7 +53,6 @@ interface PortaalItemData {
   created_at: string
   bestanden: PortaalBestandData[]
   reacties: PortaalReactieData[]
-  // Chat fields
   bericht_type?: string | null
   bericht_tekst?: string | null
   foto_url?: string | null
@@ -97,50 +99,6 @@ function formatDate(dateStr: string): string {
   }).format(new Date(dateStr))
 }
 
-/** Convert API response items to PortaalItem type for chat component */
-function toPortaalItems(apiItems: PortaalItemData[]): PortaalItem[] {
-  return apiItems.map(item => ({
-    id: item.id,
-    user_id: '',
-    project_id: '',
-    portaal_id: '',
-    type: item.type as PortaalItem['type'],
-    titel: item.titel,
-    omschrijving: item.omschrijving || undefined,
-    label: item.label || undefined,
-    status: item.status as PortaalItem['status'],
-    bekeken_op: item.bekeken_op || undefined,
-    mollie_payment_url: item.mollie_payment_url || undefined,
-    bedrag: item.bedrag || undefined,
-    zichtbaar_voor_klant: true,
-    volgorde: item.volgorde,
-    bericht_type: (item.bericht_type || 'item') as PortaalItem['bericht_type'],
-    bericht_tekst: item.bericht_tekst || undefined,
-    foto_url: item.foto_url || undefined,
-    afzender: (item.afzender || 'bedrijf') as PortaalItem['afzender'],
-    bestanden: item.bestanden.map(b => ({
-      id: b.id,
-      portaal_item_id: item.id,
-      bestandsnaam: b.bestandsnaam,
-      mime_type: b.mime_type || undefined,
-      grootte: b.grootte || undefined,
-      url: b.url,
-      thumbnail_url: b.thumbnail_url || undefined,
-      uploaded_by: (b.uploaded_by || 'bedrijf') as 'bedrijf' | 'klant',
-      created_at: b.created_at,
-    })),
-    reacties: item.reacties.map(r => ({
-      id: r.id,
-      portaal_item_id: item.id,
-      type: r.type as PortaalReactie['type'],
-      bericht: r.bericht || undefined,
-      klant_naam: r.klant_naam || undefined,
-      created_at: r.created_at,
-    })),
-    created_at: item.created_at,
-  }))
-}
-
 // ── Bekeken Tracker Hook ─────────────────────────────────────────────────
 
 function useBekekenTracker(token: string | undefined) {
@@ -182,6 +140,59 @@ function useBekekenTracker(token: string | undefined) {
   return { markBekeken }
 }
 
+// ── Action Summary Component ─────────────────────────────────────────────
+
+function PortaalActionSummary({ offertes, drukproeven, primaire_kleur }: {
+  offertes: PortaalItemData[]
+  drukproeven: PortaalItemData[]
+  primaire_kleur: string
+}) {
+  const pendingOffertes = offertes.filter(i => i.status !== 'goedgekeurd' && i.status !== 'betaald')
+  const pendingDrukproeven = drukproeven.filter(i => i.status !== 'goedgekeurd')
+  const totalPending = pendingOffertes.length + pendingDrukproeven.length
+  const totalItems = offertes.length + drukproeven.length
+  const completed = totalItems - totalPending
+
+  if (totalItems === 0) return null
+
+  const allDone = totalPending === 0
+  const progressPercent = totalItems > 0 ? Math.round((completed / totalItems) * 100) : 0
+
+  return (
+    <div className={`rounded-xl border px-5 py-4 ${allDone ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+      <div className="flex items-center gap-3">
+        {allDone ? (
+          <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+        ) : (
+          <Clock className="w-5 h-5 text-gray-400 flex-shrink-0" />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-medium ${allDone ? 'text-green-700' : 'text-gray-900'}`}>
+            {allDone
+              ? 'Alles is afgehandeld!'
+              : `${totalPending} ${totalPending === 1 ? 'item wacht' : 'items wachten'} op uw goedkeuring`}
+          </p>
+          {/* Progress bar */}
+          <div className="mt-2 flex items-center gap-3">
+            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${progressPercent}%`,
+                  backgroundColor: allDone ? '#16a34a' : primaire_kleur,
+                }}
+              />
+            </div>
+            <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
+              {completed} van {totalItems}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Component ───────────────────────────────────────────────────────
 
 export function PortaalPagina() {
@@ -189,7 +200,15 @@ export function PortaalPagina() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [data, setData] = useState<PortaalData | null>(null)
+  const [klantNaam, setKlantNaam] = useState(() => {
+    try { return localStorage.getItem('forgedesk_portaal_klant_naam') || '' } catch { return '' }
+  })
   const { markBekeken } = useBekekenTracker(token)
+
+  function handleKlantNaamChange(naam: string) {
+    setKlantNaam(naam)
+    try { localStorage.setItem('forgedesk_portaal_klant_naam', naam) } catch { /* ignore */ }
+  }
 
   const fetchPortaal = useCallback(async () => {
     if (!token) return
@@ -229,106 +248,6 @@ export function PortaalPagina() {
       if (!item.bekeken_op) markBekeken(item.id)
     }
   }, [data?.items, markBekeken])
-
-  // ── Client send handler (text + photo via portaal-reactie API) ──────────
-  async function handleClientSend(payload: SendPayload) {
-    if (!token || !data?.portaal) return
-
-    if (payload.kind === 'tekst') {
-      // Create a text reaction on the portaal (we'll use a generic bericht reaction)
-      await fetch('/api/portaal-reactie', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          portaal_item_id: getLastItemId(),
-          type: 'bericht',
-          bericht: payload.tekst,
-          klant_naam: getStoredName(),
-        }),
-      })
-      await fetchPortaal()
-    } else if (payload.kind === 'foto') {
-      // Upload photo first, then create reaction
-      const formData = new FormData()
-      const reader = new FileReader()
-      const base64 = await new Promise<string>((resolve) => {
-        reader.onload = () => resolve((reader.result as string).split(',')[1])
-        reader.readAsDataURL(payload.file)
-      })
-
-      const uploadRes = await fetch('/api/portaal-upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          portaal_item_id: getLastItemId(),
-          bestandsnaam: payload.file.name,
-          mime_type: payload.file.type,
-          data: base64,
-        }),
-      })
-
-      if (uploadRes.ok) {
-        await fetch('/api/portaal-reactie', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            token,
-            portaal_item_id: getLastItemId(),
-            type: 'bericht',
-            bericht: payload.caption || 'Foto gedeeld',
-            klant_naam: getStoredName(),
-          }),
-        })
-      }
-      await fetchPortaal()
-    }
-  }
-
-  function getLastItemId(): string {
-    // Use the most recent item as the parent for client reactions
-    const items = data?.items || []
-    return items.length > 0 ? items[items.length - 1].id : ''
-  }
-
-  function getStoredName(): string {
-    return localStorage.getItem('forgedesk_portaal_klant_naam') || ''
-  }
-
-  // ── Client approve/revisie handlers ─────────────────────────────────────
-  async function handleApprove(itemId: string) {
-    if (!token) return
-    await fetch('/api/portaal-reactie', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token,
-        portaal_item_id: itemId,
-        type: 'goedkeuring',
-        klant_naam: getStoredName(),
-      }),
-    })
-    await fetchPortaal()
-  }
-
-  async function handleRevisie(itemId: string) {
-    if (!token) return
-    const bericht = prompt('Beschrijf de gewenste wijzigingen:')
-    if (!bericht) return
-    await fetch('/api/portaal-reactie', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token,
-        portaal_item_id: itemId,
-        type: 'revisie',
-        bericht,
-        klant_naam: getStoredName(),
-      }),
-    })
-    await fetchPortaal()
-  }
 
   // ── Loading / Error / Expired / Closed states ───────────────────────────
   if (loading) {
@@ -379,18 +298,22 @@ export function PortaalPagina() {
   const project = data.project
   const portaal = data.portaal!
   const rawItems = data.items || []
-  const chatItems = toPortaalItems(rawItems)
   const primaire_kleur = bedrijf.primaire_kleur || '#1a1a1a'
   const instellingen = (data.instellingen || {}) as Record<string, unknown>
   const toonContact = instellingen.contactgegevens_tonen !== false
   const toonLogo = instellingen.bedrijfslogo_op_portaal !== false
   const kanBerichtenSturen = instellingen.klant_kan_berichten_sturen !== false
 
+  // Filter items per sectie
+  const offerteItems = rawItems.filter(i => i.type === 'offerte' && (!i.bericht_type || i.bericht_type === 'item'))
+  const tekeningItems = rawItems.filter(i => i.type === 'tekening' && (!i.bericht_type || i.bericht_type === 'item'))
+  const berichtItems = rawItems.filter(i => i.bericht_type === 'tekst' || i.type === 'bericht')
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {toonLogo && bedrijf.logo_url ? (
               <img
@@ -420,32 +343,61 @@ export function PortaalPagina() {
         </div>
       </header>
 
-      {/* Instruction text */}
-      {portaal.instructie_tekst && (
-        <div className="max-w-3xl mx-auto w-full px-4 pt-4">
-          <div className="bg-white rounded-2xl border border-gray-200 px-5 py-4">
+      {/* Content */}
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 space-y-6">
+        {/* Instruction text */}
+        {portaal.instructie_tekst && (
+          <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
             <p className="text-sm text-gray-700 whitespace-pre-wrap">{portaal.instructie_tekst}</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Chat timeline */}
-      <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
-        <PortaalChat
-          items={chatItems}
-          isPublic={true}
-          bedrijfNaam={bedrijf.naam}
-          onSend={kanBerichtenSturen ? handleClientSend : undefined}
-          onApprove={handleApprove}
-          onRevisie={handleRevisie}
-          instellingen={instellingen}
+        {/* Action summary */}
+        <PortaalActionSummary
+          offertes={offerteItems}
+          drukproeven={tekeningItems}
+          primaire_kleur={primaire_kleur}
         />
-      </div>
+
+        {/* Offertes section */}
+        {offerteItems.length > 0 && (
+          <PortaalOfferteSection
+            items={offerteItems}
+            token={token!}
+            klantNaam={klantNaam}
+            onKlantNaamChange={handleKlantNaamChange}
+            onReactie={fetchPortaal}
+            primaire_kleur={primaire_kleur}
+          />
+        )}
+
+        {/* Drukproeven section */}
+        {tekeningItems.length > 0 && (
+          <PortaalDrukproevenSection
+            items={tekeningItems}
+            token={token!}
+            klantNaam={klantNaam}
+            onReactie={fetchPortaal}
+            primaire_kleur={primaire_kleur}
+          />
+        )}
+
+        {/* Berichten section */}
+        <PortaalBerichtenSection
+          items={berichtItems}
+          allItems={rawItems}
+          token={token!}
+          klantNaam={klantNaam}
+          kanBerichtenSturen={kanBerichtenSturen}
+          primaire_kleur={primaire_kleur}
+          onReactie={fetchPortaal}
+        />
+      </main>
 
       {/* Contact section */}
       {toonContact && (bedrijf.telefoon || bedrijf.email || bedrijf.website) && (
-        <div className="max-w-3xl mx-auto w-full px-4 pb-4">
-          <div className="bg-white rounded-2xl border border-gray-200 px-5 py-4 space-y-2">
+        <div className="max-w-2xl mx-auto w-full px-4 pb-4">
+          <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 space-y-2">
             <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
               <Building2 className="w-4 h-4" />
               <span>Contact</span>
@@ -474,7 +426,6 @@ export function PortaalPagina() {
         </div>
       )}
 
-      {/* Footer — geen FORGEdesk branding */}
       <div className="h-4 flex-shrink-0" />
     </div>
   )

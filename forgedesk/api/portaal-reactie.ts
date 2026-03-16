@@ -30,13 +30,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { token, portaal_item_id, type, bericht, klant_naam, bestanden } = req.body as {
+    const { token, portaal_item_id, type, bericht, klant_naam, bestanden, portaal_bestand_id } = req.body as {
       token: string
       portaal_item_id: string
       type: 'goedkeuring' | 'revisie' | 'bericht'
       bericht?: string
       klant_naam?: string
       bestanden?: string[] // URLs van geüploade bestanden
+      portaal_bestand_id?: string // Voor per-afbeelding goedkeuring
     }
 
     if (!token || !portaal_item_id || !type) {
@@ -88,6 +89,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Item niet gevonden' })
     }
 
+    // Valideer portaal_bestand_id als meegegeven (per-afbeelding goedkeuring)
+    if (portaal_bestand_id) {
+      const { data: bestand } = await supabaseAdmin
+        .from('portaal_bestanden')
+        .select('id')
+        .eq('id', portaal_bestand_id)
+        .eq('portaal_item_id', portaal_item_id)
+        .single()
+      if (!bestand) {
+        return res.status(400).json({ error: 'Bestand hoort niet bij dit item' })
+      }
+    }
+
     // Sanitize klant_naam: strip HTML tags en control characters
     const sanitizedNaam = klant_naam
       ? klant_naam.trim().replace(/<[^>]*>/g, '').replace(/[\r\n\t]/g, ' ').substring(0, 100)
@@ -106,6 +120,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('portaal_reacties')
       .insert({
         portaal_item_id,
+        portaal_bestand_id: portaal_bestand_id || null,
         type,
         bericht: bericht?.trim()?.substring(0, 5000) || null,
         klant_naam: sanitizedNaam,
@@ -119,7 +134,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Update item status
-    const newStatus = type === 'goedkeuring' ? 'goedgekeurd' : type === 'revisie' ? 'revisie' : item.status
+    let newStatus = type === 'goedkeuring' ? 'goedgekeurd' : type === 'revisie' ? 'revisie' : item.status
+
+    // Per-afbeelding status aggregatie: check alle afbeeldingen van het item
+    if (portaal_bestand_id && (type === 'goedkeuring' || type === 'revisie')) {
+      const { data: allBestanden } = await supabaseAdmin
+        .from('portaal_bestanden')
+        .select('id')
+        .eq('portaal_item_id', portaal_item_id)
+        .in('mime_type', ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'])
+
+      const { data: allReacties } = await supabaseAdmin
+        .from('portaal_reacties')
+        .select('portaal_bestand_id, type, created_at')
+        .eq('portaal_item_id', portaal_item_id)
+        .not('portaal_bestand_id', 'is', null)
+        .order('created_at', { ascending: false })
+
+      if (allBestanden && allReacties) {
+        const imageIds = allBestanden.map(b => b.id)
+        let alleGoedgekeurd = true
+        let heeftRevisie = false
+
+        for (const imageId of imageIds) {
+          const latestReactie = allReacties.find(r => r.portaal_bestand_id === imageId)
+          if (!latestReactie || latestReactie.type !== 'goedkeuring') {
+            alleGoedgekeurd = false
+          }
+          if (latestReactie?.type === 'revisie') {
+            heeftRevisie = true
+          }
+        }
+
+        if (alleGoedgekeurd && imageIds.length > 0) {
+          newStatus = 'goedgekeurd'
+        } else if (heeftRevisie) {
+          newStatus = 'revisie'
+        } else {
+          newStatus = 'bekeken' // Nog niet alle afbeeldingen beoordeeld
+        }
+      }
+    }
+
     if (newStatus !== item.status) {
       await supabaseAdmin
         .from('portaal_items')
