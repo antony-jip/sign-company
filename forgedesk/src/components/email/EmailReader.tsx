@@ -6,8 +6,8 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
-  UserPlus, FolderPlus, FileText, ListPlus, TrendingUp,
-  Building2, Mail, Phone, ExternalLink,
+  UserPlus, FolderPlus, FileText, ListPlus,
+  Building2, Mail,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email } from '@/types'
@@ -52,6 +52,7 @@ export function EmailReader({
   const [showQuotedText, setShowQuotedText] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
+  const [editorFocused, setEditorFocused] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
 
   // Build signature HTML
@@ -72,6 +73,7 @@ export function EmailReader({
   useEffect(() => {
     setReplyMode(null)
     setShowQuotedText(false)
+    setEditorFocused(false)
   }, [email?.id])
 
   const handleReply = useCallback((mode: 'reply' | 'reply-all' | 'forward') => {
@@ -165,33 +167,35 @@ export function EmailReader({
       {/* ─── MAIN: email content + inline reply ─── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top action bar */}
-        <div className="flex items-center justify-between px-6 py-2.5 border-b border-border/50 flex-shrink-0 bg-white">
-          <div className="flex items-center gap-1.5">
-            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-foreground/60" onClick={onBack}>
+        <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-white">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 text-foreground/55 hover:text-foreground hover:bg-foreground/[0.04]"
+              onClick={onBack}
+            >
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">Terug</span>
             </Button>
-            <div className="w-px h-5 bg-border/30 mx-1" />
-            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-foreground/50 hover:text-foreground" onClick={() => email && onArchive?.(email)}>
+            <div className="w-px h-5 bg-foreground/[0.08] mx-1.5" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04]" onClick={() => email && onArchive?.(email)} title="Archiveren">
               <Archive className="h-4 w-4" />
-              <span className="text-sm hidden lg:inline">Archief</span>
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-foreground/50 hover:text-foreground" onClick={() => email && onDelete?.(email)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-red-500 hover:bg-red-500/[0.06]" onClick={() => email && onDelete?.(email)} title="Verwijderen">
               <Trash2 className="h-4 w-4" />
-              <span className="text-sm hidden lg:inline">Verwijder</span>
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-foreground/50 hover:text-foreground" onClick={() => email && onToggleRead?.(email)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04]" onClick={() => email && onToggleRead?.(email)} title="Markeer als ongelezen">
               <MailOpen className="h-4 w-4" />
-              <span className="text-sm hidden lg:inline">Ongelezen</span>
             </Button>
           </div>
           {emailIndex !== undefined && emailTotal !== undefined && (
-            <div className="flex items-center gap-1.5 text-sm text-foreground/40">
-              <span>{emailIndex + 1} / {emailTotal}</span>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
+            <div className="flex items-center gap-1 text-sm text-foreground/35">
+              <span className="tabular-nums">{emailIndex + 1} van {emailTotal}</span>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-foreground" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
                 <ChevronUp className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-foreground" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </div>
@@ -200,80 +204,98 @@ export function EmailReader({
 
         {/* Scrollable email content */}
         <div className="flex-1 overflow-y-auto bg-white">
-          <div className="max-w-[900px] px-8 py-8">
+          <div className="max-w-[880px] mx-auto px-8 py-8">
             {/* Subject */}
-            <h1 className="text-xl font-semibold text-foreground mb-6 leading-tight">
+            <h1 className="text-[22px] font-semibold text-foreground mb-8 leading-snug tracking-tight">
               {email.onderwerp || '(geen onderwerp)'}
             </h1>
 
             {/* Sender info row */}
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className={cn('w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0', avatarColor)}>
+            <div className="flex items-start justify-between mb-8">
+              <div className="flex items-start gap-3.5">
+                <div className={cn('w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-white shadow-sm', avatarColor)}>
                   <span className="text-sm font-bold text-white">{senderName[0]?.toUpperCase()}</span>
                 </div>
-                <div>
+                <div className="pt-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">{senderName}</span>
-                    <span className="text-xs text-foreground/40">&lt;{senderEmail}&gt;</span>
+                    <span className="text-[15px] font-semibold text-foreground">{senderName}</span>
+                    <span className="text-xs text-foreground/35">&lt;{senderEmail}&gt;</span>
                   </div>
-                  <div className="text-xs text-foreground/40 mt-0.5">
+                  <div className="text-xs text-foreground/35 mt-1">
                     Aan: {email.aan}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <span className="text-sm text-foreground/40">{formatShortDate(email.datum)}</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleStar?.(email)}>
-                  <Star className={cn('h-4 w-4', email.starred ? 'fill-amber-400 text-amber-400' : 'text-foreground/25')} />
-                </Button>
+              <div className="flex items-center gap-2 flex-shrink-0 pt-1">
+                <span className="text-xs text-foreground/35 tabular-nums">{formatShortDate(email.datum)}</span>
+                <button
+                  onClick={() => onToggleStar?.(email)}
+                  className={cn(
+                    'p-1.5 rounded-md transition-all',
+                    email.starred
+                      ? 'text-amber-400 hover:bg-amber-50'
+                      : 'text-foreground/20 hover:text-foreground/40 hover:bg-foreground/[0.04]',
+                  )}
+                >
+                  <Star className={cn('h-4 w-4', email.starred && 'fill-amber-400')} />
+                </button>
               </div>
             </div>
 
-            {/* Reply/Forward buttons */}
-            <div className="flex items-center gap-2 mb-6">
-              <Button variant="outline" size="sm" className="h-8 gap-2 text-sm" onClick={() => handleReply('reply')}>
+            {/* Quick reply/forward buttons */}
+            <div className="flex items-center gap-2 mb-8">
+              <button
+                onClick={() => handleReply('reply')}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-sm text-foreground/60 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
+              >
                 <Reply className="h-3.5 w-3.5" /> Beantwoorden
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 gap-2 text-sm" onClick={() => handleReply('reply-all')}>
+              </button>
+              <button
+                onClick={() => handleReply('reply-all')}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-sm text-foreground/60 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
+              >
                 <ReplyAll className="h-3.5 w-3.5" /> Allen
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 gap-2 text-sm" onClick={() => handleReply('forward')}>
+              </button>
+              <button
+                onClick={() => handleReply('forward')}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-sm text-foreground/60 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
+              >
                 <Forward className="h-3.5 w-3.5" /> Doorsturen
-              </Button>
+              </button>
             </div>
 
             {/* Email body */}
             {isLoadingBody ? (
               <div className="space-y-4 py-6">
-                <div className="h-4 bg-foreground/5 rounded w-full animate-pulse" />
-                <div className="h-4 bg-foreground/5 rounded w-4/5 animate-pulse" />
-                <div className="h-4 bg-foreground/5 rounded w-3/4 animate-pulse" />
-                <div className="h-4 bg-foreground/5 rounded w-5/6 animate-pulse" />
-                <div className="h-4 bg-foreground/5 rounded w-2/3 animate-pulse" />
+                <div className="h-4 bg-foreground/[0.04] rounded-full w-full animate-pulse" />
+                <div className="h-4 bg-foreground/[0.04] rounded-full w-4/5 animate-pulse" />
+                <div className="h-4 bg-foreground/[0.04] rounded-full w-3/4 animate-pulse" />
+                <div className="h-4 bg-foreground/[0.04] rounded-full w-5/6 animate-pulse" />
+                <div className="h-4 bg-foreground/[0.04] rounded-full w-2/3 animate-pulse" />
               </div>
             ) : (
               <div
-                className="text-[15px] leading-relaxed text-foreground/85 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/20 [&_blockquote]:pl-4 [&_blockquote]:text-foreground/60 [&_p]:mb-3"
+                className="text-[15px] leading-[1.7] text-foreground/80 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/15 [&_blockquote]:pl-4 [&_blockquote]:text-foreground/50 [&_p]:mb-3 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-3 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1"
                 dangerouslySetInnerHTML={{ __html: sanitizedBody }}
               />
             )}
 
             {/* Attachments */}
             {email.bijlagen > 0 && (
-              <div className="mt-8 pt-6 border-t border-border/30">
-                <div className="flex items-center gap-2 text-xs text-foreground/40 mb-3">
+              <div className="mt-10 pt-6 border-t border-foreground/[0.06]">
+                <div className="flex items-center gap-2 text-xs text-foreground/35 mb-3 font-medium uppercase tracking-wider">
                   <Paperclip className="h-3.5 w-3.5" />
-                  <span className="font-medium">{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
+                  <span>{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: email.bijlagen }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border/50 bg-foreground/[0.02] hover:bg-foreground/[0.04] transition-colors cursor-pointer">
-                      <div className="w-7 h-7 rounded bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">PDF</div>
-                      <div>
-                        <span className="text-sm text-foreground/70">bijlage-{i + 1}.pdf</span>
-                      </div>
-                      <Download className="h-3.5 w-3.5 text-foreground/30 hover:text-foreground/60 ml-2" />
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-foreground/[0.06] bg-foreground/[0.015] hover:bg-foreground/[0.03] hover:border-foreground/[0.1] transition-all duration-150 cursor-pointer group/att"
+                    >
+                      <div className="w-8 h-8 rounded-md bg-red-500/90 text-white text-[10px] font-bold flex items-center justify-center">PDF</div>
+                      <span className="text-sm text-foreground/60 group-hover/att:text-foreground/80">bijlage-{i + 1}.pdf</span>
+                      <Download className="h-3.5 w-3.5 text-foreground/20 group-hover/att:text-foreground/45 ml-1" />
                     </div>
                   ))}
                 </div>
@@ -282,27 +304,40 @@ export function EmailReader({
 
             {/* ─── INLINE REPLY ─── */}
             {replyMode && (
-              <div className="mt-6 border-t-2 border-primary/20">
-                {/* Reply label + To field */}
-                <div className="flex items-center gap-3 px-1 py-3 border-b border-border/20">
-                  <div className="flex items-center gap-1.5 text-xs text-foreground/40 flex-shrink-0">
-                    {replyMode === 'reply' && <Reply className="h-3.5 w-3.5" />}
-                    {replyMode === 'reply-all' && <ReplyAll className="h-3.5 w-3.5" />}
-                    {replyMode === 'forward' && <Forward className="h-3.5 w-3.5" />}
+              <div className={cn(
+                'mt-10 rounded-xl border transition-all duration-200',
+                editorFocused
+                  ? 'border-primary/30 shadow-[0_0_0_3px_rgba(var(--primary-rgb,59,130,246),0.06)]'
+                  : 'border-foreground/[0.08]',
+              )}>
+                {/* Reply header */}
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-foreground/[0.06] bg-foreground/[0.015] rounded-t-xl">
+                  <div className={cn(
+                    'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium',
+                    replyMode === 'reply' && 'bg-blue-50 text-blue-600',
+                    replyMode === 'reply-all' && 'bg-purple-50 text-purple-600',
+                    replyMode === 'forward' && 'bg-emerald-50 text-emerald-600',
+                  )}>
+                    {replyMode === 'reply' && <Reply className="h-3 w-3" />}
+                    {replyMode === 'reply-all' && <ReplyAll className="h-3 w-3" />}
+                    {replyMode === 'forward' && <Forward className="h-3 w-3" />}
+                    {replyMode === 'reply' ? 'Beantwoorden' : replyMode === 'reply-all' ? 'Allen beantwoorden' : 'Doorsturen'}
                   </div>
-                  <span className="text-sm text-foreground/40 flex-shrink-0">Aan:</span>
-                  <input
-                    type="email"
-                    value={replyTo}
-                    onChange={(e) => setReplyTo(e.target.value)}
-                    className="bg-transparent border-none outline-none text-sm text-foreground flex-1 min-w-0"
-                    placeholder="ontvanger@voorbeeld.nl"
-                  />
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-xs text-foreground/35 flex-shrink-0">aan</span>
+                    <input
+                      type="email"
+                      value={replyTo}
+                      onChange={(e) => setReplyTo(e.target.value)}
+                      className="bg-transparent border-none outline-none text-sm text-foreground flex-1 min-w-0 placeholder:text-foreground/25"
+                      placeholder="ontvanger@voorbeeld.nl"
+                    />
+                  </div>
                   <button
                     onClick={() => setReplyMode(null)}
-                    className="text-xs text-foreground/30 hover:text-foreground/50 flex-shrink-0"
+                    className="text-xs text-foreground/30 hover:text-foreground/55 flex-shrink-0 px-2 py-1 rounded hover:bg-foreground/[0.04] transition-colors"
                   >
-                    Annuleren
+                    Annuleer
                   </button>
                 </div>
 
@@ -311,7 +346,10 @@ export function EmailReader({
                   ref={editorRef}
                   contentEditable
                   suppressContentEditableWarning
-                  className="min-h-[160px] py-4 px-1 text-[15px] leading-relaxed text-foreground outline-none [&_img]:max-w-[200px]"
+                  className="min-h-[180px] py-5 px-4 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[200px] empty:before:content-[attr(data-placeholder)] empty:before:text-foreground/25 empty:before:pointer-events-none"
+                  data-placeholder="Schrijf je antwoord..."
+                  onFocus={() => setEditorFocused(true)}
+                  onBlur={() => setEditorFocused(false)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                       e.preventDefault()
@@ -322,54 +360,85 @@ export function EmailReader({
 
                 {/* Quoted original */}
                 {email.inhoud && (
-                  <div className="px-1 pb-3">
+                  <div className="px-4 pb-3">
                     <button
                       onClick={() => setShowQuotedText(!showQuotedText)}
-                      className="text-xs text-foreground/30 hover:text-foreground/50"
+                      className="text-xs text-foreground/25 hover:text-foreground/45 transition-colors"
                     >
                       {showQuotedText ? 'Verberg origineel' : '... toon origineel bericht'}
                     </button>
                     {showQuotedText && (
                       <div
-                        className="mt-3 pl-4 border-l-2 border-foreground/10 text-sm text-foreground/40"
+                        className="mt-3 pl-4 border-l-2 border-foreground/[0.08] text-sm text-foreground/35 leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(email.inhoud) }}
                       />
                     )}
                   </div>
                 )}
 
-                {/* Bottom toolbar: formatting + AI + send */}
-                <div className="flex items-center justify-between py-3 px-1 border-t border-border/20">
-                  <div className="flex items-center gap-0.5">
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('bold')}><Bold className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('italic')}><Italic className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('underline')}><Underline className="h-3.5 w-3.5" /></Button>
-                    <div className="w-px h-4 bg-border/30 mx-1" />
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('insertUnorderedList')}><List className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('insertOrderedList')}><ListOrdered className="h-3.5 w-3.5" /></Button>
-                    <div className="w-px h-4 bg-border/30 mx-1" />
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => {
-                      const url = prompt('URL:')
-                      if (url) execCommand('createLink', url)
-                    }}><Link2 className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35"><Paperclip className="h-3.5 w-3.5" /></Button>
-                    <div className="w-px h-4 bg-border/30 mx-1" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs gap-1.5 text-foreground/40 hover:text-foreground/70"
+                {/* Bottom toolbar */}
+                <div className="flex items-center justify-between px-3 py-2.5 border-t border-foreground/[0.06] bg-foreground/[0.015] rounded-b-xl">
+                  <div className="flex items-center">
+                    {/* Formatting buttons */}
+                    <div className="flex items-center gap-px">
+                      <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Vet"><Bold className="h-4 w-4" /></button>
+                      <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Cursief"><Italic className="h-4 w-4" /></button>
+                      <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
+                    </div>
+                    <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
+                    <div className="flex items-center gap-px">
+                      <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Lijst"><List className="h-4 w-4" /></button>
+                      <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
+                    </div>
+                    <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
+                    <div className="flex items-center gap-px">
+                      <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Link"><Link2 className="h-4 w-4" /></button>
+                      <button className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
+                    </div>
+                    <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
+                    <button
                       onClick={handleForgieWrite}
                       disabled={forgieLoading}
+                      className={cn(
+                        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all',
+                        forgieLoading
+                          ? 'text-primary/50'
+                          : 'text-primary/70 hover:text-primary hover:bg-primary/[0.06]',
+                      )}
                     >
-                      {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                      AI
+                      {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                      AI schrijven
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-foreground/20 hidden sm:block">
+                      {navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl'}+Enter
+                    </span>
+                    <Button
+                      size="sm"
+                      className="h-9 gap-2 text-sm px-5 rounded-lg shadow-sm"
+                      onClick={handleSend}
+                      disabled={isSending}
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      {isSending ? 'Verzenden...' : 'Verzenden'}
                     </Button>
                   </div>
-                  <Button size="sm" className="h-8 gap-2 text-sm" onClick={handleSend} disabled={isSending}>
-                    <Send className="h-3.5 w-3.5" />
-                    {isSending ? 'Verzenden...' : 'Verzenden'}
-                  </Button>
                 </div>
+              </div>
+            )}
+
+            {/* Bottom reply prompt (when no reply mode active) */}
+            {!replyMode && (
+              <div className="mt-10 pt-6 border-t border-foreground/[0.06]">
+                <button
+                  onClick={() => handleReply('reply')}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-foreground/[0.06] text-sm text-foreground/35 hover:text-foreground/55 hover:border-foreground/[0.1] hover:bg-foreground/[0.01] transition-all duration-150 group/prompt"
+                >
+                  <Reply className="h-4 w-4 text-foreground/20 group-hover/prompt:text-foreground/40" />
+                  <span>Klik hier om te antwoorden of druk op <kbd className="px-1.5 py-0.5 bg-foreground/[0.04] border border-foreground/[0.06] rounded text-[11px] font-mono mx-0.5">r</kbd></span>
+                </button>
               </div>
             )}
           </div>
@@ -377,100 +446,85 @@ export function EmailReader({
       </div>
 
       {/* ─── CRM SIDEBAR (right) ─── */}
-      <div className="w-[300px] border-l border-border/50 bg-[#FAFAF8] flex-shrink-0 overflow-y-auto hidden xl:block">
-        <div className="p-5 space-y-6">
+      <div className="w-[280px] border-l border-foreground/[0.06] bg-[#FAFAF8] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+        <div className="p-5 space-y-5 flex-1">
           {/* Contact card */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className={cn('w-11 h-11 rounded-full flex items-center justify-center', avatarColor)}>
+              <div className={cn('w-11 h-11 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm', avatarColor)}>
                 <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">{senderName}</p>
-                <p className="text-xs text-foreground/40 truncate">{senderEmail}</p>
+                <p className="text-xs text-foreground/35 truncate">{senderEmail}</p>
               </div>
             </div>
 
             {/* Contact details */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2.5 text-xs text-foreground/50">
-                <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2.5 text-xs text-foreground/45">
+                <Mail className="h-3.5 w-3.5 flex-shrink-0 text-foreground/25" />
                 <span className="truncate">{senderEmail}</span>
               </div>
               {email.aan && (
-                <div className="flex items-center gap-2.5 text-xs text-foreground/50">
-                  <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
+                <div className="flex items-center gap-2.5 text-xs text-foreground/45">
+                  <Building2 className="h-3.5 w-3.5 flex-shrink-0 text-foreground/25" />
                   <span className="truncate">{email.aan}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-border/30" />
+          <div className="border-t border-foreground/[0.06]" />
 
           {/* Quick actions */}
           <div>
-            <h3 className="text-xs font-semibold text-foreground/40 uppercase tracking-wider mb-3">Snelkoppelingen</h3>
-            <div className="space-y-1">
-              <button
-                onClick={() => navigate('/klanten')}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-white hover:text-foreground transition-colors"
-              >
-                <UserPlus className="h-4 w-4 text-foreground/40" />
-                Klant toevoegen
-              </button>
-              <button
-                onClick={() => navigate('/offertes/nieuw')}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-white hover:text-foreground transition-colors"
-              >
-                <FileText className="h-4 w-4 text-foreground/40" />
-                Offerte aanmaken
-              </button>
-              <button
-                onClick={() => navigate('/projecten/nieuw')}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-white hover:text-foreground transition-colors"
-              >
-                <FolderPlus className="h-4 w-4 text-foreground/40" />
-                Project aanmaken
-              </button>
-              <button
-                onClick={() => navigate('/taken')}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-white hover:text-foreground transition-colors"
-              >
-                <ListPlus className="h-4 w-4 text-foreground/40" />
-                Taak toevoegen
-              </button>
+            <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Snelkoppelingen</h3>
+            <div className="space-y-0.5">
+              {[
+                { icon: UserPlus, label: 'Klant toevoegen', path: '/klanten' },
+                { icon: FileText, label: 'Offerte aanmaken', path: '/offertes/nieuw' },
+                { icon: FolderPlus, label: 'Project aanmaken', path: '/projecten/nieuw' },
+                { icon: ListPlus, label: 'Taak toevoegen', path: '/taken' },
+              ].map(({ icon: Icon, label, path }) => (
+                <button
+                  key={path}
+                  onClick={() => navigate(path)}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-foreground/55 hover:bg-white hover:text-foreground hover:shadow-sm transition-all duration-150"
+                >
+                  <Icon className="h-4 w-4 text-foreground/30" />
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-border/30" />
+          <div className="border-t border-foreground/[0.06]" />
 
           {/* Email metadata */}
           <div>
-            <h3 className="text-xs font-semibold text-foreground/40 uppercase tracking-wider mb-3">Details</h3>
-            <div className="space-y-2.5 text-xs">
+            <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Details</h3>
+            <div className="space-y-3 text-xs">
               <div className="flex justify-between">
-                <span className="text-foreground/40">Datum</span>
-                <span className="text-foreground/70">{new Date(email.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="text-foreground/35">Datum</span>
+                <span className="text-foreground/60">{new Date(email.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-foreground/40">Map</span>
-                <span className="text-foreground/70 capitalize">{email.map}</span>
+                <span className="text-foreground/35">Map</span>
+                <span className="text-foreground/60 capitalize">{email.map}</span>
               </div>
               {email.bijlagen > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-foreground/40">Bijlagen</span>
-                  <span className="text-foreground/70">{email.bijlagen}</span>
+                  <span className="text-foreground/35">Bijlagen</span>
+                  <span className="text-foreground/60">{email.bijlagen}</span>
                 </div>
               )}
               {email.labels && email.labels.length > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-foreground/40">Labels</span>
-                  <div className="flex gap-1">
+                <div className="flex justify-between items-start">
+                  <span className="text-foreground/35">Labels</span>
+                  <div className="flex flex-wrap gap-1 justify-end">
                     {email.labels.map(label => (
-                      <span key={label} className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-2xs font-medium">
+                      <span key={label} className="px-1.5 py-0.5 bg-primary/8 text-primary rounded text-[10px] font-medium">
                         {label}
                       </span>
                     ))}
