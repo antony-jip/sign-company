@@ -55,6 +55,9 @@ interface AppSettingsContextType {
   emailFetchLimit: number
   // Forgie
   forgieEnabled: boolean
+  // Quick Actions
+  quickActionsEnabled: boolean
+  quickActionItems: string[]
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined)
@@ -179,6 +182,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     emailFetchLimit: settings.email_fetch_limit ?? 200,
     // Forgie
     forgieEnabled: settings.forgie_enabled ?? true,
+    // Quick Actions
+    quickActionsEnabled: settings.quick_actions_enabled ?? true,
+    quickActionItems: Array.isArray(settings.quick_action_items) ? settings.quick_action_items : ['project', 'mail', 'offerte', 'klant'],
   }
 
   return (
