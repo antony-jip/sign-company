@@ -57,6 +57,7 @@ interface PortaalItemData {
   bericht_tekst?: string | null
   foto_url?: string | null
   afzender?: string | null
+  offerte_publiek_token?: string | null
 }
 
 interface PortaalData {

@@ -119,11 +119,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Haal items met bestanden en reacties (alleen zichtbaar voor klant)
     const { data: items } = await supabaseAdmin
       .from('portaal_items')
-      .select('id, type, titel, omschrijving, label, status, bekeken_op, mollie_payment_url, bedrag, volgorde, created_at, bericht_type, bericht_tekst, foto_url, afzender, portaal_bestanden(*), portaal_reacties(*)')
+      .select('id, type, titel, omschrijving, label, status, bekeken_op, mollie_payment_url, bedrag, volgorde, created_at, bericht_type, bericht_tekst, foto_url, afzender, offerte_id, factuur_id, portaal_bestanden(*), portaal_reacties(*)')
       .eq('portaal_id', portaal.id)
       .eq('zichtbaar_voor_klant', true)
       .neq('bericht_type', 'notitie_intern')
       .order('created_at', { ascending: true })
+
+    // Haal publiek_tokens op voor gekoppelde offertes
+    const offerteIds = (items || [])
+      .filter((i: Record<string, unknown>) => i.offerte_id)
+      .map((i: Record<string, unknown>) => i.offerte_id as string)
+
+    let offerteTokenMap: Record<string, string> = {}
+    if (offerteIds.length > 0) {
+      const { data: offertes } = await supabaseAdmin
+        .from('offertes')
+        .select('id, publiek_token')
+        .in('id', offerteIds)
+      if (offertes) {
+        for (const o of offertes) {
+          if (o.publiek_token) offerteTokenMap[o.id] = o.publiek_token
+        }
+      }
+    }
 
     // Genereer publieke URLs voor bestanden die als storage-pad zijn opgeslagen
     const DOCUMENTEN_BUCKET = 'documenten'
@@ -177,6 +195,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bericht_tekst: item.bericht_tekst,
         foto_url: resolveStorageUrl(item.foto_url as string | null),
         afzender: item.afzender || 'bedrijf',
+        offerte_publiek_token: item.offerte_id ? offerteTokenMap[item.offerte_id as string] || null : null,
         bestanden,
         reacties: item.portaal_reacties || [],
       }

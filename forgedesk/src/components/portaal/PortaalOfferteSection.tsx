@@ -32,6 +32,7 @@ interface PortaalItemData {
   created_at: string
   bestanden: PortaalBestandData[]
   reacties: PortaalReactieData[]
+  offerte_publiek_token?: string | null
 }
 
 interface Props {
@@ -168,6 +169,20 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
                 <span className="truncate max-w-[200px]">{b.bestandsnaam}</span>
               </a>
             ))}
+          </div>
+        )}
+
+        {/* Offerte bekijken link — opent in zelfde venster met terug-knop */}
+        {item.offerte_publiek_token && (
+          <div className="mt-3">
+            <a
+              href={`/offerte-bekijken/${item.offerte_publiek_token}?terug=${encodeURIComponent(window.location.pathname)}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors"
+            >
+              <FileText className="w-4 h-4 text-gray-500" />
+              Bekijk volledige offerte
+              <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+            </a>
           </div>
         )}
       </div>

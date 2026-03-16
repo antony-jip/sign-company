@@ -253,6 +253,13 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     } else if (payload.kind === 'offerte') {
       const offerte = offertes.find(o => o.id === payload.offerteId)
       if (!offerte) return
+      // Zorg dat de offerte een publiek_token heeft zodat de klant hem kan bekijken
+      if (!offerte.publiek_token) {
+        const { updateOfferte } = await import('@/services/supabaseService')
+        const publiekToken = crypto.randomUUID()
+        await updateOfferte(offerte.id, { publiek_token: publiekToken })
+        offerte.publiek_token = publiekToken
+      }
       newItem = await createPortaalItem({
         user_id: user.id,
         project_id: projectId,

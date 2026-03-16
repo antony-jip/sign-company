@@ -448,6 +448,24 @@ export function OffertePubliekPagina() {
 
       <div className="max-w-[720px] mx-auto p-4 md:p-8 space-y-6 pb-32 md:pb-8">
 
+        {/* ── Terug naar portaal knop ── */}
+        {(() => {
+          const params = new URLSearchParams(window.location.search)
+          const terugUrl = params.get('terug')
+          if (!terugUrl) return null
+          return (
+            <div className="pt-2">
+              <a
+                href={terugUrl}
+                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Terug naar portaal
+              </a>
+            </div>
+          )
+        })()}
+
         {/* ── Header: Logo + Bedrijfsnaam ── */}
         <div className="text-center space-y-3 pt-4 md:pt-8">
           {bedrijf?.logo_url ? (
