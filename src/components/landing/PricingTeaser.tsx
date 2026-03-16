@@ -10,10 +10,10 @@ export default function PricingTeaser() {
       {/* Mesh background */}
       <div className="bg-mesh-pricing absolute inset-0 pointer-events-none" />
 
-      <div className="container relative z-10 max-w-[800px] text-center">
+      <div className="container relative z-10 max-w-[900px]">
         {/* Overline */}
         <motion.p
-          className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-6"
+          className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-6 text-center"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
@@ -24,60 +24,96 @@ export default function PricingTeaser() {
           <span className="inline-block w-8 h-px bg-ink-20 ml-3 align-middle" />
         </motion.p>
 
-        {/* Price — massive */}
-        <motion.div
-          className="mb-6"
+        {/* Heading */}
+        <motion.h2
+          className="font-heading text-ink text-center mb-4"
+          style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-2px', lineHeight: 0.95 }}
           initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
         >
-          <div className="flex items-baseline justify-center gap-3">
-            <span className="font-heading text-ink font-black tracking-tight" style={{ fontSize: 'clamp(64px, 10vw, 120px)', lineHeight: 0.9, letterSpacing: '-4px' }}>
-              &euro;<AnimatedCounter target={49} className="font-heading" duration={1200} />
-            </span>
-            <span className="text-ink-40 text-[20px] font-medium">/maand</span>
-          </div>
-        </motion.div>
+          Twee plannen. Geen verrassingen.
+        </motion.h2>
 
-        {/* One line */}
         <motion.p
-          className="text-[19px] leading-[1.7] text-ink-60 max-w-[560px] mx-auto mb-4"
+          className="text-[16px] text-ink-40 text-center mb-16 max-w-[400px] mx-auto"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
         >
-          Onbeperkt gebruikers. Geen verborgen kosten.
+          Alles inbegrepen. Geen verborgen modules.
         </motion.p>
 
-        {/* Feature sentence — no checkmarks */}
-        <motion.p
-          className="text-[16px] leading-[1.8] text-ink-40 max-w-[520px] mx-auto mb-12"
-          initial={{ opacity: 0, y: 20 }}
+        {/* Two cards side by side */}
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+          initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
+          viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
         >
-          Offertes, werkbonnen, facturen, klantportaal, AI, planning. Alles.
-        </motion.p>
+          {/* Starter */}
+          <div className="rounded-[20px] border border-ink-10 bg-white" style={{ padding: 40 }}>
+            <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-ink-40 mb-5">Starter</p>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="font-heading text-ink font-black tracking-tight" style={{ fontSize: 'clamp(48px, 6vw, 64px)', lineHeight: 0.9, letterSpacing: '-3px' }}>
+                &euro;<AnimatedCounter target={49} className="font-heading" duration={1200} />
+              </span>
+              <span className="text-ink-40 text-[17px] font-medium">/maand</span>
+            </div>
+            <p className="text-[15px] text-ink-60 mb-8">Tot 3 gebruikers</p>
+            <p className="text-[14px] leading-[1.8] text-ink-40 mb-8">
+              Alles wat je nodig hebt: offertes, werkbonnen, facturen, klantportaal, planning en AI.
+            </p>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
+              <Button variant="soft" size="lg" href="https://app.forgedesk.io" className="w-full justify-center">
+                Probeer 30 dagen gratis &rarr;
+              </Button>
+            </motion.div>
+          </div>
 
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
-        >
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }} className="inline-block">
-            <Button variant="ink" size="lg" href="https://app.forgedesk.io">
-              Probeer 30 dagen gratis &rarr;
-            </Button>
-          </motion.div>
-          <p className="text-[13px] text-ink-40 mt-4">
-            Geen creditcard nodig &middot; Maandelijks opzegbaar
-          </p>
+          {/* Team */}
+          <div className="rounded-[20px] border-2 border-ink bg-white relative" style={{ padding: 40 }}>
+            <motion.span
+              className="absolute -top-3 left-8 bg-ink text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full"
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
+            >
+              Populair
+            </motion.span>
+            <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-ink-40 mb-5">Team</p>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="font-heading text-ink font-black tracking-tight" style={{ fontSize: 'clamp(48px, 6vw, 64px)', lineHeight: 0.9, letterSpacing: '-3px' }}>
+                &euro;<AnimatedCounter target={69} className="font-heading" duration={1200} />
+              </span>
+              <span className="text-ink-40 text-[17px] font-medium">/maand</span>
+            </div>
+            <p className="text-[15px] text-ink-60 mb-8">Onbeperkt gebruikers</p>
+            <p className="text-[14px] leading-[1.8] text-ink-40 mb-8">
+              Voor teams die groeien. Dezelfde features, zonder limiet op gebruikers.
+            </p>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
+              <Button variant="ink" size="lg" href="https://app.forgedesk.io" className="w-full justify-center">
+                Probeer 30 dagen gratis &rarr;
+              </Button>
+            </motion.div>
+          </div>
         </motion.div>
+
+        {/* Bottom note */}
+        <motion.p
+          className="text-[13px] text-ink-40 text-center mt-8"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+        >
+          Geen creditcard nodig &middot; Maandelijks opzegbaar
+        </motion.p>
       </div>
     </section>
   );

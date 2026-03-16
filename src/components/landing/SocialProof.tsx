@@ -52,10 +52,10 @@ export default function SocialProof() {
             className="font-heading text-blush-vivid font-black tracking-tight"
             style={{ fontSize: 'clamp(48px, 8vw, 96px)', lineHeight: 0.9, letterSpacing: '-4px' }}
           >
-            &euro;<AnimatedCounter target={6192} className="font-heading" duration={2000} formatNumber />
+            &euro;<AnimatedCounter target={5952} className="font-heading" duration={2000} formatNumber />
           </p>
           <p className="text-[17px] text-ink-40 mt-4">
-            per jaar bespaard &middot; James PRO &euro;565/mnd vs FORGEdesk &euro;49/mnd
+            per jaar bespaard &middot; James PRO &euro;565/mnd vs FORGEdesk &euro;69/mnd
           </p>
         </motion.div>
 

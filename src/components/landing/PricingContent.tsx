@@ -6,7 +6,7 @@ import AnimatedCounter from '@/components/landing/AnimatedCounter';
 
 export default function PricingContent() {
   const { ref: heroRef, isInView: heroVisible } = useInView();
-  const { ref: cardRef, isInView: cardVisible } = useInView();
+  const { ref: cardsRef, isInView: cardsVisible } = useInView();
   const { ref: saveRef, isInView: saveVisible } = useInView();
   const { ref: faqRef, isInView: faqVisible } = useInView();
 
@@ -30,51 +30,72 @@ export default function PricingContent() {
             className="font-heading text-ink mb-5"
             style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, letterSpacing: '-3px', lineHeight: 0.95 }}
           >
-            E&eacute;n prijs. Alles erin.
+            Twee plannen. Geen verrassingen.
           </h1>
           <p className="text-[19px] leading-[1.7] text-ink-60 max-w-[520px] mx-auto">
-            Geen tiers, geen verborgen kosten, geen kosten per gebruiker. Gewoon alles.
+            Alles inbegrepen bij beide plannen. Geen verborgen kosten, geen extra modules.
           </p>
         </div>
       </section>
 
-      {/* Single pricing card */}
+      {/* Two pricing cards */}
       <section style={{ paddingTop: 40, paddingBottom: 80 }}>
-        <div className="container flex justify-center">
+        <div className="container max-w-[900px]">
           <div
-            ref={cardRef}
-            className="w-full max-w-[560px]"
+            ref={cardsRef}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
             style={{
-              opacity: cardVisible ? 1 : 0,
-              transform: cardVisible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.96)',
+              opacity: cardsVisible ? 1 : 0,
+              transform: cardsVisible ? 'translateY(0)' : 'translateY(32px)',
               transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s',
             }}
           >
-            <div className="rounded-[20px] border border-ink-10 bg-white text-center" style={{ padding: 48 }}>
-              {/* Price */}
-              <div className="flex items-baseline justify-center gap-2 mb-3">
-                <span className="font-heading text-ink font-black tracking-tight" style={{ fontSize: 'clamp(56px, 8vw, 80px)', lineHeight: 1, letterSpacing: '-3px' }}>
+            {/* Starter */}
+            <div className="rounded-[20px] border border-ink-10 bg-white" style={{ padding: 48 }}>
+              <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-ink-40 mb-5">Starter</p>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="font-heading text-ink font-black tracking-tight" style={{ fontSize: 'clamp(48px, 7vw, 72px)', lineHeight: 1, letterSpacing: '-3px' }}>
                   &euro;<AnimatedCounter target={49} className="font-heading" duration={1200} />
                 </span>
                 <span className="text-ink-40 text-[18px] font-medium">/maand</span>
               </div>
-              <p className="text-[17px] text-ink-60 mb-8">
-                Onbeperkt gebruikers &middot; 30 dagen gratis
+              <p className="text-[17px] text-ink-60 mb-8">Tot 3 gebruikers</p>
+
+              <p className="text-[15px] leading-[1.8] text-ink-40 mb-10">
+                Offertes met marge-inzicht, werkbonnen op locatie, facturen met betaallinks, klantportaal, planning, e-mail, PDF &amp; UBL-export, AI-assistent Forgie. Alles zit erin.
               </p>
 
-              {/* Narrative — not a checklist */}
-              <p className="text-[15px] leading-[1.8] text-ink-40 max-w-[400px] mx-auto mb-10">
-                Offertes met marge-inzicht, werkbonnen op locatie, facturen met betaallinks, klantportaal, planning, e-mail gekoppeld aan projecten, PDF &amp; UBL-export, AI-assistent Forgie, Sign Visualiser. Alles zit erin.
+              <Button variant="soft" size="lg" href="https://app.forgedesk.io" className="w-full justify-center">
+                Probeer 30 dagen gratis &rarr;
+              </Button>
+            </div>
+
+            {/* Team */}
+            <div className="rounded-[20px] border-2 border-ink bg-white relative" style={{ padding: 48 }}>
+              <span className="absolute -top-3 left-8 bg-ink text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                Populair
+              </span>
+              <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-ink-40 mb-5">Team</p>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="font-heading text-ink font-black tracking-tight" style={{ fontSize: 'clamp(48px, 7vw, 72px)', lineHeight: 1, letterSpacing: '-3px' }}>
+                  &euro;<AnimatedCounter target={69} className="font-heading" duration={1200} />
+                </span>
+                <span className="text-ink-40 text-[18px] font-medium">/maand</span>
+              </div>
+              <p className="text-[17px] text-ink-60 mb-8">Onbeperkt gebruikers</p>
+
+              <p className="text-[15px] leading-[1.8] text-ink-40 mb-10">
+                Dezelfde volledige toolkit — maar zonder limiet op het aantal gebruikers. Ideaal voor groeiende teams.
               </p>
 
               <Button variant="ink" size="lg" href="https://app.forgedesk.io" className="w-full justify-center">
                 Probeer 30 dagen gratis &rarr;
               </Button>
-              <p className="text-[13px] text-ink-40 mt-4">
-                Geen creditcard nodig &middot; Maandelijks opzegbaar
-              </p>
             </div>
           </div>
+          <p className="text-[13px] text-ink-40 text-center mt-8">
+            Geen creditcard nodig &middot; Direct aan de slag &middot; Maandelijks opzegbaar
+          </p>
         </div>
       </section>
 
@@ -93,10 +114,10 @@ export default function PricingContent() {
             Vergelijk
           </p>
           <p className="text-[17px] leading-[1.8] text-ink-60 mb-6">
-            James PRO kost &euro;565/maand voor een team van 5. FORGEdesk kost &euro;49/maand voor onbeperkt gebruikers.
+            James PRO kost &euro;565/maand voor een team van 5. FORGEdesk Team kost &euro;69/maand voor onbeperkt gebruikers.
           </p>
           <p className="font-heading text-blush-vivid font-black tracking-tight mb-2" style={{ fontSize: 'clamp(40px, 6vw, 64px)', lineHeight: 1, letterSpacing: '-3px' }}>
-            &euro;<AnimatedCounter target={6192} className="font-heading" duration={2000} formatNumber />
+            &euro;<AnimatedCounter target={5952} className="font-heading" duration={2000} formatNumber />
           </p>
           <p className="text-[15px] text-ink-40">
             besparing per jaar
@@ -124,8 +145,12 @@ export default function PricingContent() {
           <div className="space-y-8">
             {[
               {
-                q: 'Hoeveel gebruikers kan ik toevoegen?',
-                a: 'Onbeperkt. Iedereen in je team kan mee, zonder extra kosten.',
+                q: 'Wat is het verschil tussen Starter en Team?',
+                a: 'Beide plannen bevatten exact dezelfde features. Het enige verschil is het aantal gebruikers: Starter tot 3, Team onbeperkt.',
+              },
+              {
+                q: 'Kan ik later upgraden van Starter naar Team?',
+                a: 'Ja, je kunt op elk moment upgraden. Je data en instellingen blijven gewoon behouden.',
               },
               {
                 q: 'Kan ik mijn data importeren uit James, Gripp of Excel?',
@@ -142,10 +167,6 @@ export default function PricingContent() {
               {
                 q: 'Hoe werkt het AI-tegoed?',
                 a: 'Forgie, de chatbot, zit inbegrepen met \u20AC5 AI-tegoed per maand. De Sign Visualiser draait op AI-tokens die je apart bijkoopt. Zo betaal je alleen voor wat je gebruikt.',
-              },
-              {
-                q: 'Zijn er extra kosten voor opslag of modules?',
-                a: 'Nee. Alles zit erin. Offertes, werkbonnen, facturen, klantportaal, e-mail. Alleen AI-tokens voor de Visualiser zijn apart.',
               },
             ].map((item) => (
               <div key={item.q} className="border-b border-ink-05 pb-8">
