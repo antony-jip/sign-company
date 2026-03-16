@@ -107,7 +107,7 @@ export function RecenteActiviteitWidget() {
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-5">
           <h3 className="card-title-lg text-foreground">Recente activiteit</h3>
-          <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+          <span className="text-xs font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
             Alles →
           </span>
         </div>
@@ -132,8 +132,8 @@ export function RecenteActiviteitWidget() {
               >
                 <div className={`w-2 h-2 rounded-full mt-[7px] flex-shrink-0 ${item.color} ring-4 ring-background`} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] leading-snug text-foreground font-medium">{item.text}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">{item.time}</p>
+                  <p className="text-sm leading-snug text-foreground font-medium">{item.text}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{item.time}</p>
                 </div>
               </div>
             ))}

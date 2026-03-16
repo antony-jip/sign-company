@@ -496,12 +496,12 @@ export function ImportAIChat() {
                               return (
                                 <div key={i} className={cn('rounded-lg px-3 py-2', c.bg)}>
                                   <div className="flex items-center justify-between mb-0.5">
-                                    <span className="text-[10px] font-medium text-muted-foreground">{m.label}</span>
+                                    <span className="text-2xs font-medium text-muted-foreground">{m.label}</span>
                                     {m.trend === 'up' && <TrendingUp className="w-3 h-3 text-emerald-500" />}
                                     {m.trend === 'down' && <TrendingDown className="w-3 h-3 text-red-500" />}
                                   </div>
                                   <p className={cn('text-sm font-bold', c.text)}>{m.value}</p>
-                                  {m.sub && <p className="text-[10px] text-muted-foreground">{m.sub}</p>}
+                                  {m.sub && <p className="text-2xs text-muted-foreground">{m.sub}</p>}
                                 </div>
                               )
                             })}
@@ -513,7 +513,7 @@ export function ImportAIChat() {
                               <thead>
                                 <tr className="bg-muted/50">
                                   {msg.data.headers.map((h, i) => (
-                                    <th key={i} className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+                                    <th key={i} className="text-left px-3 py-2 text-xs font-bold uppercase tracking-label text-text-tertiary">
                                       {h}
                                     </th>
                                   ))}
@@ -552,7 +552,7 @@ export function ImportAIChat() {
               <button
                 key={s.label}
                 onClick={() => handleSend(s.label)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full border bg-background hover:bg-muted/60 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full border bg-background hover:bg-muted/60 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 {s.icon}
                 {s.label}
@@ -588,7 +588,7 @@ function MiniStat({ label, value, color, icon }: {
     <div className={cn('rounded-lg px-2.5 py-2', c.bg)}>
       <div className="flex items-center gap-1.5 mb-0.5">
         <span className={c.icon}>{icon}</span>
-        <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
+        <span className="text-2xs font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
       </div>
       <p className={cn('text-sm font-bold', c.text)}>{value}</p>
     </div>

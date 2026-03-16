@@ -269,7 +269,7 @@ export function DealDetail() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold">{deal.titel}</h1>
-              <Badge className={cn('text-[11px]', statusColor)}>{deal.status}</Badge>
+              <Badge className={cn('text-xs', statusColor)}>{deal.status}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">{klant?.bedrijfsnaam || '-'} — {faseLabel}</p>
           </div>
@@ -346,8 +346,8 @@ export function DealDetail() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <Badge variant="outline" className="text-[10px]">{cfg.label}</Badge>
-                            <span className="text-[11px] text-muted-foreground/60">{formatDateTime(act.datum)}</span>
+                            <Badge variant="outline" className="text-2xs">{cfg.label}</Badge>
+                            <span className="text-xs text-muted-foreground/60">{formatDateTime(act.datum)}</span>
                           </div>
                           <p className="text-sm text-foreground/70 dark:text-muted-foreground/50">{act.beschrijving}</p>
                         </div>
@@ -381,7 +381,7 @@ export function DealDetail() {
                   onChange={(e) => setKansPercentage(parseInt(e.target.value))}
                   className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer dark:bg-foreground/70 accent-blue-500"
                 />
-                <div className="flex justify-between text-[10px] text-muted-foreground/60">
+                <div className="flex justify-between text-2xs text-muted-foreground/60">
                   <span>0%</span><span>50%</span><span>100%</span>
                 </div>
               </div>

@@ -412,14 +412,14 @@ export function PortalenOverzicht() {
                       </div>
 
                       <div className="flex items-center gap-2 mt-1.5">
-                        <Badge className={`${status.color} text-[10px] px-1.5 flex items-center gap-0.5`}>
+                        <Badge className={`${status.color} text-2xs px-1.5 flex items-center gap-0.5`}>
                           <StatusIcon className="h-2.5 w-2.5" />
                           {status.label}
                         </Badge>
                       </div>
 
                       {samenvatting && (
-                        <p className="text-[11px] text-muted-foreground/70 mt-1">{samenvatting}</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">{samenvatting}</p>
                       )}
                     </div>
 
@@ -565,7 +565,7 @@ export function PortalenOverzicht() {
                                 </button>
                               )}
                             </div>
-                            <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-1">
+                            <span className="text-2xs text-muted-foreground whitespace-nowrap ml-1">
                               {formatTijdGeleden(act.created_at)}
                             </span>
                           </div>

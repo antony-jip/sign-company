@@ -632,7 +632,7 @@ export function VisualizerLayout() {
 
                 {/* Metadata */}
                 {bericht.generatie_tijd_ms && (
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-2 text-2xs text-muted-foreground">
                     <span>{(bericht.generatie_tijd_ms / 1000).toFixed(1)}s</span>
                     <span>·</span>
                     <span>1 credit</span>
@@ -724,7 +724,7 @@ export function VisualizerLayout() {
           </div>
           <div className="min-w-0">
             <h1 className="page-title text-foreground truncate">Signing Visualizer</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Upload een foto of ontwerp, beschrijf het gewenste resultaat — AI doet de rest
             </p>
           </div>
@@ -870,7 +870,7 @@ export function VisualizerLayout() {
                     >
                       {opt.label}
                       <span className={cn(
-                        'block text-[10px] font-normal mt-0.5',
+                        'block text-2xs font-normal mt-0.5',
                         resolutie === opt.label ? 'text-white/70' : 'text-sage-deep/50',
                       )}>
                         {opt.credit === 1 ? '1 credit' : '2 credits'}
@@ -961,10 +961,10 @@ export function VisualizerLayout() {
                   <div className="p-2.5">
                     <div className="flex items-center gap-1 flex-wrap mb-1">
                       {project && (
-                        <Badge className="badge-sage text-[10px]">{project.naam}</Badge>
+                        <Badge className="badge-sage text-2xs">{project.naam}</Badge>
                       )}
                       {offerte && (
-                        <Badge className="badge-mist text-[10px]">{offerte.nummer || offerte.titel}</Badge>
+                        <Badge className="badge-mist text-2xs">{offerte.nummer || offerte.titel}</Badge>
                       )}
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -984,7 +984,7 @@ export function VisualizerLayout() {
                       <Download className="h-3 w-3" />
                     </Button>
                     {deleteConfirmId === v.id ? (
-                      <Button size="sm" variant="destructive" className="h-6 px-2 text-[10px] rounded-lg"
+                      <Button size="sm" variant="destructive" className="h-6 px-2 text-2xs rounded-lg"
                         onClick={() => handleDelete(v.id)}>
                         Bevestig
                       </Button>

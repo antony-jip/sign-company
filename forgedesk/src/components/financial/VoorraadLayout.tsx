@@ -431,7 +431,7 @@ export function VoorraadLayout() {
                       <Icon className={cn('h-4 w-4', cfg.color)} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[10px]">{cfg.label}</Badge>
+                          <Badge variant="outline" className="text-2xs">{cfg.label}</Badge>
                           <span className={cn('text-sm font-semibold', m.aantal >= 0 ? 'text-accent dark:text-wm-light' : 'text-red-600')}>
                             {m.aantal >= 0 ? '+' : ''}{m.aantal} {selectedArtikel.eenheid}
                           </span>
@@ -536,12 +536,12 @@ export function VoorraadLayout() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-foreground">{art.naam}</span>
-                          {!art.actief && <Badge variant="secondary" className="text-[10px]">Inactief</Badge>}
+                          {!art.actief && <Badge variant="secondary" className="text-2xs">Inactief</Badge>}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground font-mono">{art.sku || '-'}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className="text-[11px]">{art.categorie}</Badge>
+                        <Badge variant="outline" className="text-xs">{art.categorie}</Badge>
                       </td>
                       <td className="px-4 py-3">
                         <span className={cn('text-sm font-semibold', isLaag ? 'text-red-600' : 'text-foreground')}>

@@ -432,7 +432,7 @@ function StartSection({
                   )}>
                     {step.title}
                     {step.done && (
-                      <Badge variant="secondary" className="ml-2 text-[10px] bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                      <Badge variant="secondary" className="ml-2 text-2xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
                         Klaar
                       </Badge>
                     )}
@@ -474,7 +474,7 @@ function StartSection({
                   <s.icon className="h-5 w-5" />
                 </div>
                 <p className="text-xs font-semibold text-foreground dark:text-white">{s.title}</p>
-                <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{s.desc}</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{s.desc}</p>
                 {i < 3 && (
                   <ArrowRight className="hidden sm:block absolute right-[-14px] top-3 h-4 w-4 text-muted-foreground/50 dark:text-muted-foreground" />
                 )}
@@ -513,7 +513,7 @@ function StartSection({
                   <div className="flex items-start justify-between mb-2">
                     <span className="text-2xl">{starter.icon}</span>
                     {isInstalled && (
-                      <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                      <Badge variant="secondary" className="text-2xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
                         <Check className="h-3 w-3 mr-0.5" />
                         Geinstalleerd
                       </Badge>
@@ -521,7 +521,7 @@ function StartSection({
                   </div>
                   <h4 className="text-sm font-semibold text-foreground dark:text-white">{starter.naam}</h4>
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5 mb-3">{starter.beschrijving}</p>
-                  <div className="text-[11px] text-muted-foreground/60 dark:text-muted-foreground mb-3">
+                  <div className="text-xs text-muted-foreground/60 dark:text-muted-foreground mb-3">
                     {starter.regels.length} regels
                   </div>
                   {!isInstalled && (
@@ -765,7 +765,7 @@ function ProductenSection({
                   onChange={(e) => setProductNaam(e.target.value)}
                   placeholder="Bijv. Dibond plaat 3mm"
                 />
-                <p className="text-[11px] text-muted-foreground/60">De naam die je in calculaties ziet</p>
+                <p className="text-xs text-muted-foreground/60">De naam die je in calculaties ziet</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Categorie</Label>
@@ -812,7 +812,7 @@ function ProductenSection({
                     className="pl-7"
                   />
                 </div>
-                <p className="text-[11px] text-muted-foreground/60">Wat je zelf betaalt</p>
+                <p className="text-xs text-muted-foreground/60">Wat je zelf betaalt</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Marge (%)</Label>
@@ -831,7 +831,7 @@ function ProductenSection({
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60">%</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground/60">Je winstmarge</p>
+                <p className="text-xs text-muted-foreground/60">Je winstmarge</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Verkoopprijs per eenheid</Label>
@@ -853,7 +853,7 @@ function ProductenSection({
                     className="pl-7"
                   />
                 </div>
-                <p className="text-[11px] text-muted-foreground/60">Wat de klant betaalt</p>
+                <p className="text-xs text-muted-foreground/60">Wat de klant betaalt</p>
               </div>
             </div>
 
@@ -939,7 +939,7 @@ function ProductenSection({
             <Card key={categorie}>
               <CardContent className="p-0">
                 <div className="px-4 py-2.5 border-b border-border dark:border-border bg-background/50 dark:bg-foreground/80/30">
-                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">
+                  <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label">
                     {categorie} <span className="text-muted-foreground/60 dark:text-muted-foreground font-normal">({prods.length})</span>
                   </h4>
                 </div>
@@ -947,12 +947,12 @@ function ProductenSection({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left px-4 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label">Product</th>
-                        <th className="text-center px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Eenheid</th>
-                        <th className="text-right px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-24">Inkoop</th>
-                        <th className="text-right px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-24">Verkoop</th>
-                        <th className="text-right px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Marge</th>
-                        <th className="text-center px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Actief</th>
+                        <th className="text-left px-4 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label">Product</th>
+                        <th className="text-center px-3 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-20">Eenheid</th>
+                        <th className="text-right px-3 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-24">Inkoop</th>
+                        <th className="text-right px-3 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-24">Verkoop</th>
+                        <th className="text-right px-3 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-20">Marge</th>
+                        <th className="text-center px-3 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-16">Actief</th>
                         <th className="w-20" />
                       </tr>
                     </thead>
@@ -1250,9 +1250,9 @@ function TemplatesSection({
                       <span className="text-lg">{starter.icon}</span>
                       <h4 className="text-sm font-medium text-foreground dark:text-white">{starter.naam}</h4>
                     </div>
-                    <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/60 mb-2">{starter.regels.length} regels</p>
+                    <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-2">{starter.regels.length} regels</p>
                     {isInstalled ? (
-                      <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">
+                      <Badge variant="secondary" className="text-2xs bg-green-100 text-green-700">
                         <Check className="h-3 w-3 mr-0.5" /> Geinstalleerd
                       </Badge>
                     ) : (
@@ -1291,7 +1291,7 @@ function TemplatesSection({
                   onChange={(e) => setTplNaam(e.target.value)}
                   placeholder="Bijv. Standaard gevelreclame"
                 />
-                <p className="text-[11px] text-muted-foreground/60">Herkenbare naam voor deze calculatie</p>
+                <p className="text-xs text-muted-foreground/60">Herkenbare naam voor deze calculatie</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Beschrijving</Label>
@@ -1310,7 +1310,7 @@ function TemplatesSection({
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-medium">Calculatie regels</Label>
                 {producten.length > 0 && (
-                  <p className="text-[11px] text-muted-foreground/60">
+                  <p className="text-xs text-muted-foreground/60">
                     Klik op het product-icoon om uit je catalogus te kiezen
                   </p>
                 )}
@@ -1333,13 +1333,13 @@ function TemplatesSection({
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-background dark:bg-foreground/80/50 border-b border-border dark:border-border">
-                          <th className="text-left px-3 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label min-w-[180px]">Product / Dienst</th>
-                          <th className="text-center px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Aantal</th>
-                          <th className="text-center px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Eenh.</th>
-                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Inkoop</th>
-                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Verkoop</th>
-                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">Marge</th>
-                          <th className="text-right px-2 py-2 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Subtotaal</th>
+                          <th className="text-left px-3 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label min-w-[180px]">Product / Dienst</th>
+                          <th className="text-center px-2 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-16">Aantal</th>
+                          <th className="text-center px-2 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-16">Eenh.</th>
+                          <th className="text-right px-2 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-20">Inkoop</th>
+                          <th className="text-right px-2 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-20">Verkoop</th>
+                          <th className="text-right px-2 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-16">Marge</th>
+                          <th className="text-right px-2 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-20">Subtotaal</th>
                           <th className="w-8" />
                         </tr>
                       </thead>
@@ -1392,7 +1392,7 @@ function TemplatesSection({
                             </td>
                             <td className="px-1 py-1.5">
                               <Select value={regel.eenheid} onValueChange={(v) => updateRegel(regel.id, { eenheid: v })}>
-                                <SelectTrigger className="border-0 bg-transparent shadow-none h-7 text-[10px]">
+                                <SelectTrigger className="border-0 bg-transparent shadow-none h-7 text-2xs">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1435,7 +1435,7 @@ function TemplatesSection({
                                     regel.marge_percentage > 0 ? 'text-green-600 dark:text-green-400' : ''
                                   )}
                                 />
-                                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/60">%</span>
+                                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-2xs text-muted-foreground/60">%</span>
                               </div>
                             </td>
                             <td className="px-2 py-1.5 text-right text-xs font-medium text-foreground/70 dark:text-muted-foreground/50 whitespace-nowrap">
@@ -1533,7 +1533,7 @@ function TemplatesSection({
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-sm text-foreground dark:text-white">{t.naam}</p>
                         {!t.actief && (
-                          <Badge variant="secondary" className="text-[10px]">Inactief</Badge>
+                          <Badge variant="secondary" className="text-2xs">Inactief</Badge>
                         )}
                       </div>
                       {t.beschrijving && (
@@ -1784,7 +1784,7 @@ function OfferteTemplatesSubSection({
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Badge variant={regel.soort === 'prijs' ? 'default' : 'secondary'} className="text-[10px]">
+                            <Badge variant={regel.soort === 'prijs' ? 'default' : 'secondary'} className="text-2xs">
                               {regel.soort === 'prijs' ? 'Prijsregel' : 'Tekstregel'}
                             </Badge>
                             <span className="text-xs text-muted-foreground/60">#{idx + 1}</span>
@@ -1803,7 +1803,7 @@ function OfferteTemplatesSubSection({
                           <div className="grid grid-cols-2 gap-2">
                             {regelVelden.map((veld) => (
                               <div key={veld} className="space-y-0.5">
-                                <Label className="text-[10px] text-muted-foreground/60">{veld}</Label>
+                                <Label className="text-2xs text-muted-foreground/60">{veld}</Label>
                                 <Input
                                   value={regel.extra_velden[veld] || ''}
                                   onChange={(e) =>
@@ -1821,7 +1821,7 @@ function OfferteTemplatesSubSection({
                         {regel.soort === 'prijs' && (
                           <div className="grid grid-cols-4 gap-2">
                             <div className="space-y-0.5">
-                              <Label className="text-[10px] text-muted-foreground/60">Aantal</Label>
+                              <Label className="text-2xs text-muted-foreground/60">Aantal</Label>
                               <Input
                                 type="number"
                                 value={regel.aantal || ''}
@@ -1831,7 +1831,7 @@ function OfferteTemplatesSubSection({
                               />
                             </div>
                             <div className="space-y-0.5">
-                              <Label className="text-[10px] text-muted-foreground/60">Prijs</Label>
+                              <Label className="text-2xs text-muted-foreground/60">Prijs</Label>
                               <Input
                                 type="number"
                                 value={regel.eenheidsprijs || ''}
@@ -1842,7 +1842,7 @@ function OfferteTemplatesSubSection({
                               />
                             </div>
                             <div className="space-y-0.5">
-                              <Label className="text-[10px] text-muted-foreground/60">BTW %</Label>
+                              <Label className="text-2xs text-muted-foreground/60">BTW %</Label>
                               <Input
                                 type="number"
                                 value={regel.btw_percentage}
@@ -1851,7 +1851,7 @@ function OfferteTemplatesSubSection({
                               />
                             </div>
                             <div className="space-y-0.5">
-                              <Label className="text-[10px] text-muted-foreground/60">Korting %</Label>
+                              <Label className="text-2xs text-muted-foreground/60">Korting %</Label>
                               <Input
                                 type="number"
                                 value={regel.korting_percentage || ''}
@@ -1918,7 +1918,7 @@ function OfferteTemplatesSubSection({
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-sm text-foreground dark:text-white">{t.naam}</p>
-                      {!t.actief && <Badge variant="secondary" className="text-[10px]">Inactief</Badge>}
+                      {!t.actief && <Badge variant="secondary" className="text-2xs">Inactief</Badge>}
                     </div>
                     {t.beschrijving && (
                       <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{t.beschrijving}</p>
@@ -2239,12 +2239,12 @@ function InstellingenSection() {
           <div>
             <h3 className="text-sm font-semibold text-foreground dark:text-white flex items-center gap-2">
               Uren overzicht velden
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-blue-600 border-blue-200">Sidebar</Badge>
+              <Badge variant="outline" className="text-2xs px-1.5 py-0 font-normal text-blue-600 border-blue-200">Sidebar</Badge>
             </h3>
             <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">
               Kies welke uren-categorieën je wilt zien in het offerte-overzicht.
             </p>
-            <p className="text-[11px] text-muted-foreground/50 dark:text-muted-foreground/40 mt-0.5">
+            <p className="text-xs text-muted-foreground/50 dark:text-muted-foreground/40 mt-0.5">
               Deze categorieën worden automatisch herkend uit je offerte-regels en getoond als totaal in de sidebar.
             </p>
           </div>
@@ -2308,7 +2308,7 @@ function InstellingenSection() {
 
             {/* Rechts: live preview */}
             <div className="bg-white dark:bg-card rounded-xl border border-black/[0.06] shadow-sm p-4 space-y-3">
-              <p className="text-[10px] font-bold text-[#8a8680] uppercase tracking-label">Uren &amp; Materiaal</p>
+              <p className="text-2xs font-bold text-text-tertiary uppercase tracking-label">Uren &amp; Materiaal</p>
               <div className="space-y-1.5">
                 {urenVelden.map((veld, i) => {
                   const dummyUren = [5, 3, 4, 2, 6, 1, 8, 7]

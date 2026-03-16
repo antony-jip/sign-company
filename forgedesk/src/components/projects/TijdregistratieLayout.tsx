@@ -947,7 +947,7 @@ export function TijdregistratieLayout() {
                   >
                     {DAG_NAMEN[index]}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-2xs text-muted-foreground">
                     {date.getDate()}/{date.getMonth() + 1}
                   </span>
                 </div>
@@ -960,7 +960,7 @@ export function TijdregistratieLayout() {
                 <span className="text-2xl font-bold">{weekTotal.toFixed(1)}</span>
               </div>
               <span className="text-xs font-medium text-muted-foreground">uur</span>
-              <span className="text-[10px] text-muted-foreground">&nbsp;</span>
+              <span className="text-2xs text-muted-foreground">&nbsp;</span>
             </div>
           </div>
         </CardContent>
@@ -998,7 +998,7 @@ export function TijdregistratieLayout() {
             >
               {filter.label}
               {filter.key !== "alle" && (
-                <Badge variant="secondary" className="ml-1.5 px-1.5 py-0 text-[10px]">
+                <Badge variant="secondary" className="ml-1.5 px-1.5 py-0 text-2xs">
                   {filterCounts[filter.key] ?? 0}
                 </Badge>
               )}
@@ -1085,7 +1085,7 @@ export function TijdregistratieLayout() {
                         </td>
                         <td className="py-3 pr-4 text-center">
                           {reg.gefactureerd ? (
-                            <Badge className="badge-lavender text-[10px]">
+                            <Badge className="badge-lavender text-2xs">
                               Gefact.
                             </Badge>
                           ) : reg.facturabel ? (

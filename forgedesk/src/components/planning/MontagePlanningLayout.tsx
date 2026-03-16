@@ -709,7 +709,7 @@ export function MontagePlanningLayout() {
   }
 
   function renderMonteurAvatars(monteurIds: string[], size: "sm" | "md" = "sm") {
-    const sizeClasses = size === "sm" ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs";
+    const sizeClasses = size === "sm" ? "h-6 w-6 text-2xs" : "h-8 w-8 text-xs";
     return (
       <div className="flex -space-x-1.5">
         {monteurIds.map((id, idx) => {
@@ -769,7 +769,7 @@ export function MontagePlanningLayout() {
         onClick={() => openEditDialog(afspraak)}
       >
         {hasConflict && (
-          <div className="flex items-center gap-1 text-[10px] font-medium text-red-600 mb-1">
+          <div className="flex items-center gap-1 text-2xs font-medium text-red-600 mb-1">
             <AlertTriangle className="h-3 w-3" />
             Overlap
           </div>
@@ -924,31 +924,31 @@ export function MontagePlanningLayout() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-background">
-              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Datum
               </th>
-              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Tijd
               </th>
-              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Project
               </th>
-              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Klant
               </th>
-              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Locatie
               </th>
-              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Medewerkers
               </th>
-              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Status
               </th>
-              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Materialen
               </th>
-              <th className="text-left py-3 px-4 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Acties
               </th>
             </tr>
@@ -984,7 +984,7 @@ export function MontagePlanningLayout() {
                   >
                     <td className="py-3 px-4">
                       {rowConflict && (
-                        <div className="flex items-center gap-1 text-[10px] font-medium text-red-600 mb-0.5">
+                        <div className="flex items-center gap-1 text-2xs font-medium text-red-600 mb-0.5">
                           <AlertTriangle className="h-3 w-3" />
                           Overlap
                         </div>
@@ -1114,7 +1114,7 @@ export function MontagePlanningLayout() {
         {/* Header rij met dagen */}
         <div className="grid gap-0" style={{ gridTemplateColumns: "180px repeat(5, 1fr)" }}>
           <div className="p-2 border-b-2 border-r bg-muted/30">
-            <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Monteur</span>
+            <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Monteur</span>
           </div>
           {werkdagen.map((date, i) => {
             const dateStr = formatDate(date);
@@ -1155,7 +1155,7 @@ export function MontagePlanningLayout() {
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm font-medium truncate">{monteur.naam}</div>
-                  <div className="text-[10px] text-muted-foreground truncate">{monteur.functie}</div>
+                  <div className="text-2xs text-muted-foreground truncate">{monteur.functie}</div>
                 </div>
               </div>
 
@@ -1209,19 +1209,19 @@ export function MontagePlanningLayout() {
                         >
                           <div className="flex items-center gap-1 mb-0.5">
                             <Clock className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-                            <span className="text-[10px] text-muted-foreground font-mono">
+                            <span className="text-2xs text-muted-foreground font-mono">
                               {afspraak.start_tijd}-{afspraak.eind_tijd}
                             </span>
                           </div>
                           <div className="font-medium truncate leading-tight">{afspraak.titel}</div>
                           {afspraak.locatie && (
-                            <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground mt-0.5 truncate">
+                            <div className="flex items-center gap-0.5 text-2xs text-muted-foreground mt-0.5 truncate">
                               <MapPin className="h-2.5 w-2.5 shrink-0" />
                               {afspraak.locatie}
                             </div>
                           )}
                           {afspraak.werkbon_id && (
-                            <div className="flex items-center gap-0.5 text-[10px] text-primary mt-0.5">
+                            <div className="flex items-center gap-0.5 text-2xs text-primary mt-0.5">
                               <ClipboardList className="h-2.5 w-2.5 shrink-0" />
                               Werkbon
                             </div>
@@ -1230,7 +1230,7 @@ export function MontagePlanningLayout() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-5 px-1 text-[10px] mt-0.5 w-full justify-start text-muted-foreground hover:text-primary"
+                              className="h-5 px-1 text-2xs mt-0.5 w-full justify-start text-muted-foreground hover:text-primary"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setWerkbonMontage(afspraak);
@@ -1246,7 +1246,7 @@ export function MontagePlanningLayout() {
                     })}
                     {cellAfspraken.length === 0 && (
                       <div className="h-full flex items-center justify-center">
-                        <span className="text-[10px] text-muted-foreground/40 italic">—</span>
+                        <span className="text-2xs text-muted-foreground/40 italic">—</span>
                       </div>
                     )}
                   </div>
@@ -1839,7 +1839,7 @@ export function MontagePlanningLayout() {
                       <Badge
                         variant="secondary"
                         className={cn(
-                          "text-[10px] px-1.5 py-0",
+                          "text-2xs px-1.5 py-0",
                           vandaagBezet
                             ? "bg-amber-100 text-amber-700"
                             : "bg-green-100 text-green-700"
@@ -1847,7 +1847,7 @@ export function MontagePlanningLayout() {
                       >
                         {vandaagBezet ? "Bezet" : "Beschikbaar"}
                       </Badge>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-2xs text-muted-foreground">
                         {monteurAfspraken.length} deze week
                       </span>
                     </div>

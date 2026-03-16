@@ -75,7 +75,7 @@ export function QuickActionsButton() {
               }}
             >
               {/* Label */}
-              <span className="text-[13px] font-medium text-foreground bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-sm font-medium text-foreground bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
                 {action.label}
               </span>
               {/* Icon circle */}

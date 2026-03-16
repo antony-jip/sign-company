@@ -693,7 +693,7 @@ export function QuotesPipeline() {
           </div>
           <div className="min-w-0">
             <h1 className="page-title text-foreground truncate">Offertes</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {filteredOffertes.length} van {offertes.length} offertes
             </p>
           </div>
@@ -714,22 +714,22 @@ export function QuotesPipeline() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {kpis.openCount > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
             <FileText className="w-3 h-3" />
             {kpis.openCount} open
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+        <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
           <TrendingUp className="w-3 h-3" />
           <span className="tabular-nums">{kpis.conversionRate}%</span> conversie
         </div>
         {kpis.overdueFollowUps > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
             <AlertTriangle className="w-3 h-3" />
             {kpis.overdueFollowUps} achterstallig
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+        <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
           <DollarSign className="w-3 h-3" />
           Pipeline {formatCurrency(financialSummary.pipelineTotaal)}
         </div>
@@ -956,7 +956,7 @@ export function QuotesPipeline() {
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
-                  <span className={`text-[11px] font-bold ${col.textColor} uppercase tracking-label`}>{col.label}</span>
+                  <span className={`text-xs font-bold ${col.textColor} uppercase tracking-label`}>{col.label}</span>
                 </div>
                 <p className="text-lg font-bold font-mono text-foreground">{formatCurrency(data.totaal)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -1055,7 +1055,7 @@ export function QuotesPipeline() {
                             </span>
                             <div className="flex items-center gap-1">
                               {offerte.prioriteit && offerte.prioriteit !== 'laag' && (
-                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${PRIORITY_COLORS[offerte.prioriteit] || ''}`}>
+                                <span className={`text-2xs font-semibold px-1.5 py-0.5 rounded-md ${PRIORITY_COLORS[offerte.prioriteit] || ''}`}>
                                   {offerte.prioriteit.charAt(0).toUpperCase() + offerte.prioriteit.slice(1)}
                                 </span>
                               )}
@@ -1072,12 +1072,12 @@ export function QuotesPipeline() {
                                 <span className="inline-flex items-center gap-0.5" title={`Bekeken door klant${offerte.aantal_keer_bekeken ? ` (${offerte.aantal_keer_bekeken}x)` : ''}`}>
                                   <Eye className="h-3.5 w-3.5 text-emerald-500" />
                                   {offerte.aantal_keer_bekeken && offerte.aantal_keer_bekeken > 1 && (
-                                    <span className="text-[10px] text-emerald-600 font-medium">{offerte.aantal_keer_bekeken}x</span>
+                                    <span className="text-2xs text-emerald-600 font-medium">{offerte.aantal_keer_bekeken}x</span>
                                   )}
                                 </span>
                               )}
                               {offerte.geaccepteerd_door && (
-                                <span className="text-[10px] text-emerald-600 font-medium truncate max-w-[80px]" title={`Geaccepteerd door ${offerte.geaccepteerd_door}`}>
+                                <span className="text-2xs text-emerald-600 font-medium truncate max-w-[80px]" title={`Geaccepteerd door ${offerte.geaccepteerd_door}`}>
                                   ✓ {offerte.geaccepteerd_door}
                                 </span>
                               )}
@@ -1094,19 +1094,19 @@ export function QuotesPipeline() {
                             <span className="text-sm font-bold font-mono text-foreground">
                               {formatCurrency(offerte.totaal)}
                             </span>
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-2xs text-muted-foreground">
                               {relativeDate(offerte.created_at)}
                             </span>
                           </div>
 
                           {/* Expiry warning */}
                           {expiryStatus === 'expired' && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                            <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-md bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
                               Verlopen
                             </span>
                           )}
                           {expiryStatus === 'soon' && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                            <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
                               Verloopt binnenkort
                             </span>
                           )}
@@ -1127,7 +1127,7 @@ export function QuotesPipeline() {
                                   setFollowUpNote(offerte.follow_up_notitie || '')
                                 }
                               }}
-                              className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] font-medium rounded-lg bg-primary/8 dark:bg-primary/15 text-accent dark:text-wm-light hover:bg-primary/15 dark:hover:bg-primary/25 transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium rounded-lg bg-primary/8 dark:bg-primary/15 text-accent dark:text-wm-light hover:bg-primary/15 dark:hover:bg-primary/25 transition-colors"
                             >
                               <CalendarPlus className="h-3 w-3" />
                               Follow-up
@@ -1139,7 +1139,7 @@ export function QuotesPipeline() {
                                 handleCallClient(offerte)
                               }}
                               disabled={callingClient === offerte.id}
-                              className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] font-medium rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors disabled:opacity-50"
+                              className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors disabled:opacity-50"
                             >
                               {callingClient === offerte.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -1169,7 +1169,7 @@ export function QuotesPipeline() {
                               </button>
                             </div>
                             <div>
-                              <label className="text-[11px] font-medium text-muted-foreground mb-1 block">
+                              <label className="text-xs font-medium text-muted-foreground mb-1 block">
                                 Datum
                               </label>
                               <input
@@ -1180,7 +1180,7 @@ export function QuotesPipeline() {
                               />
                             </div>
                             <div>
-                              <label className="text-[11px] font-medium text-muted-foreground mb-1 block">
+                              <label className="text-xs font-medium text-muted-foreground mb-1 block">
                                 Notitie
                               </label>
                               <textarea
@@ -1266,20 +1266,20 @@ export function QuotesPipeline() {
           <div className="relative flex items-center gap-3 px-4 py-2.5">
             <div className="flex items-center gap-2.5">
               <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: 'var(--color-sage-text)', color: 'white' }}>
-                <span className="text-[11px] font-bold">{selectedIds.size}</span>
+                <span className="text-xs font-bold">{selectedIds.size}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[13px] font-semibold" style={{ color: 'var(--color-sage-text)' }}>
+                <span className="text-sm font-semibold" style={{ color: 'var(--color-sage-text)' }}>
                   {selectedIds.size} offerte{selectedIds.size === 1 ? '' : 's'} geselecteerd
                 </span>
-                <span className="text-[10px] font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
+                <span className="text-2xs font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
                   van {filteredOffertes.length} totaal
                 </span>
               </div>
             </div>
             <button
               onClick={toggleSelectAll}
-              className="text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
+              className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
               style={{ color: 'var(--color-sage-text)' }}
             >
               {selectedIds.size === filteredOffertes.length ? 'Deselecteer alles' : 'Selecteer alles'}
@@ -1287,7 +1287,7 @@ export function QuotesPipeline() {
             <div className="flex-1" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[12px] font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
                   <ArrowUpDown className="w-3 h-3" />
                   Status wijzigen
                   <ChevronDown className="w-3 h-3 opacity-50" />
@@ -1352,12 +1352,12 @@ export function QuotesPipeline() {
                       />
                     </th>
                     <th className="text-left py-2.5 px-4 w-[110px]">
-                      <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
+                      <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Status</span>
                     </th>
                     <th className="text-left py-2.5 px-4">
                       <button
                         onClick={() => handleListSort('nummer')}
-                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
                       >
                         Offerte
                         {listSortColumn === 'nummer' ? (
@@ -1370,7 +1370,7 @@ export function QuotesPipeline() {
                     <th className="text-left py-2.5 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('klant_naam')}
-                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
                       >
                         Klant
                         {listSortColumn === 'klant_naam' ? (
@@ -1383,7 +1383,7 @@ export function QuotesPipeline() {
                     <th className="text-right py-2.5 px-4 hidden xl:table-cell">
                       <button
                         onClick={() => handleListSort('totaal')}
-                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                       >
                         Bedrag
                         {listSortColumn === 'totaal' ? (
@@ -1396,7 +1396,7 @@ export function QuotesPipeline() {
                     <th className="text-right py-2.5 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('created_at')}
-                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                       >
                         Datum
                         {listSortColumn === 'created_at' ? (
@@ -1409,7 +1409,7 @@ export function QuotesPipeline() {
                     <th className="text-right py-2.5 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('days_open')}
-                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                       >
                         Dagen open
                         {listSortColumn === 'days_open' ? (
@@ -1422,7 +1422,7 @@ export function QuotesPipeline() {
                     <th className="text-right py-2.5 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('geldig_tot')}
-                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                       >
                         Geldig tot
                         {listSortColumn === 'geldig_tot' ? (
@@ -1443,7 +1443,7 @@ export function QuotesPipeline() {
                       <tr
                         key={offerte.id}
                         className={cn(
-                          'border-b border-border/50 last:border-0 hover:bg-[#F4F3F0]/60 cursor-pointer transition-colors group border-l-2',
+                          'border-b border-border/50 last:border-0 hover:bg-bg-subtle/60 cursor-pointer transition-colors group border-l-2',
                           getOfferteStatusBorderColor(offerte.status),
                           selectedIds.has(offerte.id) && 'bg-primary/5'
                         )}
@@ -1516,12 +1516,12 @@ export function QuotesPipeline() {
                               </Link>
                             </div>
                             {offerte.prioriteit && offerte.prioriteit !== 'laag' && (
-                              <Badge className={cn(PRIORITY_COLORS[offerte.prioriteit] || '', 'text-[9px] px-1.5 py-0 flex-shrink-0')}>
+                              <Badge className={cn(PRIORITY_COLORS[offerte.prioriteit] || '', 'text-2xs px-1.5 py-0 flex-shrink-0')}>
                                 {offerte.prioriteit}
                               </Badge>
                             )}
                             {expiryStatus === 'expired' && (
-                              <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[9px] px-1.5 py-0 flex-shrink-0">
+                              <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-2xs px-1.5 py-0 flex-shrink-0">
                                 Verlopen
                               </Badge>
                             )}
@@ -1552,7 +1552,7 @@ export function QuotesPipeline() {
                           {(() => {
                             const days = getDaysOpen(offerte.created_at)
                             return (
-                              <span className={cn('text-[11px] font-medium px-2 py-0.5 rounded-full tabular-nums', getDaysColor(days))}>
+                              <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full tabular-nums', getDaysColor(days))}>
                                 {days}d
                               </span>
                             )

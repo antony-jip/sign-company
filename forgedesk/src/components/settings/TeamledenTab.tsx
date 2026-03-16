@@ -307,7 +307,7 @@ export function TeamledenTab() {
           >
             {tab.label}
             <span className={cn(
-              'text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
+              'text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
               activeTab === tab.id
                 ? 'bg-primary/10 text-primary'
                 : 'bg-muted-foreground/10 text-muted-foreground'
@@ -470,15 +470,15 @@ function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeac
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground truncate">{name}</span>
           {isCurrentUser && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Jij</Badge>
+            <Badge variant="secondary" className="text-2xs px-1.5 py-0">Jij</Badge>
           )}
         </div>
-        <span className="text-[13px] text-muted-foreground truncate block">{profile.email}</span>
+        <span className="text-sm text-muted-foreground truncate block">{profile.email}</span>
       </div>
 
       <Badge
         variant="outline"
-        className={cn('text-[11px] font-bold uppercase tracking-wider flex-shrink-0', ROL_COLORS[rol as TeamRol] || '')}
+        className={cn('text-xs font-bold uppercase tracking-wider flex-shrink-0', ROL_COLORS[rol as TeamRol] || '')}
       >
         {ROL_LABELS[rol as TeamRol] || rol}
       </Badge>
@@ -548,10 +548,10 @@ function UitnodigingRow({ uitnodiging, onCancel }: UitnodigingRowProps) {
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground truncate">{uitnodiging.email}</span>
           {isExpired && (
-            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Verlopen</Badge>
+            <Badge variant="destructive" className="text-2xs px-1.5 py-0">Verlopen</Badge>
           )}
         </div>
-        <span className="text-[13px] text-muted-foreground truncate block">
+        <span className="text-sm text-muted-foreground truncate block">
           <Mail className="w-3 h-3 inline mr-1 -mt-0.5" />
           Uitnodiging verstuurd {new Date(uitnodiging.created_at).toLocaleDateString('nl-NL')}
         </span>
@@ -559,7 +559,7 @@ function UitnodigingRow({ uitnodiging, onCancel }: UitnodigingRowProps) {
 
       <Badge
         variant="outline"
-        className={cn('text-[11px] font-bold uppercase tracking-wider flex-shrink-0', ROL_COLORS[rol] || '')}
+        className={cn('text-xs font-bold uppercase tracking-wider flex-shrink-0', ROL_COLORS[rol] || '')}
       >
         {ROL_LABELS[rol] || rol}
       </Badge>

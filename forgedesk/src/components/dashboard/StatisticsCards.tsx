@@ -110,14 +110,14 @@ export function StatisticsCards() {
       {stats.map((stat) => (
         <div key={stat.title} className={`${stat.gradient} rounded-2xl p-6 cursor-default group stat-card-hover stat-card-glow relative overflow-hidden`}>
           <Sparkline />
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] dark:text-[#a0a0a0] mb-3 relative z-[1]">
+          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary dark:text-text-tertiary mb-3 relative z-[1]">
             {stat.title}
           </p>
           <p className="display-number display-number-xl text-foreground relative z-[1] font-mono">
             {stat.value}
           </p>
           {stat.change && (
-            <p className={`text-[12px] font-bold mt-4 relative z-[1] ${stat.changeDown ? 'text-destructive' : 'text-[#3A7D52] dark:text-[#7AAF85]'}`}>
+            <p className={`text-xs font-bold mt-4 relative z-[1] ${stat.changeDown ? 'text-destructive' : 'text-[#3A7D52] dark:text-[#7AAF85]'}`}>
               {stat.changeDown ? '↓' : '↑'} {stat.change}
             </p>
           )}

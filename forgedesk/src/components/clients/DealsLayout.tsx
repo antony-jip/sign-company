@@ -309,20 +309,20 @@ export function DealsLayout() {
       {/* KPI Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3">
-          <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide">Pipeline waarde</p>
+          <p className="text-2xs font-semibold uppercase text-muted-foreground tracking-wide">Pipeline waarde</p>
           <p className="text-lg font-bold text-foreground mt-1">{formatCurrency(kpis.openWaarde)}</p>
-          <p className="text-[10px] text-muted-foreground/60">Gewogen: {formatCurrency(kpis.gewogenWaarde)}</p>
+          <p className="text-2xs text-muted-foreground/60">Gewogen: {formatCurrency(kpis.gewogenWaarde)}</p>
         </Card>
         <Card className="p-3">
-          <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide">Gem. deal grootte</p>
+          <p className="text-2xs font-semibold uppercase text-muted-foreground tracking-wide">Gem. deal grootte</p>
           <p className="text-lg font-bold text-foreground mt-1">{formatCurrency(kpis.gemDealGrootte)}</p>
         </Card>
         <Card className="p-3">
-          <p className="text-[10px] font-semibold uppercase text-accent dark:text-wm-light tracking-wide">Gewonnen (maand)</p>
+          <p className="text-2xs font-semibold uppercase text-accent dark:text-wm-light tracking-wide">Gewonnen (maand)</p>
           <p className="text-lg font-bold text-accent dark:text-wm-light mt-1">{formatCurrency(kpis.gewonnenMaand)}</p>
         </Card>
         <Card className="p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-coral-text)' }}>Verloren (maand)</p>
+          <p className="text-2xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-coral-text)' }}>Verloren (maand)</p>
           <p className="text-lg font-bold mt-1" style={{ color: 'var(--color-coral-text)' }}>{formatCurrency(kpis.verlorenMaand)}</p>
         </Card>
       </div>
@@ -371,7 +371,7 @@ export function DealsLayout() {
                   <div className="flex items-center gap-2 mb-1">
                     <div className={cn('w-2 h-2 rounded-full', col.accent)} />
                     <h3 className="font-semibold text-sm text-foreground">{col.label}</h3>
-                    <Badge variant="secondary" className="ml-auto text-[10px]">{colDeals.length}</Badge>
+                    <Badge variant="secondary" className="ml-auto text-2xs">{colDeals.length}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground pl-4">{formatCurrency(colTotal)}</p>
                 </div>
@@ -393,7 +393,7 @@ export function DealsLayout() {
                           <span className="text-xs text-muted-foreground">{getKlantNaam(deal.klant_id)}</span>
                           {deal.kans_percentage !== undefined && (
                             <span className={cn(
-                              'text-[10px] font-bold px-1.5 py-0.5 rounded',
+                              'text-2xs font-bold px-1.5 py-0.5 rounded',
                               (deal.kans_percentage || 0) >= 70 ? 'bg-[var(--color-sage)] text-[var(--color-sage-text)]' :
                               (deal.kans_percentage || 0) >= 30 ? 'bg-[var(--color-cream)] text-[var(--color-cream-text)]' :
                               'bg-[var(--color-coral)] text-[var(--color-coral-text)]'
@@ -405,12 +405,12 @@ export function DealsLayout() {
                           <span className="text-sm font-bold text-foreground">{formatCurrency(deal.verwachte_waarde)}</span>
                           {deal.medewerker_id && (
                             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center" title={getMedewerkerNaam(deal.medewerker_id)}>
-                              <span className="text-[9px] font-bold text-white">{getInitials(getMedewerkerNaam(deal.medewerker_id))}</span>
+                              <span className="text-2xs font-bold text-white">{getInitials(getMedewerkerNaam(deal.medewerker_id))}</span>
                             </div>
                           )}
                         </div>
                         {deal.volgende_actie && (
-                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <div className="flex items-center gap-1 text-2xs text-muted-foreground">
                             <ArrowRight className="h-3 w-3" />
                             <span className="truncate">{deal.volgende_actie}</span>
                           </div>
@@ -450,7 +450,7 @@ export function DealsLayout() {
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getKlantNaam(deal.klant_id)}</td>
                       <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(deal.verwachte_waarde)}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className="text-[11px]">{columns.find((c) => c.key === deal.fase)?.label || deal.fase}</Badge>
+                        <Badge variant="outline" className="text-xs">{columns.find((c) => c.key === deal.fase)?.label || deal.fase}</Badge>
                       </td>
                       <td className="px-4 py-3">
                         <span className={cn(

@@ -105,7 +105,7 @@ export function CalendarMiniWidget() {
           {WEEKDAY_LABELS.map((day) => (
             <div
               key={day}
-              className="text-[11px] font-medium text-muted-foreground/60 dark:text-muted-foreground py-1"
+              className="text-xs font-medium text-muted-foreground/60 dark:text-muted-foreground py-1"
             >
               {day}
             </div>

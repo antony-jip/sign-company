@@ -181,7 +181,7 @@ export function WeekView({ currentDate, selectedDate, events, onSelectDate }: We
                         {event.titel}
                       </p>
                       {height > 30 && (
-                        <p className="text-[10px] opacity-90 mt-0.5">
+                        <p className="text-2xs opacity-90 mt-0.5">
                           {format(parseISO(event.start_datum), 'HH:mm')} - {format(parseISO(event.eind_datum), 'HH:mm')}
                         </p>
                       )}

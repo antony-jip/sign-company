@@ -111,7 +111,7 @@ export function MonthView({ currentDate, selectedDate, events, onSelectDate }: M
                 </span>
               </div>
               {feestdagInfo && (
-                <div className="px-1 py-0.5 rounded text-[9px] font-medium text-red-600 dark:text-red-400 truncate leading-tight">
+                <div className="px-1 py-0.5 rounded text-2xs font-medium text-red-600 dark:text-red-400 truncate leading-tight">
                   {feestdagInfo.naam}
                 </div>
               )}
@@ -121,7 +121,7 @@ export function MonthView({ currentDate, selectedDate, events, onSelectDate }: M
                   <div
                     key={event.id}
                     className={cn(
-                      'px-1.5 py-0.5 rounded text-[10px] font-medium truncate leading-tight',
+                      'px-1.5 py-0.5 rounded text-2xs font-medium truncate leading-tight',
                       getEventColor(event.type)
                     )}
                     title={`${event.titel} - ${format(parseISO(event.start_datum), 'HH:mm')}`}
@@ -130,7 +130,7 @@ export function MonthView({ currentDate, selectedDate, events, onSelectDate }: M
                   </div>
                 ))}
                 {overflow > 0 && (
-                  <p className="text-[10px] text-muted-foreground font-medium px-1.5">
+                  <p className="text-2xs text-muted-foreground font-medium px-1.5">
                     +{overflow} meer
                   </p>
                 )}

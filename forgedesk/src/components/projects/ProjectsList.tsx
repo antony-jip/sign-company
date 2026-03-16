@@ -400,7 +400,7 @@ export function ProjectsList() {
           </div>
           <div className="min-w-0">
             <h1 className="page-title text-foreground truncate">Projecten</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {gefilterdeProjecten.length} van {projecten.length} projecten
             </p>
           </div>
@@ -421,25 +421,25 @@ export function ProjectsList() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {stats.actief > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
             <TrendingUp className="w-3 h-3" />
             {stats.actief} actief
           </div>
         )}
         {stats.teFactureren > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
             <Receipt className="w-3 h-3" />
             {stats.teFactureren} te factureren
           </div>
         )}
         {stats.overdue > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
             <AlertTriangle className="w-3 h-3" />
             {stats.overdue} verlopen
           </div>
         )}
         {stats.afgerond > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
             <CheckCircle2 className="w-3 h-3" />
             {stats.afgerond} afgerond
           </div>
@@ -516,7 +516,7 @@ export function ProjectsList() {
                 key={optie.value}
                 onClick={() => setStatusFilter(optie.value)}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all duration-150',
+                  'px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150',
                   statusFilter === optie.value
                     ? 'bg-foreground text-background shadow-sm'
                     : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
@@ -582,13 +582,13 @@ export function ProjectsList() {
             {/* Selectie teller */}
             <div className="flex items-center gap-2.5">
               <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: 'var(--color-sage-text)', color: 'white' }}>
-                <span className="text-[11px] font-bold">{selectedIds.size}</span>
+                <span className="text-xs font-bold">{selectedIds.size}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[13px] font-semibold" style={{ color: 'var(--color-sage-text)' }}>
+                <span className="text-sm font-semibold" style={{ color: 'var(--color-sage-text)' }}>
                   {selectedIds.size} {selectedIds.size === 1 ? 'project' : 'projecten'} geselecteerd
                 </span>
-                <span className="text-[10px] font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
+                <span className="text-2xs font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
                   van {gefilterdeProjecten.length} totaal
                 </span>
               </div>
@@ -597,7 +597,7 @@ export function ProjectsList() {
             {/* Selecteer alles toggle */}
             <button
               onClick={toggleSelectAll}
-              className="text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
+              className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
               style={{ color: 'var(--color-sage-text)' }}
             >
               {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
@@ -608,7 +608,7 @@ export function ProjectsList() {
             {/* Status wijzigen knop */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[12px] font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
                   <ArrowUpDown className="w-3 h-3" />
                   Status wijzigen
                   <ChevronDown className="w-3 h-3 opacity-50" />
@@ -680,14 +680,14 @@ export function ProjectsList() {
                     <p className="text-sm font-medium text-foreground truncate">{project.naam}</p>
                     {klantNaam && <p className="text-xs text-muted-foreground truncate mt-0.5">{klantNaam}</p>}
                   </div>
-                  <Badge className={cn('text-[10px] capitalize flex-shrink-0', getStatusColor(project.status))}>
+                  <Badge className={cn('text-2xs capitalize flex-shrink-0', getStatusColor(project.status))}>
                     {statusLabels[project.status] || project.status}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      'text-[10px] font-medium px-1.5 py-0.5 rounded uppercase',
+                      'text-2xs font-medium px-1.5 py-0.5 rounded uppercase',
                       getPriorityColor(project.prioriteit)
                     )}>
                       {project.prioriteit}
@@ -717,12 +717,12 @@ export function ProjectsList() {
                   />
                 </th>
                 <th className="text-left py-2.5 px-4 w-[110px]">
-                  <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</span>
+                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Status</span>
                 </th>
                 <th className="text-left py-2.5 px-4">
                   <button
                     onClick={() => handleSort('naam')}
-                    className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
                   >
                     Project
                     {sortField === 'naam' ? (
@@ -733,15 +733,15 @@ export function ProjectsList() {
                   </button>
                 </th>
                 <th className="text-left py-2.5 px-4 hidden lg:table-cell">
-                  <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Klant</span>
+                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Klant</span>
                 </th>
                 <th className="text-left py-2.5 px-4 hidden md:table-cell">
-                  <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Team</span>
+                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Team</span>
                 </th>
                 <th className="text-right py-2.5 px-4 hidden xl:table-cell">
                   <button
                     onClick={() => handleSort('bedrag')}
-                    className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                    className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                   >
                     Bedrag
                     {sortField === 'bedrag' ? (
@@ -754,7 +754,7 @@ export function ProjectsList() {
                 <th className="text-right py-2.5 px-4 hidden lg:table-cell">
                   <button
                     onClick={() => handleSort('start_datum')}
-                    className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                    className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                   >
                     Datum
                     {sortField === 'start_datum' ? (
@@ -777,7 +777,7 @@ export function ProjectsList() {
                   <tr
                     key={project.id}
                     className={cn(
-                      'border-b border-border/30 last:border-0 hover:bg-[#F4F3F0]/50 dark:hover:bg-muted/20 cursor-pointer transition-all duration-150 group border-l-2',
+                      'border-b border-border/30 last:border-0 hover:bg-bg-subtle/50 dark:hover:bg-muted/20 cursor-pointer transition-all duration-150 group border-l-2',
                       getStatusBorderColor(project.status),
 
 
@@ -845,7 +845,7 @@ export function ProjectsList() {
                           <div>
                             <Link
                               to={`/projecten/${project.id}`}
-                              className="text-[13px] font-medium text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
+                              className="text-sm font-medium text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
                               onClick={(e) => e.stopPropagation()}
                             >
                               {project.naam}
@@ -855,13 +855,13 @@ export function ProjectsList() {
                             )}
                           </div>
                           {project.beschrijving && (
-                            <p className="text-[11px] text-muted-foreground truncate max-w-[300px] mt-0.5">
+                            <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">
                               {project.beschrijving}
                             </p>
                           )}
                         </div>
                         <span className={cn(
-                          'text-[9px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 uppercase tracking-wide',
+                          'text-2xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 uppercase tracking-wide',
                           project.prioriteit === 'hoog' || project.prioriteit === 'urgent'
                             ? 'text-red-600/70 bg-red-50 dark:text-red-400/70 dark:bg-red-950/20'
                             : project.prioriteit === 'laag'
@@ -871,7 +871,7 @@ export function ProjectsList() {
                           {project.prioriteit}
                         </span>
                         {isOverdue && (
-                          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[9px] px-1.5 py-0 flex-shrink-0">
+                          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-2xs px-1.5 py-0 flex-shrink-0">
                             Verlopen
                           </Badge>
                         )}
@@ -880,12 +880,12 @@ export function ProjectsList() {
 
                     {/* Klant */}
                     <td className="py-3 px-4 hidden lg:table-cell">
-                      <span className="text-[13px] text-foreground">{klantNaam}</span>
+                      <span className="text-sm text-foreground">{klantNaam}</span>
                       {project.vestiging_naam && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{project.vestiging_naam}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{project.vestiging_naam}</p>
                       )}
                       {!project.vestiging_naam && contactpersoon && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{contactpersoon}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{contactpersoon}</p>
                       )}
                     </td>
 
@@ -896,14 +896,14 @@ export function ProjectsList() {
                           {project.team_leden.slice(0, 3).map((lid, i) => (
                             <div
                               key={i}
-                              className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-white dark:border-card text-[9px] font-semibold text-accent dark:text-primary"
+                              className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-white dark:border-card text-2xs font-semibold text-accent dark:text-primary"
                               title={lid}
                             >
                               {lid.charAt(0).toUpperCase()}
                             </div>
                           ))}
                           {project.team_leden.length > 3 && (
-                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center border-2 border-white dark:border-card text-[9px] font-medium text-muted-foreground">
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center border-2 border-white dark:border-card text-2xs font-medium text-muted-foreground">
                               +{project.team_leden.length - 3}
                             </div>
                           )}
@@ -929,7 +929,7 @@ export function ProjectsList() {
 
                     {/* Datum */}
                     <td className="py-3 px-4 text-right hidden lg:table-cell">
-                      <span className="text-[12px] text-muted-foreground tabular-nums">
+                      <span className="text-xs text-muted-foreground tabular-nums">
                         {formatDate(project.created_at)}
                       </span>
                     </td>

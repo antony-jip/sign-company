@@ -514,7 +514,7 @@ export function EmailLayout() {
           </div>
           <div className="min-w-0">
             <h1 className="page-title text-foreground truncate">Email</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Klantcommunicatie
             </p>
           </div>
@@ -537,7 +537,7 @@ export function EmailLayout() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap',
+                'relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                 isActive
                   ? 'bg-foreground text-background shadow-sm'
                   : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -633,7 +633,7 @@ export function EmailLayout() {
                     key={tab.id}
                     onClick={() => handleFolderChange(tab.id)}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150 mb-0.5',
+                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-150 mb-0.5',
                       isActive
                         ? 'bg-foreground/8 text-foreground font-semibold shadow-[inset_0_1px_0_rgba(0,0,0,0.04)]'
                         : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -643,7 +643,7 @@ export function EmailLayout() {
                     <span className="flex-1 text-left">{tab.label}</span>
                     {count > 0 && (
                       <span className={cn(
-                        'text-[10px] font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center tabular-nums',
+                        'text-2xs font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center tabular-nums',
                         isActive
                           ? 'bg-primary text-white'
                           : 'bg-muted-foreground/10 text-muted-foreground/70'
@@ -660,7 +660,7 @@ export function EmailLayout() {
             <div className="border-t border-border/20 px-3 py-4">
               <div className="flex items-center gap-1.5 mb-2.5">
                 <Tag className="w-3 h-3 text-muted-foreground/50" />
-                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.08em]">Labels</span>
+                <span className="text-2xs font-bold text-muted-foreground/50 uppercase tracking-[0.08em]">Labels</span>
               </div>
               {['offerte', 'klant', 'project', 'leverancier'].map((label) => {
                 const labelCount = emails.filter((e) => e.labels.includes(label)).length
@@ -670,7 +670,7 @@ export function EmailLayout() {
                     key={label}
                     onClick={() => setSearchQuery(isActive ? '' : `label:${label}`)}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12px] transition-all duration-150',
+                      'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150',
                       isActive
                         ? 'bg-muted/60 text-foreground font-medium'
                         : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
@@ -685,7 +685,7 @@ export function EmailLayout() {
                     )} />
                     <span className="flex-1 text-left capitalize">{label}</span>
                     {labelCount > 0 && (
-                      <span className="text-[10px] text-muted-foreground/40 tabular-nums">{labelCount}</span>
+                      <span className="text-2xs text-muted-foreground/40 tabular-nums">{labelCount}</span>
                     )}
                   </button>
                 )
@@ -733,9 +733,9 @@ export function EmailLayout() {
                           onClick={() => { setSearchQuery(op.key); setShowSearchHelp(false) }}
                           className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs hover:bg-muted/60 transition-colors text-left"
                         >
-                          <code className="font-mono text-primary bg-primary/8 px-1.5 py-0.5 rounded-md text-[11px]">{op.key}</code>
+                          <code className="font-mono text-primary bg-primary/8 px-1.5 py-0.5 rounded-md text-xs">{op.key}</code>
                           <span className="text-muted-foreground">{op.description}</span>
-                          <span className="ml-auto text-muted-foreground/40 font-mono text-[10px]">{op.example}</span>
+                          <span className="ml-auto text-muted-foreground/40 font-mono text-2xs">{op.example}</span>
                         </button>
                       ))}
                     </div>
@@ -749,7 +749,7 @@ export function EmailLayout() {
                   onClick={handleAiSummary}
                   disabled={aiSummaryLoading}
                   className={cn(
-                    'flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-medium transition-all border group',
+                    'flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium transition-all border group',
                     showAiSummary
                       ? 'bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-950/30 dark:border-violet-800 dark:text-violet-400 shadow-sm'
                       : 'bg-background border-border/40 text-muted-foreground hover:border-violet-200 hover:text-violet-600 hover:bg-violet-50/50 dark:hover:bg-violet-950/20'
@@ -775,8 +775,8 @@ export function EmailLayout() {
                           <Sparkles className="w-3 h-3 text-white" />
                         </div>
                         <div>
-                          <span className="text-[13px] font-semibold text-foreground">Inbox Overzicht</span>
-                          <span className="text-[10px] text-muted-foreground ml-2">
+                          <span className="text-sm font-semibold text-foreground">Inbox Overzicht</span>
+                          <span className="text-2xs text-muted-foreground ml-2">
                             {emails.filter(e => e.map === 'inbox' && !e.gelezen).length} ongelezen
                           </span>
                         </div>
@@ -796,10 +796,10 @@ export function EmailLayout() {
                           <div className="h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
                             <Loader2 className="w-5 h-5 animate-spin text-violet-500" />
                           </div>
-                          <p className="text-[12px] text-muted-foreground">Emails analyseren...</p>
+                          <p className="text-xs text-muted-foreground">Emails analyseren...</p>
                         </div>
                       ) : aiSummary ? (
-                        <div className="text-[13px] text-foreground/85 leading-relaxed whitespace-pre-wrap">
+                        <div className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap">
                           {aiSummary}
                         </div>
                       ) : null}
@@ -807,14 +807,14 @@ export function EmailLayout() {
 
                     {/* Footer */}
                     <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/20 bg-muted/5">
-                      <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
+                      <span className="text-2xs text-muted-foreground/50 flex items-center gap-1">
                         <Sparkles className="w-2.5 h-2.5" />
                         Gegenereerd met AI
                       </span>
                       {!aiSummaryLoading && (
                         <button
                           onClick={() => { setAiSummary(null); handleAiSummary() }}
-                          className="text-[10px] font-medium text-violet-500 hover:text-violet-600 transition-colors"
+                          className="text-2xs font-medium text-violet-500 hover:text-violet-600 transition-colors"
                         >
                           Vernieuw
                         </button>
@@ -861,7 +861,7 @@ export function EmailLayout() {
                     {tab.label}
                     {count > 0 && (
                       <span className={cn(
-                        'text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center',
+                        'text-2xs font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center',
                         isActive ? 'bg-primary text-white' : 'bg-muted-foreground/20 text-muted-foreground'
                       )}>
                         {count}
@@ -890,7 +890,7 @@ export function EmailLayout() {
                       key={f}
                       onClick={() => setFilter(f)}
                       className={cn(
-                        'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-150',
+                        'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150',
                         isActive
                           ? 'bg-foreground text-background shadow-sm'
                           : 'bg-muted/50 text-muted-foreground hover:bg-muted/80 hover:text-foreground'
@@ -899,7 +899,7 @@ export function EmailLayout() {
                       {labels[f]}
                       {f !== 'alle' && count > 0 && (
                         <span className={cn(
-                          'text-[9px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center tabular-nums',
+                          'text-2xs font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center tabular-nums',
                           isActive ? 'bg-background/20 text-background' : 'bg-muted-foreground/12 text-muted-foreground'
                         )}>
                           {count}
@@ -917,7 +917,7 @@ export function EmailLayout() {
                     onClick={() => setFontSize(size)}
                     className={cn(
                       'w-6 h-6 rounded-md flex items-center justify-center font-bold transition-all duration-150',
-                      size === 'small' ? 'text-[10px]' : size === 'medium' ? 'text-xs' : 'text-sm',
+                      size === 'small' ? 'text-2xs' : size === 'medium' ? 'text-xs' : 'text-sm',
                       fontSize === size
                         ? 'bg-foreground text-background shadow-sm'
                         : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/60'
@@ -967,10 +967,10 @@ export function EmailLayout() {
                   onCheckedChange={selection.toggleCheckAll}
                   className="opacity-40 hover:opacity-100 transition-opacity"
                 />
-                <button onClick={selection.toggleCheckAll} className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer">
+                <button onClick={selection.toggleCheckAll} className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer">
                   Alles selecteren
                 </button>
-                <span className="text-[11px] text-muted-foreground/40 ml-auto tabular-nums">
+                <span className="text-xs text-muted-foreground/40 ml-auto tabular-nums">
                   {filteredEmails.length} email{filteredEmails.length !== 1 ? 's' : ''}
                 </span>
               </div>

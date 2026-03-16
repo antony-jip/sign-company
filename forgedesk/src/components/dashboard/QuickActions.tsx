@@ -77,7 +77,7 @@ export function QuickActions() {
                     <span className="text-sm font-medium text-foreground block">
                       {action.label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground hidden sm:block">
+                    <span className="text-xs text-muted-foreground hidden sm:block">
                       {action.description}
                     </span>
                   </div>

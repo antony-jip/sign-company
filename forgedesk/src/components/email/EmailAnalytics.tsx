@@ -125,7 +125,7 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
               </div>
             </div>
             <p className="text-2xl font-bold font-mono">{stats.ontvangenWeek}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">deze week</p>
+            <p className="text-2xs text-muted-foreground mt-1">deze week</p>
           </CardContent>
         </Card>
 
@@ -140,7 +140,7 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
               </div>
             </div>
             <p className="text-2xl font-bold font-mono">{stats.verzondenWeek}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">deze week</p>
+            <p className="text-2xs text-muted-foreground mt-1">deze week</p>
           </CardContent>
         </Card>
 
@@ -155,7 +155,7 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
               </div>
             </div>
             <p className="text-2xl font-bold font-mono">{stats.openRate.toFixed(1)}%</p>
-            <p className="text-[10px] text-muted-foreground mt-1">van gevolgde emails</p>
+            <p className="text-2xs text-muted-foreground mt-1">van gevolgde emails</p>
           </CardContent>
         </Card>
 
@@ -170,7 +170,7 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
               </div>
             </div>
             <p className="text-2xl font-bold font-mono">{stats.ongelezen}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">in inbox</p>
+            <p className="text-2xs text-muted-foreground mt-1">in inbox</p>
           </CardContent>
         </Card>
       </div>
@@ -198,18 +198,18 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
                       style={{ height: `${(dag.verzonden / maxDagWaarde) * 100}%`, minHeight: dag.verzonden > 0 ? 4 : 0 }}
                     />
                   </div>
-                  <span className="text-[10px] text-muted-foreground">{dag.dag}</span>
+                  <span className="text-2xs text-muted-foreground">{dag.dag}</span>
                 </div>
               ))}
             </div>
             <div className="flex items-center justify-center gap-4 mt-3">
               <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded bg-blue-400" />
-                <span className="text-[10px] text-muted-foreground">Ontvangen</span>
+                <span className="text-2xs text-muted-foreground">Ontvangen</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded bg-emerald-400" />
-                <span className="text-[10px] text-muted-foreground">Verzonden</span>
+                <span className="text-2xs text-muted-foreground">Verzonden</span>
               </div>
             </div>
           </CardContent>
@@ -238,11 +238,11 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
               ))}
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[9px] text-muted-foreground">0:00</span>
-              <span className="text-[9px] text-muted-foreground">6:00</span>
-              <span className="text-[9px] text-muted-foreground">12:00</span>
-              <span className="text-[9px] text-muted-foreground">18:00</span>
-              <span className="text-[9px] text-muted-foreground">23:00</span>
+              <span className="text-2xs text-muted-foreground">0:00</span>
+              <span className="text-2xs text-muted-foreground">6:00</span>
+              <span className="text-2xs text-muted-foreground">12:00</span>
+              <span className="text-2xs text-muted-foreground">18:00</span>
+              <span className="text-2xs text-muted-foreground">23:00</span>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               Piekuur: <span className="font-medium text-foreground">{stats.piekUur.uur}:00</span> ({stats.piekUur.aantal} emails)
@@ -269,7 +269,7 @@ export function EmailAnalytics({ emails }: EmailAnalyticsProps) {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm truncate">{email}</p>
                     </div>
-                    <Badge variant="secondary" className="text-[10px]">
+                    <Badge variant="secondary" className="text-2xs">
                       {count} emails
                     </Badge>
                   </div>

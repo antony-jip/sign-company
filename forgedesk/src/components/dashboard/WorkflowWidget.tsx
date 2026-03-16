@@ -219,7 +219,7 @@ export function WorkflowWidget() {
               </div>
               <Badge
                 variant="secondary"
-                className={`text-[10px] px-1.5 py-0 h-4 flex-shrink-0 ${badgeColorMap[item.type]}`}
+                className={`text-2xs px-1.5 py-0 h-4 flex-shrink-0 ${badgeColorMap[item.type]}`}
               >
                 {labelMap[item.type]}
               </Badge>

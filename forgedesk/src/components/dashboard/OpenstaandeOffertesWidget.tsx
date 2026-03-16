@@ -43,7 +43,7 @@ export function OpenstaandeOffertesWidget() {
           <h3 className="card-title-lg text-foreground">Openstaande offertes</h3>
           <span
             onClick={() => navigate('/offertes')}
-            className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+            className="text-xs font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
           >
             Alles →
           </span>
@@ -77,7 +77,7 @@ export function OpenstaandeOffertesWidget() {
                 >
                   <div className={`w-1 h-9 rounded-sm flex-shrink-0 ${barColors[offerte.status] || 'bg-border'}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground truncate">{offerte.titel}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{offerte.titel}</p>
                     <p className="text-[11.5px] text-muted-foreground mt-0.5">
                       {offerte.klant_naam || 'Onbekend'} · <span className="font-mono">{formatCurrency(offerte.totaal)}</span>
                     </p>

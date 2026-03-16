@@ -44,9 +44,9 @@ export function formatShortDate(dateStr: string): string {
 }
 
 export const fontSizeClasses: Record<FontSize, { name: string; subject: string; preview: string; date: string }> = {
-  small: { name: 'text-xs', subject: 'text-xs', preview: 'text-[11px]', date: 'text-[10px]' },
-  medium: { name: 'text-sm', subject: 'text-[13px]', preview: 'text-xs', date: 'text-[11px]' },
-  large: { name: 'text-base', subject: 'text-sm', preview: 'text-[13px]', date: 'text-xs' },
+  small: { name: 'text-xs', subject: 'text-xs', preview: 'text-xs', date: 'text-2xs' },
+  medium: { name: 'text-sm', subject: 'text-sm', preview: 'text-xs', date: 'text-xs' },
+  large: { name: 'text-base', subject: 'text-sm', preview: 'text-sm', date: 'text-xs' },
 }
 
 export const labelColors: Record<string, string> = {

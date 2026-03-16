@@ -90,7 +90,7 @@ export function PriorityTasks() {
         ) : (
         <div className="space-y-1">
           {/* Table header */}
-          <div className="grid grid-cols-[80px_1fr_140px_100px_90px] gap-3 px-3 py-2 text-[11px] font-bold text-[#8a8680] uppercase tracking-label border-b border-border/50">
+          <div className="grid grid-cols-[80px_1fr_140px_100px_90px] gap-3 px-3 py-2 text-xs font-bold text-text-tertiary uppercase tracking-label border-b border-border/50">
             <span>Prioriteit</span>
             <span>Taak</span>
             <span>Project</span>
@@ -107,7 +107,7 @@ export function PriorityTasks() {
             >
               <div>
                 <Badge
-                  className={`${getPriorityColor(task.prioriteit)} text-[11px] capitalize`}
+                  className={`${getPriorityColor(task.prioriteit)} text-xs capitalize`}
                 >
                   {task.prioriteit}
                 </Badge>
@@ -133,7 +133,7 @@ export function PriorityTasks() {
 
               <div>
                 <Badge
-                  className={`${getStatusColor(task.status)} text-[11px] capitalize`}
+                  className={`${getStatusColor(task.status)} text-xs capitalize`}
                 >
                   {task.status}
                 </Badge>

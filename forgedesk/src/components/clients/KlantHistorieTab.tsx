@@ -51,15 +51,15 @@ function getStatusBadge(status?: string) {
   if (!status) return null
   const lower = status.toLowerCase()
   if (lower === 'akkoord') {
-    return <Badge className="bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80] text-[10px] px-1.5 py-0 border-0">Akkoord</Badge>
+    return <Badge className="bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80] text-2xs px-1.5 py-0 border-0">Akkoord</Badge>
   }
   if (lower === 'in afwachting') {
-    return <Badge className="bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A] text-[10px] px-1.5 py-0 border-0">In afwachting</Badge>
+    return <Badge className="bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A] text-2xs px-1.5 py-0 border-0">In afwachting</Badge>
   }
   if (lower === 'niet akkoord') {
-    return <Badge className="bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70] text-[10px] px-1.5 py-0 border-0">Niet akkoord</Badge>
+    return <Badge className="bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70] text-2xs px-1.5 py-0 border-0">Niet akkoord</Badge>
   }
-  return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{status}</Badge>
+  return <Badge variant="secondary" className="text-2xs px-1.5 py-0">{status}</Badge>
 }
 
 export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) {
@@ -198,11 +198,11 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-2 pr-3 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Datum</th>
-                  <th className="text-left py-2 pr-3 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Type</th>
-                  <th className="text-left py-2 pr-3 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Omschrijving</th>
-                  <th className="text-left py-2 pr-3 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Status</th>
-                  <th className="text-right py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Bedrag</th>
+                  <th className="text-left py-2 pr-3 text-xs font-bold uppercase tracking-label text-text-tertiary">Datum</th>
+                  <th className="text-left py-2 pr-3 text-xs font-bold uppercase tracking-label text-text-tertiary">Type</th>
+                  <th className="text-left py-2 pr-3 text-xs font-bold uppercase tracking-label text-text-tertiary">Omschrijving</th>
+                  <th className="text-left py-2 pr-3 text-xs font-bold uppercase tracking-label text-text-tertiary">Status</th>
+                  <th className="text-right py-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Bedrag</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -216,11 +216,11 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
                     </td>
                     <td className="py-2 pr-3">
                       {item.type === 'project' ? (
-                        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-[10px] px-1.5 py-0">
+                        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-2xs px-1.5 py-0">
                           Project
                         </Badge>
                       ) : (
-                        <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-[10px] px-1.5 py-0">
+                        <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-2xs px-1.5 py-0">
                           Offerte
                         </Badge>
                       )}

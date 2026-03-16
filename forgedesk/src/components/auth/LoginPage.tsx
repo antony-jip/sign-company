@@ -133,7 +133,7 @@ export function LoginPage() {
               { icon: CalendarDays, label: 'Planning' },
               { icon: BarChart3, label: 'Rapportages' },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2 text-[13px] text-white/50 bg-white/5 border border-white/10 rounded-full px-4 py-2">
+              <div key={label} className="flex items-center gap-2 text-sm text-white/50 bg-white/5 border border-white/10 rounded-full px-4 py-2">
                 <Icon className="w-3.5 h-3.5 text-white/40" />
                 {label}
               </div>
@@ -141,7 +141,7 @@ export function LoginPage() {
           </div>
         </div>
 
-        <p className="relative z-10 text-[12px] text-white/25" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <p className="relative z-10 text-xs text-white/25" style={{ fontFamily: 'Inter, sans-serif' }}>
           © {new Date().getFullYear()} FORGEdesk. Alle rechten voorbehouden.
         </p>
       </div>
@@ -171,7 +171,7 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-[13px] font-medium text-foreground/70">E-mailadres</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-foreground/70">E-mailadres</Label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -189,10 +189,10 @@ export function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-[13px] font-medium text-foreground/70">Wachtwoord</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-foreground/70">Wachtwoord</Label>
                 <Link
                   to="/wachtwoord-vergeten"
-                  className="text-[12.5px] text-primary hover:underline font-medium"
+                  className="text-xs text-primary hover:underline font-medium"
                 >
                   Vergeten?
                 </Link>
@@ -239,14 +239,14 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-[13.5px] text-muted-foreground mt-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-center text-sm text-muted-foreground mt-8" style={{ fontFamily: 'Inter, sans-serif' }}>
             Nog geen account?{' '}
             <Link to="/registreren" className="text-primary hover:underline font-semibold">
               Gratis registreren →
             </Link>
           </p>
 
-          <p className="text-center text-[11px] text-muted-foreground/60 mt-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-center text-xs text-muted-foreground/60 mt-6" style={{ fontFamily: 'Inter, sans-serif' }}>
             Demo: gebruik demo@forgedesk.nl / demo1234
           </p>
         </div>

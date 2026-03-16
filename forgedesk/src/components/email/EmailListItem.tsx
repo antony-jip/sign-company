@@ -149,7 +149,7 @@ export function EmailListItem({
 
         {/* Thread count badge */}
         {email.threadCount && email.threadCount > 1 && (
-          <span className="flex-shrink-0 text-[10px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+          <span className="flex-shrink-0 text-2xs font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
             {email.threadCount}
           </span>
         )}
@@ -161,7 +161,7 @@ export function EmailListItem({
               <span
                 key={label}
                 className={cn(
-                  'px-1.5 py-0 rounded text-[9px] font-semibold uppercase tracking-label',
+                  'px-1.5 py-0 rounded text-2xs font-semibold uppercase tracking-label',
                   label === 'offerte' && 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
                   label === 'klant' && 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300',
                   label === 'project' && 'bg-primary/10 text-primary',
@@ -225,7 +225,7 @@ export function EmailListItem({
 
       {/* Snooze indicator */}
       {email.snoozed_until && (
-        <div className="flex items-center gap-1.5 px-8 py-1 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/10 border-b border-border/30">
+        <div className="flex items-center gap-1.5 px-8 py-1 text-2xs text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/10 border-b border-border/30">
           <AlarmClock className="w-3 h-3" />
           Gesnoozed tot {formatDateTime(email.snoozed_until)}
           <button
@@ -258,10 +258,10 @@ export function EmailListItem({
         <div className="mx-3 my-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-background shadow-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50/60 dark:bg-blue-950/30 border-b border-blue-100 dark:border-blue-900/50">
             <Reply className="w-3.5 h-3.5 text-blue-500" />
-            <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">
+            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
               Beantwoorden aan {extractSenderName(email.van)}
             </span>
-            <span className="text-[10px] text-muted-foreground ml-auto">
+            <span className="text-2xs text-muted-foreground ml-auto">
               Ctrl+Enter om te versturen
             </span>
           </div>

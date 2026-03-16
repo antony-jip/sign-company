@@ -172,7 +172,7 @@ export function ProjectCreate() {
         <div className="rounded-xl border border-black/[0.06] bg-card p-5 mb-4">
           <div className="flex items-center gap-2 mb-3">
             <User className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Klant & Contact</span>
+            <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Klant & Contact</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

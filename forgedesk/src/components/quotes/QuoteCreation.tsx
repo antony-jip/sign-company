@@ -1904,7 +1904,7 @@ export function QuoteCreation() {
                           <SelectItem value="geen"><span className="text-muted-foreground">Geen project</span></SelectItem>
                           {klantProjecten.map((project) => (
                             <SelectItem key={project.id} value={project.id}>
-                              <div className="flex items-center gap-2"><span className="font-medium">{project.naam}</span><Badge variant="outline" className="text-[10px] px-1.5 py-0">{project.status}</Badge></div>
+                              <div className="flex items-center gap-2"><span className="font-medium">{project.naam}</span><Badge variant="outline" className="text-2xs px-1.5 py-0">{project.status}</Badge></div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1934,9 +1934,9 @@ export function QuoteCreation() {
                               <div className={cn('w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold', selectedContactId === cp.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground')}>{cp.naam[0]?.toUpperCase()}</div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-foreground truncate">{cp.naam}</p>
-                                {cp.functie && <p className="text-[11px] text-muted-foreground truncate">{cp.functie}</p>}
+                                {cp.functie && <p className="text-xs text-muted-foreground truncate">{cp.functie}</p>}
                               </div>
-                              {cp.is_primair && <span className="text-[9px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">primair</span>}
+                              {cp.is_primair && <span className="text-2xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">primair</span>}
                             </div>
                           </button>
                         ))}
@@ -1969,7 +1969,7 @@ export function QuoteCreation() {
                     )}
                     {!showNewContact && (
                       <div className="space-y-1.5 pt-1 border-t border-border">
-                        <Label className="text-[11px] text-muted-foreground">Of typ een naam</Label>
+                        <Label className="text-xs text-muted-foreground">Of typ een naam</Label>
                         <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-8 text-sm" />
                       </div>
                     )}
@@ -2064,13 +2064,13 @@ export function QuoteCreation() {
                 <h1 className="text-xl font-extrabold tracking-[-0.03em] text-foreground font-display truncate">{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
                 <Badge variant="outline" className="text-xs font-mono bg-white/50 dark:bg-foreground/80/50 flex-shrink-0"><Hash className="h-3 w-3 mr-1" />{offerteNummer}</Badge>
                 {versieNummer > 1 && (
-                  <Badge variant="outline" className="text-[10px] bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 cursor-pointer flex-shrink-0" onClick={() => setShowVersieHistorie(!showVersieHistorie)}>v{versieNummer}</Badge>
+                  <Badge variant="outline" className="text-2xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 cursor-pointer flex-shrink-0" onClick={() => setShowVersieHistorie(!showVersieHistorie)}>v{versieNummer}</Badge>
                 )}
                 {geldigTot && (() => {
                   const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                  if (days < 0) return <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200 flex-shrink-0">Verlopen</Badge>
-                  if (days < 7) return <Badge className="text-[10px] bg-orange-100 text-orange-700 border-orange-200 flex-shrink-0">Verloopt over {days} {days === 1 ? 'dag' : 'dagen'}</Badge>
-                  return <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200 flex-shrink-0"><Calendar className="h-3 w-3 mr-1" />Geldig t/m {new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</Badge>
+                  if (days < 0) return <Badge className="text-2xs bg-red-100 text-red-700 border-red-200 flex-shrink-0">Verlopen</Badge>
+                  if (days < 7) return <Badge className="text-2xs bg-orange-100 text-orange-700 border-orange-200 flex-shrink-0">Verloopt over {days} {days === 1 ? 'dag' : 'dagen'}</Badge>
+                  return <Badge variant="outline" className="text-2xs bg-green-50 text-green-700 border-green-200 flex-shrink-0"><Calendar className="h-3 w-3 mr-1" />Geldig t/m {new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</Badge>
                 })()}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
@@ -2130,7 +2130,7 @@ export function QuoteCreation() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Clock className="h-4 w-4 text-purple-500" />Versie historie
-                <Badge variant="outline" className="text-[10px]">{versieHistorie.length} versies</Badge>
+                <Badge variant="outline" className="text-2xs">{versieHistorie.length} versies</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -2322,7 +2322,7 @@ export function QuoteCreation() {
                       </div>
                       <p className="text-xs text-muted-foreground">Heeft u vragen? Neem gerust contact op.</p>
                     </div>
-                    <p className="text-[10px] text-muted-foreground/60">De klant ontvangt een professionele HTML email met uw bedrijfslogo, huisstijlkleur en een directe link naar de offerte.</p>
+                    <p className="text-2xs text-muted-foreground/60">De klant ontvangt een professionele HTML email met uw bedrijfslogo, huisstijlkleur en een directe link naar de offerte.</p>
                   </div>
 
                   <Separator />
@@ -2448,7 +2448,7 @@ export function QuoteCreation() {
                       >
                         <Pin className={cn('h-3.5 w-3.5', isPinned && 'fill-current')} />
                       </button>
-                      <span className="text-[9px] text-muted-foreground/40 ml-0.5">
+                      <span className="text-2xs text-muted-foreground/40 ml-0.5">
                         {sectionId === 'klant' && 'Klant'}
                         {sectionId === 'factureren' && 'Factureren'}
                         {sectionId === 'samenvatting' && 'Samenvatting'}
@@ -2467,7 +2467,7 @@ export function QuoteCreation() {
                               </div>
                               <div className="flex-1 text-left min-w-0">
                                 <p className="text-sm font-semibold text-foreground truncate">{selectedKlant.bedrijfsnaam}</p>
-                                <p className="text-[11px] text-muted-foreground truncate">{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
+                                <p className="text-xs text-muted-foreground truncate">{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
                               </div>
                               {klantPanelOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                             </button>
@@ -2486,13 +2486,13 @@ export function QuoteCreation() {
 
                                 {selectedKlant.contactpersonen?.length > 0 && (
                                   <div className="space-y-1.5">
-                                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-label">Contactpersoon</label>
+                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-label">Contactpersoon</label>
                                     <Select value={selectedContactId} onValueChange={(val) => handleSelectContact(val)}>
                                       <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecteer..." /></SelectTrigger>
                                       <SelectContent>
                                         {selectedKlant.contactpersonen.map((cp) => (
                                           <SelectItem key={cp.id} value={cp.id}>
-                                            <div className="flex items-center gap-1.5"><span>{cp.naam}</span>{cp.is_primair && <span className="text-[9px] text-primary">(primair)</span>}</div>
+                                            <div className="flex items-center gap-1.5"><span>{cp.naam}</span>{cp.is_primair && <span className="text-2xs text-primary">(primair)</span>}</div>
                                           </SelectItem>
                                         ))}
                                         <SelectItem value="__new__"><span className="text-blue-600">+ Nieuw</span></SelectItem>
@@ -2509,9 +2509,9 @@ export function QuoteCreation() {
                                 )}
 
                                 <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border dark:border-border">
-                                  {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"><Phone className="h-3 w-3" />Bellen</a>}
-                                  {selectedKlant.email && <a href={`mailto:${selectedKlant.email}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"><Mail className="h-3 w-3" />Email</a>}
-                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-background text-foreground/70 border border-border hover:bg-muted transition-colors"><ExternalLink className="h-3 w-3" />Profiel</Link>
+                                  {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"><Phone className="h-3 w-3" />Bellen</a>}
+                                  {selectedKlant.email && <a href={`mailto:${selectedKlant.email}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"><Mail className="h-3 w-3" />Email</a>}
+                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-background text-foreground/70 border border-border hover:bg-muted transition-colors"><ExternalLink className="h-3 w-3" />Profiel</Link>
                                 </div>
                               </div>
                             )}
@@ -2534,16 +2534,16 @@ export function QuoteCreation() {
                             <div className="bg-[#E8F5EC] dark:bg-[#162018] p-4">
                               <div className="flex items-center gap-2 mb-2">
                                 <CheckCircle2 className="h-4 w-4 text-[#4A9960] dark:text-[#6ACA80]" />
-                                <p className="text-[10px] uppercase tracking-label text-[#4A9960]/80 dark:text-[#6ACA80]/80 font-medium">Gefactureerd</p>
+                                <p className="text-2xs uppercase tracking-label text-[#4A9960]/80 dark:text-[#6ACA80]/80 font-medium">Gefactureerd</p>
                               </div>
                               <div className="flex items-center gap-2">
                                 <div className="flex-1">
-                                  <p className="text-[10px] text-[#4A9960]/60 dark:text-[#6ACA80]/60">Offerte bedrag</p>
+                                  <p className="text-2xs text-[#4A9960]/60 dark:text-[#6ACA80]/60">Offerte bedrag</p>
                                   <p className="text-sm font-bold text-[#4A9960] dark:text-[#6ACA80]">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
                                 </div>
                                 <ArrowRight className="h-4 w-4 text-[#4A9960]/40 dark:text-[#6ACA80]/40 flex-shrink-0" />
                                 <div className="flex-1 text-right">
-                                  <p className="text-[10px] text-[#4A9960]/60 dark:text-[#6ACA80]/60">Factuur</p>
+                                  <p className="text-2xs text-[#4A9960]/60 dark:text-[#6ACA80]/60">Factuur</p>
                                   <p className="text-sm font-bold text-[#4A9960] dark:text-[#6ACA80]">{linkedFactuur ? formatCurrency(linkedFactuur.totaal) : '...'}</p>
                                 </div>
                               </div>
@@ -2555,7 +2555,7 @@ export function QuoteCreation() {
                                     <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
                                     <span className="text-xs font-medium">{linkedFactuur.nummer}</span>
                                   </div>
-                                  <Badge className={cn('text-[10px]',
+                                  <Badge className={cn('text-2xs',
                                     linkedFactuur.status === 'betaald' && 'bg-emerald-100 text-emerald-700 border-emerald-200',
                                     linkedFactuur.status === 'verzonden' && 'bg-blue-100 text-blue-700 border-blue-200',
                                     linkedFactuur.status === 'concept' && 'bg-muted text-foreground/70 border-border',
@@ -2587,13 +2587,13 @@ export function QuoteCreation() {
                             <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-4">
                               <div className="flex items-center gap-2 mb-2">
                                 <Receipt className="h-4 w-4 text-white" />
-                                <p className="text-[10px] uppercase tracking-label text-white/80 font-medium">Klaar om te factureren</p>
+                                <p className="text-2xs uppercase tracking-label text-white/80 font-medium">Klaar om te factureren</p>
                               </div>
-                              <p className="text-[10px] text-white/60">Offerte bedrag incl BTW</p>
+                              <p className="text-2xs text-white/60">Offerte bedrag incl BTW</p>
                               <p className="text-xl font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
                               <div className="flex items-center gap-3 mt-1">
-                                <p className="text-[10px] text-white/60">{formatCurrency(subtotaal)} excl BTW</p>
-                                <p className="text-[10px] text-white/60">+{formatCurrency(btwBedrag)} BTW</p>
+                                <p className="text-2xs text-white/60">{formatCurrency(subtotaal)} excl BTW</p>
+                                <p className="text-2xs text-white/60">+{formatCurrency(btwBedrag)} BTW</p>
                               </div>
                             </div>
                             <div className="p-3">
@@ -2622,7 +2622,7 @@ export function QuoteCreation() {
                     {sectionId === 'samenvatting' && (
                       <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
                         <div className="bg-mist dark:bg-mist/15 p-4">
-                          <p className="text-[10px] uppercase tracking-label text-foreground/70 font-medium">Totaal incl BTW</p>
+                          <p className="text-2xs uppercase tracking-label text-foreground/70 font-medium">Totaal incl BTW</p>
                           {isEditingTotaal ? (
                             <div className="mt-1">
                               <div className="flex items-center gap-1">
@@ -2649,7 +2649,7 @@ export function QuoteCreation() {
                                   placeholder={round2(subtotaal + btwBedrag).toFixed(2)}
                                 />
                               </div>
-                              <p className="text-[9px] text-foreground/50 mt-0.5">Enter = bevestig, Esc = annuleer</p>
+                              <p className="text-2xs text-foreground/50 mt-0.5">Enter = bevestig, Esc = annuleer</p>
                             </div>
                           ) : (
                             <button
@@ -2665,35 +2665,35 @@ export function QuoteCreation() {
                           )}
                           {afrondingskorting !== 0 && (
                             <div className="flex items-center justify-between mt-1">
-                              <p className="text-[10px] text-white/60">Korting: {formatCurrency(afrondingskorting)} excl BTW</p>
-                              <button onClick={() => setAfrondingskorting(0)} className="text-[9px] text-white/50 hover:text-white underline">Herstel</button>
+                              <p className="text-2xs text-white/60">Korting: {formatCurrency(afrondingskorting)} excl BTW</p>
+                              <button onClick={() => setAfrondingskorting(0)} className="text-2xs text-white/50 hover:text-white underline">Herstel</button>
                             </div>
                           )}
                           {urenCorrectieBedrag !== 0 && (
                             <div className="flex items-center justify-between mt-1">
-                              <p className="text-[10px] text-white/60">Uren correctie: {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)} excl BTW</p>
-                              <button onClick={() => setUrenCorrectie({})} className="text-[9px] text-white/50 hover:text-white underline">Herstel</button>
+                              <p className="text-2xs text-white/60">Uren correctie: {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)} excl BTW</p>
+                              <button onClick={() => setUrenCorrectie({})} className="text-2xs text-white/50 hover:text-white underline">Herstel</button>
                             </div>
                           )}
                           {optionelSubtotaal > 0 && (
-                            <p className="text-[10px] text-white/60 mt-1">+ {formatCurrency(round2(optionelSubtotaal + optionelBtw))} aan opties</p>
+                            <p className="text-2xs text-white/60 mt-1">+ {formatCurrency(round2(optionelSubtotaal + optionelBtw))} aan opties</p>
                           )}
                         </div>
 
                         <div className="p-4 space-y-4">
                           <div className="grid grid-cols-2 gap-2">
                             <div className="rounded-lg bg-background/80 dark:bg-foreground/80/50 p-2.5">
-                              <p className="text-[9px] uppercase tracking-label text-muted-foreground font-medium">Subtotaal</p>
+                              <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Subtotaal</p>
                               <p className="text-sm font-medium font-mono text-foreground mt-0.5">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
                             </div>
                             <div className="rounded-lg bg-background/80 dark:bg-foreground/80/50 p-2.5">
-                              <p className="text-[9px] uppercase tracking-label text-muted-foreground font-medium">BTW</p>
+                              <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">BTW</p>
                               <p className="text-sm font-medium font-mono text-foreground mt-0.5">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
                             </div>
                           </div>
                           {afrondingskorting !== 0 && (
                             <div className="rounded-lg bg-amber-50/80 dark:bg-amber-900/20 p-2.5 border border-amber-200/50 dark:border-amber-800/30">
-                              <p className="text-[9px] uppercase tracking-label text-amber-600 font-medium">Afrondingskorting</p>
+                              <p className="text-2xs uppercase tracking-label text-amber-600 font-medium">Afrondingskorting</p>
                               <p className="text-sm font-medium font-mono text-amber-700 mt-0.5">{formatCurrency(afrondingskorting)}</p>
                             </div>
                           )}
@@ -2701,7 +2701,7 @@ export function QuoteCreation() {
                           <Separator className="opacity-50" />
 
                           <div className="space-y-2">
-                            <p className="text-[10px] uppercase tracking-label text-muted-foreground font-medium">Inkoop / Verkoop</p>
+                            <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Inkoop / Verkoop</p>
                             <div className="space-y-1.5">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5"><TrendingDown className="h-3.5 w-3.5 text-red-400" /><span className="text-xs text-muted-foreground">Inkoop</span></div>
@@ -2719,7 +2719,7 @@ export function QuoteCreation() {
                           </div>
 
                           <div className="space-y-2">
-                            <p className="text-[10px] uppercase tracking-label text-muted-foreground font-medium">Marge</p>
+                            <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Marge</p>
                             <div className={cn('rounded-lg p-3', margeColor.bg)}>
                               <div className="flex items-center justify-between">
                                 <Percent className={cn('h-4 w-4', margeColor.text)} />
@@ -2737,7 +2737,7 @@ export function QuoteCreation() {
                             <>
                               <Separator className="opacity-50" />
                               <div className="space-y-2">
-                                <p className="text-[10px] uppercase tracking-label text-muted-foreground font-medium">Per item</p>
+                                <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Per item</p>
                                 <div className="space-y-1.5">
                                   {itemMarges.map((m, idx) => {
                                     if (!m.hasCalc) return null
@@ -2758,7 +2758,7 @@ export function QuoteCreation() {
                             <>
                               <Separator className="opacity-50" />
                               <div className="space-y-2">
-                                <p className="text-[10px] uppercase tracking-label text-muted-foreground font-medium">{materiaalKosten > 0 ? 'Uren & Materiaal' : 'Uren'}</p>
+                                <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">{materiaalKosten > 0 ? 'Uren & Materiaal' : 'Uren'}</p>
                                 <div className="space-y-1.5">
                                   {urenVelden.map((veld) => {
                                     const basisUren = urenPerVeld[veld] || 0
@@ -2807,8 +2807,8 @@ export function QuoteCreation() {
                                   )}
                                   {urenCorrectieBedrag !== 0 && (
                                     <div className="flex items-center justify-between">
-                                      <span className="text-[10px] text-muted-foreground">Uren correctie</span>
-                                      <span className={cn('text-[10px] font-medium', urenCorrectieBedrag > 0 ? 'text-green-600' : 'text-red-500')}>
+                                      <span className="text-2xs text-muted-foreground">Uren correctie</span>
+                                      <span className={cn('text-2xs font-medium', urenCorrectieBedrag > 0 ? 'text-green-600' : 'text-red-500')}>
                                         {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)}
                                       </span>
                                     </div>
@@ -2852,7 +2852,7 @@ export function QuoteCreation() {
                           </div>
                           <div className="flex-1 text-left min-w-0">
                             <p className="text-sm font-bold text-foreground">Inkoopoffertes</p>
-                            <p className="text-[11px] text-muted-foreground">Leveranciersprijzen</p>
+                            <p className="text-xs text-muted-foreground">Leveranciersprijzen</p>
                           </div>
                           {inkoopPaneelOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                         </button>

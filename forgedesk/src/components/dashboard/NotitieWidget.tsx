@@ -23,7 +23,7 @@ export function NotitieWidget() {
         placeholder="Notities, ideeën, to-do's..."
         className="w-full h-[180px] resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 outline-none leading-relaxed"
       />
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground/40">
+      <div className="flex items-center justify-between text-2xs text-muted-foreground/40">
         <span>{text.length > 0 ? 'Auto-opgeslagen' : ''}</span>
         <span>{text.length} tekens</span>
       </div>

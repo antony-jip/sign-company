@@ -30,7 +30,7 @@ export function VisualizerDashboardWidget() {
     >
       <div className="flex items-center gap-2 mb-1.5">
         <Wand2 className="h-4 w-4 text-muted-foreground" />
-        <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+        <p className="text-xs font-bold uppercase tracking-label text-text-tertiary">
           Visualisaties
         </p>
       </div>
@@ -38,7 +38,7 @@ export function VisualizerDashboardWidget() {
         {stats.gegenereerd_deze_maand}
         <span className="text-sm font-medium text-muted-foreground ml-1">deze maand</span>
       </p>
-      <p className="text-[12px] font-semibold mt-2 text-[#5A8264] dark:text-[#7AAF85]">
+      <p className="text-xs font-semibold mt-2 text-[#5A8264] dark:text-[#7AAF85]">
         <span className="font-mono">€{round2(stats.kosten_deze_maand_eur)}</span> kosten
       </p>
     </div>

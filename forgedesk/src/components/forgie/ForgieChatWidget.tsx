@@ -160,7 +160,7 @@ export function ForgieChatWidget() {
               <ForgieAvatar size={28} />
               <div>
                 <h2 className="text-sm font-bold text-foreground">Forgie</h2>
-                <p className="text-[10px] text-muted-foreground">Je bedrijfsgeheugen</p>
+                <p className="text-2xs text-muted-foreground">Je bedrijfsgeheugen</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -326,7 +326,7 @@ export function ForgieChatWidget() {
               </span>
             )}
             {/* Hover hint */}
-            <span className="absolute -top-8 right-0 bg-white/90 dark:bg-card/90 backdrop-blur-sm text-[10px] text-foreground font-medium px-2 py-1 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none border border-white/30">
+            <span className="absolute -top-8 right-0 bg-white/90 dark:bg-card/90 backdrop-blur-sm text-2xs text-foreground font-medium px-2 py-1 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none border border-white/30">
               Vraag het Forgie! 🦊
             </span>
           </span>

@@ -725,7 +725,7 @@ export function FORGEdeskAIChat() {
               <button
                 key={s.label}
                 onClick={() => handleSend(s.label)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full border bg-background hover:bg-muted/60 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full border bg-background hover:bg-muted/60 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 {s.icon}
                 {s.label}
@@ -761,10 +761,10 @@ function QuickStat({ label, value, sub, color, icon }: {
     <div className={cn('rounded-xl px-3 py-2.5', c.bg)}>
       <div className="flex items-center gap-2 mb-1">
         <span className={c.icon}>{icon}</span>
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
+        <span className="text-2xs font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
       </div>
       <p className={cn('text-lg font-bold', c.text)}>{value}</p>
-      {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+      {sub && <p className="text-2xs text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   )
 }
@@ -774,12 +774,12 @@ function MetricCardSmall({ metric }: { key?: React.Key; metric: MetricCard }) {
   return (
     <div className={cn('rounded-lg px-3 py-2', c.bg)}>
       <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[10px] font-medium text-muted-foreground">{metric.label}</span>
+        <span className="text-2xs font-medium text-muted-foreground">{metric.label}</span>
         {metric.trend === 'up' && <TrendingUp className="w-3 h-3 text-emerald-500" />}
         {metric.trend === 'down' && <TrendingDown className="w-3 h-3 text-red-500" />}
       </div>
       <p className={cn('text-sm font-bold', c.text)}>{metric.value}</p>
-      {metric.sub && <p className="text-[10px] text-muted-foreground">{metric.sub}</p>}
+      {metric.sub && <p className="text-2xs text-muted-foreground">{metric.sub}</p>}
     </div>
   )
 }

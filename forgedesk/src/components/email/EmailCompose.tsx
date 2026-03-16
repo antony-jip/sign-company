@@ -784,7 +784,7 @@ export function EmailCompose({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-5 px-1 text-[10px] text-muted-foreground"
+                  className="h-5 px-1 text-2xs text-muted-foreground"
                   onClick={() => setShowCc(!showCc)}
                 >
                   CC
@@ -792,7 +792,7 @@ export function EmailCompose({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-5 px-1 text-[10px] text-muted-foreground"
+                  className="h-5 px-1 text-2xs text-muted-foreground"
                   onClick={() => setShowBcc(!showBcc)}
                 >
                   BCC
@@ -887,7 +887,7 @@ export function EmailCompose({
                         className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors flex items-center justify-between"
                       >
                         <span>{f.label}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">{f.value}</span>
+                        <span className="text-2xs text-muted-foreground font-mono">{f.value}</span>
                       </button>
                     ))}
                   </div>
@@ -1069,7 +1069,7 @@ export function EmailCompose({
                           <FileSignature className="w-3.5 h-3.5 text-muted-foreground" />
                           {sig.naam}
                         </div>
-                        <p className="text-[10px] text-muted-foreground truncate mt-0.5 ml-5.5">{sig.inhoud.split('\n')[0]}</p>
+                        <p className="text-2xs text-muted-foreground truncate mt-0.5 ml-5.5">{sig.inhoud.split('\n')[0]}</p>
                       </button>
                       {isSaved && (
                         <div className="flex items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100">
@@ -1151,7 +1151,7 @@ export function EmailCompose({
                 {scheduledAt ? (
                   <><Clock className="w-4 h-4" />{isSending ? 'Inplannen...' : 'Inplannen'}</>
                 ) : (
-                  <><Send className="w-4 h-4" />{isSending ? 'Verzenden...' : 'Verzenden'}<span className="text-[10px] opacity-60 ml-1 hidden sm:inline">Ctrl+Enter</span></>
+                  <><Send className="w-4 h-4" />{isSending ? 'Verzenden...' : 'Verzenden'}<span className="text-2xs opacity-60 ml-1 hidden sm:inline">Ctrl+Enter</span></>
                 )}
               </Button>
               <Button

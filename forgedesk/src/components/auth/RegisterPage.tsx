@@ -114,7 +114,7 @@ export function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="register-email" className="text-[12.5px] font-medium text-neutral-700">Email</Label>
+              <Label htmlFor="register-email" className="text-xs font-medium text-neutral-700">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
@@ -123,7 +123,7 @@ export function RegisterPage() {
                   placeholder="naam@bedrijf.nl"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9 h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+                  className="pl-9 h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
                   disabled={isLoading}
                   autoComplete="email"
                   autoFocus
@@ -132,7 +132,7 @@ export function RegisterPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="register-password" className="text-[12.5px] font-medium text-neutral-700">Wachtwoord</Label>
+              <Label htmlFor="register-password" className="text-xs font-medium text-neutral-700">Wachtwoord</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
@@ -141,7 +141,7 @@ export function RegisterPage() {
                   placeholder="Minimaal 8 tekens"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-9 pr-9 h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+                  className="pl-9 pr-9 h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
                   disabled={isLoading}
                   autoComplete="new-password"
                 />
@@ -161,13 +161,13 @@ export function RegisterPage() {
                       <div key={level} className={`h-1 flex-1 rounded-full transition-all ${level <= passwordStrength.score ? passwordStrength.color : 'bg-neutral-200'}`} />
                     ))}
                   </div>
-                  <p className="text-[11px] text-neutral-500">{passwordStrength.label}</p>
+                  <p className="text-xs text-neutral-500">{passwordStrength.label}</p>
                 </div>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="confirm-password" className="text-[12.5px] font-medium text-neutral-700">Wachtwoord bevestigen</Label>
+              <Label htmlFor="confirm-password" className="text-xs font-medium text-neutral-700">Wachtwoord bevestigen</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
@@ -176,7 +176,7 @@ export function RegisterPage() {
                   placeholder="Herhaal je wachtwoord"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`pl-9 h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black ${!passwordsMatch ? 'border-red-400 focus:ring-red-400' : ''}`}
+                  className={`pl-9 h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black ${!passwordsMatch ? 'border-red-400 focus:ring-red-400' : ''}`}
                   disabled={isLoading}
                   autoComplete="new-password"
                 />
@@ -184,7 +184,7 @@ export function RegisterPage() {
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
                 )}
               </div>
-              {!passwordsMatch && <p className="text-[11px] text-red-500">Wachtwoorden komen niet overeen</p>}
+              {!passwordsMatch && <p className="text-xs text-red-500">Wachtwoorden komen niet overeen</p>}
             </div>
 
             <Button
@@ -206,7 +206,7 @@ export function RegisterPage() {
             </Button>
           </form>
 
-          <p className="text-center text-[13.5px] text-neutral-500 mt-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-center text-sm text-neutral-500 mt-6" style={{ fontFamily: 'Inter, sans-serif' }}>
             Al een account?{' '}
             <Link to="/login" className="text-black hover:underline font-semibold">
               Inloggen
@@ -219,7 +219,7 @@ export function RegisterPage() {
       <div className="hidden lg:flex flex-col justify-center flex-1 p-12 max-w-xl">
         <div className="max-w-md">
           <div className="mb-10">
-            <div className="inline-flex items-center gap-2 text-[13px] font-medium text-neutral-600 bg-white border border-neutral-200 rounded-full px-4 py-2 mb-6">
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600 bg-white border border-neutral-200 rounded-full px-4 py-2 mb-6">
               30 dagen gratis uitproberen
             </div>
 

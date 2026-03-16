@@ -313,9 +313,9 @@ function BijlageDropZone({
         <div className="flex items-center justify-center h-5 w-5 rounded bg-violet-100 dark:bg-violet-900/30">
           <ImageIcon className="h-3 w-3 text-violet-500 dark:text-violet-400" />
         </div>
-        <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Tekening / Bijlage</span>
+        <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Tekening / Bijlage</span>
         {!sectionOpen && hasContent && (
-          <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-full">
+          <span className="text-2xs font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-full">
             {hasBijlage ? item.bijlage_naam || '1 bestand' : `${visualisaties.length} voorbeeld${visualisaties.length > 1 ? 'en' : ''}`}
           </span>
         )}
@@ -339,7 +339,7 @@ function BijlageDropZone({
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{item.bijlage_naam || 'Document.pdf'}</p>
-                <p className="text-[11px] text-muted-foreground">PDF document</p>
+                <p className="text-xs text-muted-foreground">PDF document</p>
               </div>
             </div>
           ) : (
@@ -355,7 +355,7 @@ function BijlageDropZone({
               />
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="absolute bottom-2 right-2 text-[10px] font-medium px-2 py-1 rounded-md bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 transition-colors"
+                className="absolute bottom-2 right-2 text-2xs font-medium px-2 py-1 rounded-md bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 transition-colors"
               >
                 {expanded ? 'Kleiner' : 'Groter'}
               </button>
@@ -406,7 +406,7 @@ function BijlageDropZone({
             )}>
               {isDragOver ? 'Laat los om te uploaden' : 'Sleep, plak of klik om te uploaden'}
             </p>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG of PDF — max 10MB</p>
+            <p className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG of PDF — max 10MB</p>
           </div>
           <input
             ref={fileInputRef}
@@ -425,7 +425,7 @@ function BijlageDropZone({
       {/* ── Gegenereerde visualisaties van deze offerte ── */}
       {visualisaties.length > 0 && (
         <div className="mt-2">
-          <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1.5">
+          <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1.5">
             Gegenereerde voorbeelden
           </p>
           <div className="flex gap-1.5 flex-wrap">
@@ -442,7 +442,7 @@ function BijlageDropZone({
                   className="w-full h-[56px] object-cover"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                  <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 px-2 py-1 rounded">
+                  <span className="text-white text-2xs font-medium opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 px-2 py-1 rounded">
                     Gebruiken
                   </span>
                 </div>
@@ -900,7 +900,7 @@ export function QuoteItemsTable({
 
               {/* FIX 13: Optioneel badge */}
               {item.is_optioneel && (
-                <span className="text-[9px] font-bold uppercase tracking-label text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded flex-shrink-0">
+                <span className="text-2xs font-bold uppercase tracking-label text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded flex-shrink-0">
                   Optioneel
                 </span>
               )}
@@ -965,10 +965,10 @@ export function QuoteItemsTable({
                 <div className="px-4 py-2.5 border-b border-border dark:border-border">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Afmetingen</span>
+                    <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Afmetingen</span>
                     <button
                       onClick={() => onUpdateItem(item.id, 'afmeting_vrij', !item.afmeting_vrij)}
-                      className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                      className="ml-auto flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground transition-colors"
                       title={item.afmeting_vrij ? 'Schakel naar B×H invoer' : 'Schakel naar vrije tekst'}
                     >
                       {item.afmeting_vrij ? <ToggleRight className="h-3.5 w-3.5 text-primary" /> : <ToggleLeft className="h-3.5 w-3.5" />}
@@ -995,7 +995,7 @@ export function QuoteItemsTable({
                   ) : (
                     <div className="flex items-center gap-2">
                       <div className="space-y-0.5 w-24">
-                        <label className="text-[10px] text-muted-foreground">Breedte (mm)</label>
+                        <label className="text-2xs text-muted-foreground">Breedte (mm)</label>
                         <Input
                           type="number"
                           value={item.breedte_mm || ''}
@@ -1013,7 +1013,7 @@ export function QuoteItemsTable({
                       </div>
                       <span className="text-muted-foreground text-sm pt-4">×</span>
                       <div className="space-y-0.5 w-24">
-                        <label className="text-[10px] text-muted-foreground">Hoogte (mm)</label>
+                        <label className="text-2xs text-muted-foreground">Hoogte (mm)</label>
                         <Input
                           type="number"
                           value={item.hoogte_mm || ''}
@@ -1150,7 +1150,7 @@ export function QuoteItemsTable({
                         // Will be cleared to empty string by user
                       }
                     }}
-                    className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
                   >
                     <Lock className="h-3 w-3" />
                     Interne notitie
@@ -1169,7 +1169,7 @@ export function QuoteItemsTable({
                       />
                       <button
                         onClick={() => onUpdateItem(item.id, 'interne_notitie', undefined as unknown as string)}
-                        className="text-[10px] text-muted-foreground hover:text-red-500 mt-0.5"
+                        className="text-2xs text-muted-foreground hover:text-red-500 mt-0.5"
                       >
                         Notitie verwijderen
                       </button>
@@ -1255,7 +1255,7 @@ export function QuoteItemsTable({
                       <div className="flex items-end gap-3 flex-wrap">
                         {/* Aantal */}
                         <div className="space-y-1 w-20">
-                          <label className="text-[11px] font-medium text-muted-foreground">Aantal</label>
+                          <label className="text-xs font-medium text-muted-foreground">Aantal</label>
                           <Input
                             type="number"
                             value={item.aantal || ''}
@@ -1270,7 +1270,7 @@ export function QuoteItemsTable({
 
                         {/* Prijs per stuk */}
                         <div className="space-y-1 flex-1 min-w-[140px] max-w-[200px]">
-                          <label className="text-[11px] font-medium text-muted-foreground">Prijs per stuk</label>
+                          <label className="text-xs font-medium text-muted-foreground">Prijs per stuk</label>
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">&euro;</span>
                             <Input
@@ -1298,7 +1298,7 @@ export function QuoteItemsTable({
 
                         {/* BTW */}
                         <div className="space-y-1 w-24">
-                          <label className="text-[11px] font-medium text-muted-foreground">BTW</label>
+                          <label className="text-xs font-medium text-muted-foreground">BTW</label>
                           <Select
                             value={String(item.btw_percentage)}
                             onValueChange={(value) => onUpdateItem(item.id, 'btw_percentage', parseInt(value))}
@@ -1316,7 +1316,7 @@ export function QuoteItemsTable({
 
                         {/* Korting */}
                         <div className="space-y-1 w-24">
-                          <label className="text-[11px] font-medium text-muted-foreground">Korting</label>
+                          <label className="text-xs font-medium text-muted-foreground">Korting</label>
                           <div className="relative">
                             <Input
                               type="number"
@@ -1333,7 +1333,7 @@ export function QuoteItemsTable({
 
                         {/* = Totaal */}
                         <div className="space-y-1 ml-auto">
-                          <label className="text-[11px] font-medium text-muted-foreground text-right block">Totaal</label>
+                          <label className="text-xs font-medium text-muted-foreground text-right block">Totaal</label>
                           <div className="h-9 flex items-center justify-end">
                             <span className="text-base font-bold font-mono text-foreground tabular-nums">
                               {formatCurrency(lineTotaal)}
@@ -1362,10 +1362,10 @@ export function QuoteItemsTable({
                             const colors = getMargeColor(margeData.percentage)
                             return (
                               <div className="mt-1.5 flex items-center gap-2">
-                                <span className={cn('text-[11px] font-semibold', colors.text)}>
+                                <span className={cn('text-xs font-semibold', colors.text)}>
                                   Marge: {margeData.percentage.toFixed(1)}%
                                 </span>
-                                <span className="text-[11px] text-muted-foreground">
+                                <span className="text-xs text-muted-foreground">
                                   ({formatCurrency(margeData.marge)})
                                 </span>
                                 <div className="flex-1 h-1.5 rounded-full bg-secondary dark:bg-foreground/70 max-w-[120px]">
@@ -1397,7 +1397,7 @@ export function QuoteItemsTable({
                   {item.prijs_varianten && item.prijs_varianten.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">
+                        <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">
                           Prijsopties — beide op offerte, vink de standaard aan
                         </span>
                       </div>
@@ -1439,12 +1439,12 @@ export function QuoteItemsTable({
                               />
 
                               {isActive && (
-                                <span className="text-[10px] font-medium text-primary bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 rounded">
+                                <span className="text-2xs font-medium text-primary bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 rounded">
                                   standaard
                                 </span>
                               )}
                               {!isActive && (
-                                <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                <span className="text-2xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                   meerprijs
                                 </span>
                               )}
@@ -1466,7 +1466,7 @@ export function QuoteItemsTable({
                             <div className="flex items-end gap-2 flex-wrap">
                               {/* Aantal */}
                               <div className="space-y-0.5 w-16">
-                                <label className="text-[10px] font-medium text-muted-foreground">Aantal</label>
+                                <label className="text-2xs font-medium text-muted-foreground">Aantal</label>
                                 <Input
                                   type="number"
                                   value={variant.aantal || ''}
@@ -1481,7 +1481,7 @@ export function QuoteItemsTable({
 
                               {/* Prijs per stuk */}
                               <div className="space-y-0.5 flex-1 min-w-[120px] max-w-[180px]">
-                                <label className="text-[10px] font-medium text-muted-foreground">Prijs per stuk</label>
+                                <label className="text-2xs font-medium text-muted-foreground">Prijs per stuk</label>
                                 <div className="relative">
                                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">&euro;</span>
                                   <Input
@@ -1509,7 +1509,7 @@ export function QuoteItemsTable({
 
                               {/* BTW */}
                               <div className="space-y-0.5 w-20">
-                                <label className="text-[10px] font-medium text-muted-foreground">BTW</label>
+                                <label className="text-2xs font-medium text-muted-foreground">BTW</label>
                                 <Select
                                   value={String(variant.btw_percentage)}
                                   onValueChange={(value) => updatePrijsVariantField(item.id, variant.id, 'btw_percentage', parseInt(value))}
@@ -1527,7 +1527,7 @@ export function QuoteItemsTable({
 
                               {/* Korting */}
                               <div className="space-y-0.5 w-20">
-                                <label className="text-[10px] font-medium text-muted-foreground">Korting</label>
+                                <label className="text-2xs font-medium text-muted-foreground">Korting</label>
                                 <div className="relative">
                                   <Input
                                     type="number"
@@ -1548,7 +1548,7 @@ export function QuoteItemsTable({
                               <div className="mt-1.5 pt-1.5 border-t border-border dark:border-border">
                                 <button
                                   onClick={() => openCalculatie(item.id, variant.id)}
-                                  className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                  className="text-2xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                                 >
                                   <Calculator className="h-2.5 w-2.5" />
                                   Calculatie: {variant.calculatie_regels.length} regels —
@@ -1563,10 +1563,10 @@ export function QuoteItemsTable({
                                   const colors = getMargeColor(margeData.percentage)
                                   return (
                                     <div className="mt-1 flex items-center gap-2">
-                                      <span className={cn('text-[10px] font-semibold', colors.text)}>
+                                      <span className={cn('text-2xs font-semibold', colors.text)}>
                                         Marge: {margeData.percentage.toFixed(1)}%
                                       </span>
-                                      <span className="text-[10px] text-muted-foreground">
+                                      <span className="text-2xs text-muted-foreground">
                                         ({formatCurrency(margeData.marge)})
                                       </span>
                                       <div className="flex-1 h-1 rounded-full bg-secondary dark:bg-foreground/70 max-w-[100px]">

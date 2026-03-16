@@ -172,7 +172,7 @@ function generateTypedNummer(existing: { nummer: string }[], prefix: string): st
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  concept: { label: 'Concept', color: 'bg-[#f5f4f1] text-[#8a8680]' },
+  concept: { label: 'Concept', color: 'bg-bg-hover text-text-tertiary' },
   verzonden: { label: 'Verzonden', color: 'bg-[#8BAFD415] text-[#5a8ab5]' },
   betaald: { label: 'Betaald', color: 'bg-[#16a34a12] text-[#16a34a]' },
   vervallen: { label: 'Vervallen', color: 'bg-[#ef444412] text-[#ef4444]' },
@@ -920,7 +920,7 @@ export function FactuurEditor() {
                   {isEditMode ? `Factuur ${nummer}` : 'Nieuwe factuur'}
                 </h1>
                 {isEditMode && existingFactuur && (
-                  <Badge className={cn('text-[10px] px-1.5 h-5', STATUS_CONFIG[currentStatus]?.color)}>
+                  <Badge className={cn('text-2xs px-1.5 h-5', STATUS_CONFIG[currentStatus]?.color)}>
                     {isVervallen ? 'Vervallen' : STATUS_CONFIG[currentStatus]?.label || currentStatus}
                   </Badge>
                 )}
@@ -1321,7 +1321,7 @@ export function FactuurEditor() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           {isHuidige && (
-                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-primary/40 text-primary">
+                            <Badge variant="outline" className="text-2xs px-1 h-4 border-primary/40 text-primary">
                               Huidig
                             </Badge>
                           )}
@@ -1378,7 +1378,7 @@ export function FactuurEditor() {
             </CardHeader>
             <CardContent>
               {/* Table header */}
-              <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 px-2 mb-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 px-2 mb-2 text-xs font-bold uppercase tracking-label text-text-tertiary">
                 <span>Omschrijving</span>
                 <span className="text-right">Aantal</span>
                 <span className="text-right">Prijs</span>

@@ -167,7 +167,7 @@ export function WerkbonnenLayout() {
           </div>
           <div className="min-w-0">
             <h1 className="page-title text-foreground truncate">Werkbonnen</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Instructiebladen voor monteurs — afbeeldingen, afmetingen en notities
             </p>
           </div>
@@ -196,7 +196,7 @@ export function WerkbonnenLayout() {
             <Card key={status} className="cursor-pointer hover-lift"
               onClick={() => setFilterStatus(status === filterStatus ? 'alle' : status)}>
               <CardContent className="p-4">
-                <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">{cfg.label}</p>
+                <p className="text-xs font-bold text-text-tertiary uppercase tracking-label">{cfg.label}</p>
                 <p className="text-2xl font-bold mt-1">{statusCounts[status] || 0}</p>
               </CardContent>
             </Card>
@@ -251,13 +251,13 @@ export function WerkbonnenLayout() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Nummer</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Klant</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Offerte / Project</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden sm:table-cell">Datum</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                  <th className="px-4 py-3 text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden sm:table-cell">Items</th>
-                  <th className="px-4 py-3 text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Acties</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Nummer</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Klant</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Offerte / Project</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label hidden sm:table-cell">Datum</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold text-text-tertiary uppercase tracking-label hidden sm:table-cell">Items</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Acties</th>
                 </tr>
               </thead>
               <tbody className="divide-y row-stagger">

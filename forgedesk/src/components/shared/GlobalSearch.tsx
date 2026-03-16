@@ -480,7 +480,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
         ) : (
           <div className={cn('flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/60 border border-border/40', compact ? 'mr-2' : 'mr-2.5')}>
             <Command className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground font-medium">K</span>
+            <span className="text-2xs text-muted-foreground font-medium">K</span>
           </div>
         )}
       </div>
@@ -508,7 +508,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
               {/* Results header */}
               {totalResults > 0 && (
                 <div className="px-3 py-2 border-b border-border/40">
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  <span className="text-2xs font-medium text-muted-foreground uppercase tracking-wider">
                     {totalResults} resultaat{totalResults !== 1 ? 'en' : ''}
                   </span>
                 </div>
@@ -519,10 +519,10 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
                   {/* Category header */}
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b border-border/20">
                     <span className={category.color}>{category.icon}</span>
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wider">
                       {category.label}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/60 ml-auto">
+                    <span className="text-2xs text-muted-foreground/60 ml-auto">
                       {category.total}
                     </span>
                   </div>
@@ -552,14 +552,14 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
                             {result.title}
                           </p>
                           {result.subtitle && (
-                            <p className="text-[11px] text-muted-foreground truncate">
+                            <p className="text-xs text-muted-foreground truncate">
                               {result.subtitle}
                             </p>
                           )}
                         </div>
                         {result.status && (
                           <span className={cn(
-                            'text-[9px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0',
+                            'text-2xs font-medium px-1.5 py-0.5 rounded-full flex-shrink-0',
                             getStatusBadgeColor(result.status)
                           )}>
                             {statusLabels[result.status] || result.status}
@@ -589,7 +589,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
                         setIsOpen(false)
                         setQuery('')
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-primary hover:bg-primary/5 transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/5 transition-colors"
                     >
                       Bekijk alle {category.total} resultaten
                       <ChevronRight className="w-3 h-3" />

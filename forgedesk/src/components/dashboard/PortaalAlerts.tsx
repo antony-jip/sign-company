@@ -220,17 +220,17 @@ export function PortaalAlerts() {
                   <div className="flex flex-wrap items-center gap-1.5 mt-2">
                     {isGoedkeuring ? (
                       <>
-                        <Button variant="outline" size="sm" className="h-6 text-[11px] px-2" onClick={() => handlePlanMontage(alert)}>
+                        <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={() => handlePlanMontage(alert)}>
                           <Calendar className="h-3 w-3 mr-1" />
                           Plan montage
                         </Button>
-                        <Button variant="outline" size="sm" className="h-6 text-[11px] px-2" onClick={() => handleMaakTaak(alert)}>
+                        <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={() => handleMaakTaak(alert)}>
                           <ClipboardCheck className="h-3 w-3 mr-1" />
                           Maak taak
                         </Button>
                       </>
                     ) : (
-                      <Button variant="outline" size="sm" className="h-6 text-[11px] px-2" onClick={() => handleUploadRevisie(alert)}>
+                      <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={() => handleUploadRevisie(alert)}>
                         <Upload className="h-3 w-3 mr-1" />
                         Nieuwe versie uploaden
                       </Button>
@@ -239,7 +239,7 @@ export function PortaalAlerts() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 text-[11px] px-2 text-muted-foreground"
+                        className="h-6 text-xs px-2 text-muted-foreground"
                         onClick={() => navigate(`/projecten/${alert.project_id}`)}
                       >
                         Bekijk project

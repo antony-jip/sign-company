@@ -108,7 +108,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-auto p-0 font-bold text-[11px] uppercase tracking-label text-[#8a8680] hover:text-foreground"
+                  className="h-auto p-0 font-bold text-xs uppercase tracking-label text-text-tertiary hover:text-foreground"
                   onClick={() => handleSort(field)}
                 >
                   {label}

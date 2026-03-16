@@ -723,7 +723,7 @@ export function WerkbonDetail() {
                                 </Button>
                               </div>
                               {afb.omschrijving && (
-                                <p className="text-[10px] text-muted-foreground truncate px-1 py-0.5">{afb.omschrijving}</p>
+                                <p className="text-2xs text-muted-foreground truncate px-1 py-0.5">{afb.omschrijving}</p>
                               )}
                             </div>
                           ))}
@@ -810,7 +810,7 @@ export function WerkbonDetail() {
                       <div key={foto.id} className="relative group rounded-lg overflow-hidden border">
                         <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => setLightboxUrl(foto.url)} />
                         <div className="absolute top-1 left-1">
-                          <Badge variant="secondary" className="text-[10px]">{foto.type === 'voor' ? 'Voor' : foto.type === 'na' ? 'Na' : 'Overig'}</Badge>
+                          <Badge variant="secondary" className="text-2xs">{foto.type === 'voor' ? 'Voor' : foto.type === 'na' ? 'Na' : 'Overig'}</Badge>
                         </div>
                         <Button
                           variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"

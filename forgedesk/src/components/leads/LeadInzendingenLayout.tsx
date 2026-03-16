@@ -164,7 +164,7 @@ export function LeadInzendingenLayout() {
                       <td className="px-4 py-3 text-sm font-medium text-foreground">{info.naam}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{info.email}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className={cn('text-[11px]', cfg.color)}>{cfg.label}</Badge>
+                        <Badge variant="secondary" className={cn('text-xs', cfg.color)}>{cfg.label}</Badge>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100">

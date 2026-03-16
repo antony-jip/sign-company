@@ -161,13 +161,13 @@ export function DayView({ currentDate, events }: DayViewProps) {
                   {height > 60 && (
                     <div className="mt-2 space-y-1">
                       {event.locatie && (
-                        <div className="flex items-center gap-1.5 text-[11px] opacity-85">
+                        <div className="flex items-center gap-1.5 text-xs opacity-85">
                           <MapPin className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">{event.locatie}</span>
                         </div>
                       )}
                       {event.deelnemers.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-[11px] opacity-85">
+                        <div className="flex items-center gap-1.5 text-xs opacity-85">
                           <Users className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">{event.deelnemers.join(', ')}</span>
                         </div>
@@ -176,7 +176,7 @@ export function DayView({ currentDate, events }: DayViewProps) {
                   )}
 
                   {height > 100 && event.beschrijving && (
-                    <p className="text-[11px] opacity-75 mt-2 line-clamp-2">
+                    <p className="text-xs opacity-75 mt-2 line-clamp-2">
                       {event.beschrijving}
                     </p>
                   )}

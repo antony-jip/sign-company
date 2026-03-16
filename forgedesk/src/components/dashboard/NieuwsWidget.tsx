@@ -96,8 +96,8 @@ export function NieuwsWidget() {
               {item.title}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] font-medium text-primary/70">{item.source}</span>
-              <span className="text-[10px] text-muted-foreground/40">{formatTime(item.pubDate)}</span>
+              <span className="text-2xs font-medium text-primary/70">{item.source}</span>
+              <span className="text-2xs text-muted-foreground/40">{formatTime(item.pubDate)}</span>
             </div>
           </div>
           <ExternalLink className="h-3 w-3 text-muted-foreground/30 group-hover:text-primary/50 flex-shrink-0 mt-0.5" />

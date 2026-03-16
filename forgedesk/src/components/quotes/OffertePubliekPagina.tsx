@@ -570,7 +570,7 @@ export function OffertePubliekPagina() {
                         <td className="py-3 pr-4 pl-2">
                           <span className="text-gray-800">{item.beschrijving}</span>
                           {item.is_optioneel && (
-                            <span className="ml-2 text-[10px] uppercase tracking-wide bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Optioneel</span>
+                            <span className="ml-2 text-2xs uppercase tracking-wide bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Optioneel</span>
                           )}
                         </td>
                         {item.soort === 'tekst' ? (

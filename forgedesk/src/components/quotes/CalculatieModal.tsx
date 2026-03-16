@@ -585,7 +585,7 @@ export function CalculatieModal({
                                 {producten.filter(p => p.actief).map((p) => (
                                   <SelectItem key={p.id} value={p.id}>
                                     <div className="flex items-center gap-2">
-                                      <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                      <Badge variant="outline" className="text-2xs px-1 py-0">
                                         {p.categorie}
                                       </Badge>
                                       <span>{p.naam}</span>
@@ -654,7 +654,7 @@ export function CalculatieModal({
                           />
                           {/* Probo badge */}
                           {regel.probo_product_code && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 flex-shrink-0 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+                            <Badge variant="outline" className="text-2xs px-1.5 py-0 flex-shrink-0 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
                               Probo
                             </Badge>
                           )}

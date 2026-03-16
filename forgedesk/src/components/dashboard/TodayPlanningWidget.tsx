@@ -178,7 +178,7 @@ export function TodayPlanningWidget() {
           </h3>
           <div className="flex items-center gap-2">
             {totalOverdue > 0 && (
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)' }}>
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)' }}>
                 <span className="font-mono">{totalOverdue}</span> achterstallig
               </span>
             )}
@@ -193,7 +193,7 @@ export function TodayPlanningWidget() {
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-3.5 w-3.5" style={{ color: 'var(--color-coral-text)' }} />
-              <span className="text-[11px] font-bold uppercase tracking-label" style={{ color: 'var(--color-coral-text)' }}>
+              <span className="text-xs font-bold uppercase tracking-label" style={{ color: 'var(--color-coral-text)' }}>
                 Achterstallig
               </span>
             </div>
@@ -226,10 +226,10 @@ export function TodayPlanningWidget() {
         {tomorrowItems.length > 0 && (
           <div className="mt-4 pt-3 border-t border-border/50">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+              <span className="text-xs font-bold uppercase tracking-label text-text-tertiary">
                 Morgen
               </span>
-              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
+              <span className="text-2xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
                 {tomorrowItems.length}
               </span>
             </div>
@@ -287,7 +287,7 @@ function TimelineRow({
           {item.title}
         </p>
         {item.subtitle && (
-          <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+          <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
             {(item.type === 'event' || item.type === 'montage') && item.subtitle ? (
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.subtitle)}`}
@@ -315,7 +315,7 @@ function TimelineRow({
           </span>
         )}
         {item.priority && !compact && (
-          <Badge className={`${getPriorityColor(item.priority)} text-[10px] capitalize`}>
+          <Badge className={`${getPriorityColor(item.priority)} text-2xs capitalize`}>
             {item.priority}
           </Badge>
         )}

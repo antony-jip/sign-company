@@ -546,7 +546,7 @@ export function TasksLayout() {
             </div>
             <div className="min-w-0">
               <h1 className="page-title text-foreground truncate">Taken</h1>
-              <p className="text-[12px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Productie &amp; oplevering
               </p>
             </div>
@@ -635,7 +635,7 @@ export function TasksLayout() {
                 )}
               >
                 <div className={cn(
-                  'text-[11px] uppercase tracking-label font-bold',
+                  'text-xs uppercase tracking-label font-bold',
                   isToday ? 'text-primary' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
                 )}>
                   {DAY_LABELS[i]}
@@ -651,7 +651,7 @@ export function TasksLayout() {
                   </span>
                   {dayTasks.length > 0 && (
                     <span className={cn(
-                      'text-[10px] font-medium font-mono tabular-nums px-1.5 py-0.5 rounded-full',
+                      'text-2xs font-medium font-mono tabular-nums px-1.5 py-0.5 rounded-full',
                       isToday
                         ? 'bg-primary/15 text-primary'
                         : 'bg-muted/60 text-muted-foreground/50'
@@ -672,7 +672,7 @@ export function TasksLayout() {
             <div className="w-14 flex-shrink-0 relative">
               {HOURS.map((hour) => (
                 <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
-                  <span className="absolute -top-2.5 right-3 text-[11px] text-muted-foreground/40 font-mono tabular-nums font-medium">
+                  <span className="absolute -top-2.5 right-3 text-xs text-muted-foreground/40 font-mono tabular-nums font-medium">
                     {String(hour).padStart(2, '0')}:00
                   </span>
                 </div>
@@ -1022,7 +1022,7 @@ function DayColumn({
               <div className="h-full flex items-start pt-1 px-1 pointer-events-none">
                 <div className="w-full rounded-md border-2 border-dashed border-primary/40 h-10 flex items-center justify-center">
                   <Clock className="w-3 h-3 text-primary/60 mr-1" />
-                  <span className="text-[10px] text-primary/60 font-medium">{String(hour).padStart(2, '0')}:00</span>
+                  <span className="text-2xs text-primary/60 font-medium">{String(hour).padStart(2, '0')}:00</span>
                 </div>
               </div>
             )}
@@ -1152,15 +1152,15 @@ function DayColumn({
             )}>
               <div className="flex items-center gap-1 mb-0.5">
                 <Wrench className="w-3 h-3 text-orange-500 flex-shrink-0" />
-                <span className="text-[11px] font-semibold text-orange-700 dark:text-orange-300 truncate">
+                <span className="text-xs font-semibold text-orange-700 dark:text-orange-300 truncate">
                   {afspraak.titel}
                 </span>
               </div>
-              <div className="text-[10px] text-orange-600/70 dark:text-orange-400/70 truncate">
+              <div className="text-2xs text-orange-600/70 dark:text-orange-400/70 truncate">
                 {afspraak.start_tijd?.slice(0, 5)} – {afspraak.eind_tijd?.slice(0, 5)}
               </div>
               {afspraak.locatie && (
-                <div className="text-[10px] text-orange-600/50 dark:text-orange-400/50 truncate flex items-center gap-0.5 mt-0.5">
+                <div className="text-2xs text-orange-600/50 dark:text-orange-400/50 truncate flex items-center gap-0.5 mt-0.5">
                   <MapPin className="w-2.5 h-2.5" />
                   {afspraak.locatie}
                 </div>
@@ -1168,7 +1168,7 @@ function DayColumn({
               {heightPx > 60 && (
                 <div className="mt-1">
                   <span className={cn(
-                    'text-[9px] font-medium px-1.5 py-0.5 rounded-full',
+                    'text-2xs font-medium px-1.5 py-0.5 rounded-full',
                     afspraak.status === 'afgerond' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                     afspraak.status === 'bezig' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
                     'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
@@ -1223,7 +1223,7 @@ function DayColumn({
           ) : (
             <button
               onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] text-muted-foreground/30 hover:text-primary hover:bg-primary/5 transition-all duration-200"
+              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground/30 hover:text-primary hover:bg-primary/5 transition-all duration-200"
             >
               <Plus className="w-3 h-3" />
             </button>
@@ -1315,7 +1315,7 @@ function TaskCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-1">
             <p className={cn(
-              'text-[12px] font-medium leading-tight text-foreground flex-1',
+              'text-xs font-medium leading-tight text-foreground flex-1',
               isDone && 'line-through text-muted-foreground'
             )}>
               {taak.titel}
@@ -1323,27 +1323,27 @@ function TaskCard({
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {projectNaam && (
-              <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5">
+              <span className="text-2xs text-muted-foreground/50 flex items-center gap-0.5">
                 <Hash className="w-2 h-2" />{projectNaam}
               </span>
             )}
             {!projectNaam && klantNaam && (
-              <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5">
+              <span className="text-2xs text-muted-foreground/50 flex items-center gap-0.5">
                 <User2 className="w-2 h-2" />{klantNaam}
               </span>
             )}
             {taak.locatie && (
-              <span className="text-[10px] text-muted-foreground/40 flex items-center gap-0.5">
+              <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
                 <MapPin className="w-2 h-2" />{taak.locatie}
               </span>
             )}
             {scheduled && hour !== null && (
-              <span className="text-[10px] text-muted-foreground/40 flex items-center gap-0.5">
+              <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
                 <Clock className="w-2 h-2" />{String(hour).padStart(2, '0')}:00
               </span>
             )}
             {durationLabel && (
-              <span className="text-[10px] text-muted-foreground/40 font-medium">
+              <span className="text-2xs text-muted-foreground/40 font-medium">
                 {durationLabel}
               </span>
             )}

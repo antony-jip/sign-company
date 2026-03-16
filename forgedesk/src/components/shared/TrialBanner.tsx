@@ -65,7 +65,7 @@ export function TrialBanner() {
   }
 
   return (
-    <div className={`w-full flex items-center justify-center px-4 py-2 text-[13px] font-medium ${bgClass}`} style={{ minHeight: 36 }}>
+    <div className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium ${bgClass}`} style={{ minHeight: 36 }}>
       <span className="text-center">{message}</span>
       {isDismissable && (
         <button

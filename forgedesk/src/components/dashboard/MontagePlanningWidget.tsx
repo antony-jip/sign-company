@@ -169,7 +169,7 @@ export function MontagePlanningWidget() {
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset((o) => o + 1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1 font-mono">
+            <span className="text-2xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1 font-mono">
               {weekTotal}
             </span>
           </div>
@@ -181,7 +181,7 @@ export function MontagePlanningWidget() {
             <button
               onClick={() => setSelectedMonteur('alle')}
               className={cn(
-                'text-[11px] font-medium px-2 py-1 rounded-full border transition-colors',
+                'text-xs font-medium px-2 py-1 rounded-full border transition-colors',
                 selectedMonteur === 'alle'
                   ? 'bg-primary text-white border-primary'
                   : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
@@ -194,7 +194,7 @@ export function MontagePlanningWidget() {
                 key={m.id}
                 onClick={() => setSelectedMonteur(selectedMonteur === m.id ? 'alle' : m.id)}
                 className={cn(
-                  'flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full border transition-colors',
+                  'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border transition-colors',
                   selectedMonteur === m.id
                     ? 'bg-primary text-white border-primary'
                     : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
@@ -244,13 +244,13 @@ export function MontagePlanningWidget() {
                     today && 'bg-primary/5'
                   )}>
                     <span className={cn(
-                      'text-[11px] font-bold uppercase tracking-label w-6',
+                      'text-xs font-bold uppercase tracking-label w-6',
                       today ? 'text-primary' : 'text-muted-foreground'
                     )}>
                       {DAG_NAMEN[dayIdx]}
                     </span>
                     <span className={cn(
-                      'text-[11px]',
+                      'text-xs',
                       today ? 'text-primary font-medium' : 'text-muted-foreground'
                     )}>
                       {date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
@@ -283,7 +283,7 @@ export function MontagePlanningWidget() {
                           <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                             {montage.titel}
                           </p>
-                          <Badge className={cn('text-[10px] capitalize flex-shrink-0', STATUS_BADGE[montage.status])}>
+                          <Badge className={cn('text-2xs capitalize flex-shrink-0', STATUS_BADGE[montage.status])}>
                             {STATUS_LABEL[montage.status]}
                           </Badge>
                         </div>
@@ -294,14 +294,14 @@ export function MontagePlanningWidget() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-[11px] text-primary truncate flex items-center gap-0.5 hover:underline"
+                              className="text-xs text-primary truncate flex items-center gap-0.5 hover:underline"
                             >
                               <MapPin className="h-2.5 w-2.5" />
                               {montage.locatie}
                             </a>
                           )}
                           {montage.klant_naam && !montage.locatie && (
-                            <span className="text-[11px] text-muted-foreground truncate">
+                            <span className="text-xs text-muted-foreground truncate">
                               {montage.klant_naam}
                             </span>
                           )}
@@ -324,7 +324,7 @@ export function MontagePlanningWidget() {
                                 )
                               })}
                               {montage.monteurs.length > 3 && (
-                                <span className="text-[9px] text-muted-foreground ml-1">
+                                <span className="text-2xs text-muted-foreground ml-1">
                                   +{montage.monteurs.length - 3}
                                 </span>
                               )}

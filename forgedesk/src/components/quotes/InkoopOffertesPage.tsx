@@ -94,25 +94,25 @@ export function InkoopOffertesPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <CardContent className="pt-4 pb-3">
-            <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Offertes</p>
+            <p className="text-xs font-bold uppercase tracking-label text-text-tertiary">Offertes</p>
             <p className="text-2xl font-bold font-mono">{offertes.length}</p>
           </CardContent>
         </Card>
         <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <CardContent className="pt-4 pb-3">
-            <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Leveranciers</p>
+            <p className="text-xs font-bold uppercase tracking-label text-text-tertiary">Leveranciers</p>
             <p className="text-2xl font-bold font-mono">{new Set(offertes.map(o => o.leverancier_naam)).size}</p>
           </CardContent>
         </Card>
         <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <CardContent className="pt-4 pb-3">
-            <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Totaal regels</p>
+            <p className="text-xs font-bold uppercase tracking-label text-text-tertiary">Totaal regels</p>
             <p className="text-2xl font-bold font-mono">{offertes.reduce((sum, o) => sum + (o.regels?.length || 0), 0)}</p>
           </CardContent>
         </Card>
         <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <CardContent className="pt-4 pb-3">
-            <p className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Totaal inkoop</p>
+            <p className="text-xs font-bold uppercase tracking-label text-text-tertiary">Totaal inkoop</p>
             <p className="text-2xl font-bold font-mono tabular-nums">{formatCurrency(totaalInkoop)}</p>
           </CardContent>
         </Card>
@@ -176,11 +176,11 @@ export function InkoopOffertesPage() {
                       <table className="w-full text-sm">
                         <thead className="bg-muted/50">
                           <tr>
-                            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Omschrijving</th>
-                            <th className="text-right px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-20">Aantal</th>
-                            <th className="text-right px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-24">Eenheid</th>
-                            <th className="text-right px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-28">Prijs/stk</th>
-                            <th className="text-right px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-28">Totaal</th>
+                            <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Omschrijving</th>
+                            <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-label text-text-tertiary w-20">Aantal</th>
+                            <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-label text-text-tertiary w-24">Eenheid</th>
+                            <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-label text-text-tertiary w-28">Prijs/stk</th>
+                            <th className="text-right px-3 py-2 text-xs font-bold uppercase tracking-label text-text-tertiary w-28">Totaal</th>
                           </tr>
                         </thead>
                         <tbody>

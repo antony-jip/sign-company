@@ -197,7 +197,7 @@ export function LeveringsbonnenLayout() {
         <div className="flex gap-1 flex-wrap">
           {FILTER_OPTIONS.map((opt) => (
             <Button key={opt.value} variant={filterStatus === opt.value ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus(opt.value)} className="text-xs">
-              {opt.label} {statusCounts[opt.value] !== undefined && <span className="ml-1 text-[10px] opacity-70">({statusCounts[opt.value] || 0})</span>}
+              {opt.label} {statusCounts[opt.value] !== undefined && <span className="ml-1 text-2xs opacity-70">({statusCounts[opt.value] || 0})</span>}
             </Button>
           ))}
         </div>
@@ -227,7 +227,7 @@ export function LeveringsbonnenLayout() {
                 {gefilterd.map((lb) => {
                   const cfg = STATUS_CONFIG[lb.status]
                   return (
-                    <tr key={lb.id} className={`group hover:bg-[#F4F3F0]/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigateWithTab({ path: `/leveringsbonnen/${lb.id}`, label: lb.leveringsbon_nummer || 'Leveringsbon', id: `/leveringsbonnen/${lb.id}` })}>
+                    <tr key={lb.id} className={`group hover:bg-bg-subtle/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigateWithTab({ path: `/leveringsbonnen/${lb.id}`, label: lb.leveringsbon_nummer || 'Leveringsbon', id: `/leveringsbonnen/${lb.id}` })}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-teal-600 dark:text-teal-400">{lb.leveringsbon_nummer}</span>
                       </td>
@@ -236,7 +236,7 @@ export function LeveringsbonnenLayout() {
                       <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground">{lb.datum ? formatDate(lb.datum) : '-'}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground max-w-[200px] truncate">{lb.locatie_adres || '-'}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
+                        <Badge variant="secondary" className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
                           <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}
                         </Badge>
                       </td>

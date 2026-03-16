@@ -496,11 +496,11 @@ export function ForgieTab() {
                   <table className="w-full text-xs">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Datum</th>
-                        <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Type</th>
-                        <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Beschrijving</th>
-                        <th className="text-right p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Aantal</th>
-                        <th className="text-right p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Saldo</th>
+                        <th className="text-left p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Datum</th>
+                        <th className="text-left p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Type</th>
+                        <th className="text-left p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Beschrijving</th>
+                        <th className="text-right p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Aantal</th>
+                        <th className="text-right p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Saldo</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -543,7 +543,7 @@ export function ForgieTab() {
         <div className="bg-muted/50 rounded-lg p-3 text-center">
           <div className="text-xs text-muted-foreground">Forgie AI chat</div>
           <div className="text-lg font-bold mt-1">Inclusief</div>
-          <div className="text-[10px] text-muted-foreground">max 5 EUR/mnd</div>
+          <div className="text-2xs text-muted-foreground">max 5 EUR/mnd</div>
         </div>
       </div>
 
@@ -551,7 +551,7 @@ export function ForgieTab() {
       {/* FORGIE AI INSTELLINGEN                     */}
       {/* ═══════════════════════════════════════════ */}
       <div className="pt-2">
-        <h3 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label flex items-center gap-2 mb-4">
+        <h3 className="text-xs font-bold text-text-tertiary uppercase tracking-label flex items-center gap-2 mb-4">
           <Bot className="w-4 h-4" />
           Forgie AI-assistent
         </h3>
@@ -701,7 +701,7 @@ export function ForgieTab() {
             </div>
           ) : imports.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Geïmporteerde bestanden</p>
+              <p className="text-xs font-bold text-text-tertiary uppercase tracking-label">Geïmporteerde bestanden</p>
               {imports.map(imp => (
                 <div key={imp.bestandsnaam} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3 min-w-0">
@@ -727,7 +727,7 @@ export function ForgieTab() {
       {/* SIGNING VISUALIZER INSTELLINGEN            */}
       {/* ═══════════════════════════════════════════ */}
       <div className="pt-2">
-        <h3 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label flex items-center gap-2 mb-4">
+        <h3 className="text-xs font-bold text-text-tertiary uppercase tracking-label flex items-center gap-2 mb-4">
           <Palette className="w-4 h-4" />
           Signing Visualizer
         </h3>

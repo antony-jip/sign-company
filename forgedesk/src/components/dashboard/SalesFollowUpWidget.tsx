@@ -128,14 +128,14 @@ function FollowUpItemRow({
           {item.offerte.contact_pogingen != null && item.offerte.contact_pogingen > 0 && (
             <div className="flex items-center gap-1 mt-1">
               <Phone className="h-3 w-3 text-muted-foreground/60" />
-              <span className="text-[11px] text-muted-foreground/60">
+              <span className="text-xs text-muted-foreground/60">
                 {item.offerte.contact_pogingen}x contact
               </span>
             </div>
           )}
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          <span className={cn('text-[11px] font-medium px-2 py-0.5 rounded-full', styles.badge)}>
+          <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', styles.badge)}>
             {daysLabel}
           </span>
           <ArrowRight className="h-3 w-3 text-muted-foreground/50 dark:text-muted-foreground" />
@@ -415,7 +415,7 @@ export function SalesFollowUpWidget() {
                     <span className="hidden sm:inline">Achterstallig</span>
                     <span className="sm:hidden">Late</span>
                     {overdueItems.length > 0 && (
-                      <span className="ml-1 text-[10px] bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
+                      <span className="ml-1 text-2xs bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
                         {overdueItems.length}
                       </span>
                     )}
@@ -432,7 +432,7 @@ export function SalesFollowUpWidget() {
                     <Clock className="h-3 w-3 mr-1" />
                     Vandaag
                     {todayItems.length > 0 && (
-                      <span className="ml-1 text-[10px] bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
+                      <span className="ml-1 text-2xs bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
                         {todayItems.length}
                       </span>
                     )}
@@ -450,7 +450,7 @@ export function SalesFollowUpWidget() {
                     <span className="hidden sm:inline">Komend</span>
                     <span className="sm:hidden">7d</span>
                     {upcomingItems.length > 0 && (
-                      <span className="ml-1 text-[10px] bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
+                      <span className="ml-1 text-2xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
                         {upcomingItems.length}
                       </span>
                     )}
@@ -518,7 +518,7 @@ export function SalesFollowUpWidget() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 pt-1">
                   <div className="h-px flex-1 bg-secondary dark:bg-foreground/70" />
-                  <span className="text-[11px] font-medium text-muted-foreground/60 dark:text-muted-foreground uppercase tracking-wider flex-shrink-0">
+                  <span className="text-xs font-medium text-muted-foreground/60 dark:text-muted-foreground uppercase tracking-wider flex-shrink-0">
                     Verlopende offertes
                   </span>
                   <div className="h-px flex-1 bg-secondary dark:bg-foreground/70" />
@@ -541,12 +541,12 @@ export function SalesFollowUpWidget() {
             <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-foreground/80/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
                 <TrendingUp className="h-3 w-3 text-primary" />
-                <span className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">Open</span>
+                <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">Open</span>
               </div>
               <span className="text-sm font-bold text-foreground dark:text-white">
                 {openCount}
               </span>
-              <span className="text-[10px] text-muted-foreground/60 dark:text-muted-foreground leading-tight text-center">
+              <span className="text-2xs text-muted-foreground/60 dark:text-muted-foreground leading-tight text-center">
                 {formatCurrency(openValue)}
               </span>
             </div>
@@ -554,12 +554,12 @@ export function SalesFollowUpWidget() {
             <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-foreground/80/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3 text-green-500" />
-                <span className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">Conversie</span>
+                <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">Conversie</span>
               </div>
               <span className="text-sm font-bold text-foreground dark:text-white">
                 {conversionRate}%
               </span>
-              <span className="text-[10px] text-muted-foreground/60 dark:text-muted-foreground leading-tight text-center">
+              <span className="text-2xs text-muted-foreground/60 dark:text-muted-foreground leading-tight text-center">
                 deze maand
               </span>
             </div>
@@ -567,12 +567,12 @@ export function SalesFollowUpWidget() {
             <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-foreground/80/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
                 <Timer className="h-3 w-3 text-[#4A442D]" />
-                <span className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">Gem. reactie</span>
+                <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">Gem. reactie</span>
               </div>
               <span className="text-sm font-bold text-foreground dark:text-white">
                 {avgResponseDays}d
               </span>
-              <span className="text-[10px] text-muted-foreground/60 dark:text-muted-foreground leading-tight text-center">
+              <span className="text-2xs text-muted-foreground/60 dark:text-muted-foreground leading-tight text-center">
                 goedgekeurd
               </span>
             </div>

@@ -783,7 +783,7 @@ export function ProboConfiguratorModal({ open, onOpenChange, onSelect }: ProboCo
                           ) : (
                             <div className="flex flex-col items-center gap-1.5 text-muted-foreground/40">
                               <ImageIcon className="h-8 w-8" />
-                              <span className="text-[10px] font-mono">{product.code}</span>
+                              <span className="text-2xs font-mono">{product.code}</span>
                             </div>
                           )}
                         </div>
@@ -791,13 +791,13 @@ export function ProboConfiguratorModal({ open, onOpenChange, onSelect }: ProboCo
                         <div className="p-3">
                           <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
                           <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[11px] text-muted-foreground">{product.code}</span>
-                            <Badge className="text-[9px] px-1.5 py-0 h-4 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-0 font-semibold">
+                            <span className="text-xs text-muted-foreground">{product.code}</span>
+                            <Badge className="text-2xs px-1.5 py-0 h-4 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-0 font-semibold">
                               probo
                             </Badge>
                           </div>
                           {product.category === 'Mijn producten' && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-1.5 bg-amber-50 dark:bg-amber-950/30 text-amber-600 border-amber-200">
+                            <Badge variant="outline" className="text-2xs px-1.5 py-0 mt-1.5 bg-amber-50 dark:bg-amber-950/30 text-amber-600 border-amber-200">
                               Eigen product
                             </Badge>
                           )}

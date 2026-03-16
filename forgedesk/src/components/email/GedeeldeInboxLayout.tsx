@@ -306,7 +306,7 @@ export function GedeeldeInboxLayout() {
                         {extractSenderName(email.van)}
                       </span>
                       {email.categorie_inbox && (
-                        <Badge variant="outline" className="text-[10px] h-5">
+                        <Badge variant="outline" className="text-2xs h-5">
                           {CATEGORIE_CONFIG[email.categorie_inbox].label}
                         </Badge>
                       )}
@@ -325,11 +325,11 @@ export function GedeeldeInboxLayout() {
                         {notitieCount}
                       </div>
                     )}
-                    <Badge variant="secondary" className={cn('text-[10px]', cfg.color)}>
+                    <Badge variant="secondary" className={cn('text-2xs', cfg.color)}>
                       <StatusIcon className="h-3 w-3 mr-1" />
                       {cfg.label}
                     </Badge>
-                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatDateTime(email.datum)}
                     </span>
                   </div>
@@ -438,13 +438,13 @@ export function GedeeldeInboxLayout() {
                     .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
                     .map((notitie) => (
                       <div key={notitie.id} className="flex gap-2 p-2 bg-muted/50 rounded-lg">
-                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-2xs font-bold text-primary flex-shrink-0">
                           {getInitials(notitie.medewerker_naam)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold">{notitie.medewerker_naam}</span>
-                            <span className="text-[10px] text-muted-foreground">{formatDateTime(notitie.datum)}</span>
+                            <span className="text-2xs text-muted-foreground">{formatDateTime(notitie.datum)}</span>
                           </div>
                           <p className="text-sm text-foreground/80 whitespace-pre-wrap">{notitie.tekst}</p>
                         </div>

@@ -1269,7 +1269,7 @@ export function FacturenLayout() {
           </div>
           <div className="min-w-0">
             <h1 className="page-title text-foreground truncate">Facturen</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {filteredFacturen.length} van {facturen.length} facturen
             </p>
           </div>
@@ -1319,42 +1319,42 @@ export function FacturenLayout() {
       {/* ── Statistics ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stat-cards-stagger">
         <div className="stat-card-gradient-blush stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] mb-3">
+          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
             Totaal openstaand
           </p>
           <p className="display-number display-number-lg text-foreground font-mono">
             {formatCurrency(statistics.totaalOpenstaand)}
           </p>
-          <p className="text-[12px] font-semibold text-[#3A7D52] mt-3">
+          <p className="text-xs font-semibold text-[#3A7D52] mt-3">
             nog te ontvangen
           </p>
         </div>
 
         <div className="stat-card-gradient-sage stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] mb-3">
+          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
             Betaald deze maand
           </p>
           <p className="display-number display-number-lg text-foreground font-mono">
             {formatCurrency(statistics.betaaldDezeMaand)}
           </p>
-          <p className="text-[12px] font-semibold text-[#3A7D52] mt-3">
+          <p className="text-xs font-semibold text-[#3A7D52] mt-3">
             ontvangen
           </p>
         </div>
 
         <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, var(--color-coral), color-mix(in srgb, var(--color-coral) 70%, white))', border: '1px solid var(--color-coral-border)' }}>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: 'var(--color-coral-text)' }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: 'var(--color-coral-text)' }}>
             Vervallen facturen
           </p>
           <p className="display-number display-number-lg text-foreground">
             {verlopenCount}
           </p>
-          <p className="text-[12px] font-semibold mt-3" style={{ color: 'var(--color-coral-text)' }}>
+          <p className="text-xs font-semibold mt-3" style={{ color: 'var(--color-coral-text)' }}>
             {verlopenTotaal > 0 ? formatCurrency(verlopenTotaal) : 'actie vereist'}
           </p>
           {verlopenCount > 0 && (
             <button
-              className="text-[11px] font-bold hover:underline mt-1"
+              className="text-xs font-bold hover:underline mt-1"
               style={{ color: 'var(--color-coral-text)' }}
               onClick={() => setFilterStatus('verlopen')}
             >
@@ -1364,13 +1364,13 @@ export function FacturenLayout() {
         </div>
 
         <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, var(--color-cream), color-mix(in srgb, var(--color-cream) 70%, white))', border: '1px solid var(--color-cream-border)' }}>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: 'var(--color-cream-text)' }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: 'var(--color-cream-text)' }}>
             Gem. betaaltermijn
           </p>
           <p className="display-number display-number-lg text-foreground">
             {statistics.gemiddeldeBetaaltermijn} <span className="text-[18px]">dagen</span>
           </p>
-          <p className="text-[12px] font-semibold mt-3" style={{ color: 'var(--color-cream-text)' }}>
+          <p className="text-xs font-semibold mt-3" style={{ color: 'var(--color-cream-text)' }}>
             gemiddeld
           </p>
         </div>
@@ -1421,7 +1421,7 @@ export function FacturenLayout() {
                 />
               )}
               {option.label}
-              <span className="text-[10px] opacity-70">({count})</span>
+              <span className="text-2xs opacity-70">({count})</span>
             </button>
           )
         })}
@@ -1479,7 +1479,7 @@ export function FacturenLayout() {
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-mono font-semibold text-foreground">{factuur.nummer}</span>
                     {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                      <Badge variant="secondary" className={cn('text-[9px] px-1 py-0 h-4', TYPE_CONFIG[factuur.factuur_type].color)}>
+                      <Badge variant="secondary" className={cn('text-2xs px-1 py-0 h-4', TYPE_CONFIG[factuur.factuur_type].color)}>
                         {TYPE_CONFIG[factuur.factuur_type].label}
                       </Badge>
                     )}
@@ -1488,7 +1488,7 @@ export function FacturenLayout() {
                     {factuur.klant_naam || 'Onbekende klant'}
                   </p>
                 </div>
-                <Badge variant="secondary" className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-lg flex-shrink-0', config.color)}>
+                <Badge variant="secondary" className={cn('text-2xs font-semibold px-2 py-0.5 rounded-lg flex-shrink-0', config.color)}>
                   <span className={cn('w-1.5 h-1.5 rounded-full mr-1 inline-block', config.dot)} />
                   {config.label}
                 </Badge>
@@ -1505,7 +1505,7 @@ export function FacturenLayout() {
                 </div>
                 <div className="flex items-center gap-2">
                   {openstaand > 0 && openstaand < factuur.totaal && (
-                    <span className="text-[10px] text-muted-foreground">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
+                    <span className="text-2xs text-muted-foreground">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
                   )}
                   <span className="font-mono font-semibold text-foreground">{formatCurrency(factuur.totaal)}</span>
                 </div>
@@ -1542,7 +1542,7 @@ export function FacturenLayout() {
                 ].map((col) => (
                   <th
                     key={col.key}
-                    className={`px-4 py-3 text-left text-[11px] font-bold uppercase tracking-label text-[#8a8680] ${col.hide}`}
+                    className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-label text-text-tertiary ${col.hide}`}
                   >
                     {col.label}
                   </th>
@@ -1573,7 +1573,7 @@ export function FacturenLayout() {
                   <tr
                     key={factuur.id}
                     className={cn(
-                      'group hover:bg-[#F4F3F0]/60 transition-colors',
+                      'group hover:bg-bg-subtle/60 transition-colors',
                       'border-l-2',
                       isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border,
                       factuur.status === 'betaald' && 'factuur-row-betaald',
@@ -1597,7 +1597,7 @@ export function FacturenLayout() {
                           {factuur.nummer}
                         </button>
                         {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                          <Badge variant="secondary" className={cn('text-[9px] px-1 py-0 h-4', TYPE_CONFIG[factuur.factuur_type].color)}>
+                          <Badge variant="secondary" className={cn('text-2xs px-1 py-0 h-4', TYPE_CONFIG[factuur.factuur_type].color)}>
                             {TYPE_CONFIG[factuur.factuur_type].label}
                           </Badge>
                         )}
@@ -1647,7 +1647,7 @@ export function FacturenLayout() {
                     <td className="px-4 py-3">
                       <Badge
                         variant="secondary"
-                        className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-lg', config.color)}
+                        className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', config.color)}
                       >
                         <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', config.dot)} />
                         {config.label}
@@ -1796,7 +1796,7 @@ export function FacturenLayout() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Klant</p>
+                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Klant</p>
                   <a
                     href={`/klanten/${viewingFactuur.klant_id}`}
                     className="text-sm font-medium text-accent dark:text-wm-light hover:underline"
@@ -1805,11 +1805,11 @@ export function FacturenLayout() {
                   </a>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Status</p>
+                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Status</p>
                   <Badge
                     variant="secondary"
                     className={cn(
-                      'text-[11px] font-semibold px-2 py-0.5 rounded-lg',
+                      'text-xs font-semibold px-2 py-0.5 rounded-lg',
                       STATUS_CONFIG[viewingFactuur.status].color
                     )}
                   >
@@ -1817,20 +1817,20 @@ export function FacturenLayout() {
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Titel</p>
+                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Titel</p>
                   <p className="text-sm">{viewingFactuur.titel}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Factuurdatum</p>
+                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Factuurdatum</p>
                   <p className="text-sm">{formatDate(viewingFactuur.factuurdatum)}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Vervaldatum</p>
+                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Vervaldatum</p>
                   <p className="text-sm">{formatDate(viewingFactuur.vervaldatum)}</p>
                 </div>
                 {viewingFactuur.betaaldatum && (
                   <div>
-                    <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Betaaldatum</p>
+                    <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Betaaldatum</p>
                     <p className="text-sm">{formatDate(viewingFactuur.betaaldatum)}</p>
                   </div>
                 )}
@@ -1888,7 +1888,7 @@ export function FacturenLayout() {
                 <>
                   <Separator />
                   <div>
-                    <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Notities</p>
+                    <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Notities</p>
                     <p className="text-sm text-foreground/80">{viewingFactuur.notities}</p>
                   </div>
                 </>
@@ -1896,7 +1896,7 @@ export function FacturenLayout() {
 
               {viewingFactuur.voorwaarden && (
                 <div>
-                  <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-1">Betalingsvoorwaarden</p>
+                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Betalingsvoorwaarden</p>
                   <p className="text-sm text-foreground/80">{viewingFactuur.voorwaarden}</p>
                 </div>
               )}
@@ -2106,12 +2106,12 @@ export function FacturenLayout() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-muted/50 border-b border-border">
-                        <th className="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Beschrijving</th>
-                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-20">Aantal</th>
-                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-28">Prijs</th>
-                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-20">BTW %</th>
-                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-24">Korting %</th>
-                        <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-label text-[#8a8680] w-28">Totaal</th>
+                        <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-label text-text-tertiary">Beschrijving</th>
+                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-20">Aantal</th>
+                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-28">Prijs</th>
+                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-20">BTW %</th>
+                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-24">Korting %</th>
+                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-28">Totaal</th>
                         <th className="px-3 py-2 w-10" />
                       </tr>
                     </thead>
@@ -2272,7 +2272,7 @@ export function FacturenLayout() {
                           </span>
                           <Badge
                             variant="secondary"
-                            className="text-[10px] px-1.5 py-0 h-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                            className="text-2xs px-1.5 py-0 h-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                           >
                             Goedgekeurd
                           </Badge>
@@ -2288,7 +2288,7 @@ export function FacturenLayout() {
                         <p className="text-sm font-mono font-bold text-foreground">
                           {formatCurrency(offerte.totaal)}
                         </p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {formatDate(offerte.created_at)}
                         </p>
                       </div>

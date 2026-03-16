@@ -122,11 +122,11 @@ export function AuditLogPanel({ entityType, entityId, maxItems = 10 }: AuditLogP
                         {beschrijfActie(entry)}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground/60">
+                        <span className="text-2xs text-muted-foreground/60">
                           {formatRelativeTime(entry.created_at)}
                         </span>
                         {entry.medewerker_naam && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
+                          <span className="flex items-center gap-0.5 text-2xs text-muted-foreground/60">
                             <User className="w-2.5 h-2.5" />
                             {entry.medewerker_naam}
                           </span>

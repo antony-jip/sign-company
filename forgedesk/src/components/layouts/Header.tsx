@@ -116,7 +116,7 @@ export function Header() {
             {pageMeta.title}
           </h1>
           {pageMeta.subtitle && (
-            <p className="text-[11px] text-muted-foreground/70 truncate hidden sm:block">
+            <p className="text-xs text-muted-foreground/70 truncate hidden sm:block">
               {pageMeta.subtitle}
             </p>
           )}
@@ -172,7 +172,7 @@ export function Header() {
             aria-haspopup="true"
           >
             <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-sage to-blush flex items-center justify-center ring-2 ring-border">
-              <span className="text-white text-[10px] md:text-xs font-semibold">
+              <span className="text-white text-2xs md:text-xs font-semibold">
                 {userInitial}
               </span>
             </div>

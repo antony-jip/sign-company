@@ -73,7 +73,7 @@ export function EmailCommunicationHub() {
             <span>Recente Berichten</span>
           </CardTitle>
           {recentUnread.length > 0 && (
-            <span className="flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-accent text-white text-[11px] font-bold">
+            <span className="flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-accent text-white text-xs font-bold">
               {recentUnread.length}
             </span>
           )}
@@ -121,7 +121,7 @@ export function EmailCommunicationHub() {
                       {senderName}
                     </p>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="text-[11px] text-muted-foreground/60 dark:text-muted-foreground whitespace-nowrap">
+                      <span className="text-xs text-muted-foreground/60 dark:text-muted-foreground whitespace-nowrap">
                         {timeAgo(email.datum)}
                       </span>
                       {/* Unread indicator */}

@@ -484,7 +484,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
   // ── STATE C: Opgeslagen offertes ──
   return (
     <div className="space-y-3">
-      <p className="text-[11px] text-muted-foreground/60">
+      <p className="text-xs text-muted-foreground/60">
         Sleep een regel naar een offerte-item, of gebruik de knoppen.
       </p>
 
@@ -540,7 +540,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
                       </div>
                       {/* Prijs + acties */}
                       <div className="flex items-center gap-2 pl-[18px]">
-                        <span className="text-muted-foreground font-mono tabular-nums text-[11px]">{formatCurrency(round2(regel.prijs_per_stuk))}/stk</span>
+                        <span className="text-muted-foreground font-mono tabular-nums text-xs">{formatCurrency(round2(regel.prijs_per_stuk))}/stk</span>
                         <span className="font-bold font-mono tabular-nums text-xs">{formatCurrency(round2(regel.totaal))}</span>
                         <div className="flex items-center gap-0.5 ml-auto shrink-0">
                           <button
@@ -569,7 +569,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
                 {offerte.regels.length > 1 && (
                   <button
                     onClick={() => handleAlleRegelsToevoegen(offerte)}
-                    className="mt-2 flex items-center gap-1.5 text-[11px] text-primary hover:underline"
+                    className="mt-2 flex items-center gap-1.5 text-xs text-primary hover:underline"
                   >
                     <ArrowRight className="h-3 w-3" />
                     Alle {offerte.regels.length} regels toevoegen

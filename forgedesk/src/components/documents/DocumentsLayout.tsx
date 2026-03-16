@@ -308,10 +308,10 @@ function DocumentGrid({ documents }: { documents: Document[] }) {
                   {doc.naam}
                 </p>
                 <div className="flex items-center gap-2 mt-1.5">
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                  <Badge variant="outline" className="text-2xs px-1.5 py-0">
                     {getTypeLabel(doc.type)}
                   </Badge>
-                  <Badge className={cn('text-[10px] px-1.5 py-0', getStatusColor(doc.status))}>
+                  <Badge className={cn('text-2xs px-1.5 py-0', getStatusColor(doc.status))}>
                     {doc.status}
                   </Badge>
                 </div>
@@ -328,12 +328,12 @@ function DocumentGrid({ documents }: { documents: Document[] }) {
             {doc.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t">
                 {doc.tags.slice(0, 3).map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">
+                  <Badge key={tag} variant="secondary" className="text-2xs px-1.5 py-0">
                     {tag}
                   </Badge>
                 ))}
                 {doc.tags.length > 3 && (
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-2xs text-muted-foreground">
                     +{doc.tags.length - 3}
                   </span>
                 )}

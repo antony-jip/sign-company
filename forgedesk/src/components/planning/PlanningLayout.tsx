@@ -29,7 +29,7 @@ export function PlanningLayout() {
           </div>
           <div className="min-w-0">
             <h1 className="page-title text-foreground truncate">Planning</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Kalender en montageplanning
             </p>
           </div>
