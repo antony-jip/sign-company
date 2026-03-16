@@ -231,6 +231,15 @@ export function PortaalPagina() {
     fetchPortaal()
   }, [fetchPortaal])
 
+  // Poll for new messages every 5 seconds
+  useEffect(() => {
+    if (!token || !data || data.status !== 'actief') return
+    const interval = setInterval(() => {
+      fetchPortaal()
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [token, data?.status, fetchPortaal])
+
   // Mark portaal as bekeken on load
   useEffect(() => {
     if (!token || !data || data.status !== 'actief') return

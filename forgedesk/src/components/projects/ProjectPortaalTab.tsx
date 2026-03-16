@@ -75,6 +75,54 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     fetchPortaal()
   }, [fetchPortaal])
 
+  // ── Real-time updates via Supabase subscription ────────────────────────
+  useEffect(() => {
+    if (!portaal) return
+    let cancelled = false
+
+    async function subscribe() {
+      const { default: supabase } = await import('@/services/supabaseClient')
+      if (!supabase || cancelled) return
+
+      const channel = supabase
+        .channel(`portaal-items-${portaal!.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'portaal_items',
+            filter: `portaal_id=eq.${portaal!.id}`,
+          },
+          () => { fetchPortaal() }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'portaal_reacties',
+          },
+          () => { fetchPortaal() }
+        )
+        .subscribe()
+
+      return channel
+    }
+
+    let channel: Awaited<ReturnType<typeof subscribe>> | undefined
+    subscribe().then(c => { channel = c })
+
+    return () => {
+      cancelled = true
+      if (channel) {
+        import('@/services/supabaseClient').then(({ default: supabase }) => {
+          supabase?.removeChannel(channel!)
+        })
+      }
+    }
+  }, [portaal?.id, fetchPortaal])
+
   // ── Portaal management ──────────────────────────────────────────────────
   async function getAuthToken() {
     const { createClient } = await import('@supabase/supabase-js')
