@@ -89,13 +89,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }, { onConflict: 'user_id' })
 
     if (error) {
-      return res.status(500).json({ error: 'Kon email instellingen niet opslaan' })
+      console.error('Supabase upsert fout:', JSON.stringify(error))
+      return res.status(500).json({ error: `Kon email instellingen niet opslaan: ${error.message || error.code || JSON.stringify(error)}` })
     }
 
     return res.status(200).json({ success: true, message: 'Email instellingen opgeslagen' })
   } catch (error: unknown) {
     console.error('Email settings fout:', error)
     const msg = error instanceof Error ? error.message : 'Fout bij opslaan'
+    // Specifieke foutmeldingen voor bekende problemen
+    if (msg.includes('EMAIL_ENCRYPTION_KEY')) {
+      return res.status(500).json({ error: 'Server configuratiefout: EMAIL_ENCRYPTION_KEY is niet ingesteld. Neem contact op met de beheerder.' })
+    }
     return res.status(500).json({ error: msg })
   }
 }
