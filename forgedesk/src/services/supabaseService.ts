@@ -176,13 +176,76 @@ function normalizeKlant(raw: unknown): Klant {
   } as Klant
 }
 
+// ============ STUBS (tabellen bestaan nog niet) ============
+
 export async function getAuditLog(
   entityType: AuditLogEntry['entity_type'],
   entityId: string,
   limit = 50
 ): Promise<AuditLogEntry[]> {
-  // audit_log tabel bestaat nog niet — stub die lege array retourneert
   return []
+}
+
+export async function createAuditLogEntry(
+  entry: Omit<AuditLogEntry, 'id' | 'created_at'>
+): Promise<void> {
+  // audit_log tabel bestaat nog niet — no-op
+}
+
+export async function getAllKlantLabels(userId: string): Promise<string[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data } = await supabase
+      .from('klanten')
+      .select('labels')
+      .eq('user_id', userId)
+    if (data) {
+      const allLabels = new Set<string>()
+      for (const row of data) {
+        if (Array.isArray(row.labels)) {
+          for (const l of row.labels) allLabels.add(l)
+        }
+      }
+      return [...allLabels].sort()
+    }
+  }
+  return []
+}
+
+export async function cacheEmailsToSupabase(
+  _userId: string,
+  _emails: unknown[],
+  _folder: string
+): Promise<void> {
+  // email cache tabel bestaat nog niet — no-op
+}
+
+export async function getCachedEmails(
+  _userId: string,
+  _folder: string
+): Promise<Email[]> {
+  return []
+}
+
+export async function uploadVervolgpapier(userId: string, file: File): Promise<string> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const ext = file.name.split('.').pop() || 'png'
+    const path = `${userId}/vervolgpapier_${Date.now()}.${ext}`
+    const { error } = await supabase.storage
+      .from('briefpapier')
+      .upload(path, file, { upsert: true })
+    if (error) throw error
+    const { data: urlData } = supabase.storage
+      .from('briefpapier')
+      .getPublicUrl(path)
+    return urlData.publicUrl
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
 export async function getKlanten(limit = 500): Promise<Klant[]> {
