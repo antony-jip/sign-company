@@ -111,7 +111,6 @@ export function EmailLayout() {
   // Handlers
   const handleSelectEmail = useCallback(async (email: Email) => {
     const withBody = await loadEmailBody(email, selectedFolder)
-    // Mark as read
     if (!withBody.gelezen) {
       setEmails(prev => prev.map(e => e.id === email.id ? { ...e, gelezen: true } : e))
     }
@@ -196,11 +195,67 @@ export function EmailLayout() {
 
   const emailIndex = selectedEmail ? threadedEmails.findIndex(e => e.id === selectedEmail.id) : -1
 
+  // ─── FULL-SCREEN EMAIL READER ───
+  // When reading an email, the reader takes over the entire screen.
+  // Sidebar and list are completely hidden.
+  if (viewMode === 'reading') {
+    return (
+      <div className="h-[calc(100vh-56px)] bg-white overflow-hidden">
+        <EmailReader
+          email={selectedEmail}
+          isLoadingBody={isLoadingBody}
+          emailIndex={emailIndex}
+          emailTotal={threadedEmails.length}
+          onToggleStar={handleToggleStar}
+          onToggleRead={handleToggleRead}
+          onDelete={(email) => {
+            handleDelete(email)
+            // After deleting, go to next email or back to list
+            const nextIdx = emailIndex + 1 < threadedEmails.length ? emailIndex + 1 : emailIndex - 1
+            if (nextIdx >= 0 && nextIdx < threadedEmails.length) {
+              handleSelectEmail(threadedEmails[nextIdx])
+            } else {
+              handleBack()
+            }
+          }}
+          onArchive={(email) => {
+            handleArchive(email)
+            const nextIdx = emailIndex + 1 < threadedEmails.length ? emailIndex + 1 : emailIndex - 1
+            if (nextIdx >= 0 && nextIdx < threadedEmails.length) {
+              handleSelectEmail(threadedEmails[nextIdx])
+            } else {
+              handleBack()
+            }
+          }}
+          onBack={handleBack}
+          onNavigate={handleNavigate}
+          onSendReply={handleSendReply}
+        />
+      </div>
+    )
+  }
+
+  // ─── FULL-SCREEN COMPOSE ───
+  if (viewMode === 'composing') {
+    return (
+      <div className="h-[calc(100vh-56px)] bg-white overflow-hidden">
+        <EmailCompose
+          open={true}
+          onOpenChange={(open) => { if (!open) handleBack() }}
+          defaultTo={composeDefaults.to}
+          defaultSubject={composeDefaults.subject}
+          defaultBody={composeDefaults.body}
+          onSend={handleSendEmail}
+        />
+      </div>
+    )
+  }
+
+  // ─── INBOX VIEW: sidebar + email list ───
   return (
     <div className="flex h-[calc(100vh-56px)] bg-[#F4F3F0] overflow-hidden">
       {/* ─── SIDEBAR ─── */}
       <div className="w-[280px] bg-white border-r border-border/50 flex flex-col flex-shrink-0">
-        {/* New email button */}
         <div className="p-4">
           <Button
             className="w-full py-2.5 rounded-lg gap-2"
@@ -211,10 +266,9 @@ export function EmailLayout() {
           </Button>
         </div>
 
-        {/* Folder list */}
         <nav className="flex-1 px-2">
           {folderTabs.map(folder => {
-            const isActive = selectedFolder === folder.id && viewMode !== 'composing'
+            const isActive = selectedFolder === folder.id
             const count = folderCounts[folder.id]
             const Icon = folder.icon
             return (
@@ -242,7 +296,6 @@ export function EmailLayout() {
             )
           })}
 
-          {/* Archive */}
           <button
             onClick={() => handleFolderChange('gepland' as EmailFolder)}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground/60 hover:bg-[#F4F3F0]/50 transition-colors duration-100"
@@ -253,190 +306,143 @@ export function EmailLayout() {
         </nav>
       </div>
 
-      {/* ─── MAIN CONTENT ─── */}
-      <div className="flex-1 flex min-w-0">
-        {viewMode === 'composing' ? (
-          /* Full-width compose */
-          <div className="flex-1 bg-white">
-            <EmailCompose
-              open={true}
-              onOpenChange={(open) => { if (!open) handleBack() }}
-              defaultTo={composeDefaults.to}
-              defaultSubject={composeDefaults.subject}
-              defaultBody={composeDefaults.body}
-              onSend={handleSendEmail}
+      {/* ─── EMAIL LIST (full remaining width) ─── */}
+      <div className="flex-1 bg-white flex flex-col min-w-0">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={allChecked}
+              ref={(el) => { if (el) el.indeterminate = someChecked }}
+              onChange={toggleCheckAll}
+              className="h-3.5 w-3.5 rounded border-border cursor-pointer accent-primary"
             />
-          </div>
-        ) : (
-          <>
-            {/* Email list */}
-            <div className={cn(
-              'bg-white flex flex-col border-r border-border/50 transition-all duration-200',
-              viewMode === 'reading' ? 'w-[40%]' : 'flex-1',
-            )}>
-              {/* Toolbar */}
-              <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  {/* Select all checkbox */}
-                  <input
-                    type="checkbox"
-                    checked={allChecked}
-                    ref={(el) => { if (el) el.indeterminate = someChecked }}
-                    onChange={toggleCheckAll}
-                    className="h-3.5 w-3.5 rounded border-border cursor-pointer accent-primary"
-                  />
 
-                  {hasChecked ? (
-                    /* Bulk actions */
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkArchive}>
-                        <Archive className="h-3 w-3 mr-1" /> Archief
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkDelete}>
-                        <Trash2 className="h-3 w-3 mr-1" /> Verwijder
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkMarkRead}>
-                        <CheckCheck className="h-3 w-3 mr-1" /> Gelezen
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkMarkUnread}>
-                        Ongelezen
-                      </Button>
-                    </div>
-                  ) : (
-                    /* Filter pills */
-                    <div className="flex items-center gap-1">
-                      {filters.map(f => (
-                        <button
-                          key={f.id}
-                          onClick={() => setFilter(f.id)}
-                          className={cn(
-                            'px-2.5 py-1 rounded-md text-xs transition-colors duration-100',
-                            filter === f.id
-                              ? 'bg-[#F4F3F0] text-foreground font-medium'
-                              : 'text-foreground/40 hover:text-foreground/60',
-                          )}
-                        >
-                          {f.label}
-                          {f.id === 'ongelezen' && filterCounts.ongelezen > 0 && (
-                            <span className="ml-1 text-primary font-medium">{filterCounts.ongelezen}</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1">
-                  {/* Search toggle */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-foreground/40"
-                    onClick={() => setShowSearch(!showSearch)}
-                  >
-                    <Search className="h-3.5 w-3.5" />
-                  </Button>
-                  {/* Refresh */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-foreground/40"
-                    onClick={() => handleRefresh(selectedFolder)}
-                    disabled={isRefreshing}
-                  >
-                    <RefreshCw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} />
-                  </Button>
-                </div>
+            {hasChecked ? (
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkArchive}>
+                  <Archive className="h-3 w-3 mr-1" /> Archief
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkDelete}>
+                  <Trash2 className="h-3 w-3 mr-1" /> Verwijder
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkMarkRead}>
+                  <CheckCheck className="h-3 w-3 mr-1" /> Gelezen
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkMarkUnread}>
+                  Ongelezen
+                </Button>
               </div>
-
-              {/* Search bar */}
-              {showSearch && (
-                <div className="flex items-center px-4 py-2 border-b border-border/30 bg-foreground/[0.02]">
-                  <Search className="h-3.5 w-3.5 text-foreground/30 mr-2 flex-shrink-0" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Zoeken... (from: to: has: label:)"
-                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-foreground/30"
-                    autoFocus
-                  />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery('')}>
-                      <X className="h-3.5 w-3.5 text-foreground/30" />
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Email list */}
-              <div
-                ref={emailListRef}
-                className="flex-1 overflow-y-auto"
-                onScroll={handleScroll}
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-5 w-5 animate-spin text-foreground/30" />
-                  </div>
-                ) : threadedEmails.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-foreground/30">
-                    <Inbox className="h-8 w-8 mb-2" />
-                    <p className="text-sm">Geen emails</p>
-                  </div>
-                ) : (
-                  <>
-                    {threadedEmails.map((email, index) => (
-                      <EmailListItem
-                        key={email.id}
-                        email={email}
-                        isActive={selectedEmail?.id === email.id}
-                        isChecked={checkedEmails.has(email.id)}
-                        isFocused={focusedIndex === index}
-                        compact={viewMode === 'reading'}
-                        onSelect={handleSelectEmail}
-                        onToggleStar={handleToggleStar}
-                        onToggleCheck={toggleCheckEmail}
-                      />
-                    ))}
-                    {isLoadingMore && (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-4 w-4 animate-spin text-foreground/30" />
-                      </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                {filters.map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilter(f.id)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-md text-xs transition-colors duration-100',
+                      filter === f.id
+                        ? 'bg-[#F4F3F0] text-foreground font-medium'
+                        : 'text-foreground/40 hover:text-foreground/60',
                     )}
-                    {threadedEmails.length < imapTotal && !isLoadingMore && (
-                      <button
-                        onClick={() => loadMoreEmails(selectedFolder)}
-                        className="w-full py-3 text-xs text-foreground/40 hover:text-foreground/60"
-                      >
-                        Meer laden ({threadedEmails.length}/{imapTotal})
-                      </button>
+                  >
+                    {f.label}
+                    {f.id === 'ongelezen' && filterCounts.ongelezen > 0 && (
+                      <span className="ml-1 text-primary font-medium">{filterCounts.ongelezen}</span>
                     )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Email reader (split view) */}
-            {viewMode === 'reading' && (
-              <div className="flex-1 min-w-0">
-                <EmailReader
-                  email={selectedEmail}
-                  isLoadingBody={isLoadingBody}
-                  emailIndex={emailIndex}
-                  emailTotal={threadedEmails.length}
-                  onToggleStar={handleToggleStar}
-                  onToggleRead={handleToggleRead}
-                  onDelete={handleDelete}
-                  onArchive={handleArchive}
-                  onBack={handleBack}
-                  onNavigate={handleNavigate}
-                  onSendReply={handleSendReply}
-                />
+                  </button>
+                ))}
               </div>
             )}
-          </>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-foreground/40"
+              onClick={() => setShowSearch(!showSearch)}
+            >
+              <Search className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-foreground/40"
+              onClick={() => handleRefresh(selectedFolder)}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Search bar */}
+        {showSearch && (
+          <div className="flex items-center px-4 py-2 border-b border-border/30 bg-foreground/[0.02]">
+            <Search className="h-3.5 w-3.5 text-foreground/30 mr-2 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Zoeken... (from: to: has: label:)"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-foreground/30"
+              autoFocus
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')}>
+                <X className="h-3.5 w-3.5 text-foreground/30" />
+              </button>
+            )}
+          </div>
         )}
+
+        {/* Email list */}
+        <div
+          ref={emailListRef}
+          className="flex-1 overflow-y-auto"
+          onScroll={handleScroll}
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-5 w-5 animate-spin text-foreground/30" />
+            </div>
+          ) : threadedEmails.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-foreground/30">
+              <Inbox className="h-8 w-8 mb-2" />
+              <p className="text-sm">Geen emails</p>
+            </div>
+          ) : (
+            <>
+              {threadedEmails.map((email, index) => (
+                <EmailListItem
+                  key={email.id}
+                  email={email}
+                  isActive={selectedEmail?.id === email.id}
+                  isChecked={checkedEmails.has(email.id)}
+                  isFocused={focusedIndex === index}
+                  onSelect={handleSelectEmail}
+                  onToggleStar={handleToggleStar}
+                  onToggleCheck={toggleCheckEmail}
+                />
+              ))}
+              {isLoadingMore && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-foreground/30" />
+                </div>
+              )}
+              {threadedEmails.length < imapTotal && !isLoadingMore && (
+                <button
+                  onClick={() => loadMoreEmails(selectedFolder)}
+                  className="w-full py-3 text-xs text-foreground/40 hover:text-foreground/60"
+                >
+                  Meer laden ({threadedEmails.length}/{imapTotal})
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Keyboard shortcuts overlay */}
