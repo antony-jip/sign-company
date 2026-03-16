@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { MessageSquare } from 'lucide-react'
 import { PortaalChatDaySeparator } from './PortaalChatDaySeparator'
 import { PortaalChatBubble, type ChatMessage } from './PortaalChatBubble'
 import { PortaalChatRichCard } from './PortaalChatRichCard'
@@ -52,6 +53,7 @@ interface PortaalChatProps {
   onApprove?: (itemId: string) => void
   onRevisie?: (itemId: string) => void
   disabled?: boolean
+  instellingen?: Record<string, unknown>
 }
 
 // ---------------------------------------------------------------------------
@@ -91,6 +93,7 @@ export function PortaalChat({
   onApprove,
   onRevisie,
   disabled,
+  instellingen,
 }: PortaalChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -211,8 +214,12 @@ export function PortaalChat({
 
   if (items.length === 0 && !onSend) {
     return (
-      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-        Nog geen berichten
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+        <MessageSquare className="h-12 w-12 text-muted-foreground" />
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Start de conversatie met je klant</p>
+          <p className="text-sm text-muted-foreground">Deel offertes, tekeningen en berichten via het portaal</p>
+        </div>
       </div>
     )
   }
@@ -223,8 +230,12 @@ export function PortaalChat({
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
         <div className="mx-auto max-w-2xl space-y-3">
           {timeline.length === 0 && (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              Stuur een bericht om het gesprek te starten
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <MessageSquare className="h-12 w-12 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Start de conversatie met je klant</p>
+                <p className="text-sm text-muted-foreground">Deel offertes, tekeningen en berichten via het portaal</p>
+              </div>
             </div>
           )}
           {timeline.map((entry) => {
@@ -250,6 +261,7 @@ export function PortaalChat({
                     onApprove={onApprove}
                     onRevisie={onRevisie}
                     onImageClick={handleImageClick}
+                    instellingen={instellingen}
                   />
                 )
               default:
@@ -268,6 +280,8 @@ export function PortaalChat({
           facturen={facturen}
           onSend={onSend}
           disabled={disabled}
+          kanBestandenUploaden={instellingen?.klant_kan_bestanden_uploaden !== false}
+          kanBerichtenSturen={instellingen?.klant_kan_berichten_sturen !== false}
         />
       )}
 
