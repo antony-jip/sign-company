@@ -6,8 +6,8 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
-  UserPlus, FolderPlus, FileText, ListPlus,
-  Building2, Mail,
+  UserPlus, FolderPlus, FileText, ListPlus, X,
+  Building2, Mail, Undo2, Redo2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email } from '@/types'
@@ -52,7 +52,6 @@ export function EmailReader({
   const [showQuotedText, setShowQuotedText] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
-  const [editorFocused, setEditorFocused] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
 
   // Build signature HTML
@@ -73,7 +72,6 @@ export function EmailReader({
   useEffect(() => {
     setReplyMode(null)
     setShowQuotedText(false)
-    setEditorFocused(false)
   }, [email?.id])
 
   const handleReply = useCallback((mode: 'reply' | 'reply-all' | 'forward') => {
@@ -162,9 +160,241 @@ export function EmailReader({
     ADD_ATTR: ['target', 'style'],
   }) : ''
 
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // FULL-SCREEN REPLY MODE (like Pipedrive)
+  // When replying, the compose view takes over the entire screen.
+  // No email body visible — pure focus on writing.
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if (replyMode) {
+    const replySubject = (() => {
+      const prefix = replyMode === 'forward' ? 'Fwd: ' : 'Re: '
+      return email.onderwerp.startsWith(prefix) ? email.onderwerp : `${prefix}${email.onderwerp}`
+    })()
+
+    return (
+      <div className="flex h-full">
+        {/* ─── MAIN: full-screen compose ─── */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top action bar — same as reading view */}
+          <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-white">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 text-foreground/55 hover:text-foreground hover:bg-foreground/[0.04]"
+                onClick={onBack}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="text-sm">Terug</span>
+              </Button>
+              <div className="w-px h-5 bg-foreground/[0.08] mx-1.5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04]" onClick={() => email && onArchive?.(email)} title="Archiveren">
+                <Archive className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-red-500 hover:bg-red-500/[0.06]" onClick={() => email && onDelete?.(email)} title="Verwijderen">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04]" onClick={() => email && onToggleRead?.(email)} title="Markeer als ongelezen">
+                <MailOpen className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-1 text-sm text-foreground/35">
+              {emailIndex !== undefined && emailTotal !== undefined && (
+                <>
+                  <span className="tabular-nums">{emailIndex + 1}/{emailTotal}</span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-foreground" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-foreground" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* ─── Compose fields ─── */}
+          <div className="border-b border-foreground/[0.06] bg-white flex-shrink-0">
+            {/* Aan field */}
+            <div className="flex items-center px-6 py-2.5 border-b border-foreground/[0.04]">
+              <span className="text-sm text-foreground/35 w-10 flex-shrink-0">Aan</span>
+              <div className="flex-1 flex items-center gap-2 min-w-0">
+                <input
+                  type="text"
+                  value={replyTo}
+                  onChange={(e) => setReplyTo(e.target.value)}
+                  className="flex-1 bg-transparent border-none outline-none text-sm text-foreground min-w-0 placeholder:text-foreground/25"
+                  placeholder="ontvanger@voorbeeld.nl"
+                />
+              </div>
+              {/* Reply mode switcher */}
+              <div className="flex items-center gap-1 ml-3 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    setReplyMode('reply')
+                    setReplyTo(extractSenderEmail(email.van))
+                  }}
+                  className={cn(
+                    'p-1.5 rounded-md transition-colors',
+                    replyMode === 'reply' ? 'text-primary bg-primary/[0.06]' : 'text-foreground/25 hover:text-foreground/50 hover:bg-foreground/[0.04]',
+                  )}
+                  title="Beantwoorden"
+                >
+                  <Reply className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setReplyMode('reply-all')
+                    setReplyTo(extractSenderEmail(email.van))
+                  }}
+                  className={cn(
+                    'p-1.5 rounded-md transition-colors',
+                    replyMode === 'reply-all' ? 'text-primary bg-primary/[0.06]' : 'text-foreground/25 hover:text-foreground/50 hover:bg-foreground/[0.04]',
+                  )}
+                  title="Allen beantwoorden"
+                >
+                  <ReplyAll className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setReplyMode('forward')
+                    setReplyTo('')
+                  }}
+                  className={cn(
+                    'p-1.5 rounded-md transition-colors',
+                    replyMode === 'forward' ? 'text-primary bg-primary/[0.06]' : 'text-foreground/25 hover:text-foreground/50 hover:bg-foreground/[0.04]',
+                  )}
+                  title="Doorsturen"
+                >
+                  <Forward className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Subject */}
+            <div className="flex items-center px-6 py-2.5 border-b border-foreground/[0.04]">
+              <span className="text-sm text-foreground/35 w-10 flex-shrink-0" />
+              <span className="text-sm text-foreground/70 truncate">{replySubject}</span>
+            </div>
+
+            {/* Quick tools: AI schrijven */}
+            <div className="flex items-center gap-3 px-6 py-2">
+              <button
+                onClick={handleForgieWrite}
+                disabled={forgieLoading}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-all',
+                  forgieLoading
+                    ? 'text-primary/40'
+                    : 'text-primary/70 hover:text-primary hover:bg-primary/[0.05]',
+                )}
+              >
+                {forgieLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                Schrijf mijn e-mail
+              </button>
+            </div>
+          </div>
+
+          {/* ─── Editor area (takes all remaining space) ─── */}
+          <div className="flex-1 overflow-y-auto bg-white">
+            <div className="max-w-[880px] mx-auto px-8">
+              <div
+                ref={editorRef}
+                contentEditable
+                suppressContentEditableWarning
+                className="min-h-[300px] py-6 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[300px] empty:before:content-[attr(data-placeholder)] empty:before:text-foreground/25 empty:before:pointer-events-none"
+                data-placeholder="Schrijf je antwoord..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault()
+                    handleSend()
+                  }
+                }}
+              />
+
+              {/* Quoted original (collapsed by default) */}
+              {email.inhoud && (
+                <div className="pb-6">
+                  <button
+                    onClick={() => setShowQuotedText(!showQuotedText)}
+                    className="text-xs text-foreground/25 hover:text-foreground/45 transition-colors"
+                  >
+                    {showQuotedText ? 'Verberg origineel bericht' : '··· Toon origineel bericht'}
+                  </button>
+                  {showQuotedText && (
+                    <div
+                      className="mt-4 pl-4 border-l-2 border-foreground/[0.08] text-sm text-foreground/35 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(email.inhoud) }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ─── Bottom toolbar (fixed at bottom) ─── */}
+          <div className="flex items-center justify-between px-5 py-2.5 border-t border-foreground/[0.06] bg-white flex-shrink-0">
+            <div className="flex items-center">
+              {/* Undo/Redo */}
+              <div className="flex items-center gap-px mr-2">
+                <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/25 hover:text-foreground/55 hover:bg-foreground/[0.04] transition-colors" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
+                <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/25 hover:text-foreground/55 hover:bg-foreground/[0.04] transition-colors" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
+              </div>
+              <div className="w-px h-5 bg-foreground/[0.06] mr-2" />
+              {/* Formatting */}
+              <div className="flex items-center gap-px">
+                <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Vet (Ctrl+B)"><Bold className="h-4 w-4" /></button>
+                <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Cursief (Ctrl+I)"><Italic className="h-4 w-4" /></button>
+                <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Onderstrepen (Ctrl+U)"><Underline className="h-4 w-4" /></button>
+              </div>
+              <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
+              <div className="flex items-center gap-px">
+                <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Lijst"><List className="h-4 w-4" /></button>
+                <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
+              </div>
+              <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
+              <div className="flex items-center gap-px">
+                <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Link invoegen"><Link2 className="h-4 w-4" /></button>
+                <button className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Bijlage toevoegen"><Paperclip className="h-4 w-4" /></button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setReplyMode(null)}
+                className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/25 hover:text-foreground/55 hover:bg-foreground/[0.04] transition-colors"
+                title="Annuleren"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+              <span className="text-[10px] text-foreground/20 hidden sm:block">
+                {navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl'}+Enter
+              </span>
+              <Button
+                size="sm"
+                className="h-9 gap-2 text-sm px-6 rounded-lg shadow-sm"
+                onClick={handleSend}
+                disabled={isSending}
+              >
+                <Send className="h-3.5 w-3.5" />
+                {isSending ? 'Verzenden...' : 'Verzenden'}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── CRM SIDEBAR (right, same as reading view) ─── */}
+        {renderCRMSidebar(email, senderName, senderEmail, avatarColor, navigate)}
+      </div>
+    )
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // READING MODE — shows email body with reply buttons
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   return (
     <div className="flex h-full">
-      {/* ─── MAIN: email content + inline reply ─── */}
+      {/* ─── MAIN: email content ─── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top action bar */}
         <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-white">
@@ -191,7 +421,7 @@ export function EmailReader({
           </div>
           {emailIndex !== undefined && emailTotal !== undefined && (
             <div className="flex items-center gap-1 text-sm text-foreground/35">
-              <span className="tabular-nums">{emailIndex + 1} van {emailTotal}</span>
+              <span className="tabular-nums">{emailIndex + 1}/{emailTotal}</span>
               <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-foreground" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
                 <ChevronUp className="h-4 w-4" />
               </Button>
@@ -242,28 +472,6 @@ export function EmailReader({
               </div>
             </div>
 
-            {/* Quick reply/forward buttons */}
-            <div className="flex items-center gap-2 mb-8">
-              <button
-                onClick={() => handleReply('reply')}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-sm text-foreground/60 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
-              >
-                <Reply className="h-3.5 w-3.5" /> Beantwoorden
-              </button>
-              <button
-                onClick={() => handleReply('reply-all')}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-sm text-foreground/60 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
-              >
-                <ReplyAll className="h-3.5 w-3.5" /> Allen
-              </button>
-              <button
-                onClick={() => handleReply('forward')}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-sm text-foreground/60 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
-              >
-                <Forward className="h-3.5 w-3.5" /> Doorsturen
-              </button>
-            </div>
-
             {/* Email body */}
             {isLoadingBody ? (
               <div className="space-y-4 py-6">
@@ -302,236 +510,130 @@ export function EmailReader({
               </div>
             )}
 
-            {/* ─── INLINE REPLY ─── */}
-            {replyMode && (
-              <div className={cn(
-                'mt-10 rounded-xl border transition-all duration-200',
-                editorFocused
-                  ? 'border-primary/30 shadow-[0_0_0_3px_rgba(var(--primary-rgb,59,130,246),0.06)]'
-                  : 'border-foreground/[0.08]',
-              )}>
-                {/* Reply header */}
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-foreground/[0.06] bg-foreground/[0.015] rounded-t-xl">
-                  <div className={cn(
-                    'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium',
-                    replyMode === 'reply' && 'bg-blue-50 text-blue-600',
-                    replyMode === 'reply-all' && 'bg-purple-50 text-purple-600',
-                    replyMode === 'forward' && 'bg-emerald-50 text-emerald-600',
-                  )}>
-                    {replyMode === 'reply' && <Reply className="h-3 w-3" />}
-                    {replyMode === 'reply-all' && <ReplyAll className="h-3 w-3" />}
-                    {replyMode === 'forward' && <Forward className="h-3 w-3" />}
-                    {replyMode === 'reply' ? 'Beantwoorden' : replyMode === 'reply-all' ? 'Allen beantwoorden' : 'Doorsturen'}
-                  </div>
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-xs text-foreground/35 flex-shrink-0">aan</span>
-                    <input
-                      type="email"
-                      value={replyTo}
-                      onChange={(e) => setReplyTo(e.target.value)}
-                      className="bg-transparent border-none outline-none text-sm text-foreground flex-1 min-w-0 placeholder:text-foreground/25"
-                      placeholder="ontvanger@voorbeeld.nl"
-                    />
-                  </div>
-                  <button
-                    onClick={() => setReplyMode(null)}
-                    className="text-xs text-foreground/30 hover:text-foreground/55 flex-shrink-0 px-2 py-1 rounded hover:bg-foreground/[0.04] transition-colors"
-                  >
-                    Annuleer
-                  </button>
-                </div>
-
-                {/* Editor area */}
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  suppressContentEditableWarning
-                  className="min-h-[180px] py-5 px-4 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[200px] empty:before:content-[attr(data-placeholder)] empty:before:text-foreground/25 empty:before:pointer-events-none"
-                  data-placeholder="Schrijf je antwoord..."
-                  onFocus={() => setEditorFocused(true)}
-                  onBlur={() => setEditorFocused(false)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                      e.preventDefault()
-                      handleSend()
-                    }
-                  }}
-                />
-
-                {/* Quoted original */}
-                {email.inhoud && (
-                  <div className="px-4 pb-3">
-                    <button
-                      onClick={() => setShowQuotedText(!showQuotedText)}
-                      className="text-xs text-foreground/25 hover:text-foreground/45 transition-colors"
-                    >
-                      {showQuotedText ? 'Verberg origineel' : '... toon origineel bericht'}
-                    </button>
-                    {showQuotedText && (
-                      <div
-                        className="mt-3 pl-4 border-l-2 border-foreground/[0.08] text-sm text-foreground/35 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(email.inhoud) }}
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* Bottom toolbar */}
-                <div className="flex items-center justify-between px-3 py-2.5 border-t border-foreground/[0.06] bg-foreground/[0.015] rounded-b-xl">
-                  <div className="flex items-center">
-                    {/* Formatting buttons */}
-                    <div className="flex items-center gap-px">
-                      <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Vet"><Bold className="h-4 w-4" /></button>
-                      <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Cursief"><Italic className="h-4 w-4" /></button>
-                      <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
-                    </div>
-                    <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
-                    <div className="flex items-center gap-px">
-                      <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Lijst"><List className="h-4 w-4" /></button>
-                      <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
-                    </div>
-                    <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
-                    <div className="flex items-center gap-px">
-                      <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Link"><Link2 className="h-4 w-4" /></button>
-                      <button className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.05] transition-colors" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
-                    </div>
-                    <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
-                    <button
-                      onClick={handleForgieWrite}
-                      disabled={forgieLoading}
-                      className={cn(
-                        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all',
-                        forgieLoading
-                          ? 'text-primary/50'
-                          : 'text-primary/70 hover:text-primary hover:bg-primary/[0.06]',
-                      )}
-                    >
-                      {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                      AI schrijven
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-foreground/20 hidden sm:block">
-                      {navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl'}+Enter
-                    </span>
-                    <Button
-                      size="sm"
-                      className="h-9 gap-2 text-sm px-5 rounded-lg shadow-sm"
-                      onClick={handleSend}
-                      disabled={isSending}
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      {isSending ? 'Verzenden...' : 'Verzenden'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Bottom reply prompt (when no reply mode active) */}
-            {!replyMode && (
-              <div className="mt-10 pt-6 border-t border-foreground/[0.06]">
-                <button
-                  onClick={() => handleReply('reply')}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-foreground/[0.06] text-sm text-foreground/35 hover:text-foreground/55 hover:border-foreground/[0.1] hover:bg-foreground/[0.01] transition-all duration-150 group/prompt"
-                >
-                  <Reply className="h-4 w-4 text-foreground/20 group-hover/prompt:text-foreground/40" />
-                  <span>Klik hier om te antwoorden of druk op <kbd className="px-1.5 py-0.5 bg-foreground/[0.04] border border-foreground/[0.06] rounded text-[11px] font-mono mx-0.5">r</kbd></span>
-                </button>
-              </div>
-            )}
+            {/* Reply prompt at bottom */}
+            <div className="mt-10 pt-6 border-t border-foreground/[0.06] flex items-center gap-2">
+              <button
+                onClick={() => handleReply('reply')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-foreground/[0.08] text-sm text-foreground/50 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
+              >
+                <Reply className="h-4 w-4" /> Beantwoorden
+              </button>
+              <button
+                onClick={() => handleReply('reply-all')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-foreground/[0.08] text-sm text-foreground/50 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
+              >
+                <ReplyAll className="h-4 w-4" /> Allen
+              </button>
+              <button
+                onClick={() => handleReply('forward')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-foreground/[0.08] text-sm text-foreground/50 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
+              >
+                <Forward className="h-4 w-4" /> Doorsturen
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ─── CRM SIDEBAR (right) ─── */}
-      <div className="w-[280px] border-l border-foreground/[0.06] bg-[#FAFAF8] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
-        <div className="p-5 space-y-5 flex-1">
-          {/* Contact card */}
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className={cn('w-11 h-11 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm', avatarColor)}>
-                <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{senderName}</p>
-                <p className="text-xs text-foreground/35 truncate">{senderEmail}</p>
-              </div>
-            </div>
+      {/* ─── CRM SIDEBAR ─── */}
+      {renderCRMSidebar(email, senderName, senderEmail, avatarColor, navigate)}
+    </div>
+  )
+}
 
-            {/* Contact details */}
-            <div className="space-y-2.5">
+// ─── Shared CRM sidebar component ───
+function renderCRMSidebar(
+  email: Email,
+  senderName: string,
+  senderEmail: string,
+  avatarColor: string,
+  navigate: (path: string) => void,
+) {
+  return (
+    <div className="w-[280px] border-l border-foreground/[0.06] bg-[#FAFAF8] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+      <div className="p-5 space-y-5 flex-1">
+        {/* Contact card */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className={cn('w-11 h-11 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm', avatarColor)}>
+              <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{senderName}</p>
+              <p className="text-xs text-foreground/35 truncate">{senderEmail}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2.5 text-xs text-foreground/45">
+              <Mail className="h-3.5 w-3.5 flex-shrink-0 text-foreground/25" />
+              <span className="truncate">{senderEmail}</span>
+            </div>
+            {email.aan && (
               <div className="flex items-center gap-2.5 text-xs text-foreground/45">
-                <Mail className="h-3.5 w-3.5 flex-shrink-0 text-foreground/25" />
-                <span className="truncate">{senderEmail}</span>
+                <Building2 className="h-3.5 w-3.5 flex-shrink-0 text-foreground/25" />
+                <span className="truncate">{email.aan}</span>
               </div>
-              {email.aan && (
-                <div className="flex items-center gap-2.5 text-xs text-foreground/45">
-                  <Building2 className="h-3.5 w-3.5 flex-shrink-0 text-foreground/25" />
-                  <span className="truncate">{email.aan}</span>
-                </div>
-              )}
-            </div>
+            )}
           </div>
+        </div>
 
-          <div className="border-t border-foreground/[0.06]" />
+        <div className="border-t border-foreground/[0.06]" />
 
-          {/* Quick actions */}
-          <div>
-            <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Snelkoppelingen</h3>
-            <div className="space-y-0.5">
-              {[
-                { icon: UserPlus, label: 'Klant toevoegen', path: '/klanten' },
-                { icon: FileText, label: 'Offerte aanmaken', path: '/offertes/nieuw' },
-                { icon: FolderPlus, label: 'Project aanmaken', path: '/projecten/nieuw' },
-                { icon: ListPlus, label: 'Taak toevoegen', path: '/taken' },
-              ].map(({ icon: Icon, label, path }) => (
-                <button
-                  key={path}
-                  onClick={() => navigate(path)}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-foreground/55 hover:bg-white hover:text-foreground hover:shadow-sm transition-all duration-150"
-                >
-                  <Icon className="h-4 w-4 text-foreground/30" />
-                  {label}
-                </button>
-              ))}
-            </div>
+        {/* Quick actions */}
+        <div>
+          <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Snelkoppelingen</h3>
+          <div className="space-y-0.5">
+            {[
+              { icon: UserPlus, label: 'Klant toevoegen', path: '/klanten' },
+              { icon: FileText, label: 'Offerte aanmaken', path: '/offertes/nieuw' },
+              { icon: FolderPlus, label: 'Project aanmaken', path: '/projecten/nieuw' },
+              { icon: ListPlus, label: 'Taak toevoegen', path: '/taken' },
+            ].map(({ icon: Icon, label, path }) => (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-foreground/55 hover:bg-white hover:text-foreground hover:shadow-sm transition-all duration-150"
+              >
+                <Icon className="h-4 w-4 text-foreground/30" />
+                {label}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="border-t border-foreground/[0.06]" />
+        <div className="border-t border-foreground/[0.06]" />
 
-          {/* Email metadata */}
-          <div>
-            <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Details</h3>
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between">
-                <span className="text-foreground/35">Datum</span>
-                <span className="text-foreground/60">{new Date(email.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-foreground/35">Map</span>
-                <span className="text-foreground/60 capitalize">{email.map}</span>
-              </div>
-              {email.bijlagen > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-foreground/35">Bijlagen</span>
-                  <span className="text-foreground/60">{email.bijlagen}</span>
-                </div>
-              )}
-              {email.labels && email.labels.length > 0 && (
-                <div className="flex justify-between items-start">
-                  <span className="text-foreground/35">Labels</span>
-                  <div className="flex flex-wrap gap-1 justify-end">
-                    {email.labels.map(label => (
-                      <span key={label} className="px-1.5 py-0.5 bg-primary/8 text-primary rounded text-[10px] font-medium">
-                        {label}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+        {/* Email metadata */}
+        <div>
+          <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Details</h3>
+          <div className="space-y-3 text-xs">
+            <div className="flex justify-between">
+              <span className="text-foreground/35">Datum</span>
+              <span className="text-foreground/60">{new Date(email.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-foreground/35">Map</span>
+              <span className="text-foreground/60 capitalize">{email.map}</span>
+            </div>
+            {email.bijlagen > 0 && (
+              <div className="flex justify-between">
+                <span className="text-foreground/35">Bijlagen</span>
+                <span className="text-foreground/60">{email.bijlagen}</span>
+              </div>
+            )}
+            {email.labels && email.labels.length > 0 && (
+              <div className="flex justify-between items-start">
+                <span className="text-foreground/35">Labels</span>
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {email.labels.map(label => (
+                    <span key={label} className="px-1.5 py-0.5 bg-primary/8 text-primary rounded text-[10px] font-medium">
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
