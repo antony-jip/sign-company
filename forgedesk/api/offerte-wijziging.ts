@@ -88,15 +88,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const [{ data: emailSettings }, { data: profile }] = await Promise.all([
         supabaseAdmin.from('user_email_settings')
-          .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
+          .select('gmail_address, app_password_encrypted, smtp_host, smtp_port')
           .eq('user_id', offerte.user_id).single(),
         supabaseAdmin.from('profiles')
           .select('bedrijfsnaam, email, logo_url')
           .eq('id', offerte.user_id).single(),
       ])
 
-      if (emailSettings?.gmail_address && emailSettings?.encrypted_app_password) {
-        const password = decrypt(emailSettings.encrypted_app_password)
+      if (emailSettings?.gmail_address && emailSettings?.app_password_encrypted) {
+        const password = decrypt(emailSettings.app_password_encrypted)
         const transporter = createTransport({
           host: emailSettings.smtp_host || 'smtp.gmail.com',
           port: emailSettings.smtp_port || 587,
