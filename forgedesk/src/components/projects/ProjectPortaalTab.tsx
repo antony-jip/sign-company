@@ -386,39 +386,51 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     }
   }
 
-  // ── Email notification (fire-and-forget) ────────────────────────────────
+  // ── Email notification (user explicitly checked "Klant notificeren") ────
   async function sendEmailNotification(content: string, titel: string) {
     try {
       const { getProject, getKlant, getPortaalInstellingen } = await import('@/services/supabaseService')
       const { sendEmail } = await import('@/services/gmailService')
-
-      // Check setting: email_naar_klant_bij_nieuw_item
-      if (user?.id) {
-        const instellingen = await getPortaalInstellingen(user.id)
-        if (instellingen.email_naar_klant_bij_nieuw_item === false) return
-      }
+      const { buildPortalEmailHtml, replaceEmailVariables } = await import('@/utils/emailTemplate')
 
       const project = await getProject(projectId)
       if (!project?.klant_id || !portaal) {
-        console.warn('Email notificatie overgeslagen: geen klant gekoppeld aan project')
+        toast.warning('Geen klant gekoppeld aan project — email niet verstuurd')
         return
       }
       const klant = await getKlant(project.klant_id)
       const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
       if (!klantEmail) {
-        console.warn('Email notificatie overgeslagen: klant heeft geen email adres')
-        toast.info('Klant heeft geen email adres — notificatie niet verstuurd')
+        toast.warning('Klant heeft geen email adres — notificatie niet verstuurd')
         return
       }
+
       const bedrijfsnaam = profile?.bedrijfsnaam || ''
-      const logoUrl = profile?.logo_url || ''
       const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
-      const klantNaam = klant?.contactpersoon || klant?.bedrijfsnaam || 'klant'
+      const klantNaam = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || klant?.bedrijfsnaam || 'klant'
+      const primaireKleur = profile?.primaireKleur || undefined
+
+      // Gebruik email templates uit portaal instellingen
+      const instellingen = user?.id ? await getPortaalInstellingen(user.id) : null
+      const vars: Record<string, string> = {
+        projectnaam: projectNaam,
+        itemtitel: titel,
+        klantNaam,
+        bedrijfsnaam: bedrijfsnaam || 'Update',
+        portaalUrl,
+      }
+
+      const onderwerp = instellingen
+        ? replaceEmailVariables(instellingen.email_nieuw_item_onderwerp, vars)
+        : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
+      const heading = instellingen
+        ? replaceEmailVariables(instellingen.email_nieuw_item_tekst, vars)
+        : `Er is een nieuw item gedeeld voor project ${projectNaam}.`
 
       const plainBody = [
         `Beste ${klantNaam},`,
         '',
-        `Er is een nieuw item gedeeld voor project ${projectNaam}.`,
+        heading,
         '',
         content,
         '',
@@ -428,23 +440,19 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         bedrijfsnaam || 'Het team',
       ].join('\n')
 
-      const logoHtml = logoUrl
-        ? `<img src="${logoUrl}" alt="${bedrijfsnaam}" style="max-height:40px;margin-bottom:16px;" /><br/>`
-        : ''
+      const htmlBody = buildPortalEmailHtml({
+        heading,
+        itemTitel: titel,
+        beschrijving: content,
+        ctaLabel: 'Bekijk in portaal →',
+        ctaUrl: portaalUrl,
+        bedrijfsnaam,
+        logoUrl: profile?.logo_url || undefined,
+        primaireKleur,
+      })
 
-      const htmlBody = `${logoHtml}
-        <p>Beste ${klantNaam},</p>
-        <p>Er is een nieuw item gedeeld voor project <strong>${projectNaam}</strong>.</p>
-        <p>${content}</p>
-        <p><a href="${portaalUrl}" style="display:inline-block;padding:10px 20px;background:#1a1a1a;color:#fff;border-radius:6px;text-decoration:none;">Bekijk in portaal</a></p>
-        <p>Met vriendelijke groet,<br/>${bedrijfsnaam || 'Het team'}</p>`
-
-      await sendEmail(
-        klantEmail,
-        `${bedrijfsnaam || 'Nieuw item'} — ${titel}`,
-        plainBody,
-        { html: htmlBody }
-      )
+      await sendEmail(klantEmail, onderwerp, plainBody, { html: htmlBody })
+      toast.success(`Email verstuurd naar ${klantEmail}`)
     } catch (emailErr) {
       console.error('Email notificatie mislukt:', emailErr)
       toast.error('Email naar klant kon niet worden verstuurd')
