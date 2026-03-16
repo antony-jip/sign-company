@@ -295,41 +295,39 @@ export function EmailReader({
             </div>
           </div>
 
-          {/* ─── Editor area (takes all remaining space) ─── */}
+          {/* ─── Editor area (takes all remaining space, no box) ─── */}
           <div className="flex-1 overflow-y-auto bg-white">
-            <div className="max-w-[880px] mx-auto px-8">
-              <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                className="min-h-[300px] py-6 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[300px] empty:before:content-[attr(data-placeholder)] empty:before:text-foreground/25 empty:before:pointer-events-none"
-                data-placeholder="Schrijf je antwoord..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault()
-                    handleSend()
-                  }
-                }}
-              />
+            <div
+              ref={editorRef}
+              contentEditable
+              suppressContentEditableWarning
+              className="min-h-[300px] py-6 px-6 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[400px] empty:before:content-[attr(data-placeholder)] empty:before:text-foreground/25 empty:before:pointer-events-none"
+              data-placeholder="Schrijf je antwoord..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  handleSend()
+                }
+              }}
+            />
 
-              {/* Quoted original (collapsed by default) */}
-              {email.inhoud && (
-                <div className="pb-6">
-                  <button
-                    onClick={() => setShowQuotedText(!showQuotedText)}
-                    className="text-xs text-foreground/25 hover:text-foreground/45 transition-colors"
-                  >
-                    {showQuotedText ? 'Verberg origineel bericht' : '··· Toon origineel bericht'}
-                  </button>
-                  {showQuotedText && (
-                    <div
-                      className="mt-4 pl-4 border-l-2 border-foreground/[0.08] text-sm text-foreground/35 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(email.inhoud) }}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Quoted original (collapsed by default) */}
+            {email.inhoud && (
+              <div className="px-6 pb-6">
+                <button
+                  onClick={() => setShowQuotedText(!showQuotedText)}
+                  className="text-xs text-foreground/25 hover:text-foreground/45 transition-colors"
+                >
+                  {showQuotedText ? 'Verberg origineel bericht' : '··· Toon origineel bericht'}
+                </button>
+                {showQuotedText && (
+                  <div
+                    className="mt-4 pl-4 border-l-2 border-foreground/[0.08] text-sm text-foreground/35 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(email.inhoud) }}
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           {/* ─── Bottom toolbar (fixed at bottom) ─── */}
