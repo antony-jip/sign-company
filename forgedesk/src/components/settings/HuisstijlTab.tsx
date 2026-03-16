@@ -31,14 +31,14 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { getDocumentStyle, upsertDocumentStyle, uploadBriefpapier } from '@/services/supabaseService'
+import { getDocumentStyle, upsertDocumentStyle, uploadBriefpapier, uploadVervolgpapier } from '@/services/supabaseService'
 import {
   BESCHIKBARE_FONTS,
   DOCUMENT_TEMPLATES,
   getDefaultDocumentStyle,
   loadGoogleFonts,
 } from '@/lib/documentTemplates'
-import type { DocumentStyle, DocumentTemplateId } from '@/types'
+import type { DocumentStyle, DocumentTemplateId, BriefpapierModus } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 
@@ -135,7 +135,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
         )}
 
         <div ref={previewRef} className={pageClass}>
-          {/* Briefpapier achtergrond */}
+          {/* Briefpapier achtergrond - pagina 1 */}
           {style.briefpapier_modus !== 'geen' && style.briefpapier_url && (
             <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 pointer-events-none"
@@ -349,11 +349,67 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
                 <span>
                   {style.footer_tekst || [bedrijfsnaam, kvkNummer ? `KvK: ${kvkNummer}` : '', btwNummer ? `BTW: ${btwNummer}` : ''].filter(Boolean).join(' | ')}
                 </span>
-                <span>Pagina 1 van 1</span>
+                <span>Pagina 1 van {style.briefpapier_modus === 'eerste_en_vervolg' ? '2' : '1'}</span>
               </div>
             )}
           </div>
         </div>
+
+        {/* Pagina 2 preview (bij modus eerste_en_vervolg) */}
+        {style.briefpapier_modus === 'eerste_en_vervolg' && (
+          <div className={cn(pageClass, 'mt-3')}>
+            {/* Vervolgpapier achtergrond */}
+            {style.vervolgpapier_url && (
+              <div
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 pointer-events-none"
+                style={{ backgroundImage: `url(${style.vervolgpapier_url})` }}
+              />
+            )}
+            <div
+              className="relative h-full flex flex-col"
+              style={{
+                paddingTop: `${(style.marge_boven / 297) * 100}%`,
+                paddingBottom: `${(style.marge_onder / 297) * 100}%`,
+                paddingLeft: `${(style.marge_links / 210) * 100}%`,
+                paddingRight: `${(style.marge_rechts / 210) * 100}%`,
+              }}
+            >
+              {/* Vervolg content placeholder */}
+              <div
+                style={{
+                  fontFamily: `'${style.body_font}', sans-serif`,
+                  color: style.tekst_kleur,
+                  fontSize: fullscreen ? '7px' : 'clamp(4px, 0.7vw, 7px)',
+                  lineHeight: 1.8,
+                  opacity: 0.4,
+                }}
+              >
+                <p>Vervolginhoud pagina 2...</p>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                <p>Sed do eiusmod tempor incididunt ut labore et dolore.</p>
+              </div>
+              <div className="flex-1" />
+              {style.toon_footer && (
+                <div
+                  style={{
+                    borderTop: '1px solid #d1d5db',
+                    paddingTop: '1%',
+                    fontFamily: `'${style.body_font}', sans-serif`,
+                    fontSize: fullscreen ? '6px' : 'clamp(3.5px, 0.6vw, 6px)',
+                    color: '#9ca3af',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <span>
+                    {style.footer_tekst || [bedrijfsnaam, kvkNummer ? `KvK: ${kvkNummer}` : '', btwNummer ? `BTW: ${btwNummer}` : ''].filter(Boolean).join(' | ')}
+                  </span>
+                  <span>Pagina 2 van 2</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -443,8 +499,10 @@ export function HuisstijlTab() {
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [uploadingBriefpapier, setUploadingBriefpapier] = useState(false)
+  const [uploadingVervolgpapier, setUploadingVervolgpapier] = useState(false)
   const [subTab, setSubTab] = useState('template')
   const briefpapierInputRef = useRef<HTMLInputElement>(null)
+  const vervolgpapierInputRef = useRef<HTMLInputElement>(null)
   const savedStyleRef = useRef<DocumentStyle | null>(null)
 
   // Load existing style
@@ -521,10 +579,9 @@ export function HuisstijlTab() {
     const file = e.target.files?.[0]
     if (!file || !user?.id) return
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Ongeldig bestandstype. Gebruik JPG, PNG, WebP of PDF.')
+      toast.error('Ongeldig bestandstype. Gebruik JPG, PNG of WebP.')
       return
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -535,7 +592,8 @@ export function HuisstijlTab() {
     setUploadingBriefpapier(true)
     try {
       const url = await uploadBriefpapier(user.id, file)
-      updateStyle({ briefpapier_url: url, briefpapier_modus: 'achtergrond' })
+      const modus = style.vervolgpapier_url ? 'eerste_en_vervolg' : 'achtergrond'
+      updateStyle({ briefpapier_url: url, briefpapier_modus: modus })
       toast.success('Briefpapier geüpload')
     } catch (err) {
       logger.error('Error uploading briefpapier:', err)
@@ -544,7 +602,38 @@ export function HuisstijlTab() {
       setUploadingBriefpapier(false)
       if (briefpapierInputRef.current) briefpapierInputRef.current.value = ''
     }
-  }, [user?.id, updateStyle])
+  }, [user?.id, style.vervolgpapier_url, updateStyle])
+
+  // Vervolgpapier upload
+  const handleVervolgpapierUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user?.id) return
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Ongeldig bestandstype. Gebruik JPG, PNG of WebP.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Bestand is te groot (max 10MB)')
+      return
+    }
+
+    setUploadingVervolgpapier(true)
+    try {
+      const url = await uploadVervolgpapier(user.id, file)
+      const modus = style.briefpapier_url ? 'eerste_en_vervolg' : style.briefpapier_modus
+      updateStyle({ vervolgpapier_url: url, briefpapier_modus: modus })
+      toast.success('Vervolgpapier geüpload')
+    } catch (err) {
+      logger.error('Error uploading vervolgpapier:', err)
+      toast.error('Upload mislukt')
+    } finally {
+      setUploadingVervolgpapier(false)
+      if (vervolgpapierInputRef.current) vervolgpapierInputRef.current.value = ''
+    }
+  }, [user?.id, style.briefpapier_url, style.briefpapier_modus, updateStyle])
+
 
   if (isLoading) {
     return (
@@ -834,68 +923,137 @@ export function HuisstijlTab() {
 
           {subTab === 'briefpapier' && (
           <>
-          {/* Briefpapier */}
+          {/* Briefpapier upload */}
           <Section title="Briefpapier" icon={Image}>
             <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-              Upload uw eigen briefpapier als achtergrond voor alle documenten. Gebruik een hoge resolutie afbeelding (A4 formaat).
+              Upload je eigen briefpapier en vervolgpapier als achtergrond voor offertes, facturen en andere documenten.
             </p>
 
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => briefpapierInputRef.current?.click()}
-                disabled={uploadingBriefpapier}
-              >
-                <Upload className="w-3.5 h-3.5 mr-1.5" />
-                {uploadingBriefpapier ? 'Uploaden...' : 'Briefpapier uploaden'}
-              </Button>
-              {style.briefpapier_url && (
+            {/* Briefpapier (eerste pagina) */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Briefpapier (eerste pagina)</Label>
+              {style.briefpapier_url ? (
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg border border-border dark:border-border p-2 bg-background dark:bg-foreground/80/50 flex-1">
+                    <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+                      <Check className="w-3.5 h-3.5" />
+                      Briefpapier geüpload
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => briefpapierInputRef.current?.click()}
+                    disabled={uploadingBriefpapier}
+                  >
+                    <Upload className="w-3.5 h-3.5 mr-1.5" />
+                    {uploadingBriefpapier ? 'Uploaden...' : 'Wijzigen'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateStyle({ briefpapier_url: '', briefpapier_modus: 'geen' })}
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ) : (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  onClick={() => updateStyle({ briefpapier_url: '', briefpapier_modus: 'geen' })}
-                  className="text-red-500 hover:text-red-600"
+                  onClick={() => briefpapierInputRef.current?.click()}
+                  disabled={uploadingBriefpapier}
                 >
-                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                  Verwijderen
+                  <Upload className="w-3.5 h-3.5 mr-1.5" />
+                  {uploadingBriefpapier ? 'Uploaden...' : 'Briefpapier uploaden'}
                 </Button>
               )}
+              <input
+                ref={briefpapierInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={handleBriefpapierUpload}
+                className="hidden"
+              />
+              <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">
+                Achtergrond voor de eerste pagina van je documenten. JPG, PNG of WebP (max 10MB).
+              </p>
             </div>
 
-            <input
-              ref={briefpapierInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              onChange={handleBriefpapierUpload}
-              className="hidden"
-            />
-
-            {style.briefpapier_url && (
-              <>
-                <div className="rounded-lg border border-border dark:border-border p-2 bg-background dark:bg-foreground/80/50">
-                  <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
-                    <Check className="w-3.5 h-3.5" />
-                    Briefpapier geüpload
+            {/* Vervolgpapier */}
+            <div className="space-y-2 pt-3 border-t border-border dark:border-border">
+              <Label className="text-xs font-medium">Vervolgpapier (pagina 2+)</Label>
+              {style.vervolgpapier_url ? (
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg border border-border dark:border-border p-2 bg-background dark:bg-foreground/80/50 flex-1">
+                    <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+                      <Check className="w-3.5 h-3.5" />
+                      Vervolgpapier geüpload
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Briefpapier modus</Label>
-                  <Select
-                    value={style.briefpapier_modus}
-                    onValueChange={(v) => updateStyle({ briefpapier_modus: v as 'geen' | 'achtergrond' | 'alleen_eerste_pagina' })}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => vervolgpapierInputRef.current?.click()}
+                    disabled={uploadingVervolgpapier}
                   >
-                    <SelectTrigger className="h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="achtergrond">Alle pagina&apos;s</SelectItem>
-                      <SelectItem value="alleen_eerste_pagina">Alleen eerste pagina</SelectItem>
-                      <SelectItem value="geen">Uitgeschakeld</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Upload className="w-3.5 h-3.5 mr-1.5" />
+                    {uploadingVervolgpapier ? 'Uploaden...' : 'Wijzigen'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateStyle({ vervolgpapier_url: '' })}
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
-              </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => vervolgpapierInputRef.current?.click()}
+                  disabled={uploadingVervolgpapier}
+                >
+                  <Upload className="w-3.5 h-3.5 mr-1.5" />
+                  {uploadingVervolgpapier ? 'Uploaden...' : 'Vervolgpapier uploaden'}
+                </Button>
+              )}
+              <input
+                ref={vervolgpapierInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={handleVervolgpapierUpload}
+                className="hidden"
+              />
+              <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">
+                Achtergrond voor pagina 2 en verder. Gebruik een compactere header dan het briefpapier.
+              </p>
+            </div>
+
+            {/* Modus selectie - alleen tonen als er minstens briefpapier is */}
+            {style.briefpapier_url && (
+              <div className="space-y-1.5 pt-3 border-t border-border dark:border-border">
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Briefpapier modus</Label>
+                <Select
+                  value={style.briefpapier_modus}
+                  onValueChange={(v) => updateStyle({ briefpapier_modus: v as BriefpapierModus })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="achtergrond">Alle pagina&apos;s</SelectItem>
+                    <SelectItem value="alleen_eerste_pagina">Alleen eerste pagina</SelectItem>
+                    {style.vervolgpapier_url && (
+                      <SelectItem value="eerste_en_vervolg">Eerste pagina + vervolgpapier</SelectItem>
+                    )}
+                    <SelectItem value="geen">Uitgeschakeld</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </Section>
           </>

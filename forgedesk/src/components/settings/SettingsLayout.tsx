@@ -58,6 +58,8 @@ import {
   Loader2,
   Package,
   Link2,
+  LayoutGrid,
+  GripVertical,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -73,6 +75,8 @@ import { uploadFile, downloadFile } from '@/services/storageService'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
+import { useDashboardLayout } from '@/hooks/useDashboardLayout'
+import { WIDGET_REGISTRY } from '@/components/dashboard/FORGEdeskDashboard'
 import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
@@ -2983,6 +2987,7 @@ const WEERGAVE_TABS: SubTab[] = [
   { id: 'layout', label: 'Layout', icon: Monitor },
   { id: 'voorkeuren', label: 'Voorkeuren', icon: Sliders },
   { id: 'navigatie', label: 'Navigatie', icon: Settings },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
 ]
 
 function WeergaveTab() {
@@ -3496,6 +3501,117 @@ function WeergaveTab() {
       </CardContent>
     </Card>
     )}
+
+    {subTab === 'dashboard' && <DashboardSettingsTab />}
     </>
+  )
+}
+
+// ============ DASHBOARD SETTINGS TAB ============
+
+function DashboardSettingsTab() {
+  const dashLayout = useDashboardLayout()
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <LayoutGrid className="w-5 h-5" />
+          Dashboard aanpassen
+        </CardTitle>
+        <CardDescription>
+          Kies welke widgets zichtbaar zijn op je dashboard en sleep ze in de gewenste volgorde.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Active widgets */}
+        <div>
+          <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3">
+            Actieve widgets
+          </h4>
+          <div className="space-y-1.5">
+            {dashLayout.order.map((id) => {
+              const def = WIDGET_REGISTRY[id]
+              if (!def) return null
+              const IconComp = def.icon
+              return (
+                <div
+                  key={id}
+                  draggable
+                  onDragStart={(e) => dashLayout.handleDragStart(e, id)}
+                  onDragEnd={dashLayout.handleDragEnd}
+                  onDragEnter={(e) => dashLayout.handleDragEnter(e, id)}
+                  onDragLeave={dashLayout.handleDragLeave}
+                  onDragOver={dashLayout.handleDragOver}
+                  onDrop={(e) => dashLayout.handleDrop(e, id)}
+                  className={cn(
+                    'flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/30 transition-colors group',
+                    dashLayout.draggedWidget === id && 'opacity-40',
+                    dashLayout.dragOverWidget === id && 'ring-2 ring-primary/30',
+                  )}
+                >
+                  <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground transition-colors">
+                    <GripVertical className="h-4 w-4" />
+                  </div>
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-accent/20 to-primary/20 flex-shrink-0">
+                    <IconComp className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{def.label}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{def.description}</p>
+                  </div>
+                  <Switch
+                    checked={true}
+                    onCheckedChange={() => dashLayout.toggleWidget(id)}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Hidden widgets */}
+        {dashLayout.allWidgets.filter(id => dashLayout.hidden.has(id)).length > 0 && (
+          <div>
+            <Separator className="mb-4" />
+            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3">
+              Beschikbare widgets
+            </h4>
+            <div className="space-y-1.5">
+              {dashLayout.allWidgets.filter(id => dashLayout.hidden.has(id)).map((id) => {
+                const def = WIDGET_REGISTRY[id]
+                if (!def) return null
+                const IconComp = def.icon
+                return (
+                  <div
+                    key={id}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/30 transition-colors opacity-60"
+                  >
+                    <div className="w-4" />
+                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted flex-shrink-0">
+                      <IconComp className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{def.label}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{def.description}</p>
+                    </div>
+                    <Switch
+                      checked={false}
+                      onCheckedChange={() => dashLayout.toggleWidget(id)}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="pt-2">
+          <Button variant="outline" size="sm" onClick={dashLayout.resetLayout}>
+            Standaard herstellen
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

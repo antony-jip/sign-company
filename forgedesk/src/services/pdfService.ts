@@ -86,16 +86,35 @@ function formatDate(dateString: string): string {
 
 // ============ BRIEFPAPIER BACKGROUND ============
 
-function addBriefpapierBackground(doc: jsPDF, docStyle: DocumentStyle | null | undefined, pageNum: number): void {
-  if (!docStyle?.briefpapier_url || docStyle.briefpapier_modus === 'geen') return
-  if (docStyle.briefpapier_modus === 'alleen_eerste_pagina' && pageNum > 1) return
+function detectImageFormat(url: string): string {
+  const lower = url.toLowerCase()
+  if (lower.includes('image/jpeg') || lower.includes('.jpg') || lower.includes('.jpeg')) return 'JPEG'
+  if (lower.includes('image/webp') || lower.includes('.webp')) return 'WEBP'
+  return 'PNG'
+}
+
+export function addBriefpapierBackground(doc: jsPDF, docStyle: DocumentStyle | null | undefined, pageNum: number): void {
+  if (!docStyle || docStyle.briefpapier_modus === 'geen') return
+
+  let imageUrl: string | undefined
+  if (docStyle.briefpapier_modus === 'eerste_en_vervolg') {
+    imageUrl = pageNum === 1 ? docStyle.briefpapier_url : docStyle.vervolgpapier_url
+  } else if (docStyle.briefpapier_modus === 'alleen_eerste_pagina') {
+    imageUrl = pageNum === 1 ? docStyle.briefpapier_url : undefined
+  } else {
+    // 'achtergrond' — zelfde afbeelding op alle pagina's
+    imageUrl = docStyle.briefpapier_url
+  }
+
+  if (!imageUrl) return
 
   try {
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
-    doc.addImage(docStyle.briefpapier_url, 'PNG', 0, 0, pageWidth, pageHeight)
-  } catch {
-    // Briefpapier loading failed silently
+    const format = detectImageFormat(imageUrl)
+    doc.addImage(imageUrl, format, 0, 0, pageWidth, pageHeight)
+  } catch (e) {
+    console.warn('Briefpapier achtergrond kon niet worden geladen:', e)
   }
 }
 
@@ -134,12 +153,13 @@ function addHeader(
 
   if (bedrijfsProfiel.logo_url) {
     try {
+      const logoFormat = detectImageFormat(bedrijfsProfiel.logo_url)
       if (logoPositie === 'rechts') {
-        doc.addImage(bedrijfsProfiel.logo_url, 'PNG', pageWidth - margins.right - logoW, margins.top, logoW, logoH)
+        doc.addImage(bedrijfsProfiel.logo_url, logoFormat, pageWidth - margins.right - logoW, margins.top, logoW, logoH)
       } else if (logoPositie === 'midden') {
-        doc.addImage(bedrijfsProfiel.logo_url, 'PNG', (pageWidth - logoW) / 2, margins.top, logoW, logoH)
+        doc.addImage(bedrijfsProfiel.logo_url, logoFormat, (pageWidth - logoW) / 2, margins.top, logoW, logoH)
       } else {
-        doc.addImage(bedrijfsProfiel.logo_url, 'PNG', margins.left, margins.top, logoW, logoH)
+        doc.addImage(bedrijfsProfiel.logo_url, logoFormat, margins.left, margins.top, logoW, logoH)
         nameX = margins.left + logoW + 5
       }
     } catch {
@@ -591,7 +611,7 @@ export function generateOffertePDF(
           logoH = logoMaxH
           logoW = logoH * logoAspect
         }
-        doc.addImage(bedrijfsProfiel.logo_url, 'PNG', bMargin, bMargin, logoW, logoH)
+        doc.addImage(bedrijfsProfiel.logo_url, detectImageFormat(bedrijfsProfiel.logo_url), bMargin, bMargin, logoW, logoH)
         logoEndX = bMargin + logoW + 5
       } catch {
         // Logo loading failed, skip

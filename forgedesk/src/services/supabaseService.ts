@@ -3870,6 +3870,9 @@ export async function getDocumentStyle(userId: string): Promise<DocumentStyle | 
 export async function upsertDocumentStyle(userId: string, style: Partial<DocumentStyle>): Promise<DocumentStyle> {
   assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
+    // Strip fields that should not be sent to Supabase
+    const { id: _id, user_id: _uid, created_at: _ca, ...payload } = style as DocumentStyle
+
     const { data: existing } = await supabase
       .from('document_styles')
       .select('id')
@@ -3879,7 +3882,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
     if (existing) {
       const { data, error } = await supabase
         .from('document_styles')
-        .update({ ...style, updated_at: now() })
+        .update({ ...payload, updated_at: now() })
         .eq('user_id', userId)
         .select()
         .single()
@@ -3888,7 +3891,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
     } else {
       const { data, error } = await supabase
         .from('document_styles')
-        .insert({ ...style, user_id: userId, created_at: now(), updated_at: now() })
+        .insert({ ...payload, user_id: userId, created_at: now(), updated_at: now() })
         .select()
         .single()
       if (error) throw error
@@ -3918,6 +3921,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
       logo_grootte: 100,
       briefpapier_url: '',
       briefpapier_modus: 'geen',
+      vervolgpapier_url: '',
       toon_header: true,
       toon_footer: true,
       footer_tekst: '',
@@ -3941,6 +3945,29 @@ export async function uploadBriefpapier(userId: string, file: File): Promise<str
   if (isSupabaseConfigured() && supabase) {
     const ext = file.name.split('.').pop() || 'png'
     const path = `${userId}/briefpapier_${Date.now()}.${ext}`
+    const { error } = await supabase.storage
+      .from('briefpapier')
+      .upload(path, file, { upsert: true })
+    if (error) throw error
+    const { data: urlData } = supabase.storage
+      .from('briefpapier')
+      .getPublicUrl(path)
+    return urlData.publicUrl
+  }
+  // localStorage fallback: store as data URL
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+export async function uploadVervolgpapier(userId: string, file: File): Promise<string> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const ext = file.name.split('.').pop() || 'png'
+    const path = `${userId}/vervolgpapier_${Date.now()}.${ext}`
     const { error } = await supabase.storage
       .from('briefpapier')
       .upload(path, file, { upsert: true })

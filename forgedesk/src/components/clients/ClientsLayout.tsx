@@ -523,42 +523,6 @@ export function ClientsLayout() {
         </div>
       </div>
 
-      {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-lg">
-          <CheckSquare className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">
-            {selectedIds.size} van {filteredKlanten.length} geselecteerd
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs"
-            onClick={toggleSelectAll}
-          >
-            {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
-          </Button>
-          <div className="flex-1" />
-          <Button
-            variant="destructive"
-            size="sm"
-            className="gap-1.5"
-            onClick={handleBulkDelete}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Verwijder ({selectedIds.size})
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setSelectedIds(new Set())}
-          >
-            <X className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      )}
-
       {/* Content */}
       {loading ? (
         <SkeletonTable rows={6} cols={4} />
@@ -592,6 +556,26 @@ export function ClientsLayout() {
         </Card>
       ) : viewMode === 'grid' ? (
         /* ==================== GRID VIEW ==================== */
+        <>
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2 bg-primary/5 border border-primary/20 rounded-lg mb-3">
+            <CheckSquare className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[12px] font-semibold text-primary">
+              {selectedIds.size} geselecteerd
+            </span>
+            <Button variant="ghost" size="sm" className="text-[11px] h-7 px-2" onClick={toggleSelectAll}>
+              {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
+            </Button>
+            <div className="flex-1" />
+            <Button variant="destructive" size="sm" className="gap-1.5 h-7 text-[11px]" onClick={handleBulkDelete}>
+              <Trash2 className="w-3 h-3" />
+              Verwijder ({selectedIds.size})
+            </Button>
+            <button className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setSelectedIds(new Set())}>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {filteredKlanten.map((klant) => (
             <ClientCard
@@ -605,13 +589,14 @@ export function ClientsLayout() {
             />
           ))}
         </div>
+        </>
       ) : (
         /* ==================== LIST VIEW ==================== */
         <Card className="rounded-xl border-black/[0.06]">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
+                <tr className={cn("border-b border-border", selectedIds.size > 0 ? "bg-primary/5" : "bg-muted/50")}>
                   <th className="w-10 px-3 py-3">
                     <Checkbox
                       checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
@@ -619,32 +604,65 @@ export function ClientsLayout() {
                       aria-label="Selecteer alles"
                     />
                   </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
-                    Bedrijfsnaam
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden md:table-cell">
-                    Contactpersoon
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden lg:table-cell">
-                    Email
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden xl:table-cell">
-                    Telefoon
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden lg:table-cell">
-                    Stad
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
-                    Status
-                  </th>
-                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden xl:table-cell">
-                    Klant Status
-                  </th>
-                  <th className="text-center text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
-                    Projecten
-                  </th>
-                  <th className="text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-2 py-3 w-12">
-                  </th>
+                  {selectedIds.size > 0 ? (
+                    <th colSpan={8} className="px-4 py-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[12px] font-semibold text-primary">
+                          {selectedIds.size} geselecteerd
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-[11px] h-7 px-2"
+                          onClick={toggleSelectAll}
+                        >
+                          {selectedIds.size === filteredKlanten.length ? 'Deselecteer alles' : 'Selecteer alles'}
+                        </Button>
+                        <div className="flex-1" />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="gap-1.5 h-7 text-[11px]"
+                          onClick={handleBulkDelete}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Verwijder ({selectedIds.size})
+                        </Button>
+                        <button
+                          className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          onClick={() => setSelectedIds(new Set())}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </th>
+                  ) : (
+                    <>
+                      <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
+                        Bedrijfsnaam
+                      </th>
+                      <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden md:table-cell">
+                        Contactpersoon
+                      </th>
+                      <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden lg:table-cell">
+                        Email
+                      </th>
+                      <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden xl:table-cell">
+                        Telefoon
+                      </th>
+                      <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden lg:table-cell">
+                        Stad
+                      </th>
+                      <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
+                        Status
+                      </th>
+                      <th className="text-center text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
+                        Projecten
+                      </th>
+                      <th className="text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-2 py-3 w-12">
+                      </th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50 row-stagger">
