@@ -56,7 +56,12 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import { logger } from '../../utils/logger'
+import { KlantStatusBadgeInline, KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
+import { logWijziging } from '@/utils/auditLogger'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
+import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
+import { ShareButton } from '@/components/shared/ShareButton'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -129,6 +134,7 @@ export function OfferteDetail() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
+  const [showPdfPreview, setShowPdfPreview] = useState(false)
   const [portaalToken, setPortaalToken] = useState<string | null>(null)
 
   // Fetch data
@@ -245,6 +251,11 @@ export function OfferteDetail() {
       const updated = await updateOfferte(offerte.id, updates)
       setOfferte(updated)
       setStatusOpen(false)
+      // Audit log
+      if (user?.id) {
+        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        logWijziging({ userId: user.id, entityType: 'offerte', entityId: offerte.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: offerte.status, nieuweWaarde: newStatus })
+      }
       toast.success(`Status bijgewerkt naar ${STATUS_LABELS[newStatus]}`)
     } catch (err) {
       logger.error('Failed to update status:', err)
@@ -513,7 +524,7 @@ export function OfferteDetail() {
   )
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 mod-strip mod-strip-offertes">
+    <div className="max-w-5xl mx-auto space-y-4 mod-strip mod-strip-offertes">
       {/* Top bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -590,6 +601,10 @@ export function OfferteDetail() {
                 <FileText className="h-4 w-4 mr-1" />
                 Calculatie bewerken
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowPdfPreview(true)}>
+                <Eye className="h-4 w-4 mr-1" />
+                PDF Preview
+              </Button>
               <Button size="sm" onClick={openSendDialog}>
                 <Send className="h-4 w-4 mr-1" />
                 Versturen
@@ -609,6 +624,15 @@ export function OfferteDetail() {
                   <ExternalLink className="h-4 w-4 mr-1" />
                   Kopieer link
                 </Button>
+              )}
+              {(portaalToken || offerte.publiek_token) && (
+                <ShareButton
+                  title={`Offerte ${offerte.nummer}`}
+                  url={portaalToken
+                    ? `/portaal/${portaalToken}`
+                    : `/offerte-bekijken/${offerte.publiek_token}`
+                  }
+                />
               )}
               {!offerte.geconverteerd_naar_factuur_id ? (
                 <Button size="sm" onClick={handleMaakFactuur}>
@@ -752,7 +776,7 @@ export function OfferteDetail() {
       {/* Client + Details grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Klant info */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5" />
@@ -761,7 +785,7 @@ export function OfferteDetail() {
           </div>
           {klant ? (
             <div className="space-y-1.5">
-              <p className="font-semibold text-foreground">{klant.bedrijfsnaam}</p>
+              <p className="font-semibold text-foreground">{klant.bedrijfsnaam}<KlantStatusBadgeInline klant={klant} /></p>
               <p className="text-sm text-muted-foreground">{klant.contactpersoon}</p>
               {klant.email && (
                 <p className="text-sm text-muted-foreground flex items-center gap-1.5">
@@ -792,7 +816,7 @@ export function OfferteDetail() {
         </div>
 
         {/* Details */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" />
@@ -849,7 +873,7 @@ export function OfferteDetail() {
 
         {/* Klant activiteit */}
         {(offerte.eerste_bekeken_op || offerte.geaccepteerd_door || offerte.wijziging_opmerking) && (
-          <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
             <div className="section-header-pastel">
               <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
                 <Eye className="h-3.5 w-3.5" />
@@ -916,7 +940,7 @@ export function OfferteDetail() {
 
       {/* Intro tekst */}
       {(isEditing || offerte.intro_tekst) && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Intro tekst
@@ -1022,7 +1046,7 @@ export function OfferteDetail() {
 
       {/* Outro tekst */}
       {(isEditing || offerte.outro_tekst) && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Outro tekst
@@ -1043,7 +1067,7 @@ export function OfferteDetail() {
 
       {/* Notities (edit mode) */}
       {isEditing && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Notities
@@ -1060,7 +1084,7 @@ export function OfferteDetail() {
 
       {/* Notities (view mode) */}
       {!isEditing && offerte.notities && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
             <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
               Notities
@@ -1071,7 +1095,7 @@ export function OfferteDetail() {
       )}
 
       {/* Activiteit log */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
         <div className="section-header-pastel">
           <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
             Activiteit
@@ -1105,6 +1129,11 @@ export function OfferteDetail() {
       {/* Signing Visualisaties */}
       <div className="rounded-xl border border-border bg-card p-5">
         <VisualisatieGallery offerte_id={offerte.id} klant_id={offerte.klant_id} />
+      </div>
+
+      {/* Audit Log */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <AuditLogPanel entityType="offerte" entityId={offerte.id} />
       </div>
 
       {/* Send Dialog */}
@@ -1224,6 +1253,25 @@ export function OfferteDetail() {
           offerte={offerte}
           items={items}
           klant={klant}
+        />
+      )}
+
+      {/* PDF Preview Dialog */}
+      {offerte && (
+        <PdfPreviewDialog
+          open={showPdfPreview}
+          onOpenChange={setShowPdfPreview}
+          title={`Offerte ${offerte.nummer}`}
+          generatePdf={async () => {
+            const doc = generateOffertePDF(
+              offerte,
+              items,
+              klant || {},
+              { ...profile, primaireKleur: primaireKleur || '#2563eb' },
+              documentStyle,
+            )
+            return doc.output('blob')
+          }}
         />
       )}
     </div>

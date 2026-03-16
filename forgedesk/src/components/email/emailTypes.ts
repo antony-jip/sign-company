@@ -1,7 +1,8 @@
 import type React from 'react'
 
 export type EmailFolder = 'inbox' | 'verzonden' | 'concepten' | 'gepland' | 'gesnoozed' | 'prullenbak'
-export type FilterType = 'alle' | 'ongelezen' | 'met-ster' | 'vastgepind' | 'bijlagen'
+export type FilterType = 'alle' | 'ongelezen' | 'met-ster' | 'vastgepind' | 'bijlagen' | 'geen-antwoord'
+export type NoReplyRange = '0-3' | '4-7' | '8-30'
 export type FontSize = 'small' | 'medium' | 'large'
 export type EmailTab = 'email' | 'gedeelde-inbox' | 'tracking' | 'sequences' | 'analytics'
 export type ViewMode = 'idle' | 'reading' | 'composing'

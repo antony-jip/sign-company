@@ -52,6 +52,10 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
 import type { Taak, Project, Klant, MontageAfspraak } from '@/types'
 import { logger } from '../../utils/logger'
+import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
+import { logWijziging } from '@/utils/auditLogger'
+import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal'
+import { updateProject } from '@/services/supabaseService'
 
 type TaakStatus = Taak['status']
 type TaakPrioriteit = Taak['prioriteit']
@@ -167,6 +171,9 @@ export function TasksLayout() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingTaak, setDeletingTaak] = useState<Taak | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Completion prompt
+  const [completionPrompt, setCompletionPrompt] = useState<{ open: boolean; projectId: string; projectNaam: string }>({ open: false, projectId: '', projectNaam: '' })
 
   // Drag state
   const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null)
@@ -381,7 +388,21 @@ export function TasksLayout() {
     const newStatus: TaakStatus = taak.status === 'klaar' ? 'todo' : 'klaar'
     try {
       const updated = await updateTaak(taak.id, { status: newStatus })
-      setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      setTaken((prev) => {
+        const next = prev.map((t) => (t.id === updated.id ? updated : t))
+        // Check: als alle taken van dit project nu 'klaar' zijn → prompt
+        if (newStatus === 'klaar' && taak.project_id) {
+          const projectTaken = next.filter((t) => t.project_id === taak.project_id)
+          const alleKlaar = projectTaken.length > 0 && projectTaken.every((t) => t.status === 'klaar')
+          if (alleKlaar) {
+            const project = projecten.find((p) => p.id === taak.project_id)
+            if (project && project.status !== 'afgerond' && project.status !== 'opgeleverd') {
+              setTimeout(() => setCompletionPrompt({ open: true, projectId: project.id, projectNaam: project.naam }), 500)
+            }
+          }
+        }
+        return next
+      })
       if (newStatus === 'klaar') toast.success('Taak afgerond!')
     } catch (error) {
       logger.error('Fout bij statuswijziging:', error)
@@ -436,6 +457,15 @@ export function TasksLayout() {
         locatie: formData.locatie.trim() || undefined,
       })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      // Audit log
+      if (user?.id && editingTaak) {
+        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        if (editingTaak.status !== formData.status) {
+          logWijziging({ userId: user.id, entityType: 'taak', entityId: editingTaak.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: editingTaak.status, nieuweWaarde: formData.status })
+        } else {
+          logWijziging({ userId: user.id, entityType: 'taak', entityId: editingTaak.id, actie: 'gewijzigd', medewerkerNaam: naam })
+        }
+      }
       toast.success('Taak bijgewerkt')
       setEditDialogOpen(false)
     } catch (error) {
@@ -769,6 +799,7 @@ export function TasksLayout() {
         open={editDialogOpen} onOpenChange={setEditDialogOpen}
         formData={formData} setFormData={setFormData}
         onSave={handleSave} isSaving={isSaving} projecten={projecten} klanten={klanten}
+        editingTaakId={editingTaak?.id}
       />
 
       {/* Delete dialog */}
@@ -787,6 +818,21 @@ export function TasksLayout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Completion prompt modal */}
+      <CompletionPromptModal
+        open={completionPrompt.open}
+        projectNaam={completionPrompt.projectNaam}
+        onClose={() => setCompletionPrompt((prev) => ({ ...prev, open: false }))}
+        onUpdateStatus={async (status) => {
+          try {
+            await updateProject(completionPrompt.projectId, { status })
+            toast.success(`Project gemarkeerd als ${status}`)
+          } catch {
+            toast.error('Kon projectstatus niet bijwerken')
+          }
+        }}
+      />
     </>
   )
 }
@@ -1363,11 +1409,12 @@ function TaskCard({
 // === EDIT DIALOG ===
 
 function EditTaskDialog({
-  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten,
+  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten, editingTaakId,
 }: {
   open: boolean; onOpenChange: (open: boolean) => void
   formData: TaakFormData; setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
   onSave: () => void; isSaving: boolean; projecten: Project[]; klanten: Klant[]
+  editingTaakId?: string
 }) {
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -1465,7 +1512,7 @@ function EditTaskDialog({
                 <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="geen">Intern (geen klant)</SelectItem>
-                  {klanten.map((k) => (<SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam}</SelectItem>))}
+                  {klanten.map((k) => (<SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam || k.contactpersoon}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
@@ -1479,6 +1526,9 @@ function EditTaskDialog({
             <Input id="edit-toegewezen" value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
           </div>
         </div>
+        {editingTaakId && (
+          <AuditLogPanel entityType="taak" entityId={editingTaakId} />
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Annuleren</Button>
           <Button onClick={onSave} disabled={isSaving}>

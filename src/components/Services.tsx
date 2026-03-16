@@ -15,13 +15,13 @@ const OfferteShowcase: React.FC = () => {
               Offertes die <span className="text-gradient-forge">indruk</span> maken
             </h2>
             <p className="slide-left stagger-1 text-lg text-gray-500 leading-relaxed">
-              Bouw je offerte op met regels, calculaties en materiaallijsten. Je klant ziet een strakke <strong className="text-gray-900">PDF</strong> — jij ziet je <strong className="text-gray-900">marge</strong>.
+              Bouw je offerte op met regels, calculaties en materiaallijsten. Je klant ziet een strakke <strong className="text-gray-900">PDF</strong>. Jij ziet je <strong className="text-gray-900">marge</strong>.
             </p>
           </div>
           <div className="lg:w-[55%]">
             <div className="slide-right bg-white rounded-2xl shadow-xl p-6 lg:p-8 border border-blush/20 interactive-card">
               <div className="flex justify-between items-start mb-6">
-                <div><p className="font-bold text-gray-900">Sign Company</p><p className="text-sm text-gray-400">Enkhuizen</p></div>
+                <div><p className="font-bold text-gray-900">FORGEdesk</p><p className="text-sm text-gray-400">Enkhuizen</p></div>
                 <div className="text-right"><p className="text-xs text-blush-deep uppercase tracking-wider font-semibold">OFF-2026-048</p><p className="text-sm text-gray-500">14 maart 2026</p></div>
               </div>
               <p className="text-sm text-gray-500 mb-6">Klant: <span className="text-gray-900 font-medium">Bakkerij Jansen</span></p>

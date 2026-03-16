@@ -467,7 +467,7 @@ export function UitgavenLayout() {
                   <SelectTrigger><SelectValue placeholder="Selecteer leverancier" /></SelectTrigger>
                   <SelectContent>
                     {leveranciers.filter((l) => l.actief).map((l) => (
-                      <SelectItem key={l.id} value={l.id}>{l.bedrijfsnaam}</SelectItem>
+                      <SelectItem key={l.id} value={l.id}>{l.bedrijfsnaam || l.contactpersoon}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -475,10 +475,10 @@ export function UitgavenLayout() {
 
               <div>
                 <Label>Project (optioneel)</Label>
-                <Select value={formData.project_id} onValueChange={(v) => setFormData((p) => ({ ...p, project_id: v }))}>
+                <Select value={formData.project_id || '_none'} onValueChange={(v) => setFormData((p) => ({ ...p, project_id: v === '_none' ? '' : v }))}>
                   <SelectTrigger><SelectValue placeholder="Koppel aan project" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Geen project</SelectItem>
+                    <SelectItem value="_none">Geen project</SelectItem>
                     {projecten.map((p) => <SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>)}
                   </SelectContent>
                 </Select>

@@ -12,7 +12,10 @@ import {
   Thermometer,
   Loader2,
   MapPin,
+  Sunrise,
+  Sunset,
 } from 'lucide-react'
+import { Card } from '@/components/ui/card'
 
 interface WeatherData {
   temperature: number
@@ -73,16 +76,16 @@ function getWeatherIcon(code: number, size: string = 'h-5 w-5') {
 function getWeatherGradient(code: number, isDay: boolean): string {
   if (code === 0 || code === 1) {
     return isDay
-      ? 'from-amber-400/20 via-orange-300/10 to-yellow-200/5'
-      : 'from-indigo-500/20 via-purple-400/10 to-slate-600/5'
+      ? 'from-amber-400/30 via-orange-300/20 to-yellow-200/10'
+      : 'from-indigo-600/30 via-purple-500/20 to-slate-700/10'
   }
-  if (code === 2 || code === 3) return 'from-slate-300/20 via-gray-200/10 to-slate-100/5'
-  if (code === 45 || code === 48) return 'from-gray-400/20 via-slate-300/10 to-gray-200/5'
-  if (code >= 51 && code <= 55) return 'from-blue-300/20 via-sky-200/10 to-blue-100/5'
-  if (code >= 61 && code <= 65) return 'from-blue-500/25 via-indigo-300/15 to-blue-200/5'
-  if (code >= 71 && code <= 86) return 'from-sky-200/30 via-blue-100/15 to-white/10'
-  if (code >= 95) return 'from-purple-500/25 via-slate-400/15 to-indigo-300/5'
-  return 'from-slate-200/15 via-gray-100/10 to-transparent'
+  if (code === 2 || code === 3) return 'from-slate-400/25 via-gray-300/15 to-slate-200/10'
+  if (code === 45 || code === 48) return 'from-gray-500/25 via-slate-400/15 to-gray-300/10'
+  if (code >= 51 && code <= 55) return 'from-blue-400/25 via-sky-300/15 to-blue-200/10'
+  if (code >= 61 && code <= 65) return 'from-blue-600/30 via-indigo-400/20 to-blue-300/10'
+  if (code >= 71 && code <= 86) return 'from-sky-300/35 via-blue-200/20 to-white/15'
+  if (code >= 95) return 'from-purple-600/30 via-slate-500/20 to-indigo-400/10'
+  return 'from-slate-300/20 via-gray-200/15 to-transparent'
 }
 
 function isGoodWorkWeather(code: number, windSpeed: number): 'goed' | 'matig' | 'slecht' {
@@ -96,16 +99,19 @@ const DAY_NAMES = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
 export function WeatherWidget() {
   const [current, setCurrent] = useState<WeatherData | null>(null)
   const [forecast, setForecast] = useState<DailyForecast[]>([])
+  const [todayForecast, setTodayForecast] = useState<DailyForecast | null>(null)
   const [location, setLocation] = useState('Nederland')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [sunrise, setSunrise] = useState('')
+  const [sunset, setSunset] = useState('')
 
   useEffect(() => {
     let cancelled = false
     async function fetchWeather(lat: number, lon: number) {
       try {
         const res = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe%2FAmsterdam&forecast_days=5`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&timezone=Europe%2FAmsterdam&forecast_days=5`
         )
         if (!res.ok) throw new Error('Weather fetch failed')
         const data = await res.json()
@@ -118,6 +124,21 @@ export function WeatherWidget() {
             windSpeed: Math.round(data.current.wind_speed_10m),
             humidity: data.current.relative_humidity_2m,
             isDay: data.current.is_day === 1,
+          })
+
+          // Today's forecast
+          if (data.daily.sunrise?.[0]) {
+            setSunrise(data.daily.sunrise[0].split('T')[1]?.substring(0, 5) || '')
+          }
+          if (data.daily.sunset?.[0]) {
+            setSunset(data.daily.sunset[0].split('T')[1]?.substring(0, 5) || '')
+          }
+          setTodayForecast({
+            date: new Date(data.daily.time[0]),
+            maxTemp: Math.round(data.daily.temperature_2m_max[0]),
+            minTemp: Math.round(data.daily.temperature_2m_min[0]),
+            weatherCode: data.daily.weather_code[0],
+            precipitationProbability: data.daily.precipitation_probability_max[0],
           })
 
           const days: DailyForecast[] = data.daily.time.slice(1).map((t: string, i: number) => ({
@@ -161,9 +182,11 @@ export function WeatherWidget() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-      </div>
+      <Card className="overflow-hidden">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      </Card>
     )
   }
 
@@ -185,78 +208,94 @@ export function WeatherWidget() {
   const gradient = getWeatherGradient(current.weatherCode, current.isDay)
 
   return (
-    <div className="space-y-3">
+    <Card className="overflow-hidden border-0 shadow-sm">
       {/* Hero section with gradient */}
-      <div className={`relative rounded-xl bg-gradient-to-br ${gradient} p-4 overflow-hidden`}>
-        {/* Decorative circle */}
-        <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br from-white/10 to-transparent" />
+      <div className={`relative bg-gradient-to-br ${gradient} p-5 pb-4`}>
+        {/* Decorative elements */}
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-gradient-to-br from-white/8 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-foreground/5 to-transparent" />
 
-        <div className="relative flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-background/60 dark:bg-background/30 backdrop-blur-sm shadow-sm">
-              {getWeatherIcon(current.weatherCode, 'h-10 w-10')}
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-background/70 dark:bg-background/40 backdrop-blur-md shadow-sm ring-1 ring-white/10">
+              {getWeatherIcon(current.weatherCode, 'h-12 w-12')}
             </div>
             <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-bold text-foreground font-mono tracking-tight">{current.temperature}°</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-[42px] font-extrabold text-foreground font-mono tracking-tighter leading-none">{current.temperature}°</span>
               </div>
-              <p className="text-sm font-medium text-foreground/70">
+              <p className="text-sm font-semibold text-foreground/70 mt-0.5">
                 {WMO_DESCRIPTIONS[current.weatherCode] || 'Onbekend'}
               </p>
+              <span className="text-[11px] text-muted-foreground/70 flex items-center gap-0.5 mt-1">
+                <MapPin className="h-2.5 w-2.5" />{location}
+              </span>
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1.5">
-            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${conditionColors[workCondition]}`}>
+          <div className="flex flex-col items-end gap-2">
+            <span className={`text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm ${conditionColors[workCondition]}`}>
               {conditionLabels[workCondition]}
             </span>
-            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-              <MapPin className="h-2.5 w-2.5" />{location}
-            </span>
+            {todayForecast && (
+              <span className="text-[11px] text-muted-foreground/60 font-mono">
+                {todayForecast.maxTemp}° / {todayForecast.minTemp}°
+              </span>
+            )}
           </div>
         </div>
 
         {/* Stats row */}
-        <div className="relative flex items-center gap-4 mt-3 pt-3 border-t border-foreground/5">
-          <span className="flex items-center gap-1.5 text-xs text-foreground/60">
+        <div className="relative flex items-center gap-5 mt-4 pt-3 border-t border-foreground/5">
+          <span className="flex items-center gap-1.5 text-[13px] text-foreground/60">
             <Thermometer className="h-3.5 w-3.5" />
-            Voelt als <span className="font-mono font-medium text-foreground/80">{current.apparentTemperature}°</span>
+            Voelt als <span className="font-mono font-semibold text-foreground/80">{current.apparentTemperature}°</span>
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-foreground/60">
+          <span className="flex items-center gap-1.5 text-[13px] text-foreground/60">
             <Wind className="h-3.5 w-3.5" />
-            <span className="font-mono font-medium text-foreground/80">{current.windSpeed}</span> km/u
+            <span className="font-mono font-semibold text-foreground/80">{current.windSpeed}</span> km/u
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-foreground/60">
+          <span className="flex items-center gap-1.5 text-[13px] text-foreground/60">
             <Droplets className="h-3.5 w-3.5" />
-            <span className="font-mono font-medium text-foreground/80">{current.humidity}%</span>
+            <span className="font-mono font-semibold text-foreground/80">{current.humidity}%</span>
           </span>
+          {sunrise && (
+            <span className="flex items-center gap-1.5 text-[13px] text-foreground/60 ml-auto">
+              <Sunrise className="h-3.5 w-3.5 text-amber-500/70" />
+              <span className="font-mono text-foreground/50">{sunrise}</span>
+              <Sunset className="h-3.5 w-3.5 text-orange-500/70 ml-2" />
+              <span className="font-mono text-foreground/50">{sunset}</span>
+            </span>
+          )}
         </div>
       </div>
 
       {/* Forecast */}
-      <div className="grid grid-cols-4 gap-1.5">
-        {forecast.map((day) => (
-          <div
-            key={day.date.toISOString()}
-            className="flex flex-col items-center gap-1 py-2.5 px-1.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
-          >
-            <span className="text-[11px] font-semibold text-muted-foreground">
-              {DAY_NAMES[day.date.getDay()]}
-            </span>
-            {getWeatherIcon(day.weatherCode, 'h-5 w-5')}
-            <div className="flex items-center gap-1 text-xs">
-              <span className="font-bold text-foreground font-mono">{day.maxTemp}°</span>
-              <span className="text-muted-foreground/60 font-mono">{day.minTemp}°</span>
-            </div>
-            {day.precipitationProbability > 20 && (
-              <span className="text-[10px] text-blue-500 flex items-center gap-0.5">
-                <Droplets className="h-2.5 w-2.5" />
-                <span className="font-mono">{day.precipitationProbability}%</span>
+      <div className="p-3 bg-card">
+        <div className="grid grid-cols-4 gap-1.5">
+          {forecast.map((day) => (
+            <div
+              key={day.date.toISOString()}
+              className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-muted/25 hover:bg-muted/40 transition-colors"
+            >
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
+                {DAY_NAMES[day.date.getDay()]}
               </span>
-            )}
-          </div>
-        ))}
+              {getWeatherIcon(day.weatherCode, 'h-6 w-6')}
+              <div className="flex items-center gap-1.5 text-[13px]">
+                <span className="font-bold text-foreground font-mono">{day.maxTemp}°</span>
+                <span className="text-muted-foreground/50 font-mono">{day.minTemp}°</span>
+              </div>
+              {day.precipitationProbability > 20 && (
+                <span className="text-[10px] text-blue-500/80 flex items-center gap-0.5 font-medium">
+                  <Droplets className="h-2.5 w-2.5" />
+                  <span className="font-mono">{day.precipitationProbability}%</span>
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </Card>
   )
 }

@@ -77,6 +77,7 @@ import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { useSidebarLayout, type SidebarSectionId } from '@/hooks/useSidebarLayout'
 import type { CalculatieRegel, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { safeSetItem } from '@/utils/localStorageUtils'
 
 const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
@@ -1825,8 +1826,8 @@ export function QuoteCreation() {
   // ────────────────────────────────────────────────────────────────────
   if (showKlantSelector && !isEditMode) {
     return (
-      <div className="pb-12">
-        <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="pb-6">
+        <div className="space-y-3 max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => {
@@ -2046,9 +2047,9 @@ export function QuoteCreation() {
   // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
-    <div className="pb-12 mod-strip mod-strip-offertes">
+    <div className="pb-6 mod-strip mod-strip-offertes">
       {/* ──── HEADER BAR ──── */}
-      <div className="rounded-xl bg-gradient-to-br from-[#9B8EC4]/8 via-[#9B8EC4]/4 to-transparent dark:from-[#9B8EC4]/12 dark:via-[#9B8EC4]/6 border border-[#9B8EC4]/12 dark:border-[#9B8EC4]/20 px-6 py-4 mb-6">
+      <div className="rounded-xl bg-gradient-to-br from-[#9B8EC4]/8 via-[#9B8EC4]/4 to-transparent dark:from-[#9B8EC4]/12 dark:via-[#9B8EC4]/6 border border-[#9B8EC4]/12 dark:border-[#9B8EC4]/20 px-4 py-2.5 mb-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Back + Title + Badges */}
           <div className="flex items-center gap-3 min-w-0">
@@ -2149,11 +2150,11 @@ export function QuoteCreation() {
       )}
 
       {/* ──── TWO-COLUMN GRID ──── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         {/* ════════════════════════════════════════════════════════════════ */}
         {/* LEFT COLUMN: Scrollable content                                */}
         {/* ════════════════════════════════════════════════════════════════ */}
-        <div className="space-y-5 min-w-0">
+        <div className="space-y-3 min-w-0">
           {/* ── Introductietekst ── */}
           <Card>
             <CardHeader className="pb-3">
@@ -2480,6 +2481,8 @@ export function QuoteCreation() {
                                     <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-muted-foreground" />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
                                   )}
                                 </div>
+
+                                <KlantStatusWarning klant={selectedKlant} className="mt-2" />
 
                                 {selectedKlant.contactpersonen?.length > 0 && (
                                   <div className="space-y-1.5">

@@ -25,7 +25,10 @@ export async function signUp(email: string, password: string, metadata?: { voorn
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: metadata }
+    options: {
+      data: metadata,
+      emailRedirectTo: `${import.meta.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'}/welkom`
+    }
   })
   if (error) throw error
   const user = data.user ? { id: data.user.id, email: data.user.email ?? '', user_metadata: (data.user.user_metadata ?? {}) as Record<string, string> } : null
@@ -61,7 +64,25 @@ export async function resetPassword(email: string) {
   if (!isSupabaseConfigured() || !supabase) {
     return // Demo mode - no-op
   }
-  const { error } = await supabase.auth.resetPasswordForEmail(email)
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${import.meta.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'}/wachtwoord-resetten`
+  })
+  if (error) throw error
+}
+
+export async function updatePassword(newPassword: string) {
+  if (!isSupabaseConfigured() || !supabase) {
+    return // Demo mode - no-op
+  }
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw error
+}
+
+export async function resendConfirmation(email: string) {
+  if (!isSupabaseConfigured() || !supabase) {
+    return // Demo mode - no-op
+  }
+  const { error } = await supabase.auth.resend({ type: 'signup', email })
   if (error) throw error
 }
 

@@ -1,11 +1,13 @@
 import React from 'react';
+import Link from 'next/link';
 
 const footerLinks = {
   product: [
-    { name: 'Features', href: '#features' },
-    { name: 'AI Tools', href: '#ai-tools' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'Roadmap', href: '#' },
+    { name: 'AI Tools', href: '/features/ai' },
+    { name: 'Offertes', href: '/features/offertes' },
+    { name: 'Klantportaal', href: '/features/klantportaal' },
+    { name: 'E-mail', href: '/features/email' },
+    { name: 'Integraties', href: '/features/integraties' },
   ],
   bedrijf: [
     { name: 'Over ons', href: '#over-ons' },
@@ -45,7 +47,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5">
               {footerLinks.product.map((item) => (
                 <li key={item.name}>
-                  <a href={item.href} className="text-sm text-gray-500 hover:text-white transition-colors">{item.name}</a>
+                  <Link href={item.href} className="text-sm text-gray-500 hover:text-white transition-colors">{item.name}</Link>
                 </li>
               ))}
             </ul>

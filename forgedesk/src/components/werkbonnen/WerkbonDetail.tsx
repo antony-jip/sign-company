@@ -523,7 +523,7 @@ export function WerkbonDetail() {
                   <SelectTrigger><SelectValue placeholder="Selecteer klant" /></SelectTrigger>
                   <SelectContent>
                     {klanten.map((k) => (
-                      <SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam}</SelectItem>
+                      <SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam || k.contactpersoon}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

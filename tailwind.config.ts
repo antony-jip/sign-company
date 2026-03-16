@@ -8,73 +8,70 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        heading: ['var(--font-madellin)', 'Outfit', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-dm-mono)', 'monospace'],
+      },
       colors: {
+        bg: '#FAFAF7',
+        ink: {
+          DEFAULT: '#1A1A1A',
+          80: '#333330',
+          60: '#5A5A55',
+          40: '#8A8A85',
+          20: '#C0C0BA',
+          10: '#E8E8E3',
+          '05': '#F2F2ED',
+        },
         blush: {
-          DEFAULT: '#F0D9D0',
           light: '#F7ECE7',
-          deep: '#C49585',
+          DEFAULT: '#F0D9D0',
           vivid: '#E8A990',
+          deep: '#C49585',
         },
         sage: {
-          DEFAULT: '#C8D5CC',
           light: '#E4EBE6',
-          deep: '#5A8264',
+          DEFAULT: '#C8D5CC',
           vivid: '#7DB88A',
+          deep: '#5A8264',
         },
         mist: {
-          DEFAULT: '#CDD5DE',
           light: '#E6EAF0',
-          deep: '#5D7A93',
+          DEFAULT: '#CDD5DE',
           vivid: '#7BA3C4',
+          deep: '#5D7A93',
         },
         cream: {
-          DEFAULT: '#EDE8D8',
           light: '#F6F4EC',
-          deep: '#9A8E6E',
+          DEFAULT: '#EDE8D8',
           vivid: '#C4B88A',
+          deep: '#9A8E6E',
         },
         lavender: {
-          DEFAULT: '#DDD5E8',
           light: '#EDE9F3',
-          deep: '#7B6B8A',
+          DEFAULT: '#DDD5E8',
           vivid: '#A48BBF',
+          deep: '#7B6B8A',
         },
         peach: {
-          DEFAULT: '#F5D5C8',
           light: '#FAE8E0',
-          deep: '#D4856B',
+          DEFAULT: '#F5D5C8',
           vivid: '#F0A080',
+          deep: '#D4856B',
         },
       },
-      fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        heading: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+      letterSpacing: {
+        tighter: '-0.04em',
+        tightest: '-0.06em',
+      },
+      transitionTimingFunction: {
+        'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
       animation: {
-        'float': 'float 6s ease-in-out infinite',
-        'float-slow': 'float 8s ease-in-out infinite',
-        'pulse-soft': 'pulseSoft 4s ease-in-out infinite',
-        'gradient-x': 'gradientX 8s ease infinite',
-        'marquee': 'marquee 30s linear infinite',
         'bounce-slow': 'bounceChevron 2s ease-in-out infinite',
       },
       keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-12px)' },
-        },
-        pulseSoft: {
-          '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
-          '50%': { opacity: '1', transform: 'scale(1.05)' },
-        },
-        gradientX: {
-          '0%, 100%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-        },
-        marquee: {
-          '0%': { transform: 'translateX(0)' },
-          '100%': { transform: 'translateX(-50%)' },
-        },
         bounceChevron: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(8px)' },

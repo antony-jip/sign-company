@@ -69,7 +69,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { AppSettings, Medewerker } from '@/types'
 import { uploadFile, downloadFile } from '@/services/storageService'
 import { toast } from 'sonner'
@@ -81,6 +81,7 @@ import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
 import { PortaalTab } from './PortaalTab'
+import { SidebarTab } from './SidebarTab'
 import { Sparkles } from 'lucide-react'
 
 // Shared sub-tab navigation component
@@ -171,8 +172,11 @@ const settingsTabs = [
   { id: 'integraties', label: 'Integraties', icon: Puzzle, description: 'Koppelingen met externe diensten' },
   { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
   { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
+  { id: 'sidebar', label: 'Sidebar', icon: PanelLeft, description: 'Project sidebar secties' },
   { id: 'portaal', label: 'Portaal', icon: Link2, description: 'Klantportaal instellingen' },
   { id: 'forgie', label: 'Forgie AI', icon: Sparkles, description: 'AI assistent, visualizer en data import' },
+  { id: 'teamleden', label: 'Teamleden', icon: Users, description: 'Leden, rollen en uitnodigingen' },
+  { id: 'abonnement', label: 'Abonnement', icon: CreditCard, description: 'Plan, trial en betaling' },
 ] as const
 
 function renderTabContent(tabId: string) {
@@ -186,14 +190,21 @@ function renderTabContent(tabId: string) {
     case 'integraties': return <IntegratiesTab />
     case 'beveiliging': return <BeveiligingTab />
     case 'weergave': return <WeergaveTab />
+    case 'sidebar': return <SidebarTab />
     case 'portaal': return <PortaalTab />
     case 'forgie': return <ForgieTab />
+    case 'teamleden': return <TeamledenTab />
+    case 'abonnement': return <AbonnementTab />
     default: return null
   }
 }
 
 export function SettingsLayout() {
-  const [activeTab, setActiveTab] = useState('profiel')
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') || 'profiel'
+  const [activeTab, setActiveTab] = useState(
+    settingsTabs.some((t) => t.id === initialTab) ? initialTab : 'profiel'
+  )
   const navigate = useNavigate()
 
   return (
@@ -253,8 +264,8 @@ export function SettingsLayout() {
               >
                 <Users className="w-4 h-4 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <span className="text-sm block truncate font-medium">Teamleden</span>
-                  <span className="text-[11px] hidden md:block truncate text-muted-foreground/60 dark:text-muted-foreground">Medewerkers, rollen en verlof</span>
+                  <span className="text-sm block truncate font-medium">Team HR</span>
+                  <span className="text-[11px] hidden md:block truncate text-muted-foreground/60 dark:text-muted-foreground">Medewerkers, uurtarieven en verlof</span>
                 </div>
                 <ArrowRight className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
               </button>
@@ -671,7 +682,100 @@ function BedrijfTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Demo data verwijderen */}
+      <DemoDataSection />
     </>
+  )
+}
+
+function DemoDataSection() {
+  const { user } = useAuth()
+  const [hasDemoData, setHasDemoData] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    if (!user?.id || !isSupabaseConfigured() || !supabase) {
+      setChecked(true)
+      return
+    }
+    supabase
+      .from('klanten')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_demo_data', true)
+      .then(({ count }) => {
+        setHasDemoData((count ?? 0) > 0)
+        setChecked(true)
+      })
+  }, [user?.id])
+
+  if (!checked || !hasDemoData) return null
+
+  const handleDelete = async () => {
+    if (!user?.id || !supabase) return
+    if (!window.confirm('Weet je zeker dat je alle voorbeelddata wilt verwijderen? Dit kan niet ongedaan worden.')) return
+
+    setIsDeleting(true)
+    try {
+      // 1. Verwijder taken
+      await supabase.from('taken').delete().eq('user_id', user.id).eq('is_demo_data', true)
+
+      // 2. Haal demo offerte IDs op voor offerte_items
+      const { data: demoOffertes } = await supabase
+        .from('offertes')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_demo_data', true)
+      const demoOfferteIds = (demoOffertes || []).map((o: { id: string }) => o.id)
+
+      // 3. Verwijder offerte_items van demo offertes
+      if (demoOfferteIds.length > 0) {
+        await supabase.from('offerte_items').delete().in('offerte_id', demoOfferteIds)
+      }
+
+      // 4. Verwijder offertes
+      await supabase.from('offertes').delete().eq('user_id', user.id).eq('is_demo_data', true)
+
+      // 5. Verwijder projecten
+      await supabase.from('projecten').delete().eq('user_id', user.id).eq('is_demo_data', true)
+
+      // 6. Verwijder klanten
+      await supabase.from('klanten').delete().eq('user_id', user.id).eq('is_demo_data', true)
+
+      toast.success('Voorbeelddata verwijderd')
+      setHasDemoData(false)
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Verwijderen mislukt')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  return (
+    <Card className="border-orange-200 dark:border-orange-800 mt-6">
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-1">Voorbeelddata</h3>
+            <p className="text-[13px] text-muted-foreground">
+              Er staat nog voorbeelddata in je account van de onboarding.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20 flex-shrink-0"
+          >
+            {isDeleting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-2 h-3.5 w-3.5" />}
+            Verwijderen
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -708,12 +812,20 @@ function DocumentenTab() {
   const [factuurPrefix, setFactuurPrefix] = useState('FAC')
   const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
   const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
+  const [projectPrefix, setProjectPrefix] = useState('PRJ')
   const [betaaltermijn, setBetaaltermijn] = useState('30')
   const [voorwaarden, setVoorwaarden] = useState('')
   const [herinnering1, setHerinnering1] = useState('')
   const [herinnering2, setHerinnering2] = useState('')
   const [aanmaningTekst, setAanmaningTekst] = useState('')
   const [standaardUurtarief, setStandaardUurtarief] = useState('75')
+  // Offerte herinnering instellingen
+  const [offerteHerinnering1Actief, setOfferteHerinnering1Actief] = useState(true)
+  const [offerteHerinnering1Dagen, setOfferteHerinnering1Dagen] = useState('7')
+  const [offerteHerinnering1Tekst, setOfferteHerinnering1Tekst] = useState('Beste {contactpersoon_naam},\n\nOp {verstuurd_op} hebben wij u offerte {offerte_nummer} toegestuurd ter waarde van {offerte_bedrag}.\n\nGraag vernemen wij of u nog vragen heeft of dat wij de offerte mogen omzetten naar een opdracht.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
+  const [offerteHerinnering2Actief, setOfferteHerinnering2Actief] = useState(true)
+  const [offerteHerinnering2Dagen, setOfferteHerinnering2Dagen] = useState('14')
+  const [offerteHerinnering2Tekst, setOfferteHerinnering2Tekst] = useState('Beste {contactpersoon_naam},\n\nWij willen u er graag aan herinneren dat offerte {offerte_nummer} van {verstuurd_op} nog openstaat. De offerte vervalt op {vervaldatum}.\n\nMocht u vragen hebben of willen bespreken, dan horen wij het graag.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
@@ -736,6 +848,7 @@ function DocumentenTab() {
       setFactuurPrefix(data.factuur_prefix || 'FAC')
       setCreditnotaPrefix(data.creditnota_prefix || 'CN')
       setWerkbonPrefix(data.werkbon_prefix || 'WB')
+      setProjectPrefix(data.project_prefix || 'PRJ')
       setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
       setVoorwaarden(data.factuur_voorwaarden || '')
       setHerinnering1(data.herinnering_1_tekst || '')
@@ -775,6 +888,7 @@ function DocumentenTab() {
         factuur_prefix: factuurPrefix,
         creditnota_prefix: creditnotaPrefix,
         werkbon_prefix: werkbonPrefix,
+        project_prefix: projectPrefix,
         factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
         factuur_voorwaarden: voorwaarden,
         herinnering_1_tekst: herinnering1,
@@ -907,7 +1021,7 @@ function DocumentenTab() {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Prefixes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="factuur-prefix">Factuur prefix</Label>
                   <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value.toUpperCase())} placeholder="FAC" maxLength={5} />
@@ -922,6 +1036,11 @@ function DocumentenTab() {
                   <Label htmlFor="werkbon-prefix">Werkbon prefix</Label>
                   <Input id="werkbon-prefix" value={werkbonPrefix} onChange={(e) => setWerkbonPrefix(e.target.value.toUpperCase())} placeholder="WB" maxLength={5} />
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {werkbonPrefix}-2026-0001</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="project-prefix">Project prefix</Label>
+                  <Input id="project-prefix" value={projectPrefix} onChange={(e) => setProjectPrefix(e.target.value.toUpperCase())} placeholder="PRJ" maxLength={5} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {projectPrefix}-2026-0001</p>
                 </div>
               </div>
 
@@ -963,6 +1082,44 @@ function DocumentenTab() {
                 <div className="space-y-2">
                   <Label htmlFor="aanmaning">Aanmaning</Label>
                   <Textarea id="aanmaning" value={aanmaningTekst} onChange={(e) => setAanmaningTekst(e.target.value)} placeholder="Bijv. Indien wij binnen 7 dagen geen betaling ontvangen, zijn wij genoodzaakt verdere stappen te ondernemen." rows={2} />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Offerte Herinneringen */}
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-foreground dark:text-white">Offerte herinneringen</p>
+                <p className="text-xs text-muted-foreground">Herinneringen voor verstuurde offertes zonder reactie. Merge velden: {'{'}klant_naam{'}'}, {'{'}contactpersoon_naam{'}'}, {'{'}offerte_nummer{'}'}, {'{'}offerte_bedrag{'}'}, {'{'}verstuurd_op{'}'}, {'{'}vervaldatum{'}'}, {'{'}bedrijfsnaam{'}'}</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Herinnering 1</Label>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={offerteHerinnering1Actief} onChange={(e) => setOfferteHerinnering1Actief(e.target.checked)} className="rounded" />
+                      Actief
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Na</Label>
+                    <Input type="number" value={offerteHerinnering1Dagen} onChange={(e) => setOfferteHerinnering1Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
+                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
+                  </div>
+                  <Textarea value={offerteHerinnering1Tekst} onChange={(e) => setOfferteHerinnering1Tekst(e.target.value)} rows={3} className="text-xs" />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Herinnering 2</Label>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={offerteHerinnering2Actief} onChange={(e) => setOfferteHerinnering2Actief(e.target.checked)} className="rounded" />
+                      Actief
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Na</Label>
+                    <Input type="number" value={offerteHerinnering2Dagen} onChange={(e) => setOfferteHerinnering2Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
+                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
+                  </div>
+                  <Textarea value={offerteHerinnering2Tekst} onChange={(e) => setOfferteHerinnering2Tekst(e.target.value)} rows={3} className="text-xs" />
                 </div>
               </div>
             </CardContent>
@@ -2095,18 +2252,6 @@ function IntegratiesTab() {
           <span className="text-blush-deep font-bold text-sm">AI</span>
         </div>
       ),
-    },
-    {
-      id: 'kvk',
-      name: 'KvK API',
-      description: 'Kamer van Koophandel opzoeken voor bedrijfsgegevens',
-      connected: !!kvkApiKey,
-      icon: (
-        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-          <span className="text-blue-700 dark:text-blue-400 font-bold text-sm">KvK</span>
-        </div>
-      ),
-      details: 'Optioneel — zonder API key worden demogegevens gebruikt',
     },
   ]
 
@@ -3296,6 +3441,65 @@ function WeergaveTab() {
         </div>
       </CardContent>
     </Card>
+
+    {/* Snelkoppelingen */}
+    <Card className="mt-4">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Snelkoppelingen (+)
+            </CardTitle>
+            <CardDescription className="mt-1.5">Toon de + knop rechtsonder voor snelle acties</CardDescription>
+          </div>
+          <Switch
+            checked={settings.quick_actions_enabled ?? true}
+            onCheckedChange={(checked) => {
+              updateSettings({ quick_actions_enabled: checked })
+              toast.success(checked ? 'Snelkoppelingen ingeschakeld' : 'Snelkoppelingen uitgeschakeld')
+            }}
+          />
+        </div>
+      </CardHeader>
+      {(settings.quick_actions_enabled ?? true) && (
+      <CardContent className="space-y-3">
+        {(() => {
+          const activeItems: string[] = Array.isArray(settings.quick_action_items) ? settings.quick_action_items : ['project', 'mail', 'offerte', 'klant']
+          return [
+            { id: 'project', label: 'Nieuw project', icon: FolderKanban, color: '#8BAFD4' },
+            { id: 'mail', label: 'Nieuwe mail', icon: Mail, color: '#7BABC7' },
+            { id: 'offerte', label: 'Nieuwe offerte', icon: FileText, color: '#E8866A' },
+            { id: 'klant', label: 'Nieuwe klant', icon: Users, color: '#6B9FCC' },
+          ].map((item) => {
+            const Icon = item.icon
+            const enabled = activeItems.includes(item.id)
+            return (
+              <div key={item.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${item.color}18` }}>
+                    <Icon className="w-4 h-4" style={{ color: item.color }} />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{item.label}</span>
+                </div>
+                <Switch
+                  checked={enabled}
+                  onCheckedChange={(checked) => {
+                    const updated = checked
+                      ? [...activeItems, item.id]
+                      : activeItems.filter((i: string) => i !== item.id)
+                    updateSettings({ quick_action_items: updated })
+                    toast.success(checked ? `${item.label} toegevoegd` : `${item.label} verwijderd`)
+                  }}
+                />
+              </div>
+            )
+          })
+        })()}
+      </CardContent>
+      )}
+    </Card>
+    </>
     )}
 
     {subTab === 'navigatie' && (

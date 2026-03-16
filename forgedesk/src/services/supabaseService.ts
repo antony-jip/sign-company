@@ -68,6 +68,8 @@ import type {
   PortaalReactie,
   AppNotificatie,
   PortaalInstellingen,
+  AuditLogEntry,
+  PlanningInstellingen,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -259,10 +261,10 @@ export async function getProjecten(): Promise<Project[]> {
       .select('*, klanten(bedrijfsnaam)')
       .order('created_at', { ascending: false })
     if (error) throw error
-    return (data || []).map((p: Project & { klanten?: { bedrijfsnaam?: string } }) => ({
-      ...p,
-      klant_naam: p.klanten?.bedrijfsnaam || '',
-    }))
+    return (data || []).map((p: Project & { klanten?: { bedrijfsnaam?: string } }) => {
+      const { klanten: _kl, ...rest } = p as Record<string, unknown>
+      return { ...rest, klant_naam: p.klanten?.bedrijfsnaam || '' } as Project
+    })
   }
   const projecten = getLocalData<Project>('projecten')
   const klanten = getLocalData<Klant>('klanten')
@@ -281,7 +283,9 @@ export async function getProject(id: string): Promise<Project | null> {
       .eq('id', id)
       .single()
     if (error) throw error
-    return data ? { ...data, klant_naam: data.klanten?.bedrijfsnaam || '' } : null
+    if (!data) return null
+    const { klanten: _kl, ...rest } = data as Record<string, unknown>
+    return { ...rest, klant_naam: (data as { klanten?: { bedrijfsnaam?: string } }).klanten?.bedrijfsnaam || '' } as Project
   }
   const projecten = getLocalData<Project>('projecten')
   const klanten = getLocalData<Klant>('klanten')
@@ -350,10 +354,30 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
 export async function deleteProject(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Cascade: verwijder direct-gekoppelde child records
+    await supabase.from('taken').delete().eq('project_id', id)
+    await supabase.from('montage_afspraken').delete().eq('project_id', id)
+    await supabase.from('project_fotos').delete().eq('project_id', id)
+    await supabase.from('tijdregistraties').delete().eq('project_id', id)
+    await supabase.from('project_toewijzingen').delete().eq('project_id', id)
+    // Offertes/facturen/werkbonnen: ontkoppelen (niet verwijderen)
+    await supabase.from('offertes').update({ project_id: null }).eq('project_id', id)
+    await supabase.from('facturen').update({ project_id: null }).eq('project_id', id)
+    await supabase.from('werkbonnen').update({ project_id: null }).eq('project_id', id)
     const { error } = await supabase.from('projecten').delete().eq('id', id)
     if (error) throw error
     return
   }
+  // localStorage cascade
+  setLocalData('taken', getLocalData<Taak>('taken').filter(t => t.project_id !== id))
+  setLocalData('montage_afspraken', getLocalData<MontageAfspraak>('montage_afspraken').filter(m => m.project_id !== id))
+  setLocalData('project_fotos', getLocalData<ProjectFoto>('project_fotos').filter(f => f.project_id !== id))
+  setLocalData('tijdregistraties', getLocalData<Tijdregistratie>('tijdregistraties').filter(t => t.project_id !== id))
+  setLocalData('project_toewijzingen', getLocalData<ProjectToewijzing>('project_toewijzingen').filter(t => t.project_id !== id))
+  // Ontkoppel offertes/facturen/werkbonnen
+  setLocalData('offertes', getLocalData<Offerte>('offertes').map(o => o.project_id === id ? { ...o, project_id: undefined } : o))
+  setLocalData('facturen', getLocalData<Factuur>('facturen').map(f => f.project_id === id ? { ...f, project_id: undefined } : f))
+  setLocalData('werkbonnen', getLocalData<Werkbon>('werkbonnen').map(w => w.project_id === id ? { ...w, project_id: undefined } : w))
   const projecten = getLocalData<Project>('projecten')
   setLocalData('projecten', projecten.filter((p) => p.id !== id))
 }
@@ -465,10 +489,10 @@ export async function getOffertes(): Promise<Offerte[]> {
         .select('*, klanten(bedrijfsnaam)')
         .order('created_at', { ascending: false })
       if (error) throw error
-      return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
-        ...o,
-        klant_naam: o.klanten?.bedrijfsnaam || '',
-      }))
+      return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => {
+        const { klanten: _kl, ...rest } = o as Record<string, unknown>
+        return { ...rest, klant_naam: o.klanten?.bedrijfsnaam || '' } as Offerte
+      })
     } catch (err) {
       // Supabase failed — fall back to localStorage
       console.warn('Supabase getOffertes failed, falling back to localStorage:', err)
@@ -491,7 +515,9 @@ export async function getOfferte(id: string): Promise<Offerte | null> {
       .eq('id', id)
       .single()
     if (error) throw error
-    return data ? { ...data, klant_naam: data.klanten?.bedrijfsnaam || '' } : null
+    if (!data) return null
+    const { klanten: _kl, ...rest } = data as Record<string, unknown>
+    return { ...rest, klant_naam: (data as { klanten?: { bedrijfsnaam?: string } }).klanten?.bedrijfsnaam || '' } as Offerte
   }
   const offertes = getLocalData<Offerte>('offertes')
   const klanten = getLocalData<Klant>('klanten')
@@ -509,10 +535,10 @@ export async function getOffertesByProject(projectId: string): Promise<Offerte[]
       .eq('project_id', projectId)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
-      ...o,
-      klant_naam: o.klanten?.bedrijfsnaam || '',
-    }))
+    return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => {
+      const { klanten: _kl, ...rest } = o as Record<string, unknown>
+      return { ...rest, klant_naam: o.klanten?.bedrijfsnaam || '' } as Offerte
+    })
   }
   const offertes = getLocalData<Offerte>('offertes')
   const klanten = getLocalData<Klant>('klanten')
@@ -584,10 +610,15 @@ export async function updateOfferte(id: string, updates: Partial<Offerte>): Prom
 export async function deleteOfferte(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Cascade: verwijder offerte items en versies
+    await supabase.from('offerte_items').delete().eq('offerte_id', id)
+    await supabase.from('offerte_versies').delete().eq('offerte_id', id)
     const { error } = await supabase.from('offertes').delete().eq('id', id)
     if (error) throw error
     return
   }
+  setLocalData('offerte_items', getLocalData<OfferteItem>('offerte_items').filter(i => i.offerte_id !== id))
+  setLocalData('offerte_versies', getLocalData<OfferteVersie>('offerte_versies').filter(v => v.offerte_id !== id))
   const offertes = getLocalData<Offerte>('offertes')
   setLocalData('offertes', offertes.filter((o) => o.id !== id))
 }
@@ -1200,6 +1231,28 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return profiles.find((p) => p.id === userId) || null
 }
 
+export async function uploadAvatar(userId: string, file: Blob): Promise<string> {
+  assertId(userId, 'user_id')
+  if (!isSupabaseConfigured() || !supabase) {
+    throw new Error('Supabase niet geconfigureerd')
+  }
+  const path = `${userId}.jpg`
+  const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, {
+    cacheControl: '3600',
+    upsert: true,
+    contentType: 'image/jpeg',
+  })
+  if (uploadError) throw uploadError
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  const avatarUrl = `${data.publicUrl}?t=${Date.now()}`
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: avatarUrl })
+    .eq('id', userId)
+  if (updateError) throw updateError
+  return avatarUrl
+}
+
 // ============ NIEUWSBRIEVEN ============
 
 export async function getNieuwsbrieven(): Promise<Nieuwsbrief[]> {
@@ -1718,6 +1771,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     factuur_outro_tekst: '',
     creditnota_prefix: 'CN',
     werkbon_prefix: 'WB',
+    project_prefix: 'PRJ',
     herinnering_1_tekst: '',
     herinnering_2_tekst: '',
     aanmaning_tekst: '',
@@ -1728,6 +1782,8 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     email_fetch_limit: 200,
     forgie_enabled: true,
     forgie_bedrijfscontext: '',
+    quick_actions_enabled: true,
+    quick_action_items: ['project', 'mail', 'offerte', 'klant'],
     ai_tone_of_voice: '',
     mollie_api_key: '',
     mollie_enabled: false,
@@ -1905,13 +1961,46 @@ export async function updateFactuur(id: string, updates: Partial<Factuur>): Prom
   return items[index]
 }
 
+/**
+ * Update factuur status met cascade side-effects.
+ * Bij status 'betaald': update gekoppelde werkbon en check of project afgerond kan worden.
+ */
+export async function updateFactuurStatus(id: string, updates: Partial<Factuur>): Promise<Factuur> {
+  const factuur = await updateFactuur(id, updates)
+
+  if (updates.status === 'betaald') {
+    // Cascade: update gekoppelde werkbon naar 'gefactureerd'
+    if (factuur.werkbon_id) {
+      try {
+        await updateWerkbon(factuur.werkbon_id, { status: 'gefactureerd' })
+      } catch { /* werkbon update is best-effort */ }
+    }
+
+    // Cascade: check of alle facturen van het project betaald zijn → project afgerond
+    if (factuur.project_id) {
+      try {
+        const projectFacturen = await getFacturenByProject(factuur.project_id)
+        const alleBetaald = projectFacturen.length > 0 && projectFacturen.every(f => f.status === 'betaald')
+        if (alleBetaald) {
+          await updateProject(factuur.project_id, { status: 'afgerond' })
+        }
+      } catch { /* project update is best-effort */ }
+    }
+  }
+
+  return factuur
+}
+
 export async function deleteFactuur(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Cascade: verwijder factuur items
+    await supabase.from('factuur_items').delete().eq('factuur_id', id)
     const { error } = await supabase.from('facturen').delete().eq('id', id)
     if (error) throw error
     return
   }
+  setLocalData('factuur_items', getLocalData<FactuurItem>('factuur_items').filter(i => i.factuur_id !== id))
   const items = getLocalData<Factuur>('facturen')
   setLocalData('facturen', items.filter((f) => f.id !== id))
 }
@@ -2085,6 +2174,16 @@ export async function markAlleNotificatiesGelezen(): Promise<void> {
   const items = getLocalData<Notificatie>('notificaties')
   items.forEach((n) => (n.gelezen = true))
   setLocalData('notificaties', items)
+}
+
+export async function deleteNotificatie(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    await supabase.from('notificaties').delete().eq('id', id)
+    return
+  }
+  const items = getLocalData<Notificatie>('notificaties')
+  setLocalData('notificaties', items.filter((n) => n.id !== id))
 }
 
 // ============ MONTAGE PLANNING ============
@@ -2481,11 +2580,20 @@ export async function updateWerkbon(id: string, updates: Partial<Werkbon>): Prom
 
 export async function deleteWerkbon(id: string): Promise<void> {
   assertId(id)
+  // Cascade: verwijder werkbon items (met hun afbeeldingen), regels en fotos
+  const werkbonItems = await getWerkbonItems(id)
+  for (const item of werkbonItems) {
+    await deleteWerkbonItem(item.id)
+  }
   if (isSupabaseConfigured() && supabase) {
+    await supabase.from('werkbon_regels').delete().eq('werkbon_id', id)
+    await supabase.from('werkbon_fotos').delete().eq('werkbon_id', id)
     const { error } = await supabase.from('werkbonnen').delete().eq('id', id)
     if (error) throw error
     return
   }
+  setLocalData('werkbon_regels', getLocalData<WerkbonRegel>('werkbon_regels').filter(r => r.werkbon_id !== id))
+  setLocalData('werkbon_fotos', getLocalData<WerkbonFoto>('werkbon_fotos').filter(f => f.werkbon_id !== id))
   const items = getLocalData<Werkbon>('werkbonnen')
   setLocalData('werkbonnen', items.filter((w) => w.id !== id))
 }
@@ -4084,14 +4192,14 @@ export async function generateCreditnotaNummer(): Promise<string> {
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
-export async function generateProjectNummer(): Promise<string> {
+export async function generateProjectNummer(prefix: string = 'PRJ'): Promise<string> {
   const jaar = new Date().getFullYear()
   const projecten = await getProjecten()
-  const prefix = `PRJ-${jaar}-`
+  const jaarPrefix = `${prefix}-${jaar}-`
   const maxNr = projecten
-    .filter((p) => (p.naam || '').startsWith(prefix))
-    .reduce((max, p) => Math.max(max, parseInt((p.naam || '').replace(prefix, ''), 10) || 0), 0)
-  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
+    .filter((p) => (p.project_nummer || '').startsWith(jaarPrefix))
+    .reduce((max, p) => Math.max(max, parseInt((p.project_nummer || '').replace(jaarPrefix, ''), 10) || 0), 0)
+  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 // ============ CONVERSIE FUNCTIES ============
@@ -5340,4 +5448,113 @@ export async function getAllePortalen(userId: string): Promise<(ProjectPortaal &
   }
   const portalen = getLocalData<ProjectPortaal>('project_portalen')
   return portalen.filter((p) => p.user_id === userId).sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+// ============ AUDIT LOG (Quick Win 3) ============
+
+export async function createAuditLogEntry(
+  data: Omit<AuditLogEntry, 'id' | 'created_at'>
+): Promise<AuditLogEntry> {
+  const entry: AuditLogEntry = {
+    ...data,
+    id: generateId(),
+    created_at: now(),
+  }
+  if (isSupabaseConfigured() && supabase) {
+    const { data: result, error } = await supabase
+      .from('audit_log')
+      .insert(entry)
+      .select()
+      .single()
+    if (error) throw error
+    return result as AuditLogEntry
+  }
+  const items = getLocalData<AuditLogEntry>('audit_log')
+  items.unshift(entry)
+  // Max 1000 entries bewaren in localStorage
+  if (items.length > 1000) items.length = 1000
+  setLocalData('audit_log', items)
+  return entry
+}
+
+export async function getAuditLog(
+  entityType: string,
+  entityId: string,
+  limit = 50
+): Promise<AuditLogEntry[]> {
+  assertId(entityId, 'entity_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('audit_log')
+      .select('*')
+      .eq('entity_type', entityType)
+      .eq('entity_id', entityId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return (data || []) as AuditLogEntry[]
+  }
+  const items = getLocalData<AuditLogEntry>('audit_log')
+  return items
+    .filter((e) => e.entity_type === entityType && e.entity_id === entityId)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, limit)
+}
+
+// ============ KLANT LABELS HELPER (Quick Win 1) ============
+
+export async function getAllKlantLabels(userId: string): Promise<string[]> {
+  assertId(userId, 'user_id')
+  const klanten = await getKlanten()
+  const labelSet = new Set<string>()
+  for (const k of klanten) {
+    if (k.labels) {
+      for (const l of k.labels) labelSet.add(l)
+    }
+  }
+  return Array.from(labelSet).sort()
+}
+
+// ============ PLANNING INSTELLINGEN (Quick Win 5) ============
+
+const DEFAULT_PLANNING_INSTELLINGEN: PlanningInstellingen = {
+  feestdagen_tonen: true,
+  feestdag_waarschuwing: true,
+  custom_geblokkeerde_dagen: [],
+}
+
+export async function getPlanningInstellingen(userId: string): Promise<PlanningInstellingen> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('planning_instellingen')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+    if (error && error.code !== 'PGRST116') throw error
+    if (data) return data as PlanningInstellingen
+  }
+  const stored = localStorage.getItem(`forgedesk_planning_instellingen_${userId}`)
+  if (stored) {
+    try { return JSON.parse(stored) as PlanningInstellingen } catch { /* ignore */ }
+  }
+  return { ...DEFAULT_PLANNING_INSTELLINGEN }
+}
+
+export async function savePlanningInstellingen(
+  userId: string,
+  instellingen: PlanningInstellingen
+): Promise<void> {
+  assertId(userId, 'user_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase
+      .from('planning_instellingen')
+      .upsert({ user_id: userId, ...instellingen })
+    if (error) throw error
+    return
+  }
+  localStorage.setItem(
+    `forgedesk_planning_instellingen_${userId}`,
+    JSON.stringify(instellingen)
+  )
 }

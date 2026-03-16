@@ -22,6 +22,148 @@ async function getRawBody(req: VercelRequest): Promise<Buffer> {
   })
 }
 
+function getSupabase() {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+}
+
+// ─── Credits: checkout.session.completed (one-time payment) ───
+async function handleCreditsCheckout(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.user_id
+  const pakketId = session.metadata?.pakket_id
+  const credits = parseInt(session.metadata?.credits || '0', 10)
+
+  if (!userId || !credits) {
+    console.log('Checkout session without credits metadata, skipping credits logic:', session.id)
+    return
+  }
+
+  console.log(`Credits payment completed: user=${userId}, pakket=${pakketId}, credits=${credits}`)
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    console.warn(`Supabase not configured — credits NOT added for user ${userId}`)
+    return
+  }
+
+  const supabase = getSupabase()
+
+  const { data: existing } = await supabase
+    .from('visualizer_credits')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  if (existing) {
+    await supabase
+      .from('visualizer_credits')
+      .update({
+        saldo: existing.saldo + credits,
+        totaal_gekocht: existing.totaal_gekocht + credits,
+        laatst_bijgewerkt: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+  } else {
+    await supabase
+      .from('visualizer_credits')
+      .insert({
+        user_id: userId,
+        saldo: credits,
+        totaal_gekocht: credits,
+        totaal_gebruikt: 0,
+        laatst_bijgewerkt: new Date().toISOString(),
+      })
+  }
+
+  await supabase.from('credit_transacties').insert({
+    user_id: userId,
+    type: 'aankoop',
+    aantal: credits,
+    saldo_na: (existing?.saldo || 0) + credits,
+    beschrijving: `Stripe betaling — ${pakketId} pakket (${credits} credits)`,
+    stripe_session_id: session.id,
+    stripe_payment_intent: session.payment_intent as string,
+  })
+
+  console.log(`Credits added: user=${userId}, +${credits}, new_saldo=${(existing?.saldo || 0) + credits}`)
+}
+
+// ─── Subscription: checkout.session.completed (subscription mode) ───
+async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
+  const organisatieId = session.metadata?.organisatie_id
+  if (!organisatieId) {
+    console.log('Subscription checkout without organisatie_id, skipping:', session.id)
+    return
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    console.warn(`Supabase not configured — subscription NOT activated for org ${organisatieId}`)
+    return
+  }
+
+  const supabase = getSupabase()
+
+  await supabase
+    .from('organisaties')
+    .update({
+      is_betaald: true,
+      abonnement_status: 'actief',
+      stripe_customer_id: session.customer as string,
+      stripe_subscription_id: session.subscription as string,
+    })
+    .eq('id', organisatieId)
+
+  console.log(`Subscription activated: org=${organisatieId}, customer=${session.customer}`)
+}
+
+// ─── invoice.payment_failed ───
+async function handlePaymentFailed(invoice: Stripe.Invoice) {
+  const customerId = invoice.customer as string
+  if (!customerId || !SUPABASE_URL || !SUPABASE_SERVICE_KEY) return
+
+  const supabase = getSupabase()
+
+  await supabase
+    .from('organisaties')
+    .update({ abonnement_status: 'verlopen' })
+    .eq('stripe_customer_id', customerId)
+
+  console.log(`Payment failed: customer=${customerId}, status set to verlopen`)
+}
+
+// ─── customer.subscription.deleted ───
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string
+  if (!customerId || !SUPABASE_URL || !SUPABASE_SERVICE_KEY) return
+
+  const supabase = getSupabase()
+
+  await supabase
+    .from('organisaties')
+    .update({ abonnement_status: 'opgezegd', is_betaald: false })
+    .eq('stripe_customer_id', customerId)
+
+  console.log(`Subscription deleted: customer=${customerId}, status set to opgezegd`)
+}
+
+// ─── customer.subscription.updated ───
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string
+  if (!customerId || !SUPABASE_URL || !SUPABASE_SERVICE_KEY) return
+
+  const supabase = getSupabase()
+
+  if (subscription.status === 'active') {
+    await supabase
+      .from('organisaties')
+      .update({ abonnement_status: 'actief', is_betaald: true })
+      .eq('stripe_customer_id', customerId)
+
+    console.log(`Subscription reactivated: customer=${customerId}`)
+  }
+}
+
+// ─── Main handler ───
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -45,68 +187,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: `Webhook signature ongeldig: ${msg}` })
     }
 
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session
+    console.log(`Stripe webhook received: ${event.type}`)
 
-      const userId = session.metadata?.user_id
-      const pakketId = session.metadata?.pakket_id
-      const credits = parseInt(session.metadata?.credits || '0', 10)
-
-      if (!userId || !credits) {
-        console.error('Missing metadata in checkout session:', session.id)
-        return res.status(400).json({ error: 'Metadata ontbreekt' })
-      }
-
-      console.log(`Payment completed: user=${userId}, pakket=${pakketId}, credits=${credits}`)
-
-      // Add credits via Supabase if configured
-      if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
-        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-        // Upsert credits record
-        const { data: existing } = await supabase
-          .from('visualizer_credits')
-          .select('*')
-          .eq('user_id', userId)
-          .single()
-
-        if (existing) {
-          await supabase
-            .from('visualizer_credits')
-            .update({
-              saldo: existing.saldo + credits,
-              totaal_gekocht: existing.totaal_gekocht + credits,
-              laatst_bijgewerkt: new Date().toISOString(),
-            })
-            .eq('user_id', userId)
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session
+        if (session.mode === 'subscription') {
+          await handleSubscriptionCheckout(session)
         } else {
-          await supabase
-            .from('visualizer_credits')
-            .insert({
-              user_id: userId,
-              saldo: credits,
-              totaal_gekocht: credits,
-              totaal_gebruikt: 0,
-              laatst_bijgewerkt: new Date().toISOString(),
-            })
+          await handleCreditsCheckout(session)
         }
-
-        // Log transaction
-        await supabase.from('credit_transacties').insert({
-          user_id: userId,
-          type: 'aankoop',
-          aantal: credits,
-          saldo_na: (existing?.saldo || 0) + credits,
-          beschrijving: `Stripe betaling — ${pakketId} pakket (${credits} credits)`,
-          stripe_session_id: session.id,
-          stripe_payment_intent: session.payment_intent as string,
-        })
-
-        console.log(`Credits added: user=${userId}, +${credits}, new_saldo=${(existing?.saldo || 0) + credits}`)
-      } else {
-        // Fallback: log that credits need manual addition
-        console.warn(`Supabase not configured — credits NOT added for user ${userId}. Manual action needed.`)
+        break
       }
+      case 'invoice.payment_failed':
+        await handlePaymentFailed(event.data.object as Stripe.Invoice)
+        break
+      case 'customer.subscription.deleted':
+        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
+        break
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
+        break
+      default:
+        console.log(`Unhandled event type: ${event.type}`)
     }
 
     return res.status(200).json({ received: true })

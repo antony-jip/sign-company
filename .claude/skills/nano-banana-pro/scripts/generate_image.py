@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 
-def get_api_key(provided_key: str | None) -> str | None:
+def get_api_key(provided_key=None):
     """Get API key from argument first, then environment."""
     if provided_key:
         return provided_key
@@ -116,9 +116,6 @@ def main():
             contents=contents,
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT", "IMAGE"],
-                image_config=types.ImageConfig(
-                    image_size=output_resolution
-                )
             )
         )
         
