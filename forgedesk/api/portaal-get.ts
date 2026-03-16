@@ -37,14 +37,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-    // Haal portaal op
+    // Haal portaal op (probeer eerst project_portalen, dan tekening_goedkeuringen)
     const { data: portaal, error: portaalError } = await supabaseAdmin
       .from('project_portalen')
       .select('*')
       .eq('token', token)
       .single()
 
+    // Fallback: check tekening_goedkeuringen voor backward-compatibiliteit
     if (portaalError || !portaal) {
+      const goedkeuringResult = await handleGoedkeuringToken(supabaseAdmin, token, res)
+      if (goedkeuringResult) return goedkeuringResult
       return res.status(404).json({ error: 'Portaal niet gevonden' })
     }
 
@@ -191,4 +194,150 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('portaal-get error:', error)
     return res.status(500).json({ error: 'Er ging iets mis bij het ophalen van het portaal' })
   }
+}
+
+/**
+ * Backward-compatibiliteit: synthetiseer portaal response vanuit tekening_goedkeuringen
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleGoedkeuringToken(supabase: any, token: string, res: VercelResponse) {
+  const { data: gk } = await supabase
+    .from('tekening_goedkeuringen')
+    .select('*')
+    .eq('token', token)
+    .single()
+
+  if (!gk) return null
+
+  // Update bekeken tracking
+  const trackingUpdates: Record<string, unknown> = {
+    eerste_bekeken_op: gk.eerste_bekeken_op || new Date().toISOString(),
+    laatst_bekeken_op: new Date().toISOString(),
+    aantal_keer_bekeken: (gk.aantal_keer_bekeken || 0) + 1,
+  }
+  if (gk.status === 'verzonden') {
+    trackingUpdates.status = 'bekeken'
+  }
+  await supabase
+    .from('tekening_goedkeuringen')
+    .update(trackingUpdates)
+    .eq('id', gk.id)
+
+  // Haal bedrijfsprofiel op
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('bedrijfsnaam, logo_url, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website')
+    .eq('id', gk.user_id)
+    .single()
+
+  const { data: docStyle } = await supabase
+    .from('document_styles')
+    .select('primaire_kleur')
+    .eq('user_id', gk.user_id)
+    .maybeSingle()
+
+  // Haal project info
+  const { data: project } = await supabase
+    .from('projecten')
+    .select('id, naam, klant_id, adres, postcode, plaats')
+    .eq('id', gk.project_id)
+    .single()
+
+  // Bouw bestanden uit document_ids
+  const bestanden = []
+  if (gk.document_ids?.length) {
+    const { data: docs } = await supabase
+      .from('documenten')
+      .select('id, naam, url, type, thumbnail_url')
+      .in('id', gk.document_ids)
+
+    for (const doc of docs || []) {
+      bestanden.push({
+        id: doc.id,
+        naam: doc.naam,
+        url: doc.url,
+        type: doc.type || 'application/pdf',
+        thumbnail_url: doc.thumbnail_url,
+        bron: 'bedrijf',
+      })
+    }
+  }
+
+  // Offerte info als die er is
+  let offerteBestanden: Record<string, unknown>[] = []
+  if (gk.offerte_id) {
+    const { data: offerte } = await supabase
+      .from('offertes')
+      .select('id, titel, nummer')
+      .eq('id', gk.offerte_id)
+      .single()
+
+    if (offerte) {
+      offerteBestanden = [{
+        id: `offerte-${offerte.id}`,
+        naam: `Offerte ${offerte.nummer} - ${offerte.titel}`,
+        url: '', // Offerte wordt inline getoond
+        type: 'offerte',
+        bron: 'bedrijf',
+      }]
+    }
+  }
+
+  // Synthetiseer portal-achtige response
+  const statusMap: Record<string, string> = {
+    verzonden: 'verstuurd',
+    bekeken: 'bekeken',
+    goedgekeurd: 'goedgekeurd',
+    revisie: 'revisie',
+  }
+
+  const items = [{
+    id: gk.id,
+    type: 'tekening',
+    titel: gk.email_onderwerp || 'Tekening ter goedkeuring',
+    omschrijving: gk.email_bericht || '',
+    label: `Revisie ${gk.revisie_nummer || 1}`,
+    status: statusMap[gk.status] || 'verstuurd',
+    bekeken_op: gk.eerste_bekeken_op,
+    mollie_payment_url: null,
+    bedrag: null,
+    volgorde: 0,
+    created_at: gk.created_at,
+    bestanden: [...bestanden, ...offerteBestanden],
+    reacties: gk.goedgekeurd_door ? [{
+      id: `reactie-${gk.id}`,
+      type: gk.status === 'goedgekeurd' ? 'goedkeuring' : 'revisie',
+      bericht: gk.revisie_opmerkingen || `Goedgekeurd door ${gk.goedgekeurd_door}`,
+      naam: gk.goedgekeurd_door,
+      created_at: gk.goedgekeurd_op || gk.updated_at,
+    }] : [],
+  }]
+
+  return res.status(200).json({
+    status: 'actief',
+    portaal: {
+      id: `gk-${gk.id}`,
+      instructie_tekst: gk.email_bericht || '',
+      verloopt_op: new Date(Date.now() + 90 * 86400000).toISOString(), // 90 dagen
+    },
+    project: project ? {
+      naam: project.naam,
+      adres: project.adres,
+      postcode: project.postcode,
+      plaats: project.plaats,
+    } : null,
+    bedrijf: {
+      naam: profile?.bedrijfsnaam || '',
+      logo_url: profile?.logo_url || '',
+      telefoon: profile?.bedrijfs_telefoon || '',
+      email: profile?.bedrijfs_email || '',
+      website: profile?.bedrijfs_website || '',
+      primaire_kleur: docStyle?.primaire_kleur || '#1a1a1a',
+    },
+    instellingen: {},
+    items,
+    // Flag voor PortaalPagina om goedkeuring-specifieke UI te tonen
+    goedkeuring_mode: true,
+    goedkeuring_token: token,
+  })
 }

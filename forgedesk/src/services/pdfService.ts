@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf'
+import jsPDF, { GState } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
@@ -753,7 +753,26 @@ export function generateFactuurPDF(
     eindafrekening: 'Eindafrekening',
   }
   const headerLabel = typeLabels[factuurData.factuur_type || 'standaard'] || 'Factuur'
+  const isCreditnota = factuurData.factuur_type === 'creditnota'
+
+  // Override brand color to red for creditnota
+  const effectiveBrand: [number, number, number] = isCreditnota ? [200, 50, 50] : brand
+
   let y = addHeader(doc, bedrijfsProfiel, headerLabel, factuurData.nummer, docStyle)
+
+  // Diagonal watermark for creditnota
+  if (isCreditnota) {
+    doc.saveGraphicsState()
+    doc.setFontSize(60)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(200, 50, 50)
+    const gState = new GState({ opacity: 0.08 })
+    doc.setGState(gState)
+    const cx = doc.internal.pageSize.getWidth() / 2
+    const cy = doc.internal.pageSize.getHeight() / 2
+    doc.text('CREDITNOTA', cx, cy, { align: 'center', angle: 45 })
+    doc.restoreGraphicsState()
+  }
 
   // Client info
   y = addClientInfo(doc, klant, y, docStyle)
@@ -782,6 +801,7 @@ export function generateFactuurPDF(
     item.aantal.toString(),
     formatCurrency(item.eenheidsprijs),
     item.btw_percentage > 0 ? `${item.btw_percentage}%` : '-',
+    item.korting_percentage > 0 ? `${item.korting_percentage}%` : '-',
     formatCurrency(item.totaal),
   ])
 
@@ -790,7 +810,7 @@ export function generateFactuurPDF(
 
   autoTable(doc, {
     startY: y,
-    head: [['#', 'Omschrijving', 'Aantal', 'Eenheidsprijs', 'BTW', 'Totaal']],
+    head: [['#', 'Omschrijving', 'Aantal', 'Eenheidsprijs', 'BTW', 'Korting', 'Totaal']],
     body: tableBody,
     theme: tableStyles.theme,
     headStyles: tableStyles.headStyles,
@@ -802,7 +822,8 @@ export function generateFactuurPDF(
       2: { cellWidth: 20, halign: 'center' },
       3: { cellWidth: 30, halign: 'right' },
       4: { cellWidth: 18, halign: 'center' },
-      5: { cellWidth: 30, halign: 'right' },
+      5: { cellWidth: 20, halign: 'center' },
+      6: { cellWidth: 30, halign: 'right' },
     },
     margin: { left: margins.left, right: margins.right },
   })
@@ -825,13 +846,13 @@ export function generateFactuurPDF(
   doc.text(formatCurrency(factuurData.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
-  doc.setDrawColor(...brand)
+  doc.setDrawColor(...effectiveBrand)
   doc.setLineWidth(0.5)
   doc.line(totalsX, totalsY - 2, pageWidth - margins.right, totalsY - 2)
 
   doc.setFont(headingFont, 'bold')
   doc.setFontSize(baseFontSize + 2)
-  doc.setTextColor(...brand)
+  doc.setTextColor(...effectiveBrand)
   doc.text('Totaal:', totalsX, totalsY + 5)
   doc.text(formatCurrency(factuurData.totaal), pageWidth - margins.right, totalsY + 5, { align: 'right' })
 

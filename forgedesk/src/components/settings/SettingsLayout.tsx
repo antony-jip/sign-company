@@ -1355,7 +1355,7 @@ function SignaturePreview({
 }
 
 function EmailTab() {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const { refreshSettings, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
   const [subTab, setSubTab] = useState('handtekening')
   const [isLoading, setIsLoading] = useState(true)
@@ -1372,7 +1372,6 @@ function EmailTab() {
   const [teamLoading, setTeamLoading] = useState(false)
   const [savingMwId, setSavingMwId] = useState<string | null>(null)
   const [teamEdits, setTeamEdits] = useState<Record<string, { handtekening: string; afbeelding: string }>>({})
-  const isAdmin = true // TODO: koppel aan app_rol wanneer rollen geïmplementeerd zijn
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
