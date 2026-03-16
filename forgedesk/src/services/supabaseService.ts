@@ -70,6 +70,7 @@ import type {
   PortaalInstellingen,
   AuditLogEntry,
   PlanningInstellingen,
+  Organisatie,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -5557,4 +5558,80 @@ export async function savePlanningInstellingen(
     `forgedesk_planning_instellingen_${userId}`,
     JSON.stringify(instellingen)
   )
+}
+
+// ============ ORGANISATIES ============
+
+export async function createOrganisatie(naam: string, userId: string): Promise<Organisatie> {
+  assertId(userId, 'user_id')
+  const now_ = new Date().toISOString()
+  const trialEinde = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('organisaties')
+      .insert({
+        naam,
+        eigenaar_id: userId,
+        abonnement_status: 'trial',
+        trial_start: now_,
+        trial_einde: trialEinde,
+        onboarding_compleet: false,
+        onboarding_stap: 0,
+        created_at: now_,
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return data as Organisatie
+  }
+  const org: Organisatie = {
+    id: crypto.randomUUID(),
+    naam,
+    eigenaar_id: userId,
+    abonnement_status: 'trial',
+    trial_start: now_,
+    trial_einde: trialEinde,
+    onboarding_compleet: false,
+    onboarding_stap: 0,
+    created_at: now_,
+  }
+  const orgs = getLocalData<Organisatie>('organisaties')
+  orgs.push(org)
+  safeSetItem('forgedesk_organisaties', JSON.stringify(orgs))
+  return org
+}
+
+export async function updateOrganisatie(organisatieId: string, updates: Partial<Organisatie>): Promise<Organisatie> {
+  assertId(organisatieId, 'organisatie_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('organisaties')
+      .update(updates)
+      .eq('id', organisatieId)
+      .select()
+      .single()
+    if (error) throw error
+    return data as Organisatie
+  }
+  const orgs = getLocalData<Organisatie>('organisaties')
+  const idx = orgs.findIndex((o) => o.id === organisatieId)
+  if (idx === -1) throw new Error('Organisatie niet gevonden')
+  orgs[idx] = { ...orgs[idx], ...updates }
+  safeSetItem('forgedesk_organisaties', JSON.stringify(orgs))
+  return orgs[idx]
+}
+
+export async function getOrganisatie(organisatieId: string): Promise<Organisatie | null> {
+  assertId(organisatieId, 'organisatie_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('organisaties')
+      .select('*')
+      .eq('id', organisatieId)
+      .single()
+    if (error) throw error
+    return data as Organisatie
+  }
+  const orgs = getLocalData<Organisatie>('organisaties')
+  return orgs.find((o) => o.id === organisatieId) || null
 }
