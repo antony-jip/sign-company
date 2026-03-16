@@ -58,7 +58,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('user_id', portaal.user_id)
       .maybeSingle()
 
-    const instellingenData = appSettingsEarly?.portaal_instellingen || {}
+    // Merge met defaults zodat ontbrekende velden correcte standaardwaarden krijgen
+    const DEFAULT_INSTELLINGEN = {
+      portaal_standaard_actief: false,
+      link_geldigheid_dagen: 30,
+      klant_kan_offerte_goedkeuren: true,
+      klant_kan_tekening_goedkeuren: true,
+      klant_kan_bestanden_uploaden: true,
+      klant_kan_berichten_sturen: false,
+      max_bestandsgrootte_mb: 10,
+      email_naar_klant_bij_nieuw_item: true,
+      email_naar_mij_bij_reactie: true,
+      herinnering_na_dagen: 3,
+      bedrijfslogo_op_portaal: true,
+      bedrijfskleuren_gebruiken: true,
+      contactgegevens_tonen: true,
+    }
+    const instellingenData = { ...DEFAULT_INSTELLINGEN, ...((appSettingsEarly?.portaal_instellingen as Record<string, unknown>) || {}) }
 
     // Check gedeactiveerd
     if (!portaal.actief) {

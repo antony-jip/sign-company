@@ -42,6 +42,7 @@ interface Props {
   onKlantNaamChange: (naam: string) => void
   onReactie: () => void
   primaire_kleur: string
+  kanGoedkeuren?: boolean
 }
 
 function formatCurrency(amount: number): string {
@@ -67,7 +68,7 @@ function isFileViewable(mime: string | null): boolean {
   return mime === 'application/pdf' || mime.startsWith('image/')
 }
 
-export function PortaalOfferteSection({ items, token, klantNaam, onKlantNaamChange, onReactie, primaire_kleur }: Props) {
+export function PortaalOfferteSection({ items, token, klantNaam, onKlantNaamChange, onReactie, primaire_kleur, kanGoedkeuren = true }: Props) {
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider px-1">Offertes</h2>
@@ -80,19 +81,21 @@ export function PortaalOfferteSection({ items, token, klantNaam, onKlantNaamChan
           onKlantNaamChange={onKlantNaamChange}
           onReactie={onReactie}
           primaire_kleur={primaire_kleur}
+          kanGoedkeuren={kanGoedkeuren}
         />
       ))}
     </section>
   )
 }
 
-function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, primaire_kleur }: {
+function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, primaire_kleur, kanGoedkeuren = true }: {
   item: PortaalItemData
   token: string
   klantNaam: string
   onKlantNaamChange: (naam: string) => void
   onReactie: () => void
   primaire_kleur: string
+  kanGoedkeuren?: boolean
 }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -214,7 +217,7 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
       )}
 
       {/* Onderteken formulier */}
-      {!isGetekend && !success && (
+      {kanGoedkeuren && !isGetekend && !success && (
         <div className="border-t border-gray-100 px-5 py-4 space-y-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

@@ -232,13 +232,23 @@ export function PortaalPagina() {
     fetchPortaal()
   }, [fetchPortaal])
 
-  // Poll for new messages every 5 seconds
+  // Poll for new messages every 5 seconds + refetch on tab focus
   useEffect(() => {
     if (!token || !data || data.status !== 'actief') return
     const interval = setInterval(() => {
       fetchPortaal()
     }, 5000)
-    return () => clearInterval(interval)
+    // Refetch immediately when tab becomes visible again (mobile resume)
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') {
+        fetchPortaal()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [token, data?.status, fetchPortaal])
 
   // Mark portaal as bekeken on load
@@ -308,11 +318,14 @@ export function PortaalPagina() {
   const project = data.project
   const portaal = data.portaal!
   const rawItems = data.items || []
-  const primaire_kleur = bedrijf.primaire_kleur || '#1a1a1a'
   const instellingen = (data.instellingen || {}) as Record<string, unknown>
+  const gebruikKleuren = instellingen.bedrijfskleuren_gebruiken !== false
+  const primaire_kleur = gebruikKleuren ? (bedrijf.primaire_kleur || '#1a1a1a') : '#1a1a1a'
   const toonContact = instellingen.contactgegevens_tonen !== false
   const toonLogo = instellingen.bedrijfslogo_op_portaal !== false
   const kanBerichtenSturen = instellingen.klant_kan_berichten_sturen !== false
+  const kanOfferteGoedkeuren = instellingen.klant_kan_offerte_goedkeuren !== false
+  const kanTekeningGoedkeuren = instellingen.klant_kan_tekening_goedkeuren !== false
 
   // Filter items per sectie
   const offerteItems = rawItems.filter(i => i.type === 'offerte' && (!i.bericht_type || i.bericht_type === 'item'))
@@ -378,6 +391,7 @@ export function PortaalPagina() {
             onKlantNaamChange={handleKlantNaamChange}
             onReactie={fetchPortaal}
             primaire_kleur={primaire_kleur}
+            kanGoedkeuren={kanOfferteGoedkeuren}
           />
         )}
 
@@ -389,6 +403,7 @@ export function PortaalPagina() {
             klantNaam={klantNaam}
             onReactie={fetchPortaal}
             primaire_kleur={primaire_kleur}
+            kanGoedkeuren={kanTekeningGoedkeuren}
           />
         )}
 

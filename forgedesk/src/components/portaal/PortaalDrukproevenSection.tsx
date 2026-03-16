@@ -40,6 +40,7 @@ interface Props {
   klantNaam: string
   onReactie: () => void
   primaire_kleur: string
+  kanGoedkeuren?: boolean
 }
 
 function isImage(mime: string | null): boolean {
@@ -70,7 +71,7 @@ function getImageReactie(reacties: PortaalReactieData[], bestandId: string): Por
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
 }
 
-export function PortaalDrukproevenSection({ items, token, klantNaam, onReactie, primaire_kleur }: Props) {
+export function PortaalDrukproevenSection({ items, token, klantNaam, onReactie, primaire_kleur, kanGoedkeuren = true }: Props) {
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider px-1">Drukproeven</h2>
@@ -82,18 +83,20 @@ export function PortaalDrukproevenSection({ items, token, klantNaam, onReactie, 
           klantNaam={klantNaam}
           onReactie={onReactie}
           primaire_kleur={primaire_kleur}
+          kanGoedkeuren={kanGoedkeuren}
         />
       ))}
     </section>
   )
 }
 
-function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur }: {
+function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur, kanGoedkeuren = true }: {
   item: PortaalItemData
   token: string
   klantNaam: string
   onReactie: () => void
   primaire_kleur: string
+  kanGoedkeuren?: boolean
 }) {
   const [lightboxIndex, setLightboxIndex] = useState(-1)
   const [itemLoading, setItemLoading] = useState<'goedkeuring' | 'revisie' | null>(null)
@@ -187,6 +190,7 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur }: {
                 onReactie={onReactie}
                 onImageClick={() => setLightboxIndex(index)}
                 primaire_kleur={primaire_kleur}
+                kanGoedkeuren={kanGoedkeuren}
               />
             ))}
           </div>
@@ -212,7 +216,7 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur }: {
         )}
 
         {/* Item-level approve/revisie (when no images, only documents) */}
-        {needsItemLevelApproval && !showItemRevisie && (
+        {kanGoedkeuren && needsItemLevelApproval && !showItemRevisie && (
           <div className="flex gap-2 mt-4">
             <button
               onClick={() => handleItemReactie('goedkeuring')}
@@ -239,7 +243,7 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur }: {
         )}
 
         {/* Item-level revisie form */}
-        {showItemRevisie && needsItemLevelApproval && (
+        {kanGoedkeuren && showItemRevisie && needsItemLevelApproval && (
           <div className="mt-4 space-y-2">
             <textarea
               value={itemRevisieBericht}
@@ -283,7 +287,7 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur }: {
   )
 }
 
-function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam, onReactie, onImageClick, primaire_kleur }: {
+function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam, onReactie, onImageClick, primaire_kleur, kanGoedkeuren = true }: {
   bestand: PortaalBestandData
   status: ImageStatus
   reactie: PortaalReactieData | undefined
@@ -293,6 +297,7 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
   onReactie: () => void
   onImageClick: () => void
   primaire_kleur: string
+  kanGoedkeuren?: boolean
 }) {
   const [loading, setLoading] = useState<'goedkeuring' | 'revisie' | null>(null)
   const [showRevisie, setShowRevisie] = useState(false)
@@ -389,7 +394,7 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
       )}
 
       {/* Action buttons */}
-      {status === 'verstuurd' && !showRevisie && (
+      {kanGoedkeuren && status === 'verstuurd' && !showRevisie && (
         <div className="flex gap-1.5">
           <button
             onClick={() => handleReactie('goedkeuring')}
@@ -416,7 +421,7 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
       )}
 
       {/* Revisie form */}
-      {showRevisie && status === 'verstuurd' && (
+      {kanGoedkeuren && showRevisie && status === 'verstuurd' && (
         <div className="space-y-2">
           <textarea
             value={revisieBericht}

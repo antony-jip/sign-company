@@ -61,6 +61,7 @@ export function PortaalChatInput({
   const [pendingFoto, setPendingFoto] = useState<File | null>(null)
   const [pendingTekeningFiles, setPendingTekeningFiles] = useState<File[]>([])
   const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
 
   // --- refs ----------------------------------------------------------------
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -119,6 +120,7 @@ export function PortaalChatInput({
     if (sending || disabled) return
 
     setSending(true)
+    setError('')
     try {
       if (pendingFoto) {
         await onSend({
@@ -142,6 +144,8 @@ export function PortaalChatInput({
         await onSend({ kind: 'tekst', tekst: tekst.trim(), emailNotify })
       }
       resetInput()
+    } catch (err) {
+      setError((err as Error).message || 'Versturen mislukt. Probeer het opnieuw.')
     } finally {
       setSending(false)
     }
@@ -314,6 +318,16 @@ export function PortaalChatInput({
             }}
             className="ml-auto"
           >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Error message */}
+      {error && (
+        <div className="mb-2 flex items-center gap-2 rounded-md bg-red-50 px-3 py-1.5 text-xs text-red-700">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError('')} className="ml-auto">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>

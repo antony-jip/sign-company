@@ -102,6 +102,7 @@ function extractMessages(items: PortaalItemData[]): Message[] {
 export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kanBerichtenSturen, primaire_kleur, onReactie }: Props) {
   const [bericht, setBericht] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -121,11 +122,15 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
   async function handleSend() {
     if (!bericht.trim() || loading) return
     setLoading(true)
+    setError('')
     try {
       const lastItemId = allItems.length > 0 ? allItems[allItems.length - 1].id : ''
-      if (!lastItemId) return
+      if (!lastItemId) {
+        setError('Kan bericht niet versturen')
+        return
+      }
 
-      await fetch('/api/portaal-reactie', {
+      const response = await fetch('/api/portaal-reactie', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -136,10 +141,13 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
           klant_naam: klantNaam.trim() || undefined,
         }),
       })
+      if (!response.ok) {
+        throw new Error('Versturen mislukt')
+      }
       setBericht('')
       onReactie()
     } catch {
-      // Ignore
+      setError('Bericht versturen mislukt. Probeer het opnieuw.')
     } finally {
       setLoading(false)
     }
@@ -210,6 +218,9 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
         {/* Input */}
         {kanBerichtenSturen && (
           <div className="border-t border-gray-100 px-4 py-3">
+            {error && (
+              <p className="text-xs text-red-600 mb-2">{error}</p>
+            )}
             <div className="flex items-end gap-2">
               <textarea
                 value={bericht}

@@ -105,7 +105,12 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
           },
           () => { fetchPortaal() }
         )
-        .subscribe()
+        .subscribe((status) => {
+          // On reconnect after disconnect, refetch data
+          if (status === 'SUBSCRIBED') {
+            fetchPortaal()
+          }
+        })
 
       return channel
     }
@@ -113,8 +118,23 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     let channel: Awaited<ReturnType<typeof subscribe>> | undefined
     subscribe().then(c => { channel = c })
 
+    // Fallback polling every 10s in case Realtime disconnects silently
+    const pollInterval = setInterval(() => {
+      if (!cancelled) fetchPortaal()
+    }, 10_000)
+
+    // Refetch when tab becomes visible again (mobile resume)
+    function handleVisibility() {
+      if (document.visibilityState === 'visible' && !cancelled) {
+        fetchPortaal()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     return () => {
       cancelled = true
+      clearInterval(pollInterval)
+      document.removeEventListener('visibilitychange', handleVisibility)
       if (channel) {
         import('@/services/supabaseClient').then(({ default: supabase }) => {
           supabase?.removeChannel(channel!)
@@ -199,9 +219,11 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
   // ── Send handler (from chat input) ──────────────────────────────────────
   async function handleSend(payload: SendPayload) {
-    if (!portaal || !user?.id) return
+    if (!portaal || !user?.id) throw new Error('Sessie verlopen. Ververs de pagina.')
 
     let newItem: PortaalItem | null = null
+
+    try {
 
     if (payload.kind === 'tekst') {
       newItem = await createPortaalItem({
@@ -356,6 +378,12 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
     toast.success('Verstuurd')
     await fetchPortaal()
+
+    } catch (err) {
+      console.error('Fout bij versturen:', err)
+      toast.error('Versturen mislukt. Probeer het opnieuw.')
+      throw err // Re-throw so PortaalChatInput can also handle it
+    }
   }
 
   // ── Email notification (fire-and-forget) ────────────────────────────────
