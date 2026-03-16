@@ -399,10 +399,17 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       }
 
       const project = await getProject(projectId)
-      if (!project?.klant_id || !portaal) return
+      if (!project?.klant_id || !portaal) {
+        console.warn('Email notificatie overgeslagen: geen klant gekoppeld aan project')
+        return
+      }
       const klant = await getKlant(project.klant_id)
       const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
-      if (!klantEmail) return
+      if (!klantEmail) {
+        console.warn('Email notificatie overgeslagen: klant heeft geen email adres')
+        toast.info('Klant heeft geen email adres — notificatie niet verstuurd')
+        return
+      }
       const bedrijfsnaam = profile?.bedrijfsnaam || ''
       const logoUrl = profile?.logo_url || ''
       const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
@@ -438,8 +445,9 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         plainBody,
         { html: htmlBody }
       )
-    } catch {
-      // Email faalt silently
+    } catch (emailErr) {
+      console.error('Email notificatie mislukt:', emailErr)
+      toast.error('Email naar klant kon niet worden verstuurd')
     }
   }
 
