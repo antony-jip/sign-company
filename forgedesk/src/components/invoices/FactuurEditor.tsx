@@ -82,6 +82,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
+import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { factuurVerzendTemplate } from '@/services/emailTemplateService'
@@ -689,6 +690,48 @@ export function FactuurEditor() {
     }
   }, [selectedKlant, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, documentStyle, existingFactuur])
 
+  // ============ UBL XML ============
+
+  const handleDownloadUbl = useCallback(() => {
+    if (!selectedKlant) {
+      toast.error('Selecteer eerst een klant')
+      return
+    }
+
+    try {
+      const xml = generateUBLInvoice({
+        factuur: {
+          nummer,
+          titel,
+          factuurdatum,
+          vervaldatum,
+          subtotaal,
+          btw_bedrag: btwBedrag,
+          totaal,
+          factuur_type: existingFactuur?.factuur_type || 'standaard',
+          notities: notities || '',
+          voorwaarden: voorwaarden || '',
+        },
+        items: validItems.map((item, idx) => ({
+          beschrijving: item.beschrijving,
+          aantal: item.aantal,
+          eenheidsprijs: item.eenheidsprijs,
+          btw_percentage: item.btw_percentage,
+          korting_percentage: item.korting_percentage,
+          totaal: calcLineTotal(item),
+          volgorde: idx + 1,
+        })),
+        klant: selectedKlant,
+        profiel: profile || {},
+      })
+      downloadUBLXml(xml, `factuur-${nummer}.xml`)
+      toast.success('UBL XML gedownload')
+    } catch (err) {
+      logger.error('Fout bij genereren UBL:', err)
+      toast.error('Kon UBL XML niet genereren')
+    }
+  }, [selectedKlant, profile, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, existingFactuur])
+
   // ============ SEND EMAIL ============
 
   const handleSendFactuur = useCallback(async () => {
@@ -983,6 +1026,10 @@ export function FactuurEditor() {
                     <DropdownMenuItem onClick={handleDownloadPdf}>
                       <FileDown className="h-4 w-4 mr-2" />
                       Download PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDownloadUbl}>
+                      <FileDown className="h-4 w-4 mr-2" />
+                      Download UBL XML
                     </DropdownMenuItem>
                     {currentStatus === 'concept' && selectedKlant?.email && (
                       <DropdownMenuItem onClick={() => setSendDialogOpen(true)}>

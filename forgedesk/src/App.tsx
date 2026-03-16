@@ -48,7 +48,7 @@ import { TijdregistratieLayout } from '@/components/projects/TijdregistratieLayo
 import { NacalculatieLayout } from '@/components/projects/NacalculatieLayout'
 import { TeamLayout } from '@/components/settings/TeamLayout'
 import { CommandPalette } from '@/components/shared/CommandPalette'
-import { ClientApprovalPage } from '@/components/portaal/ClientApprovalPage'
+// ClientApprovalPage deprecated — goedkeuring tokens now handled via PortaalPagina
 import { BookingBeheer } from '@/components/planning/BookingBeheer'
 import { PublicBookingPage } from '@/components/planning/PublicBookingPage'
 import { WerkbonnenLayout } from '@/components/werkbonnen/WerkbonnenLayout'
@@ -74,6 +74,13 @@ import { ForecastLayout } from '@/components/reports/ForecastLayout'
 import { ForgieChatPage } from '@/components/forgie/ForgieChatPage'
 import { VisualizerLayout } from '@/components/visualizer/VisualizerLayout'
 import { useDataInit } from '@/hooks/useDataInit'
+import { useParams } from 'react-router-dom'
+
+/** Redirect /goedkeuring/:token → /portaal/:token (backward-compatibiliteit) */
+function GoedkeuringRedirect() {
+  const { token } = useParams()
+  return <Navigate to={`/portaal/${token}`} replace />
+}
 
 function AppContent() {
   const { isReady } = useDataInit()
@@ -97,8 +104,8 @@ function AppContent() {
       <Route path="/check-inbox" element={<CheckInboxPage />} />
       <Route path="/wachtwoord-vergeten" element={<ForgotPasswordPage />} />
       <Route path="/wachtwoord-resetten" element={<ResetPasswordPage />} />
-      {/* Publieke route - klant goedkeuring (geen login vereist) */}
-      <Route path="/goedkeuring/:token" element={<ClientApprovalPage />} />
+      {/* Publieke route - klant goedkeuring → redirect naar portaal */}
+      <Route path="/goedkeuring/:token" element={<GoedkeuringRedirect />} />
       {/* Publieke route - klant booking (geen login vereist) */}
       <Route path="/boeken/:userId" element={<PublicBookingPage />} />
       {/* Publieke route - online factuur betalen (geen login vereist) */}

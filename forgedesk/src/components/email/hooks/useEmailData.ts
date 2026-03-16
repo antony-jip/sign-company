@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getEmails, getKlanten } from '@/services/supabaseService'
+import { getEmails, getKlanten, cacheEmailsToSupabase, getCachedEmails as getSupabaseCachedEmails } from '@/services/supabaseService'
 import { fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
 import type { Email, Klant } from '@/types'
@@ -74,12 +74,24 @@ export function useEmailData() {
       setUseIMAP(true)
       const emailData = result.emails.map((msg) => imapToEmail(msg, imapFolder))
       setCachedEmails(imapFolder, emailData)
+      // Fire-and-forget: cache naar Supabase voor offline/snellere herstart
+      if (user?.id) {
+        cacheEmailsToSupabase(user.id, result.emails, imapFolder).catch(() => {})
+      }
       return emailData
     } catch {
+      // IMAP mislukt — probeer Supabase cache
+      if (user?.id) {
+        const dbCached = await getSupabaseCachedEmails(user.id, imapFolder).catch(() => null)
+        if (dbCached && dbCached.length > 0) {
+          setUseIMAP(false)
+          return dbCached
+        }
+      }
       setUseIMAP(false)
       return await getEmails().catch(() => [])
     }
-  }, [imapToEmail, setCachedEmails, fetchLimit])
+  }, [imapToEmail, setCachedEmails, fetchLimit, user?.id])
 
   const loadMoreEmails = useCallback(async (folder: EmailFolder) => {
     if (!useIMAP || isLoadingMore) return

@@ -76,6 +76,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(409).json({ error: 'Er staat al een uitnodiging open voor dit e-mailadres' })
     }
 
+    // Check max 10 leden per organisatie (profielen + openstaande uitnodigingen)
+    const { count: profielCount } = await supabaseAdmin
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('organisatie_id', organisatie_id)
+
+    const { count: uitnodigingCount } = await supabaseAdmin
+      .from('uitnodigingen')
+      .select('id', { count: 'exact', head: true })
+      .eq('organisatie_id', organisatie_id)
+      .eq('status', 'verstuurd')
+
+    const totaalLeden = (profielCount || 0) + (uitnodigingCount || 0)
+    if (totaalLeden >= 10) {
+      return res.status(403).json({ error: 'Maximum aantal teamleden (10) bereikt voor deze organisatie' })
+    }
+
     // Stuur uitnodiging via Supabase Auth
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       data: {
