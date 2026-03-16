@@ -87,7 +87,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         setFetchedOfferte(offerte)
 
         const [klant, items] = await Promise.all([
-          offerte.klant_id ? getKlant(offerte.klant_id).catch(() => null) : Promise.resolve(null),
+          getKlant(offerte.klant_id),
           getOfferteItems(offerte.id),
         ])
 
@@ -332,18 +332,18 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               Offertes
             </button>
             <ChevronRight className="h-3.5 w-3.5" />
-            {fetchedKlant && fetchedKlant.bedrijfsnaam && (
+            {fetchedKlant && (
               <>
                 <button
                   onClick={() => navigate(`/klanten/${fetchedKlant.id}`)}
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
-                  {String(fetchedKlant.bedrijfsnaam)}
+                  {fetchedKlant.bedrijfsnaam}
                 </button>
                 <ChevronRight className="h-3.5 w-3.5" />
               </>
             )}
-            <span className="text-foreground dark:text-white font-medium">{offerteData.nummer ?? ''}</span>
+            <span className="text-foreground dark:text-white font-medium">{offerteData.nummer}</span>
           </div>
 
           {/* Row 2: Title + Status + Actions */}
@@ -357,7 +357,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               </button>
               <div className="min-w-0">
                 <h1 className="text-lg font-bold tracking-[-0.02em] text-foreground dark:text-white truncate">
-                  {offerteData.titel ?? ''}
+                  {offerteData.titel}
                 </h1>
                 <div className="flex items-center gap-2 mt-0.5">
                   <select
@@ -506,14 +506,12 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               </h3>
               {klant ? (
                 <div className="space-y-1">
-                  <p className="font-medium text-foreground dark:text-white">{klant.bedrijfsnaam ?? ''}</p>
-                  {klant.contactpersoon && <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">t.a.v. {klant.contactpersoon}</p>}
-                  {klant.adres && <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">{klant.adres}</p>}
-                  {(klant.postcode || klant.stad) && (
-                    <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
-                      {klant.postcode ?? ''} {klant.stad ?? ''}
-                    </p>
-                  )}
+                  <p className="font-medium text-foreground dark:text-white">{klant.bedrijfsnaam}</p>
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">t.a.v. {klant.contactpersoon}</p>
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">{klant.adres}</p>
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
+                    {klant.postcode} {klant.stad}
+                  </p>
                   {klant.btw_nummer && (
                     <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-2">
                       BTW: {klant.btw_nummer}
@@ -521,7 +519,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Particulier / geen klant gekoppeld</p>
+                <p className="text-sm text-muted-foreground">Klant niet gevonden</p>
               )}
             </div>
 
@@ -643,16 +641,16 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                                 </span>
                               )}
                             </td>
-                            <td className="py-2 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 text-xs">
+                            <td className="py-2 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 text-xs font-mono">
                               {variant.aantal}
                             </td>
-                            <td className="py-2 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 text-xs">
+                            <td className="py-2 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 text-xs font-mono">
                               {formatCurrency(variant.eenheidsprijs)}
                             </td>
-                            <td className="py-2 px-2 text-right text-muted-foreground/60 dark:text-muted-foreground text-xs">
+                            <td className="py-2 px-2 text-right text-muted-foreground/60 dark:text-muted-foreground text-xs font-mono">
                               {variant.btw_percentage}%
                             </td>
-                            <td className="py-2 px-2 text-right text-xs font-medium text-foreground/70 dark:text-muted-foreground/50">
+                            <td className="py-2 px-2 text-right text-xs font-medium text-foreground/70 dark:text-muted-foreground/50 font-mono">
                               {formatCurrency(variantTotaal)}
                             </td>
                           </tr>
@@ -680,16 +678,16 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-2 text-right text-foreground/70 dark:text-muted-foreground/50">
+                    <td className="py-3 px-2 text-right text-foreground/70 dark:text-muted-foreground/50 font-mono">
                       {item.aantal}
                     </td>
-                    <td className="py-3 px-2 text-right text-foreground/70 dark:text-muted-foreground/50">
+                    <td className="py-3 px-2 text-right text-foreground/70 dark:text-muted-foreground/50 font-mono">
                       {formatCurrency(item.eenheidsprijs)}
                     </td>
-                    <td className="py-3 px-2 text-right text-muted-foreground dark:text-muted-foreground/60">
+                    <td className="py-3 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 font-mono">
                       {item.btw_percentage}%
                     </td>
-                    <td className="py-3 px-2 text-right font-medium text-foreground dark:text-muted-foreground/20">
+                    <td className="py-3 px-2 text-right font-medium text-foreground dark:text-muted-foreground/20 font-mono">
                       {formatCurrency(lineTotaal)}
                     </td>
                   </tr>
@@ -747,7 +745,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           <div className="w-72 space-y-2">
             <div className="flex justify-between text-sm text-muted-foreground dark:text-muted-foreground/60 py-1">
               <span>Subtotaal</span>
-              <span className="font-medium text-foreground dark:text-muted-foreground/20">
+              <span className="font-medium text-foreground dark:text-muted-foreground/20 font-mono">
                 {formatCurrency(subtotaal)}
               </span>
             </div>
@@ -759,8 +757,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   key={percentage}
                   className="flex justify-between text-sm text-muted-foreground dark:text-muted-foreground/60 py-1"
                 >
-                  <span>BTW {percentage}%</span>
-                  <span className="font-medium text-foreground dark:text-muted-foreground/20">
+                  <span className="font-mono">BTW {percentage}%</span>
+                  <span className="font-medium text-foreground dark:text-muted-foreground/20 font-mono">
                     {formatCurrency(bedrag)}
                   </span>
                 </div>
@@ -769,7 +767,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             <div className="border-t-2 border-border dark:border-border pt-3 mt-2">
               <div className="flex justify-between">
                 <span className="text-lg font-bold text-foreground dark:text-white">Totaal</span>
-                <span className="text-lg font-bold" style={{ color: primaireKleur }}>
+                <span className="text-lg font-bold font-mono" style={{ color: primaireKleur }}>
                   {formatCurrency(totaal, valuta)}
                 </span>
               </div>

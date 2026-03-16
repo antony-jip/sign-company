@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
 import type { Klant } from '@/types'
+import { klantStatusConfig } from '@/types'
 
 interface ClientCardProps {
   key?: React.Key
@@ -70,9 +71,24 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
               <Building2 className="w-5 h-5 text-[#8BAFD4] dark:text-[#8BAFD4]" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-semibold text-base text-foreground dark:text-white truncate">
-                {klant.bedrijfsnaam}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-base text-foreground dark:text-white truncate">
+                  {klant.bedrijfsnaam}
+                </h3>
+                {klant.klant_status && klant.klant_status !== 'normaal' && (() => {
+                  const cfg = klantStatusConfig[klant.klant_status]
+                  if (!cfg) return null
+                  return (
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap"
+                      style={{ color: cfg.color, backgroundColor: cfg.bgColor }}
+                    >
+                      {(klant.klant_status === 'niet_helpen' || klant.klant_status === 'geblokkeerd') && '⚠ '}
+                      {cfg.label}
+                    </span>
+                  )
+                })()}
+              </div>
               <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 truncate">
                 {klant.contactpersoon}
               </p>
@@ -187,9 +203,18 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
           )}
         </div>
 
-        {/* Tags and project count */}
+        {/* Tags, labels and project count */}
         <div className="flex items-center justify-between pt-2 border-t border-border dark:border-border">
           <div className="flex flex-wrap gap-1.5">
+            {(klant.labels || []).slice(0, 2).map((label) => (
+              <Badge
+                key={label}
+                variant="outline"
+                className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground"
+              >
+                {label}
+              </Badge>
+            ))}
             {klant.tags.slice(0, 3).map((tag) => (
               <Badge
                 key={tag}

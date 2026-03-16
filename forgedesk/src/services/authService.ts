@@ -27,7 +27,7 @@ export async function signUp(email: string, password: string, metadata?: { voorn
     password,
     options: {
       data: metadata,
-      emailRedirectTo: `${import.meta.env.VITE_APP_URL || 'https://app.forgedesk.io'}/welkom`
+      emailRedirectTo: `${import.meta.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'}/welkom`
     }
   })
   if (error) throw error
@@ -65,7 +65,7 @@ export async function resetPassword(email: string) {
     return // Demo mode - no-op
   }
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${import.meta.env.VITE_APP_URL || 'https://app.forgedesk.io'}/wachtwoord-resetten`
+    redirectTo: `${import.meta.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'}/wachtwoord-resetten`
   })
   if (error) throw error
 }

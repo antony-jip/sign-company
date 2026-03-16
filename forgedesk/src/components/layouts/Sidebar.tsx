@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react'
-import { NavLink, Link, useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText,
   Mail, Calendar, PiggyBank, Settings, ChevronLeft,
@@ -249,10 +249,9 @@ export function Sidebar() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <Link
-        to="/"
+      <div
         className={cn(
-          'flex items-center h-16 px-4 flex-shrink-0 hover:opacity-80 transition-opacity',
+          'flex items-center h-16 px-4 flex-shrink-0',
           isCollapsed ? 'justify-center' : 'gap-[10px]'
         )}
       >
@@ -264,7 +263,7 @@ export function Sidebar() {
             FORGE<span className="font-medium text-muted-foreground">desk</span>
           </span>
         )}
-      </Link>
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 py-3 px-2 overflow-y-auto scrollbar-thin">
@@ -372,7 +371,7 @@ export function Sidebar() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden" aria-hidden="true" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden" aria-hidden="true" />
       )}
 
       {/* Mobile sidebar */}
@@ -387,7 +386,7 @@ export function Sidebar() {
       </aside>
 
       {/* Desktop sidebar */}
-      <div className="hidden md:flex flex-shrink-0 relative transition-[width] duration-200 ease-in-out" style={{ width: isCollapsed ? collapsedWidth : sidebarWidth }}>
+      <div className="hidden md:flex flex-shrink-0 relative" style={{ width: isCollapsed ? collapsedWidth : sidebarWidth }}>
         <aside
           className="flex flex-col h-screen wm-sidebar w-full transition-[width] duration-200 ease-in-out"
         >

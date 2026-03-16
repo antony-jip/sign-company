@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getAppSettings, updateAppSettings, getProfile, updateProfile } from '@/services/supabaseService'
 import type { AppSettings, Profile, PipelineStap } from '@/types'
@@ -55,9 +55,8 @@ interface AppSettingsContextType {
   emailFetchLimit: number
   // Forgie
   forgieEnabled: boolean
-  forgieChatOpen: boolean
-  setForgieChatOpen: (open: boolean) => void
   // Quick Actions
+  quickActionsEnabled: boolean
   quickActionItems: string[]
 }
 
@@ -68,7 +67,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(() => getDefaultAppSettings(''))
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [forgieChatOpen, setForgieChatOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -134,7 +132,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   // Anthropic key is server-side only (ANTHROPIC_API_KEY in env, not exposed to frontend)
   const anthropicApiKey = ''
 
-  const value: AppSettingsContextType = useMemo(() => ({
+  const value: AppSettingsContextType = {
     settings,
     profile,
     isLoading,
@@ -184,11 +182,10 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     emailFetchLimit: settings.email_fetch_limit ?? 200,
     // Forgie
     forgieEnabled: settings.forgie_enabled ?? true,
-    forgieChatOpen,
-    setForgieChatOpen,
     // Quick Actions
-    quickActionItems: settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant'],
-  }), [settings, profile, isLoading, handleUpdateSettings, handleUpdateProfile, refreshSettings, refreshProfile, forgieChatOpen])
+    quickActionsEnabled: settings.quick_actions_enabled ?? true,
+    quickActionItems: Array.isArray(settings.quick_action_items) ? settings.quick_action_items : ['project', 'mail', 'offerte', 'klant'],
+  }
 
   return (
     <AppSettingsContext.Provider value={value}>

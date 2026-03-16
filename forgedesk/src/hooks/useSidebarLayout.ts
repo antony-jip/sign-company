@@ -45,11 +45,6 @@ export function useSidebarLayout() {
     setDraggedSection(id)
     e.dataTransfer.setData('text/plain', id)
     e.dataTransfer.effectAllowed = 'move'
-    // Make the drag image semi-transparent
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = '0.5'
-      setTimeout(() => { (e.currentTarget as HTMLElement).style.opacity = '1' }, 0)
-    }
   }, [])
 
   const handleDragEnd = useCallback(() => {

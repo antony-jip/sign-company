@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -67,6 +67,7 @@ import {
   createFactuur,
   createFactuurItem,
   updateFactuur,
+  updateFactuurStatus,
   deleteFactuur,
   getOffertes,
   getOfferteItems,
@@ -86,6 +87,10 @@ import { sendEmail } from '@/services/gmailService'
 import { factuurVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { logger } from '../../utils/logger'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
+import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
+import { logWijziging } from '@/utils/auditLogger'
 
 // ============ TYPES ============
 
@@ -204,6 +209,10 @@ export function FactuurEditor() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+
+  // Unsaved changes warning
+  useUnsavedWarning(isDirty)
 
   // Existing factuur data (for edit mode)
   const [existingFactuur, setExistingFactuur] = useState<Factuur | null>(null)
@@ -230,6 +239,17 @@ export function FactuurEditor() {
   const [introTekst, setIntroTekst] = useState(factuurIntroTekst)
   const [outroTekst, setOutroTekst] = useState(factuurOutroTekst)
   const [items, setItems] = useState<LineItem[]>([createEmptyLineItem(standaardBtw)])
+
+  // Track form modifications after initial load
+  const initialLoadDone = useRef(false)
+  useEffect(() => {
+    if (!isLoading && !initialLoadDone.current) {
+      // Skip first render after data loads
+      initialLoadDone.current = true
+      return
+    }
+    if (initialLoadDone.current) setIsDirty(true)
+  }, [titel, nummer, klantId, items, notities, voorwaarden, factuurdatum, vervaldatum])
 
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -325,6 +345,18 @@ export function FactuurEditor() {
               const allOffertes = await getOffertes().catch(() => [])
               const offerte = allOffertes.find((o) => o.id === paramOfferteId)
               if (offerte) {
+                // Waarschuwing bij dubbele facturatie
+                if (offerte.status === 'gefactureerd' || offerte.geconverteerd_naar_factuur_id) {
+                  const doorgaan = window.confirm(
+                    `Let op: offerte ${offerte.nummer} is al eerder gefactureerd` +
+                    (offerte.geconverteerd_naar_factuur_op ? ` op ${new Date(offerte.geconverteerd_naar_factuur_op).toLocaleDateString('nl-NL')}` : '') +
+                    '.\n\nWil je toch een nieuwe factuur aanmaken?'
+                  )
+                  if (!doorgaan) {
+                    navigate('/facturen')
+                    return
+                  }
+                }
                 setOfferteId(offerte.id)
                 setKlantId(offerte.klant_id)
                 setShowKlantSelector(false)
@@ -494,6 +526,7 @@ export function FactuurEditor() {
         }
         const updated = await updateFactuur(existingFactuur.id, updates)
         setExistingFactuur({ ...existingFactuur, ...updated })
+        setIsDirty(false)
         toast.success('Factuur bijgewerkt')
       } else {
         const betaalToken = generateBetaalToken()
@@ -544,9 +577,14 @@ export function FactuurEditor() {
         // Update offerte met factuur link (bidirectioneel) en zet status op gefactureerd
         if (offerteId) {
           try {
+            // Haal bestaande offerte op voor factuur_ids array
+            const bestaandeOfferte = allOffertes.find((o) => o.id === offerteId)
+            const bestaandeFactuurIds = bestaandeOfferte?.factuur_ids || []
             await updateOfferte(offerteId, {
               geconverteerd_naar_factuur_id: newFactuur.id,
               status: 'gefactureerd',
+              factuur_ids: [...bestaandeFactuurIds, newFactuur.id],
+              geconverteerd_naar_factuur_op: bestaandeOfferte?.geconverteerd_naar_factuur_op || new Date().toISOString(),
             })
           } catch (err) {
             logger.error('Kon offerte status niet bijwerken:', err)
@@ -701,13 +739,17 @@ export function FactuurEditor() {
         betaald_bedrag: existingFactuur.totaal,
         betaaldatum: getTodayString(),
       }
-      const updated = await updateFactuur(existingFactuur.id, updates)
+      const updated = await updateFactuurStatus(existingFactuur.id, updates)
       setExistingFactuur({ ...existingFactuur, ...updated, ...updates })
+      if (user?.id) {
+        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        logWijziging({ userId: user.id, entityType: 'factuur', entityId: existingFactuur.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: existingFactuur.status, nieuweWaarde: 'betaald' })
+      }
       toast.success(`${nummer} gemarkeerd als betaald`)
     } catch {
       toast.error('Kon status niet bijwerken')
     }
-  }, [existingFactuur, nummer])
+  }, [existingFactuur, nummer, user])
 
   // ============ DELETE ============
 
@@ -1118,6 +1160,7 @@ export function FactuurEditor() {
                       {selectedKlant.adres}{selectedKlant.stad ? `, ${selectedKlant.stad}` : ''}
                     </div>
                   )}
+                  <KlantStatusWarning klant={selectedKlant} className="mt-2" />
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Geen klant geselecteerd</p>
@@ -1636,6 +1679,13 @@ export function FactuurEditor() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Audit Log */}
+      {existingFactuur && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <AuditLogPanel entityType="factuur" entityId={existingFactuur.id} />
+        </div>
+      )}
     </div>
   )
 }

@@ -77,6 +77,7 @@ import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { useSidebarLayout, type SidebarSectionId } from '@/hooks/useSidebarLayout'
 import type { CalculatieRegel, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { safeSetItem } from '@/utils/localStorageUtils'
 
 const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
@@ -1825,8 +1826,8 @@ export function QuoteCreation() {
   // ────────────────────────────────────────────────────────────────────
   if (showKlantSelector && !isEditMode) {
     return (
-      <div className="pb-12">
-        <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="pb-6">
+        <div className="space-y-3 max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => {
@@ -2046,9 +2047,9 @@ export function QuoteCreation() {
   // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
-    <div className="pb-12 mod-strip mod-strip-offertes">
+    <div className="pb-6 mod-strip mod-strip-offertes">
       {/* ──── HEADER BAR ──── */}
-      <div className="rounded-xl bg-gradient-to-br from-[#9B8EC4]/8 via-[#9B8EC4]/4 to-transparent dark:from-[#9B8EC4]/12 dark:via-[#9B8EC4]/6 border border-[#9B8EC4]/12 dark:border-[#9B8EC4]/20 px-6 py-4 mb-6">
+      <div className="rounded-xl bg-gradient-to-br from-[#9B8EC4]/8 via-[#9B8EC4]/4 to-transparent dark:from-[#9B8EC4]/12 dark:via-[#9B8EC4]/6 border border-[#9B8EC4]/12 dark:border-[#9B8EC4]/20 px-4 py-2.5 mb-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Back + Title + Badges */}
           <div className="flex items-center gap-3 min-w-0">
@@ -2149,11 +2150,11 @@ export function QuoteCreation() {
       )}
 
       {/* ──── TWO-COLUMN GRID ──── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         {/* ════════════════════════════════════════════════════════════════ */}
         {/* LEFT COLUMN: Scrollable content                                */}
         {/* ════════════════════════════════════════════════════════════════ */}
-        <div className="space-y-5 min-w-0">
+        <div className="space-y-3 min-w-0">
           {/* ── Introductietekst ── */}
           <Card>
             <CardHeader className="pb-3">
@@ -2387,18 +2388,24 @@ export function QuoteCreation() {
             </button>
 
             <div className={cn('space-y-0', sidebarCollapsed && 'hidden lg:block')}>
-              {/* Render sidebar sections in configured order */}
-              {sidebarLayout.order.map((sectionId) => {
-                // Determine visibility
+              {/* Render sidebar sections: pinned group (sticky) + unpinned */}
+              {(() => {
                 const showFactureren = isEditMode && (offerteStatus === 'goedgekeurd' || offerteStatus === 'gefactureerd' || !!geconverteerdNaarFactuurId)
-                if (sectionId === 'factureren' && !showFactureren) return null
-                if (sectionId === 'inkoop' && !user?.id) return null
+                const isVisible = (id: typeof sidebarLayout.order[number]) => {
+                  if (id === 'factureren' && !showFactureren) return false
+                  if (id === 'inkoop' && !user?.id) return false
+                  return true
+                }
+                const visibleOrder = sidebarLayout.order.filter(isVisible)
+                const pinnedIds = visibleOrder.filter(id => sidebarLayout.pinned.has(id))
+                const unpinnedIds = visibleOrder.filter(id => !sidebarLayout.pinned.has(id))
 
-                const isPinned = sidebarLayout.pinned.has(sectionId)
-                const isDragging = sidebarLayout.draggedSection === sectionId
-                const isDragOver = sidebarLayout.dragOverSection === sectionId
+                const renderSection = (sectionId: typeof sidebarLayout.order[number]) => {
+                  const isPinned = sidebarLayout.pinned.has(sectionId)
+                  const isDragging = sidebarLayout.draggedSection === sectionId
+                  const isDragOver = sidebarLayout.dragOverSection === sectionId
 
-                return (
+                  return (
                   <div
                     key={sectionId}
                     draggable
@@ -2410,7 +2417,6 @@ export function QuoteCreation() {
                     onDrop={(e) => sidebarLayout.handleDrop(e, sectionId)}
                     className={cn(
                       'group/sidebar-section pb-4 transition-all',
-                      isPinned && 'lg:sticky lg:top-4 z-10',
                       isDragging && 'opacity-40',
                       isDragOver && 'pt-1',
                     )}
@@ -2421,21 +2427,26 @@ export function QuoteCreation() {
                     )}
 
                     {/* Drag handle + pin bar */}
-                    <div className="flex items-center gap-1 mb-1 opacity-0 group-hover/sidebar-section:opacity-100 transition-opacity">
-                      <div className="cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-muted-foreground">
-                        <GripVertical className="h-3 w-3" />
+                    <div className={cn(
+                      'flex items-center gap-1.5 mb-1 transition-opacity',
+                      isPinned
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover/sidebar-section:opacity-100'
+                    )}>
+                      <div className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted text-muted-foreground/40 hover:text-muted-foreground">
+                        <GripVertical className="h-3.5 w-3.5" />
                       </div>
                       <button
                         onClick={() => sidebarLayout.togglePin(sectionId)}
                         className={cn(
-                          'p-0.5 rounded transition-colors',
+                          'p-1 rounded transition-colors',
                           isPinned
-                            ? 'text-primary bg-primary/10 hover:bg-primary/20'
+                            ? 'text-primary bg-primary/15 hover:bg-primary/25'
                             : 'text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted'
                         )}
                         title={isPinned ? 'Losmaken' : 'Vastzetten (sticky)'}
                       >
-                        <Pin className={cn('h-3 w-3', isPinned && 'fill-current')} />
+                        <Pin className={cn('h-3.5 w-3.5', isPinned && 'fill-current')} />
                       </button>
                       <span className="text-[9px] text-muted-foreground/40 ml-0.5">
                         {sectionId === 'klant' && 'Klant'}
@@ -2470,6 +2481,8 @@ export function QuoteCreation() {
                                     <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-muted-foreground" />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
                                   )}
                                 </div>
+
+                                <KlantStatusWarning klant={selectedKlant} className="mt-2" />
 
                                 {selectedKlant.contactpersonen?.length > 0 && (
                                   <div className="space-y-1.5">
@@ -2856,8 +2869,20 @@ export function QuoteCreation() {
                       </div>
                     )}
                   </div>
+                  )
+                }
+
+                return (
+                  <>
+                    {pinnedIds.length > 0 && (
+                      <div className="lg:sticky lg:top-4 z-10 bg-background rounded-xl">
+                        {pinnedIds.map(id => renderSection(id))}
+                      </div>
+                    )}
+                    {unpinnedIds.map(id => renderSection(id))}
+                  </>
                 )
-              })}
+              })()}
             </div>
           </div>
         </div>{/* end RIGHT SIDEBAR */}

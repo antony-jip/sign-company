@@ -54,12 +54,13 @@ import {
   Globe,
   Copy,
   Receipt,
-  ChevronDown,
+  Share2,
 } from 'lucide-react'
 import {
   getFacturen,
   createFactuur,
   updateFactuur,
+  updateFactuurStatus,
   deleteFactuur,
   getKlanten,
   getOffertes,
@@ -85,6 +86,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import { PaginationControls } from '@/components/ui/pagination-controls'
 
 // ============ TYPES ============
 
@@ -265,7 +267,8 @@ export function FacturenLayout() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [sortField, setSortField] = useState<SortField>('datum')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 50
 
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -398,6 +401,15 @@ export function FacturenLayout() {
 
     return result
   }, [facturen, searchQuery, filterStatus, sortField, sortDir])
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1) }, [searchQuery, filterStatus, sortField, sortDir])
+
+  const totalPages = Math.ceil(filteredFacturen.length / PAGE_SIZE)
+  const paginatedFacturen = useMemo(
+    () => filteredFacturen.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredFacturen, currentPage]
+  )
 
   const goedgekeurdeOffertes = useMemo(() => {
     return offertes.filter((o) => o.status === 'goedgekeurd')
@@ -624,7 +636,7 @@ export function FacturenLayout() {
       }
 
       try {
-        const updated = await updateFactuur(factuur.id, updates)
+        const updated = await updateFactuurStatus(factuur.id, updates)
         setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
       } catch {
         toast.error('Kon status niet bijwerken')
@@ -1310,7 +1322,7 @@ export function FacturenLayout() {
           <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] mb-3">
             Totaal openstaand
           </p>
-          <p className="display-number display-number-lg text-foreground">
+          <p className="display-number display-number-lg text-foreground font-mono">
             {formatCurrency(statistics.totaalOpenstaand)}
           </p>
           <p className="text-[12px] font-semibold text-[#3A7D52] mt-3">
@@ -1322,7 +1334,7 @@ export function FacturenLayout() {
           <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] mb-3">
             Betaald deze maand
           </p>
-          <p className="display-number display-number-lg text-foreground">
+          <p className="display-number display-number-lg text-foreground font-mono">
             {formatCurrency(statistics.betaaldDezeMaand)}
           </p>
           <p className="text-[12px] font-semibold text-[#3A7D52] mt-3">
@@ -1444,66 +1456,67 @@ export function FacturenLayout() {
         ))}
       </div>
 
-      {/* ── Bulk action bar ── */}
-      {selectedIds.size > 0 && (
-        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: 'linear-gradient(135deg, var(--color-sage), #d4e8db)', borderColor: 'var(--color-sage-border)' }}>
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'var(--wm-noise)' }} />
-          <div className="relative flex items-center gap-3 px-4 py-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: 'var(--color-sage-text)', color: 'white' }}>
-                <span className="text-[11px] font-bold">{selectedIds.size}</span>
+      {/* ── Mobile card view ── */}
+      <div className="md:hidden space-y-2 -mx-1">
+        {filteredFacturen.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8">Geen facturen gevonden</p>
+        )}
+        {paginatedFacturen.map((factuur) => {
+          const config = STATUS_CONFIG[factuur.status]
+          const isOverdue = factuur.status === 'verzonden' && new Date(factuur.vervaldatum) < new Date()
+          const openstaand = factuur.totaal - factuur.betaald_bedrag
+          return (
+            <div
+              key={`mobile-${factuur.id}`}
+              onClick={() => setViewingFactuur(factuur)}
+              className={cn(
+                'p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-3',
+                isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border
+              )}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-mono font-semibold text-foreground">{factuur.nummer}</span>
+                    {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
+                      <Badge variant="secondary" className={cn('text-[9px] px-1 py-0 h-4', TYPE_CONFIG[factuur.factuur_type].color)}>
+                        {TYPE_CONFIG[factuur.factuur_type].label}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {factuur.klant_naam || 'Onbekende klant'}
+                  </p>
+                </div>
+                <Badge variant="secondary" className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-lg flex-shrink-0', config.color)}>
+                  <span className={cn('w-1.5 h-1.5 rounded-full mr-1 inline-block', config.dot)} />
+                  {config.label}
+                </Badge>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[13px] font-semibold" style={{ color: 'var(--color-sage-text)' }}>
-                  {selectedIds.size} factu{selectedIds.size === 1 ? 'ur' : 'ren'} geselecteerd
-                </span>
-                <span className="text-[10px] font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
-                  van {filteredFacturen.length} totaal
-                </span>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span>{formatDate(factuur.factuurdatum)}</span>
+                  {isOverdue && (
+                    <span className="text-red-600 dark:text-red-400 font-medium flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      Verlopen
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {openstaand > 0 && openstaand < factuur.totaal && (
+                    <span className="text-[10px] text-muted-foreground">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
+                  )}
+                  <span className="font-mono font-semibold text-foreground">{formatCurrency(factuur.totaal)}</span>
+                </div>
               </div>
             </div>
-            <button
-              onClick={toggleSelectAll}
-              className="text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
-              style={{ color: 'var(--color-sage-text)' }}
-            >
-              {selectedIds.size === filteredFacturen.length ? 'Deselecteer alles' : 'Selecteer alles'}
-            </button>
-            <div className="flex-1" />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[12px] font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
-                  <ArrowUpDown className="w-3 h-3" />
-                  Status wijzigen
-                  <ChevronDown className="w-3 h-3 opacity-50" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                {(Object.keys(STATUS_CONFIG) as FactuurStatus[]).map((status) => (
-                  <DropdownMenuItem
-                    key={status}
-                    onClick={() => handleBulkStatusChange(status)}
-                    className="flex items-center gap-2 text-xs"
-                  >
-                    <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', STATUS_CONFIG[status].dot)} />
-                    {STATUS_CONFIG[status].label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <button
-              onClick={() => setSelectedIds(new Set())}
-              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-white/40"
-              style={{ color: 'var(--color-sage-text)' }}
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
+          )
+        })}
+      </div>
 
-      {/* ── Table ─────────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
+      {/* ── Desktop Table ─────────────────────────────────────────────────── */}
+      <div className="hidden md:block rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -1550,7 +1563,7 @@ export function FacturenLayout() {
                   </td>
                 </tr>
               )}
-              {filteredFacturen.map((factuur) => {
+              {paginatedFacturen.map((factuur) => {
                 const config = STATUS_CONFIG[factuur.status]
                 const isOverdue =
                   factuur.status === 'verzonden' &&
@@ -1688,7 +1701,7 @@ export function FacturenLayout() {
                             <FileDown className="h-4 w-4 mr-2" />
                             Download PDF
                           </DropdownMenuItem>
-                          {factuur.betaal_link && (
+                          {factuur.betaal_link && (<>
                             <DropdownMenuItem onClick={() => {
                               navigator.clipboard.writeText(factuur.betaal_link!).then(() => {
                                 toast.success('Betaallink gekopieerd naar klembord')
@@ -1699,7 +1712,19 @@ export function FacturenLayout() {
                               <Link className="h-4 w-4 mr-2" />
                               Kopieer betaallink
                             </DropdownMenuItem>
-                          )}
+                            <DropdownMenuItem onClick={async () => {
+                              const url = factuur.betaal_link!
+                              if (navigator.share) {
+                                try { await navigator.share({ title: `Factuur ${factuur.nummer}`, url }) } catch { /* cancelled */ }
+                              } else {
+                                await navigator.clipboard.writeText(url)
+                                toast.success('Link gekopieerd naar klembord')
+                              }
+                            }}>
+                              <Share2 className="h-4 w-4 mr-2" />
+                              Deel factuur
+                            </DropdownMenuItem>
+                          </>)}
                           {factuur.status === 'concept' && (
                             <DropdownMenuItem onClick={() => handleSendFactuur(factuur)}>
                               <Send className="h-4 w-4 mr-2" />
@@ -1747,6 +1772,15 @@ export function FacturenLayout() {
           </table>
         </div>
       </div>
+
+      {/* Paginatie */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredFacturen.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
 
       {/* ── View Factuur Dialog ────────────────────────────────────── */}
       <Dialog open={!!viewingFactuur} onOpenChange={(open) => !open && setViewingFactuur(null)}>

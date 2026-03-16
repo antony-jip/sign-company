@@ -67,7 +67,7 @@ export function StatisticsCards() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="rounded-xl p-[22px] h-[120px] bg-muted/30 animate-pulse" />
         ))}
@@ -106,14 +106,14 @@ export function StatisticsCards() {
   ]
 
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 stat-cards-stagger">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 stat-cards-stagger">
       {stats.map((stat) => (
-        <div key={stat.title} className={`${stat.gradient} rounded-2xl p-4 sm:p-6 cursor-default group stat-card-hover stat-card-glow relative overflow-hidden`}>
+        <div key={stat.title} className={`${stat.gradient} rounded-2xl p-6 cursor-default group stat-card-hover stat-card-glow relative overflow-hidden`}>
           <Sparkline />
           <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] dark:text-[#a0a0a0] mb-3 relative z-[1]">
             {stat.title}
           </p>
-          <p className="display-number display-number-xl text-foreground relative z-[1]">
+          <p className="display-number display-number-xl text-foreground relative z-[1] font-mono">
             {stat.value}
           </p>
           {stat.change && (

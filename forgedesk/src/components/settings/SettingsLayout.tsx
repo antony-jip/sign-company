@@ -58,7 +58,8 @@ import {
   Loader2,
   Package,
   Link2,
-  FolderKanban,
+  LayoutGrid,
+  GripVertical,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -74,12 +75,13 @@ import { uploadFile, downloadFile } from '@/services/storageService'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
+import { useDashboardLayout } from '@/hooks/useDashboardLayout'
+import { WIDGET_REGISTRY } from '@/components/dashboard/FORGEdeskDashboard'
 import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
 import { PortaalTab } from './PortaalTab'
-import { TeamledenTab } from './TeamledenTab'
-import { AbonnementTab } from './AbonnementTab'
+import { SidebarTab } from './SidebarTab'
 import { Sparkles } from 'lucide-react'
 
 // Shared sub-tab navigation component
@@ -170,6 +172,7 @@ const settingsTabs = [
   { id: 'integraties', label: 'Integraties', icon: Puzzle, description: 'Koppelingen met externe diensten' },
   { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
   { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
+  { id: 'sidebar', label: 'Sidebar', icon: PanelLeft, description: 'Project sidebar secties' },
   { id: 'portaal', label: 'Portaal', icon: Link2, description: 'Klantportaal instellingen' },
   { id: 'forgie', label: 'Forgie AI', icon: Sparkles, description: 'AI assistent, visualizer en data import' },
   { id: 'teamleden', label: 'Teamleden', icon: Users, description: 'Leden, rollen en uitnodigingen' },
@@ -187,6 +190,7 @@ function renderTabContent(tabId: string) {
     case 'integraties': return <IntegratiesTab />
     case 'beveiliging': return <BeveiligingTab />
     case 'weergave': return <WeergaveTab />
+    case 'sidebar': return <SidebarTab />
     case 'portaal': return <PortaalTab />
     case 'forgie': return <ForgieTab />
     case 'teamleden': return <TeamledenTab />
@@ -808,12 +812,20 @@ function DocumentenTab() {
   const [factuurPrefix, setFactuurPrefix] = useState('FAC')
   const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
   const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
+  const [projectPrefix, setProjectPrefix] = useState('PRJ')
   const [betaaltermijn, setBetaaltermijn] = useState('30')
   const [voorwaarden, setVoorwaarden] = useState('')
   const [herinnering1, setHerinnering1] = useState('')
   const [herinnering2, setHerinnering2] = useState('')
   const [aanmaningTekst, setAanmaningTekst] = useState('')
   const [standaardUurtarief, setStandaardUurtarief] = useState('75')
+  // Offerte herinnering instellingen
+  const [offerteHerinnering1Actief, setOfferteHerinnering1Actief] = useState(true)
+  const [offerteHerinnering1Dagen, setOfferteHerinnering1Dagen] = useState('7')
+  const [offerteHerinnering1Tekst, setOfferteHerinnering1Tekst] = useState('Beste {contactpersoon_naam},\n\nOp {verstuurd_op} hebben wij u offerte {offerte_nummer} toegestuurd ter waarde van {offerte_bedrag}.\n\nGraag vernemen wij of u nog vragen heeft of dat wij de offerte mogen omzetten naar een opdracht.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
+  const [offerteHerinnering2Actief, setOfferteHerinnering2Actief] = useState(true)
+  const [offerteHerinnering2Dagen, setOfferteHerinnering2Dagen] = useState('14')
+  const [offerteHerinnering2Tekst, setOfferteHerinnering2Tekst] = useState('Beste {contactpersoon_naam},\n\nWij willen u er graag aan herinneren dat offerte {offerte_nummer} van {verstuurd_op} nog openstaat. De offerte vervalt op {vervaldatum}.\n\nMocht u vragen hebben of willen bespreken, dan horen wij het graag.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
@@ -836,6 +848,7 @@ function DocumentenTab() {
       setFactuurPrefix(data.factuur_prefix || 'FAC')
       setCreditnotaPrefix(data.creditnota_prefix || 'CN')
       setWerkbonPrefix(data.werkbon_prefix || 'WB')
+      setProjectPrefix(data.project_prefix || 'PRJ')
       setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
       setVoorwaarden(data.factuur_voorwaarden || '')
       setHerinnering1(data.herinnering_1_tekst || '')
@@ -875,6 +888,7 @@ function DocumentenTab() {
         factuur_prefix: factuurPrefix,
         creditnota_prefix: creditnotaPrefix,
         werkbon_prefix: werkbonPrefix,
+        project_prefix: projectPrefix,
         factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
         factuur_voorwaarden: voorwaarden,
         herinnering_1_tekst: herinnering1,
@@ -1007,7 +1021,7 @@ function DocumentenTab() {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Prefixes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="factuur-prefix">Factuur prefix</Label>
                   <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value.toUpperCase())} placeholder="FAC" maxLength={5} />
@@ -1022,6 +1036,11 @@ function DocumentenTab() {
                   <Label htmlFor="werkbon-prefix">Werkbon prefix</Label>
                   <Input id="werkbon-prefix" value={werkbonPrefix} onChange={(e) => setWerkbonPrefix(e.target.value.toUpperCase())} placeholder="WB" maxLength={5} />
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {werkbonPrefix}-2026-0001</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="project-prefix">Project prefix</Label>
+                  <Input id="project-prefix" value={projectPrefix} onChange={(e) => setProjectPrefix(e.target.value.toUpperCase())} placeholder="PRJ" maxLength={5} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {projectPrefix}-2026-0001</p>
                 </div>
               </div>
 
@@ -1063,6 +1082,44 @@ function DocumentenTab() {
                 <div className="space-y-2">
                   <Label htmlFor="aanmaning">Aanmaning</Label>
                   <Textarea id="aanmaning" value={aanmaningTekst} onChange={(e) => setAanmaningTekst(e.target.value)} placeholder="Bijv. Indien wij binnen 7 dagen geen betaling ontvangen, zijn wij genoodzaakt verdere stappen te ondernemen." rows={2} />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Offerte Herinneringen */}
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-foreground dark:text-white">Offerte herinneringen</p>
+                <p className="text-xs text-muted-foreground">Herinneringen voor verstuurde offertes zonder reactie. Merge velden: {'{'}klant_naam{'}'}, {'{'}contactpersoon_naam{'}'}, {'{'}offerte_nummer{'}'}, {'{'}offerte_bedrag{'}'}, {'{'}verstuurd_op{'}'}, {'{'}vervaldatum{'}'}, {'{'}bedrijfsnaam{'}'}</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Herinnering 1</Label>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={offerteHerinnering1Actief} onChange={(e) => setOfferteHerinnering1Actief(e.target.checked)} className="rounded" />
+                      Actief
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Na</Label>
+                    <Input type="number" value={offerteHerinnering1Dagen} onChange={(e) => setOfferteHerinnering1Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
+                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
+                  </div>
+                  <Textarea value={offerteHerinnering1Tekst} onChange={(e) => setOfferteHerinnering1Tekst(e.target.value)} rows={3} className="text-xs" />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Herinnering 2</Label>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={offerteHerinnering2Actief} onChange={(e) => setOfferteHerinnering2Actief(e.target.checked)} className="rounded" />
+                      Actief
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Na</Label>
+                    <Input type="number" value={offerteHerinnering2Dagen} onChange={(e) => setOfferteHerinnering2Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
+                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
+                  </div>
+                  <Textarea value={offerteHerinnering2Tekst} onChange={(e) => setOfferteHerinnering2Tekst(e.target.value)} rows={3} className="text-xs" />
                 </div>
               </div>
             </CardContent>
@@ -2098,6 +2155,11 @@ function IntegratiesTab() {
   const [subTab, setSubTab] = useState('koppelingen')
   const { user } = useAuth()
   const { refreshSettings } = useAppSettings()
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+  const supabaseConnected = !!supabaseUrl && supabaseUrl !== 'your-supabase-url-here'
+  // Anthropic key is server-side only (configured via ANTHROPIC_API_KEY env var on Vercel)
+  const anthropicConfigured = supabaseConnected
+
   // Mollie state
   const [mollieEnabled, setMollieEnabled] = useState(false)
   const [mollieApiKey, setMollieApiKey] = useState('')
@@ -2167,10 +2229,90 @@ function IntegratiesTab() {
     }
   }
 
+  const integrations = [
+    {
+      id: 'supabase',
+      name: 'Supabase',
+      description: 'Database en authenticatie backend',
+      connected: supabaseConnected,
+      icon: (
+        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+          <span className="text-green-700 dark:text-green-400 font-bold text-sm">SB</span>
+        </div>
+      ),
+      details: supabaseConnected ? `URL: ${supabaseUrl.substring(0, 30)}...` : 'Demo modus actief - data wordt lokaal opgeslagen',
+    },
+    {
+      id: 'anthropic',
+      name: 'Anthropic (Forgie)',
+      description: 'AI-functionaliteit aangedreven door Claude',
+      connected: anthropicConfigured,
+      icon: (
+        <div className="w-10 h-10 bg-blush/30 dark:bg-blush-deep/30 rounded-lg flex items-center justify-center">
+          <span className="text-blush-deep font-bold text-sm">AI</span>
+        </div>
+      ),
+    },
+  ]
+
   return (
     <>
     <SubTabNav tabs={INTEGRATIES_TABS} active={subTab} onChange={setSubTab} />
     <div className="space-y-4">
+      {integrations.map((integration) => (
+        <Card
+          key={integration.id}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              {integration.icon}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-1">
+                  <h3 className="text-base font-semibold text-foreground dark:text-white">
+                    {integration.name}
+                  </h3>
+                  <Badge
+                    className={
+                      integration.connected
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        : 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
+                    }
+                  >
+                    {integration.connected ? (
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Verbonden
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <XCircle className="w-3 h-3" />
+                        Niet verbonden
+                      </span>
+                    )}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
+                  {integration.description}
+                </p>
+                {integration.details && (
+                  <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mt-1 font-mono">
+                    {integration.details}
+                  </p>
+                )}
+
+                {/* Anthropic - server-side configured */}
+                {integration.id === 'anthropic' && (
+                  <p className="text-xs text-muted-foreground/60 dark:text-muted-foreground mt-2">
+                    De Anthropic API key wordt veilig op de server geconfigureerd (ANTHROPIC_API_KEY environment variable). Forgie gebruikt Claude voor AI-functies.
+                  </p>
+                )}
+
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
       {/* ── Mollie Instellingen ── */}
       <Card>
         <CardContent className="p-6 space-y-4">
@@ -2845,6 +2987,7 @@ const WEERGAVE_TABS: SubTab[] = [
   { id: 'layout', label: 'Layout', icon: Monitor },
   { id: 'voorkeuren', label: 'Voorkeuren', icon: Sliders },
   { id: 'navigatie', label: 'Navigatie', icon: Settings },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
 ]
 
 function WeergaveTab() {
@@ -3210,7 +3353,6 @@ function WeergaveTab() {
     )}
 
     {subTab === 'voorkeuren' && (
-    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -3303,45 +3445,59 @@ function WeergaveTab() {
     {/* Snelkoppelingen */}
     <Card className="mt-4">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="w-5 h-5" />
-          Snelkoppelingen (+)
-        </CardTitle>
-        <CardDescription>Kies welke snelkoppelingen zichtbaar zijn in de + knop rechtsonder</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Snelkoppelingen (+)
+            </CardTitle>
+            <CardDescription className="mt-1.5">Toon de + knop rechtsonder voor snelle acties</CardDescription>
+          </div>
+          <Switch
+            checked={settings.quick_actions_enabled ?? true}
+            onCheckedChange={(checked) => {
+              updateSettings({ quick_actions_enabled: checked })
+              toast.success(checked ? 'Snelkoppelingen ingeschakeld' : 'Snelkoppelingen uitgeschakeld')
+            }}
+          />
+        </div>
       </CardHeader>
+      {(settings.quick_actions_enabled ?? true) && (
       <CardContent className="space-y-3">
-        {[
-          { id: 'project', label: 'Nieuw project', icon: FolderKanban, color: '#8BAFD4' },
-          { id: 'mail', label: 'Nieuwe mail', icon: Mail, color: '#7BABC7' },
-          { id: 'offerte', label: 'Nieuwe offerte', icon: FileText, color: '#E8866A' },
-          { id: 'klant', label: 'Nieuwe klant', icon: Users, color: '#6B9FCC' },
-        ].map((item) => {
-          const Icon = item.icon
-          const items = settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant']
-          const enabled = items.includes(item.id)
-          return (
-            <div key={item.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${item.color}18` }}>
-                  <Icon className="w-4 h-4" style={{ color: item.color }} />
+        {(() => {
+          const activeItems: string[] = Array.isArray(settings.quick_action_items) ? settings.quick_action_items : ['project', 'mail', 'offerte', 'klant']
+          return [
+            { id: 'project', label: 'Nieuw project', icon: FolderKanban, color: '#8BAFD4' },
+            { id: 'mail', label: 'Nieuwe mail', icon: Mail, color: '#7BABC7' },
+            { id: 'offerte', label: 'Nieuwe offerte', icon: FileText, color: '#E8866A' },
+            { id: 'klant', label: 'Nieuwe klant', icon: Users, color: '#6B9FCC' },
+          ].map((item) => {
+            const Icon = item.icon
+            const enabled = activeItems.includes(item.id)
+            return (
+              <div key={item.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${item.color}18` }}>
+                    <Icon className="w-4 h-4" style={{ color: item.color }} />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{item.label}</span>
                 </div>
-                <span className="text-sm font-medium text-foreground">{item.label}</span>
+                <Switch
+                  checked={enabled}
+                  onCheckedChange={(checked) => {
+                    const updated = checked
+                      ? [...activeItems, item.id]
+                      : activeItems.filter((i: string) => i !== item.id)
+                    updateSettings({ quick_action_items: updated })
+                    toast.success(checked ? `${item.label} toegevoegd` : `${item.label} verwijderd`)
+                  }}
+                />
               </div>
-              <Switch
-                checked={enabled}
-                onCheckedChange={(checked) => {
-                  const current = settings.quick_action_items ?? ['project', 'mail', 'offerte', 'klant']
-                  const updated = checked
-                    ? [...current, item.id]
-                    : current.filter((i: string) => i !== item.id)
-                  updateSettings({ quick_action_items: updated })
-                  toast.success(checked ? `${item.label} toegevoegd` : `${item.label} verwijderd`)
-                }}
-              />
-            </div>
-          )
-        })}
+            )
+          })
+        })()}
       </CardContent>
+      )}
     </Card>
     </>
     )}
@@ -3404,6 +3560,117 @@ function WeergaveTab() {
       </CardContent>
     </Card>
     )}
+
+    {subTab === 'dashboard' && <DashboardSettingsTab />}
     </>
+  )
+}
+
+// ============ DASHBOARD SETTINGS TAB ============
+
+function DashboardSettingsTab() {
+  const dashLayout = useDashboardLayout()
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <LayoutGrid className="w-5 h-5" />
+          Dashboard aanpassen
+        </CardTitle>
+        <CardDescription>
+          Kies welke widgets zichtbaar zijn op je dashboard en sleep ze in de gewenste volgorde.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Active widgets */}
+        <div>
+          <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3">
+            Actieve widgets
+          </h4>
+          <div className="space-y-1.5">
+            {dashLayout.order.map((id) => {
+              const def = WIDGET_REGISTRY[id]
+              if (!def) return null
+              const IconComp = def.icon
+              return (
+                <div
+                  key={id}
+                  draggable
+                  onDragStart={(e) => dashLayout.handleDragStart(e, id)}
+                  onDragEnd={dashLayout.handleDragEnd}
+                  onDragEnter={(e) => dashLayout.handleDragEnter(e, id)}
+                  onDragLeave={dashLayout.handleDragLeave}
+                  onDragOver={dashLayout.handleDragOver}
+                  onDrop={(e) => dashLayout.handleDrop(e, id)}
+                  className={cn(
+                    'flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/30 transition-colors group',
+                    dashLayout.draggedWidget === id && 'opacity-40',
+                    dashLayout.dragOverWidget === id && 'ring-2 ring-primary/30',
+                  )}
+                >
+                  <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground transition-colors">
+                    <GripVertical className="h-4 w-4" />
+                  </div>
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-accent/20 to-primary/20 flex-shrink-0">
+                    <IconComp className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{def.label}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{def.description}</p>
+                  </div>
+                  <Switch
+                    checked={true}
+                    onCheckedChange={() => dashLayout.toggleWidget(id)}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Hidden widgets */}
+        {dashLayout.allWidgets.filter(id => dashLayout.hidden.has(id)).length > 0 && (
+          <div>
+            <Separator className="mb-4" />
+            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3">
+              Beschikbare widgets
+            </h4>
+            <div className="space-y-1.5">
+              {dashLayout.allWidgets.filter(id => dashLayout.hidden.has(id)).map((id) => {
+                const def = WIDGET_REGISTRY[id]
+                if (!def) return null
+                const IconComp = def.icon
+                return (
+                  <div
+                    key={id}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/30 transition-colors opacity-60"
+                  >
+                    <div className="w-4" />
+                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted flex-shrink-0">
+                      <IconComp className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{def.label}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{def.description}</p>
+                    </div>
+                    <Switch
+                      checked={false}
+                      onCheckedChange={() => dashLayout.toggleWidget(id)}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="pt-2">
+          <Button variant="outline" size="sm" onClick={dashLayout.resetLayout}>
+            Standaard herstellen
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -102,6 +102,9 @@ export interface Klant {
   // Klant labels + gepinde notitie
   klant_labels?: string[];
   gepinde_notitie?: string;
+  // Klant status & vrije labels (Quick Win 1)
+  klant_status?: 'normaal' | 'vooruit_betalen' | 'niet_helpen' | 'voorrang' | 'geblokkeerd';
+  labels?: string[];
   // Import velden
   omzet_totaal?: number;
   klant_sinds?: string;
@@ -177,6 +180,7 @@ export interface Project {
   user_id?: string;
   klant_id: string;
   klant_naam?: string;
+  project_nummer?: string;
   naam: string;
   beschrijving: string;
   status: 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren';
@@ -281,6 +285,12 @@ export interface Offerte {
   aangepast_totaal?: number;
   // Uren correctie — handmatige +/- aanpassingen vanuit sidebar
   uren_correctie?: Record<string, number>;
+  // Quick Win 2: Offerte-herinnering
+  herinnering_1_verstuurd?: string;
+  herinnering_2_verstuurd?: string;
+  // Quick Win 4: Auto-status bij facturatie
+  factuur_ids?: string[];
+  geconverteerd_naar_factuur_op?: string;
   created_at: string;
   updated_at: string;
 }
@@ -582,6 +592,7 @@ export interface AppSettings {
   factuur_outro_tekst: string;
   creditnota_prefix: string;
   werkbon_prefix: string;
+  project_prefix: string;
   // Werkbon instellingen
   werkbon_monteur_uren: boolean;
   werkbon_monteur_opmerkingen: boolean;
@@ -602,6 +613,7 @@ export interface AppSettings {
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;
   // Quick Actions
+  quick_actions_enabled: boolean;
   quick_action_items: string[];
   // AI schrijfstijl per gebruiker
   ai_tone_of_voice: string;
@@ -1162,7 +1174,7 @@ export interface WerkbonRegel {
 export interface HerinneringTemplate {
   id: string;
   user_id?: string;
-  type: 'herinnering_1' | 'herinnering_2' | 'herinnering_3' | 'aanmaning';
+  type: 'herinnering_1' | 'herinnering_2' | 'herinnering_3' | 'aanmaning' | 'offerte_herinnering_1' | 'offerte_herinnering_2';
   onderwerp: string;
   inhoud: string;
   dagen_na_vervaldatum: number;
@@ -1508,7 +1520,7 @@ export interface InkoopRegel {
 
 export type DocumentTemplateId = 'klassiek' | 'modern' | 'minimaal' | 'industrieel';
 export type LogoPositie = 'links' | 'rechts' | 'midden';
-export type BriefpapierModus = 'geen' | 'achtergrond' | 'alleen_eerste_pagina';
+export type BriefpapierModus = 'geen' | 'achtergrond' | 'alleen_eerste_pagina' | 'eerste_en_vervolg';
 
 // ============ SIGNING VISUALIZER ============
 
@@ -1539,6 +1551,7 @@ export interface DocumentStyle {
   // Briefpapier
   briefpapier_url: string;
   briefpapier_modus: BriefpapierModus;
+  vervolgpapier_url: string;
   // Header / Footer
   toon_header: boolean;
   toon_footer: boolean;
@@ -1636,12 +1649,56 @@ export interface PortaalInstellingen {
   email_naar_klant_bij_nieuw_item: boolean;
   email_naar_mij_bij_reactie: boolean;
   herinnering_na_dagen: number;
-  herinnering_ook_voor_factuur: boolean;
-  email_nieuw_item_onderwerp: string;
-  email_nieuw_item_tekst: string;
-  email_herinnering_onderwerp: string;
-  email_herinnering_tekst: string;
   bedrijfslogo_op_portaal: boolean;
   bedrijfskleuren_gebruiken: boolean;
   contactgegevens_tonen: boolean;
 }
+
+// ============ AUDIT LOG (Quick Win 3) ============
+
+export interface AuditLogEntry {
+  id: string;
+  user_id: string;
+  entity_type: 'taak' | 'project' | 'offerte' | 'factuur' | 'klant' | 'werkbon';
+  entity_id: string;
+  actie: 'aangemaakt' | 'gewijzigd' | 'verwijderd' | 'status_gewijzigd' | 'verstuurd' | 'goedgekeurd';
+  veld?: string;
+  oude_waarde?: string;
+  nieuwe_waarde?: string;
+  medewerker_naam?: string;
+  omschrijving?: string;
+  created_at: string;
+}
+
+// ============ PLANNING INSTELLINGEN (Quick Win 5) ============
+
+export interface Feestdag {
+  datum: string;
+  naam: string;
+  type: 'officieel' | 'custom';
+}
+
+export interface PlanningInstellingen {
+  feestdagen_tonen: boolean;
+  feestdag_waarschuwing: boolean;
+  custom_geblokkeerde_dagen: Array<{
+    datum: string;
+    naam: string;
+  }>;
+}
+
+// ============ KLANT STATUS CONFIG (Quick Win 1) ============
+
+export interface KlantStatusConfigItem {
+  label: string;
+  color: string;
+  bgColor: string;
+}
+
+export const klantStatusConfig: Record<string, KlantStatusConfigItem> = {
+  normaal:          { label: 'Normaal',          color: '#6B7280', bgColor: '#F3F4F6' },
+  vooruit_betalen:  { label: 'Vooruit betalen',  color: '#D97706', bgColor: '#FEF3C7' },
+  niet_helpen:      { label: 'Niet helpen',      color: '#DC2626', bgColor: '#FEE2E2' },
+  voorrang:         { label: 'Voorrang',          color: '#059669', bgColor: '#D1FAE5' },
+  geblokkeerd:      { label: 'Geblokkeerd',       color: '#991B1B', bgColor: '#FCA5A5' },
+};

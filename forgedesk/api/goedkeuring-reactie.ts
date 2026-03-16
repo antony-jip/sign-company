@@ -150,7 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? `Tekening goedgekeurd door ${klantNaam}`
           : `Revisie gevraagd door ${klantNaam}`
 
-        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.forgedesk.io')
+        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://forgedesk.nl')
 
         const emailBody = [
           `${klantNaam} heeft de tekening ${actieLabel}:`,

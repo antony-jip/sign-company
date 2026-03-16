@@ -558,7 +558,7 @@ export function NotificatieCenter() {
           <button
             onClick={() => {
               setOpen(false);
-              navigate("/portalen");
+              navigate("/meldingen");
             }}
             className="w-full px-4 py-2.5 text-xs font-medium text-center text-primary hover:bg-accent transition-colors"
           >

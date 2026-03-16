@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || ''
-const APP_URL = process.env.VITE_APP_URL || 'https://app.forgedesk.io'
+const APP_URL = process.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 

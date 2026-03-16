@@ -50,10 +50,10 @@ export const fontSizeClasses: Record<FontSize, { name: string; subject: string; 
 }
 
 export const labelColors: Record<string, string> = {
-  offerte: 'bg-[#D5CCE6]',
-  klant: 'bg-[#BCCAD6]',
-  project: 'bg-[#B8CCBE]',
-  leverancier: 'bg-[#E8866A]',
+  offerte: 'bg-blue-400',
+  klant: 'bg-emerald-400',
+  project: 'bg-primary',
+  leverancier: 'bg-amber-400',
 }
 
 export const IMAP_FOLDER_MAP: Record<string, string> = {

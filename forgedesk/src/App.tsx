@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { PaletteProvider } from '@/contexts/PaletteContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
@@ -67,6 +68,7 @@ import { LeadFormulierEditor } from '@/components/leads/LeadFormulierEditor'
 import { LeadFormulierPubliek } from '@/components/leads/LeadFormulierPubliek'
 import { PortaalPagina } from '@/components/portaal/PortaalPagina'
 import { PortalenOverzicht } from '@/components/portaal/PortalenOverzicht'
+import { MeldingenPage } from '@/components/notifications/MeldingenPage'
 import { LeadInzendingenLayout } from '@/components/leads/LeadInzendingenLayout'
 import { ForecastLayout } from '@/components/forecast/ForecastLayout'
 import { ForgieChatPage } from '@/components/forgie/ForgieChatPage'
@@ -175,6 +177,7 @@ function AppContent() {
         <Route path="booking" element={<BookingBeheer />} />
         <Route path="visualizer" element={<VisualizerLayout />} />
         <Route path="portalen" element={<PortalenOverzicht />} />
+        <Route path="meldingen" element={<MeldingenPage />} />
         <Route path="instellingen" element={<SettingsLayout />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
@@ -187,6 +190,7 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
         <PaletteProvider>
           <LanguageProvider>
             <AuthProvider>
@@ -203,6 +207,7 @@ function App() {
             </AuthProvider>
           </LanguageProvider>
         </PaletteProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

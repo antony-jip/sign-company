@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import {
   Palette, Upload, X, Image as ImageIcon, Sparkles,
   Loader2, Download, Save, Trash2, Eye, Link2, Filter,
-  Send, Plus, Maximize2, RotateCcw, FolderKanban,
+  Send, Plus, Maximize2, RotateCcw,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -16,7 +16,6 @@ import {
   getVisualizerCredits,
   createSigningVisualisatie,
   deleteSigningVisualisatie,
-  updateSigningVisualisatie,
   getProjecten,
   getOffertes,
 } from '@/services/supabaseService'
@@ -91,7 +90,6 @@ export function VisualizerLayout() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [filterKoppeling, setFilterKoppeling] = useState<'alle' | 'gekoppeld' | 'los'>('alle')
   const [showCreditsPakket, setShowCreditsPakket] = useState(false)
-  const [linkOpenId, setLinkOpenId] = useState<string | null>(null)
 
   // ── Data for linking ──
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -465,25 +463,6 @@ export function VisualizerLayout() {
       toast.error('Verwijderen mislukt')
     }
   }, [user?.id])
-
-  const handleLinkProject = useCallback(async (visualisatieId: string, newProjectId: string | null) => {
-    try {
-      const project = newProjectId ? projecten.find(p => p.id === newProjectId) : null
-      await updateSigningVisualisatie(visualisatieId, {
-        project_id: newProjectId || undefined,
-        klant_id: project?.klant_id || undefined,
-      })
-      setVisualisaties(prev => prev.map(v =>
-        v.id === visualisatieId
-          ? { ...v, project_id: newProjectId || undefined, klant_id: project?.klant_id || undefined }
-          : v
-      ))
-      setLinkOpenId(null)
-      toast.success(newProjectId ? 'Gekoppeld aan project' : 'Koppeling verwijderd')
-    } catch {
-      toast.error('Koppeling mislukt')
-    }
-  }, [projecten])
 
   const isGenerating = ['claude', 'genereren'].includes(generatieStatus)
 
@@ -979,23 +958,10 @@ export function VisualizerLayout() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  {/* Linked project badge */}
-                  {project && (
-                    <div className="absolute top-1.5 left-1.5">
-                      <button
-                        onClick={() => setLinkOpenId(prev => prev === v.id ? null : v.id)}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-white text-[10px] font-medium hover:bg-black/70 transition-colors"
-                      >
-                        <FolderKanban className="w-3 h-3" />
-                        {project.naam}
-                      </button>
-                    </div>
-                  )}
-
                   <div className="p-2.5">
                     <div className="flex items-center gap-1 flex-wrap mb-1">
-                      {!project && !offerte && (
-                        <Badge variant="outline" className="text-[10px] text-muted-foreground/60">Niet gekoppeld</Badge>
+                      {project && (
+                        <Badge className="badge-sage text-[10px]">{project.naam}</Badge>
                       )}
                       {offerte && (
                         <Badge className="badge-mist text-[10px]">{offerte.nummer || offerte.titel}</Badge>
@@ -1007,33 +973,8 @@ export function VisualizerLayout() {
                     </div>
                   </div>
 
-                  {/* Link to project panel */}
-                  {linkOpenId === v.id && (
-                    <div className="border-t border-border p-2.5 bg-muted/30 animate-in slide-in-from-top-1 duration-150">
-                      <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-muted-foreground">
-                        <Link2 className="w-3 h-3" />
-                        Koppel aan project
-                      </div>
-                      <select
-                        value={v.project_id || ''}
-                        onChange={(e) => handleLinkProject(v.id, e.target.value || null)}
-                        className="w-full text-xs bg-background border border-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      >
-                        <option value="">Geen project</option>
-                        {projecten.map(p => (
-                          <option key={p.id} value={p.id}>{p.naam}{p.klant_naam ? ` — ${p.klant_naam}` : ''}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
                   {/* Actions */}
                   <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="sm" variant="secondary" className={cn('h-6 w-6 p-0 rounded-lg', v.project_id && 'text-primary')}
-                      onClick={() => setLinkOpenId(prev => prev === v.id ? null : v.id)}
-                      title="Koppel aan project">
-                      <Link2 className="h-3 w-3" />
-                    </Button>
                     <Button size="sm" variant="secondary" className="h-6 w-6 p-0 rounded-lg"
                       onClick={() => setLightboxIndex(index)}>
                       <Eye className="h-3 w-3" />

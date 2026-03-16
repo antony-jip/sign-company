@@ -26,7 +26,6 @@ import {
   Bell,
   Send,
   Reply,
-  Mail,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -91,7 +90,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 
 export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabProps) {
   const { user } = useAuth()
-  const { profile, primaireKleur } = useAppSettings()
+  const { profile } = useAppSettings()
   const [portaal, setPortaal] = useState<ProjectPortaal | null>(null)
   const [items, setItems] = useState<PortaalItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -122,22 +121,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   const [replyItemId, setReplyItemId] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
   const [replySending, setReplySending] = useState(false)
-
-  // Check if email is configured for portal notifications
-  const [emailConfigured, setEmailConfigured] = useState(true) // assume true to avoid flash
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('forgedesk_email_settings')
-      if (stored) {
-        const settings = JSON.parse(stored)
-        setEmailConfigured(!!settings.gmail_address && !!settings.app_password)
-      } else {
-        setEmailConfigured(false)
-      }
-    } catch {
-      setEmailConfigured(false)
-    }
-  }, [])
 
   const fetchPortaal = useCallback(async () => {
     try {
@@ -254,15 +237,9 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
     // Laad data voor dropdowns
     if (type === 'offerte') {
-      getOffertesByProject(projectId).then(setOffertes).catch((err) => {
-        console.error('Fout bij ophalen offertes:', err)
-        toast.error('Kon offertes niet ophalen')
-      })
+      getOffertesByProject(projectId).then(setOffertes)
     } else if (type === 'factuur') {
-      getFacturenByProject(projectId).then(setFacturen).catch((err) => {
-        console.error('Fout bij ophalen facturen:', err)
-        toast.error('Kon facturen niet ophalen')
-      })
+      getFacturenByProject(projectId).then(setFacturen)
     }
 
     setItemDialogOpen(true)
@@ -354,56 +331,29 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       toast.success('Item toegevoegd aan portaal')
       setItemDialogOpen(false)
 
-      // Email naar klant (niet-blokkerend, respecteert toggle)
+      // Email naar klant (niet-blokkerend)
       try {
-        const { getProject, getKlant, getPortaalInstellingen } = await import('@/services/supabaseService')
-        const portaalSettings = await getPortaalInstellingen(user!.id)
-
-        if (portaalSettings.email_naar_klant_bij_nieuw_item) {
-          const { sendEmail } = await import('@/services/gmailService')
-          const { buildPortalEmailHtml, replaceEmailVariables } = await import('@/utils/emailTemplate')
-          const project = await getProject(projectId)
-          if (project?.klant_id) {
-            const klant = await getKlant(project.klant_id)
-            const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
-            if (klantEmail && portaal) {
-              const bedrijfsnaam = profile?.bedrijfsnaam || ''
-              const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
-              const klantNaam = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || 'klant'
-
-              const vars: Record<string, string> = {
-                projectnaam: projectNaam,
-                itemtitel: titel,
-                klantNaam,
-                bedrijfsnaam: bedrijfsnaam || 'Nieuw item',
-                portaalUrl,
-              }
-
-              const onderwerp = replaceEmailVariables(portaalSettings.email_nieuw_item_onderwerp, vars)
-              const heading = replaceEmailVariables(portaalSettings.email_nieuw_item_tekst, vars)
-
-              const plainBody = [
-                heading,
-                '', titel, itemOmschrijving || '', '',
+        const { getProject, getKlant } = await import('@/services/supabaseService')
+        const { sendEmail } = await import('@/services/gmailService')
+        const project = await getProject(projectId)
+        if (project?.klant_id) {
+          const klant = await getKlant(project.klant_id)
+          const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
+          if (klantEmail && portaal) {
+            const bedrijfsnaam = profile?.bedrijfsnaam || ''
+            const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
+            sendEmail(
+              klantEmail,
+              `${bedrijfsnaam || 'Nieuw item'} — ${titel}`,
+              [
+                `Er is een nieuw item gedeeld voor project ${projectNaam}.`,
+                '',
+                titel,
+                itemOmschrijving || '',
+                '',
                 `Bekijk het hier: ${portaalUrl}`,
               ].filter(Boolean).join('\n')
-              const htmlBody = buildPortalEmailHtml({
-                heading,
-                itemTitel: titel,
-                beschrijving: itemOmschrijving || undefined,
-                ctaLabel: 'Bekijk in portaal \u2192',
-                ctaUrl: portaalUrl,
-                bedrijfsnaam,
-                logoUrl: profile?.logo_url || undefined,
-                primaireKleur: primaireKleur || undefined,
-              })
-              sendEmail(
-                klantEmail,
-                onderwerp,
-                plainBody,
-                { html: htmlBody }
-              ).catch(() => {}) // Niet-blokkerend
-            }
+            ).catch(() => {}) // Niet-blokkerend
           }
         }
       } catch {
@@ -430,7 +380,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
   async function handleReply(itemId: string) {
     if (!replyText.trim() || !portaal) return
-    const replyContent = replyText.trim()
     setReplySending(true)
     try {
       // Maak een nieuw bericht-item als reactie op het portaal
@@ -456,57 +405,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       setReplyItemId(null)
       toast.success('Reactie verstuurd')
       await fetchPortaal()
-
-      // Email naar klant (niet-blokkerend)
-      try {
-        const { getProject, getKlant, getPortaalInstellingen } = await import('@/services/supabaseService')
-        const portaalSettings = await getPortaalInstellingen(user!.id)
-
-        if (portaalSettings.email_naar_klant_bij_nieuw_item) {
-          const { sendEmail } = await import('@/services/gmailService')
-          const { buildPortalEmailHtml, replaceEmailVariables } = await import('@/utils/emailTemplate')
-          const project = await getProject(projectId)
-          if (project?.klant_id) {
-            const klant = await getKlant(project.klant_id)
-            const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
-            if (klantEmail && portaal) {
-              const bedrijfsnaam = profile?.bedrijfsnaam || ''
-              const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
-              const klantNaam = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || 'klant'
-
-              const vars: Record<string, string> = {
-                projectnaam: projectNaam,
-                itemtitel: 'Nieuw bericht',
-                klantNaam,
-                bedrijfsnaam: bedrijfsnaam || 'Update',
-                portaalUrl,
-              }
-
-              const onderwerp = replaceEmailVariables(portaalSettings.email_nieuw_item_onderwerp, vars)
-              const heading = replaceEmailVariables(portaalSettings.email_nieuw_item_tekst, vars)
-
-              const htmlBody = buildPortalEmailHtml({
-                heading,
-                itemTitel: 'Reactie',
-                beschrijving: replyContent,
-                ctaLabel: 'Bekijk in portaal \u2192',
-                ctaUrl: portaalUrl,
-                bedrijfsnaam,
-                logoUrl: profile?.logo_url || undefined,
-                primaireKleur: primaireKleur || undefined,
-              })
-              sendEmail(
-                klantEmail,
-                onderwerp,
-                `${heading}\n\n${replyContent}\n\nBekijk het hier: ${portaalUrl}`,
-                { html: htmlBody }
-              ).catch(() => {})
-            }
-          }
-        }
-      } catch {
-        // Email faalt silently
-      }
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
@@ -625,28 +523,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               </>
             )}
           </div>
-
-          {/* Email guidance banner */}
-          {isActief && !emailConfigured && (
-            <div className="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
-              <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                  Koppel je e-mail account om klanten automatisch te notificeren
-                </p>
-                <p className="text-[11px] text-amber-600/80 dark:text-amber-400/60 mt-0.5">
-                  Zonder e-mailkoppeling werkt het portaal, maar ontvangt de klant geen melding bij nieuwe items.
-                </p>
-                <a
-                  href="/instellingen"
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 hover:underline mt-1.5"
-                >
-                  Ga naar e-mailinstellingen
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            </div>
-          )}
 
           {/* Item toevoegen knoppen */}
           {isActief && (
@@ -878,12 +754,9 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                     <SelectValue placeholder="Selecteer offerte..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {offertes.length === 0 && (
-                      <div className="px-2 py-1.5 text-sm text-muted-foreground">Geen offertes gevonden voor dit project</div>
-                    )}
                     {offertes.map(o => (
                       <SelectItem key={o.id} value={o.id}>
-                        {o.offerte_nummer} — {o.titel || 'Geen titel'} ({formatCurrency(o.totaal_incl_btw || 0)}) · {o.status || 'concept'}
+                        {o.offerte_nummer} — {o.titel || 'Geen titel'} ({formatCurrency(o.totaal_incl_btw || 0)})
                       </SelectItem>
                     ))}
                   </SelectContent>

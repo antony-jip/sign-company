@@ -3,59 +3,38 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 /**
- * Hook that checks for portaal items waiting without reaction
- * and sends branded reminder emails. Runs once per session (on mount).
- * Delay, types, and email text are driven by portaal instellingen.
+ * Hook that checks for portaal items waiting > 3 days without reaction
+ * and sends reminder emails. Runs once per session (on mount).
+ * Max 1 reminder per item. Only for offerte/tekening types.
  */
 export function usePortaalHerinnering() {
   const { user } = useAuth()
-  const { profile, primaireKleur } = useAppSettings()
+  const { profile } = useAppSettings()
   const hasRun = useRef(false)
 
   useEffect(() => {
     if (hasRun.current || !user?.id) return
     hasRun.current = true
 
-    checkEnStuurHerinneringen(
-      user.id,
-      profile?.bedrijfsnaam || '',
-      profile?.logo_url || undefined,
-      primaireKleur || undefined,
-    ).catch(err =>
+    // Async, niet-blokkerend
+    checkEnStuurHerinneringen(user.id, profile?.bedrijfsnaam || '').catch(err =>
       console.warn('Herinnering check mislukt:', err)
     )
-  }, [user?.id, profile?.bedrijfsnaam, profile?.logo_url, primaireKleur])
+  }, [user?.id, profile?.bedrijfsnaam])
 }
 
-async function checkEnStuurHerinneringen(
-  userId: string,
-  bedrijfsnaam: string,
-  logoUrl?: string,
-  primaireKleur?: string,
-) {
+async function checkEnStuurHerinneringen(userId: string, bedrijfsnaam: string) {
   const { createClient } = await import('@supabase/supabase-js')
 
+  // Use the env vars that are available client-side
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
   if (!supabaseUrl || !supabaseKey) return
 
   const supabase = createClient(supabaseUrl, supabaseKey)
 
-  // Haal portaal instellingen op
-  const { getPortaalInstellingen } = await import('@/services/supabaseService')
-  const settings = await getPortaalInstellingen(userId)
-
-  // Als herinnering_na_dagen 0 is, geen herinneringen sturen
-  if (settings.herinnering_na_dagen === 0) return
-
-  const delayMs = settings.herinnering_na_dagen * 86_400_000
-  const cutoff = new Date(Date.now() - delayMs).toISOString()
-
-  // Bepaal welke item types herinneringen krijgen
-  const types: string[] = ['offerte', 'tekening']
-  if (settings.herinnering_ook_voor_factuur) {
-    types.push('factuur')
-  }
+  // Zoek items die > 3 dagen oud zijn, status 'verstuurd', type offerte/tekening
+  const dreiDagenGeleden = new Date(Date.now() - 3 * 86400000).toISOString()
 
   const { data: items } = await supabase
     .from('portaal_items')
@@ -63,8 +42,8 @@ async function checkEnStuurHerinneringen(
     .eq('user_id', userId)
     .eq('status', 'verstuurd')
     .eq('zichtbaar_voor_klant', true)
-    .in('type', types)
-    .lt('created_at', cutoff)
+    .in('type', ['offerte', 'tekening'])
+    .lt('created_at', dreiDagenGeleden)
 
   if (!items || items.length === 0) return
 
@@ -114,9 +93,8 @@ async function checkEnStuurHerinneringen(
 
   const klantMap = new Map<string, { id: string; email: string; contactpersoon: string }>((klanten || []).map((k: { id: string; email: string; contactpersoon: string }) => [k.id, k]))
 
-  // Email helpers
+  // Get email credentials
   const { sendEmail } = await import('@/services/gmailService')
-  const { buildPortalEmailHtml, replaceEmailVariables } = await import('@/utils/emailTemplate')
 
   for (const item of teVersturen) {
     const portaal = portaalMap.get(item.portaal_id)
@@ -131,45 +109,20 @@ async function checkEnStuurHerinneringen(
       const klantNaam = klant?.contactpersoon || 'klant'
       const projectNaam = project?.naam || 'project'
 
-      const vars: Record<string, string> = {
-        projectnaam: projectNaam,
-        itemtitel: item.titel,
-        klantNaam,
-        bedrijfsnaam: bedrijfsnaam || 'Het team',
-        portaalUrl,
-      }
-
-      const onderwerp = replaceEmailVariables(settings.email_herinnering_onderwerp, vars)
-      const berichtTekst = replaceEmailVariables(settings.email_herinnering_tekst, vars)
-
-      const plainBody = [
-        `Beste ${klantNaam},`,
-        '',
-        berichtTekst,
-        '',
-        `Bekijk het hier: ${portaalUrl}`,
-        '',
-        `Met vriendelijke groet,`,
-        bedrijfsnaam || 'Het team',
-      ].join('\n')
-
-      const htmlBody = buildPortalEmailHtml({
-        heading: berichtTekst,
-        itemTitel: item.titel,
-        beschrijving: `Project: ${projectNaam}`,
-        ctaLabel: 'Bekijk in portaal \u2192',
-        ctaUrl: portaalUrl,
-        bedrijfsnaam: bedrijfsnaam || undefined,
-        logoUrl,
-        primaireKleur,
-      })
-
       try {
         await sendEmail(
           klantEmail,
-          onderwerp,
-          plainBody,
-          { html: htmlBody }
+          `Herinnering: ${item.titel} wacht op uw reactie`,
+          [
+            `Beste ${klantNaam},`,
+            '',
+            `U heeft nog niet gereageerd op ${item.titel} voor project ${projectNaam}.`,
+            '',
+            `Bekijk het hier: ${portaalUrl}`,
+            '',
+            `Met vriendelijke groet,`,
+            bedrijfsnaam || 'Het team',
+          ].join('\n')
         )
       } catch {
         // Email mislukt, maar log wel de herinnering
