@@ -153,6 +153,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    function resolveStorageUrl(url: string | null | undefined): string | null {
+      if (!url) return null
+      if (url.startsWith('http') || url.startsWith('data:')) return url
+      // Storage path → generate public URL
+      const bucket = url.startsWith('portaal-bestanden/') ? PORTAAL_BUCKET : DOCUMENTEN_BUCKET
+      const storagePath = url.startsWith('portaal-bestanden/') ? url.replace('portaal-bestanden/', '') : url
+      const { data: publicUrl } = supabaseAdmin.storage.from(bucket).getPublicUrl(storagePath)
+      return publicUrl.publicUrl
+    }
+
     const safeItems = (items || []).map((item: Record<string, unknown>) => {
       const bestanden = ((item.portaal_bestanden || []) as Record<string, unknown>[]).map(resolveFileUrl)
       return {
@@ -169,7 +179,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         created_at: item.created_at,
         bericht_type: item.bericht_type || 'item',
         bericht_tekst: item.bericht_tekst,
-        foto_url: item.foto_url,
+        foto_url: resolveStorageUrl(item.foto_url as string | null),
         afzender: item.afzender || 'bedrijf',
         bestanden,
         reacties: item.portaal_reacties || [],
