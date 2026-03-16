@@ -2024,21 +2024,22 @@ export function QuoteCreation() {
   // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
-    <div className="pb-6 mod-strip mod-strip-offertes">
+    <div className="min-h-screen bg-gradient-to-b from-[#F4F3F0] to-[#EBE9E4] dark:from-background dark:to-background">
+    <div className="pb-6 px-4 py-8 md:py-12 mod-strip mod-strip-offertes">
       {/* ──── HEADER BAR ──── */}
-      <div className="rounded-xl bg-gradient-to-br from-[#9B8EC4]/8 via-[#9B8EC4]/4 to-transparent dark:from-[#9B8EC4]/12 dark:via-[#9B8EC4]/6 border border-[#9B8EC4]/12 dark:border-[#9B8EC4]/20 px-4 py-2.5 mb-4">
+      <div className="rounded-xl bg-white/80 dark:bg-card backdrop-blur-sm border border-border-primary/50 px-4 py-3 mb-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Back + Title + Badges */}
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" className="hover:bg-white/50 dark:hover:bg-foreground/80/50 flex-shrink-0" onClick={() => {
+            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-white/50 dark:hover:bg-foreground/80/50 flex-shrink-0" onClick={() => {
               const from = (location.state as { from?: string })?.from
               navigate(from || '/offertes')
             }}>
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-extrabold tracking-[-0.03em] text-foreground font-display truncate">{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
                 <Badge variant="outline" className="text-xs font-mono bg-white/50 dark:bg-foreground/80/50 flex-shrink-0"><Hash className="h-3 w-3 mr-1" />{offerteNummer}</Badge>
                 {versieNummer > 1 && (
                   <Badge variant="outline" className="text-2xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 cursor-pointer flex-shrink-0" onClick={() => setShowVersieHistorie(!showVersieHistorie)}>v{versieNummer}</Badge>
@@ -2051,6 +2052,7 @@ export function QuoteCreation() {
                 })()}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-sm text-muted-foreground">{isEditMode ? 'Bewerk de offertegegevens' : 'Stel een nieuwe offerte op'}</p>
                 {autoSaveStatus === 'saving' && <span className="flex items-center gap-1.5 text-xs text-amber-600"><div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />Opslaan...</span>}
                 {autoSaveStatus === 'saved' && <span className="flex items-center gap-1.5 text-xs text-emerald-600"><Check className="h-3 w-3" />Opgeslagen</span>}
               </div>
@@ -2131,9 +2133,9 @@ export function QuoteCreation() {
         {/* ════════════════════════════════════════════════════════════════ */}
         {/* LEFT COLUMN: Scrollable content                                */}
         {/* ════════════════════════════════════════════════════════════════ */}
-        <div className="space-y-3 min-w-0">
+        <div className="space-y-4 min-w-0">
           {/* ── Introductietekst ── */}
-          <Card>
+          <Card className="bg-white/80 dark:bg-card backdrop-blur-sm border-border-primary/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center"><Mail className="h-3.5 w-3.5 text-white" /></div>
@@ -2156,7 +2158,7 @@ export function QuoteCreation() {
           </Card>
 
           {/* ── Items ── */}
-          <Card>
+          <Card className="bg-white/80 dark:bg-card backdrop-blur-sm border-border-primary/50">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -2190,7 +2192,7 @@ export function QuoteCreation() {
           </Card>
 
           {/* ── Afsluittekst ── */}
-          <Card>
+          <Card className="bg-white/80 dark:bg-card backdrop-blur-sm border-border-primary/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
@@ -2213,7 +2215,7 @@ export function QuoteCreation() {
           </Card>
 
           {/* ── Notities & Voorwaarden ── */}
-          <Card>
+          <Card className="bg-white/80 dark:bg-card backdrop-blur-sm border-border-primary/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-muted-foreground to-foreground/60 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
@@ -2864,6 +2866,7 @@ export function QuoteCreation() {
           </div>
         </div>{/* end RIGHT SIDEBAR */}
       </div>
+    </div>
     </div>
   )
 }

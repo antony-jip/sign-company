@@ -122,21 +122,25 @@ export function ProjectCreate() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto animate-fade-in-up">
+    <div className="min-h-screen bg-gradient-to-b from-[#F4F3F0] to-[#EBE9E4] dark:from-background dark:to-background">
+      <div className="max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/projecten')}>
+      <div className="flex items-center gap-3 mb-8">
+        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/projecten')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: '#7EB5A6' }}>
+        <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: '#7EB5A6' }}>
           <FolderKanban className="h-4 w-4 text-white" />
         </div>
-        <h1 className="text-lg font-extrabold tracking-[-0.03em] text-foreground">Nieuw project</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Nieuw project</h1>
+          <p className="text-sm text-muted-foreground">Maak een nieuw project aan</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Project info */}
-        <div className="rounded-xl border border-black/[0.06] bg-card p-5 mb-4">
+        <div className="rounded-xl border border-border-primary/50 bg-white/80 dark:bg-card backdrop-blur-sm p-6">
           <div className="space-y-4">
             <div>
               <Label htmlFor="naam" className="text-xs font-medium text-muted-foreground mb-1.5 block">
@@ -169,10 +173,10 @@ export function ProjectCreate() {
         </div>
 
         {/* Klant + Contactpersoon */}
-        <div className="rounded-xl border border-black/[0.06] bg-card p-5 mb-4">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="rounded-xl border border-border-primary/50 bg-white/80 dark:bg-card backdrop-blur-sm p-6">
+          <div className="flex items-center gap-2 mb-4">
             <User className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Klant & Contact</span>
+            <span className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Klant & Contact</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -251,7 +255,7 @@ export function ProjectCreate() {
         </div>
 
         {/* Status + Datums */}
-        <div className="rounded-xl border border-black/[0.06] bg-card p-5 mb-6">
+        <div className="rounded-xl border border-border-primary/50 bg-white/80 dark:bg-card backdrop-blur-sm p-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</Label>
@@ -293,7 +297,7 @@ export function ProjectCreate() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-end gap-3 pt-2">
           <Button
             type="button"
             variant="ghost"
@@ -303,12 +307,13 @@ export function ProjectCreate() {
           >
             Annuleren
           </Button>
-          <Button type="submit" size="sm" disabled={loading} className="">
+          <Button type="submit" size="sm" disabled={loading}>
             <Save className="h-3.5 w-3.5 mr-1.5" />
             {loading ? 'Opslaan...' : 'Project aanmaken'}
           </Button>
         </div>
       </form>
+      </div>
     </div>
   )
 }
