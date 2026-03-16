@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Send, Loader2, MessageSquare } from 'lucide-react'
+import { PortaalLightbox } from './PortaalLightbox'
 
 interface PortaalReactieData {
   id: string
@@ -15,6 +16,7 @@ interface PortaalItemData {
   titel: string
   bericht_type?: string | null
   bericht_tekst?: string | null
+  foto_url?: string | null
   afzender?: string | null
   created_at: string
   reacties: PortaalReactieData[]
@@ -51,6 +53,7 @@ function formatDate(dateStr: string): string {
 interface Message {
   id: string
   tekst: string
+  foto_url?: string | null
   afzender: 'bedrijf' | 'klant'
   created_at: string
 }
@@ -59,11 +62,22 @@ function extractMessages(items: PortaalItemData[]): Message[] {
   const messages: Message[] = []
 
   for (const item of items) {
-    // Bericht-type items (tekst berichten)
+    // Tekst berichten
     if (item.bericht_type === 'tekst' && item.bericht_tekst) {
       messages.push({
         id: item.id,
         tekst: item.bericht_tekst,
+        afzender: (item.afzender || 'bedrijf') as 'bedrijf' | 'klant',
+        created_at: item.created_at,
+      })
+    }
+
+    // Foto berichten
+    if (item.bericht_type === 'foto' && item.foto_url) {
+      messages.push({
+        id: item.id,
+        tekst: item.bericht_tekst || '',
+        foto_url: item.foto_url,
         afzender: (item.afzender || 'bedrijf') as 'bedrijf' | 'klant',
         created_at: item.created_at,
       })
@@ -88,9 +102,18 @@ function extractMessages(items: PortaalItemData[]): Message[] {
 export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kanBerichtenSturen, primaire_kleur, onReactie }: Props) {
   const [bericht, setBericht] = useState('')
   const [loading, setLoading] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const messages = extractMessages(items)
   const hasMessages = messages.length > 0
+
+  // Auto-scroll naar beneden bij nieuwe berichten
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [messages.length])
 
   // Niet tonen als er geen berichten zijn en klant niet kan sturen
   if (!hasMessages && !kanBerichtenSturen) return null
@@ -141,7 +164,7 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {/* Message list */}
         {hasMessages ? (
-          <div className="px-5 py-4 space-y-4 max-h-[400px] overflow-y-auto">
+          <div ref={scrollRef} className="px-5 py-4 space-y-4 max-h-[400px] overflow-y-auto">
             {grouped.map(group => (
               <div key={group.date} className="space-y-2">
                 <p className="text-xs text-gray-400 text-center">{group.date}</p>
@@ -157,7 +180,17 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
                           : 'bg-gray-100 text-gray-800 rounded-bl-md'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap break-words">{msg.tekst}</p>
+                      {msg.foto_url && (
+                        <img
+                          src={msg.foto_url}
+                          alt={msg.tekst || 'Foto'}
+                          className="max-w-[240px] rounded-lg mb-1.5 cursor-pointer"
+                          onClick={() => setLightboxUrl(msg.foto_url!)}
+                        />
+                      )}
+                      {msg.tekst && (
+                        <p className="whitespace-pre-wrap break-words">{msg.tekst}</p>
+                      )}
                       <p className={`text-xs mt-1 ${msg.afzender === 'klant' ? 'text-gray-400' : 'text-gray-500'}`}>
                         {formatTime(msg.created_at)}
                       </p>
@@ -208,6 +241,15 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
           </div>
         )}
       </div>
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <PortaalLightbox
+          images={[{ url: lightboxUrl, bestandsnaam: '' }]}
+          startIndex={0}
+          onClose={() => setLightboxUrl(null)}
+        />
+      )}
     </section>
   )
 }
