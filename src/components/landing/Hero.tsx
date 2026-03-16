@@ -1,38 +1,53 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import LetterReveal from '@/components/landing/LetterReveal';
 import AnimatedCounter from '@/components/landing/AnimatedCounter';
 
 export default function Hero() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start start', 'end start'],
+  });
+
+  // Parallax: glows move at different speeds for depth
+  const glow1Y = useTransform(scrollYProgress, [0, 1], [0, -120]);
+  const glow2Y = useTransform(scrollYProgress, [0, 1], [0, -60]);
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, 80]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.6, 0]);
+
   return (
-    <section className="relative min-h-screen flex items-center bg-forge-dark overflow-hidden">
+    <section ref={sectionRef} className="relative min-h-screen flex items-center bg-forge-dark overflow-hidden">
       {/* Grain texture */}
       <div className="absolute inset-0 noise-overlay-dark pointer-events-none" />
 
-      {/* Ambient glows — subtle, warm */}
+      {/* Ambient glows — parallax layers for depth */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div
+        <motion.div
           className="absolute rounded-full"
           style={{
             top: '-15%', right: '-10%', width: 700, height: 700,
             background: 'radial-gradient(circle, rgba(232,169,144,0.08), transparent 70%)',
             filter: 'blur(100px)',
+            y: glow1Y,
           }}
         />
-        <div
+        <motion.div
           className="absolute rounded-full"
           style={{
             bottom: '-5%', left: '-8%', width: 500, height: 500,
             background: 'radial-gradient(circle, rgba(125,184,138,0.05), transparent 70%)',
             filter: 'blur(80px)',
+            y: glow2Y,
           }}
         />
       </div>
 
-      {/* Content */}
-      <div className="container relative z-10" style={{ paddingTop: 160, paddingBottom: 120 }}>
+      {/* Content — parallax fade */}
+      <motion.div className="container relative z-10" style={{ paddingTop: 160, paddingBottom: 120, y: contentY, opacity: contentOpacity }}>
         <div className="max-w-[1000px]">
           {/* Overline */}
           <motion.p
@@ -53,7 +68,7 @@ export default function Hero() {
             <span className="block">
               <LetterReveal text="tot" delay={0.6} className="text-ink-40" />
               {' '}
-              <LetterReveal text="factuur." delay={0.7} className="text-blush-vivid" />
+              <LetterReveal text="factuur." delay={0.7} className="text-ember-gradient" />
             </span>
           </h1>
 
@@ -81,13 +96,21 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 1.4 }}
           >
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
+            <motion.div
+              whileHover={{ scale: 1.04, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            >
               <Button variant="warm" size="lg" href="https://app.forgedesk.io">
                 Probeer 30 dagen gratis &rarr;
               </Button>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
-              <a href="#stappen" className="inline-flex items-center gap-2 px-7 py-4 text-sm font-semibold text-ink-40 hover:text-white transition-colors rounded-full border border-ink-20 hover:border-ink-40">
+            <motion.div
+              whileHover={{ scale: 1.04, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            >
+              <a href="#stappen" className="inline-flex items-center gap-2 px-7 py-4 text-sm font-semibold text-ink-40 hover:text-white transition-colors duration-300 rounded-full border border-ink-20 hover:border-ink-40">
                 Bekijk hoe het werkt
               </a>
             </motion.div>
@@ -116,7 +139,7 @@ export default function Hero() {
             ))}
           </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Vertical text */}
       <motion.div
