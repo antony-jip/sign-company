@@ -2,8 +2,8 @@ import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Calendar, Wrench } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { CalendarLayout } from '@/components/calendar/CalendarLayout'
-import { MontagePlanningLayout } from '@/components/montage/MontagePlanningLayout'
+import { CalendarLayout } from '@/components/planning/CalendarLayout'
+import { MontagePlanningLayout } from '@/components/planning/MontagePlanningLayout'
 
 type PlanningModus = 'kalender' | 'montage'
 
