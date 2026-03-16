@@ -239,7 +239,7 @@ CREATE TABLE IF NOT EXISTS user_email_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL UNIQUE,
   gmail_address TEXT NOT NULL,
-  app_password_encrypted TEXT NOT NULL,
+  encrypted_app_password TEXT NOT NULL,
   smtp_host TEXT DEFAULT 'smtp.gmail.com',
   smtp_port INTEGER DEFAULT 587,
   created_at TIMESTAMPTZ DEFAULT NOW(),

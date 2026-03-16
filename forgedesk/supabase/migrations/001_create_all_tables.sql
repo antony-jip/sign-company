@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS user_email_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
   gmail_address TEXT,
-  app_password_encrypted TEXT,
+  encrypted_app_password TEXT,
   smtp_host TEXT DEFAULT 'smtp.gmail.com',
   smtp_port INTEGER DEFAULT 587,
   imap_host TEXT DEFAULT 'imap.gmail.com',

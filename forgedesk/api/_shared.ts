@@ -59,17 +59,17 @@ function decryptPassword(encrypted: string): string {
 export async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   const { data, error } = await supabaseAdmin
     .from('user_email_settings')
-    .select('gmail_address, app_password_encrypted, smtp_host, smtp_port, imap_host, imap_port')
+    .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port')
     .eq('user_id', userId)
     .single()
 
-  if (error || !data?.gmail_address || !data?.app_password_encrypted) {
+  if (error || !data?.gmail_address || !data?.encrypted_app_password) {
     throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
   }
 
   return {
     gmail_address: data.gmail_address,
-    app_password: decryptPassword(data.app_password_encrypted),
+    app_password: decryptPassword(data.encrypted_app_password),
     smtp_host: data.smtp_host || 'smtp.gmail.com',
     smtp_port: data.smtp_port || 587,
     imap_host: data.imap_host || 'imap.gmail.com',

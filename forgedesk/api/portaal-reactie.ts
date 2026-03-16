@@ -177,7 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Stuur email naar gebruiker via user_email_settings (encrypted credentials)
       const { data: emailSettings, error: emailSettingsError } = await supabaseAdmin
         .from('user_email_settings')
-        .select('gmail_address, app_password_encrypted, smtp_host, smtp_port')
+        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
         .eq('user_id', portaal.user_id)
         .maybeSingle()
 
@@ -185,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         user_id: portaal.user_id,
         found: !!emailSettings,
         has_gmail: !!emailSettings?.gmail_address,
-        has_password: !!emailSettings?.app_password_encrypted,
+        has_password: !!emailSettings?.encrypted_app_password,
         has_encryption_key: !!ENCRYPTION_KEY,
         error: emailSettingsError?.message || null,
       })
@@ -203,8 +203,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('user_id', portaal.user_id)
         .maybeSingle()
 
-      if (emailSettings?.gmail_address && emailSettings?.app_password_encrypted && ENCRYPTION_KEY) {
-        const password = decrypt(emailSettings.app_password_encrypted)
+      if (emailSettings?.gmail_address && emailSettings?.encrypted_app_password && ENCRYPTION_KEY) {
+        const password = decrypt(emailSettings.encrypted_app_password)
 
         const onderwerp = type === 'goedkeuring'
           ? `Goedgekeurd: ${fullItem?.titel || 'Item'} — ${displayNaam}`

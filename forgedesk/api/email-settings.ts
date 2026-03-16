@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userId = await verifyUser(req)
       const { data, error } = await supabaseAdmin
         .from('user_email_settings')
-        .select('gmail_address, app_password_encrypted, smtp_host, smtp_port, imap_host, imap_port')
+        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port')
         .eq('user_id', userId)
         .single()
 
@@ -44,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       let app_password = ''
       try {
-        app_password = decrypt(data.app_password_encrypted)
+        app_password = decrypt(data.encrypted_app_password)
       } catch {
         return res.status(500).json({ error: 'Kon wachtwoord niet ontsleutelen' })
       }
@@ -80,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .upsert({
         user_id: userId,
         gmail_address,
-        app_password_encrypted: encryptedPassword,
+        encrypted_app_password: encryptedPassword,
         smtp_host: smtp_host || 'smtp.gmail.com',
         smtp_port: smtp_port || 587,
         imap_host: imap_host || 'imap.gmail.com',
