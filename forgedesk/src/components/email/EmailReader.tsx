@@ -100,11 +100,11 @@ function getAvatarColor(name: string): string {
 
 function getLabelColor(label: string): string {
   switch (label) {
-    case 'offerte': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-    case 'klant': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
-    case 'project': return 'bg-wm-pale/30 text-accent dark:bg-accent/30 dark:text-wm-light'
-    case 'leverancier': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
-    default: return 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
+    case 'offerte': return 'bg-[#D5CCE6]/40 text-[#6B5B8A] dark:bg-[#D5CCE6]/20 dark:text-[#D5CCE6]'
+    case 'klant': return 'bg-[#BCCAD6]/40 text-[#4A6E8A] dark:bg-[#BCCAD6]/20 dark:text-[#BCCAD6]'
+    case 'project': return 'bg-[#B8CCBE]/40 text-[#4E7A58] dark:bg-[#B8CCBE]/20 dark:text-[#B8CCBE]'
+    case 'leverancier': return 'bg-[#E8866A]/20 text-[#C4735A] dark:bg-[#E8866A]/15 dark:text-[#E8866A]'
+    default: return 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
   }
 }
 
@@ -640,12 +640,10 @@ export function EmailReader({
 
   if (!email) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-        <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-          <Inbox className="w-10 h-10 opacity-30" />
-        </div>
-        <p className="text-lg font-medium">Selecteer een email</p>
-        <p className="text-sm mt-1 text-center max-w-xs">Kies een bericht uit de lijst om de inhoud te bekijken.</p>
+      <div className="flex flex-col items-center justify-center h-full">
+        <Mail className="w-16 h-16 text-stone-300 dark:text-stone-600 mb-4" />
+        <p className="text-base text-stone-400 dark:text-stone-500">Selecteer een email</p>
+        <p className="text-sm mt-1 text-stone-400/60 dark:text-stone-500/60">of druk <kbd className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-xs font-mono font-medium text-stone-500">c</kbd> voor een nieuwe email</p>
       </div>
     )
   }
@@ -673,69 +671,62 @@ export function EmailReader({
 
   return (
     <div className="flex flex-col h-full">
-      {/* ── Top Toolbar ── */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30 flex-shrink-0">
-        <div className="flex items-center gap-2">
+      {/* ── Top Toolbar (sticky) ── */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-stone-100 dark:border-stone-800/40 flex-shrink-0 sticky top-0 bg-white/95 dark:bg-stone-950/95 backdrop-blur-sm z-10">
+        <div className="flex items-center gap-1">
           {onBack && (
             <button
               onClick={onBack}
-              className="flex items-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+              className="flex items-center gap-1 mr-2 p-2 -ml-2 text-sm font-medium text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-md transition-colors md:hidden min-w-[44px] min-h-[44px] justify-center"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Terug
+              <ArrowLeft className="w-5 h-5" />
             </button>
           )}
-          {onBack && <Separator orientation="vertical" className="h-5 mx-1" />}
-          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => onArchive?.(email)}>
-            <Archive className="w-3.5 h-3.5" />
-            Archief
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+          <button
+            onClick={() => onArchive?.(email)}
+            className="p-2 rounded-md text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+            title="Archiveren"
+          >
+            <Archive className="w-[18px] h-[18px]" />
+          </button>
+          <button
             onClick={() => onDelete?.(email)}
+            className="p-2 rounded-md text-stone-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+            title="Verwijderen"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            Verwijderen
-          </Button>
-          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => onToggleRead?.(email)}>
-            {email.gelezen ? (
-              <><MailOpen className="w-3.5 h-3.5" /> Markeer als ongelezen</>
-            ) : (
-              <><Mail className="w-3.5 h-3.5" /> Markeer als gelezen</>
-            )}
-          </Button>
-          <div className="h-4 w-px bg-border mx-1" />
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn('gap-1.5 h-8 text-xs', showNotes && 'bg-accent')}
+            <Trash2 className="w-[18px] h-[18px]" />
+          </button>
+          <button
+            onClick={() => onToggleRead?.(email)}
+            className="p-2 rounded-md text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+            title={email.gelezen ? 'Markeer als ongelezen' : 'Markeer als gelezen'}
+          >
+            {email.gelezen ? <MailOpen className="w-[18px] h-[18px]" /> : <Mail className="w-[18px] h-[18px]" />}
+          </button>
+          <div className="h-4 w-px bg-stone-200 dark:bg-stone-700 mx-1" />
+          <button
             onClick={() => { setShowNotes(!showNotes); setShowFollowUp(false); setShowCreateTask(false) }}
+            className={cn('p-2 rounded-md text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors relative', showNotes && 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200')}
+            title="Notities"
           >
-            <StickyNote className="w-3.5 h-3.5" />
-            Notities
-            {email.internal_notes && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn('gap-1.5 h-8 text-xs', showFollowUp && 'bg-accent')}
+            <StickyNote className="w-[18px] h-[18px]" />
+            {email.internal_notes && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-500" />}
+          </button>
+          <button
             onClick={() => { setShowFollowUp(!showFollowUp); setShowNotes(false); setShowCreateTask(false) }}
+            className={cn('p-2 rounded-md text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors relative', showFollowUp && 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200')}
+            title="Follow-up"
           >
-            <Bell className="w-3.5 h-3.5" />
-            Follow-up
-            {email.follow_up_at && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn('gap-1.5 h-8 text-xs', showCreateTask && 'bg-accent')}
+            <Bell className="w-[18px] h-[18px]" />
+            {email.follow_up_at && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#8BAFD4]" />}
+          </button>
+          <button
             onClick={() => { setShowCreateTask(!showCreateTask); setShowNotes(false); setShowFollowUp(false) }}
+            className={cn('p-2 rounded-md text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors', showCreateTask && 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200')}
+            title="Taak aanmaken"
           >
-            <CheckSquare className="w-3.5 h-3.5" />
-            Taak
-          </Button>
+            <CheckSquare className="w-[18px] h-[18px]" />
+          </button>
         </div>
       </div>
 
@@ -829,23 +820,23 @@ export function EmailReader({
       )}
 
       {/* ── Subject Header ── */}
-      <div className="px-6 pt-5 pb-4 border-b flex-shrink-0">
+      <div className="px-6 pt-5 pb-4 border-b border-stone-100 dark:border-stone-800/40 flex-shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold tracking-[-0.02em] text-foreground leading-tight">{email.onderwerp}</h2>
+            <h2 className="text-lg font-semibold text-[#1a1a1a] dark:text-stone-100 leading-tight">{email.onderwerp}</h2>
             <div className="flex items-center gap-2 mt-2">
               {visibleLabels.map((label) => (
                 <Badge
                   key={label}
                   variant="secondary"
-                  className={`text-xs uppercase tracking-label font-semibold px-2 py-0.5 ${getLabelColor(label)}`}
+                  className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 ${getLabelColor(label)}`}
                 >
                   {label}
                 </Badge>
               ))}
-              <button className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline">
+              <button className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
                 <Tag className="w-3 h-3" />
-                Label toevoegen
+                Label
               </button>
             </div>
           </div>
@@ -855,9 +846,9 @@ export function EmailReader({
             title={email.starred ? 'Ster verwijderen' : 'Ster toevoegen'}
           >
             {email.starred ? (
-              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+              <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
             ) : (
-              <Star className="w-5 h-5 text-muted-foreground/50 hover:text-yellow-400 transition-colors" />
+              <Star className="w-5 h-5 text-stone-300 hover:text-amber-400 transition-colors dark:text-stone-600" />
             )}
           </button>
         </div>
@@ -942,58 +933,61 @@ export function EmailReader({
 
       {/* ── Thread / Conversation View ── */}
       <ScrollArea className="flex-1">
-        <div className="divide-y">
+        <div className="divide-y divide-stone-100 dark:divide-stone-800/40">
           {[email].map((msg, index) => {
             const msgSenderName = extractSenderName(msg.van)
-            const msgSenderInitials = getInitials(msgSenderName)
+            const msgSenderEmail = extractSenderEmail(msg.van)
             const isExpanded = expandedMessages.has(index)
 
             return (
               <div key={msg.id + '-' + index} className="group">
+                {/* Sender header — Superhuman style */}
                 <div
-                  className="flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="flex items-start gap-3 px-6 py-4 cursor-pointer hover:bg-stone-50/50 dark:hover:bg-stone-800/20 transition-colors"
                   onClick={() => toggleMessage(index)}
                 >
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${getAvatarColor(msgSenderName)}`}>
-                    {msgSenderInitials}
-                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-foreground">{msgSenderName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        &lt;{extractSenderEmail(msg.van)}&gt;
+                      <span className="text-sm font-semibold text-[#1a1a1a] dark:text-stone-100">Van: {msgSenderName}</span>
+                      <span className="text-xs font-mono text-stone-400 dark:text-stone-500">
+                        &lt;{msgSenderEmail}&gt;
                       </span>
                     </div>
+                    <div className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">Aan: <span className="font-mono text-xs">{msg.aan}</span></div>
+                    {msg.cc && <div className="text-sm text-stone-500 dark:text-stone-400">CC: <span className="font-mono text-xs">{msg.cc}</span></div>}
+                    <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mt-1">{formatDateTime(msg.datum)}</div>
                     {!isExpanded && (
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {msg.inhoud.split('\n')[0].substring(0, 100)}
+                      <p className="text-sm text-stone-400 truncate mt-1.5">
+                        {msg.inhoud.replace(/<[^>]*>/g, '').split('\n')[0].substring(0, 120)}
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs text-muted-foreground">{formatDateTime(msg.datum)}</span>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                  <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
                   </div>
                 </div>
 
                 {isExpanded && (
-                  <div className="px-6 pb-4">
-                    <div className="ml-12 mb-4 text-xs text-muted-foreground">Aan: {msg.aan}</div>
+                  <div className="px-6 pb-6">
                     {isLoadingBody ? (
-                      <div className="ml-12 flex items-center gap-2 py-8 text-muted-foreground">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">Email laden...</span>
+                      /* Loading skeleton for body */
+                      <div className="max-w-[680px] space-y-3 py-4">
+                        <div className="h-4 rounded animate-shimmer w-full" />
+                        <div className="h-4 rounded animate-shimmer w-5/6" />
+                        <div className="h-4 rounded animate-shimmer w-4/6" />
+                        <div className="h-4 rounded animate-shimmer w-full" />
+                        <div className="h-4 rounded animate-shimmer w-3/6" />
                       </div>
                     ) : msg.inhoud && (msg.inhoud.includes('<') && msg.inhoud.includes('>')) ? (
-                      <div className="ml-12 prose prose-sm dark:prose-invert max-w-none">
+                      <div className="max-w-[680px]">
                         <div
-                          className="text-sm leading-relaxed text-foreground email-html-content"
+                          className="text-sm leading-relaxed text-stone-700 dark:text-stone-300 email-html-content [&_a]:text-[#8BAFD4] [&_a]:no-underline hover:[&_a]:underline [&_img]:max-w-full [&_img]:rounded-md [&_img]:border [&_img]:border-stone-200"
                           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.inhoud, { ADD_ATTR: ['target'] }) }}
                         />
                       </div>
                     ) : (
-                      <div className="ml-12 prose prose-sm dark:prose-invert max-w-none">
-                        <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{msg.inhoud}</div>
+                      <div className="max-w-[680px]">
+                        <div className="whitespace-pre-wrap text-sm leading-relaxed text-stone-700 dark:text-stone-300">{msg.inhoud}</div>
                       </div>
                     )}
                     {msg.bijlagen > 0 && (
@@ -1104,12 +1098,12 @@ export function EmailReader({
       </ScrollArea>
 
       {/* ── Reply Editor ── */}
-      <div className="border-t flex-shrink-0">
+      <div className="border-t border-stone-100 dark:border-stone-800/40 flex-shrink-0">
         {!replyOpen ? (
           <div className="p-4">
             <button
               onClick={() => openReply('reply')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-border dark:border-border hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all text-sm text-muted-foreground"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-md bg-stone-50/50 dark:bg-stone-800/30 border border-stone-200 dark:border-stone-700 hover:border-[#8BAFD4]/50 hover:bg-white dark:hover:bg-stone-900 transition-all text-sm text-stone-400 dark:text-stone-500"
             >
               <Reply className="w-4 h-4" />
               Klik hier om te antwoorden...
@@ -1384,9 +1378,8 @@ export function EmailReader({
                 {/* Schedule + Send split button */}
                 <div className="relative" ref={scheduleRef}>
                   <div className="flex">
-                    <Button
-                      size="sm"
-                      className="gap-1.5 rounded-r-none"
+                    <button
+                      className="flex items-center gap-1.5 h-8 px-4 text-sm font-medium bg-[#1a1a1a] dark:bg-stone-100 text-white dark:text-stone-900 rounded-l-md hover:bg-[#2a2a2a] dark:hover:bg-stone-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       onClick={handleSend}
                       disabled={editorEmpty && attachments.length === 0}
                     >
@@ -1395,15 +1388,13 @@ export function EmailReader({
                       ) : (
                         <><Send className="w-3.5 h-3.5" /> Verstuur</>
                       )}
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="rounded-l-none border-l border-l-primary-foreground/20 px-1.5"
+                    </button>
+                    <button
+                      className="flex items-center h-8 px-1.5 bg-[#1a1a1a] dark:bg-stone-100 text-white dark:text-stone-900 rounded-r-md border-l border-white/20 dark:border-stone-900/20 hover:bg-[#2a2a2a] dark:hover:bg-stone-200 transition-colors"
                       onClick={() => setShowSchedule(!showSchedule)}
                     >
                       <CalendarClock className="w-3.5 h-3.5" />
-                    </Button>
+                    </button>
                   </div>
 
                   {showSchedule && (
