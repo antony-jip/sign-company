@@ -282,30 +282,78 @@ export function EmailReader({
 
             {/* ─── INLINE REPLY ─── */}
             {replyMode && (
-              <div className="mt-8 pt-6 border-t border-border/30">
-                <div className="rounded-xl border border-border/60 bg-white shadow-sm overflow-hidden">
-                  {/* Reply header */}
-                  <div className="flex items-center justify-between px-5 py-3 bg-foreground/[0.02] border-b border-border/30">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="text-sm text-foreground/40 flex-shrink-0">Aan:</span>
-                      <input
-                        type="email"
-                        value={replyTo}
-                        onChange={(e) => setReplyTo(e.target.value)}
-                        className="bg-transparent border-none outline-none text-sm text-foreground flex-1 min-w-0"
-                        placeholder="ontvanger@voorbeeld.nl"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-foreground/35 flex-shrink-0 ml-4">
-                      {replyMode === 'reply' && <Reply className="h-3 w-3" />}
-                      {replyMode === 'reply-all' && <ReplyAll className="h-3 w-3" />}
-                      {replyMode === 'forward' && <Forward className="h-3 w-3" />}
-                      <span className="truncate max-w-[200px]">Re: {email.onderwerp}</span>
-                    </div>
+              <div className="mt-6 border-t-2 border-primary/20">
+                {/* Reply label + To field */}
+                <div className="flex items-center gap-3 px-1 py-3 border-b border-border/20">
+                  <div className="flex items-center gap-1.5 text-xs text-foreground/40 flex-shrink-0">
+                    {replyMode === 'reply' && <Reply className="h-3.5 w-3.5" />}
+                    {replyMode === 'reply-all' && <ReplyAll className="h-3.5 w-3.5" />}
+                    {replyMode === 'forward' && <Forward className="h-3.5 w-3.5" />}
                   </div>
+                  <span className="text-sm text-foreground/40 flex-shrink-0">Aan:</span>
+                  <input
+                    type="email"
+                    value={replyTo}
+                    onChange={(e) => setReplyTo(e.target.value)}
+                    className="bg-transparent border-none outline-none text-sm text-foreground flex-1 min-w-0"
+                    placeholder="ontvanger@voorbeeld.nl"
+                  />
+                  <button
+                    onClick={() => setReplyMode(null)}
+                    className="text-xs text-foreground/30 hover:text-foreground/50 flex-shrink-0"
+                  >
+                    Annuleren
+                  </button>
+                </div>
 
-                  {/* AI bar */}
-                  <div className="flex items-center gap-2 px-5 py-2 border-b border-border/20">
+                {/* Editor area */}
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  className="min-h-[160px] py-4 px-1 text-[15px] leading-relaxed text-foreground outline-none [&_img]:max-w-[200px]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault()
+                      handleSend()
+                    }
+                  }}
+                />
+
+                {/* Quoted original */}
+                {email.inhoud && (
+                  <div className="px-1 pb-3">
+                    <button
+                      onClick={() => setShowQuotedText(!showQuotedText)}
+                      className="text-xs text-foreground/30 hover:text-foreground/50"
+                    >
+                      {showQuotedText ? 'Verberg origineel' : '... toon origineel bericht'}
+                    </button>
+                    {showQuotedText && (
+                      <div
+                        className="mt-3 pl-4 border-l-2 border-foreground/10 text-sm text-foreground/40"
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(email.inhoud) }}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* Bottom toolbar: formatting + AI + send */}
+                <div className="flex items-center justify-between py-3 px-1 border-t border-border/20">
+                  <div className="flex items-center gap-0.5">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('bold')}><Bold className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('italic')}><Italic className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('underline')}><Underline className="h-3.5 w-3.5" /></Button>
+                    <div className="w-px h-4 bg-border/30 mx-1" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('insertUnorderedList')}><List className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => execCommand('insertOrderedList')}><ListOrdered className="h-3.5 w-3.5" /></Button>
+                    <div className="w-px h-4 bg-border/30 mx-1" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35" onClick={() => {
+                      const url = prompt('URL:')
+                      if (url) execCommand('createLink', url)
+                    }}><Link2 className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/35"><Paperclip className="h-3.5 w-3.5" /></Button>
+                    <div className="w-px h-4 bg-border/30 mx-1" />
                     <Button
                       variant="ghost"
                       size="sm"
@@ -314,68 +362,13 @@ export function EmailReader({
                       disabled={forgieLoading}
                     >
                       {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                      Schrijf mijn e-mail
+                      AI
                     </Button>
                   </div>
-
-                  {/* Editor */}
-                  <div
-                    ref={editorRef}
-                    contentEditable
-                    suppressContentEditableWarning
-                    className="min-h-[180px] px-5 py-4 text-[15px] leading-relaxed text-foreground outline-none [&_img]:max-w-[200px]"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                        e.preventDefault()
-                        handleSend()
-                      }
-                    }}
-                  />
-
-                  {/* Quoted original */}
-                  {email.inhoud && (
-                    <div className="px-5 pb-3">
-                      <button
-                        onClick={() => setShowQuotedText(!showQuotedText)}
-                        className="text-xs text-foreground/30 hover:text-foreground/50"
-                      >
-                        {showQuotedText ? 'Verberg origineel' : '... toon origineel bericht'}
-                      </button>
-                      {showQuotedText && (
-                        <div
-                          className="mt-3 pl-4 border-l-2 border-foreground/10 text-sm text-foreground/40"
-                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(email.inhoud) }}
-                        />
-                      )}
-                    </div>
-                  )}
-
-                  {/* Toolbar + send */}
-                  <div className="flex items-center justify-between px-5 py-3 border-t border-border/30 bg-foreground/[0.02]">
-                    <div className="flex items-center gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35" onClick={() => execCommand('bold')}><Bold className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35" onClick={() => execCommand('italic')}><Italic className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35" onClick={() => execCommand('underline')}><Underline className="h-4 w-4" /></Button>
-                      <div className="w-px h-5 bg-border/40 mx-1.5" />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35" onClick={() => execCommand('insertUnorderedList')}><List className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35" onClick={() => execCommand('insertOrderedList')}><ListOrdered className="h-4 w-4" /></Button>
-                      <div className="w-px h-5 bg-border/40 mx-1.5" />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35" onClick={() => {
-                        const url = prompt('URL:')
-                        if (url) execCommand('createLink', url)
-                      }}><Link2 className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35"><Paperclip className="h-4 w-4" /></Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" className="h-8 text-sm text-foreground/40" onClick={() => setReplyMode(null)}>
-                        Annuleren
-                      </Button>
-                      <Button size="sm" className="h-8 gap-2 text-sm" onClick={handleSend} disabled={isSending}>
-                        <Send className="h-3.5 w-3.5" />
-                        {isSending ? 'Verzenden...' : 'Verzenden'}
-                      </Button>
-                    </div>
-                  </div>
+                  <Button size="sm" className="h-8 gap-2 text-sm" onClick={handleSend} disabled={isSending}>
+                    <Send className="h-3.5 w-3.5" />
+                    {isSending ? 'Verzenden...' : 'Verzenden'}
+                  </Button>
                 </div>
               </div>
             )}

@@ -17,7 +17,7 @@ import { useEmailActions } from './hooks/useEmailActions'
 import { useEmailSelection } from './hooks/useEmailSelection'
 import { useEmailFilters } from './hooks/useEmailFilters'
 import { useEmailKeyboard } from './hooks/useEmailKeyboard'
-import type { EmailFolder, FilterType, ViewMode } from './emailTypes'
+import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
 import { extractSenderEmail } from './emailHelpers'
 import { KEYBOARD_SHORTCUTS } from './emailHelpers'
 
@@ -45,6 +45,7 @@ export function EmailLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filter, setFilter] = useState<FilterType>('alle')
   const [showSearch, setShowSearch] = useState(false)
+  const [fontSize, setFontSize] = useState<FontSize>('medium')
 
   // Compose state
   const [composeDefaults, setComposeDefaults] = useState<{
@@ -309,7 +310,7 @@ export function EmailLayout() {
       {/* ─── EMAIL LIST (full remaining width) ─── */}
       <div className="flex-1 bg-white flex flex-col min-w-0">
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 flex-shrink-0">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/50 flex-shrink-0">
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -358,6 +359,27 @@ export function EmailLayout() {
           </div>
 
           <div className="flex items-center gap-1">
+            {/* Font size toggle */}
+            <div className="flex items-center border border-border/30 rounded-md overflow-hidden mr-1">
+              {(['small', 'medium', 'large'] as FontSize[]).map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setFontSize(size)}
+                  className={cn(
+                    'px-1.5 py-1 text-foreground/40 transition-colors',
+                    fontSize === size && 'bg-foreground/5 text-foreground/70',
+                  )}
+                  title={size === 'small' ? 'Klein' : size === 'medium' ? 'Normaal' : 'Groot'}
+                >
+                  <span className={cn(
+                    'font-medium leading-none',
+                    size === 'small' && 'text-[10px]',
+                    size === 'medium' && 'text-xs',
+                    size === 'large' && 'text-sm',
+                  )}>A</span>
+                </button>
+              ))}
+            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -422,6 +444,7 @@ export function EmailLayout() {
                   isActive={selectedEmail?.id === email.id}
                   isChecked={checkedEmails.has(email.id)}
                   isFocused={focusedIndex === index}
+                  fontSize={fontSize}
                   onSelect={handleSelectEmail}
                   onToggleStar={handleToggleStar}
                   onToggleCheck={toggleCheckEmail}
