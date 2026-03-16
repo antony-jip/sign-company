@@ -222,6 +222,9 @@ export async function testEmailConnection(
   return response.json()
 }
 
+// Cache voor credentials uit Supabase (zodat we niet bij elke call een API request doen)
+let _cachedCredentials: { gmail_address: string; app_password: string; smtp_host?: string; smtp_port?: number; imap_host?: string; imap_port?: number } | null = null
+
 function getLocalEmailCredentials(): { gmail_address: string; app_password: string; smtp_host?: string; smtp_port?: number; imap_host?: string; imap_port?: number } {
   try {
     const stored = localStorage.getItem('forgedesk_email_settings')
@@ -239,7 +242,44 @@ function getLocalEmailCredentials(): { gmail_address: string; app_password: stri
       }
     }
   } catch { /* ignore */ }
+  // Fallback naar in-memory cache (geladen vanuit Supabase)
+  if (_cachedCredentials) return _cachedCredentials
   throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
+}
+
+/**
+ * Laad email instellingen vanuit Supabase en cache ze in localStorage.
+ * Wordt aangeroepen bij app start zodat credentials altijd beschikbaar zijn.
+ */
+export async function syncEmailSettingsFromServer(): Promise<boolean> {
+  try {
+    if (!supabase) return false
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return false
+
+    const response = await fetch('/api/email-settings', {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    })
+    if (!response.ok) return false
+
+    const settings = await response.json()
+    if (settings.gmail_address && settings.app_password) {
+      // Sla op in localStorage zodat ze persistent blijven
+      localStorage.setItem('forgedesk_email_settings', JSON.stringify({
+        gmail_address: settings.gmail_address,
+        app_password: settings.app_password,
+        smtp_host: settings.smtp_host || 'smtp.gmail.com',
+        smtp_port: settings.smtp_port || 587,
+        imap_host: settings.imap_host || 'imap.gmail.com',
+        imap_port: settings.imap_port || 993,
+      }))
+      // Ook in-memory cache bijwerken
+      _cachedCredentials = settings
+      return true
+    }
+  } catch { /* ignore */ }
+  return false
 }
 
 export async function fetchEmailsFromIMAP(

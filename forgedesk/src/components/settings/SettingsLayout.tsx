@@ -1814,13 +1814,20 @@ function EmailSettingsInline({
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // Load existing settings on mount
+  // Load existing settings on mount — try localStorage first, then Supabase
   useEffect(() => {
     const existing = getLocalEmailSettings()
-    if (existing) {
+    if (existing && existing.gmail_address && existing.app_password) {
       setSettings(existing)
     } else {
-      setSettings(DEFAULT_EMAIL_SETTINGS)
+      // Probeer vanuit server te laden als localStorage leeg is
+      import('@/services/gmailService').then(async ({ syncEmailSettingsFromServer }) => {
+        const synced = await syncEmailSettingsFromServer()
+        if (synced) {
+          const loaded = getLocalEmailSettings()
+          if (loaded) setSettings(loaded)
+        }
+      }).catch(() => {})
     }
   }, [])
 

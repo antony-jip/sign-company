@@ -159,6 +159,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (u?.id) {
         const currentPath = location?.pathname || window.location.pathname
         handleOnboardingRedirect(u.id, currentPath).then(() => setIsLoading(false))
+        // Sync email settings from server to localStorage (fire-and-forget)
+        import('@/services/gmailService').then(({ syncEmailSettingsFromServer }) => {
+          syncEmailSettingsFromServer().catch(() => {})
+        }).catch(() => {})
       } else {
         setIsLoading(false)
       }
@@ -170,6 +174,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(sess?.user || null)
       if (sess?.user?.id) {
         fetchOrgData(sess.user.id)
+        // Sync email settings on auth state change
+        import('@/services/gmailService').then(({ syncEmailSettingsFromServer }) => {
+          syncEmailSettingsFromServer().catch(() => {})
+        }).catch(() => {})
       } else {
         setOrganisatieId(null)
         setUserRol(null)

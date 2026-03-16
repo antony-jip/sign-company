@@ -14,6 +14,16 @@ function encrypt(text: string): string {
   return iv.toString('hex') + ':' + encrypted
 }
 
+function decrypt(encryptedText: string): string {
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
+  const [ivHex, encrypted] = encryptedText.split(':')
+  const iv = Buffer.from(ivHex, 'hex')
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+  decrypted += decipher.final('utf8')
+  return decrypted
+}
+
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -30,6 +40,42 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
+
+  // GET: haal opgeslagen email instellingen op (met ontsleuteld wachtwoord)
+  if (req.method === 'GET') {
+    try {
+      const userId = await verifyUser(req)
+      const { data, error } = await supabase
+        .from('user_email_settings')
+        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port')
+        .eq('user_id', userId)
+        .single()
+
+      if (error || !data) {
+        return res.status(404).json({ error: 'Geen email instellingen gevonden' })
+      }
+
+      let app_password = ''
+      try {
+        app_password = decrypt(data.encrypted_app_password)
+      } catch {
+        return res.status(500).json({ error: 'Kon wachtwoord niet ontsleutelen' })
+      }
+
+      return res.status(200).json({
+        gmail_address: data.gmail_address,
+        app_password,
+        smtp_host: data.smtp_host,
+        smtp_port: data.smtp_port,
+        imap_host: data.imap_host,
+        imap_port: data.imap_port,
+      })
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Fout bij ophalen'
+      return res.status(401).json({ error: msg })
+    }
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
