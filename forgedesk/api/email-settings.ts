@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import { verifyUser, supabaseAdmin } from './_shared'
 
-const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
-if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY environment variable is required')
+const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
 
 function encrypt(text: string): string {
+  if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
   const iv = crypto.randomBytes(16)
   const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
@@ -15,6 +15,7 @@ function encrypt(text: string): string {
 }
 
 function decrypt(encryptedText: string): string {
+  if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
   const [ivHex, encrypted] = encryptedText.split(':')
   const iv = Buffer.from(ivHex, 'hex')
@@ -24,20 +25,6 @@ function decrypt(encryptedText: string): string {
   return decrypted
 }
 
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-)
-
-async function verifyUser(req: VercelRequest): Promise<string> {
-  const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
-  const token = authHeader.split(' ')[1]
-  const { data: { user }, error } = await supabase.auth.getUser(token)
-  if (error || !user) throw new Error('Ongeldige sessie')
-  return user.id
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
@@ -45,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     try {
       const userId = await verifyUser(req)
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('user_email_settings')
         .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port')
         .eq('user_id', userId)
@@ -88,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const encryptedPassword = encrypt(app_password)
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('user_email_settings')
       .upsert({
         user_id: userId,
