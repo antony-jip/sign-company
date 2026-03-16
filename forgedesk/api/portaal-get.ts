@@ -114,10 +114,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Haal items met bestanden en reacties (alleen zichtbaar voor klant)
     const { data: items } = await supabaseAdmin
       .from('portaal_items')
-      .select('id, type, titel, omschrijving, label, status, bekeken_op, mollie_payment_url, bedrag, volgorde, created_at, portaal_bestanden(*), portaal_reacties(*)')
+      .select('id, type, titel, omschrijving, label, status, bekeken_op, mollie_payment_url, bedrag, volgorde, created_at, bericht_type, bericht_tekst, foto_url, afzender, portaal_bestanden(*), portaal_reacties(*)')
       .eq('portaal_id', portaal.id)
       .eq('zichtbaar_voor_klant', true)
-      .order('created_at', { ascending: false })
+      .neq('bericht_type', 'notitie_intern')
+      .order('created_at', { ascending: true })
 
     // Genereer publieke URLs voor bestanden die als storage-pad zijn opgeslagen
     const DOCUMENTEN_BUCKET = 'documenten'
@@ -161,6 +162,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bedrag: item.bedrag,
         volgorde: item.volgorde,
         created_at: item.created_at,
+        bericht_type: item.bericht_type || 'item',
+        bericht_tekst: item.bericht_tekst,
+        foto_url: item.foto_url,
+        afzender: item.afzender || 'bedrijf',
         bestanden,
         reacties: item.portaal_reacties || [],
       }

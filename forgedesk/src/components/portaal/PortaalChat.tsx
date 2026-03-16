@@ -1,0 +1,284 @@
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { PortaalChatDaySeparator } from './PortaalChatDaySeparator'
+import { PortaalChatBubble, type ChatMessage } from './PortaalChatBubble'
+import { PortaalChatRichCard } from './PortaalChatRichCard'
+import { PortaalChatInput, type SendPayload } from './PortaalChatInput'
+import { PortaalLightbox } from './PortaalLightbox'
+import type { PortaalItem, Offerte, Factuur } from '@/types'
+
+// ---------------------------------------------------------------------------
+// Timeline entry — unified type for rendering
+// ---------------------------------------------------------------------------
+
+interface TimelineBase {
+  key: string
+  ts: string
+}
+
+interface DaySeparatorEntry extends TimelineBase {
+  kind: 'day_separator'
+  date: string
+}
+
+interface BubbleEntry extends TimelineBase {
+  kind: 'bubble'
+  message: ChatMessage
+}
+
+interface RichCardEntry extends TimelineBase {
+  kind: 'rich_card'
+  item: PortaalItem
+}
+
+interface ReactionBubbleEntry extends TimelineBase {
+  kind: 'reaction_bubble'
+  message: ChatMessage
+}
+
+type TimelineEntry = DaySeparatorEntry | BubbleEntry | RichCardEntry | ReactionBubbleEntry
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+interface PortaalChatProps {
+  items: PortaalItem[]
+  isPublic: boolean
+  bedrijfNaam?: string
+  // Intern-only
+  offertes?: Offerte[]
+  facturen?: Factuur[]
+  onSend?: (payload: SendPayload) => Promise<void>
+  onApprove?: (itemId: string) => void
+  onRevisie?: (itemId: string) => void
+  disabled?: boolean
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function dateKey(ts: string): string {
+  return new Date(ts).toISOString().split('T')[0]
+}
+
+function isBubbleItem(item: PortaalItem): boolean {
+  const bt = item.bericht_type
+  return bt === 'tekst' || bt === 'notitie_intern'
+}
+
+function isRichCardItem(item: PortaalItem): boolean {
+  if (item.bericht_type === 'foto') return true
+  if (item.bericht_type === 'item' || !item.bericht_type) {
+    return ['offerte', 'tekening', 'factuur'].includes(item.type)
+  }
+  // Fallback: old bericht items with omschrijving
+  if (item.type === 'bericht' && !item.bericht_type) return false
+  return false
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export function PortaalChat({
+  items,
+  isPublic,
+  bedrijfNaam,
+  offertes,
+  facturen,
+  onSend,
+  onApprove,
+  onRevisie,
+  disabled,
+}: PortaalChatProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+
+  // --- build timeline -------------------------------------------------------
+  const timeline = useMemo(() => {
+    type TempEntry = (BubbleEntry | RichCardEntry | ReactionBubbleEntry) & { key: string }
+
+    const entries: TempEntry[] = []
+
+    for (const item of items) {
+      if (isPublic && item.bericht_type === 'notitie_intern') continue
+      if (isPublic && !item.zichtbaar_voor_klant) continue
+
+      const source = (item.afzender || 'bedrijf') as 'bedrijf' | 'klant'
+      const ts = item.created_at
+
+      if (isBubbleItem(item)) {
+        entries.push({
+          kind: 'bubble',
+          key: `msg-${item.id}`,
+          ts,
+          message: {
+            id: item.id,
+            type: 'bubble',
+            source,
+            timestamp: ts,
+            text: item.bericht_tekst || item.omschrijving || '',
+            isInternalNote: item.bericht_type === 'notitie_intern',
+            senderName: source === 'bedrijf' ? (bedrijfNaam || 'Jij') : 'Klant',
+          },
+        })
+      } else if (isRichCardItem(item)) {
+        entries.push({ kind: 'rich_card', key: `card-${item.id}`, ts, item })
+      } else {
+        // Old-style bericht items → show as bubble
+        entries.push({
+          kind: 'bubble',
+          key: `msg-${item.id}`,
+          ts,
+          message: {
+            id: item.id,
+            type: 'bubble',
+            source,
+            timestamp: ts,
+            text: item.omschrijving || item.titel || '',
+            senderName: source === 'bedrijf' ? (bedrijfNaam || 'Jij') : 'Klant',
+          },
+        })
+      }
+
+      // Add client reactions as chat messages
+      if (item.reacties) {
+        for (const r of item.reacties) {
+          if (r.bericht) {
+            entries.push({
+              kind: 'reaction_bubble',
+              key: `react-${r.id}`,
+              ts: r.created_at,
+              message: {
+                id: r.id,
+                type: 'reaction',
+                source: 'klant',
+                timestamp: r.created_at,
+                text: r.bericht,
+                senderName: r.klant_naam || 'Klant',
+              },
+            })
+          }
+        }
+      }
+    }
+
+    // Sort chronologically
+    entries.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime())
+
+    // Insert day separators
+    const result: TimelineEntry[] = []
+    let lastDay = ''
+    for (const entry of entries) {
+      const day = dateKey(entry.ts)
+      if (day !== lastDay) {
+        result.push({ kind: 'day_separator', date: entry.ts, key: `day-${day}`, ts: entry.ts })
+        lastDay = day
+      }
+      result.push(entry)
+    }
+
+    return result
+  }, [items, isPublic, bedrijfNaam])
+
+  // --- auto-scroll to bottom ------------------------------------------------
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
+
+  useEffect(() => {
+    // Scroll on initial load and when items change
+    const timer = setTimeout(scrollToBottom, 100)
+    return () => clearTimeout(timer)
+  }, [timeline.length, scrollToBottom])
+
+  // --- image lightbox -------------------------------------------------------
+  const handleImageClick = useCallback((url: string) => {
+    setLightboxUrl(url)
+  }, [])
+
+  // --- render ---------------------------------------------------------------
+  const isOwnMessage = useCallback(
+    (source: string) => {
+      // In public view: klant messages are "own" (right side)
+      // In internal view: bedrijf messages are "own" (right side)
+      return isPublic ? source === 'klant' : source === 'bedrijf'
+    },
+    [isPublic],
+  )
+
+  if (items.length === 0 && !onSend) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+        Nog geen berichten
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Scrollable chat area */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="mx-auto max-w-2xl space-y-3">
+          {timeline.length === 0 && (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              Stuur een bericht om het gesprek te starten
+            </div>
+          )}
+          {timeline.map((entry) => {
+            switch (entry.kind) {
+              case 'day_separator':
+                return <PortaalChatDaySeparator key={entry.key} date={entry.date} />
+              case 'bubble':
+              case 'reaction_bubble':
+                return (
+                  <PortaalChatBubble
+                    key={entry.key}
+                    message={entry.message}
+                    isOwnMessage={isOwnMessage(entry.message.source)}
+                    onImageClick={handleImageClick}
+                  />
+                )
+              case 'rich_card':
+                return (
+                  <PortaalChatRichCard
+                    key={entry.key}
+                    item={entry.item}
+                    isPublic={isPublic}
+                    onApprove={onApprove}
+                    onRevisie={onRevisie}
+                    onImageClick={handleImageClick}
+                  />
+                )
+              default:
+                return null
+            }
+          })}
+          <div ref={bottomRef} />
+        </div>
+      </div>
+
+      {/* Message input bar */}
+      {onSend && (
+        <PortaalChatInput
+          isPublic={isPublic}
+          offertes={offertes}
+          facturen={facturen}
+          onSend={onSend}
+          disabled={disabled}
+        />
+      )}
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <PortaalLightbox
+          images={[{ url: lightboxUrl, bestandsnaam: '' }]}
+          startIndex={0}
+          onClose={() => setLightboxUrl(null)}
+        />
+      )}
+    </div>
+  )
+}
