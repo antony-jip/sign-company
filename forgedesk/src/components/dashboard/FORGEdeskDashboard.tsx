@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -16,6 +16,11 @@ import { ClockWidget } from './ClockWidget'
 import { NotitieWidget } from './NotitieWidget'
 import { InboxPreviewWidget } from './InboxPreviewWidget'
 import { NieuwsWidget } from './NieuwsWidget'
+import { StatisticsCards } from './StatisticsCards'
+import { RecenteActiviteitWidget } from './RecenteActiviteitWidget'
+import { TodayPlanningWidget } from './TodayPlanningWidget'
+import { PriorityTasks } from './PriorityTasks'
+import { OpenstaandeOffertesWidget } from './OpenstaandeOffertesWidget'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AlertTriangle,
