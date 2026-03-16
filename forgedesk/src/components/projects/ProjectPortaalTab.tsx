@@ -272,6 +272,42 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         zichtbaar_voor_klant: true,
         volgorde: 0,
       })
+      // Genereer offerte PDF en koppel als bestand
+      try {
+        const { getOfferteItems, getKlant, getProject } = await import('@/services/supabaseService')
+        const { generateOffertePDF } = await import('@/services/pdfService')
+        const { getDocumentStyle } = await import('@/services/supabaseService')
+
+        const [offerteItems, project, docStyle] = await Promise.all([
+          getOfferteItems(offerte.id),
+          getProject(projectId),
+          user?.id ? getDocumentStyle(user.id) : Promise.resolve(null),
+        ])
+        const klant = project?.klant_id ? await getKlant(project.klant_id) : null
+
+        const doc = generateOffertePDF(
+          offerte,
+          offerteItems,
+          klant || {},
+          { ...profile, primaireKleur: docStyle?.primaire_kleur || '#2563eb' },
+          docStyle,
+        )
+        const pdfBlob = doc.output('blob')
+        const pdfFile = new File([pdfBlob], `${offerte.nummer}.pdf`, { type: 'application/pdf' })
+        const pdfPath = `${user.id}/portaal/${portaal.id}/${Date.now()}_${offerte.nummer}.pdf`
+        const pdfUrl = await uploadFile(pdfFile, pdfPath)
+        await createPortaalBestand({
+          portaal_item_id: newItem.id,
+          bestandsnaam: `${offerte.nummer}.pdf`,
+          mime_type: 'application/pdf',
+          grootte: pdfBlob.size,
+          url: pdfUrl,
+          uploaded_by: 'bedrijf',
+        })
+      } catch (pdfErr) {
+        console.warn('Offerte PDF genereren/uploaden mislukt:', pdfErr)
+        // Niet blokkeren — offerte is al gedeeld via de publiek_token link
+      }
       if (payload.emailNotify) sendEmailNotification(`Offerte ${offerte.nummer}`, offerte.titel || `Offerte ${offerte.nummer}`)
     } else if (payload.kind === 'factuur') {
       const factuur = facturen.find(f => f.id === payload.factuurId)
