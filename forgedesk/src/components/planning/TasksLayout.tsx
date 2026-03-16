@@ -48,6 +48,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { WeatherDayStrip } from './WeatherDayStrip'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
@@ -605,6 +606,12 @@ export function TasksLayout() {
           </div>
         </div>
 
+        {/* === WEATHER STRIP === */}
+        <div className="flex flex-shrink-0">
+          <div className="w-14 flex-shrink-0" />
+          <WeatherDayStrip weekDays={weekDays} />
+        </div>
+
         {/* === DAY HEADERS === */}
         <div className="flex border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           {/* Time gutter spacer */}
@@ -1110,59 +1117,50 @@ function DayColumn({
         )
       })}
 
-      {/* Montage afspraken - positioned at their time */}
+      {/* Montage afspraken - subtle gradient overlay BEHIND tasks */}
       {montageAfspraken.map((afspraak) => {
         const startHour = afspraak.start_tijd ? parseInt(afspraak.start_tijd.split(':')[0], 10) : null
+        const startMin = afspraak.start_tijd ? parseInt(afspraak.start_tijd.split(':')[1], 10) || 0 : 0
         const endHour = afspraak.eind_tijd ? parseInt(afspraak.eind_tijd.split(':')[0], 10) : null
+        const endMin = afspraak.eind_tijd ? parseInt(afspraak.eind_tijd.split(':')[1], 10) || 0 : 0
         if (startHour === null || startHour < 7 || startHour > 19) return null
-        const topPx = (startHour - 7) * HOUR_HEIGHT + 4
-        const duration = endHour !== null && endHour > startHour ? endHour - startHour : 1
-        const heightPx = duration * HOUR_HEIGHT - 6
+        const topPx = (startHour - 7) * HOUR_HEIGHT + (startMin / 60) * HOUR_HEIGHT
+        const endTotal = endHour !== null && endHour > startHour ? (endHour - 7) * HOUR_HEIGHT + (endMin / 60) * HOUR_HEIGHT : topPx + HOUR_HEIGHT
+        const heightPx = Math.max(endTotal - topPx, 20)
 
         const STATUS_LABELS: Record<string, string> = {
           gepland: 'Gepland', onderweg: 'Onderweg', bezig: 'Bezig', afgerond: 'Afgerond', uitgesteld: 'Uitgesteld',
         }
 
+        const tooltipText = [
+          afspraak.titel,
+          afspraak.locatie ? `📍 ${afspraak.locatie}` : '',
+          `⏰ ${afspraak.start_tijd?.slice(0, 5)} – ${afspraak.eind_tijd?.slice(0, 5)}`,
+          STATUS_LABELS[afspraak.status] || afspraak.status,
+        ].filter(Boolean).join('\n')
+
         return (
           <div
             key={`montage-${afspraak.id}`}
-            className="absolute z-10"
+            className="absolute z-0 pointer-events-auto"
             style={{
               top: topPx,
-              right: 4,
-              width: 'calc(35% - 4px)',
+              left: 0,
+              right: 0,
               height: heightPx,
+              background: 'linear-gradient(135deg, rgba(126, 181, 166, 0.12), rgba(126, 181, 166, 0.06))',
+              borderLeft: '3px solid rgba(126, 181, 166, 0.4)',
+              borderRadius: '4px',
             }}
+            title={tooltipText}
           >
-            <div className={cn(
-              'h-full rounded-lg border-l-[3px] border-orange-400 bg-orange-50 dark:bg-orange-950/30 px-2 py-1.5 overflow-hidden cursor-default',
-              'hover:shadow-md transition-shadow duration-150',
-            )}>
-              <div className="flex items-center gap-1 mb-0.5">
-                <Wrench className="w-3 h-3 text-orange-500 flex-shrink-0" />
-                <span className="text-xs font-semibold text-orange-700 dark:text-orange-300 truncate">
-                  {afspraak.titel}
-                </span>
-              </div>
-              <div className="text-2xs text-orange-600/70 dark:text-orange-400/70 truncate">
-                {afspraak.start_tijd?.slice(0, 5)} – {afspraak.eind_tijd?.slice(0, 5)}
+            <div className="px-2 py-1 overflow-hidden">
+              <div className="text-xs text-muted-foreground/60 truncate font-medium">
+                {afspraak.titel}
               </div>
               {afspraak.locatie && (
-                <div className="text-2xs text-orange-600/50 dark:text-orange-400/50 truncate flex items-center gap-0.5 mt-0.5">
-                  <MapPin className="w-2.5 h-2.5" />
+                <div className="text-xs text-muted-foreground/40 truncate">
                   {afspraak.locatie}
-                </div>
-              )}
-              {heightPx > 60 && (
-                <div className="mt-1">
-                  <span className={cn(
-                    'text-2xs font-medium px-1.5 py-0.5 rounded-full',
-                    afspraak.status === 'afgerond' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                    afspraak.status === 'bezig' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                    'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                  )}>
-                    {STATUS_LABELS[afspraak.status] || afspraak.status}
-                  </span>
                 </div>
               )}
             </div>

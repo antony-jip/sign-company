@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { WeatherDayStrip } from "./WeatherDayStrip";
 import {
   Card,
   CardContent,
@@ -848,7 +849,9 @@ export function MontagePlanningLayout() {
 
   function renderWeekView() {
     return (
-      <div className="grid grid-cols-7 gap-2 min-w-[700px]">
+      <div className="min-w-[700px]">
+        <WeatherDayStrip weekDays={weekDates} />
+        <div className="grid grid-cols-7 gap-2">
         {weekDates.map((date, dayIndex) => {
           const dateStr = formatDate(date);
           const isToday = dateStr === todayStr;
@@ -909,6 +912,7 @@ export function MontagePlanningLayout() {
             </div>
           );
         })}
+        </div>
       </div>
     );
   }
@@ -1551,7 +1555,7 @@ export function MontagePlanningLayout() {
             Montage Planning
           </h1>
           <p className="text-muted-foreground mt-1 truncate">
-            Plan en beheer montage afspraken voor installatieteams
+            Plan en beheer montage afspraken
           </p>
         </div>
         <Button onClick={openNewDialog} size="lg" className="flex-shrink-0">
@@ -1559,76 +1563,6 @@ export function MontagePlanningLayout() {
           <span className="hidden sm:inline">Nieuwe montage</span>
           <span className="sm:hidden">Nieuw</span>
         </Button>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="rounded-xl border-black/[0.06]">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-[#7EB5A6]/15">
-                <ClipboardList className="h-6 w-6 text-[#7EB5A6]" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Montages deze week
-                </p>
-                <p className="text-2xl font-bold font-mono">{stats.totaalWeek}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl border-black/[0.06]">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-amber-100">
-                <CalendarDays className="h-6 w-6 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Gepland vandaag
-                </p>
-                <p className="text-2xl font-bold font-mono">{stats.geplandVandaag}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl border-black/[0.06]">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-green-100">
-                <UserCheck className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Medewerkers beschikbaar
-                </p>
-                <p className="text-2xl font-bold font-mono">
-                  {stats.monteursBeschikbaar}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={cn("rounded-xl border-black/[0.06]", conflicts.length > 0 && "border-red-200 bg-red-50/50")}>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className={cn("p-3 rounded-xl", conflicts.length > 0 ? "bg-red-100" : "bg-muted")}>
-                <AlertTriangle className={cn("h-6 w-6", conflicts.length > 0 ? "text-red-600" : "text-muted-foreground/60")} />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Conflicten
-                </p>
-                <p className={cn("text-2xl font-bold font-mono", conflicts.length > 0 && "text-red-600")}>
-                  {conflicts.length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Conflict warnings */}
@@ -1786,76 +1720,6 @@ export function MontagePlanningLayout() {
 
         <CardContent className="overflow-x-auto">
           {viewMode === "week" ? renderWeekView() : viewMode === "raster" ? renderRasterView() : renderListView()}
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-xl border-black/[0.06]">
-        <CardHeader>
-          <CardTitle className="text-base font-bold tracking-[-0.02em] flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Medewerkers overzicht
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {monteurs.map((monteur, idx) => {
-              const monteurAfspraken = weekAfspraken.filter((a) =>
-                a.monteurs.includes(monteur.id)
-              );
-              const vandaagBezet = afspraken
-                .filter((a) => a.datum === todayStr)
-                .some(
-                  (a) =>
-                    a.monteurs.includes(monteur.id) &&
-                    a.status !== "afgerond" &&
-                    a.status !== "uitgesteld"
-                );
-
-              return (
-                <div
-                  key={monteur.id}
-                  onClick={() => setSelectedMonteur(selectedMonteur === monteur.id ? "alle" : monteur.id)}
-                  className={cn(
-                    "flex items-center gap-3 p-3 rounded-xl border border-black/[0.06] cursor-pointer transition-all hover:shadow-sm",
-                    selectedMonteur === monteur.id && "ring-2 ring-primary border-primary bg-primary/5"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0",
-                      getAvatarColor(idx)
-                    )}
-                  >
-                    {getInitials(monteur.naam)}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      {monteur.naam}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {monteur.functie}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          "text-2xs px-1.5 py-0",
-                          vandaagBezet
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-green-100 text-green-700"
-                        )}
-                      >
-                        {vandaagBezet ? "Bezet" : "Beschikbaar"}
-                      </Badge>
-                      <span className="text-2xs text-muted-foreground">
-                        {monteurAfspraken.length} deze week
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </CardContent>
       </Card>
 
