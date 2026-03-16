@@ -3,11 +3,11 @@ import { createTransport } from 'nodemailer'
 import crypto from 'crypto'
 import { supabaseAdmin, isRateLimited } from './_shared'
 
-const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
-if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY environment variable is required')
+const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
 const APP_URL = process.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'
 
 function decrypt(encrypted: string): string {
+  if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
   const [ivHex, encHex] = encrypted.split(':')
   const iv = Buffer.from(ivHex, 'hex')

@@ -132,9 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             onConflict: 'user_id,message_id',
             ignoreDuplicates: false,
           })
-          .catch(() => {
-            // Silently fail cache write — user still gets the email
-          })
+        // Silently ignore cache write failures — user still gets the email
       }
 
       return res.status(200).json(result)

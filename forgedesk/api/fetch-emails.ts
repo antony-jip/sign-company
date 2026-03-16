@@ -201,7 +201,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           for (const email of batch) {
             if (!email.message_id) {
               // Insert without upsert for emails without message_id
-              await supabaseAdmin.from('emails').insert(email).catch(() => {})
+              const { error: insertErr } = await supabaseAdmin.from('emails').insert(email)
+              if (insertErr) { /* silently ignore duplicate inserts */ }
             }
           }
         } else {

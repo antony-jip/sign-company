@@ -1,21 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+import { supabaseAdmin, verifyUser } from './_shared'
 
 const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
-
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-async function verifyUser(req: VercelRequest): Promise<string> {
-  const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
-  const token = authHeader.split(' ')[1]
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
-  if (error || !user) throw new Error('Ongeldige sessie')
-  return user.id
-}
 
 // ── Helpers ──
 
@@ -29,16 +15,15 @@ interface ExactSettings {
 }
 
 async function getValidToken(
-  supabase: ReturnType<typeof createClient>,
   user_id: string,
   host: string,
   protocol: string
 ): Promise<string> {
-  const { data: tokenData } = await supabase
+  const { data: tokenData } = await supabaseAdmin
     .from('exact_tokens')
     .select('access_token, expires_at')
     .eq('user_id', user_id)
-    .single()
+    .single() as { data: { access_token: string; expires_at: string } | null }
 
   if (!tokenData) {
     throw new Error('Geen Exact Online tokens gevonden. Verbind opnieuw via Instellingen.')
@@ -181,12 +166,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'factuur_id is verplicht' })
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
     const host = (req.headers['x-forwarded-host'] || req.headers.host || 'forgedesk-ten.vercel.app') as string
     const protocol = (req.headers['x-forwarded-proto'] || 'https') as string
 
     // 1. Haal factuur + items op
-    const { data: factuur, error: factuurError } = await supabase
+    const { data: factuur, error: factuurError } = await supabaseAdmin
       .from('facturen')
       .select('*')
       .eq('id', factuur_id)
@@ -196,7 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Factuur niet gevonden.' })
     }
 
-    const { data: factuurItems, error: itemsError } = await supabase
+    const { data: factuurItems, error: itemsError } = await supabaseAdmin
       .from('factuur_items')
       .select('*')
       .eq('factuur_id', factuur_id)
@@ -209,7 +193,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. Haal geldige access_token op
     let token: string
     try {
-      token = await getValidToken(supabase, user_id, host, protocol)
+      token = await getValidToken(user_id, host, protocol)
     } catch {
       return res.status(401).json({
         error: 'Exact Online sessie verlopen. Verbind opnieuw via Instellingen > Integraties.',
@@ -217,7 +201,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 3. Haal Exact instellingen op
-    const { data: settings } = await supabase
+    const { data: settings } = await supabaseAdmin
       .from('app_settings')
       .select('exact_administratie_id, exact_verkoopboek, exact_grootboek, exact_btw_hoog, exact_btw_laag, exact_btw_nul')
       .eq('user_id', user_id)
@@ -234,7 +218,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 4. Klant zoeken/aanmaken
     // Haal klantgegevens op uit Supabase
-    const { data: klant } = await supabase
+    const { data: klant } = await supabaseAdmin
       .from('klanten')
       .select('naam, email, telefoon')
       .eq('id', factuur.klant_id)
@@ -355,7 +339,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const exactEntryId = entryResult?.d?.EntryID
 
     // 7. Sla op in factuur
-    await supabase
+    await supabaseAdmin
       .from('facturen')
       .update({
         exact_entry_id: exactEntryId || null,
