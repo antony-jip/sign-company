@@ -1594,6 +1594,9 @@ export interface PortaalItem {
   bedrag?: number;
   zichtbaar_voor_klant: boolean;
   volgorde: number;
+  sort_order?: number;
+  notitie?: string;
+  toegewezen_aan?: string;
   bestanden: PortaalBestand[];
   reacties: PortaalReactie[];
   created_at: string;

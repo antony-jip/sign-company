@@ -26,6 +26,11 @@ import {
   Bell,
   Send,
   Reply,
+  GripVertical,
+  ChevronDown,
+  ChevronRight,
+  StickyNote,
+  UserCircle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -62,10 +67,11 @@ import {
   getFacturenByProject,
   getNotificaties,
   markNotificatieGelezen,
+  getMedewerkers,
 } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
-import type { ProjectPortaal, PortaalItem, Offerte, Factuur, Notificatie } from '@/types'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import type { ProjectPortaal, PortaalItem, Offerte, Factuur, Notificatie, Medewerker } from '@/types'
+import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
 interface ProjectPortaalTabProps {
   projectId: string
@@ -122,6 +128,13 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   const [replyText, setReplyText] = useState('')
   const [replySending, setReplySending] = useState(false)
 
+  // Checklist redesign state
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [noteText, setNoteText] = useState('')
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+
   const fetchPortaal = useCallback(async () => {
     try {
       const p = await getPortaalByProject(projectId)
@@ -149,6 +162,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
   useEffect(() => {
     fetchPortaal()
+    getMedewerkers().then(setMedewerkers).catch(() => {})
   }, [fetchPortaal])
 
   async function handleCreatePortaal() {
@@ -412,6 +426,56 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     }
   }
 
+  function toggleExpand(itemId: string) {
+    setExpandedItems(prev => {
+      const next = new Set(prev)
+      if (next.has(itemId)) next.delete(itemId)
+      else next.add(itemId)
+      return next
+    })
+  }
+
+  async function handleSaveNote(itemId: string) {
+    try {
+      await updatePortaalItem(itemId, { notitie: noteText })
+      setEditingNoteId(null)
+      toast.success('Notitie opgeslagen')
+      await fetchPortaal()
+    } catch {
+      toast.error('Kon notitie niet opslaan')
+    }
+  }
+
+  async function handleAssign(itemId: string, medewerkerUuid: string) {
+    try {
+      await updatePortaalItem(itemId, { toegewezen_aan: medewerkerUuid || undefined })
+      toast.success('Toewijzing bijgewerkt')
+      await fetchPortaal()
+    } catch {
+      toast.error('Kon niet toewijzen')
+    }
+  }
+
+  async function handleDrop(targetIndex: number) {
+    if (draggedId === null) return
+    const currentItems = [...items].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    const draggedIndex = currentItems.findIndex(i => i.id === draggedId)
+    if (draggedIndex === -1 || draggedIndex === targetIndex) {
+      setDraggedId(null)
+      return
+    }
+    const [moved] = currentItems.splice(draggedIndex, 1)
+    currentItems.splice(targetIndex, 0, moved)
+    // Update sort_order for all items
+    for (let i = 0; i < currentItems.length; i++) {
+      if (currentItems[i].sort_order !== i) {
+        updatePortaalItem(currentItems[i].id, { sort_order: i }).catch(() => {})
+      }
+    }
+    setItems(currentItems.map((item, i) => ({ ...item, sort_order: i })))
+    setDraggedId(null)
+  }
+
   async function handleMarkNotifGelezen(notifId: string) {
     try {
       await markNotificatieGelezen(notifId)
@@ -457,200 +521,232 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   const isVerlopen = new Date(portaal.verloopt_op) < new Date()
   const isActief = portaal.actief && !isVerlopen
 
+  // Progress tracking
+  const goedgekeurdCount = items.filter(i => i.status === 'goedgekeurd').length
+  const sortedItems = [...items].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+  const progressPct = items.length > 0 ? Math.round((goedgekeurdCount / items.length) * 100) : 0
+
   return (
     <>
-      <Card className="border-border/80 dark:border-border/80">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                <Link2 className="h-3.5 w-3.5 text-white" />
-              </div>
-              Klantportaal
-              <Badge className={isActief
-                ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300 text-2xs'
-                : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 text-2xs'
-              }>
-                {isActief ? 'Actief' : isVerlopen ? 'Verlopen' : 'Gedeactiveerd'}
-              </Badge>
-            </CardTitle>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={copyLink}>
-                <Copy className="h-3.5 w-3.5 mr-1" />
-                Link
-              </Button>
-              <a
-                href={`${window.location.origin}/portaal/${portaal.token}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center h-7 px-2 text-xs rounded-md hover:bg-muted transition-colors"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {/* Status info */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
-              Geldig tot {formatDate(portaal.verloopt_op)}
-            </div>
-            <div className="flex items-center gap-1">
-              <FileText className="h-3.5 w-3.5" />
-              {items.length} item{items.length !== 1 ? 's' : ''}
-            </div>
-          </div>
-
-          {/* Acties */}
-          <div className="flex flex-wrap gap-1.5">
-            {isVerlopen || !portaal.actief ? (
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleActiveer}>
-                <Power className="h-3 w-3 mr-1" />
-                Heractiveren
-              </Button>
-            ) : (
-              <>
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleVerlengen}>
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Verlengen
-                </Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs text-destructive hover:text-destructive" onClick={handleDeactiveer}>
-                  <PowerOff className="h-3 w-3 mr-1" />
-                  Deactiveren
-                </Button>
-              </>
-            )}
-          </div>
-
-          {/* Item toevoegen knoppen */}
-          {isActief && (
-            <div className="border-t pt-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Item toevoegen</p>
-              <div className="flex flex-wrap gap-1.5">
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openItemDialog('offerte')}>
-                  <FileText className="h-3 w-3 mr-1" />
-                  Offerte
-                </Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openItemDialog('tekening')}>
-                  <Image className="h-3 w-3 mr-1" />
-                  Tekening
-                </Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openItemDialog('factuur')}>
-                  <Receipt className="h-3 w-3 mr-1" />
-                  Factuur
-                </Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openItemDialog('bericht')}>
-                  <MessageSquare className="h-3 w-3 mr-1" />
-                  Bericht
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Notificaties */}
-          {notificaties.length > 0 && (
-            <div className="border-t pt-3 space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Bell className="h-3 w-3" />
-                Meldingen
-                <Badge className="bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400 text-2xs px-1.5">{notificaties.length}</Badge>
-              </p>
-              {notificaties.map((notif) => (
-                <div
-                  key={notif.id}
-                  className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs cursor-pointer hover:bg-muted/80 transition-colors ${
-                    notif.type === 'portaal_goedkeuring' ? 'bg-green-50/50 dark:bg-green-950/20'
-                    : notif.type === 'portaal_revisie' ? 'bg-amber-50/50 dark:bg-amber-950/20'
-                    : 'bg-blue-50/50 dark:bg-blue-950/20'
-                  }`}
-                  onClick={() => handleMarkNotifGelezen(notif.id)}
-                  title="Klik om te markeren als gelezen"
-                >
-                  {notif.type === 'portaal_goedkeuring' ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 flex-shrink-0 mt-0.5" />
-                    : notif.type === 'portaal_revisie' ? <RotateCcw className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    : <MessageSquare className="h-3.5 w-3.5 text-blue-600 flex-shrink-0 mt-0.5" />}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground">{notif.titel}</p>
-                    {notif.bericht && <p className="text-muted-foreground mt-0.5 line-clamp-2">{notif.bericht}</p>}
-                    <span className="text-muted-foreground/60">{formatDate(notif.created_at)}</span>
+      <div className="space-y-4">
+        {/* 4.5 Portaal header */}
+        <Card className="border-border/80">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                  <Link2 className="h-4 w-4 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold truncate">{projectNaam}</span>
+                    <Badge className={cn(
+                      'text-2xs px-1.5',
+                      isActief
+                        ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300'
+                        : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                    )}>
+                      {isActief ? 'Actief' : isVerlopen ? 'Verlopen' : 'Gedeactiveerd'}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Geldig tot {formatDate(portaal.verloopt_op)}
                   </div>
                 </div>
-              ))}
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={copyLink}>
+                  <Copy className="h-3 w-3 mr-1" />
+                  Link kopiëren
+                </Button>
+                {isVerlopen || !portaal.actief ? (
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={handleActiveer}>
+                    <Power className="h-3 w-3 mr-1" />
+                    Heractiveren
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={handleVerlengen}>
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Verlengen
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={handleDeactiveer}>
+                      <PowerOff className="h-3 w-3 mr-1" />
+                      Deactiveren
+                    </Button>
+                  </>
+                )}
+                <a
+                  href={`${window.location.origin}/portaal/${portaal.token}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center h-7 px-2 text-xs rounded-md border hover:bg-muted transition-colors"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
             </div>
-          )}
 
-          {/* Items lijst */}
-          {items.length > 0 && (
-            <div className="border-t pt-3 space-y-2">
-              {items.map((item) => {
-                const TypeIcon = TYPE_ICONS[item.type] || FileText
-                const config = STATUS_CONFIG[item.status] || STATUS_CONFIG.verstuurd
-                const StatusIcon = config.icon
-                const hasRevisie = item.reacties?.some(r => r.type === 'revisie')
-                const hasBericht = item.reacties?.some(r => r.type === 'bericht')
+            {/* Notificatie-banner — subtiel */}
+            {notificaties.length > 0 && (
+              <div className="mt-3 flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/40">
+                <Bell className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+                <span className="text-amber-700 dark:text-amber-400">
+                  {notificaties.length} nieuwe melding{notificaties.length !== 1 ? 'en' : ''} van klant
+                </span>
+                <button
+                  onClick={() => notificaties.forEach(n => handleMarkNotifGelezen(n.id))}
+                  className="ml-auto text-amber-600 hover:text-amber-800 underline"
+                >
+                  Alles gelezen
+                </button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-                return (
-                  <div key={item.id} className="space-y-1">
-                    <div
-                      className="flex items-center gap-2.5 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
-                    >
-                      <TypeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-foreground truncate">{item.titel}</span>
-                          {item.label && (
-                            <span className="text-2xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{item.label}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-2xs text-muted-foreground">{formatDate(item.created_at)}</span>
-                          {item.bekeken_op ? (() => {
-                            const bekekenDagenGeleden = (Date.now() - new Date(item.bekeken_op).getTime()) / 86400000
-                            const heeftReactie = item.reacties && item.reacties.length > 0
-                            const isOranje = bekekenDagenGeleden > 1 && !heeftReactie
-                            return (
-                              <span className={`text-2xs flex items-center gap-0.5 ${isOranje ? 'text-amber-500' : 'text-blue-500'}`}
-                                title={isOranje ? `Bekeken ${Math.floor(bekekenDagenGeleden)} dagen geleden, geen reactie` : `Bekeken op ${formatDate(item.bekeken_op)}`}
-                              >
-                                <Eye className="h-2.5 w-2.5" />
-                                {isOranje ? `${Math.floor(bekekenDagenGeleden)}d geen reactie` : 'Bekeken'}
-                              </span>
-                            )
-                          })() : (
-                            <span className="text-2xs text-muted-foreground/50 flex items-center gap-0.5" title="Nog niet bekeken">
-                              <Eye className="h-2.5 w-2.5" /> Niet bekeken
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <Badge className={`${config.color} text-2xs px-1.5 flex items-center gap-0.5`}>
-                        <StatusIcon className="h-2.5 w-2.5" />
-                        {config.label}
-                      </Badge>
-                      {!item.zichtbaar_voor_klant && (
-                        <EyeOff className="h-3 w-3 text-muted-foreground" title="Verborgen" />
+        {/* 4.1 Progress indicator */}
+        {items.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Voortgang: {goedgekeurdCount}/{items.length} items goedgekeurd</span>
+              <span className="font-mono text-muted-foreground">{progressPct}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 4.2 Items als draggable cards */}
+        <div className="space-y-2">
+          {sortedItems.map((item, idx) => {
+            const TypeIcon = TYPE_ICONS[item.type] || FileText
+            const config = STATUS_CONFIG[item.status] || STATUS_CONFIG.verstuurd
+            const StatusIcon = config.icon
+            const isExpanded = expandedItems.has(item.id)
+            const isGoedgekeurd = item.status === 'goedgekeurd'
+            const hasRevisie = item.reacties?.some(r => r.type === 'revisie')
+            const hasBericht = item.reacties?.some(r => r.type === 'bericht')
+            const assignedMw = medewerkers.find(m => m.id === item.toegewezen_aan)
+
+            return (
+              <div
+                key={item.id}
+                draggable
+                onDragStart={() => setDraggedId(item.id)}
+                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+                onDrop={() => handleDrop(idx)}
+                onDragEnd={() => setDraggedId(null)}
+                className={cn(
+                  'bg-white dark:bg-card border border-border rounded-md shadow-sm transition-all',
+                  draggedId === item.id && 'opacity-50',
+                  isGoedgekeurd && 'bg-green-50/30 dark:bg-green-950/10'
+                )}
+              >
+                {/* Collapsed row */}
+                <div
+                  className="flex items-center gap-2 px-3 py-2.5 cursor-pointer group"
+                  onClick={() => toggleExpand(item.id)}
+                >
+                  {/* Drag handle */}
+                  <GripVertical className="h-4 w-4 text-muted-foreground/30 hover:text-muted-foreground cursor-grab flex-shrink-0" />
+
+                  {/* Checkbox */}
+                  <div className={cn(
+                    'h-5 w-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors',
+                    isGoedgekeurd
+                      ? 'bg-emerald-500 border-emerald-500'
+                      : 'border-border hover:border-muted-foreground/50'
+                  )}>
+                    {isGoedgekeurd && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
+                  </div>
+
+                  {/* Type icon */}
+                  <TypeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+
+                  {/* Title + optional description */}
+                  <div className="flex-1 min-w-0">
+                    <span className={cn(
+                      'text-sm font-medium truncate block',
+                      isGoedgekeurd && 'line-through text-muted-foreground'
+                    )}>
+                      {item.titel}
+                    </span>
+                    {item.omschrijving && !isExpanded && (
+                      <span className="text-xs text-muted-foreground truncate block">{item.omschrijving}</span>
+                    )}
+                  </div>
+
+                  {/* Assigned */}
+                  {assignedMw && (
+                    <span className="text-2xs text-muted-foreground flex items-center gap-0.5 flex-shrink-0" title={`Toegewezen aan ${assignedMw.naam}`}>
+                      <UserCircle className="h-3 w-3" />
+                      {assignedMw.naam.split(' ')[0]}
+                    </span>
+                  )}
+
+                  {/* Status badge */}
+                  <Badge className={cn(config.color, 'text-2xs px-1.5 flex items-center gap-0.5 flex-shrink-0')}>
+                    <StatusIcon className="h-2.5 w-2.5" />
+                    {config.label}
+                  </Badge>
+
+                  {/* Expand chevron */}
+                  {isExpanded
+                    ? <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    : <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+                </div>
+
+                {/* Expanded details */}
+                {isExpanded && (
+                  <div className="border-t border-border/60 px-3 py-3 space-y-3 bg-muted/20">
+                    {/* Omschrijving */}
+                    {item.omschrijving && (
+                      <p className="text-xs text-muted-foreground">{item.omschrijving}</p>
+                    )}
+
+                    {/* Meta */}
+                    <div className="flex items-center gap-4 text-2xs text-muted-foreground">
+                      <span>{formatDate(item.created_at)}</span>
+                      {item.bekeken_op && (
+                        <span className="flex items-center gap-0.5 text-blue-500">
+                          <Eye className="h-2.5 w-2.5" />
+                          Bekeken {formatDate(item.bekeken_op)}
+                        </span>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDeleteItem(item.id)}
-                        title="Verbergen voor klant"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      {item.label && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{item.label}</span>
+                      )}
                     </div>
-                    {/* Reacties onder het item */}
+
+                    {/* Bestanden */}
+                    {item.bestanden && item.bestanden.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-2xs font-medium text-muted-foreground uppercase tracking-wider">Bestanden</span>
+                        {item.bestanden.map((b) => (
+                          <a key={b.id} href={b.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                            <FileText className="h-3 w-3" />
+                            {b.bestandsnaam}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Reacties */}
                     {item.reacties && item.reacties.length > 0 && (
-                      <div className="ml-6 space-y-1">
+                      <div className="space-y-1.5">
+                        <span className="text-2xs font-medium text-muted-foreground uppercase tracking-wider">Klant reacties</span>
                         {item.reacties.map((reactie) => (
-                          <div key={reactie.id} className={`flex items-start gap-1.5 text-2xs rounded px-2 py-1.5 ${
+                          <div key={reactie.id} className={cn(
+                            'flex items-start gap-1.5 text-2xs rounded px-2 py-1.5',
                             reactie.type === 'goedkeuring' ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
                             : reactie.type === 'revisie' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
                             : 'bg-muted text-muted-foreground'
-                          }`}>
+                          )}>
                             {reactie.type === 'goedkeuring' ? <CheckCircle2 className="h-3 w-3 flex-shrink-0 mt-0.5" />
                               : reactie.type === 'revisie' ? <RotateCcw className="h-3 w-3 flex-shrink-0 mt-0.5" />
                               : <MessageSquare className="h-3 w-3 flex-shrink-0 mt-0.5" />}
@@ -659,7 +755,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                                 {reactie.type === 'goedkeuring' ? 'Goedgekeurd' : reactie.type === 'revisie' ? 'Revisie' : 'Bericht'}
                                 {reactie.klant_naam && ` — ${reactie.klant_naam}`}
                               </span>
-                              {reactie.bericht && <p className="text-muted-foreground mt-0.5">{reactie.bericht}</p>}
+                              {reactie.bericht && <p className="mt-0.5">{reactie.bericht}</p>}
                               <span className="text-muted-foreground/60">{formatDate(reactie.created_at)}</span>
                             </div>
                           </div>
@@ -667,9 +763,56 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                       </div>
                     )}
 
-                    {/* Reageer knop — toon bij revisie of bericht reacties */}
-                    {isActief && (hasRevisie || hasBericht) && replyItemId !== item.id && (
-                      <div className="ml-6">
+                    {/* 4.3 Inline acties */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Notitie toevoegen */}
+                      {editingNoteId === item.id ? (
+                        <div className="flex items-end gap-1.5 w-full">
+                          <Textarea
+                            value={noteText}
+                            onChange={(e) => setNoteText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveNote(item.id) }
+                            }}
+                            placeholder="Interne notitie..."
+                            rows={1}
+                            className="text-xs min-h-[32px] resize-none flex-1"
+                            autoFocus
+                          />
+                          <Button size="sm" className="h-8 px-2 text-xs" onClick={() => handleSaveNote(item.id)}>Opslaan</Button>
+                          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => setEditingNoteId(null)}>Annuleer</Button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setEditingNoteId(item.id); setNoteText(item.notitie || '') }}
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <StickyNote className="h-3 w-3" />
+                          {item.notitie ? 'Notitie bewerken' : 'Notitie toevoegen'}
+                        </button>
+                      )}
+
+                      {/* Toewijzen */}
+                      {editingNoteId !== item.id && (
+                        <Select
+                          value={item.toegewezen_aan || ''}
+                          onValueChange={(val) => handleAssign(item.id, val)}
+                        >
+                          <SelectTrigger className="h-7 w-auto text-xs gap-1 border-none shadow-none text-muted-foreground hover:text-foreground px-1">
+                            <UserCircle className="h-3 w-3" />
+                            <SelectValue placeholder="Toewijzen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Niet toegewezen</SelectItem>
+                            {medewerkers.map(m => (
+                              <SelectItem key={m.id} value={m.id}>{m.naam}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {/* Reageren */}
+                      {isActief && (hasRevisie || hasBericht) && replyItemId !== item.id && editingNoteId !== item.id && (
                         <button
                           onClick={() => { setReplyItemId(item.id); setReplyText('') }}
                           className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
@@ -677,51 +820,79 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                           <Reply className="h-3 w-3" />
                           Reageren
                         </button>
+                      )}
+
+                      {/* Verwijderen */}
+                      {editingNoteId !== item.id && (
+                        <button
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors ml-auto"
+                          title="Verbergen voor klant"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Notitie weergave */}
+                    {item.notitie && editingNoteId !== item.id && (
+                      <div className="flex items-start gap-1.5 text-xs text-muted-foreground bg-amber-50/50 dark:bg-amber-950/10 rounded px-2 py-1.5 border border-amber-200/30">
+                        <StickyNote className="h-3 w-3 text-amber-500 flex-shrink-0 mt-0.5" />
+                        {item.notitie}
                       </div>
                     )}
 
-                    {/* Inline reply input */}
+                    {/* Inline reply */}
                     {replyItemId === item.id && (
-                      <div className="ml-6 flex items-end gap-1.5">
+                      <div className="flex items-end gap-1.5">
                         <Textarea
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault()
-                              if (replyText.trim()) handleReply(item.id)
-                            }
+                            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (replyText.trim()) handleReply(item.id) }
                           }}
                           placeholder="Typ een reactie naar de klant..."
                           rows={1}
                           className="text-xs min-h-[32px] resize-none"
                           autoFocus
                         />
-                        <Button
-                          size="sm"
-                          className="h-8 w-8 p-0 flex-shrink-0"
-                          disabled={replySending || !replyText.trim()}
-                          onClick={() => handleReply(item.id)}
-                        >
+                        <Button size="sm" className="h-8 w-8 p-0 flex-shrink-0" disabled={replySending || !replyText.trim()} onClick={() => handleReply(item.id)}>
                           {replySending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 px-2 text-xs text-muted-foreground flex-shrink-0"
-                          onClick={() => setReplyItemId(null)}
-                        >
+                        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground flex-shrink-0" onClick={() => setReplyItemId(null)}>
                           Annuleer
                         </Button>
                       </div>
                     )}
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* 4.4 Toevoegen onderaan */}
+        {isActief && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => openItemDialog('offerte')}>
+              <Plus className="h-3 w-3 mr-1" />
+              Offerte
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => openItemDialog('tekening')}>
+              <Plus className="h-3 w-3 mr-1" />
+              Tekening
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => openItemDialog('factuur')}>
+              <Plus className="h-3 w-3 mr-1" />
+              Factuur
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => openItemDialog('bericht')}>
+              <Plus className="h-3 w-3 mr-1" />
+              Bericht
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Item toevoegen dialog */}
       <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
@@ -745,7 +916,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
           </DialogHeader>
 
           <div className="space-y-3 py-2">
-            {/* Offerte selectie */}
             {itemType === 'offerte' && (
               <div>
                 <Label className="text-sm">Offerte</Label>
@@ -764,7 +934,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               </div>
             )}
 
-            {/* Factuur selectie */}
             {itemType === 'factuur' && (
               <div>
                 <Label className="text-sm">Factuur</Label>
@@ -783,7 +952,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               </div>
             )}
 
-            {/* Tekening upload */}
             {itemType === 'tekening' && (
               <div>
                 <Label className="text-sm">Bestanden</Label>
@@ -811,7 +979,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               </div>
             )}
 
-            {/* Titel */}
             <div>
               <Label className="text-sm">Titel{itemType !== 'offerte' && itemType !== 'factuur' ? ' *' : ' (optioneel)'}</Label>
               <Input
@@ -827,7 +994,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               />
             </div>
 
-            {/* Omschrijving */}
             <div>
               <Label className="text-sm">Omschrijving</Label>
               <Textarea
@@ -839,7 +1005,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               />
             </div>
 
-            {/* Label */}
             <div>
               <Label className="text-sm">Label (optioneel)</Label>
               <Input
