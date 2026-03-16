@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
-  Loader2, Archive, RefreshCw, CheckCheck, X,
+  Loader2, Archive, RefreshCw, CheckCheck, X, Mail,
 } from 'lucide-react'
 import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
 import { cn } from '@/lib/utils'
@@ -197,8 +197,6 @@ export function EmailLayout() {
   const emailIndex = selectedEmail ? threadedEmails.findIndex(e => e.id === selectedEmail.id) : -1
 
   // ─── FULL-SCREEN EMAIL READER ───
-  // When reading an email, the reader takes over the entire screen.
-  // Sidebar and list are completely hidden.
   if (viewMode === 'reading') {
     return (
       <div className="h-[calc(100vh-56px)] bg-white overflow-hidden">
@@ -211,7 +209,6 @@ export function EmailLayout() {
           onToggleRead={handleToggleRead}
           onDelete={(email) => {
             handleDelete(email)
-            // After deleting, go to next email or back to list
             const nextIdx = emailIndex + 1 < threadedEmails.length ? emailIndex + 1 : emailIndex - 1
             if (nextIdx >= 0 && nextIdx < threadedEmails.length) {
               handleSelectEmail(threadedEmails[nextIdx])
@@ -252,22 +249,25 @@ export function EmailLayout() {
     )
   }
 
+  // Active folder label for header
+  const activeFolder = folderTabs.find(f => f.id === selectedFolder)
+
   // ─── INBOX VIEW: sidebar + email list ───
   return (
-    <div className="flex h-[calc(100vh-56px)] bg-[#F4F3F0] overflow-hidden">
+    <div className="flex h-[calc(100vh-56px)] bg-[#F8F7F5] overflow-hidden">
       {/* ─── SIDEBAR ─── */}
-      <div className="w-[280px] bg-white border-r border-border/50 flex flex-col flex-shrink-0">
-        <div className="p-4">
+      <div className="w-[240px] bg-white border-r border-foreground/[0.06] flex flex-col flex-shrink-0">
+        <div className="p-3">
           <Button
-            className="w-full py-2.5 rounded-lg gap-2"
+            className="w-full h-10 rounded-lg gap-2 text-sm font-medium shadow-sm"
             onClick={() => handleCompose()}
           >
             <Pencil className="h-4 w-4" />
-            Nieuw
+            Nieuwe email
           </Button>
         </div>
 
-        <nav className="flex-1 px-2">
+        <nav className="flex-1 px-2 space-y-0.5">
           {folderTabs.map(folder => {
             const isActive = selectedFolder === folder.id
             const count = folderCounts[folder.id]
@@ -277,18 +277,22 @@ export function EmailLayout() {
                 key={folder.id}
                 onClick={() => handleFolderChange(folder.id)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-100',
+                  'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150',
                   isActive
-                    ? 'bg-[#F4F3F0] text-foreground font-medium'
-                    : 'text-foreground/60 hover:bg-[#F4F3F0]/50',
+                    ? 'bg-primary/[0.08] text-primary font-semibold'
+                    : 'text-foreground/55 hover:bg-foreground/[0.04] hover:text-foreground/75',
                 )}
               >
-                <Icon className="h-4 w-4 flex-shrink-0" />
+                <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-primary')} />
                 <span className="flex-1 text-left">{folder.label}</span>
                 {count > 0 && (
                   <span className={cn(
-                    'text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
-                    folder.id === 'inbox' ? 'bg-primary text-white font-medium' : 'text-foreground/40',
+                    'text-[11px] px-1.5 py-0.5 rounded-full min-w-[20px] text-center font-medium',
+                    folder.id === 'inbox' && isActive
+                      ? 'bg-primary text-white'
+                      : folder.id === 'inbox'
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground/35',
                   )}>
                     {count}
                   </span>
@@ -297,82 +301,101 @@ export function EmailLayout() {
             )
           })}
 
+          <div className="my-2 border-t border-foreground/[0.05]" />
+
           <button
             onClick={() => handleFolderChange('gepland' as EmailFolder)}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground/60 hover:bg-[#F4F3F0]/50 transition-colors duration-100"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-foreground/55 hover:bg-foreground/[0.04] hover:text-foreground/75 transition-all duration-150"
           >
             <Archive className="h-4 w-4 flex-shrink-0" />
             <span className="flex-1 text-left">Archief</span>
           </button>
         </nav>
+
+        {/* Sidebar footer — subtle branding */}
+        <div className="px-4 py-3 border-t border-foreground/[0.05]">
+          <div className="flex items-center gap-2 text-[11px] text-foreground/25">
+            <Mail className="h-3 w-3" />
+            <span>FORGEdesk Mail</span>
+          </div>
+        </div>
       </div>
 
       {/* ─── EMAIL LIST (full remaining width) ─── */}
       <div className="flex-1 bg-white flex flex-col min-w-0">
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/50 flex-shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-4 h-12 border-b border-foreground/[0.06] flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {/* Select all checkbox */}
             <input
               type="checkbox"
               checked={allChecked}
               ref={(el) => { if (el) el.indeterminate = someChecked }}
               onChange={toggleCheckAll}
-              className="h-3.5 w-3.5 rounded border-border cursor-pointer accent-primary"
+              className="h-4 w-4 rounded border-foreground/20 cursor-pointer accent-primary"
             />
 
             {hasChecked ? (
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkArchive}>
-                  <Archive className="h-3 w-3 mr-1" /> Archief
+              <div className="flex items-center gap-0.5">
+                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-foreground/55 hover:text-foreground hover:bg-foreground/[0.04]" onClick={handleBulkArchive}>
+                  <Archive className="h-3.5 w-3.5" /> Archief
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkDelete}>
-                  <Trash2 className="h-3 w-3 mr-1" /> Verwijder
+                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-foreground/55 hover:text-foreground hover:bg-foreground/[0.04]" onClick={handleBulkDelete}>
+                  <Trash2 className="h-3.5 w-3.5" /> Verwijder
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkMarkRead}>
-                  <CheckCheck className="h-3 w-3 mr-1" /> Gelezen
+                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-foreground/55 hover:text-foreground hover:bg-foreground/[0.04]" onClick={handleBulkMarkRead}>
+                  <CheckCheck className="h-3.5 w-3.5" /> Gelezen
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground/60" onClick={handleBulkMarkUnread}>
+                <Button variant="ghost" size="sm" className="h-8 text-xs text-foreground/55 hover:text-foreground hover:bg-foreground/[0.04]" onClick={handleBulkMarkUnread}>
                   Ongelezen
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-1">
-                {filters.map(f => (
-                  <button
-                    key={f.id}
-                    onClick={() => setFilter(f.id)}
-                    className={cn(
-                      'px-2.5 py-1 rounded-md text-xs transition-colors duration-100',
-                      filter === f.id
-                        ? 'bg-[#F4F3F0] text-foreground font-medium'
-                        : 'text-foreground/40 hover:text-foreground/60',
-                    )}
-                  >
-                    {f.label}
-                    {f.id === 'ongelezen' && filterCounts.ongelezen > 0 && (
-                      <span className="ml-1 text-primary font-medium">{filterCounts.ongelezen}</span>
-                    )}
-                  </button>
-                ))}
+              <div className="flex items-center gap-0.5 bg-foreground/[0.03] rounded-lg p-0.5">
+                {filters.map(f => {
+                  const isActiveFilter = filter === f.id
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => setFilter(f.id)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-md text-xs transition-all duration-150',
+                        isActiveFilter
+                          ? 'bg-white text-foreground font-medium shadow-sm'
+                          : 'text-foreground/45 hover:text-foreground/65',
+                      )}
+                    >
+                      {f.label}
+                      {f.id === 'ongelezen' && filterCounts.ongelezen > 0 && (
+                        <span className={cn(
+                          'ml-1 font-semibold',
+                          isActiveFilter ? 'text-primary' : 'text-primary/60',
+                        )}>{filterCounts.ongelezen}</span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {/* Font size toggle */}
-            <div className="flex items-center border border-border/30 rounded-md overflow-hidden mr-1">
+            <div className="flex items-center bg-foreground/[0.03] rounded-md p-0.5 mr-1">
               {(['small', 'medium', 'large'] as FontSize[]).map((size) => (
                 <button
                   key={size}
                   onClick={() => setFontSize(size)}
                   className={cn(
-                    'px-1.5 py-1 text-foreground/40 transition-colors',
-                    fontSize === size && 'bg-foreground/5 text-foreground/70',
+                    'px-1.5 py-1 rounded transition-all duration-150',
+                    fontSize === size
+                      ? 'bg-white text-foreground shadow-sm'
+                      : 'text-foreground/35 hover:text-foreground/55',
                   )}
                   title={size === 'small' ? 'Klein' : size === 'medium' ? 'Normaal' : 'Groot'}
                 >
                   <span className={cn(
-                    'font-medium leading-none',
+                    'font-semibold leading-none',
                     size === 'small' && 'text-[10px]',
                     size === 'medium' && 'text-xs',
                     size === 'large' && 'text-sm',
@@ -383,38 +406,38 @@ export function EmailLayout() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-foreground/40"
+              className="h-8 w-8 text-foreground/35 hover:text-foreground/60 hover:bg-foreground/[0.04]"
               onClick={() => setShowSearch(!showSearch)}
             >
-              <Search className="h-3.5 w-3.5" />
+              <Search className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-foreground/40"
+              className="h-8 w-8 text-foreground/35 hover:text-foreground/60 hover:bg-foreground/[0.04]"
               onClick={() => handleRefresh(selectedFolder)}
               disabled={isRefreshing}
             >
-              <RefreshCw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} />
+              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
             </Button>
           </div>
         </div>
 
         {/* Search bar */}
         {showSearch && (
-          <div className="flex items-center px-4 py-2 border-b border-border/30 bg-foreground/[0.02]">
-            <Search className="h-3.5 w-3.5 text-foreground/30 mr-2 flex-shrink-0" />
+          <div className="flex items-center px-4 h-11 border-b border-foreground/[0.05] bg-foreground/[0.015]">
+            <Search className="h-4 w-4 text-foreground/25 mr-3 flex-shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Zoeken... (from: to: has: label:)"
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-foreground/30"
+              placeholder="Zoeken in emails... (from: to: has: label:)"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-foreground/25"
               autoFocus
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')}>
-                <X className="h-3.5 w-3.5 text-foreground/30" />
+              <button onClick={() => setSearchQuery('')} className="p-1 hover:bg-foreground/5 rounded">
+                <X className="h-4 w-4 text-foreground/30" />
               </button>
             )}
           </div>
@@ -427,13 +450,26 @@ export function EmailLayout() {
           onScroll={handleScroll}
         >
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-5 w-5 animate-spin text-foreground/30" />
+            <div className="flex flex-col items-center justify-center h-full gap-3">
+              <Loader2 className="h-6 w-6 animate-spin text-primary/40" />
+              <p className="text-sm text-foreground/30">Emails laden...</p>
             </div>
           ) : threadedEmails.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-foreground/30">
-              <Inbox className="h-8 w-8 mb-2" />
-              <p className="text-sm">Geen emails</p>
+            <div className="flex flex-col items-center justify-center h-full text-center px-8">
+              <div className="w-16 h-16 rounded-2xl bg-foreground/[0.03] flex items-center justify-center mb-4">
+                <Inbox className="h-7 w-7 text-foreground/20" />
+              </div>
+              <h3 className="text-sm font-medium text-foreground/50 mb-1">
+                {searchQuery ? 'Geen resultaten' : filter !== 'alle' ? 'Geen emails met dit filter' : 'Inbox is leeg'}
+              </h3>
+              <p className="text-xs text-foreground/30 max-w-[240px]">
+                {searchQuery
+                  ? `Geen emails gevonden voor "${searchQuery}"`
+                  : filter !== 'alle'
+                    ? 'Probeer een ander filter of bekijk alle emails'
+                    : 'Nieuwe emails verschijnen hier automatisch'
+                }
+              </p>
             </div>
           ) : (
             <>
@@ -451,16 +487,17 @@ export function EmailLayout() {
                 />
               ))}
               {isLoadingMore && (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin text-foreground/30" />
+                <div className="flex items-center justify-center py-5">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary/40 mr-2" />
+                  <span className="text-xs text-foreground/30">Meer laden...</span>
                 </div>
               )}
               {threadedEmails.length < imapTotal && !isLoadingMore && (
                 <button
                   onClick={() => loadMoreEmails(selectedFolder)}
-                  className="w-full py-3 text-xs text-foreground/40 hover:text-foreground/60"
+                  className="w-full py-4 text-xs text-foreground/35 hover:text-primary hover:bg-primary/[0.02] transition-colors"
                 >
-                  Meer laden ({threadedEmails.length}/{imapTotal})
+                  Meer laden ({threadedEmails.length} van {imapTotal})
                 </button>
               )}
             </>
@@ -471,19 +508,19 @@ export function EmailLayout() {
       {/* Keyboard shortcuts overlay */}
       {showShortcuts && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/30" onClick={() => setShowShortcuts(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-xl border border-border p-6 w-[320px]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold">Sneltoetsen</h3>
-              <button onClick={() => setShowShortcuts(false)}>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-foreground/10 p-6 w-[340px]">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-sm font-semibold text-foreground">Sneltoetsen</h3>
+              <button onClick={() => setShowShortcuts(false)} className="p-1 hover:bg-foreground/5 rounded">
                 <X className="h-4 w-4 text-foreground/40" />
               </button>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {KEYBOARD_SHORTCUTS.map(s => (
-                <div key={s.key} className="flex items-center justify-between text-sm">
-                  <span className="text-foreground/60">{s.action}</span>
-                  <kbd className="px-2 py-0.5 bg-foreground/5 rounded text-xs font-mono">{s.key}</kbd>
+                <div key={s.key} className="flex items-center justify-between">
+                  <span className="text-sm text-foreground/55">{s.action}</span>
+                  <kbd className="px-2 py-1 bg-foreground/[0.04] border border-foreground/[0.08] rounded text-xs font-mono text-foreground/60">{s.key}</kbd>
                 </div>
               ))}
             </div>
