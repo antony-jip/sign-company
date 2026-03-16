@@ -1,58 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Send,
-  Paperclip,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  CalendarClock,
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-  List,
-  ListOrdered,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Link2,
-  Undo2,
-  Redo2,
-  Quote,
-  X,
-  Type,
-  ArrowLeft,
-  FileSignature,
-
-  Users,
-  Pencil,
-  Trash2,
-  Plus,
-  Minus,
+  Send, Paperclip, Sparkles, ArrowLeft, X, Loader2,
+  Bold, Italic, Underline, List, ListOrdered, Link2,
+  ChevronDown, Image, Trash2,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getKlanten } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { cn, getInitials } from '@/lib/utils'
-import { logger } from '../../utils/logger'
 import type { Klant } from '@/types'
-import { callForgie, getForgieUsage } from '@/services/forgieService'
-import type { ForgieAction } from '@/services/forgieService'
-import { Loader2, Globe, RefreshCw } from 'lucide-react'
+import { callForgie } from '@/services/forgieService'
+import { logger } from '../../utils/logger'
 
 interface EmailComposeProps {
   open: boolean
@@ -67,74 +27,19 @@ const emailTemplates: Record<string, { onderwerp: string; body: string }> = {
   none: { onderwerp: '', body: '' },
   'offerte-followup': {
     onderwerp: 'Opvolging offerte',
-    body: `Beste [naam],
-
-Graag volg ik onze offerte [nummer] op die wij op [datum] hebben verstuurd.
-
-Heeft u de offerte kunnen bekijken? Wij horen graag of u nog vragen heeft of dat we verdere toelichting kunnen geven.
-
-Mocht u interesse hebben, dan plannen we graag een afspraak in om de details te bespreken.
-
-Met vriendelijke groet,
-[uw naam]`,
+    body: `Beste [naam],\n\nGraag volg ik onze offerte [nummer] op die wij op [datum] hebben verstuurd.\n\nHeeft u de offerte kunnen bekijken? Wij horen graag of u nog vragen heeft of dat we verdere toelichting kunnen geven.\n\nMocht u interesse hebben, dan plannen we graag een afspraak in om de details te bespreken.`,
   },
   'project-update': {
     onderwerp: 'Project update',
-    body: `Beste [naam],
-
-Hierbij een update over de voortgang van uw project [projectnaam].
-
-Wat is er bereikt:
-- [punt 1]
-- [punt 2]
-- [punt 3]
-
-Volgende stappen:
-- [stap 1]
-- [stap 2]
-
-Verwachte opleverdatum: [datum]
-
-Heeft u vragen? Neem gerust contact op.
-
-Met vriendelijke groet,
-[uw naam]`,
+    body: `Beste [naam],\n\nHierbij een update over de voortgang van uw project [projectnaam].\n\nWat is er bereikt:\n- [punt 1]\n- [punt 2]\n\nVolgende stappen:\n- [stap 1]\n\nVerwachte opleverdatum: [datum]`,
   },
   welkomstbericht: {
     onderwerp: 'Welkom bij Sign Company',
-    body: `Beste [naam],
-
-Welkom bij Sign Company! Wij zijn verheugd om met u samen te werken.
-
-Uw contactpersoon is [naam contactpersoon], bereikbaar via [telefoonnummer] en [emailadres].
-
-De volgende stappen zijn:
-1. Kennismakingsgesprek inplannen
-2. Wensen en eisen inventariseren
-3. Ontwerp voorstel opstellen
-
-Wij kijken uit naar een prettige samenwerking!
-
-Met vriendelijke groet,
-[uw naam]`,
+    body: `Beste [naam],\n\nWelkom bij Sign Company! Wij zijn verheugd om met u samen te werken.\n\nUw contactpersoon is [naam contactpersoon], bereikbaar via [telefoonnummer] en [emailadres].\n\nWij kijken uit naar een prettige samenwerking!`,
   },
   betaalherinnering: {
     onderwerp: 'Herinnering: openstaande factuur',
-    body: `Beste [naam],
-
-Uit onze administratie blijkt dat de volgende factuur nog niet is voldaan:
-
-Factuurnummer: [nummer]
-Factuurdatum: [datum]
-Bedrag: [bedrag]
-Vervaldatum: [vervaldatum]
-
-Wij verzoeken u vriendelijk het openstaande bedrag binnen 7 dagen te voldoen op rekeningnummer [IBAN] o.v.v. het factuurnummer.
-
-Mocht de betaling reeds zijn verricht, dan kunt u deze herinnering als niet verzonden beschouwen.
-
-Met vriendelijke groet,
-[uw naam]`,
+    body: `Beste [naam],\n\nUit onze administratie blijkt dat de volgende factuur nog niet is voldaan:\n\nFactuurnummer: [nummer]\nVervaldatum: [vervaldatum]\nBedrag: [bedrag]\n\nWij verzoeken u vriendelijk het openstaande bedrag binnen 7 dagen te voldoen.`,
   },
 }
 
@@ -144,52 +49,16 @@ const mergeFields = [
   { id: 'datum', label: 'Datum', value: '[datum]' },
   { id: 'projectnaam', label: 'Projectnaam', value: '[projectnaam]' },
   { id: 'offerte_nummer', label: 'Offertenummer', value: '[offerte_nummer]' },
-  { id: 'mijn_naam', label: 'Mijn naam', value: '[mijn_naam]' },
-  { id: 'telefoon', label: 'Telefoonnummer', value: '[telefoon]' },
 ]
-
-interface Signature {
-  id: string
-  naam: string
-  inhoud: string
-}
-
-const DEFAULT_SIGNATURES: Signature[] = [
-  {
-    id: 'zakelijk',
-    naam: 'Zakelijk',
-    inhoud: 'Met vriendelijke groet,',
-  },
-  {
-    id: 'informeel',
-    naam: 'Informeel',
-    inhoud: 'Groeten,',
-  },
-  {
-    id: 'offerte',
-    naam: 'Offerte',
-    inhoud: 'Met vriendelijke groet,',
-  },
-]
-
-const SIGNATURES_STORAGE_KEY = 'forgedesk_email_signatures'
-
-function loadSavedSignatures(): Signature[] {
-  try {
-    const saved = localStorage.getItem(SIGNATURES_STORAGE_KEY)
-    return saved ? JSON.parse(saved) : []
-  } catch { return [] }
-}
-
-function saveSignatures(sigs: Signature[]) {
-  localStorage.setItem(SIGNATURES_STORAGE_KEY, JSON.stringify(sigs))
-}
-
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function getFileExt(name: string): string {
+  return (name.split('.').pop() || 'FILE').toUpperCase().substring(0, 4)
 }
 
 function getFileTypeColor(name: string): string {
@@ -199,13 +68,8 @@ function getFileTypeColor(name: string): string {
     case 'doc': case 'docx': return 'bg-blue-600'
     case 'xls': case 'xlsx': return 'bg-green-600'
     case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-primary'
-    case 'zip': case 'rar': return 'bg-yellow-600'
     default: return 'bg-muted-foreground'
   }
-}
-
-function getFileExt(name: string): string {
-  return (name.split('.').pop() || 'FILE').toUpperCase().substring(0, 4)
 }
 
 export function EmailCompose({
@@ -216,1075 +80,446 @@ export function EmailCompose({
   defaultBody = '',
   onSend,
 }: EmailComposeProps) {
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
 
   const [to, setTo] = useState(defaultTo)
   const [cc, setCc] = useState('')
   const [bcc, setBcc] = useState('')
-  const [showCc, setShowCc] = useState(false)
-  const [showBcc, setShowBcc] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
+  const [showCcBcc, setShowCcBcc] = useState(false)
   const [subject, setSubject] = useState(defaultSubject)
-  const [template, setTemplate] = useState('none')
   const [isSending, setIsSending] = useState(false)
-  const [scheduledAt, setScheduledAt] = useState('')
-  const [showScheduleDropdown, setShowScheduleDropdown] = useState(false)
-  const [scheduleOption, setScheduleOption] = useState<string>('now')
-  const [customDate, setCustomDate] = useState('')
-  const [customTime, setCustomTime] = useState('09:00')
+  const [template, setTemplate] = useState('none')
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false)
+  const [showMergeFields, setShowMergeFields] = useState(false)
 
-  // Contact autocomplete
+  // Contacts autocomplete
   const [contacts, setContacts] = useState<Klant[]>([])
-  const [contactSuggestions, setContactSuggestions] = useState<Klant[]>([])
+  const [suggestions, setSuggestions] = useState<Klant[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const suggestionsRef = useRef<HTMLDivElement>(null)
   const toInputRef = useRef<HTMLInputElement>(null)
 
-  // Signatures
-  const [selectedSignature, setSelectedSignature] = useState<string>('zakelijk')
-  const [showSignatureDropdown, setShowSignatureDropdown] = useState(false)
-  const [savedSignatures, setSavedSignatures] = useState<Signature[]>(() => loadSavedSignatures())
-  const [editingSignature, setEditingSignature] = useState<Signature | null>(null)
-  const [editSigNaam, setEditSigNaam] = useState('')
-  const [editSigInhoud, setEditSigInhoud] = useState('')
-  const signatureRef = useRef<HTMLDivElement>(null)
-  const allSignatures = useMemo(() => {
-    const custom: Signature[] = emailHandtekening
-      ? [{ id: 'custom', naam: 'Mijn handtekening', inhoud: emailHandtekening }]
-      : []
-    return [...custom, ...savedSignatures, ...DEFAULT_SIGNATURES]
-  }, [emailHandtekening, savedSignatures])
-
-  // File upload
+  // Files
   const [attachments, setAttachments] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
-  // ContentEditable editor
+  // Editor
   const editorRef = useRef<HTMLDivElement>(null)
-  const [editorEmpty, setEditorEmpty] = useState(true)
-  const [activeFormats, setActiveFormats] = useState({
-    bold: false, italic: false, underline: false, strikethrough: false,
-  })
-
-  // Merge fields
-  const [showMergeFields, setShowMergeFields] = useState(false)
-  const mergeFieldRef = useRef<HTMLDivElement>(null)
 
   // Forgie AI
-  const [showForgieMenu, setShowForgieMenu] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
-  const [forgieOriginalText, setForgieOriginalText] = useState<string | null>(null)
-  const [forgieUsage, setForgieUsage] = useState<{ usage: number; limiet: number } | null>(null)
-  const [forgieSuggestion, setForgieSuggestion] = useState<string | null>(null)
-  const [forgieLastAction, setForgieLastAction] = useState<ForgieAction | null>(null)
-  const forgieMenuRef = useRef<HTMLDivElement>(null)
 
-  const scheduleDropdownRef = useRef<HTMLDivElement>(null)
+  // Auto-save timer
+  const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Set initial editor content when panel opens
-  const imgHeight = handtekeningAfbeeldingGrootte ?? 64
-  const imgMaxWidth = Math.round(imgHeight * 2.5)
-  const sigImageHtml = handtekeningAfbeelding
-    ? `<br><img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`
-    : ''
-
-  // Build signature HTML block (image only, or image + text from selected signature)
-  const buildSignatureHtml = useCallback(() => {
-    const sig = allSignatures.find(s => s.id === selectedSignature)
-    const sigText = sig ? sig.inhoud.replace(/\n/g, '<br>') : ''
-    // Only include image if available; text signature is secondary
-    if (sigImageHtml || sigText) {
-      return `<br><br>--<br>${sigImageHtml}${sigText ? `<br>${sigText}` : ''}`
+  // Build signature HTML
+  const signatureHtml = useMemo(() => {
+    const imgHeight = handtekeningAfbeeldingGrootte ?? 64
+    const imgMaxWidth = Math.round(imgHeight * 2.5)
+    const parts: string[] = []
+    if (emailHandtekening) {
+      parts.push(emailHandtekening.replace(/\n/g, '<br>'))
     }
-    return ''
-  }, [allSignatures, selectedSignature, sigImageHtml])
+    if (handtekeningAfbeelding) {
+      parts.push(`<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`)
+    }
+    return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
+  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte])
 
+  // Initialize editor with signature
   useEffect(() => {
     if (open && editorRef.current) {
       const timer = setTimeout(() => {
         if (!editorRef.current) return
-        const sigHtml = buildSignatureHtml()
         if (defaultBody) {
-          // Reply/forward: insert signature before the quoted text
-          editorRef.current.innerHTML = `<br>${sigHtml}${defaultBody.replace(/\n/g, '<br>')}`
+          editorRef.current.innerHTML = `<br>${signatureHtml}${defaultBody.replace(/\n/g, '<br>')}`
         } else {
-          // New email: just signature
-          editorRef.current.innerHTML = sigHtml || ''
+          editorRef.current.innerHTML = signatureHtml || '<br>'
         }
-        setEditorEmpty(!editorRef.current.innerText?.trim())
-      }, 50)
+        // Place cursor at start
+        const range = document.createRange()
+        const sel = window.getSelection()
+        range.setStart(editorRef.current, 0)
+        range.collapse(true)
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+        editorRef.current.focus()
+      }, 100)
       return () => clearTimeout(timer)
     }
-  }, [open, defaultBody, buildSignatureHtml])
+  }, [open, defaultBody, signatureHtml])
 
-  // Sync state when defaults change (reply/forward)
   useEffect(() => {
     setTo(defaultTo)
     setSubject(defaultSubject)
   }, [defaultTo, defaultSubject])
 
-  // Load contacts for autocomplete
+  // Load contacts
   useEffect(() => {
-    let cancelled = false
-    getKlanten().then((data) => {
-      if (!cancelled) setContacts(data || [])
-    }).catch(() => {})
-    return () => { cancelled = true }
-  }, [])
+    if (open) {
+      getKlanten().then(setContacts).catch(() => {})
+    }
+  }, [open])
 
-  // Filter contact suggestions based on "to" input
+  // Auto-save concept every 30s
   useEffect(() => {
-    if (!to.trim() || to.includes('@') && to.endsWith('.')) {
-      setContactSuggestions([])
+    if (open) {
+      autoSaveRef.current = setInterval(() => {
+        // Could save to localStorage or Supabase
+        logger.info('Auto-save concept')
+      }, 30000)
+      return () => {
+        if (autoSaveRef.current) clearInterval(autoSaveRef.current)
+      }
+    }
+  }, [open])
+
+  const handleToChange = useCallback((value: string) => {
+    setTo(value)
+    if (value.length >= 2 && contacts.length > 0) {
+      const q = value.toLowerCase()
+      const matches = contacts.filter(k =>
+        k.bedrijfsnaam?.toLowerCase().includes(q) ||
+        k.contactpersoon?.toLowerCase().includes(q) ||
+        k.email?.toLowerCase().includes(q)
+      ).slice(0, 5)
+      setSuggestions(matches)
+      setShowSuggestions(matches.length > 0)
+    } else {
       setShowSuggestions(false)
-      return
     }
-    const q = to.toLowerCase()
-    const matches = contacts.filter((k) => {
-      const contactEmails = k.contactpersonen?.map(c => c.email).filter(Boolean) || []
-      const contactNames = k.contactpersonen?.map(c => c.naam).filter(Boolean) || []
-      return (
-        k.bedrijfsnaam.toLowerCase().includes(q) ||
-        contactNames.some(n => n.toLowerCase().includes(q)) ||
-        contactEmails.some(e => e.toLowerCase().includes(q))
-      )
-    }).slice(0, 5)
-    setContactSuggestions(matches)
-    setShowSuggestions(matches.length > 0)
-  }, [to, contacts])
-
-  // Close dropdowns on outside click
-  useEffect(() => {
-    if (!showScheduleDropdown && !showMergeFields && !showSuggestions && !showSignatureDropdown && !showForgieMenu) return
-    function handleClickOutside(e: MouseEvent) {
-      if (showScheduleDropdown && scheduleDropdownRef.current && !scheduleDropdownRef.current.contains(e.target as Node)) {
-        setShowScheduleDropdown(false)
-      }
-      if (showMergeFields && mergeFieldRef.current && !mergeFieldRef.current.contains(e.target as Node)) {
-        setShowMergeFields(false)
-      }
-      if (showSuggestions && suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false)
-      }
-      if (showSignatureDropdown && signatureRef.current && !signatureRef.current.contains(e.target as Node)) {
-        setShowSignatureDropdown(false)
-      }
-      if (showForgieMenu && forgieMenuRef.current && !forgieMenuRef.current.contains(e.target as Node)) {
-        setShowForgieMenu(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showScheduleDropdown, showMergeFields, showSuggestions, showSignatureDropdown, showForgieMenu])
+  }, [contacts])
 
   const handleSelectContact = useCallback((klant: Klant) => {
-    const email = klant.contactpersonen?.[0]?.email || ''
-    if (email) {
-      setTo(email)
-    }
+    setTo(klant.email || '')
     setShowSuggestions(false)
   }, [])
 
-  const handleSignatureChange = useCallback((sigId: string) => {
-    setSelectedSignature(sigId)
-    const sig = allSignatures.find(s => s.id === sigId)
-    if (editorRef.current) {
-      const currentHtml = editorRef.current.innerHTML
-      const sigSeparator = currentHtml.indexOf('--<br>')
-      const bodyPart = sigSeparator >= 0 ? currentHtml.substring(0, sigSeparator) : currentHtml
-      if (sig) {
-        const sigText = sig.inhoud.replace(/\n/g, '<br>')
-        const newSigHtml = `--<br>${sigImageHtml}${sigText ? `<br>${sigText}` : ''}`
-        editorRef.current.innerHTML = `${bodyPart}${newSigHtml}`
-      } else {
-        // 'none' selected — remove signature
-        editorRef.current.innerHTML = bodyPart
+  const handleTemplateSelect = useCallback((key: string) => {
+    const tmpl = emailTemplates[key]
+    if (tmpl && editorRef.current) {
+      if (tmpl.onderwerp) setSubject(tmpl.onderwerp)
+      if (tmpl.body) {
+        editorRef.current.innerHTML = `${tmpl.body.replace(/\n/g, '<br>')}${signatureHtml}`
       }
-      setEditorEmpty(!editorRef.current.innerText?.trim())
     }
-    setShowSignatureDropdown(false)
-  }, [allSignatures, sigImageHtml])
+    setTemplate(key)
+    setShowTemplateMenu(false)
+  }, [signatureHtml])
 
-  const handleSaveSignature = useCallback(() => {
-    if (!editSigNaam.trim() || !editSigInhoud.trim()) return
-    const isNew = !editingSignature || !savedSignatures.find(s => s.id === editingSignature.id)
-    const sig: Signature = {
-      id: isNew ? `sig-${Date.now()}` : editingSignature!.id,
-      naam: editSigNaam.trim(),
-      inhoud: editSigInhoud.trim(),
-    }
-    const updated = isNew
-      ? [...savedSignatures, sig]
-      : savedSignatures.map(s => s.id === sig.id ? sig : s)
-    setSavedSignatures(updated)
-    saveSignatures(updated)
-    setEditingSignature(null)
-    setEditSigNaam('')
-    setEditSigInhoud('')
-    toast.success(isNew ? 'Handtekening opgeslagen' : 'Handtekening bijgewerkt')
-  }, [editingSignature, editSigNaam, editSigInhoud, savedSignatures])
-
-  const handleDeleteSignature = useCallback((id: string) => {
-    const updated = savedSignatures.filter(s => s.id !== id)
-    setSavedSignatures(updated)
-    saveSignatures(updated)
-    if (selectedSignature === id) setSelectedSignature('zakelijk')
-    toast.success('Handtekening verwijderd')
-  }, [savedSignatures, selectedSignature])
-
-  // Format commands
-  const updateFormatState = useCallback(() => {
-    setActiveFormats({
-      bold: document.queryCommandState('bold'),
-      italic: document.queryCommandState('italic'),
-      underline: document.queryCommandState('underline'),
-      strikethrough: document.queryCommandState('strikeThrough'),
-    })
-  }, [])
-
-  const execFormat = useCallback((command: string, value?: string) => {
-    document.execCommand(command, false, value)
-    editorRef.current?.focus()
-    updateFormatState()
-  }, [updateFormatState])
-
-  const handleEditorInput = useCallback(() => {
-    if (editorRef.current) {
-      setEditorEmpty(!editorRef.current.innerText?.trim())
-    }
-  }, [])
-
-  const insertLink = useCallback(() => {
-    const url = prompt('Voer de URL in:', 'https://')
-    if (url) execFormat('createLink', url)
-  }, [execFormat])
-
-  const insertMergeField = useCallback((value: string) => {
-    editorRef.current?.focus()
+  const handleMergeFieldInsert = useCallback((value: string) => {
     document.execCommand('insertText', false, value)
     setShowMergeFields(false)
-    setEditorEmpty(false)
+    editorRef.current?.focus()
   }, [])
 
-  // File upload
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setAttachments(prev => [...prev, ...Array.from(e.target.files!)])
+  const handleForgieWrite = useCallback(async () => {
+    if (!editorRef.current) return
+    setForgieLoading(true)
+    try {
+      const context = `Onderwerp: ${subject}\nAan: ${to}`
+      const response = await callForgie('generate-reply', context)
+      if (response?.result && editorRef.current) {
+        editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
+      }
+    } catch {
+      toast.error('Forgie kon geen email genereren')
+    } finally {
+      setForgieLoading(false)
     }
-    e.target.value = ''
+  }, [subject, to, signatureHtml])
+
+  const execCommand = useCallback((command: string, value?: string) => {
+    document.execCommand(command, false, value)
+    editorRef.current?.focus()
   }, [])
 
-  const removeAttachment = useCallback((index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index))
-  }, [])
+  const handleSend = useCallback(async () => {
+    if (!to.trim()) {
+      toast.error('Vul een ontvanger in')
+      return
+    }
+    if (!subject.trim()) {
+      toast.error('Vul een onderwerp in')
+      return
+    }
+    setIsSending(true)
+    try {
+      const html = editorRef.current?.innerHTML || ''
+      const body = editorRef.current?.innerText || ''
+      await onSend?.({ to, subject, body, html })
+      toast.success('Email verzonden')
+      onOpenChange(false)
+    } catch {
+      toast.error('Verzenden mislukt')
+    } finally {
+      setIsSending(false)
+    }
+  }, [to, subject, onSend, onOpenChange])
 
-  // Drag & drop for attachments
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    setAttachments(prev => [...prev, ...files])
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
-    e.stopPropagation()
     setIsDragging(false)
     const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) {
-      setAttachments((prev) => [...prev, ...files])
-      toast.success(`${files.length} bestand${files.length > 1 ? 'en' : ''} toegevoegd`)
-    }
+    setAttachments(prev => [...prev, ...files])
   }, [])
-
-  // Ref to latest handleSend so the keyboard effect doesn't go stale
-  const handleSendRef = useRef<() => void>(() => {})
-
-  // Ctrl+Enter to send
-  useEffect(() => {
-    if (!open) return
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault()
-        handleSendRef.current()
-      }
-      if (e.key === 'Escape' && isFullscreen) {
-        e.preventDefault()
-        setIsFullscreen(false)
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, isFullscreen])
-
-  const handleTemplateChange = (value: string) => {
-    setTemplate(value)
-    if (value !== 'none' && emailTemplates[value] && editorRef.current) {
-      const tmpl = emailTemplates[value]
-      if (tmpl.onderwerp && !subject) setSubject(tmpl.onderwerp)
-      const sigHtml = buildSignatureHtml()
-      editorRef.current.innerHTML = tmpl.body.replace(/\n/g, '<br>') + sigHtml
-      setEditorEmpty(false)
-    }
-  }
-
-  const getNextMonday = () => {
-    const now = new Date()
-    const dayOfWeek = now.getDay()
-    const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek
-    const nextMonday = new Date(now)
-    nextMonday.setDate(now.getDate() + daysUntilMonday)
-    return nextMonday
-  }
-
-  const handleScheduleSelect = (option: string) => {
-    setScheduleOption(option)
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(now.getDate() + 1)
-    const tomorrowStr = tomorrow.toISOString().split('T')[0]
-
-    switch (option) {
-      case 'now':
-        setScheduledAt('')
-        break
-      case 'tomorrow-9':
-        setScheduledAt(`${tomorrowStr}T09:00`)
-        break
-      case 'tomorrow-14':
-        setScheduledAt(`${tomorrowStr}T14:00`)
-        break
-      case 'next-monday': {
-        const monday = getNextMonday()
-        const mondayStr = monday.toISOString().split('T')[0]
-        setScheduledAt(`${mondayStr}T09:00`)
-        break
-      }
-      case 'custom':
-        if (customDate && customTime) {
-          setScheduledAt(`${customDate}T${customTime}`)
-        } else {
-          setScheduledAt('')
-        }
-        break
-    }
-    if (option !== 'custom') {
-      setShowScheduleDropdown(false)
-    }
-  }
-
-  const handleForgieAction = async (action: ForgieAction) => {
-    const currentText = editorRef.current?.innerText || ''
-    if (!currentText.trim() && action !== 'write-followup') {
-      toast.error('Schrijf eerst tekst voordat Forgie het kan herschrijven')
-      return
-    }
-    setForgieLoading(true)
-    setShowForgieMenu(false)
-    setForgieLastAction(action)
-    setForgieOriginalText(currentText)
-    try {
-      const result = await callForgie(action, currentText)
-      setForgieSuggestion(result.result)
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Forgie is niet beschikbaar')
-    } finally {
-      setForgieLoading(false)
-    }
-  }
-
-  const handleForgieApply = () => {
-    if (editorRef.current && forgieSuggestion) {
-      editorRef.current.innerText = forgieSuggestion
-      setEditorEmpty(false)
-    }
-    setForgieSuggestion(null)
-    setForgieLastAction(null)
-  }
-
-  const handleForgieRetry = () => {
-    if (forgieLastAction) {
-      setForgieSuggestion(null)
-      handleForgieAction(forgieLastAction)
-    }
-  }
-
-  const handleForgieDismiss = () => {
-    setForgieSuggestion(null)
-    setForgieLastAction(null)
-  }
-
-  const handleForgieMenuOpen = async () => {
-    setShowForgieMenu(!showForgieMenu)
-    if (!showForgieMenu) {
-      try {
-        const usage = await getForgieUsage()
-        setForgieUsage(usage)
-      } catch {
-        // Usage ophalen is niet-kritiek
-      }
-    }
-  }
-
-  const handleSend = async () => {
-    if (!to.trim() || !subject.trim()) return
-
-    const body = editorRef.current?.innerText || ''
-    const html = editorRef.current?.innerHTML || ''
-    const sendData = { to: to.trim(), subject: subject.trim(), body, html, scheduledAt: scheduledAt || undefined }
-
-    setIsSending(true)
-    try {
-      onSend?.(sendData)
-      resetAndClose()
-    } catch (error) {
-      logger.error('Verzenden mislukt:', error)
-    } finally {
-      setIsSending(false)
-    }
-  }
-  handleSendRef.current = handleSend
-
-  const resetAndClose = () => {
-    setTo(defaultTo)
-    setCc('')
-    setBcc('')
-    setShowCc(false)
-    setShowBcc(false)
-    setIsFullscreen(false)
-    setSubject(defaultSubject)
-    setTemplate('none')
-    setScheduledAt('')
-    setShowScheduleDropdown(false)
-    setScheduleOption('now')
-    setCustomDate('')
-    setCustomTime('09:00')
-    setAttachments([])
-    setShowMergeFields(false)
-    setEditorEmpty(true)
-    if (editorRef.current) editorRef.current.innerHTML = ''
-    onOpenChange(false)
-  }
 
   if (!open) return null
 
   return (
-    <div
-      className={cn(
-        'relative flex flex-col',
-        isFullscreen
-          ? 'fixed inset-0 z-50 bg-background'
-          : 'h-full'
-      )}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* Drag overlay */}
-      {isDragging && (
-        <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none">
-          <div className="bg-background rounded-lg p-6 shadow-lg text-center">
-            <Paperclip className="w-8 h-8 text-primary mx-auto mb-2" />
-            <p className="text-sm font-medium">Sleep bestanden hier om toe te voegen</p>
-          </div>
+    <div className="flex flex-col h-full bg-white">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-foreground/60" onClick={() => onOpenChange(false)}>
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span className="text-xs">Terug naar inbox</span>
+          </Button>
         </div>
-      )}
+        <h2 className="text-sm font-medium text-foreground/60">Nieuw bericht</h2>
+        <div />
+      </div>
 
-      {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/20 dark:bg-muted/10">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={resetAndClose}>
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <h2 className="text-base font-semibold">
-          {defaultTo ? (defaultSubject?.startsWith('Re:') ? 'Beantwoorden' : defaultSubject?.startsWith('Fwd:') ? 'Doorsturen' : 'Nieuwe email') : 'Nieuwe email'}
-        </h2>
-        <div className="ml-auto flex items-center gap-2">
-          <div className="relative" ref={forgieMenuRef}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1.5 text-xs text-blush-deep hover:text-blush-deep hover:bg-blush/20"
-              onClick={handleForgieMenuOpen}
-              disabled={forgieLoading}
-            >
-              {forgieLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              Forgie
-              <ChevronDown className="w-3 h-3" />
-            </Button>
-            {showForgieMenu && (
-              <div className="absolute right-0 top-full mt-1 w-56 bg-card border rounded-xl shadow-lg py-1 z-50">
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('rewrite-professional')}>
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Herschrijf professioneler
+      {/* Compose form */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-[800px] mx-auto px-6 py-4">
+          {/* To field with autocomplete */}
+          <div className="relative">
+            <div className="flex items-center border-b border-border/30 py-2">
+              <label className="text-sm text-foreground/40 w-12 flex-shrink-0">Aan</label>
+              <Input
+                ref={toInputRef}
+                type="email"
+                value={to}
+                onChange={(e) => handleToChange(e.target.value)}
+                onFocus={() => to.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                className="border-none shadow-none h-8 text-sm focus-visible:ring-0 px-0"
+                placeholder="ontvanger@voorbeeld.nl"
+              />
+              {!showCcBcc && (
+                <button
+                  onClick={() => setShowCcBcc(true)}
+                  className="text-xs text-foreground/40 hover:text-foreground/60 flex-shrink-0"
+                >
+                  CC BCC
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('rewrite-shorter')}>
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Maak korter
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('formalize')}>
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Formaliseer
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('write-followup')}>
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep" /> Schrijf follow-up
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('translate-en')}>
-                  <Globe className="w-3.5 h-3.5 text-blush-deep" /> Vertaal naar Engels
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2" onClick={() => handleForgieAction('translate-nl')}>
-                  <Globe className="w-3.5 h-3.5 text-blush-deep" /> Vertaal naar Nederlands
-                </button>
-                <div className="border-t my-1" />
-                <div className="px-3 py-2 text-xs text-muted-foreground">
-                  Gebruikt: €{forgieUsage ? forgieUsage.usage.toFixed(2) : '...'} / €{forgieUsage ? forgieUsage.limiet.toFixed(2) : '5.00'}
-                </div>
+              )}
+            </div>
+            {/* Autocomplete dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-12 top-full mt-1 w-80 bg-white rounded-lg border border-border shadow-lg z-50 py-1">
+                {suggestions.map(klant => (
+                  <button
+                    key={klant.id}
+                    onClick={() => handleSelectContact(klant)}
+                    className="w-full text-left px-3 py-2 hover:bg-foreground/5 flex items-center gap-2"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-medium text-primary">{getInitials(klant.bedrijfsnaam || klant.contactpersoon || '')}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{klant.bedrijfsnaam || klant.contactpersoon}</div>
+                      <div className="text-xs text-foreground/40 truncate">{klant.email}</div>
+                    </div>
+                  </button>
+                ))}
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            title={isFullscreen ? 'Verkleinen' : 'Volledig scherm'}
-          >
-            {isFullscreen ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-          </Button>
-        </div>
-      </div>
 
-      {/* ── Form ── */}
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-3">
-          {/* Template selector */}
-          <div className="flex items-center gap-3">
-            <Label className="text-sm font-medium w-20 flex-shrink-0">Template</Label>
-            <Select value={template} onValueChange={handleTemplateChange}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Selecteer template" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Geen template</SelectItem>
-                <SelectItem value="offerte-followup">Offerte follow-up</SelectItem>
-                <SelectItem value="project-update">Project update</SelectItem>
-                <SelectItem value="welkomstbericht">Welkomstbericht</SelectItem>
-                <SelectItem value="betaalherinnering">Betaalherinnering</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* To field with autocomplete */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-between w-20 flex-shrink-0">
-              <Label className="text-sm font-medium">Aan</Label>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 px-1 text-2xs text-muted-foreground"
-                  onClick={() => setShowCc(!showCc)}
-                >
-                  CC
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 px-1 text-2xs text-muted-foreground"
-                  onClick={() => setShowBcc(!showBcc)}
-                >
-                  BCC
-                </Button>
+          {/* CC/BCC */}
+          {showCcBcc && (
+            <>
+              <div className="flex items-center border-b border-border/30 py-2">
+                <label className="text-sm text-foreground/40 w-12 flex-shrink-0">CC</label>
+                <Input
+                  type="email"
+                  value={cc}
+                  onChange={(e) => setCc(e.target.value)}
+                  className="border-none shadow-none h-8 text-sm focus-visible:ring-0 px-0"
+                  placeholder="cc@voorbeeld.nl"
+                />
               </div>
-            </div>
-            <div className="relative flex-1" ref={suggestionsRef}>
-              <Input
-                ref={toInputRef}
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                onFocus={() => { if (contactSuggestions.length > 0) setShowSuggestions(true) }}
-                placeholder="email@voorbeeld.nl of zoek contacten..."
-                type="text"
-                className="h-9"
-              />
-              {showSuggestions && contactSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 rounded-lg border bg-popover shadow-lg z-50 max-h-48 overflow-y-auto">
-                  {contactSuggestions.map((klant) => {
-                    const contact = klant.contactpersonen?.[0]
-                    const email = contact?.email || ''
-                    const naam = contact?.naam || klant.bedrijfsnaam
-                    return (
-                      <button
-                        key={klant.id}
-                        onClick={() => handleSelectContact(klant)}
-                        className="w-full text-left px-3 py-2 hover:bg-accent transition-colors flex items-center gap-3"
-                      >
-                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary flex-shrink-0">
-                          {getInitials(naam)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{naam}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {klant.bedrijfsnaam}{email ? ` — ${email}` : ''}
-                          </p>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* CC field */}
-          {showCc && (
-            <div className="flex items-center gap-3">
-              <Label className="text-sm font-medium w-20 flex-shrink-0">CC</Label>
-              <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@voorbeeld.nl" type="email" className="h-9" />
-            </div>
-          )}
-
-          {/* BCC field */}
-          {showBcc && (
-            <div className="flex items-center gap-3">
-              <Label className="text-sm font-medium w-20 flex-shrink-0">BCC</Label>
-              <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@voorbeeld.nl" type="email" className="h-9" />
-            </div>
+              <div className="flex items-center border-b border-border/30 py-2">
+                <label className="text-sm text-foreground/40 w-12 flex-shrink-0">BCC</label>
+                <Input
+                  type="email"
+                  value={bcc}
+                  onChange={(e) => setBcc(e.target.value)}
+                  className="border-none shadow-none h-8 text-sm focus-visible:ring-0 px-0"
+                  placeholder="bcc@voorbeeld.nl"
+                />
+              </div>
+            </>
           )}
 
           {/* Subject */}
-          <div className="flex items-center gap-3">
-            <Label className="text-sm font-medium w-20 flex-shrink-0">Onderwerp</Label>
-            <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Onderwerp van de email..." className="h-9" />
+          <div className="flex items-center border-b border-border/30 py-2">
+            <label className="text-sm text-foreground/40 w-12 flex-shrink-0">Onderwerp</label>
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="border-none shadow-none h-8 text-sm focus-visible:ring-0 px-0"
+              placeholder="Onderwerp..."
+            />
           </div>
 
-          <Separator />
-
-          {/* Body - Rich Editor */}
-          <div className="border rounded-lg overflow-hidden">
-            {/* Merge fields toolbar */}
-            <div className="flex items-center gap-0.5 px-2 py-1.5 border-b bg-muted/20">
-              <div className="relative" ref={mergeFieldRef}>
-                <button
-                  onClick={() => setShowMergeFields(!showMergeFields)}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded hover:bg-accent transition-colors',
-                    showMergeFields && 'bg-accent'
-                  )}
-                >
-                  <Type className="w-3.5 h-3.5" />
-                  Veld invoegen
-                  <ChevronDown className="w-3 h-3" />
-                </button>
-                {showMergeFields && (
-                  <div className="absolute left-0 top-full mt-1 w-52 rounded-lg border bg-popover p-1 shadow-lg z-50">
-                    {mergeFields.map(f => (
+          {/* Action bar: template, merge fields, AI */}
+          <div className="flex items-center gap-2 py-2 border-b border-border/20">
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1 text-foreground/40"
+                onClick={() => setShowTemplateMenu(!showTemplateMenu)}
+              >
+                Template kiezen <ChevronDown className="h-3 w-3" />
+              </Button>
+              {showTemplateMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowTemplateMenu(false)} />
+                  <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-lg border border-border shadow-lg z-50 py-1">
+                    {Object.entries(emailTemplates).filter(([k]) => k !== 'none').map(([key, tmpl]) => (
                       <button
-                        key={f.id}
-                        onClick={() => insertMergeField(f.value)}
-                        className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors flex items-center justify-between"
+                        key={key}
+                        onClick={() => handleTemplateSelect(key)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-foreground/5"
                       >
-                        <span>{f.label}</span>
-                        <span className="text-2xs text-muted-foreground font-mono">{f.value}</span>
+                        {tmpl.onderwerp}
                       </button>
                     ))}
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* ContentEditable - full width */}
-            <div className="relative">
-              {editorEmpty && (
-                <div className="absolute top-3 left-4 text-sm text-muted-foreground pointer-events-none select-none">
-                  Schrijf uw bericht hier...
-                </div>
+                </>
               )}
-              <div
-                ref={editorRef}
-                contentEditable
-                onInput={handleEditorInput}
-                onMouseUp={updateFormatState}
-                onKeyUp={updateFormatState}
-                className="min-h-[240px] max-h-[500px] overflow-y-auto px-4 py-3 text-sm leading-relaxed focus:outline-none"
-                suppressContentEditableWarning
-              />
-              <AIContentEditableToolbar
-                editorRef={editorRef}
-                onContentChange={handleEditorInput}
-              />
             </div>
 
-            {/* Attachments */}
-            {attachments.length > 0 && (
-              <div className="px-3 py-2 border-t bg-muted/10">
-                <div className="flex flex-wrap gap-2">
-                  {attachments.map((file, i) => (
-                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-muted rounded-lg text-xs">
-                      <div className={`w-6 h-6 rounded flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0 ${getFileTypeColor(file.name)}`}>
-                        {getFileExt(file.name)}
-                      </div>
-                      <span className="font-medium max-w-[120px] truncate">{file.name}</span>
-                      <span className="text-muted-foreground">({formatFileSize(file.size)})</span>
-                      <button onClick={() => removeAttachment(i)} className="text-muted-foreground hover:text-red-500 transition-colors">
-                        <X className="w-3.5 h-3.5" />
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1 text-foreground/40"
+                onClick={() => setShowMergeFields(!showMergeFields)}
+              >
+                Veld invoegen <ChevronDown className="h-3 w-3" />
+              </Button>
+              {showMergeFields && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowMergeFields(false)} />
+                  <div className="absolute left-0 top-full mt-1 w-40 bg-white rounded-lg border border-border shadow-lg z-50 py-1">
+                    {mergeFields.map(field => (
+                      <button
+                        key={field.id}
+                        onClick={() => handleMergeFieldInsert(field.value)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-foreground/5"
+                      >
+                        {field.label}
                       </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Formatting toolbar */}
-            <div className="flex items-center gap-0.5 px-2 py-1 border-t bg-muted/30 flex-wrap">
-              <button onClick={() => execFormat('undo')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Ongedaan maken">
-                <Undo2 className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-              <button onClick={() => execFormat('redo')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Opnieuw">
-                <Redo2 className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-
-              <Separator orientation="vertical" className="h-4 mx-1" />
-
-              <button
-                onClick={() => execFormat('bold')}
-                className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.bold && 'bg-accent text-foreground')}
-                title="Vet (Ctrl+B)"
-              >
-                <Bold className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => execFormat('italic')}
-                className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.italic && 'bg-accent text-foreground')}
-                title="Cursief (Ctrl+I)"
-              >
-                <Italic className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => execFormat('underline')}
-                className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.underline && 'bg-accent text-foreground')}
-                title="Onderstrepen (Ctrl+U)"
-              >
-                <Underline className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => execFormat('strikeThrough')}
-                className={cn('p-1.5 rounded hover:bg-accent transition-colors', activeFormats.strikethrough && 'bg-accent text-foreground')}
-                title="Doorhalen"
-              >
-                <Strikethrough className="w-3.5 h-3.5" />
-              </button>
-
-              <Separator orientation="vertical" className="h-4 mx-1" />
-
-              <button onClick={() => execFormat('insertUnorderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Opsommingslijst">
-                <List className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-              <button onClick={() => execFormat('insertOrderedList')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Genummerde lijst">
-                <ListOrdered className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-
-              <Separator orientation="vertical" className="h-4 mx-1" />
-
-              <button onClick={() => execFormat('justifyLeft')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Links uitlijnen">
-                <AlignLeft className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-              <button onClick={() => execFormat('justifyCenter')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Centreren">
-                <AlignCenter className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-              <button onClick={() => execFormat('justifyRight')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Rechts uitlijnen">
-                <AlignRight className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-
-              <Separator orientation="vertical" className="h-4 mx-1" />
-
-              <button onClick={() => execFormat('formatBlock', 'blockquote')} className="p-1.5 rounded hover:bg-accent transition-colors" title="Citaat">
-                <Quote className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-              <button onClick={insertLink} className="p-1.5 rounded hover:bg-accent transition-colors" title="Link invoegen">
-                <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-        </div>
-      </ScrollArea>
 
-      {/* ── Footer / Actions ── */}
-      <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/10">
-        <div className="flex items-center gap-2">
-          <input
-            type="file"
-            ref={fileInputRef}
-            multiple
-            onChange={handleFileSelect}
-            className="hidden"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.svg,.zip,.rar,.txt,.csv"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 text-muted-foreground"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="w-4 h-4" />
-            Bijlage
-          </Button>
-          {attachments.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {attachments.length} bestand{attachments.length > 1 ? 'en' : ''}
-            </span>
-          )}
-          <Separator orientation="vertical" className="h-5 mx-1" />
-          {/* Signature selector */}
-          <div className="relative" ref={signatureRef}>
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-muted-foreground"
-              onClick={() => setShowSignatureDropdown(!showSignatureDropdown)}
+              className="h-7 text-xs gap-1 text-foreground/40"
+              onClick={handleForgieWrite}
+              disabled={forgieLoading}
             >
-              <FileSignature className="w-4 h-4" />
-              Handtekening
-              <ChevronDown className="w-3 h-3" />
+              {forgieLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+              Schrijf mijn e-mail
             </Button>
-            {showSignatureDropdown && !editingSignature && (
-              <div className="absolute left-0 bottom-full mb-2 w-64 rounded-lg border bg-popover p-1 shadow-lg z-50">
-                <button
-                  onClick={() => { setSelectedSignature('none'); setShowSignatureDropdown(false) }}
-                  className={cn('w-full text-left px-3 py-2 text-sm rounded hover:bg-accent', selectedSignature === 'none' && 'bg-accent font-medium')}
-                >
-                  Geen handtekening
-                </button>
-                {allSignatures.map((sig) => {
-                  const isSaved = savedSignatures.some(s => s.id === sig.id)
-                  return (
-                    <div key={sig.id} className={cn('flex items-center rounded hover:bg-accent group', selectedSignature === sig.id && 'bg-accent font-medium')}>
-                      <button
-                        onClick={() => handleSignatureChange(sig.id)}
-                        className="flex-1 text-left px-3 py-2 text-sm"
-                      >
-                        <div className="flex items-center gap-2">
-                          <FileSignature className="w-3.5 h-3.5 text-muted-foreground" />
-                          {sig.naam}
-                        </div>
-                        <p className="text-2xs text-muted-foreground truncate mt-0.5 ml-5.5">{sig.inhoud.split('\n')[0]}</p>
-                      </button>
-                      {isSaved && (
-                        <div className="flex items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setEditingSignature(sig); setEditSigNaam(sig.naam); setEditSigInhoud(sig.inhoud) }}
-                            className="p-1 rounded hover:bg-muted" title="Bewerken"
-                          >
-                            <Pencil className="w-3 h-3 text-muted-foreground" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteSignature(sig.id) }}
-                            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-950" title="Verwijderen"
-                          >
-                            <Trash2 className="w-3 h-3 text-red-500" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-                <div className="border-t mt-1 pt-1">
-                  <button
-                    onClick={() => { setEditingSignature({ id: '', naam: '', inhoud: '' }); setEditSigNaam(''); setEditSigInhoud('') }}
-                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent text-primary font-medium flex items-center gap-2"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Nieuwe handtekening
-                  </button>
-                </div>
-              </div>
-            )}
-            {editingSignature && (
-              <div className="absolute left-0 bottom-full mb-2 w-72 rounded-lg border bg-popover p-3 shadow-lg z-50">
-                <h4 className="text-sm font-semibold mb-2">{editingSignature.id ? 'Handtekening bewerken' : 'Nieuwe handtekening'}</h4>
-                <input
-                  value={editSigNaam}
-                  onChange={(e) => setEditSigNaam(e.target.value)}
-                  placeholder="Naam (bijv. Zakelijk)"
-                  className="w-full text-sm border rounded px-2 py-1.5 mb-2 bg-background"
-                />
-                <textarea
-                  value={editSigInhoud}
-                  onChange={(e) => setEditSigInhoud(e.target.value)}
-                  placeholder="Handtekening tekst..."
-                  rows={4}
-                  className="w-full text-sm border rounded px-2 py-1.5 mb-2 bg-background resize-none"
-                />
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => { setEditingSignature(null); setEditSigNaam(''); setEditSigInhoud('') }}
-                    className="text-xs text-muted-foreground hover:text-foreground px-2 py-1"
-                  >
-                    Annuleren
-                  </button>
-                  <button
-                    onClick={handleSaveSignature}
-                    disabled={!editSigNaam.trim() || !editSigInhoud.trim()}
-                    className="text-xs bg-primary text-primary-foreground rounded px-3 py-1 font-medium disabled:opacity-50"
-                  >
-                    Opslaan
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={resetAndClose}>
-            Annuleren
-          </Button>
-          <div className="relative" ref={scheduleDropdownRef}>
-            <div className="flex">
-              <Button
-                onClick={handleSend}
-                disabled={!to.trim() || !subject.trim() || isSending}
-                size="sm"
-                className="gap-2 rounded-r-none"
-              >
-                {scheduledAt ? (
-                  <><Clock className="w-4 h-4" />{isSending ? 'Inplannen...' : 'Inplannen'}</>
-                ) : (
-                  <><Send className="w-4 h-4" />{isSending ? 'Verzenden...' : 'Verzenden'}<span className="text-2xs opacity-60 ml-1 hidden sm:inline">Ctrl+Enter</span></>
-                )}
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                className="rounded-l-none border-l border-l-primary-foreground/20 px-2"
-                onClick={() => setShowScheduleDropdown(!showScheduleDropdown)}
-                type="button"
-              >
-                <CalendarClock className="w-4 h-4" />
-              </Button>
+
+          {/* Editor */}
+          <div
+            ref={editorRef}
+            contentEditable
+            suppressContentEditableWarning
+            className={cn(
+              'min-h-[300px] py-4 text-base leading-relaxed text-foreground outline-none [&_img]:max-w-[200px]',
+              isDragging && 'ring-2 ring-primary/30 ring-inset rounded-lg bg-primary/5',
+            )}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                handleSend()
+              }
+            }}
+          />
+
+          {/* Attachments */}
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 py-3 border-t border-border/30">
+              {attachments.map((file, i) => (
+                <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-foreground/[0.02] text-sm">
+                  <div className={cn('w-6 h-6 rounded text-white text-[8px] font-bold flex items-center justify-center', getFileTypeColor(file.name))}>
+                    {getFileExt(file.name)}
+                  </div>
+                  <span className="text-foreground/70 max-w-[150px] truncate">{file.name}</span>
+                  <span className="text-foreground/30 text-xs">{formatFileSize(file.size)}</span>
+                  <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}>
+                    <X className="h-3 w-3 text-foreground/30 hover:text-foreground/60" />
+                  </button>
+                </div>
+              ))}
             </div>
-            {showScheduleDropdown && (
-              <div className="absolute right-0 bottom-full mb-2 w-72 rounded-lg border bg-popover p-2 shadow-md z-50">
-                <div className="space-y-1">
-                  <button
-                    type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'now' && 'bg-accent font-medium')}
-                    onClick={() => handleScheduleSelect('now')}
-                  >
-                    <div className="flex items-center gap-2"><Send className="w-4 h-4" /> Nu verzenden</div>
-                  </button>
-                  <button
-                    type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'tomorrow-9' && 'bg-accent font-medium')}
-                    onClick={() => handleScheduleSelect('tomorrow-9')}
-                  >
-                    <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 09:00</div>
-                  </button>
-                  <button
-                    type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'tomorrow-14' && 'bg-accent font-medium')}
-                    onClick={() => handleScheduleSelect('tomorrow-14')}
-                  >
-                    <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Morgen 14:00</div>
-                  </button>
-                  <button
-                    type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'next-monday' && 'bg-accent font-medium')}
-                    onClick={() => handleScheduleSelect('next-monday')}
-                  >
-                    <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Volgende week maandag 09:00</div>
-                  </button>
-                  <div className="border-t my-1" />
-                  <button
-                    type="button"
-                    className={cn('w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent', scheduleOption === 'custom' && 'bg-accent font-medium')}
-                    onClick={() => handleScheduleSelect('custom')}
-                  >
-                    <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Aangepaste datum/tijd</div>
-                  </button>
-                  {scheduleOption === 'custom' && (
-                    <div className="px-3 py-2 space-y-2">
-                      <div>
-                        <Label className="text-xs">Datum</Label>
-                        <Input
-                          type="date"
-                          value={customDate}
-                          onChange={(e) => {
-                            setCustomDate(e.target.value)
-                            if (e.target.value && customTime) setScheduledAt(`${e.target.value}T${customTime}`)
-                          }}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Tijd</Label>
-                        <Input
-                          type="time"
-                          value={customTime}
-                          onChange={(e) => {
-                            setCustomTime(e.target.value)
-                            if (customDate && e.target.value) setScheduledAt(`${customDate}T${e.target.value}`)
-                          }}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* ── AI Suggestie Popup ── */}
-      {forgieSuggestion && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px] rounded-xl">
-          <div
-            className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl flex flex-col"
-            style={{ minWidth: 420, minHeight: 200, maxHeight: '60vh', width: '80%', maxWidth: 600 }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blush-deep" />
-                <span className="text-sm font-semibold text-foreground">AI Suggestie</span>
-              </div>
-              <button
-                onClick={handleForgieDismiss}
-                className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Content — scrollbaar */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                {forgieSuggestion}
-              </p>
-            </div>
-
-            {/* Sticky footer knoppen */}
-            <div className="flex items-center gap-2 px-5 py-3.5 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
-              <Button size="sm" className="gap-1.5" onClick={handleForgieApply}>
-                Toepassen
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleForgieRetry} disabled={forgieLoading}>
-                {forgieLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                Opnieuw
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
-                setForgieSuggestion(null)
-                setShowForgieMenu(true)
-              }}>
-                Ander
-              </Button>
-            </div>
-          </div>
+      {/* Bottom toolbar */}
+      <div className="flex items-center justify-between px-6 py-3 border-t border-border/50 bg-foreground/[0.02] flex-shrink-0">
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('bold')}><Bold className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('italic')}><Italic className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('underline')}><Underline className="h-4 w-4" /></Button>
+          <div className="w-px h-5 bg-border/50 mx-1" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('insertUnorderedList')}><List className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('insertOrderedList')}><ListOrdered className="h-4 w-4" /></Button>
+          <div className="w-px h-5 bg-border/50 mx-1" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => {
+            const url = prompt('URL:')
+            if (url) execCommand('createLink', url)
+          }}><Link2 className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => fileInputRef.current?.click()}>
+            <Paperclip className="h-4 w-4" />
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+            accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx"
+          />
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-sm text-foreground/40"
+            onClick={() => onOpenChange(false)}
+          >
+            Annuleren
+          </Button>
+          <Button size="sm" className="h-8 gap-1.5" onClick={handleSend} disabled={isSending}>
+            <Send className="h-3.5 w-3.5" />
+            {isSending ? 'Verzenden...' : 'Verzenden'}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
