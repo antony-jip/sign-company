@@ -1597,6 +1597,11 @@ export interface PortaalItem {
   sort_order?: number;
   notitie?: string;
   toegewezen_aan?: string;
+  bericht_type?: 'item' | 'tekst' | 'foto' | 'notitie_intern';
+  bericht_tekst?: string;
+  foto_url?: string;
+  afzender?: 'bedrijf' | 'klant';
+  email_notificatie?: boolean;
   bestanden: PortaalBestand[];
   reacties: PortaalReactie[];
   created_at: string;
