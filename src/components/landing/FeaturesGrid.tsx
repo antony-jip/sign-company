@@ -1,121 +1,101 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRef } from 'react';
 
-/* ── Feature data ──────────────────────────────────────────────── */
-
-const categories = [
+const capabilities = [
   {
     number: '01',
     title: 'Verkoop &\nfacturatie',
-    description: 'Van offerte tot betaling — automatisch, met marge-inzicht. PDF met je eigen huisstijl, betaallinks voor je klant, UBL voor je boekhouder.',
-    features: ['Offertes met marge-inzicht', 'Facturen in één klik', 'PDF & UBL-export', 'Online betaallinks'],
-    accent: 'blush',
-    accentColor: 'text-blush-vivid',
-    dotColor: 'bg-blush-vivid',
+    body: 'Maak offertes met marge-inzicht in minuten. Eén klik en het is een factuur. PDF met je eigen huisstijl, UBL voor je boekhouder, betaallinks voor je klant. Je weet precies wat je verdient voordat de klant tekent.',
+    accent: 'bg-blush-vivid',
+    accentText: 'text-blush-vivid',
   },
   {
     number: '02',
     title: 'Projecten &\nplanning',
-    description: "Wie doet wat, wanneer. Werkbonnen op locatie invullen met foto's en uren. E-mail automatisch gekoppeld aan je project.",
-    features: ['Werkbonnen op locatie', 'Planning & agenda', 'Projecten met marge', 'E-mail in je projecten'],
-    accent: 'sage',
-    accentColor: 'text-sage-vivid',
-    dotColor: 'bg-sage-vivid',
+    body: 'Werkbonnen op locatie invullen met foto\'s en uren. Een planning die je team begrijpt zonder uitleg. Projecten met realtime marge-overzicht. E-mail automatisch gekoppeld aan het juiste project.',
+    accent: 'bg-sage-vivid',
+    accentText: 'text-sage-vivid',
   },
   {
     number: '03',
     title: 'Slim &\nuniek',
-    description: 'AI die signing visualiseert voor je klant. Een assistent die teksten schrijft. Een klantportaal waar je klant zelf inlogt.',
-    features: ['Sign Visualiser', 'AI-assistent Forgie', 'Klantportaal', 'Onbeperkte opslag'],
-    accent: 'lavender',
-    accentColor: 'text-lavender-vivid',
-    dotColor: 'bg-lavender-vivid',
+    body: 'Forgie, je AI-assistent, schrijft e-mails en vat gesprekken samen. De Sign Visualiser toont je klant een gevelreclame op hun eigen pand — voordat je begint. Een klantportaal waar ze zelf offertes goedkeuren en facturen bekijken.',
+    accent: 'bg-lavender-vivid',
+    accentText: 'text-lavender-vivid',
   },
 ];
 
-/* ── Animation variants ────────────────────────────────────────── */
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring' as const, damping: 25, stiffness: 100 },
-  },
-};
-
-/* ── Component ─────────────────────────────────────────────────── */
-
 export default function FeaturesGrid() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const dotY = useTransform(scrollYProgress, [0, 1], [20, -20]);
+
   return (
-    <section className="relative bg-bg" style={{ paddingTop: 140, paddingBottom: 140 }}>
+    <section ref={sectionRef} className="relative bg-bg" style={{ paddingTop: 140, paddingBottom: 140 }}>
+      {/* Dot grid pattern with parallax */}
+      <motion.div className="dot-grid-pattern absolute inset-0" style={{ y: dotY }} />
+
       <div className="container relative z-10">
-        {/* Section header — editorial, left-aligned */}
+        {/* Section header */}
         <motion.div
-          className="mb-24 max-w-[600px]"
-          initial="hidden"
-          whileInView="visible"
+          className="mb-20"
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          variants={fadeUp}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-4">
             <span className="inline-block w-8 h-px bg-ink-20 mr-3 align-middle" />
             Alles inbegrepen
           </p>
-          <h2 className="font-heading section-heading text-ink mb-5">
-            Eén prijs.<br />Alles erin.
+          <h2
+            className="font-heading text-ink"
+            style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, letterSpacing: '-3px', lineHeight: 0.95 }}
+          >
+            Alles in &eacute;&eacute;n systeem.
           </h2>
-          <p className="text-[18px] leading-[1.7] text-ink-60">
-            Geen losse modules. Geen verborgen kosten. Vanaf &euro;49 per maand heb je alles wat je nodig hebt.
-          </p>
         </motion.div>
 
-        {/* Feature rows — editorial, alternating */}
+        {/* Capability blocks — editorial with hover interactions */}
         <div className="space-y-0">
-          {categories.map((cat, i) => (
+          {capabilities.map((cap, i) => (
             <motion.div
-              key={cat.number}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 border-t border-ink-10 items-start"
-              style={{ paddingTop: 60, paddingBottom: 60 }}
-              initial="hidden"
-              whileInView="visible"
+              key={cap.number}
+              className="group border-t border-ink-10 py-16 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start cursor-default"
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              variants={fadeUp}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: i * 0.1 }}
             >
-              {/* Number */}
-              <div className="lg:col-span-1">
-                <span className={`font-mono text-[13px] font-bold ${cat.accentColor}`}>
-                  {cat.number}
+              {/* Number + accent dot */}
+              <div className="lg:col-span-2 flex items-center gap-3">
+                <span className={`w-2.5 h-2.5 rounded-full ${cap.accent} transition-transform duration-500 ease-out group-hover:scale-[2]`} />
+                <span className={`font-mono text-[13px] text-ink-20 transition-colors duration-500 group-hover:${cap.accentText}`}>
+                  {cap.number}
                 </span>
               </div>
 
-              {/* Title — large, raw */}
+              {/* Title — grows on hover */}
               <div className="lg:col-span-4">
                 <h3
-                  className="font-heading text-ink leading-none whitespace-pre-line"
-                  style={{ fontSize: 'clamp(28px, 3vw, 40px)', fontWeight: 900, letterSpacing: '-1.5px' }}
+                  className="font-heading text-ink leading-none whitespace-pre-line transition-transform duration-500 ease-out origin-left group-hover:translate-x-2"
+                  style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, letterSpacing: '-1.5px' }}
                 >
-                  {cat.title}
+                  {cap.title}
                 </h3>
               </div>
 
-              {/* Description + features */}
-              <div className="lg:col-span-7">
-                <p className="text-[16px] leading-[1.7] text-ink-60 mb-6 max-w-[460px]">
-                  {cat.description}
+              {/* Body — narrative prose */}
+              <div className="lg:col-span-6">
+                <p className="text-[17px] leading-[1.8] text-ink-60 transition-colors duration-500 group-hover:text-ink">
+                  {cap.body}
                 </p>
-                <div className="flex flex-wrap gap-3">
-                  {cat.features.map((feature) => (
-                    <span
-                      key={feature}
-                      className="inline-flex items-center gap-2 text-[13px] font-medium text-ink-60 bg-ink-05 rounded-full px-4 py-1.5"
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${cat.dotColor}`} />
-                      {feature}
-                    </span>
-                  ))}
-                </div>
               </div>
             </motion.div>
           ))}

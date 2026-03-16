@@ -8,7 +8,7 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring' as const, damping: 25, stiffness: 100 },
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
   },
 };
 
@@ -91,7 +91,7 @@ export default function OverOnsContent() {
               transition={{ type: 'spring' as const, damping: 20, stiffness: 80, delay: 0.4 }}
             >
               Eén systeem voor{' '}
-              <span className="neon-text-glow">je hele bedrijf.</span>
+              <span className="text-blush-vivid">je hele bedrijf.</span>
             </motion.h1>
 
             <motion.p
@@ -239,9 +239,7 @@ export default function OverOnsContent() {
                   transition={{ type: 'spring' as const, damping: 25, stiffness: 120, delay: i * 0.06 }}
                 >
                   <span className="text-[16px] font-semibold text-ink">{audience}</span>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-sage-vivid">
-                    <path d="M4 8l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <span className="w-2 h-2 rounded-full bg-sage-vivid" />
                 </motion.div>
               ))}
             </div>
