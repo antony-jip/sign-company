@@ -63,6 +63,7 @@ interface PortaalData {
   bedrijfsnaam?: string
   bedrijfs_telefoon?: string
   bedrijfs_email?: string
+  logo_url?: string
   portaal?: {
     id: string
     instructie_tekst: string | null
@@ -350,22 +351,26 @@ export function PortaalPagina() {
   }
 
   if (data.status === 'gesloten') {
+    const inst = (data.instellingen || {}) as Record<string, unknown>
     return (
       <PortaalGesloten
         bedrijfsnaam={data.bedrijfsnaam || ''}
-        telefoon={data.bedrijfs_telefoon}
-        email={data.bedrijfs_email}
+        telefoon={inst.contactgegevens_tonen !== false ? data.bedrijfs_telefoon : undefined}
+        email={inst.contactgegevens_tonen !== false ? data.bedrijfs_email : undefined}
+        logoUrl={inst.bedrijfslogo_op_portaal !== false ? data.logo_url : undefined}
       />
     )
   }
 
   if (data.status === 'verlopen') {
+    const inst = (data.instellingen || {}) as Record<string, unknown>
     return (
       <PortaalVerlopen
         token={data.token || token || ''}
         bedrijfsnaam={data.bedrijfsnaam || ''}
-        telefoon={data.bedrijfs_telefoon}
-        email={data.bedrijfs_email}
+        telefoon={inst.contactgegevens_tonen !== false ? data.bedrijfs_telefoon : undefined}
+        email={inst.contactgegevens_tonen !== false ? data.bedrijfs_email : undefined}
+        logoUrl={inst.bedrijfslogo_op_portaal !== false ? data.logo_url : undefined}
       />
     )
   }
@@ -378,6 +383,8 @@ export function PortaalPagina() {
   const primaire_kleur = bedrijf.primaire_kleur || '#1a1a1a'
   const instellingen = (data.instellingen || {}) as Record<string, unknown>
   const toonContact = instellingen.contactgegevens_tonen !== false
+  const toonLogo = instellingen.bedrijfslogo_op_portaal !== false
+  const kanBerichtenSturen = instellingen.klant_kan_berichten_sturen !== false
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
@@ -385,11 +392,11 @@ export function PortaalPagina() {
       <header className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {bedrijf.logo_url ? (
+            {toonLogo && bedrijf.logo_url ? (
               <img
                 src={bedrijf.logo_url}
                 alt={bedrijf.naam}
-                className="h-8 w-auto max-w-[140px] object-contain"
+                className="h-10 w-auto max-w-[160px] object-contain"
               />
             ) : (
               <div
@@ -428,9 +435,10 @@ export function PortaalPagina() {
           items={chatItems}
           isPublic={true}
           bedrijfNaam={bedrijf.naam}
-          onSend={handleClientSend}
+          onSend={kanBerichtenSturen ? handleClientSend : undefined}
           onApprove={handleApprove}
           onRevisie={handleRevisie}
+          instellingen={instellingen}
         />
       </div>
 
@@ -466,10 +474,8 @@ export function PortaalPagina() {
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="max-w-3xl mx-auto px-4 py-4 text-center flex-shrink-0">
-        <p className="text-xs text-gray-400">Powered by FORGEdesk</p>
-      </footer>
+      {/* Footer — geen FORGEdesk branding */}
+      <div className="h-4 flex-shrink-0" />
     </div>
   )
 }

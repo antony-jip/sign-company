@@ -4,19 +4,23 @@ interface PortaalGeslotenProps {
   bedrijfsnaam: string
   telefoon?: string
   email?: string
+  logoUrl?: string
 }
 
-export function PortaalGesloten({ bedrijfsnaam, telefoon, email }: PortaalGeslotenProps) {
+export function PortaalGesloten({ bedrijfsnaam, telefoon, email, logoUrl }: PortaalGeslotenProps) {
   return (
     <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center space-y-6">
+        {logoUrl && (
+          <img src={logoUrl} alt={bedrijfsnaam} className="h-10 w-auto mx-auto object-contain" />
+        )}
         <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto">
           <XCircle className="w-8 h-8 text-red-500" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Portaal gesloten</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Dit portaal is gesloten</h1>
           <p className="text-gray-600">
-            Dit portaal is niet meer beschikbaar.
+            Neem contact op met {bedrijfsnaam || 'het bedrijf'} voor vragen.
           </p>
         </div>
 
