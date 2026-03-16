@@ -96,16 +96,59 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur }: {
   primaire_kleur: string
 }) {
   const [lightboxIndex, setLightboxIndex] = useState(-1)
+  const [itemLoading, setItemLoading] = useState<'goedkeuring' | 'revisie' | null>(null)
+  const [showItemRevisie, setShowItemRevisie] = useState(false)
+  const [itemRevisieBericht, setItemRevisieBericht] = useState('')
+  const [itemError, setItemError] = useState('')
 
   const images = item.bestanden.filter(b => isImage(b.mime_type))
   const documents = item.bestanden.filter(b => !isImage(b.mime_type))
 
-  const allApproved = images.length > 0 && images.every(img => getImageStatus(item.reacties, img.id) === 'goedgekeurd')
+  const allApproved = images.length > 0
+    ? images.every(img => getImageStatus(item.reacties, img.id) === 'goedgekeurd')
+    : item.status === 'goedgekeurd'
+
+  const isItemApproved = item.status === 'goedgekeurd'
+  const isItemRevisie = item.status === 'revisie'
+  const needsItemLevelApproval = images.length === 0 && !isItemApproved && !isItemRevisie
 
   const lightboxImages = images.map(img => ({
     url: img.url,
     bestandsnaam: img.bestandsnaam,
   }))
+
+  async function handleItemReactie(type: 'goedkeuring' | 'revisie') {
+    if (type === 'revisie' && !itemRevisieBericht.trim()) {
+      setItemError('Beschrijf wat er anders moet')
+      return
+    }
+    setItemLoading(type)
+    setItemError('')
+    try {
+      const response = await fetch('/api/portaal-reactie', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          portaal_item_id: item.id,
+          type,
+          bericht: type === 'revisie' ? itemRevisieBericht.trim() : undefined,
+          klant_naam: klantNaam.trim() || undefined,
+        }),
+      })
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Kon niet opslaan')
+      }
+      setShowItemRevisie(false)
+      setItemRevisieBericht('')
+      onReactie()
+    } catch (err) {
+      setItemError((err as Error).message)
+    } finally {
+      setItemLoading(null)
+    }
+  }
 
   return (
     <div className={`bg-white rounded-xl border transition-all ${allApproved ? 'border-green-200 bg-green-50/30' : 'border-gray-200'}`}>
@@ -118,7 +161,13 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur }: {
           {allApproved && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Alles goedgekeurd
+              {images.length > 0 ? 'Alles goedgekeurd' : 'Goedgekeurd'}
+            </span>
+          )}
+          {isItemRevisie && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+              <RotateCcw className="w-3.5 h-3.5" />
+              Revisie gevraagd
             </span>
           )}
         </div>
@@ -159,6 +208,65 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur }: {
                 <span className="truncate max-w-[200px]">{doc.bestandsnaam}</span>
               </a>
             ))}
+          </div>
+        )}
+
+        {/* Item-level approve/revisie (when no images, only documents) */}
+        {needsItemLevelApproval && !showItemRevisie && (
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => handleItemReactie('goedkeuring')}
+              disabled={!!itemLoading}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: primaire_kleur }}
+            >
+              {itemLoading === 'goedkeuring' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              Goedkeuren
+            </button>
+            <button
+              onClick={() => setShowItemRevisie(true)}
+              disabled={!!itemLoading}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors disabled:opacity-50"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Revisie vragen
+            </button>
+          </div>
+        )}
+
+        {/* Item-level revisie form */}
+        {showItemRevisie && needsItemLevelApproval && (
+          <div className="mt-4 space-y-2">
+            <textarea
+              value={itemRevisieBericht}
+              onChange={(e) => setItemRevisieBericht(e.target.value)}
+              placeholder="Wat moet er anders?"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent resize-none"
+              style={{ '--tw-ring-color': primaire_kleur } as React.CSSProperties}
+              autoFocus
+            />
+            {itemError && <p className="text-xs text-red-600">{itemError}</p>}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleItemReactie('revisie')}
+                disabled={!!itemLoading}
+                className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-50"
+              >
+                {itemLoading === 'revisie' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                Versturen
+              </button>
+              <button
+                onClick={() => { setShowItemRevisie(false); setItemError('') }}
+                className="px-4 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 transition-colors"
+              >
+                Annuleren
+              </button>
+            </div>
           </div>
         )}
       </div>
