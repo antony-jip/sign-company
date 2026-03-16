@@ -1,52 +1,25 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-
-function AnimatedCounter({ target, suffix = '', duration = 2000, active }: { target: number; suffix?: string; duration?: number; active: boolean }) {
-  const [count, setCount] = useState(0);
-  const hasAnimated = useRef(false);
-
-  useEffect(() => {
-    if (!active || hasAnimated.current) return;
-    hasAnimated.current = true;
-
-    const start = performance.now();
-    const step = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(eased * target));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [active, target, duration]);
-
-  return <>{count}{suffix}</>;
-}
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring' as const, damping: 25, stiffness: 100 },
-  },
-};
+import AnimatedCounter from '@/components/landing/AnimatedCounter';
 
 export default function SocialProof() {
-  const [active, setActive] = useState(false);
+  const [statsActive, setStatsActive] = useState(false);
 
   return (
-    <section className="relative bg-forge-dark overflow-hidden noise-overlay-dark" style={{ paddingTop: 120, paddingBottom: 120 }}>
+    <section className="relative bg-forge-dark overflow-hidden" style={{ paddingTop: 140, paddingBottom: 140 }}>
+      {/* Noise overlay */}
+      <div className="absolute inset-0 noise-overlay-dark pointer-events-none" />
+
       <div className="container relative z-10">
         {/* Big quote — the origin story IS the social proof */}
         <motion.div
           className="max-w-[700px] mb-20"
-          initial="hidden"
-          whileInView="visible"
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          variants={fadeUp}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-8">
             <span className="inline-block w-8 h-px bg-blush-vivid mr-3 align-middle" />
@@ -57,21 +30,43 @@ export default function SocialProof() {
             style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, letterSpacing: '-1.5px', lineHeight: 1.1 }}
           >
             &ldquo;We zochten software die past bij hoe wij werken. Die was er niet.
-            <span className="neon-text-glow"> Dus bouwden we het zelf.</span>&rdquo;
+            <span className="text-blush-vivid"> Dus bouwden we het zelf.</span>&rdquo;
           </blockquote>
           <p className="text-[15px] text-ink-40 leading-[1.7] max-w-[500px]">
             Gebouwd door een signbedrijf met 40+ jaar ervaring. Niet door een softwarebedrijf dat denkt te weten hoe het werkt.
           </p>
         </motion.div>
 
+        {/* Savings callout — massive */}
+        <motion.div
+          className="mb-20 text-center"
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+        >
+          <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-40 mb-4">
+            Bespaar vs James PRO
+          </p>
+          <p
+            className="font-heading text-blush-vivid font-black tracking-tight"
+            style={{ fontSize: 'clamp(48px, 8vw, 96px)', lineHeight: 0.9, letterSpacing: '-4px' }}
+          >
+            &euro;<AnimatedCounter target={6192} className="font-heading" duration={2000} formatNumber />
+          </p>
+          <p className="text-[17px] text-ink-40 mt-4">
+            per jaar bespaard &middot; James PRO &euro;565/mnd vs FORGEdesk &euro;49/mnd
+          </p>
+        </motion.div>
+
         {/* Stats — big, raw numbers */}
         <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-ink-20 pt-12"
-          initial="hidden"
-          whileInView="visible"
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          variants={fadeUp}
-          onViewportEnter={() => setActive(true)}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+          onViewportEnter={() => setStatsActive(true)}
         >
           {[
             { value: 500, suffix: '+', label: 'Offertes verstuurd' },
@@ -84,7 +79,10 @@ export default function SocialProof() {
                 className="font-heading text-white font-black leading-none tracking-tighter"
                 style={{ fontSize: 'clamp(36px, 4vw, 56px)' }}
               >
-                <AnimatedCounter target={stat.value} suffix={stat.suffix} active={active} />
+                {statsActive && (
+                  <AnimatedCounter target={stat.value} suffix={stat.suffix} duration={1500} />
+                )}
+                {!statsActive && <>0{stat.suffix}</>}
               </p>
               <p className="text-[12px] text-ink-40 mt-2 font-mono tracking-wide">
                 {stat.label}
