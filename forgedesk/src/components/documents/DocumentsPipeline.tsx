@@ -78,13 +78,13 @@ export function DocumentsPipeline({ documents }: DocumentsPipelineProps) {
                                   <Badge
                                     key={tag}
                                     variant="outline"
-                                    className="text-[10px] px-1.5 py-0"
+                                    className="text-2xs px-1.5 py-0"
                                   >
                                     {tag}
                                   </Badge>
                                 ))}
                                 {doc.tags.length > 2 && (
-                                  <span className="text-[10px] text-muted-foreground">
+                                  <span className="text-2xs text-muted-foreground">
                                     +{doc.tags.length - 2}
                                   </span>
                                 )}

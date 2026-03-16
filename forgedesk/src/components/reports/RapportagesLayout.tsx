@@ -816,7 +816,7 @@ export function RapportagesLayout() {
                   key={i}
                   className="flex flex-1 flex-col items-center justify-end gap-1"
                 >
-                  <span className="text-[10px] font-medium text-muted-foreground">
+                  <span className="text-2xs font-medium text-muted-foreground">
                     {m.waarde > 0
                       ? formatCurrency(m.waarde).replace(/\s/g, '')
                       : ''}
@@ -1295,7 +1295,7 @@ export function RapportagesLayout() {
                 <CardDescription>
                   {voorraadStats.totaalArtikelen} artikelen | Waarde: {formatCurrency(voorraadStats.totaleVoorraadWaarde)}
                   {voorraadStats.onderMinimum > 0 && (
-                    <Badge variant="destructive" className="ml-2 text-[10px]">
+                    <Badge variant="destructive" className="ml-2 text-2xs">
                       {voorraadStats.onderMinimum} onder minimum
                     </Badge>
                   )}
@@ -1334,7 +1334,7 @@ export function RapportagesLayout() {
                       )}>
                         <td className="py-3 font-medium">
                           {a.naam}
-                          {onderMin && <Badge variant="destructive" className="ml-2 text-[10px]">Laag</Badge>}
+                          {onderMin && <Badge variant="destructive" className="ml-2 text-2xs">Laag</Badge>}
                         </td>
                         <td className="py-3 text-muted-foreground">{a.categorie || '-'}</td>
                         <td className={cn('py-3 text-right', onderMin && 'text-red-600 font-bold')}>

@@ -41,24 +41,24 @@ export function ResetPasswordPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">Nieuw wachtwoord</Label>
+            <Label className="text-xs font-medium text-neutral-700">Nieuw wachtwoord</Label>
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Minimaal 8 tekens"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
               autoFocus
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">Bevestig wachtwoord</Label>
+            <Label className="text-xs font-medium text-neutral-700">Bevestig wachtwoord</Label>
             <Input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Herhaal je wachtwoord"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
             />
           </div>
           <Button

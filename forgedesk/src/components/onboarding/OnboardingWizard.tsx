@@ -186,10 +186,10 @@ function StepLogo({
         ) : (
           <>
             <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-3" />
-            <p className="text-[13px] text-neutral-600" style={{ fontFamily: 'Inter, sans-serif' }}>
+            <p className="text-sm text-neutral-600" style={{ fontFamily: 'Inter, sans-serif' }}>
               Sleep je logo hierheen of <span className="text-black font-semibold">klik om te uploaden</span>
             </p>
-            <p className="text-[11px] text-neutral-400 mt-1">PNG, JPG, SVG — max 400×400px</p>
+            <p className="text-xs text-neutral-400 mt-1">PNG, JPG, SVG — max 400×400px</p>
           </>
         )}
         <input
@@ -272,36 +272,36 @@ function StepBedrijfsgegevens({
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-1 space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">Adres</Label>
+            <Label className="text-xs font-medium text-neutral-700">Adres</Label>
             <Input
               value={gegevens.adres}
               onChange={(e) => update('adres', e.target.value)}
               placeholder="Straat + nr"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">Postcode</Label>
+            <Label className="text-xs font-medium text-neutral-700">Postcode</Label>
             <Input
               value={gegevens.postcode}
               onChange={(e) => update('postcode', e.target.value)}
               placeholder="1234 AB"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">Plaats</Label>
+            <Label className="text-xs font-medium text-neutral-700">Plaats</Label>
             <Input
               value={gegevens.plaats}
               onChange={(e) => update('plaats', e.target.value)}
               placeholder="Amsterdam"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-[12.5px] font-medium text-neutral-700">
+          <Label className="text-xs font-medium text-neutral-700">
             <Phone className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
             Telefoon
           </Label>
@@ -309,31 +309,31 @@ function StepBedrijfsgegevens({
             value={gegevens.telefoon}
             onChange={(e) => update('telefoon', e.target.value)}
             placeholder="06-12345678"
-            className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+            className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">
+            <Label className="text-xs font-medium text-neutral-700">
               KvK-nummer <span className="text-neutral-400 font-normal">Optioneel</span>
             </Label>
             <Input
               value={gegevens.kvk_nummer}
               onChange={(e) => update('kvk_nummer', e.target.value)}
               placeholder="12345678"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-[12.5px] font-medium text-neutral-700">
+            <Label className="text-xs font-medium text-neutral-700">
               BTW-nummer <span className="text-neutral-400 font-normal">Optioneel</span>
             </Label>
             <Input
               value={gegevens.btw_nummer}
               onChange={(e) => update('btw_nummer', e.target.value)}
               placeholder="NL123456789B01"
-              className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+              className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
             />
           </div>
         </div>
@@ -410,7 +410,7 @@ function StepBeginnen({
             <Users className="w-5 h-5 text-neutral-700" />
             <h3 className="text-[15px] font-bold text-black" style={{ fontFamily: 'Manrope, sans-serif' }}>Zelf beginnen</h3>
           </div>
-          <p className="text-[13px] text-neutral-500 mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-sm text-neutral-500 mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
             Voeg je eerste klant toe en ga direct aan de slag.
           </p>
 
@@ -421,7 +421,7 @@ function StepBeginnen({
                 value={klant.bedrijfsnaam}
                 onChange={(e) => updateKlant('bedrijfsnaam', e.target.value)}
                 placeholder="Naam van je klant"
-                className="h-9 rounded-lg border-neutral-200 bg-white text-[13px] focus:border-black focus:ring-black"
+                className="h-9 rounded-lg border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
               />
             </div>
             <div className="space-y-1">
@@ -430,7 +430,7 @@ function StepBeginnen({
                 value={klant.contactpersoon}
                 onChange={(e) => updateKlant('contactpersoon', e.target.value)}
                 placeholder="Naam contactpersoon"
-                className="h-9 rounded-lg border-neutral-200 bg-white text-[13px] focus:border-black focus:ring-black"
+                className="h-9 rounded-lg border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -440,7 +440,7 @@ function StepBeginnen({
                   value={klant.email}
                   onChange={(e) => updateKlant('email', e.target.value)}
                   placeholder="email@klant.nl"
-                  className="h-9 rounded-lg border-neutral-200 bg-white text-[13px] focus:border-black focus:ring-black"
+                  className="h-9 rounded-lg border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
                 />
               </div>
               <div className="space-y-1">
@@ -449,7 +449,7 @@ function StepBeginnen({
                   value={klant.telefoon}
                   onChange={(e) => updateKlant('telefoon', e.target.value)}
                   placeholder="06-..."
-                  className="h-9 rounded-lg border-neutral-200 bg-white text-[13px] focus:border-black focus:ring-black"
+                  className="h-9 rounded-lg border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
                 />
               </div>
             </div>
@@ -458,7 +458,7 @@ function StepBeginnen({
           <Button
             onClick={onKlantToevoegen}
             disabled={!klant.bedrijfsnaam.trim() || isSaving}
-            className="w-full h-10 mt-4 bg-black text-white hover:bg-neutral-800 rounded-xl font-semibold text-[13px]"
+            className="w-full h-10 mt-4 bg-black text-white hover:bg-neutral-800 rounded-xl font-semibold text-sm"
           >
             {savingAction === 'klant' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Klant toevoegen & afronden
@@ -471,7 +471,7 @@ function StepBeginnen({
             <Package className="w-5 h-5 text-neutral-700" />
             <h3 className="text-[15px] font-bold text-black" style={{ fontFamily: 'Manrope, sans-serif' }}>Met voorbeelddata</h3>
           </div>
-          <p className="text-[13px] text-neutral-500 mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-sm text-neutral-500 mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
             We vullen de app met 3 klanten, een offerte en een project zodat je kunt rondkijken.
           </p>
 
@@ -485,7 +485,7 @@ function StepBeginnen({
                 <div className="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center flex-shrink-0">
                   <Icon className="w-3.5 h-3.5 text-neutral-600" />
                 </div>
-                <span className="text-[13px] text-neutral-600" style={{ fontFamily: 'Inter, sans-serif' }}>{text}</span>
+                <span className="text-sm text-neutral-600" style={{ fontFamily: 'Inter, sans-serif' }}>{text}</span>
               </div>
             ))}
           </div>
@@ -494,7 +494,7 @@ function StepBeginnen({
             onClick={onDemoData}
             disabled={isSaving}
             variant="outline"
-            className="w-full h-10 rounded-xl border-neutral-300 font-semibold text-[13px]"
+            className="w-full h-10 rounded-xl border-neutral-300 font-semibold text-sm"
           >
             {savingAction === 'demo' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Voorbeelddata laden
@@ -506,7 +506,7 @@ function StepBeginnen({
       <button
         onClick={onSkip}
         disabled={isSaving}
-        className="block mx-auto mt-6 text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+        className="block mx-auto mt-6 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
         style={{ fontFamily: 'Inter, sans-serif' }}
       >
         <SkipForward className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
@@ -924,7 +924,7 @@ export function OnboardingWizard() {
             {steps.map((label, idx) => (
               <span
                 key={label}
-                className={`text-[11px] font-medium transition-colors ${
+                className={`text-xs font-medium transition-colors ${
                   idx <= currentStep ? 'text-black' : 'text-neutral-400'
                 }`}
                 style={{ fontFamily: 'Inter, sans-serif' }}
@@ -942,7 +942,7 @@ export function OnboardingWizard() {
           <div className="max-w-2xl mx-auto">
             <button
               onClick={() => goToStep(currentStep - 1)}
-              className="flex items-center gap-1 text-[13px] text-neutral-500 hover:text-black transition-colors"
+              className="flex items-center gap-1 text-sm text-neutral-500 hover:text-black transition-colors"
               disabled={isSaving}
             >
               <ArrowLeft className="w-3.5 h-3.5" />

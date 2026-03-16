@@ -479,7 +479,7 @@ export function TeamLayout() {
                             </div>
                             <div>
                               <p className="font-medium text-sm">{m.naam}</p>
-                              <p className="text-[10px] text-muted-foreground capitalize">{m.rol}</p>
+                              <p className="text-2xs text-muted-foreground capitalize">{m.rol}</p>
                             </div>
                           </div>
                         </td>
@@ -721,7 +721,7 @@ export function TeamLayout() {
                       <th className="text-left py-2 pr-4 font-medium text-muted-foreground w-48">Medewerker</th>
                       {alleVaardigheden.map((v) => (
                         <th key={v} className="text-center py-2 px-1 font-medium text-muted-foreground">
-                          <span className="text-[10px] writing-mode-vertical rotate-[-45deg] inline-block w-16 text-left truncate" title={v}>
+                          <span className="text-2xs writing-mode-vertical rotate-[-45deg] inline-block w-16 text-left truncate" title={v}>
                             {v}
                           </span>
                         </th>
@@ -733,7 +733,7 @@ export function TeamLayout() {
                       <tr key={m.id} className="border-b last:border-0">
                         <td className="py-2 pr-4">
                           <div className="flex items-center gap-2">
-                            <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold', avatarColor(m.naam))}>
+                            <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-white text-2xs font-semibold', avatarColor(m.naam))}>
                               {getInitials(m.naam)}
                             </div>
                             <span className="font-medium text-sm truncate">{m.naam}</span>
@@ -797,7 +797,7 @@ export function TeamLayout() {
                         <p className="font-semibold text-sm truncate">{m.naam}</p>
                         <p className="text-xs text-muted-foreground">{m.functie} — {m.afdeling}</p>
                       </div>
-                      <Badge variant="outline" className={cn('text-[10px]', ROL_KLEUREN[m.rol])}>
+                      <Badge variant="outline" className={cn('text-2xs', ROL_KLEUREN[m.rol])}>
                         {ROL_LABELS[m.rol]}
                       </Badge>
                     </div>
@@ -805,21 +805,21 @@ export function TeamLayout() {
                     <div className="grid grid-cols-3 gap-3 text-center">
                       <div>
                         <p className="text-lg font-bold">{projecten}</p>
-                        <p className="text-[10px] text-muted-foreground">Projecten</p>
+                        <p className="text-2xs text-muted-foreground">Projecten</p>
                       </div>
                       <div>
                         <p className="text-lg font-bold">{uren}u</p>
-                        <p className="text-[10px] text-muted-foreground">Uren (maand)</p>
+                        <p className="text-2xs text-muted-foreground">Uren (maand)</p>
                       </div>
                       <div>
                         <p className="text-lg font-bold">&euro;{(uren * m.uurtarief).toFixed(0)}</p>
-                        <p className="text-[10px] text-muted-foreground">Omzet</p>
+                        <p className="text-2xs text-muted-foreground">Omzet</p>
                       </div>
                     </div>
 
                     {/* Progress bar */}
                     <div>
-                      <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                      <div className="flex justify-between text-2xs text-muted-foreground mb-1">
                         <span>Uren target</span>
                         <span>{uren}/{urenTarget}u ({urenPerc.toFixed(0)}%)</span>
                       </div>

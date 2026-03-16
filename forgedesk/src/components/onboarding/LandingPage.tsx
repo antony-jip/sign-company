@@ -329,7 +329,7 @@ function FloatingCards({ scrollY }: { scrollY: number }) {
           }}
         >
           <div className="text-xs font-bold text-[#1a1a1a]">{card.title}</div>
-          <div className="text-[11px] text-[#999] mt-1">{card.sub}</div>
+          <div className="text-xs text-[#999] mt-1">{card.sub}</div>
           <div className="text-sm font-bold text-[#1a1a1a] mt-2 font-outfit">
             {card.amount}
           </div>
@@ -404,7 +404,7 @@ function Hero() {
             </div>
 
             {/* Trust */}
-            <div className="lf-fade-up lf-delay-4 mt-10 flex flex-wrap gap-6 text-[13px] text-[#aaa]">
+            <div className="lf-fade-up lf-delay-4 mt-10 flex flex-wrap gap-6 text-sm text-[#aaa]">
               <span className="flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5" /> Direct aan de slag
               </span>
@@ -585,7 +585,7 @@ function HowItWorksSection() {
 
         {/* Tabs */}
         <div className="lf-fade-up lf-delay-2 flex justify-center mb-14">
-          <div className="inline-flex bg-[#F4F3F0] rounded-full p-1.5">
+          <div className="inline-flex bg-bg-subtle rounded-full p-1.5">
             {['Voor de baas', 'Voor de monteur'].map((label, i) => (
               <button
                 key={label}
@@ -733,7 +733,7 @@ function ForgieSection() {
                 </div>
                 {isTyping ? (
                   <div className="flex justify-start">
-                    <div className="bg-[#F4F3F0] rounded-2xl rounded-bl-md px-5 py-3">
+                    <div className="bg-bg-subtle rounded-2xl rounded-bl-md px-5 py-3">
                       <div className="flex gap-1.5">
                         <div className="w-2 h-2 bg-[#bbb] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                         <div className="w-2 h-2 bg-[#bbb] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -743,7 +743,7 @@ function ForgieSection() {
                   </div>
                 ) : showAnswer ? (
                   <div className="flex justify-start">
-                    <div className="bg-[#F4F3F0] text-[#1a1a1a] rounded-2xl rounded-bl-md px-4 py-3 text-sm max-w-[85%] leading-relaxed whitespace-pre-line">
+                    <div className="bg-bg-subtle text-[#1a1a1a] rounded-2xl rounded-bl-md px-4 py-3 text-sm max-w-[85%] leading-relaxed whitespace-pre-line">
                       {conversations[activeChat].answer.split('**').map((part, i) =>
                         i % 2 === 1 ? <strong key={i}>{part}</strong> : part
                       )}
@@ -754,7 +754,7 @@ function ForgieSection() {
 
               {/* Suggestion chips */}
               <div className="px-6 pb-5 border-t border-[#E8E5DE] pt-4">
-                <div className="text-[10px] text-[#bbb] uppercase tracking-widest mb-2.5 font-semibold">Probeer een vraag</div>
+                <div className="text-2xs text-[#bbb] uppercase tracking-widest mb-2.5 font-semibold">Probeer een vraag</div>
                 <div className="flex flex-wrap gap-2">
                   {conversations.map((conv, i) => (
                     <button
@@ -763,7 +763,7 @@ function ForgieSection() {
                       className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-300 ${
                         i === activeChat
                           ? 'bg-[#9B8EC4]/15 text-[#9B8EC4] border border-[#9B8EC4]/25'
-                          : 'bg-[#F4F3F0] border border-[#E8E5DE] text-[#777] hover:border-[#9B8EC4]/30'
+                          : 'bg-bg-subtle border border-[#E8E5DE] text-[#777] hover:border-[#9B8EC4]/30'
                       }`}
                     >
                       {conv.icon}

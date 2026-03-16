@@ -268,7 +268,7 @@ function PortaalItemCard({
               <div className="rounded-2xl rounded-bl-md bg-gray-100 px-3.5 py-2">
                 <p className="text-sm text-gray-800 whitespace-pre-wrap">{item.omschrijving}</p>
               </div>
-              <p className="text-[11px] text-gray-400 mt-0.5">{formatDate(item.created_at)}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{formatDate(item.created_at)}</p>
             </div>
           </div>
         </div>
@@ -390,7 +390,7 @@ function PortaalItemCard({
                         </div>
                       )}
                     </div>
-                    <p className="text-[11px] text-gray-400 mt-0.5 text-right">
+                    <p className="text-xs text-gray-400 mt-0.5 text-right">
                       {reactie.klant_naam && `${reactie.klant_naam} · `}
                       {formatDateTime(reactie.created_at)}
                     </p>

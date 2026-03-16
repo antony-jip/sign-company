@@ -257,7 +257,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
               e.target.value = ''
             }}
           />
-          <p className="text-[11px] text-gray-400 mt-0.5">Max {MAX_FILES} bestanden, 10MB per stuk (JPG, PNG, PDF)</p>
+          <p className="text-xs text-gray-400 mt-0.5">Max {MAX_FILES} bestanden, 10MB per stuk (JPG, PNG, PDF)</p>
         </div>
 
         {/* Geselecteerde bestanden */}
@@ -267,7 +267,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
               <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
                 <FileText className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                 <span className="text-xs text-gray-700 truncate flex-1">{file.name}</span>
-                <span className="text-[10px] text-gray-400">{(file.size / 1024).toFixed(0)} KB</span>
+                <span className="text-2xs text-gray-400">{(file.size / 1024).toFixed(0)} KB</span>
                 <button onClick={() => removeFile(i)} className="text-gray-400 hover:text-red-500">
                   <X className="w-3 h-3" />
                 </button>

@@ -216,7 +216,7 @@ export function BestelbonnenLayout() {
         <div className="flex gap-1 flex-wrap">
           {FILTER_OPTIONS.map((opt) => (
             <Button key={opt.value} variant={filterStatus === opt.value ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus(opt.value)} className="text-xs">
-              {opt.label} {statusCounts[opt.value] !== undefined && <span className="ml-1 text-[10px] opacity-70">({statusCounts[opt.value] || 0})</span>}
+              {opt.label} {statusCounts[opt.value] !== undefined && <span className="ml-1 text-2xs opacity-70">({statusCounts[opt.value] || 0})</span>}
             </Button>
           ))}
         </div>
@@ -246,7 +246,7 @@ export function BestelbonnenLayout() {
                 {gefilterd.map((bst) => {
                   const cfg = STATUS_CONFIG[bst.status]
                   return (
-                    <tr key={bst.id} className={`group hover:bg-[#F4F3F0]/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` })}>
+                    <tr key={bst.id} className={`group hover:bg-bg-subtle/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` })}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-orange-600 dark:text-orange-400">{bst.bestelbon_nummer}</span>
                       </td>
@@ -254,7 +254,7 @@ export function BestelbonnenLayout() {
                       <td className="px-4 py-3 text-sm text-foreground/80">{getProjectNaam(bst.project_id)}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground">{bst.besteld_op ? formatDate(bst.besteld_op) : '-'}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
+                        <Badge variant="secondary" className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
                           <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}
                         </Badge>
                       </td>

@@ -188,7 +188,7 @@ function FormField({
 }) {
   return (
     <div className="space-y-1">
-      <Label className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+      <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
         <Icon className="w-3 h-3" />
         {label}
       </Label>
@@ -286,11 +286,11 @@ function AddContactForm({
               <p className="text-sm font-medium text-foreground truncate">
                 {form.contactpersoon || senderName}
               </p>
-              <p className="text-[11px] text-muted-foreground truncate">{form.email}</p>
+              <p className="text-xs text-muted-foreground truncate">{form.email}</p>
             </div>
             <div className="flex-shrink-0">
               <Badge variant="secondary" className={cn(
-                'text-[10px]',
+                'text-2xs',
                 form.status === 'actief' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
                 form.status === 'prospect' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
                 form.status === 'inactief' && 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60',
@@ -302,7 +302,7 @@ function AddContactForm({
 
           {/* ── Persoonlijke gegevens ── */}
           <div>
-            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2.5 flex items-center gap-2">
+            <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2.5 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Users className="w-3 h-3 text-primary" />
               </span>
@@ -342,7 +342,7 @@ function AddContactForm({
 
           {/* ── Bedrijfsgegevens ── */}
           <div>
-            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2.5 flex items-center gap-2">
+            <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2.5 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-amber-500/10 flex items-center justify-center flex-shrink-0">
                 <Building2 className="w-3 h-3 text-amber-600" />
               </span>
@@ -390,7 +390,7 @@ function AddContactForm({
 
           {/* ── Adres ── */}
           <div>
-            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2.5 flex items-center gap-2">
+            <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2.5 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                 <MapPin className="w-3 h-3 text-blue-500" />
               </span>
@@ -434,7 +434,7 @@ function AddContactForm({
 
           {/* ── Status & Tags ── */}
           <div>
-            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2.5 flex items-center gap-2">
+            <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2.5 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                 <Tag className="w-3 h-3 text-emerald-500" />
               </span>
@@ -454,7 +454,7 @@ function AddContactForm({
                 </Select>
               </FormField>
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                   <Tag className="w-3 h-3" />
                   Tags
                 </Label>
@@ -464,7 +464,7 @@ function AddContactForm({
                       key={tag}
                       onClick={() => toggleTag(tag)}
                       className={cn(
-                        'px-2.5 py-1 rounded-full text-[11px] font-medium transition-all',
+                        'px-2.5 py-1 rounded-full text-xs font-medium transition-all',
                         form.tags.includes(tag)
                           ? getTagColor(tag)
                           : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -488,7 +488,7 @@ function AddContactForm({
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">Nieuwsbrief</p>
-                <p className="text-[11px] text-muted-foreground">Abonneren op mailinglijst</p>
+                <p className="text-xs text-muted-foreground">Abonneren op mailinglijst</p>
               </div>
             </div>
             <Switch
@@ -593,7 +593,7 @@ function QuickProjectForm({
               rows={3}
             />
           </FormField>
-          <div className="bg-muted/50 rounded-lg p-2.5 text-[11px] text-muted-foreground">
+          <div className="bg-muted/50 rounded-lg p-2.5 text-xs text-muted-foreground">
             <Zap className="w-3 h-3 inline mr-1 text-amber-500" />
             Het project wordt automatisch gekoppeld aan de klant uit deze email.
           </div>
@@ -930,7 +930,7 @@ export function ContactSidebar({
 
           {/* ── MENSEN IN DEZE CONVERSATIE ── */}
           <div className="mb-4">
-            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3 flex items-center gap-2">
+            <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-3 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Users className="w-3 h-3 text-primary" />
               </span>
@@ -944,7 +944,7 @@ export function ContactSidebar({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{p.email}</p>
+                    <p className="text-xs text-muted-foreground truncate">{p.email}</p>
                   </div>
                 </div>
               ))}
@@ -957,7 +957,7 @@ export function ContactSidebar({
           {linkedDeal && (
             <>
               <div className="mb-4">
-                <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3 flex items-center gap-2">
+                <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-3 flex items-center gap-2">
                   <span className="w-5 h-5 rounded-md bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                     <Link2 className="w-3 h-3 text-blue-500" />
                   </span>
@@ -972,7 +972,7 @@ export function ContactSidebar({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{linkedDeal.value}</span>
-                    <Badge variant="secondary" className={`text-[10px] ${getDealStatusColor(linkedDeal.status)}`}>
+                    <Badge variant="secondary" className={`text-2xs ${getDealStatusColor(linkedDeal.status)}`}>
                       {getDealStatusLabel(linkedDeal.status)}
                     </Badge>
                   </div>
@@ -990,7 +990,7 @@ export function ContactSidebar({
 
           {/* ── CONTACT DETAILS ── */}
           <div className="mb-4">
-            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3 flex items-center gap-2">
+            <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-3 flex items-center gap-2">
               <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Mail className="w-3 h-3 text-primary" />
               </span>
@@ -1052,7 +1052,7 @@ export function ContactSidebar({
               <Button
                 onClick={() => setView('addProject')}
                 variant="outline"
-                className="gap-1.5 text-[12px] h-8 px-2"
+                className="gap-1.5 text-xs h-8 px-2"
                 size="sm"
               >
                 <FolderPlus className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
@@ -1061,7 +1061,7 @@ export function ContactSidebar({
               <Button
                 onClick={() => setView('addTask')}
                 variant="outline"
-                className="gap-1.5 text-[12px] h-8 px-2"
+                className="gap-1.5 text-xs h-8 px-2"
                 size="sm"
               >
                 <ListPlus className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
@@ -1070,7 +1070,7 @@ export function ContactSidebar({
               <Button
                 onClick={() => onNavigateToOfferte?.(recentlyCreatedKlantId || undefined)}
                 variant="outline"
-                className="gap-1.5 text-[12px] h-8 px-2"
+                className="gap-1.5 text-xs h-8 px-2"
                 size="sm"
               >
                 <FileSignature className="w-3.5 h-3.5 text-primary flex-shrink-0" />
@@ -1089,7 +1089,7 @@ export function ContactSidebar({
                 Abonneren nieuwsbrief
               </Button>
             ) : (
-              <div className="flex items-center justify-center gap-1.5 text-blue-600 dark:text-blue-300 rounded-md px-3 py-1 text-[11px]">
+              <div className="flex items-center justify-center gap-1.5 text-blue-600 dark:text-blue-300 rounded-md px-3 py-1 text-xs">
                 <Check className="w-3 h-3" />
                 Geabonneerd
               </div>
@@ -1100,7 +1100,7 @@ export function ContactSidebar({
             <>
               {contact.tags.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-amber-500/10 flex items-center justify-center flex-shrink-0">
                       <Tag className="w-3 h-3 text-amber-500" />
                     </span>
@@ -1108,7 +1108,7 @@ export function ContactSidebar({
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
                     {contact.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className={`text-[10px] font-medium ${getTagColor(tag)}`}>
+                      <Badge key={tag} variant="secondary" className={`text-2xs font-medium ${getTagColor(tag)}`}>
                         {tag}
                       </Badge>
                     ))}
@@ -1120,7 +1120,7 @@ export function ContactSidebar({
 
               {contact.deals && contact.deals.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                       <Banknote className="w-3 h-3 text-emerald-500" />
                     </span>
@@ -1134,7 +1134,7 @@ export function ContactSidebar({
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{deal.value}</span>
-                          <Badge variant="secondary" className={`text-[10px] ${getDealStatusColor(deal.status)}`}>
+                          <Badge variant="secondary" className={`text-2xs ${getDealStatusColor(deal.status)}`}>
                             {getDealStatusLabel(deal.status)}
                           </Badge>
                         </div>
@@ -1146,7 +1146,7 @@ export function ContactSidebar({
 
               {contact.activities && contact.activities.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                       <Calendar className="w-3 h-3 text-blue-500" />
                     </span>
@@ -1160,7 +1160,7 @@ export function ContactSidebar({
                         </div>
                         <div>
                           <p className="text-xs text-foreground">{activity.description}</p>
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-2xs text-muted-foreground">
                             {new Date(activity.date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </p>
                         </div>
@@ -1172,7 +1172,7 @@ export function ContactSidebar({
 
               {contactEmails.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <Mail className="w-3 h-3 text-primary" />
                     </span>
@@ -1187,10 +1187,10 @@ export function ContactSidebar({
                           ) : (
                             <Mail className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                           )}
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-2xs text-muted-foreground">
                             {em.map === 'verzonden' ? 'Verzonden' : 'Ontvangen'}
                           </span>
-                          <span className="text-[10px] text-muted-foreground ml-auto">
+                          <span className="text-2xs text-muted-foreground ml-auto">
                             {new Date(em.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
                           </span>
                         </div>
@@ -1198,7 +1198,7 @@ export function ContactSidebar({
                       </div>
                     ))}
                     {contactEmails.length > 10 && (
-                      <p className="text-[10px] text-muted-foreground text-center">
+                      <p className="text-2xs text-muted-foreground text-center">
                         +{contactEmails.length - 10} meer
                       </p>
                     )}
@@ -1208,7 +1208,7 @@ export function ContactSidebar({
 
               {contact.notes && (
                 <div className="mb-4">
-                  <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2 flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-muted-foreground/10 flex items-center justify-center flex-shrink-0">
                       <FileText className="w-3 h-3 text-muted-foreground" />
                     </span>
@@ -1219,7 +1219,7 @@ export function ContactSidebar({
               )}
 
               {contact.addedDate && (
-                <div className="text-[10px] text-muted-foreground text-center mt-4 pt-3 border-t">
+                <div className="text-2xs text-muted-foreground text-center mt-4 pt-3 border-t">
                   In bestand sinds {new Date(contact.addedDate).toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })}
                 </div>
               )}
@@ -1230,7 +1230,7 @@ export function ContactSidebar({
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
                   <AlertCircle className="w-5 h-5 text-amber-500 mx-auto mb-1.5" />
                   <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">Nieuw contact</p>
-                  <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                     Dit emailadres is nog niet bekend in uw klantenbestand.
                   </p>
                 </div>

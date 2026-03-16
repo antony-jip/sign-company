@@ -1048,7 +1048,7 @@ export function NewsletterBuilder() {
                             >
                               <span className="font-medium truncate">{klant.bedrijfsnaam}</span>
                               <span className="flex items-center gap-1 text-muted-foreground flex-shrink-0">
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                                <Badge variant="secondary" className="text-2xs h-4 px-1">
                                   {klant.contactpersonen.filter((cp) => cp.email).length}
                                 </Badge>
                                 {expandedKlantIds.has(klant.id) ? (
@@ -1077,7 +1077,7 @@ export function NewsletterBuilder() {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-6 text-[10px] px-2 flex-shrink-0"
+                                        className="h-6 text-2xs px-2 flex-shrink-0"
                                         onClick={(e) => {
                                           e.stopPropagation()
                                           setEditor((prev) => {

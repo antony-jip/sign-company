@@ -318,7 +318,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                               />
                               <div className="grid grid-cols-4 gap-2">
                                 <div>
-                                  <Label className="text-[10px] text-muted-foreground">Aantal</Label>
+                                  <Label className="text-2xs text-muted-foreground">Aantal</Label>
                                   <Input
                                     type="number"
                                     min={0}
@@ -328,7 +328,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                                   />
                                 </div>
                                 <div>
-                                  <Label className="text-[10px] text-muted-foreground">Prijs</Label>
+                                  <Label className="text-2xs text-muted-foreground">Prijs</Label>
                                   <Input
                                     type="number"
                                     min={0}
@@ -339,7 +339,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                                   />
                                 </div>
                                 <div>
-                                  <Label className="text-[10px] text-muted-foreground">BTW %</Label>
+                                  <Label className="text-2xs text-muted-foreground">BTW %</Label>
                                   <Input
                                     type="number"
                                     min={0}
@@ -349,7 +349,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                                   />
                                 </div>
                                 <div>
-                                  <Label className="text-[10px] text-muted-foreground">Korting %</Label>
+                                  <Label className="text-2xs text-muted-foreground">Korting %</Label>
                                   <Input
                                     type="number"
                                     min={0}

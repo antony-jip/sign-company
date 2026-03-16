@@ -220,7 +220,7 @@ export function PortaalTab() {
               onChange={(e) => update('herinnering_na_dagen', parseInt(e.target.value) || 0)}
               className="w-32"
             />
-            <p className="text-[11px] text-muted-foreground mt-1">0 = geen herinnering</p>
+            <p className="text-xs text-muted-foreground mt-1">0 = geen herinnering</p>
           </div>
         </CardContent>
       </Card>

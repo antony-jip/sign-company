@@ -68,6 +68,27 @@
     /* Radius */
     --radius: 0.625rem;                /* 10px voor buttons/inputs */
 
+    /* Semantic UI tokens */
+    --border-subtle: 36 10% 89%;           /* #e8e6e1 — light borders on inputs, buttons */
+    --text-placeholder: 30 6% 68%;         /* #b5b0aa — placeholder text */
+    --text-tertiary: 30 3% 52%;            /* #8a8680 — labels, table headers, muted UI */
+    --bg-hover: 40 8% 95%;                 /* #f5f4f1 — hover backgrounds */
+    --bg-subtle: 40 14% 95%;              /* #F4F3F0 — subtle backgrounds */
+
+    /* Animation timing */
+    --duration-fast: 120ms;
+    --duration-normal: 200ms;
+    --duration-slow: 350ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Border radius scale */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 14px;
+    --radius-2xl: 18px;
+
     /* FORGEdesk design tokens */
     --wm-gradient-start: #5A8264;
     --wm-gradient-mid: #C8D5CC;
@@ -133,6 +154,13 @@
     --popover: 40 6% 12%;
     --popover-foreground: 40 6% 90%;
     --ring: 145 22% 45%;
+
+    /* Semantic UI tokens — dark */
+    --border-subtle: 40 8% 20%;
+    --text-placeholder: 40 4% 40%;
+    --text-tertiary: 40 4% 50%;            /* #a0a0a0 equiv */
+    --bg-hover: 40 8% 14%;
+    --bg-subtle: 40 6% 10%;
 
     --wm-sidebar-bg: 40 4% 10%;
     --wm-sidebar-hover: 40 8% 14%;
@@ -465,11 +493,11 @@ tbody tr:hover {
    ================================================================ */
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in-up {
-  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp var(--duration-slow) var(--ease-out) forwards;
 }
 
 @keyframes fadeIn {
@@ -478,6 +506,40 @@ tbody tr:hover {
 }
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Scroll progress bar — pure CSS, no JS */
+@keyframes scrollProgress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.scroll-progress {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 2px;
+  background: hsl(var(--primary));
+  transform-origin: left;
+  animation: scrollProgress auto linear;
+  animation-timeline: scroll(nearest);
+}
+
+/* Interactive table rows — subtle scale + press feedback */
+.tr-interactive {
+  transition: all var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+}
+.tr-interactive:hover {
+  background: hsl(var(--bg-subtle));
+  transform: scale(1.003);
+}
+.tr-interactive:active {
+  transform: scale(0.997);
+}
+.tr-interactive:focus-visible {
+  outline: 2px solid hsl(var(--primary) / 0.3);
+  outline-offset: -2px;
+  border-radius: var(--radius-md);
 }
 
 @keyframes slideInLeft {

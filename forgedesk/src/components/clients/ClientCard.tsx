@@ -80,7 +80,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
                   if (!cfg) return null
                   return (
                     <span
-                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap"
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold whitespace-nowrap"
                       style={{ color: cfg.color, backgroundColor: cfg.bgColor }}
                     >
                       {(klant.klant_status === 'niet_helpen' || klant.klant_status === 'geblokkeerd') && '⚠ '}
@@ -210,7 +210,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
               <Badge
                 key={label}
                 variant="outline"
-                className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground"
+                className="text-2xs px-1.5 py-0 font-normal text-muted-foreground"
               >
                 {label}
               </Badge>

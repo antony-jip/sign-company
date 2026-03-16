@@ -233,7 +233,7 @@ export function ActionBlock() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className={`font-medium text-foreground truncate group-hover:text-primary transition-colors ${
-                      idx === 0 ? 'text-sm' : 'text-[13px]'
+                      idx === 0 ? 'text-sm' : 'text-sm'
                     }`}>
                       {action.title}
                     </p>
@@ -242,7 +242,7 @@ export function ActionBlock() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] text-muted-foreground truncate">
+                    <span className="text-xs text-muted-foreground truncate">
                       {action.subtitle}
                     </span>
                     {action.location && (
@@ -251,7 +251,7 @@ export function ActionBlock() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={e => e.stopPropagation()}
-                        className="text-[11px] text-primary truncate flex items-center gap-0.5 hover:underline flex-shrink-0"
+                        className="text-xs text-primary truncate flex items-center gap-0.5 hover:underline flex-shrink-0"
                       >
                         <MapPin className="h-2.5 w-2.5" />
                         Route
@@ -273,7 +273,7 @@ export function ActionBlock() {
                       {action.meta}
                     </span>
                   )}
-                  <Badge className="text-[10px] bg-muted text-muted-foreground border-0">
+                  <Badge className="text-2xs bg-muted text-muted-foreground border-0">
                     {typeLabels[action.type]}
                   </Badge>
                   <ArrowRight className="h-3 w-3 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity" />

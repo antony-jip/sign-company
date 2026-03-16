@@ -48,13 +48,13 @@ export function ForgotPasswordPage() {
             </p>
             <form onSubmit={handleSubmit} className="space-y-4 text-left">
               <div className="space-y-1.5">
-                <Label className="text-[12.5px] font-medium text-neutral-700">Email</Label>
+                <Label className="text-xs font-medium text-neutral-700">Email</Label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="naam@bedrijf.nl"
-                  className="h-11 rounded-xl border-neutral-200 bg-white text-[13.5px] focus:border-black focus:ring-black"
+                  className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
                   autoFocus
                 />
               </div>
@@ -72,7 +72,7 @@ export function ForgotPasswordPage() {
 
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-[13.5px] text-neutral-600 hover:text-black font-medium transition-colors mt-6"
+          className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-black font-medium transition-colors mt-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Terug naar inloggen

@@ -391,7 +391,7 @@ export function SigningVisualizerDialog({
               >
                 {bericht.rol !== 'systeem' && (
                   <div className={cn(
-                    'flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px]',
+                    'flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-2xs',
                     bericht.rol === 'user'
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground',
@@ -432,7 +432,7 @@ export function SigningVisualizerDialog({
                   )}
 
                   {bericht.generatie_tijd_ms && (
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="text-2xs text-muted-foreground">
                       {(bericht.generatie_tijd_ms / 1000).toFixed(1)}s · 1 credit
                     </div>
                   )}
@@ -480,8 +480,8 @@ export function SigningVisualizerDialog({
               </Button>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <p className="text-[10px] text-muted-foreground">1 credit per aanpassing · Enter = verzenden</p>
-              <span className={cn('text-[10px] font-medium', creditSaldo < 5 ? 'text-orange-500' : 'text-muted-foreground')}>
+              <p className="text-2xs text-muted-foreground">1 credit per aanpassing · Enter = verzenden</p>
+              <span className={cn('text-2xs font-medium', creditSaldo < 5 ? 'text-orange-500' : 'text-muted-foreground')}>
                 {creditSaldo} credits
               </span>
             </div>

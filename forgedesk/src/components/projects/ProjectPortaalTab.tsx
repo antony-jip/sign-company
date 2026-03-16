@@ -468,8 +468,8 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               </div>
               Klantportaal
               <Badge className={isActief
-                ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300 text-[10px]'
-                : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 text-[10px]'
+                ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300 text-2xs'
+                : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 text-2xs'
               }>
                 {isActief ? 'Actief' : isVerlopen ? 'Verlopen' : 'Gedeactiveerd'}
               </Badge>
@@ -555,7 +555,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Bell className="h-3 w-3" />
                 Meldingen
-                <Badge className="bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400 text-[10px] px-1.5">{notificaties.length}</Badge>
+                <Badge className="bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400 text-2xs px-1.5">{notificaties.length}</Badge>
               </p>
               {notificaties.map((notif) => (
                 <div
@@ -601,17 +601,17 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-foreground truncate">{item.titel}</span>
                           {item.label && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{item.label}</span>
+                            <span className="text-2xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{item.label}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-muted-foreground">{formatDate(item.created_at)}</span>
+                          <span className="text-2xs text-muted-foreground">{formatDate(item.created_at)}</span>
                           {item.bekeken_op ? (() => {
                             const bekekenDagenGeleden = (Date.now() - new Date(item.bekeken_op).getTime()) / 86400000
                             const heeftReactie = item.reacties && item.reacties.length > 0
                             const isOranje = bekekenDagenGeleden > 1 && !heeftReactie
                             return (
-                              <span className={`text-[10px] flex items-center gap-0.5 ${isOranje ? 'text-amber-500' : 'text-blue-500'}`}
+                              <span className={`text-2xs flex items-center gap-0.5 ${isOranje ? 'text-amber-500' : 'text-blue-500'}`}
                                 title={isOranje ? `Bekeken ${Math.floor(bekekenDagenGeleden)} dagen geleden, geen reactie` : `Bekeken op ${formatDate(item.bekeken_op)}`}
                               >
                                 <Eye className="h-2.5 w-2.5" />
@@ -619,13 +619,13 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                               </span>
                             )
                           })() : (
-                            <span className="text-[10px] text-muted-foreground/50 flex items-center gap-0.5" title="Nog niet bekeken">
+                            <span className="text-2xs text-muted-foreground/50 flex items-center gap-0.5" title="Nog niet bekeken">
                               <Eye className="h-2.5 w-2.5" /> Niet bekeken
                             </span>
                           )}
                         </div>
                       </div>
-                      <Badge className={`${config.color} text-[10px] px-1.5 flex items-center gap-0.5`}>
+                      <Badge className={`${config.color} text-2xs px-1.5 flex items-center gap-0.5`}>
                         <StatusIcon className="h-2.5 w-2.5" />
                         {config.label}
                       </Badge>
@@ -646,7 +646,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                     {item.reacties && item.reacties.length > 0 && (
                       <div className="ml-6 space-y-1">
                         {item.reacties.map((reactie) => (
-                          <div key={reactie.id} className={`flex items-start gap-1.5 text-[10px] rounded px-2 py-1.5 ${
+                          <div key={reactie.id} className={`flex items-start gap-1.5 text-2xs rounded px-2 py-1.5 ${
                             reactie.type === 'goedkeuring' ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
                             : reactie.type === 'revisie' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
                             : 'bg-muted text-muted-foreground'
@@ -672,7 +672,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                       <div className="ml-6">
                         <button
                           onClick={() => { setReplyItemId(item.id); setReplyText('') }}
-                          className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 transition-colors"
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
                         >
                           <Reply className="h-3 w-3" />
                           Reageren

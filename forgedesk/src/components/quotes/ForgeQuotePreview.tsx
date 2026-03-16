@@ -501,7 +501,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           <div className="grid grid-cols-2 gap-8">
             {/* Client */}
             <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-4">
-              <h3 className="text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground/60 uppercase tracking-label mb-2">
+              <h3 className="text-xs font-bold text-text-tertiary dark:text-muted-foreground/60 uppercase tracking-label mb-2">
                 Klantgegevens
               </h3>
               {klant ? (
@@ -525,7 +525,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
 
             {/* Quote Details */}
             <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-4">
-              <h3 className="text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground/60 uppercase tracking-label mb-2">
+              <h3 className="text-xs font-bold text-text-tertiary dark:text-muted-foreground/60 uppercase tracking-label mb-2">
                 Offertegegevens
               </h3>
               <div className="space-y-2">
@@ -571,22 +571,22 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-border dark:border-border">
-                <th className="text-left py-3 px-2 font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label w-10">
+                <th className="text-left py-3 px-2 font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label w-10">
                   #
                 </th>
-                <th className="text-left py-3 px-2 font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label">
+                <th className="text-left py-3 px-2 font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label">
                   Beschrijving
                 </th>
-                <th className="text-right py-3 px-2 font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label w-20">
+                <th className="text-right py-3 px-2 font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label w-20">
                   Aantal
                 </th>
-                <th className="text-right py-3 px-2 font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label w-28">
+                <th className="text-right py-3 px-2 font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label w-28">
                   Eenheidsprijs
                 </th>
-                <th className="text-right py-3 px-2 font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label w-16">
+                <th className="text-right py-3 px-2 font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label w-16">
                   BTW
                 </th>
-                <th className="text-right py-3 px-2 font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label w-28">
+                <th className="text-right py-3 px-2 font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label w-28">
                   Totaal
                 </th>
               </tr>
@@ -626,11 +626,11 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                                 <span className={`inline-block w-2 h-2 rounded-full ${isActive ? 'bg-blue-500' : 'bg-border dark:bg-muted-foreground'}`} />
                                 <span className="text-xs font-medium">{variant.label}</span>
                                 {isActive ? (
-                                  <span className="text-[9px] font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-1 py-0.5 rounded">
+                                  <span className="text-2xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-1 py-0.5 rounded">
                                     standaard
                                   </span>
                                 ) : (
-                                  <span className="text-[9px] font-medium text-muted-foreground bg-muted px-1 py-0.5 rounded">
+                                  <span className="text-2xs font-medium text-muted-foreground bg-muted px-1 py-0.5 rounded">
                                     alternatief
                                   </span>
                                 )}
@@ -700,7 +700,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         {/* Bijlagen per item */}
         {Object.keys(bijlageUrls).length > 0 && (
           <div className="mx-10 mb-6 space-y-4">
-            <h4 className="font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label flex items-center gap-2">
+            <h4 className="font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
               Bijlagen
             </h4>
@@ -788,7 +788,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         <div className="mx-10 pb-10 space-y-6">
           {offerteData.notities && (
             <div>
-              <h4 className="font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label mb-2">
+              <h4 className="font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label mb-2">
                 Notities
               </h4>
               <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 leading-relaxed whitespace-pre-wrap">
@@ -799,7 +799,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
 
           {offerteData.voorwaarden && (
             <div className="bg-background dark:bg-foreground/80/30 rounded-lg p-4">
-              <h4 className="font-bold text-[#8a8680] dark:text-muted-foreground/50 text-[11px] uppercase tracking-label mb-2">
+              <h4 className="font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label mb-2">
                 Voorwaarden
               </h4>
               <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 leading-relaxed whitespace-pre-wrap">

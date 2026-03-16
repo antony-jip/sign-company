@@ -71,13 +71,13 @@ export function CheckInboxPage() {
           )}
         </Button>
 
-        <p className="text-[13px] text-neutral-500 mt-6 mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <p className="text-sm text-neutral-500 mt-6 mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
           Tip: Check ook je spam folder.
         </p>
 
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-[13.5px] text-neutral-600 hover:text-black font-medium transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-black font-medium transition-colors"
           style={{ fontFamily: 'Inter, sans-serif' }}
         >
           <ArrowLeft className="w-4 h-4" />

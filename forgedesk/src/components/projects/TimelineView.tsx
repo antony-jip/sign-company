@@ -157,10 +157,10 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
                     {formatDate(taak.created_at)} - {formatDate(taak.deadline ?? "")}
                   </p>
                   <div className="flex gap-1.5">
-                    <Badge className={`${getStatusColor(taak.status)} text-[10px] px-1.5 py-0`}>
+                    <Badge className={`${getStatusColor(taak.status)} text-2xs px-1.5 py-0`}>
                       {statusLabels[taak.status]}
                     </Badge>
-                    <Badge className={`${getPriorityColor(taak.prioriteit)} text-[10px] px-1.5 py-0`}>
+                    <Badge className={`${getPriorityColor(taak.prioriteit)} text-2xs px-1.5 py-0`}>
                       {taak.prioriteit}
                     </Badge>
                   </div>
@@ -176,7 +176,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
               className="absolute top-0 h-full w-0.5 bg-red-500 z-10 pointer-events-none"
               style={{ left: `${todayPositie}%` }}
             >
-              <div className="absolute -top-6 -translate-x-1/2 bg-red-500 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
+              <div className="absolute -top-6 -translate-x-1/2 bg-red-500 text-white text-2xs font-medium px-1.5 py-0.5 rounded">
                 Vandaag
               </div>
             </div>

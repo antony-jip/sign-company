@@ -107,7 +107,7 @@ export function LeadCaptureLayout() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => navigate('/leads/inzendingen')} className="gap-1">
-            <Eye className="h-4 w-4" /> Inzendingen {nieuweLeads > 0 && <Badge className="ml-1 bg-red-500 text-white text-[10px]">{nieuweLeads}</Badge>}
+            <Eye className="h-4 w-4" /> Inzendingen {nieuweLeads > 0 && <Badge className="ml-1 bg-red-500 text-white text-2xs">{nieuweLeads}</Badge>}
           </Button>
           <Button onClick={() => navigate('/leads/formulieren/nieuw')} className="gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-600 hover:to-fuchsia-700 border-0" size="sm">
             <Plus className="h-4 w-4" /> Nieuw formulier
@@ -151,7 +151,7 @@ export function LeadCaptureLayout() {
                       <span className="font-semibold">{total}</span>
                     </div>
                     {nieuw > 0 && (
-                      <Badge className="bg-red-100 text-red-700 text-[10px]">{nieuw} nieuw</Badge>
+                      <Badge className="bg-red-100 text-red-700 text-2xs">{nieuw} nieuw</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground/60">

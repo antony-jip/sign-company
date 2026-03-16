@@ -552,7 +552,7 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
             step={child.step_size ? Number(child.step_size) : undefined}
           />
           {child.description && (
-            <p className="text-[11px] text-muted-foreground">{child.description}</p>
+            <p className="text-xs text-muted-foreground">{child.description}</p>
           )}
         </div>
       )
@@ -597,7 +597,7 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">{v.name || v.code}</p>
                     {(v as ProboOptionChild).description && (
-                      <p className="text-[11px] text-muted-foreground">{(v as ProboOptionChild).description}</p>
+                      <p className="text-xs text-muted-foreground">{(v as ProboOptionChild).description}</p>
                     )}
                   </div>
                 </button>
@@ -663,7 +663,7 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
             {selectedCategory && (
               <button
                 onClick={() => setSelectedCategory(null)}
-                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
               >
                 <ArrowLeft className="h-3 w-3" />
                 Alle categorieën
@@ -673,7 +673,7 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
               <button
                 key={cat.name}
                 onClick={() => setSelectedCategory(cat.name)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg border border-border hover:bg-muted hover:border-muted-foreground/20 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-border hover:bg-muted hover:border-muted-foreground/20 transition-colors"
               >
                 <span>{cat.icon}</span>
                 <span>{cat.name}</span>
@@ -699,10 +699,10 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
               <Package className="h-4 w-4 text-emerald-500 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                <p className="text-[11px] text-muted-foreground font-mono">{product.code}</p>
+                <p className="text-xs text-muted-foreground font-mono">{product.code}</p>
               </div>
               {product.category === 'Mijn producten' && (
-                <span className="text-[10px] font-medium text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded">
+                <span className="text-2xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded">
                   eigen
                 </span>
               )}
@@ -755,10 +755,10 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground truncate">{productName}</p>
-          <p className="text-[11px] text-muted-foreground font-mono">{productCode}</p>
+          <p className="text-xs text-muted-foreground font-mono">{productCode}</p>
         </div>
         {selectedOptions.length > 0 && (
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             Stap {stepNumber}
           </span>
         )}
@@ -770,7 +770,7 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
           {selectedOptions.map((so) => (
             <span
               key={so.code}
-              className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+              className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
             >
               {so.name || so.code}: {so.value}
             </span>
@@ -793,7 +793,7 @@ export function ProboProductPicker({ onSelect, onCancel }: ProboProductPickerPro
             <AlertTriangle className="h-3.5 w-3.5" />
             {configureError}
           </p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Dit product is mogelijk niet beschikbaar via de API.
             Probeer een ander product of configureer dit product in je Probo webshop.
           </p>

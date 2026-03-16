@@ -1,31 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import React, { useState, useEffect } from 'react'
 import { getProjecten, getOffertes, getFacturen } from '@/services/supabaseService'
 import type { Project, Offerte, Factuur } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { useCountUp } from '@/hooks/useCountUp'
 import { logger } from '../../utils/logger'
-
-function useAnimatedCounter(target: number, duration: number = 800): number {
-  const [count, setCount] = useState(0)
-  const prevTarget = useRef(0)
-
-  useEffect(() => {
-    if (target === prevTarget.current) return
-    prevTarget.current = target
-    const startTime = Date.now()
-    const startValue = count
-    function tick() {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setCount(Math.round(startValue + (target - startValue) * eased))
-      if (progress < 1) requestAnimationFrame(tick)
-    }
-    requestAnimationFrame(tick)
-  }, [target, duration])
-
-  return count
-}
 
 function Sparkline() {
   return (
@@ -61,9 +39,9 @@ export function StatisticsCards() {
   const totaalOffertes = offertes.filter(o => o.status !== 'concept').length
   const hitRate = totaalOffertes > 0 ? Math.round((goedgekeurd / totaalOffertes) * 100) : 0
 
-  const animProjecten = useAnimatedCounter(loading ? 0 : actieveProjecten)
-  const animOffertes = useAnimatedCounter(loading ? 0 : verstuurdeOffertes)
-  const animHitRate = useAnimatedCounter(loading ? 0 : hitRate)
+  const animProjecten = useCountUp(loading ? 0 : actieveProjecten)
+  const animOffertes = useCountUp(loading ? 0 : verstuurdeOffertes)
+  const animHitRate = useCountUp(loading ? 0 : hitRate)
 
   if (loading) {
     return (
@@ -110,14 +88,14 @@ export function StatisticsCards() {
       {stats.map((stat) => (
         <div key={stat.title} className={`${stat.gradient} rounded-2xl p-6 cursor-default group stat-card-hover stat-card-glow relative overflow-hidden`}>
           <Sparkline />
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] dark:text-[#a0a0a0] mb-3 relative z-[1]">
+          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary dark:text-text-tertiary mb-3 relative z-[1]">
             {stat.title}
           </p>
           <p className="display-number display-number-xl text-foreground relative z-[1] font-mono">
             {stat.value}
           </p>
           {stat.change && (
-            <p className={`text-[12px] font-bold mt-4 relative z-[1] ${stat.changeDown ? 'text-destructive' : 'text-[#3A7D52] dark:text-[#7AAF85]'}`}>
+            <p className={`text-xs font-bold mt-4 relative z-[1] ${stat.changeDown ? 'text-destructive' : 'text-[#3A7D52] dark:text-[#7AAF85]'}`}>
               {stat.changeDown ? '↓' : '↑'} {stat.change}
             </p>
           )}

@@ -233,7 +233,7 @@ export function EmailSequences() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h4 className="text-sm font-semibold truncate">{seq.naam}</h4>
-                      <Badge variant="secondary" className={cn('text-[10px]', getStatusColor(seq.status))}>
+                      <Badge variant="secondary" className={cn('text-2xs', getStatusColor(seq.status))}>
                         {getStatusLabel(seq.status)}
                       </Badge>
                     </div>
@@ -305,7 +305,7 @@ export function EmailSequences() {
                             {index + 1}
                           </div>
                           {index > 0 && (
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <div className="flex items-center gap-1 text-2xs text-muted-foreground">
                               <Clock className="w-3 h-3" />
                               +{stap.wacht_dagen}d
                             </div>

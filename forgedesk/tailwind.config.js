@@ -21,6 +21,9 @@ export default {
         outfit: ['"Outfit"', 'sans-serif'],
         serif: ['"DM Serif Display"', 'Georgia', 'serif'],
       },
+      fontSize: {
+        "2xs": ["10px", { lineHeight: "14px" }],
+      },
       letterSpacing: {
         'label': '0.06em',
       },
@@ -61,6 +64,12 @@ export default {
         "wm-hover": "hsl(var(--wm-hover))",
         "wm-light": "hsl(var(--wm-light))",
         "wm-pale": "hsl(var(--wm-pale))",
+        // Semantic UI tokens
+        "border-subtle": "hsl(var(--border-subtle))",
+        "text-placeholder": "hsl(var(--text-placeholder))",
+        "text-tertiary": "hsl(var(--text-tertiary))",
+        "bg-hover": "hsl(var(--bg-hover))",
+        "bg-subtle": "hsl(var(--bg-subtle))",
         // Pastel palette — FORGEdesk signature
         blush: {
           DEFAULT: '#EDCFC4',
@@ -105,12 +114,30 @@ export default {
         'lf-blue': '#8BAFD4',
         'lf-border': '#E8E5DE',
       },
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        normal: "var(--duration-normal)",
+        slow: "var(--duration-slow)",
+      },
+      transitionTimingFunction: {
+        "out-expo": "var(--ease-out)",
+      },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-2xl)",
       },
       keyframes: {
+        "stagger-item": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "count-up": {
+          from: { opacity: "0", transform: "translateY(4px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -154,6 +181,7 @@ export default {
         },
       },
       animation: {
+        "stagger-item": "stagger-item 0.3s var(--ease-out) both",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "float": "float 5s ease-in-out infinite",

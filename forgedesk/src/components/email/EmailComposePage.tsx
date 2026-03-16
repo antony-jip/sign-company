@@ -271,7 +271,7 @@ export function EmailComposePage() {
           {/* Attachment indicator */}
           {pdfBlob && (
             <div className="flex items-center gap-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="w-8 h-8 rounded flex items-center justify-center bg-red-500 text-white text-[9px] font-bold flex-shrink-0">
+              <div className="w-8 h-8 rounded flex items-center justify-center bg-red-500 text-white text-2xs font-bold flex-shrink-0">
                 PDF
               </div>
               <div className="flex-1 min-w-0">

@@ -99,13 +99,13 @@ export function MoneyBlock() {
             className="stat-card-gradient-blush rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigate('/facturen')}
           >
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] dark:text-[#a0a0a0] mb-1">
+            <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary dark:text-text-tertiary mb-1">
               Openstaand
             </p>
             <p className="text-xl font-bold text-foreground font-mono leading-tight">
               {formatCurrency(openstaand)}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
               Te ontvangen
               <ArrowRight className="h-2.5 w-2.5" />
             </p>
@@ -116,14 +116,14 @@ export function MoneyBlock() {
             className="stat-card-gradient-sage rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigate('/facturen')}
           >
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8a8680] dark:text-[#a0a0a0] mb-1">
+            <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary dark:text-text-tertiary mb-1">
               Omzet deze maand
             </p>
             <p className="text-xl font-bold text-foreground font-mono leading-tight flex items-center gap-1.5">
               {formatCurrency(omzetDezeMaand)}
               <TrendingUp className="h-4 w-4 text-[#3A7D52] dark:text-[#7AAF85]" />
             </p>
-            <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
               Betaald ontvangen
               <ArrowRight className="h-2.5 w-2.5" />
             </p>
@@ -135,10 +135,10 @@ export function MoneyBlock() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-destructive">
+              <span className="text-xs font-bold uppercase tracking-[0.08em] text-destructive">
                 Verlopen facturen
               </span>
-              <span className="text-[10px] text-destructive bg-destructive/10 px-1.5 py-0.5 rounded font-mono">
+              <span className="text-2xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded font-mono">
                 {verlopenFacturen.length}
               </span>
             </div>
@@ -149,15 +149,15 @@ export function MoneyBlock() {
                   onClick={() => navigate('/facturen')}
                   className="flex items-center gap-3 px-2.5 py-2 rounded-lg hover:bg-destructive/5 transition-colors cursor-pointer group"
                 >
-                  <span className="text-[11px] font-bold text-destructive font-mono w-8 flex-shrink-0">
+                  <span className="text-xs font-bold text-destructive font-mono w-8 flex-shrink-0">
                     {f.dagenVerlopen}d
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-foreground truncate group-hover:text-destructive transition-colors">
+                    <p className="text-sm font-medium text-foreground truncate group-hover:text-destructive transition-colors">
                       {f.nummer} — {f.klant_naam || f.titel}
                     </p>
                   </div>
-                  <span className="text-[13px] font-semibold text-destructive font-mono flex-shrink-0">
+                  <span className="text-sm font-semibold text-destructive font-mono flex-shrink-0">
                     {formatCurrency(f.openstaandBedrag)}
                   </span>
                 </div>

@@ -853,7 +853,7 @@ export function ProjectDetail() {
                     <span className="text-xs text-gray-400 font-mono">{project.project_nummer}</span>
                   )}
                 </div>
-                <p className="text-[13px] text-muted-foreground mt-1 flex items-center gap-1.5">
+                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
                   <Users className="h-3 w-3" />
                   {project.klant_naam || 'Onbekende klant'}
                   {project.vestiging_naam && (
@@ -957,7 +957,7 @@ export function ProjectDetail() {
                       ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
                       : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
                   </p>
-                  <p className="text-[10px] text-muted-foreground font-mono">
+                  <p className="text-2xs text-muted-foreground font-mono">
                     {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)}
                   </p>
                 </div>
@@ -987,7 +987,7 @@ export function ProjectDetail() {
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-sm font-medium truncate">{offerte.titel}</span>
                           <span className="text-xs text-muted-foreground font-mono">{offerte.nummer}</span>
-                          <Badge className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0`}>
+                          <Badge className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0`}>
                             {offerte.status}
                           </Badge>
                         </div>
@@ -1295,7 +1295,7 @@ export function ProjectDetail() {
                         <h3 className="text-xs font-semibold text-foreground">{kolom.label}</h3>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 font-medium">
+                        <span className="text-2xs text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 font-medium">
                           {kolomTaken.length}
                         </span>
                         <button
@@ -1329,7 +1329,7 @@ export function ProjectDetail() {
                       }}
                     >
                       {kolomTaken.length === 0 ? (
-                        <div className="text-center py-6 text-muted-foreground/40 text-[11px] border border-dashed border-border/50 rounded-lg">
+                        <div className="text-center py-6 text-muted-foreground/40 text-xs border border-dashed border-border/50 rounded-lg">
                           Sleep taken hierheen
                         </div>
                       ) : (
@@ -1409,7 +1409,7 @@ export function ProjectDetail() {
                           {gk.offerte_id && ' + offerte'}
                         </span>
                       </div>
-                      <Badge className={`${getGoedkeuringStatusColor(gk.status)} text-[10px] px-2`}>
+                      <Badge className={`${getGoedkeuringStatusColor(gk.status)} text-2xs px-2`}>
                         {goedkeuringStatusLabels[gk.status] || gk.status}
                       </Badge>
                     </div>
@@ -1532,13 +1532,13 @@ export function ProjectDetail() {
                 </div>
                 {klant.contactpersoon && (
                   <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 border border-border/40">
-                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blush to-blush-deep flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
+                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blush to-blush-deep flex items-center justify-center text-white text-2xs font-bold flex-shrink-0">
                       {getInitials(klant.contactpersoon)}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{klant.contactpersoon}</p>
-                      {klant.telefoon && <p className="text-[11px] text-muted-foreground">{klant.telefoon}</p>}
-                      {klant.email && <p className="text-[11px] text-muted-foreground truncate">{klant.email}</p>}
+                      {klant.telefoon && <p className="text-xs text-muted-foreground">{klant.telefoon}</p>}
+                      {klant.email && <p className="text-xs text-muted-foreground truncate">{klant.email}</p>}
                     </div>
                   </div>
                 )}
@@ -1568,7 +1568,7 @@ export function ProjectDetail() {
                       key={lid}
                       className="flex items-center gap-2.5 bg-background rounded-lg px-3 py-2 border border-border/40 group"
                     >
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center text-white text-2xs font-bold flex-shrink-0">
                         {getInitials(lid)}
                       </div>
                       <span className="text-sm font-medium text-foreground truncate flex-1">{lid}</span>
@@ -1892,7 +1892,7 @@ export function ProjectDetail() {
                             <select
                               value={offerte.status}
                               onChange={(e) => handleOfferteStatusChange(offerte.id, e.target.value as Offerte['status'])}
-                              className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0.5 rounded-full border-0 cursor-pointer appearance-none font-medium focus:ring-1 focus:ring-primary/30 focus:outline-none`}
+                              className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0.5 rounded-full border-0 cursor-pointer appearance-none font-medium focus:ring-1 focus:ring-primary/30 focus:outline-none`}
                             >
                               <option value="concept">Concept</option>
                               <option value="verzonden">Verzonden</option>
@@ -1902,7 +1902,7 @@ export function ProjectDetail() {
                               <option value="verlopen">Verlopen</option>
                             </select>
                           ) : (
-                            <Badge className={`${getStatusColor(offerte.status)} text-[10px] px-1.5 py-0 flex-shrink-0`}>
+                            <Badge className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0 flex-shrink-0`}>
                               {offerte.status}
                             </Badge>
                           )}
@@ -2189,8 +2189,8 @@ export function ProjectDetail() {
                           {doc.naam}
                         </p>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.grootte)}</span>
-                          <Badge className={`${getStatusColor(doc.status)} text-[9px] px-1 py-0`}>
+                          <span className="text-2xs text-muted-foreground">{formatFileSize(doc.grootte)}</span>
+                          <Badge className={`${getStatusColor(doc.status)} text-2xs px-1 py-0`}>
                             {doc.status}
                           </Badge>
                         </div>
@@ -2360,7 +2360,7 @@ export function ProjectDetail() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{doc.naam}</p>
-                        <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.grootte)}</span>
+                        <span className="text-2xs text-muted-foreground">{formatFileSize(doc.grootte)}</span>
                       </div>
                     </label>
                   ))
@@ -2637,12 +2637,12 @@ function TaakCard({ taak, onStatusChange }: { key?: React.Key; taak: Taak; onSta
 
         <div className="flex-1 min-w-0">
           <p className={cn(
-            'text-[13px] font-medium leading-tight',
+            'text-sm font-medium leading-tight',
             isDone ? 'line-through text-muted-foreground' : 'text-foreground'
           )}>{taak.titel}</p>
 
           <div className="flex items-center gap-1.5 mt-1.5">
-            <Badge className={`${getPriorityColor(taak.prioriteit)} text-[9px] px-1 py-0`}>
+            <Badge className={`${getPriorityColor(taak.prioriteit)} text-2xs px-1 py-0`}>
               {taak.prioriteit}
             </Badge>
             {taak.toegewezen_aan && (
@@ -2656,7 +2656,7 @@ function TaakCard({ taak, onStatusChange }: { key?: React.Key; taak: Taak; onSta
             )}
             {taak.deadline && (
               <span className={cn(
-                'text-[10px] ml-auto',
+                'text-2xs ml-auto',
                 isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground/60'
               )}>
                 {formatDate(taak.deadline)}
@@ -2679,7 +2679,7 @@ function TaakCard({ taak, onStatusChange }: { key?: React.Key; taak: Taak; onSta
                 key={s}
                 onClick={() => onStatusChange(s)}
                 className={cn(
-                  'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] transition-colors',
+                  'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-2xs transition-colors',
                   taak.status === s
                     ? `${si.color} bg-muted font-medium`
                     : 'text-muted-foreground/50 hover:text-foreground hover:bg-muted/50'

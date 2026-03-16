@@ -59,7 +59,7 @@ export function ProjectProgressIndicator({ projectStatus, offertes, werkbonnen, 
                 <Icon className="h-3.5 w-3.5" />
               </div>
               <span className={cn(
-                'text-[9px] font-medium leading-none text-center whitespace-nowrap',
+                'text-2xs font-medium leading-none text-center whitespace-nowrap',
                 isCompleted && 'text-emerald-600 dark:text-emerald-400',
                 isCurrent && 'text-primary font-bold',
                 !isCompleted && !isCurrent && 'text-muted-foreground/50',

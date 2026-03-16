@@ -888,7 +888,7 @@ export function EmailReader({
               <div className="flex items-center gap-2">
                 <span className={cn('text-sm font-semibold', intent.color)}>{intent.label}</span>
                 {intent.confidence === 'hoog' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-current/10 font-medium opacity-70">
+                  <span className="text-2xs px-1.5 py-0.5 rounded-full bg-current/10 font-medium opacity-70">
                     <Sparkles className="w-3 h-3 inline mr-0.5" />
                     hoge zekerheid
                   </span>
@@ -1016,10 +1016,10 @@ export function EmailReader({
                                   )}
                                   onClick={() => setPreviewAttachment(isPreview ? null : i)}
                                 >
-                                  <div className="w-8 h-8 rounded bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">PDF</div>
+                                  <div className="w-8 h-8 rounded bg-red-500 flex items-center justify-center text-white text-2xs font-bold">PDF</div>
                                   <div>
                                     <span className="text-xs font-medium">Bijlage {i + 1}</span>
-                                    <p className="text-[10px] text-muted-foreground">PDF document</p>
+                                    <p className="text-2xs text-muted-foreground">PDF document</p>
                                   </div>
                                   <div className="flex items-center gap-1 ml-2">
                                     <button
@@ -1055,7 +1055,7 @@ export function EmailReader({
                                       <div className="text-center text-muted-foreground">
                                         <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
                                         <p className="text-xs">PDF voorbeeld</p>
-                                        <p className="text-[10px] mt-1">Klik op downloaden om het volledige bestand te openen</p>
+                                        <p className="text-2xs mt-1">Klik op downloaden om het volledige bestand te openen</p>
                                       </div>
                                     </div>
                                   </div>
@@ -1226,7 +1226,7 @@ export function EmailReader({
                         className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors flex items-center justify-between"
                       >
                         <span>{f.label}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">{f.value}</span>
+                        <span className="text-2xs text-muted-foreground font-mono">{f.value}</span>
                       </button>
                     ))}
                   </div>

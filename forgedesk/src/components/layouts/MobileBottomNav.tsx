@@ -100,7 +100,7 @@ export function MobileBottomNav() {
                 />
                 <span
                   className={cn(
-                    'text-[10px] font-medium transition-colors',
+                    'text-2xs font-medium transition-colors',
                     isActive ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
@@ -123,7 +123,7 @@ export function MobileBottomNav() {
             />
             <span
               className={cn(
-                'text-[10px] font-medium transition-colors',
+                'text-2xs font-medium transition-colors',
                 isMoreActive || moreOpen ? 'text-primary' : 'text-muted-foreground'
               )}
             >

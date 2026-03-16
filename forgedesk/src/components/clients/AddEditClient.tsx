@@ -364,7 +364,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                 {kvkLoadingProfiel && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                    <span className="text-[10px] text-muted-foreground">Ophalen...</span>
+                    <span className="text-2xs text-muted-foreground">Ophalen...</span>
                   </div>
                 )}
                 {/* KVK suggesties dropdown */}
@@ -372,7 +372,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                   <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100">
                     <div className="px-3 py-1.5 bg-muted/40 border-b border-border/50 flex items-center gap-1.5">
                       <Building2 className="h-3 w-3 text-muted-foreground/60" />
-                      <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">KvK Resultaten</span>
+                      <span className="text-2xs font-medium text-muted-foreground/60 uppercase tracking-wider">KvK Resultaten</span>
                     </div>
                     <div className="max-h-[200px] overflow-y-auto">
                       {kvkSuggesties.slice(0, 5).map((r) => (
@@ -382,8 +382,8 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                           onClick={() => selectKvkSuggestie(r)}
                           className="w-full text-left px-3 py-2 hover:bg-muted/60 transition-colors border-b border-border/20 last:border-0"
                         >
-                          <p className="text-[13px] font-medium text-foreground truncate">{r.naam}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">
+                          <p className="text-sm font-medium text-foreground truncate">{r.naam}</p>
+                          <p className="text-xs text-muted-foreground truncate">
                             {[r.adres.straat, r.postcode, r.adres.plaats].filter(Boolean).join(', ')}
                             {r.kvkNummer && <span className="ml-2 text-muted-foreground/50">KvK {r.kvkNummer}</span>}
                           </p>

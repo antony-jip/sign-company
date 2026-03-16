@@ -199,7 +199,7 @@ export function MeldingenPage() {
             >
               {f.label}
               {f.key === 'ongelezen' && aantalOngelezen > 0 && (
-                <Badge variant="destructive" className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[10px]">
+                <Badge variant="destructive" className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-2xs">
                   {aantalOngelezen}
                 </Badge>
               )}
@@ -254,8 +254,8 @@ export function MeldingenPage() {
                         </div>
                         <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{n.bericht}</p>
                         <div className="mt-1 flex items-center gap-2">
-                          <span className="text-[11px] text-muted-foreground/60">{formatDatum(n.created_at)}</span>
-                          <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-medium', config.bgClass, config.colorClass)}>
+                          <span className="text-xs text-muted-foreground/60">{formatDatum(n.created_at)}</span>
+                          <span className={cn('rounded-full px-1.5 py-0.5 text-2xs font-medium', config.bgClass, config.colorClass)}>
                             {config.label}
                           </span>
                         </div>

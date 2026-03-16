@@ -797,7 +797,7 @@ export function HuisstijlTab() {
                 onChange={(e) => updateStyle({ font_grootte_basis: parseInt(e.target.value) })}
                 className="w-full accent-blue-500"
               />
-              <div className="flex justify-between text-[10px] text-muted-foreground/60">
+              <div className="flex justify-between text-2xs text-muted-foreground/60">
                 <span>8pt</span>
                 <span>14pt</span>
               </div>
@@ -976,7 +976,7 @@ export function HuisstijlTab() {
                 onChange={handleBriefpapierUpload}
                 className="hidden"
               />
-              <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                 Achtergrond voor de eerste pagina van je documenten. JPG, PNG of WebP (max 10MB).
               </p>
             </div>
@@ -1028,7 +1028,7 @@ export function HuisstijlTab() {
                 onChange={handleVervolgpapierUpload}
                 className="hidden"
               />
-              <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/60">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                 Achtergrond voor pagina 2 en verder. Gebruik een compactere header dan het briefpapier.
               </p>
             </div>

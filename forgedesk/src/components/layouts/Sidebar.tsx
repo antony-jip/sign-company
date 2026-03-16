@@ -195,7 +195,7 @@ export function Sidebar() {
       <NavLink
         to={item.path}
         className={cn(
-          'flex items-center gap-2.5 py-[8px] px-[10px] rounded-[10px] text-[13px] font-medium transition-all duration-200 relative group',
+          'flex items-center gap-2.5 py-[8px] px-[10px] rounded-[10px] text-sm font-medium transition-all duration-200 relative group',
           isActive
             ? 'font-semibold text-foreground'
             : 'text-muted-foreground hover:bg-background/80 hover:text-foreground',
@@ -227,7 +227,7 @@ export function Sidebar() {
         </div>
         {!isCollapsed && <span className="truncate">{item.label}</span>}
         {isForgie && !isCollapsed && (
-          <span className="ml-auto text-[9px] font-bold uppercase tracking-[0.06em] text-[#9B8EC4] bg-[#9B8EC4]/12 px-1.5 py-0.5 rounded-full">AI</span>
+          <span className="ml-auto text-2xs font-bold uppercase tracking-[0.06em] text-[#9B8EC4] bg-[#9B8EC4]/12 px-1.5 py-0.5 rounded-full">AI</span>
         )}
       </NavLink>
     )
@@ -303,7 +303,7 @@ export function Sidebar() {
                   ? `${user.user_metadata.voornaam}${user.user_metadata.achternaam ? ' ' + user.user_metadata.achternaam : ''}`
                   : user.email?.split('@')[0] || 'Gebruiker'}
               </p>
-              <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
             <Button
               variant="ghost"

@@ -529,7 +529,7 @@ export function CalendarLayout() {
 
   // ---- Render helpers ----
   const renderMonteurAvatars = (monteurIds: string[], size: 'sm' | 'md' = 'sm') => {
-    const dims = size === 'sm' ? 'w-5 h-5 text-[9px]' : 'w-7 h-7 text-xs'
+    const dims = size === 'sm' ? 'w-5 h-5 text-2xs' : 'w-7 h-7 text-xs'
     return (
       <div className="flex -space-x-1">
         {monteurIds.slice(0, 3).map((mId) => {
@@ -613,22 +613,22 @@ export function CalendarLayout() {
                 <p className={cn(
                   'font-semibold truncate leading-tight',
                   cfg.color,
-                  isNarrow ? 'text-[10px]' : 'text-[11px]'
+                  isNarrow ? 'text-2xs' : 'text-xs'
                 )}>
                   {afspraak.titel}
                 </p>
                 {monteurName && height > 28 && (
-                  <p className="text-[9px] text-muted-foreground truncate font-medium">
+                  <p className="text-2xs text-muted-foreground truncate font-medium">
                     {monteurName}
                   </p>
                 )}
                 {height > 36 && (
-                  <p className="text-[10px] text-muted-foreground truncate">
+                  <p className="text-2xs text-muted-foreground truncate">
                     {afspraak.start_tijd} - {afspraak.eind_tijd}
                   </p>
                 )}
                 {!isNarrow && height > 52 && afspraak.locatie && (
-                  <p className="text-[10px] text-muted-foreground truncate flex items-center gap-0.5">
+                  <p className="text-2xs text-muted-foreground truncate flex items-center gap-0.5">
                     <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
                     {afspraak.locatie}
                   </p>
@@ -718,36 +718,36 @@ export function CalendarLayout() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-background border-blue-200/50 dark:border-blue-800/50">
           <CardContent className="p-3">
-            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Vandaag</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Vandaag</p>
             <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{todayAfspraken.length}</p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {todayAfspraken.filter((a) => a.status === 'afgerond').length} afgerond
             </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-primary/5 to-white dark:from-primary/10 dark:to-background border-primary/20">
           <CardContent className="p-3">
-            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Deze week</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Deze week</p>
             <p className="text-2xl font-bold text-accent dark:text-primary">{weekAfspraken.length}</p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {weekAfspraken.filter((a) => a.status === 'gepland').length} gepland
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Monteurs</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Monteurs</p>
             <p className="text-2xl font-bold text-foreground">{medewerkers.length}</p>
-            <p className="text-[11px] text-muted-foreground">beschikbaar</p>
+            <p className="text-xs text-muted-foreground">beschikbaar</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Openstaand</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Openstaand</p>
             <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
               {afspraken.filter((a) => a.status !== 'afgerond').length}
             </p>
-            <p className="text-[11px] text-muted-foreground">nog uit te voeren</p>
+            <p className="text-xs text-muted-foreground">nog uit te voeren</p>
           </CardContent>
         </Card>
       </div>
@@ -804,7 +804,7 @@ export function CalendarLayout() {
                         >
                           <div
                             className={cn(
-                              'w-5 h-5 rounded-full flex items-center justify-center text-[9px] text-white font-bold',
+                              'w-5 h-5 rounded-full flex items-center justify-center text-2xs text-white font-bold',
                               getAvatarColor(idx)
                             )}
                           >
@@ -840,7 +840,7 @@ export function CalendarLayout() {
                     {HOURS.map((hour) => (
                       <div
                         key={hour}
-                        className="border-b border-border dark:border-border text-[10px] text-muted-foreground text-right pr-2 pt-1"
+                        className="border-b border-border dark:border-border text-2xs text-muted-foreground text-right pr-2 pt-1"
                         style={{ height: `${HOUR_HEIGHT}px` }}
                       >
                         {`${String(hour).padStart(2, '0')}:00`}
@@ -867,7 +867,7 @@ export function CalendarLayout() {
                           )}
                           title={feestdagInfo ? feestdagInfo.naam : undefined}
                         >
-                          <p className={cn('text-[10px] uppercase font-medium', feestdagInfo ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground')}>
+                          <p className={cn('text-2xs uppercase font-medium', feestdagInfo ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground')}>
                             {feestdagInfo ? feestdagInfo.naam : format(date, 'EEE', { locale: nl })}
                           </p>
                           <p
@@ -881,12 +881,12 @@ export function CalendarLayout() {
                           {(dayAfspraken.length > 0 || taskCount > 0) && (
                             <div className="flex items-center gap-0.5 justify-center">
                               {dayAfspraken.length > 0 && (
-                                <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                                <Badge variant="secondary" className="text-2xs px-1 py-0">
                                   {dayAfspraken.length}
                                 </Badge>
                               )}
                               {taskCount > 0 && (
-                                <Badge className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 border-0">
+                                <Badge className="text-2xs px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 border-0">
                                   {taskCount}
                                 </Badge>
                               )}
@@ -985,7 +985,7 @@ export function CalendarLayout() {
             <CardContent className="pb-3">
               <div className="grid grid-cols-7 mb-1">
                 {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((d) => (
-                  <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground uppercase py-0.5">
+                  <div key={d} className="text-center text-2xs font-semibold text-muted-foreground uppercase py-0.5">
                     {d}
                   </div>
                 ))}
@@ -1004,7 +1004,7 @@ export function CalendarLayout() {
                       onClick={() => setCurrentDate(day)}
                       title={miniFeestdag ? miniFeestdag.naam : undefined}
                       className={cn(
-                        'relative w-full aspect-square flex flex-col items-center justify-center text-[11px] rounded-lg transition-colors',
+                        'relative w-full aspect-square flex flex-col items-center justify-center text-xs rounded-lg transition-colors',
                         !isCurrentMonth && 'text-muted-foreground/40',
                         isCurrentMonth && 'text-foreground',
                         isTodayDate && 'bg-primary text-white font-bold',
@@ -1069,7 +1069,7 @@ export function CalendarLayout() {
                       >
                         <div
                           className={cn(
-                            'w-7 h-7 rounded-full flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0',
+                            'w-7 h-7 rounded-full flex items-center justify-center text-2xs text-white font-bold flex-shrink-0',
                             getAvatarColor(idx)
                           )}
                         >
@@ -1079,19 +1079,19 @@ export function CalendarLayout() {
                           <p className="text-xs font-medium text-foreground truncate">
                             {mw.naam}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-2xs text-muted-foreground">
                             {mw.functie || mw.rol}
                           </p>
                         </div>
                         <div className="text-right flex-shrink-0">
                           {todayCount > 0 ? (
-                            <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                            <Badge variant="secondary" className="text-2xs px-1 py-0">
                               {todayCount} vandaag
                             </Badge>
                           ) : weekCount > 0 ? (
-                            <span className="text-[10px] text-muted-foreground">{weekCount}/wk</span>
+                            <span className="text-2xs text-muted-foreground">{weekCount}/wk</span>
                           ) : (
-                            <span className="text-[10px] text-muted-foreground/50">vrij</span>
+                            <span className="text-2xs text-muted-foreground/50">vrij</span>
                           )}
                         </div>
                       </button>
@@ -1139,7 +1139,7 @@ export function CalendarLayout() {
                                 {taak.titel}
                               </p>
                               {project && (
-                                <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                <p className="text-2xs text-muted-foreground truncate mt-0.5">
                                   {project.naam}
                                 </p>
                               )}
@@ -1147,7 +1147,7 @@ export function CalendarLayout() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 px-2 text-[10px] text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                              className="h-6 px-2 text-2xs text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handlePlanTask(taak)
@@ -1302,7 +1302,7 @@ export function CalendarLayout() {
                         />
                         <div
                           className={cn(
-                            'w-6 h-6 rounded-full flex items-center justify-center text-[9px] text-white font-bold',
+                            'w-6 h-6 rounded-full flex items-center justify-center text-2xs text-white font-bold',
                             getAvatarColor(idx)
                           )}
                         >
@@ -1310,7 +1310,7 @@ export function CalendarLayout() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{mw.naam}</p>
-                          <p className="text-[10px] text-muted-foreground">{mw.functie || mw.rol}</p>
+                          <p className="text-2xs text-muted-foreground">{mw.functie || mw.rol}</p>
                         </div>
                       </label>
                     )
@@ -1318,7 +1318,7 @@ export function CalendarLayout() {
                 </div>
               )}
               {formData.monteurs.length > 0 && (
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-2xs text-muted-foreground">
                   {formData.monteurs.length} medewerker{formData.monteurs.length !== 1 ? 's' : ''} geselecteerd
                 </p>
               )}

@@ -248,7 +248,7 @@ export function SettingsLayout() {
                       <span className={`text-sm block truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
                         {tab.label}
                       </span>
-                      <span className={`text-[11px] hidden md:block truncate ${isActive ? 'text-blue-600/70 dark:text-blue-400/70' : 'text-muted-foreground/60 dark:text-muted-foreground'}`}>
+                      <span className={`text-xs hidden md:block truncate ${isActive ? 'text-blue-600/70 dark:text-blue-400/70' : 'text-muted-foreground/60 dark:text-muted-foreground'}`}>
                         {tab.description}
                       </span>
                     </div>
@@ -265,7 +265,7 @@ export function SettingsLayout() {
                 <Users className="w-4 h-4 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <span className="text-sm block truncate font-medium">Team HR</span>
-                  <span className="text-[11px] hidden md:block truncate text-muted-foreground/60 dark:text-muted-foreground">Medewerkers, uurtarieven en verlof</span>
+                  <span className="text-xs hidden md:block truncate text-muted-foreground/60 dark:text-muted-foreground">Medewerkers, uurtarieven en verlof</span>
                 </div>
                 <ArrowRight className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
               </button>
@@ -597,7 +597,7 @@ function BedrijfTab() {
                 ) : (
                   <div className="flex flex-col items-center text-muted-foreground/60">
                     <Upload className="w-6 h-6" />
-                    <span className="text-[10px] mt-1">Logo</span>
+                    <span className="text-2xs mt-1">Logo</span>
                   </div>
                 )}
                 <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
@@ -759,7 +759,7 @@ function DemoDataSection() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-sm font-semibold text-foreground mb-1">Voorbeelddata</h3>
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Er staat nog voorbeelddata in je account van de onboarding.
             </p>
           </div>
@@ -3135,7 +3135,7 @@ function WeergaveTab() {
                   <p className={cn('text-sm font-semibold', isActive ? 'text-primary' : 'text-foreground')}>
                     {t.naam}
                   </p>
-                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                  <p className="text-xs text-muted-foreground leading-tight mt-0.5">
                     {t.beschrijving}
                   </p>
                   {isActive && (
@@ -3255,7 +3255,7 @@ function WeergaveTab() {
               <p className={cn('text-sm font-semibold', layoutMode === 'sidebar' ? 'text-primary' : 'text-foreground')}>
                 Zijbalk
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Navigatie aan de linkerkant
               </p>
               {layoutMode === 'sidebar' && (
@@ -3302,7 +3302,7 @@ function WeergaveTab() {
               <p className={cn('text-sm font-semibold', layoutMode === 'topnav' ? 'text-primary' : 'text-foreground')}>
                 Top navigatie
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Navigatie bovenin de pagina
               </p>
               {layoutMode === 'topnav' && (
@@ -3342,7 +3342,7 @@ function WeergaveTab() {
                 )}
               >
                 <span className="text-sm font-medium">{size.label}</span>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{size.beschrijving}</p>
+                <p className="text-2xs text-muted-foreground mt-0.5">{size.beschrijving}</p>
               </button>
             ))}
           </div>
@@ -3520,7 +3520,7 @@ function WeergaveTab() {
           const sectionItems = ALL_SIDEBAR_ITEMS.filter((i) => i.section === section)
           return (
             <div key={section}>
-              <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-2">
+              <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2">
                 {section}
               </h4>
               <div className="space-y-2">
@@ -3585,7 +3585,7 @@ function DashboardSettingsTab() {
       <CardContent className="space-y-6">
         {/* Active widgets */}
         <div>
-          <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3">
+          <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-3">
             Actieve widgets
           </h4>
           <div className="space-y-1.5">
@@ -3617,7 +3617,7 @@ function DashboardSettingsTab() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">{def.label}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{def.description}</p>
+                    <p className="text-xs text-muted-foreground truncate">{def.description}</p>
                   </div>
                   <Switch
                     checked={true}
@@ -3633,7 +3633,7 @@ function DashboardSettingsTab() {
         {dashLayout.allWidgets.filter(id => dashLayout.hidden.has(id)).length > 0 && (
           <div>
             <Separator className="mb-4" />
-            <h4 className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label mb-3">
+            <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-3">
               Beschikbare widgets
             </h4>
             <div className="space-y-1.5">
@@ -3652,7 +3652,7 @@ function DashboardSettingsTab() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">{def.label}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{def.description}</p>
+                      <p className="text-xs text-muted-foreground truncate">{def.description}</p>
                     </div>
                     <Switch
                       checked={false}

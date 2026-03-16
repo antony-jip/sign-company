@@ -78,7 +78,7 @@ export function InboxPreviewWidget() {
             className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-muted/50 transition-colors"
           >
             <div className={cn(
-              'flex items-center justify-center h-8 w-8 rounded-full text-white text-[11px] font-semibold flex-shrink-0',
+              'flex items-center justify-center h-8 w-8 rounded-full text-white text-xs font-semibold flex-shrink-0',
               avatarColors[index % avatarColors.length]
             )}>
               {initials}
@@ -86,9 +86,9 @@ export function InboxPreviewWidget() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-foreground truncate">{senderName}</p>
-                <span className="text-[10px] text-muted-foreground/50 flex-shrink-0">{timeAgo(email.datum)}</span>
+                <span className="text-2xs text-muted-foreground/50 flex-shrink-0">{timeAgo(email.datum)}</span>
               </div>
-              <p className="text-[11px] text-muted-foreground truncate">{email.onderwerp}</p>
+              <p className="text-xs text-muted-foreground truncate">{email.onderwerp}</p>
             </div>
             {!email.gelezen && (
               <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />

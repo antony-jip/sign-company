@@ -227,18 +227,18 @@ export function WeatherWidget() {
               <p className="text-sm font-semibold text-foreground/70 mt-0.5">
                 {WMO_DESCRIPTIONS[current.weatherCode] || 'Onbekend'}
               </p>
-              <span className="text-[11px] text-muted-foreground/70 flex items-center gap-0.5 mt-1">
+              <span className="text-xs text-muted-foreground/70 flex items-center gap-0.5 mt-1">
                 <MapPin className="h-2.5 w-2.5" />{location}
               </span>
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-2">
-            <span className={`text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm ${conditionColors[workCondition]}`}>
+            <span className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm ${conditionColors[workCondition]}`}>
               {conditionLabels[workCondition]}
             </span>
             {todayForecast && (
-              <span className="text-[11px] text-muted-foreground/60 font-mono">
+              <span className="text-xs text-muted-foreground/60 font-mono">
                 {todayForecast.maxTemp}° / {todayForecast.minTemp}°
               </span>
             )}
@@ -247,20 +247,20 @@ export function WeatherWidget() {
 
         {/* Stats row */}
         <div className="relative flex items-center gap-5 mt-4 pt-3 border-t border-foreground/5">
-          <span className="flex items-center gap-1.5 text-[13px] text-foreground/60">
+          <span className="flex items-center gap-1.5 text-sm text-foreground/60">
             <Thermometer className="h-3.5 w-3.5" />
             Voelt als <span className="font-mono font-semibold text-foreground/80">{current.apparentTemperature}°</span>
           </span>
-          <span className="flex items-center gap-1.5 text-[13px] text-foreground/60">
+          <span className="flex items-center gap-1.5 text-sm text-foreground/60">
             <Wind className="h-3.5 w-3.5" />
             <span className="font-mono font-semibold text-foreground/80">{current.windSpeed}</span> km/u
           </span>
-          <span className="flex items-center gap-1.5 text-[13px] text-foreground/60">
+          <span className="flex items-center gap-1.5 text-sm text-foreground/60">
             <Droplets className="h-3.5 w-3.5" />
             <span className="font-mono font-semibold text-foreground/80">{current.humidity}%</span>
           </span>
           {sunrise && (
-            <span className="flex items-center gap-1.5 text-[13px] text-foreground/60 ml-auto">
+            <span className="flex items-center gap-1.5 text-sm text-foreground/60 ml-auto">
               <Sunrise className="h-3.5 w-3.5 text-amber-500/70" />
               <span className="font-mono text-foreground/50">{sunrise}</span>
               <Sunset className="h-3.5 w-3.5 text-orange-500/70 ml-2" />
@@ -278,16 +278,16 @@ export function WeatherWidget() {
               key={day.date.toISOString()}
               className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-muted/25 hover:bg-muted/40 transition-colors"
             >
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
                 {DAY_NAMES[day.date.getDay()]}
               </span>
               {getWeatherIcon(day.weatherCode, 'h-6 w-6')}
-              <div className="flex items-center gap-1.5 text-[13px]">
+              <div className="flex items-center gap-1.5 text-sm">
                 <span className="font-bold text-foreground font-mono">{day.maxTemp}°</span>
                 <span className="text-muted-foreground/50 font-mono">{day.minTemp}°</span>
               </div>
               {day.precipitationProbability > 20 && (
-                <span className="text-[10px] text-blue-500/80 flex items-center gap-0.5 font-medium">
+                <span className="text-2xs text-blue-500/80 flex items-center gap-0.5 font-medium">
                   <Droplets className="h-2.5 w-2.5" />
                   <span className="font-mono">{day.precipitationProbability}%</span>
                 </span>

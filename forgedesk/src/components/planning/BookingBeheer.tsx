@@ -153,7 +153,7 @@ export function BookingBeheer() {
                     .map((slot) => (
                     <div key={slot.id} className="flex items-center justify-between bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] w-8 justify-center">
+                        <Badge variant="outline" className="text-2xs w-8 justify-center">
                           {DAGEN_KORT[slot.dag_van_week]}
                         </Badge>
                         <span className="text-sm font-medium">
@@ -225,10 +225,10 @@ export function BookingBeheer() {
                           afspraak.status === 'geannuleerd' ? 'bg-muted-foreground/40' :
                           afspraak.status === 'bevestigd' ? 'bg-emerald-500' : 'bg-blue-500'
                         )}>
-                          <span className="text-[10px] font-medium leading-none">
+                          <span className="text-2xs font-medium leading-none">
                             {new Date(afspraak.datum + 'T12:00').toLocaleDateString('nl-NL', { day: 'numeric' })}
                           </span>
-                          <span className="text-[9px] leading-none mt-0.5">
+                          <span className="text-2xs leading-none mt-0.5">
                             {new Date(afspraak.datum + 'T12:00').toLocaleDateString('nl-NL', { month: 'short' })}
                           </span>
                         </div>
@@ -238,7 +238,7 @@ export function BookingBeheer() {
                           <p className="text-sm font-medium text-foreground truncate">
                             {afspraak.klant_naam}
                           </p>
-                          <Badge className={cn('text-[10px] px-1.5 py-0',
+                          <Badge className={cn('text-2xs px-1.5 py-0',
                             afspraak.status === 'gepland' && 'bg-blue-100 text-blue-700',
                             afspraak.status === 'bevestigd' && 'bg-emerald-100 text-emerald-700',
                             afspraak.status === 'geannuleerd' && 'bg-muted text-muted-foreground',

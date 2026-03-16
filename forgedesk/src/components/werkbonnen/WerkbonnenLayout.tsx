@@ -13,6 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { EmptyState } from '@/components/ui/empty-state'
 import type { Werkbon, Klant, Project, Offerte } from '@/types'
 import {
@@ -159,29 +160,23 @@ export function WerkbonnenLayout() {
 
   return (
     <div className="h-full flex flex-col mod-strip mod-strip-werkbonnen">
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #D4836A, #B8654E)' }}>
-            <ClipboardCheck className="h-5 w-5 text-white" />
+      <ModuleHeader
+        module="werkbonnen"
+        icon={ClipboardCheck}
+        title="Werkbonnen"
+        subtitle="Instructiebladen voor monteurs — afbeeldingen, afmetingen en notities"
+        actions={
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex">
+              <Download className="h-4 w-4 mr-1" /> CSV
+            </Button>
+            <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Nieuwe werkbon</span>
+              <span className="sm:hidden">Nieuw</span>
+            </Button>
           </div>
-          <div className="min-w-0">
-            <h1 className="page-title text-foreground truncate">Werkbonnen</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
-              Instructiebladen voor monteurs — afbeeldingen, afmetingen en notities
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex">
-            <Download className="h-4 w-4 mr-1" /> CSV
-          </Button>
-          <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Nieuwe werkbon</span>
-            <span className="sm:hidden">Nieuw</span>
-          </Button>
-        </div>
+        }
       </div>
 
       {/* Content */}
@@ -196,7 +191,7 @@ export function WerkbonnenLayout() {
             <Card key={status} className="cursor-pointer hover-lift"
               onClick={() => setFilterStatus(status === filterStatus ? 'alle' : status)}>
               <CardContent className="p-4">
-                <p className="text-[11px] font-bold text-[#8a8680] uppercase tracking-label">{cfg.label}</p>
+                <p className="text-xs font-bold text-text-tertiary uppercase tracking-label">{cfg.label}</p>
                 <p className="text-2xl font-bold mt-1">{statusCounts[status] || 0}</p>
               </CardContent>
             </Card>
@@ -251,13 +246,13 @@ export function WerkbonnenLayout() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Nummer</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Klant</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Offerte / Project</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden sm:table-cell">Datum</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                  <th className="px-4 py-3 text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden sm:table-cell">Items</th>
-                  <th className="px-4 py-3 text-right text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Acties</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Nummer</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Klant</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Offerte / Project</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label hidden sm:table-cell">Datum</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold text-text-tertiary uppercase tracking-label hidden sm:table-cell">Items</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Acties</th>
                 </tr>
               </thead>
               <tbody className="divide-y row-stagger">

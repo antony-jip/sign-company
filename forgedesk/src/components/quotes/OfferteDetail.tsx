@@ -532,7 +532,7 @@ export function OfferteDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#9B8EC4] mb-0.5">Offerte</p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-[#9B8EC4] mb-0.5">Offerte</p>
             <h1
               className="text-[26px] sm:text-[32px] font-extrabold tracking-[-0.04em] leading-none text-foreground cursor-pointer hover:text-primary transition-colors"
               title="Klik om nummer te kopiëren"
@@ -739,7 +739,7 @@ export function OfferteDetail() {
                       (isRejected || isExpired || isModRequested) && !isPast && 'w-3 h-3 bg-transparent border-border/60'
                     )} />
                     <span className={cn(
-                      'text-[10px] whitespace-nowrap',
+                      'text-2xs whitespace-nowrap',
                       isActive ? 'font-bold text-[#9B8EC4]' : isPast ? 'font-medium text-muted-foreground' : 'text-muted-foreground/40'
                     )}>
                       {step.label}
@@ -759,7 +759,7 @@ export function OfferteDetail() {
                     isModRequested && 'bg-blue-400 border-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.4)]'
                   )} />
                   <span className={cn(
-                    'text-[10px] font-semibold whitespace-nowrap',
+                    'text-2xs font-semibold whitespace-nowrap',
                     isRejected && 'text-red-500',
                     isExpired && 'text-amber-500',
                     isModRequested && 'text-blue-500'
@@ -778,7 +778,7 @@ export function OfferteDetail() {
         {/* Klant info */}
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
           <div className="section-header-pastel">
-            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5" />
               Klant
             </h3>
@@ -796,7 +796,7 @@ export function OfferteDetail() {
               {(klant.klant_labels || []).length > 0 && (
                 <div className="flex flex-wrap gap-1 pt-1">
                   {klant.klant_labels!.map((label) => (
-                    <Badge key={label} variant="secondary" className="text-[10px]">
+                    <Badge key={label} variant="secondary" className="text-2xs">
                       {label.replace(/_/g, ' ')}
                     </Badge>
                   ))}
@@ -818,7 +818,7 @@ export function OfferteDetail() {
         {/* Details */}
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
           <div className="section-header-pastel">
-            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" />
               Details
             </h3>
@@ -875,7 +875,7 @@ export function OfferteDetail() {
         {(offerte.eerste_bekeken_op || offerte.geaccepteerd_door || offerte.wijziging_opmerking) && (
           <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
             <div className="section-header-pastel">
-              <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680] flex items-center gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary flex items-center gap-2">
                 <Eye className="h-3.5 w-3.5" />
                 Klant activiteit
               </h3>
@@ -942,7 +942,7 @@ export function OfferteDetail() {
       {(isEditing || offerte.intro_tekst) && (
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
-            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+            <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Intro tekst
             </h3>
           </div>
@@ -962,18 +962,18 @@ export function OfferteDetail() {
       {/* Offerte Regels */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border bg-muted/30">
-          <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Offerte Regels</h3>
+          <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">Offerte Regels</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-10">#</th>
-                <th className="text-left py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label">Omschrijving</th>
-                <th className="text-right py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-20">Aantal</th>
-                <th className="text-right py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-28">Prijs</th>
-                <th className="text-right py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-16">BTW</th>
-                <th className="text-right py-3 px-4 font-bold text-[#8a8680] text-[11px] uppercase tracking-label w-28">Totaal</th>
+                <th className="text-left py-3 px-4 font-bold text-text-tertiary text-xs uppercase tracking-label w-10">#</th>
+                <th className="text-left py-3 px-4 font-bold text-text-tertiary text-xs uppercase tracking-label">Omschrijving</th>
+                <th className="text-right py-3 px-4 font-bold text-text-tertiary text-xs uppercase tracking-label w-20">Aantal</th>
+                <th className="text-right py-3 px-4 font-bold text-text-tertiary text-xs uppercase tracking-label w-28">Prijs</th>
+                <th className="text-right py-3 px-4 font-bold text-text-tertiary text-xs uppercase tracking-label w-16">BTW</th>
+                <th className="text-right py-3 px-4 font-bold text-text-tertiary text-xs uppercase tracking-label w-28">Totaal</th>
               </tr>
             </thead>
             <tbody>
@@ -1036,7 +1036,7 @@ export function OfferteDetail() {
               ))}
             <div className="totalen-groot mt-3">
               <div className="flex justify-between items-center">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Totaal incl. BTW</span>
+                <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Totaal incl. BTW</span>
                 <span className="display-number display-number-md text-foreground">{formatCurrency(totaal)}</span>
               </div>
             </div>
@@ -1048,7 +1048,7 @@ export function OfferteDetail() {
       {(isEditing || offerte.outro_tekst) && (
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
-            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+            <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Outro tekst
             </h3>
           </div>
@@ -1069,7 +1069,7 @@ export function OfferteDetail() {
       {isEditing && (
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
-            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+            <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Notities
             </h3>
           </div>
@@ -1086,7 +1086,7 @@ export function OfferteDetail() {
       {!isEditing && offerte.notities && (
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
           <div className="section-header-pastel">
-            <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+            <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Notities
             </h3>
           </div>
@@ -1097,7 +1097,7 @@ export function OfferteDetail() {
       {/* Activiteit log */}
       <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
         <div className="section-header-pastel">
-          <h3 className="text-[11px] font-bold uppercase tracking-label text-[#8a8680]">
+          <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
             Activiteit
           </h3>
         </div>

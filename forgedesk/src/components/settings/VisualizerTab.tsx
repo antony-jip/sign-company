@@ -391,11 +391,11 @@ export function VisualizerTab() {
                 <table className="w-full text-xs">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Datum</th>
-                      <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Type</th>
-                      <th className="text-right p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Aantal</th>
-                      <th className="text-right p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Saldo na</th>
-                      <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Beschrijving</th>
+                      <th className="text-left p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Datum</th>
+                      <th className="text-left p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Type</th>
+                      <th className="text-right p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Aantal</th>
+                      <th className="text-right p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Saldo na</th>
+                      <th className="text-left p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Beschrijving</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -438,10 +438,10 @@ export function VisualizerTab() {
               <table className="w-full text-xs">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Datum</th>
-                    <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Actie</th>
-                    <th className="text-right p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Kosten</th>
-                    <th className="text-left p-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">Fout</th>
+                    <th className="text-left p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Datum</th>
+                    <th className="text-left p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Actie</th>
+                    <th className="text-right p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Kosten</th>
+                    <th className="text-left p-2 text-xs font-bold uppercase tracking-label text-text-tertiary">Fout</th>
                   </tr>
                 </thead>
                 <tbody>

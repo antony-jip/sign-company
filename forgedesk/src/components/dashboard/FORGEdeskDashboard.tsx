@@ -149,7 +149,7 @@ export function FORGEdeskDashboard() {
       {/* Welcome header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-1.5">{formattedDate}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground mb-1.5">{formattedDate}</p>
           <h1 className="text-[32px] sm:text-[38px] font-extrabold tracking-[-0.04em] leading-[1.1] text-foreground">
             {greeting}{userName ? ', ' : ''}
             {userName && <span className="wm-gradient-text">{userName}</span>}
@@ -158,7 +158,7 @@ export function FORGEdeskDashboard() {
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/offertes/nieuw')}
-            className="inline-flex items-center gap-1.5 text-[13px] font-bold px-5 py-2.5 rounded-[12px] bg-foreground text-background hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-[0.96]"
+            className="inline-flex items-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-[12px] bg-foreground text-background hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-[0.96]"
           >
             + Nieuwe offerte
           </button>
@@ -172,10 +172,10 @@ export function FORGEdeskDashboard() {
           className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-destructive/8 dark:bg-destructive/10 text-destructive cursor-pointer hover:bg-destructive/12 transition-colors"
         >
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-          <span className="text-[13.5px] font-medium">
+          <span className="text-sm font-medium">
             <strong>{verlopenFacturen.count} facturen verlopen</strong> — {formatCurrency(verlopenFacturen.bedrag)} openstaand
           </span>
-          <span className="ml-auto text-[13px] font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
+          <span className="ml-auto text-sm font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
             Bekijk →
           </span>
         </div>
@@ -185,7 +185,7 @@ export function FORGEdeskDashboard() {
 
       {/* Configurable widget grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {layout.order.map((widgetId) => {
+        {layout.order.map((widgetId, index) => {
           const def = WIDGET_REGISTRY[widgetId]
           if (!def) return null
 
@@ -207,10 +207,11 @@ export function FORGEdeskDashboard() {
                 onDragOver={layout.handleDragOver}
                 onDrop={(e) => layout.handleDrop(e, widgetId)}
                 className={cn(
-                  'group/widget transition-all',
+                  'group/widget transition-all animate-stagger-item',
                   getSizeClass(size),
                   isDragging && 'opacity-40',
                 )}
+                style={{ animationDelay: `${index * 50}ms` }}
               >
                 {isDragOver && !isDragging && (
                   <div className="h-1 bg-primary/50 rounded-full mb-2 animate-pulse" />
@@ -232,10 +233,11 @@ export function FORGEdeskDashboard() {
               onDragOver={layout.handleDragOver}
               onDrop={(e) => layout.handleDrop(e, widgetId)}
               className={cn(
-                'group/widget transition-all',
+                'group/widget transition-all animate-stagger-item',
                 getSizeClass(size),
                 isDragging && 'opacity-40',
               )}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               {isDragOver && !isDragging && (
                 <div className="h-1 bg-primary/50 rounded-full mb-2 animate-pulse" />
@@ -304,7 +306,7 @@ export function FORGEdeskDashboard() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground">{def.label}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">{def.description}</p>
+                          <p className="text-xs text-muted-foreground truncate">{def.description}</p>
                         </div>
                         <Plus className="h-4 w-4 text-primary ml-auto flex-shrink-0" />
                       </button>

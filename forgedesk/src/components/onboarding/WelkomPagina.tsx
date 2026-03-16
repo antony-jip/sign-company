@@ -36,7 +36,7 @@ export function WelkomPagina() {
         </p>
 
         {/* Feature header */}
-        <p className="text-[13px] font-semibold text-neutral-500 uppercase tracking-wider mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
           Wat je allemaal kunt
         </p>
 
@@ -51,15 +51,15 @@ export function WelkomPagina() {
                 <Icon className="w-4.5 h-4.5 text-neutral-700" />
               </div>
               <div>
-                <p className="text-[13.5px] font-semibold text-black" style={{ fontFamily: 'Inter, sans-serif' }}>{title}</p>
-                <p className="text-[12px] text-neutral-500 mt-0.5" style={{ fontFamily: 'Inter, sans-serif' }}>{description}</p>
+                <p className="text-sm font-semibold text-black" style={{ fontFamily: 'Inter, sans-serif' }}>{title}</p>
+                <p className="text-xs text-neutral-500 mt-0.5" style={{ fontFamily: 'Inter, sans-serif' }}>{description}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Timing */}
-        <p className="text-[13px] text-neutral-500 mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <p className="text-sm text-neutral-500 mb-5" style={{ fontFamily: 'Inter, sans-serif' }}>
           Dit duurt ongeveer 2 minuten.
         </p>
 

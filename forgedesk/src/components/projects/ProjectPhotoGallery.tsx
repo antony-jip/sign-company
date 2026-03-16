@@ -167,7 +167,7 @@ export function ProjectPhotoGallery({
               </div>
               <h3 className="text-sm font-bold tracking-[-0.02em] text-foreground">Situatiefoto's</h3>
               {photos.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
+                <Badge variant="secondary" className="text-2xs font-mono px-1.5 py-0">
                   {photos.length}
                 </Badge>
               )}

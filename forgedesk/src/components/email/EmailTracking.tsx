@@ -184,7 +184,7 @@ export function EmailTracking({ emails }: EmailTrackingProps) {
                             {email.tracking.clicks}×
                           </div>
                         )}
-                        <Badge variant="secondary" className={cn('text-[10px] gap-1', config.color)}>
+                        <Badge variant="secondary" className={cn('text-2xs gap-1', config.color)}>
                           <StatusIcon className="w-3 h-3" />
                           {config.label}
                         </Badge>

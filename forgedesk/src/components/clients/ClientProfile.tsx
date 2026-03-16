@@ -680,7 +680,7 @@ export function ClientProfile() {
                       <p className="text-sm font-medium text-foreground truncate">
                         {cp.naam}
                         {cp.is_primair && (
-                          <span className="ml-1.5 text-[10px] text-blue-500 font-normal">primair</span>
+                          <span className="ml-1.5 text-2xs text-blue-500 font-normal">primair</span>
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
@@ -871,12 +871,12 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Omschrijving</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">PM</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden lg:table-cell">Deadline</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Waarde</th>
-                        <th className="text-center py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Downloads</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Status</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Omschrijving</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">PM</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label hidden lg:table-cell">Deadline</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Waarde</th>
+                        <th className="text-center py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Downloads</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
@@ -919,7 +919,7 @@ export function ClientProfile() {
                                 {project.team_leden.length > 0 ? (
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-wm-pale/30 dark:bg-accent/30 flex items-center justify-center flex-shrink-0">
-                                      <span className="text-[10px] font-semibold text-accent dark:text-primary">
+                                      <span className="text-2xs font-semibold text-accent dark:text-primary">
                                         {project.team_leden[0].charAt(0).toUpperCase()}
                                       </span>
                                     </div>
@@ -942,7 +942,7 @@ export function ClientProfile() {
                                 </span>
                                 {project.status !== 'afgerond' && (
                                   <p className={cn(
-                                    'text-[10px] mt-0.5',
+                                    'text-2xs mt-0.5',
                                     isOverdue ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-500' : 'text-muted-foreground'
                                   )}>
                                     {isOverdue ? `${Math.abs(daysLeft)}d verlopen` : `${daysLeft}d resterend`}
@@ -1004,11 +1004,11 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Nummer</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Titel</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Totaal</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Geldig tot</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Nummer</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Titel</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Totaal</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Geldig tot</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
@@ -1063,11 +1063,11 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Titel</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Fase</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Waarde</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Kans</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Titel</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Fase</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Waarde</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Kans</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
@@ -1113,11 +1113,11 @@ export function ClientProfile() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Nummer</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Titel</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Status</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label">Totaal</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hidden md:table-cell">Datum</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Nummer</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Titel</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Status</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label">Totaal</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Datum</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
@@ -1163,7 +1163,7 @@ export function ClientProfile() {
                     <thead>
                       <tr className="border-b">
                         {['Datum', 'Project', 'Medewerker', 'Uren', 'Beschrijving'].map((h) => (
-                          <th key={h} className="px-4 py-2 text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label">{h}</th>
+                          <th key={h} className="px-4 py-2 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1357,7 +1357,7 @@ export function ClientProfile() {
                             <p className="text-sm font-semibold text-foreground flex items-center gap-2">
                               {cp.naam}
                               {cp.is_primair && (
-                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Primair</Badge>
+                                <Badge variant="secondary" className="text-2xs px-1.5 py-0">Primair</Badge>
                               )}
                               {cp.functie && (
                                 <span className="text-xs text-muted-foreground font-normal">({cp.functie})</span>
@@ -1416,7 +1416,7 @@ export function ClientProfile() {
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-foreground flex items-center gap-2">
                               {ic.naam}
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Import</Badge>
+                              <Badge variant="secondary" className="text-2xs px-1.5 py-0">Import</Badge>
                             </p>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                               {ic.email && (

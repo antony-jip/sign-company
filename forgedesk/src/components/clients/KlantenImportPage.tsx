@@ -320,7 +320,7 @@ export function KlantenImportPage() {
                       <thead>
                         <tr className="bg-muted/50 border-b">
                           {Object.keys(activeTab === 'klanten' ? voorbeeldKlanten[0] : voorbeeldActiviteiten[0]).map((key) => (
-                            <th key={key} className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] whitespace-nowrap">
+                            <th key={key} className="text-left px-3 py-2 text-xs font-bold uppercase tracking-label text-text-tertiary whitespace-nowrap">
                               {key}
                             </th>
                           ))}
@@ -463,9 +463,9 @@ Regels:
                   <table className="w-full text-xs">
                     <thead className="sticky top-0 bg-muted/90 backdrop-blur-sm z-10">
                       <tr className="border-b">
-                        <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680]">#</th>
+                        <th className="text-left px-3 py-2 text-xs font-bold uppercase tracking-label text-text-tertiary">#</th>
                         {previewHeaders.map((h) => (
-                          <th key={h} className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-label text-[#8a8680] whitespace-nowrap">
+                          <th key={h} className="text-left px-3 py-2 text-xs font-bold uppercase tracking-label text-text-tertiary whitespace-nowrap">
                             {h}
                           </th>
                         ))}

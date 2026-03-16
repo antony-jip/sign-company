@@ -74,13 +74,13 @@ export function TeFacturerenWidget() {
             <div className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-white" />
               <h3 className="text-sm font-semibold text-white">Te factureren</h3>
-              <Badge className="bg-white/20 text-white text-[10px] px-1.5 py-0 border-0">
+              <Badge className="bg-white/20 text-white text-2xs px-1.5 py-0 border-0">
                 {offertes.length}
               </Badge>
             </div>
             <div className="text-right">
               <p className="text-lg font-bold text-white">{formatCurrency(totaalBedrag)}</p>
-              <p className="text-[10px] text-white/60">totaal excl BTW</p>
+              <p className="text-2xs text-white/60">totaal excl BTW</p>
             </div>
           </div>
         </div>

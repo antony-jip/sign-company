@@ -135,7 +135,7 @@ export function TopNav() {
                 end={item.path === '/'}
                 className={({ isActive }) =>
                   cn(
-                    'px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150',
+                    'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
                     isActive
                       ? 'text-primary font-semibold'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -152,7 +152,7 @@ export function TopNav() {
                 <button
                   onClick={() => setMoreOpen(!moreOpen)}
                   className={cn(
-                    'flex items-center gap-1 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150',
+                    'flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
                     moreOpen || moreItemActive
                       ? 'text-primary font-semibold'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -215,7 +215,7 @@ export function TopNav() {
               onClick={() => setLanguage(language === 'nl' ? 'en' : 'nl')}
               title={language === 'nl' ? 'Switch to English' : 'Wissel naar Nederlands'}
             >
-              <span className="text-[10px] font-bold">{language.toUpperCase()}</span>
+              <span className="text-2xs font-bold">{language.toUpperCase()}</span>
             </Button>
 
             <NotificatieCenter />
@@ -233,7 +233,7 @@ export function TopNav() {
                 )}
               >
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-primary/10">
-                  <span className="text-white text-[10px] font-semibold">{userInitial}</span>
+                  <span className="text-white text-2xs font-semibold">{userInitial}</span>
                 </div>
               </button>
 
@@ -339,7 +339,7 @@ export function TopNav() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{userName}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
                   <Button
                     variant="ghost"

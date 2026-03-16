@@ -68,7 +68,7 @@ export function WeekStripWidget() {
           )}
         >
           <span className={cn(
-            'text-[10px] font-bold uppercase',
+            'text-2xs font-bold uppercase',
             day.isToday ? 'text-primary' : 'text-muted-foreground'
           )}>
             {day.dayName}
