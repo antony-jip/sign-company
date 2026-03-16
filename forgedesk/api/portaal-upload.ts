@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
+// NB: Base64 encoding adds ~33% overhead. With bodyParser 12mb, max raw file ~9MB.
+// Vercel free tier has 4.5MB body limit — practical max ~3MB for free plans.
+// TODO: Migrate to multipart/form-data for larger files.
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
 
