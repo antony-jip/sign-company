@@ -82,6 +82,8 @@ import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
 import { PortaalTab } from './PortaalTab'
 import { SidebarTab } from './SidebarTab'
+import { TeamledenTab } from './TeamledenTab'
+import { AbonnementTab } from './AbonnementTab'
 import { Sparkles } from 'lucide-react'
 
 // Shared sub-tab navigation component
