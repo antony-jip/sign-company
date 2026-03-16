@@ -30,7 +30,7 @@ function MarqueeRow({ reverse = false }: { reverse?: boolean }) {
             key={`${item}-${i}`}
             className="flex items-center gap-4 shrink-0"
           >
-            <span className="font-heading text-[15px] font-bold text-ink-60 whitespace-nowrap tracking-tight">
+            <span className="font-heading text-[18px] md:text-[22px] font-bold text-ink-60 whitespace-nowrap tracking-tight">
               {item}
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-blush-vivid opacity-40 shrink-0" />

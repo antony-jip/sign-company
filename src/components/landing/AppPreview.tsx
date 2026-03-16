@@ -314,13 +314,16 @@ export default function AppPreview() {
     <section className="relative" style={{ paddingTop: 40, paddingBottom: 80 }}>
       <div className="max-w-[1040px] mx-auto px-6">
         <motion.div
-          className="browser-frame glow-border"
+          className="browser-frame shadow-deep relative"
           initial={{ opacity: 0, y: 40, scale: 0.96 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ type: 'spring' as const, damping: 22, stiffness: 80 }}
           onViewportEnter={() => setIsInView(true)}
         >
+          {/* Noise overlay */}
+          <div className="absolute inset-0 noise-overlay pointer-events-none rounded-[inherit] z-10" />
+
           {/* Browser chrome with tabs */}
           <div className="bg-ink-05 border-b border-ink-10 px-4 py-3 flex items-center gap-3">
             <div className="flex gap-1.5">
@@ -375,30 +378,6 @@ export default function AppPreview() {
         </motion.div>
       </div>
 
-      {/* Floating notification */}
-      <motion.div
-        className="absolute -right-2 md:right-8 top-[180px] z-20 hidden md:block"
-        initial={{ opacity: 0, x: 40, scale: 0.9 }}
-        whileInView={{ opacity: 1, x: 0, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ type: 'spring' as const, damping: 20, stiffness: 100, delay: 0.8 }}
-      >
-        <motion.div
-          className="bg-white rounded-xl shadow-lg border border-ink-10 p-3 flex items-center gap-3 max-w-[220px]"
-          animate={{ y: [0, -8, 0] }}
-          transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-        >
-          <div className="w-8 h-8 rounded-full bg-sage-light flex items-center justify-center flex-shrink-0">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M4 8l3 3 5-5" stroke="#5A8264" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[12px] font-semibold text-ink">Offerte goedgekeurd</p>
-            <p className="text-[11px] text-ink-40">Brouwer Reclame</p>
-          </div>
-        </motion.div>
-      </motion.div>
     </section>
   );
 }
