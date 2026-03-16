@@ -6,7 +6,7 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
-  UserPlus, FolderPlus, FileText, ListPlus, X,
+  UserPlus, FolderPlus, FileText, ListPlus, Check,
   Building2, Mail, Undo2, Redo2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,6 +16,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+import { createKlant } from '@/services/supabaseService'
 
 interface EmailReaderProps {
   email: Email | null
@@ -382,7 +383,7 @@ export function EmailReader({
         </div>
 
         {/* ─── CRM SIDEBAR (right, same as reading view) ─── */}
-        {renderCRMSidebar(email, senderName, senderEmail, avatarColor, navigate)}
+        <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} />
       </div>
     )
   }
@@ -534,46 +535,129 @@ export function EmailReader({
       </div>
 
       {/* ─── CRM SIDEBAR ─── */}
-      {renderCRMSidebar(email, senderName, senderEmail, avatarColor, navigate)}
+      <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} />
     </div>
   )
 }
 
-// ─── Shared CRM sidebar component ───
-function renderCRMSidebar(
-  email: Email,
-  senderName: string,
-  senderEmail: string,
-  avatarColor: string,
-  navigate: (path: string) => void,
-) {
+// ─── Helper: extract company name from sender ───
+function extractCompanyName(senderName: string, email: string): string {
+  // Try "Name | Company" or "Name - Company" format
+  const pipeMatch = senderName.match(/[|–—-]\s*(.+)$/)
+  if (pipeMatch) return pipeMatch[1].trim()
+
+  // Try email domain (skip generic providers)
+  const genericDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl', 'casema.nl', 'quicknet.nl', 'tele2.nl', 'solcon.nl']
+  const domainMatch = email.match(/@([^>]+)/)
+  if (domainMatch) {
+    const domain = domainMatch[1].toLowerCase()
+    if (!genericDomains.includes(domain)) {
+      // Capitalize domain name without TLD
+      const name = domain.split('.')[0]
+      return name.charAt(0).toUpperCase() + name.slice(1)
+    }
+  }
+  return ''
+}
+
+// ─── CRM Sidebar component with inline klant creation ───
+function CRMSidebar({
+  email,
+  senderName,
+  senderEmail,
+  avatarColor,
+}: {
+  email: Email
+  senderName: string
+  senderEmail: string
+  avatarColor: string
+}) {
+  const navigate = useNavigate()
+  const [showAddKlant, setShowAddKlant] = useState(false)
+  const [klantSaving, setKlantSaving] = useState(false)
+  const [klantSaved, setKlantSaved] = useState(false)
+  const [klantForm, setKlantForm] = useState({
+    bedrijfsnaam: '',
+    contactpersoon: '',
+    email: '',
+    telefoon: '',
+  })
+
+  // Pre-fill form when opening
+  const handleOpenAddKlant = useCallback(() => {
+    const companyGuess = extractCompanyName(senderName, senderEmail)
+    // Extract just the person name (before | or -)
+    const personName = senderName.replace(/\s*[|–—-]\s*.+$/, '').trim()
+    setKlantForm({
+      bedrijfsnaam: companyGuess,
+      contactpersoon: personName,
+      email: senderEmail,
+      telefoon: '',
+    })
+    setShowAddKlant(true)
+    setKlantSaved(false)
+  }, [senderName, senderEmail])
+
+  const handleSaveKlant = useCallback(async () => {
+    if (!klantForm.contactpersoon.trim() || !klantForm.email.trim()) {
+      toast.error('Naam en email zijn verplicht')
+      return
+    }
+    setKlantSaving(true)
+    try {
+      await createKlant({
+        bedrijfsnaam: klantForm.bedrijfsnaam,
+        contactpersoon: klantForm.contactpersoon,
+        email: klantForm.email,
+        telefoon: klantForm.telefoon,
+        adres: '',
+        postcode: '',
+        stad: '',
+        land: 'Nederland',
+        website: '',
+        kvk_nummer: '',
+        btw_nummer: '',
+        status: 'actief',
+        tags: [],
+        notities: '',
+        contactpersonen: [],
+      })
+      setKlantSaved(true)
+      toast.success('Klant aangemaakt')
+      setTimeout(() => {
+        setShowAddKlant(false)
+      }, 1500)
+    } catch {
+      toast.error('Klant aanmaken mislukt')
+    } finally {
+      setKlantSaving(false)
+    }
+  }, [klantForm])
+
   return (
     <div className="w-[280px] border-l border-foreground/[0.06] bg-[#FAFAF8] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
       <div className="p-5 space-y-5 flex-1">
         {/* Contact card */}
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className={cn('w-11 h-11 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm', avatarColor)}>
-              <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{senderName}</p>
-              <p className="text-xs text-foreground/35 truncate">{senderEmail}</p>
-            </div>
+        <div className="text-center">
+          <div className={cn('w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 ring-3 ring-white shadow-md', avatarColor)}>
+            <span className="text-lg font-bold text-white">{senderName[0]?.toUpperCase()}</span>
           </div>
+          <p className="text-sm font-semibold text-foreground">{senderName}</p>
+          <p className="text-xs text-foreground/35 mt-0.5">{senderEmail}</p>
+        </div>
 
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2.5 text-xs text-foreground/45">
-              <Mail className="h-3.5 w-3.5 flex-shrink-0 text-foreground/25" />
-              <span className="truncate">{senderEmail}</span>
-            </div>
-            {email.aan && (
-              <div className="flex items-center gap-2.5 text-xs text-foreground/45">
-                <Building2 className="h-3.5 w-3.5 flex-shrink-0 text-foreground/25" />
-                <span className="truncate">{email.aan}</span>
-              </div>
-            )}
+        {/* Contact details */}
+        <div className="bg-white rounded-lg p-3 space-y-2 shadow-sm border border-foreground/[0.04]">
+          <div className="flex items-center gap-2.5 text-xs text-foreground/55">
+            <Mail className="h-3.5 w-3.5 flex-shrink-0 text-foreground/30" />
+            <span className="truncate">{senderEmail}</span>
           </div>
+          {email.aan && (
+            <div className="flex items-center gap-2.5 text-xs text-foreground/55">
+              <Building2 className="h-3.5 w-3.5 flex-shrink-0 text-foreground/30" />
+              <span className="truncate">{email.aan}</span>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-foreground/[0.06]" />
@@ -582,8 +666,92 @@ function renderCRMSidebar(
         <div>
           <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Snelkoppelingen</h3>
           <div className="space-y-0.5">
+            {/* Klant toevoegen — inline */}
+            <button
+              onClick={handleOpenAddKlant}
+              className={cn(
+                'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all duration-150',
+                showAddKlant
+                  ? 'bg-primary/[0.06] text-primary font-medium'
+                  : 'text-foreground/55 hover:bg-white hover:text-foreground hover:shadow-sm',
+              )}
+            >
+              <UserPlus className="h-4 w-4" />
+              Klant toevoegen
+            </button>
+
+            {/* Inline add klant form */}
+            {showAddKlant && (
+              <div className="bg-white rounded-lg border border-foreground/[0.06] p-3 mt-1.5 mb-1.5 shadow-sm space-y-2.5">
+                {klantSaved ? (
+                  <div className="flex items-center gap-2 py-3 justify-center text-emerald-600">
+                    <Check className="h-4 w-4" />
+                    <span className="text-sm font-medium">Klant aangemaakt!</span>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-[10px] text-foreground/35 uppercase tracking-wider font-medium">Bedrijfsnaam</label>
+                      <input
+                        type="text"
+                        value={klantForm.bedrijfsnaam}
+                        onChange={(e) => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
+                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-white transition-colors"
+                        placeholder="Bedrijf B.V."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-foreground/35 uppercase tracking-wider font-medium">Contactpersoon *</label>
+                      <input
+                        type="text"
+                        value={klantForm.contactpersoon}
+                        onChange={(e) => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
+                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-white transition-colors"
+                        placeholder="Naam"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-foreground/35 uppercase tracking-wider font-medium">Email *</label>
+                      <input
+                        type="email"
+                        value={klantForm.email}
+                        onChange={(e) => setKlantForm(f => ({ ...f, email: e.target.value }))}
+                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-white transition-colors"
+                        placeholder="email@bedrijf.nl"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-foreground/35 uppercase tracking-wider font-medium">Telefoon</label>
+                      <input
+                        type="tel"
+                        value={klantForm.telefoon}
+                        onChange={(e) => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
+                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-white transition-colors"
+                        placeholder="06-12345678"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={handleSaveKlant}
+                        disabled={klantSaving}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md bg-primary text-white text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                      >
+                        {klantSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        {klantSaving ? 'Opslaan...' : 'Opslaan'}
+                      </button>
+                      <button
+                        onClick={() => setShowAddKlant(false)}
+                        className="px-3 py-2 rounded-md text-xs text-foreground/40 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors"
+                      >
+                        Annuleer
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {[
-              { icon: UserPlus, label: 'Klant toevoegen', path: '/klanten' },
               { icon: FileText, label: 'Offerte aanmaken', path: '/offertes/nieuw' },
               { icon: FolderPlus, label: 'Project aanmaken', path: '/projecten/nieuw' },
               { icon: ListPlus, label: 'Taak toevoegen', path: '/taken' },
