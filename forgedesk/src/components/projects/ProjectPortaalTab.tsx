@@ -454,8 +454,9 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       await sendEmail(klantEmail, onderwerp, plainBody, { html: htmlBody })
       toast.success(`Email verstuurd naar ${klantEmail}`)
     } catch (emailErr) {
-      console.error('Email notificatie mislukt:', emailErr)
-      toast.error('Email naar klant kon niet worden verstuurd')
+      const msg = emailErr instanceof Error ? emailErr.message : 'Onbekende fout'
+      console.error('Email notificatie mislukt:', msg, emailErr)
+      toast.error(`Email niet verstuurd: ${msg}`)
     }
   }
 
