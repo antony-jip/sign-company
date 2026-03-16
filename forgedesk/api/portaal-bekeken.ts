@@ -103,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             type: 'portaal_bekeken',
             titel: `Klant heeft ${onbekekenItems.length === 1 ? 'een item' : `${onbekekenItems.length} items`} bekeken`,
             bericht: `${itemTitels} — ${project?.naam || 'Project'}`,
-            link: `/projecten/${portaal.project_id}`,
+            link: `/projecten/${portaal.project_id}?tab=portaal`,
             project_id: portaal.project_id,
             klant_id: project?.klant_id || null,
             gelezen: false,

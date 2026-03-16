@@ -167,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bericht: bericht?.trim()
           ? `"${bericht.trim()}" — ${fullItem?.titel || 'Item'} (${project?.naam || 'Project'})`
           : `${fullItem?.titel || 'Item'} — ${project?.naam || 'Project'}`,
-        link: `/projecten/${portaal.project_id}`,
+        link: `/projecten/${portaal.project_id}?tab=portaal`,
         project_id: portaal.project_id,
         klant_id: project?.klant_id || null,
         actie_genomen: false,

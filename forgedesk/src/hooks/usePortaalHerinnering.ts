@@ -172,7 +172,7 @@ async function checkEnStuurHerinneringen(userId: string, bedrijfsnaam: string, l
       type: 'portaal_herinnering',
       titel: `Herinnering verstuurd: ${item.titel}`,
       bericht: `herinnering:${item.id}`,
-      link: `/projecten/${item.project_id}`,
+      link: `/projecten/${item.project_id}?tab=portaal`,
       project_id: item.project_id,
       gelezen: false,
       actie_genomen: false,
