@@ -619,10 +619,10 @@ export function ClientApprovalPage() {
                     <tr key={item.id} className="border-b border-border hover:bg-background/50">
                       <td className="py-2.5 px-1 text-muted-foreground/60">{index + 1}</td>
                       <td className="py-2.5 px-1 text-foreground">{item.beschrijving}</td>
-                      <td className="py-2.5 px-1 text-right text-foreground/70">{item.aantal}</td>
-                      <td className="py-2.5 px-1 text-right text-foreground/70">{formatCurrency(item.eenheidsprijs)}</td>
-                      <td className="py-2.5 px-1 text-right text-muted-foreground">{item.btw_percentage}%</td>
-                      <td className="py-2.5 px-1 text-right font-medium text-foreground">
+                      <td className="py-2.5 px-1 text-right text-foreground/70 font-mono">{item.aantal}</td>
+                      <td className="py-2.5 px-1 text-right text-foreground/70 font-mono">{formatCurrency(item.eenheidsprijs)}</td>
+                      <td className="py-2.5 px-1 text-right text-muted-foreground font-mono">{item.btw_percentage}%</td>
+                      <td className="py-2.5 px-1 text-right font-medium text-foreground font-mono">
                         {formatCurrency(calculateLineTotaal(item))}
                       </td>
                     </tr>

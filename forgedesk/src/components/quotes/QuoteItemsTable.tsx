@@ -876,7 +876,7 @@ export function QuoteItemsTable({
           >
             {/* ──── HEADER: nummer + item naam + optioneel badge + totaal + acties ──── */}
             <div className={cn(
-              "flex items-center gap-3 px-4 py-3 border-b border-border dark:border-border",
+              "flex items-center gap-3 px-4 py-2 border-b border-border dark:border-border",
               item.is_optioneel
                 ? "bg-amber-50/60 dark:bg-amber-900/10 border-dashed"
                 : "bg-background/80 dark:bg-foreground/80/50"
@@ -1178,7 +1178,7 @@ export function QuoteItemsTable({
                 </div>
 
                 {/* Beschrijving-regels (dynamisch) */}
-                <div className="px-4 py-3 space-y-1.5 border-b border-border dark:border-border">
+                <div className="px-4 py-2 space-y-1 border-b border-border dark:border-border">
                   {detailRegels.map((regel) => (
                     <div key={regel.id} className="flex items-center gap-1.5 group">
                       {/* Verwijder knop */}
@@ -1242,7 +1242,7 @@ export function QuoteItemsTable({
                 {/* ──── PRIJSBEREKENING ──── */}
                 <div
                   className={cn(
-                    'px-4 py-3 bg-background/50 dark:bg-foreground/80/30 transition-all',
+                    'px-4 py-2 bg-background/50 dark:bg-foreground/80/30 transition-all',
                     inkoopDropTargetId === item.id && 'ring-2 ring-primary/40 ring-inset bg-primary/5'
                   )}
                   onDragOver={(e) => handleInkoopDragOver(e, item.id)}

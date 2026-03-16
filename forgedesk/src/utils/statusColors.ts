@@ -56,6 +56,12 @@ export function getStatusBadgeClass(status: string): string {
     'prospect':     'badge-cream',
     'gearchiveerd': 'badge-cream',
 
+    // Klant status (Quick Win 1)
+    'normaal':         'badge-cream',
+    'vooruit_betalen': 'badge-blush',
+    'niet_helpen':     'badge-coral',
+    'voorrang':        'badge-sage',
+
     // Overig
     'review':       'badge-cream',
     'definitief':   'badge-sage',
@@ -104,6 +110,10 @@ export function getStatusLabel(status: string): string {
     'inactief':      'Inactief',
     'prospect':      'Prospect',
     'gearchiveerd':  'Gearchiveerd',
+    'normaal':       'Normaal',
+    'vooruit_betalen': 'Vooruit betalen',
+    'niet_helpen':   'Niet helpen',
+    'voorrang':      'Voorrang',
     'review':        'Review',
     'definitief':    'Definitief',
     'geweigerd':     'Geweigerd',

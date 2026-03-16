@@ -39,6 +39,7 @@ import { getRowAccentClass } from '@/utils/statusColors'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
 import type { Klant, Project } from '@/types'
+import { klantStatusConfig } from '@/types'
 import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
@@ -64,6 +65,7 @@ export function ClientsLayout() {
   const [sortField, setSortField] = useState<SortField>('bedrijfsnaam')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [labelFilter, setLabelFilter] = useState<string>('alle')
+  const [klantStatusFilter, setKlantStatusFilter] = useState<string>('alle')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const fetchData = useCallback(() => {
@@ -115,6 +117,11 @@ export function ClientsLayout() {
       result = result.filter((k) => (k.klant_labels || []).includes(labelFilter))
     }
 
+    // Klant status filter
+    if (klantStatusFilter !== 'alle') {
+      result = result.filter((k) => (k.klant_status || 'normaal') === klantStatusFilter)
+    }
+
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
@@ -125,7 +132,8 @@ export function ClientsLayout() {
           (k.email || '').toLowerCase().includes(query) ||
           (k.telefoon || '').toLowerCase().includes(query) ||
           (k.stad || '').toLowerCase().includes(query) ||
-          (k.tags || []).some((tag) => tag.toLowerCase().includes(query))
+          (k.tags || []).some((tag) => tag.toLowerCase().includes(query)) ||
+          (k.labels || []).some((l) => l.toLowerCase().includes(query))
       )
     }
 
@@ -153,7 +161,7 @@ export function ClientsLayout() {
     })
 
     return result
-  }, [klanten, searchQuery, statusFilter, labelFilter, sortField, sortDir])
+  }, [klanten, searchQuery, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
 
   function handleSort(field: SortField) {
     if (field === sortField) {
@@ -458,6 +466,32 @@ export function ClientsLayout() {
           ))}
         </div>
 
+        {/* Klant status filter */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
+          {[
+            { value: 'alle', label: 'Alle statussen', color: undefined },
+            ...Object.entries(klantStatusConfig).map(([key, cfg]) => ({
+              value: key, label: cfg.label, color: cfg.color,
+            })),
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setKlantStatusFilter(opt.value)}
+              className={cn(
+                'px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
+                klantStatusFilter === opt.value
+                  ? 'bg-primary/10 text-primary border border-primary/30'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent'
+              )}
+            >
+              {opt.color && (
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: opt.color }} />
+              )}
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         <div className="h-4 w-px bg-border hidden sm:block" />
 
         {/* Sort toolbar */}
@@ -603,6 +637,9 @@ export function ClientsLayout() {
                   <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
                     Status
                   </th>
+                  <th className="text-left text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3 hidden xl:table-cell">
+                    Klant Status
+                  </th>
                   <th className="text-center text-[11px] font-bold text-[#8a8680] uppercase tracking-label px-4 py-3">
                     Projecten
                   </th>
@@ -686,6 +723,22 @@ export function ClientsLayout() {
                       <Badge className={cn('capitalize text-xs', getStatusColor(klant.status))}>
                         {klant.status}
                       </Badge>
+                    </td>
+                    <td className="px-4 py-3 hidden xl:table-cell">
+                      {klant.klant_status && klant.klant_status !== 'normaal' ? (() => {
+                        const cfg = klantStatusConfig[klant.klant_status]
+                        if (!cfg) return null
+                        return (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                            style={{ color: cfg.color, backgroundColor: cfg.bgColor }}
+                          >
+                            {cfg.label}
+                          </span>
+                        )
+                      })() : (
+                        <span className="text-xs text-muted-foreground/40">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Badge variant="secondary" className="text-xs font-mono">

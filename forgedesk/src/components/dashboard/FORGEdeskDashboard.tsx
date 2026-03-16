@@ -1,22 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { StatisticsCards } from './StatisticsCards'
 import { PortaalAlerts } from './PortaalAlerts'
 import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
-import { RecenteActiviteitWidget } from './RecenteActiviteitWidget'
-import { OpenstaandeOffertesWidget } from './OpenstaandeOffertesWidget'
-import { TodayPlanningWidget } from './TodayPlanningWidget'
+import { ActionBlock } from './ActionBlock'
+import { MoneyBlock } from './MoneyBlock'
+import { WeekStripWidget } from './WeekStripWidget'
 import { WeatherWidget } from './WeatherWidget'
-import { PriorityTasks } from './PriorityTasks'
 import { MontagePlanningWidget } from './MontagePlanningWidget'
-import { VisualizerDashboardWidget } from './VisualizerDashboardWidget'
-import { AlertTriangle } from 'lucide-react'
-import { getFacturen } from '@/services/supabaseService'
-import type { Factuur } from '@/types'
-import { formatCurrency } from '@/lib/utils'
-import { logger } from '../../utils/logger'
+import { Card, CardContent } from '@/components/ui/card'
 
 // Playful greetings that rotate
 const GREETINGS: { greeting: string; timeOfDay: 'morning' | 'afternoon' | 'evening' }[] = [
@@ -52,27 +45,6 @@ export function FORGEdeskDashboard() {
   // Automatische herinnering check (eenmalig bij page load)
   usePortaalHerinnering()
 
-  // Verlopen facturen for alert bar
-  const [verlopenFacturen, setVerlopenFacturen] = useState<{ count: number; bedrag: number }>({ count: 0, bedrag: 0 })
-
-  useEffect(() => {
-    let cancelled = false
-    getFacturen()
-      .then((facturen: Factuur[]) => {
-        if (cancelled) return
-        const now = new Date()
-        const verlopen = facturen.filter(
-          f => (f.status === 'verzonden' || f.status === 'vervallen') && new Date(f.vervaldatum) < now
-        )
-        setVerlopenFacturen({
-          count: verlopen.length,
-          bedrag: verlopen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0),
-        })
-      })
-      .catch(logger.error)
-    return () => { cancelled = true }
-  }, [])
-
   const greeting = useMemo(() => getPlayfulGreeting(), [])
 
   const today = new Date()
@@ -105,45 +77,25 @@ export function FORGEdeskDashboard() {
         </div>
       </div>
 
-      {/* Alert bar — verlopen facturen */}
-      {verlopenFacturen.count > 0 && (
-        <div
-          onClick={() => navigate('/facturen')}
-          className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-destructive/8 dark:bg-destructive/10 text-destructive cursor-pointer hover:bg-destructive/12 transition-colors"
-        >
-          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-          <span className="text-[13.5px] font-medium">
-            <strong>{verlopenFacturen.count} facturen verlopen</strong> — {formatCurrency(verlopenFacturen.bedrag)} openstaand
-          </span>
-          <span className="ml-auto text-[13px] font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
-            Bekijk →
-          </span>
-        </div>
-      )}
+      {/* Week strip + Weather context bar */}
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <WeekStripWidget />
+          <WeatherWidget />
+        </CardContent>
+      </Card>
 
       {/* Portaal alerts */}
       <PortaalAlerts />
 
-      {/* 4 stat cards */}
-      <StatisticsCards />
-
-      {/* Row 1: Recente activiteit | Vandaag planning */}
+      {/* Two main blocks side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <RecenteActiviteitWidget />
-        <TodayPlanningWidget />
+        {/* Blok 1: Wat moet ik vandaag doen? */}
+        <ActionBlock />
+
+        {/* Blok 2: Waar zit mijn geld? */}
+        <MoneyBlock />
       </div>
-
-      {/* Row 2: Taken | Openstaande offertes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PriorityTasks />
-        <OpenstaandeOffertesWidget />
-      </div>
-
-      {/* Visualizer stats */}
-      <VisualizerDashboardWidget />
-
-      {/* Weather */}
-      <WeatherWidget />
 
       {/* Montage planning */}
       <MontagePlanningWidget />

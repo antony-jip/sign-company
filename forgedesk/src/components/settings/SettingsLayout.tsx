@@ -77,8 +77,7 @@ import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
 import { PortaalTab } from './PortaalTab'
-import { TeamledenTab } from './TeamledenTab'
-import { AbonnementTab } from './AbonnementTab'
+import { SidebarTab } from './SidebarTab'
 import { Sparkles } from 'lucide-react'
 
 // Shared sub-tab navigation component
@@ -169,6 +168,7 @@ const settingsTabs = [
   { id: 'integraties', label: 'Integraties', icon: Puzzle, description: 'Koppelingen met externe diensten' },
   { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
   { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
+  { id: 'sidebar', label: 'Sidebar', icon: PanelLeft, description: 'Project sidebar secties' },
   { id: 'portaal', label: 'Portaal', icon: Link2, description: 'Klantportaal instellingen' },
   { id: 'forgie', label: 'Forgie AI', icon: Sparkles, description: 'AI assistent, visualizer en data import' },
   { id: 'teamleden', label: 'Teamleden', icon: Users, description: 'Leden, rollen en uitnodigingen' },
@@ -186,6 +186,7 @@ function renderTabContent(tabId: string) {
     case 'integraties': return <IntegratiesTab />
     case 'beveiliging': return <BeveiligingTab />
     case 'weergave': return <WeergaveTab />
+    case 'sidebar': return <SidebarTab />
     case 'portaal': return <PortaalTab />
     case 'forgie': return <ForgieTab />
     case 'teamleden': return <TeamledenTab />
@@ -807,12 +808,20 @@ function DocumentenTab() {
   const [factuurPrefix, setFactuurPrefix] = useState('FAC')
   const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
   const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
+  const [projectPrefix, setProjectPrefix] = useState('PRJ')
   const [betaaltermijn, setBetaaltermijn] = useState('30')
   const [voorwaarden, setVoorwaarden] = useState('')
   const [herinnering1, setHerinnering1] = useState('')
   const [herinnering2, setHerinnering2] = useState('')
   const [aanmaningTekst, setAanmaningTekst] = useState('')
   const [standaardUurtarief, setStandaardUurtarief] = useState('75')
+  // Offerte herinnering instellingen
+  const [offerteHerinnering1Actief, setOfferteHerinnering1Actief] = useState(true)
+  const [offerteHerinnering1Dagen, setOfferteHerinnering1Dagen] = useState('7')
+  const [offerteHerinnering1Tekst, setOfferteHerinnering1Tekst] = useState('Beste {contactpersoon_naam},\n\nOp {verstuurd_op} hebben wij u offerte {offerte_nummer} toegestuurd ter waarde van {offerte_bedrag}.\n\nGraag vernemen wij of u nog vragen heeft of dat wij de offerte mogen omzetten naar een opdracht.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
+  const [offerteHerinnering2Actief, setOfferteHerinnering2Actief] = useState(true)
+  const [offerteHerinnering2Dagen, setOfferteHerinnering2Dagen] = useState('14')
+  const [offerteHerinnering2Tekst, setOfferteHerinnering2Tekst] = useState('Beste {contactpersoon_naam},\n\nWij willen u er graag aan herinneren dat offerte {offerte_nummer} van {verstuurd_op} nog openstaat. De offerte vervalt op {vervaldatum}.\n\nMocht u vragen hebben of willen bespreken, dan horen wij het graag.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
@@ -835,6 +844,7 @@ function DocumentenTab() {
       setFactuurPrefix(data.factuur_prefix || 'FAC')
       setCreditnotaPrefix(data.creditnota_prefix || 'CN')
       setWerkbonPrefix(data.werkbon_prefix || 'WB')
+      setProjectPrefix(data.project_prefix || 'PRJ')
       setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
       setVoorwaarden(data.factuur_voorwaarden || '')
       setHerinnering1(data.herinnering_1_tekst || '')
@@ -874,6 +884,7 @@ function DocumentenTab() {
         factuur_prefix: factuurPrefix,
         creditnota_prefix: creditnotaPrefix,
         werkbon_prefix: werkbonPrefix,
+        project_prefix: projectPrefix,
         factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
         factuur_voorwaarden: voorwaarden,
         herinnering_1_tekst: herinnering1,
@@ -1006,7 +1017,7 @@ function DocumentenTab() {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Prefixes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="factuur-prefix">Factuur prefix</Label>
                   <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value.toUpperCase())} placeholder="FAC" maxLength={5} />
@@ -1021,6 +1032,11 @@ function DocumentenTab() {
                   <Label htmlFor="werkbon-prefix">Werkbon prefix</Label>
                   <Input id="werkbon-prefix" value={werkbonPrefix} onChange={(e) => setWerkbonPrefix(e.target.value.toUpperCase())} placeholder="WB" maxLength={5} />
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {werkbonPrefix}-2026-0001</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="project-prefix">Project prefix</Label>
+                  <Input id="project-prefix" value={projectPrefix} onChange={(e) => setProjectPrefix(e.target.value.toUpperCase())} placeholder="PRJ" maxLength={5} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {projectPrefix}-2026-0001</p>
                 </div>
               </div>
 
@@ -1062,6 +1078,44 @@ function DocumentenTab() {
                 <div className="space-y-2">
                   <Label htmlFor="aanmaning">Aanmaning</Label>
                   <Textarea id="aanmaning" value={aanmaningTekst} onChange={(e) => setAanmaningTekst(e.target.value)} placeholder="Bijv. Indien wij binnen 7 dagen geen betaling ontvangen, zijn wij genoodzaakt verdere stappen te ondernemen." rows={2} />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Offerte Herinneringen */}
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-foreground dark:text-white">Offerte herinneringen</p>
+                <p className="text-xs text-muted-foreground">Herinneringen voor verstuurde offertes zonder reactie. Merge velden: {'{'}klant_naam{'}'}, {'{'}contactpersoon_naam{'}'}, {'{'}offerte_nummer{'}'}, {'{'}offerte_bedrag{'}'}, {'{'}verstuurd_op{'}'}, {'{'}vervaldatum{'}'}, {'{'}bedrijfsnaam{'}'}</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Herinnering 1</Label>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={offerteHerinnering1Actief} onChange={(e) => setOfferteHerinnering1Actief(e.target.checked)} className="rounded" />
+                      Actief
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Na</Label>
+                    <Input type="number" value={offerteHerinnering1Dagen} onChange={(e) => setOfferteHerinnering1Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
+                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
+                  </div>
+                  <Textarea value={offerteHerinnering1Tekst} onChange={(e) => setOfferteHerinnering1Tekst(e.target.value)} rows={3} className="text-xs" />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Herinnering 2</Label>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={offerteHerinnering2Actief} onChange={(e) => setOfferteHerinnering2Actief(e.target.checked)} className="rounded" />
+                      Actief
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Na</Label>
+                    <Input type="number" value={offerteHerinnering2Dagen} onChange={(e) => setOfferteHerinnering2Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
+                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
+                  </div>
+                  <Textarea value={offerteHerinnering2Tekst} onChange={(e) => setOfferteHerinnering2Tekst(e.target.value)} rows={3} className="text-xs" />
                 </div>
               </div>
             </CardContent>
