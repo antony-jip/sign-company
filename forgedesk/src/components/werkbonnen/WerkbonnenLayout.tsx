@@ -177,7 +177,7 @@ export function WerkbonnenLayout() {
             </Button>
           </div>
         }
-      </div>
+      />
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">

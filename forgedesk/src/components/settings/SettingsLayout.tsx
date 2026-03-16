@@ -3353,6 +3353,7 @@ function WeergaveTab() {
     )}
 
     {subTab === 'voorkeuren' && (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
