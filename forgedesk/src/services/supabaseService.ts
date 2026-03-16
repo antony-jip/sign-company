@@ -69,6 +69,7 @@ import type {
   AppNotificatie,
   PortaalInstellingen,
   Organisatie,
+  AuditLogEntry,
 } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 
@@ -173,6 +174,15 @@ function normalizeKlant(raw: unknown): Klant {
     contactpersonen: safeParseJsonArray(klant.contactpersonen) as Contactpersoon[],
     vestigingen: safeParseJsonArray(klant.vestigingen) as Klant['vestigingen'],
   } as Klant
+}
+
+export async function getAuditLog(
+  entityType: AuditLogEntry['entity_type'],
+  entityId: string,
+  limit = 50
+): Promise<AuditLogEntry[]> {
+  // audit_log tabel bestaat nog niet — stub die lege array retourneert
+  return []
 }
 
 export async function getKlanten(limit = 500): Promise<Klant[]> {
