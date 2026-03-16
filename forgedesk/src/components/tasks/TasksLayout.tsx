@@ -47,9 +47,6 @@ import {
   User2,
   Wrench,
 } from 'lucide-react'
-import { SkeletonTable } from '@/components/ui/skeleton'
-import { EmptyState } from '@/components/ui/empty-state'
-import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
@@ -148,7 +145,6 @@ export function TasksLayout() {
   const [showMontage, setShowMontage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
-  const [viewMode, setViewMode] = useState<'dag' | '3daags' | 'week' | 'maand'>('week')
 
   const [weekOffset, setWeekOffset] = useState(0)
   const [showCompleted, setShowCompleted] = useState(false)
@@ -250,41 +246,6 @@ export function TasksLayout() {
   }, [])
 
   const weekDays = useMemo(() => {
-    if (viewMode === 'dag') {
-      const d = new Date(today)
-      d.setDate(d.getDate() + weekOffset)
-      return [d]
-    }
-    if (viewMode === '3daags') {
-      const base = new Date(today)
-      base.setDate(base.getDate() + weekOffset)
-      return Array.from({ length: 3 }, (_, i) => {
-        const d = new Date(base)
-        d.setDate(d.getDate() + i)
-        return d
-      })
-    }
-    if (viewMode === 'maand') {
-      // Return all days of the month view (full weeks covering the month)
-      const base = new Date(today)
-      base.setMonth(base.getMonth() + weekOffset, 1)
-      const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1)
-      const startMonday = getMonday(firstOfMonth)
-      // 6 weeks to cover any month layout
-      const days: Date[] = []
-      for (let i = 0; i < 42; i++) {
-        const d = new Date(startMonday)
-        d.setDate(d.getDate() + i)
-        days.push(d)
-      }
-      // Trim trailing week if it's entirely in the next month
-      const lastOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0)
-      if (days[35] && days[35].getMonth() !== base.getMonth() && days[35].getDate() > 7) {
-        days.splice(35, 7)
-      }
-      return days
-    }
-    // week (default)
     const monday = getMonday(today)
     monday.setDate(monday.getDate() + weekOffset * 7)
     return Array.from({ length: 7 }, (_, i) => {
@@ -292,7 +253,7 @@ export function TasksLayout() {
       d.setDate(d.getDate() + i)
       return d
     })
-  }, [today, weekOffset, viewMode])
+  }, [today, weekOffset])
 
   // Tasks grouped by day key
   const tasksByDay = useMemo(() => {
@@ -356,24 +317,15 @@ export function TasksLayout() {
     return map
   }, [montageAfspraken, weekDays, showMontage])
 
-  // Navigation label
+  // Week range label
   const weekLabel = useMemo(() => {
     const first = weekDays[0]
-    const last = weekDays[weekDays.length - 1]
-    if (viewMode === 'dag') {
-      return `${DAY_LABELS[(first.getDay() + 6) % 7]} ${first.getDate()} ${MONTH_NAMES[first.getMonth()]}`
-    }
-    if (viewMode === 'maand') {
-      // Show the month of the first day of the actual month
-      const base = new Date(today)
-      base.setMonth(base.getMonth() + weekOffset, 1)
-      return `${MONTH_NAMES[base.getMonth()]} ${base.getFullYear()}`
-    }
+    const last = weekDays[6]
     if (first.getMonth() === last.getMonth()) {
       return `${first.getDate()} – ${last.getDate()} ${MONTH_NAMES[first.getMonth()]}`
     }
     return `${first.getDate()} ${MONTH_NAMES[first.getMonth()]} – ${last.getDate()} ${MONTH_NAMES[last.getMonth()]}`
-  }, [weekDays, viewMode, today, weekOffset])
+  }, [weekDays])
 
   // Now-line position
   const nowLineTop = useMemo(() => {
@@ -546,57 +498,9 @@ export function TasksLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
-        <div className="flex items-center px-4 sm:px-5 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #C4A882, #A88E66)' }}>
-              <CheckSquare className="h-5 w-5 text-white" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="page-title text-foreground truncate">Taken</h1>
-              <p className="text-[12px] text-muted-foreground mt-0.5">
-                Productie &amp; oplevering
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="p-4">
-          <SkeletonTable rows={6} cols={4} />
-        </div>
-      </div>
-    )
-  }
-
-  if (taken.length === 0) {
-    return (
-      <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
-        <div className="flex items-center px-4 sm:px-5 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #C4A882, #A88E66)' }}>
-              <CheckSquare className="h-5 w-5 text-white" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="page-title text-foreground truncate">Taken</h1>
-              <p className="text-[12px] text-muted-foreground mt-0.5">
-                Productie &amp; oplevering
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="p-4">
-          <Card className="border-dashed">
-            <EmptyState
-              module="taken"
-              title="Nog geen taken"
-              description="Maak een taak aan of koppel taken aan een project."
-              action={
-                <Button onClick={() => setFabOpen(true)} size="sm">
-                  <Plus className="h-4 w-4 mr-2" /> Nieuwe taak
-                </Button>
-              }
-            />
-          </Card>
-        </div>
+      <div className="flex flex-col items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">Taken laden...</p>
       </div>
     )
   }
@@ -619,12 +523,12 @@ export function TasksLayout() {
           </div>
         </div>
 
-        {/* === NAV + VIEW MODE + FILTERS === */}
+        {/* === WEEK NAV + FILTERS === */}
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2.5 border-b border-border/60 bg-card/50 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap">{weekLabel}</span>
             <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => viewMode === 'maand' ? w - 1 : viewMode === 'week' ? w - 1 : viewMode === '3daags' ? w - 3 : w - 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w - 1)}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
@@ -635,26 +539,9 @@ export function TasksLayout() {
               >
                 Vandaag
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => viewMode === 'maand' ? w + 1 : viewMode === 'week' ? w + 1 : viewMode === '3daags' ? w + 3 : w + 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w + 1)}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
-            </div>
-            {/* View mode toggle */}
-            <div className="inline-flex items-center rounded-xl border border-black/[0.06] bg-muted p-0.5 flex-shrink-0">
-              {([['dag', 'Dag'], ['3daags', '3 dagen'], ['week', 'Week'], ['maand', 'Maand']] as const).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => { setViewMode(key); setWeekOffset(0) }}
-                  className={cn(
-                    'text-xs px-2.5 py-1 rounded-lg transition-all duration-200 whitespace-nowrap',
-                    viewMode === key
-                      ? 'bg-background text-foreground shadow-sm font-medium'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
             </div>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
@@ -700,18 +587,6 @@ export function TasksLayout() {
           </div>
         </div>
 
-        {viewMode === 'maand' ? (
-          /* === MONTH VIEW === */
-          <MonthView
-            days={weekDays}
-            today={today}
-            tasksByDay={tasksByDay}
-            montageByDay={montageByDay}
-            projectMap={projectMap}
-            onDayClick={(day) => { setViewMode('dag'); setWeekOffset(Math.round((day.getTime() - today.getTime()) / 86400000)) }}
-          />
-        ) : (
-          <>
         {/* === DAY HEADERS === */}
         <div className="flex border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           {/* Time gutter spacer */}
@@ -721,7 +596,6 @@ export function TasksLayout() {
             const isToday = isSameDay(day, today)
             const dayTasks = tasksByDay.get(day.toDateString()) || []
             const isPast = day < today && !isToday
-            const dayLabel = DAY_LABELS[(day.getDay() + 6) % 7]
             return (
               <div
                 key={i}
@@ -734,7 +608,7 @@ export function TasksLayout() {
                   'text-[11px] uppercase tracking-label font-bold',
                   isToday ? 'text-primary' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
                 )}>
-                  {dayLabel}
+                  {DAY_LABELS[i]}
                 </div>
                 <div className="flex items-center justify-center gap-1.5 mt-0.5">
                   <span className={cn(
@@ -810,8 +684,6 @@ export function TasksLayout() {
             })}
           </div>
         </div>
-          </>
-        )}
       </div>
 
       {/* === FLOATING ACTION BUTTON === */}
@@ -916,95 +788,6 @@ export function TasksLayout() {
         </DialogContent>
       </Dialog>
     </>
-  )
-}
-
-// === MONTH VIEW ===
-
-function MonthView({
-  days, today, tasksByDay, montageByDay, projectMap, onDayClick,
-}: {
-  days: Date[]
-  today: Date
-  tasksByDay: Map<string, Taak[]>
-  montageByDay: Map<string, MontageAfspraak[]>
-  projectMap: Record<string, string>
-  onDayClick: (day: Date) => void
-}) {
-  const MAX_PILLS = 3
-  const weeks: Date[][] = []
-  for (let i = 0; i < days.length; i += 7) {
-    weeks.push(days.slice(i, i + 7))
-  }
-  const currentMonth = days.length > 15 ? days[15].getMonth() : days[0].getMonth()
-
-  return (
-    <div className="flex-1 overflow-y-auto bg-background">
-      {/* Day of week headers */}
-      <div className="grid grid-cols-7 border-b border-border/60 bg-card/80">
-        {DAY_LABELS.map((label) => (
-          <div key={label} className="text-center py-2 text-[11px] uppercase tracking-label font-bold text-muted-foreground/70">
-            {label}
-          </div>
-        ))}
-      </div>
-      {/* Week rows */}
-      {weeks.map((week, wi) => (
-        <div key={wi} className="grid grid-cols-7 border-b border-border/30">
-          {week.map((day, di) => {
-            const isToday = isSameDay(day, today)
-            const isOtherMonth = day.getMonth() !== currentMonth
-            const dayTasks = tasksByDay.get(day.toDateString()) || []
-            const dayMontage = montageByDay.get(day.toDateString()) || []
-            const extra = Math.max(0, dayTasks.length + dayMontage.length - MAX_PILLS)
-            const visibleTasks = dayTasks.slice(0, MAX_PILLS)
-            const visibleMontage = dayMontage.slice(0, MAX_PILLS - visibleTasks.length)
-            return (
-              <div
-                key={di}
-                className={cn(
-                  'min-h-[90px] p-1.5 border-l border-border/30 cursor-pointer hover:bg-muted/30 transition-colors',
-                  isToday && 'bg-primary/[0.03]',
-                  isOtherMonth && 'opacity-40',
-                )}
-                onClick={() => onDayClick(day)}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className={cn(
-                    'inline-flex items-center justify-center text-xs font-bold',
-                    isToday
-                      ? 'w-6 h-6 rounded-full bg-primary text-white shadow-sm'
-                      : 'text-foreground',
-                  )}>
-                    {day.getDate()}
-                  </span>
-                </div>
-                <div className="space-y-0.5">
-                  {visibleTasks.map((taak) => {
-                    const colors = PRIORITEIT_COLORS[taak.prioriteit]
-                    return (
-                      <div key={taak.id} className={cn('text-[10px] px-1.5 py-0.5 rounded truncate font-medium', colors.bg, colors.accent)}>
-                        {taak.titel}
-                      </div>
-                    )
-                  })}
-                  {visibleMontage.map((afspraak) => (
-                    <div key={`m-${afspraak.id}`} className="text-[10px] px-1.5 py-0.5 rounded truncate font-medium bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300">
-                      {afspraak.titel}
-                    </div>
-                  ))}
-                  {extra > 0 && (
-                    <div className="text-[9px] text-muted-foreground/60 px-1.5 font-medium">
-                      +{extra} meer
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ))}
-    </div>
   )
 }
 
@@ -1167,13 +950,10 @@ function DayColumn({
     }
   }
 
-  const isDragOverThisColumn = draggingTaakId !== null && dropTarget?.dayIndex === dayIndex
-
   return (
     <div className={cn(
-      'flex-1 min-w-0 border-l border-border/40 relative transition-colors duration-150',
-      isToday && 'bg-primary/[0.02]',
-      isDragOverThisColumn && 'bg-primary/[0.05] ring-1 ring-inset ring-primary/20',
+      'flex-1 min-w-0 border-l border-border/40 relative',
+      isToday && 'bg-primary/[0.02]'
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
@@ -1296,61 +1076,61 @@ function DayColumn({
         )
       })}
 
-      {/* Montage afspraken - full-width gradient overlay */}
+      {/* Montage afspraken - positioned at their time */}
       {montageAfspraken.map((afspraak) => {
         const startHour = afspraak.start_tijd ? parseInt(afspraak.start_tijd.split(':')[0], 10) : null
         const endHour = afspraak.eind_tijd ? parseInt(afspraak.eind_tijd.split(':')[0], 10) : null
         if (startHour === null || startHour < 7 || startHour > 19) return null
-        const topPx = (startHour - 7) * HOUR_HEIGHT
+        const topPx = (startHour - 7) * HOUR_HEIGHT + 4
         const duration = endHour !== null && endHour > startHour ? endHour - startHour : 1
-        const heightPx = duration * HOUR_HEIGHT
+        const heightPx = duration * HOUR_HEIGHT - 6
+
+        const STATUS_LABELS: Record<string, string> = {
+          gepland: 'Gepland', onderweg: 'Onderweg', bezig: 'Bezig', afgerond: 'Afgerond', uitgesteld: 'Uitgesteld',
+        }
 
         return (
           <div
             key={`montage-${afspraak.id}`}
-            className="absolute z-15 left-0 w-full pointer-events-none"
+            className="absolute z-10"
             style={{
               top: topPx,
+              right: 4,
+              width: 'calc(35% - 4px)',
               height: heightPx,
-              background: 'linear-gradient(to bottom, rgba(251,146,60,0.15), rgba(251,146,60,0.06))',
-              borderLeft: '3px solid rgb(251,146,60)',
-              zIndex: 15,
             }}
           >
-            <div className="pointer-events-auto group/montage relative px-2 py-1">
-              <div className="flex items-center gap-1">
+            <div className={cn(
+              'h-full rounded-lg border-l-[3px] border-orange-400 bg-orange-50 dark:bg-orange-950/30 px-2 py-1.5 overflow-hidden cursor-default',
+              'hover:shadow-md transition-shadow duration-150',
+            )}>
+              <div className="flex items-center gap-1 mb-0.5">
                 <Wrench className="w-3 h-3 text-orange-500 flex-shrink-0" />
                 <span className="text-[11px] font-semibold text-orange-700 dark:text-orange-300 truncate">
                   {afspraak.titel}
                 </span>
-                <span className="text-[10px] text-orange-600/70 dark:text-orange-400/70 ml-auto whitespace-nowrap">
-                  {afspraak.start_tijd?.slice(0, 5)} – {afspraak.eind_tijd?.slice(0, 5)}
-                </span>
               </div>
-              {/* Hover tooltip with full info */}
-              <div className="absolute left-2 top-full mt-1 z-50 hidden group-hover/montage:block pointer-events-none">
-                <div className="bg-card border border-border shadow-xl rounded-lg px-3 py-2 min-w-[200px] max-w-[280px]">
-                  <p className="text-xs font-semibold text-foreground">{afspraak.titel}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {afspraak.start_tijd?.slice(0, 5)} – {afspraak.eind_tijd?.slice(0, 5)}
-                  </p>
-                  {afspraak.klant_naam && (
-                    <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                      <User2 className="w-2.5 h-2.5" />{afspraak.klant_naam}
-                    </p>
-                  )}
-                  {afspraak.locatie && (
-                    <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-2.5 h-2.5" />{afspraak.locatie}
-                    </p>
-                  )}
-                  {afspraak.monteurs && afspraak.monteurs.length > 0 && (
-                    <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Wrench className="w-2.5 h-2.5" />{afspraak.monteurs.join(', ')}
-                    </p>
-                  )}
+              <div className="text-[10px] text-orange-600/70 dark:text-orange-400/70 truncate">
+                {afspraak.start_tijd?.slice(0, 5)} – {afspraak.eind_tijd?.slice(0, 5)}
+              </div>
+              {afspraak.locatie && (
+                <div className="text-[10px] text-orange-600/50 dark:text-orange-400/50 truncate flex items-center gap-0.5 mt-0.5">
+                  <MapPin className="w-2.5 h-2.5" />
+                  {afspraak.locatie}
                 </div>
-              </div>
+              )}
+              {heightPx > 60 && (
+                <div className="mt-1">
+                  <span className={cn(
+                    'text-[9px] font-medium px-1.5 py-0.5 rounded-full',
+                    afspraak.status === 'afgerond' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                    afspraak.status === 'bezig' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                    'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                  )}>
+                    {STATUS_LABELS[afspraak.status] || afspraak.status}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )
@@ -1428,7 +1208,6 @@ function TaskCard({
   onResizeStart?: (e: React.MouseEvent) => void
 }) {
   const isDone = taak.status === 'klaar'
-  const [isDragging, setIsDragging] = useState(false)
   const [justCompleted, setJustCompleted] = useState(false)
   const colors = PRIORITEIT_COLORS[taak.prioriteit]
   const hour = getHourFromDeadline(taak.deadline ?? "")
@@ -1450,25 +1229,7 @@ function TaskCard({
   function handleDragStart(e: React.DragEvent) {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', taak.id)
-    // Create a custom drag ghost
-    const el = e.currentTarget as HTMLElement
-    const ghost = el.cloneNode(true) as HTMLElement
-    ghost.style.width = `${el.offsetWidth}px`
-    ghost.style.opacity = '0.85'
-    ghost.style.transform = 'rotate(2deg)'
-    ghost.style.position = 'absolute'
-    ghost.style.top = '-9999px'
-    ghost.style.left = '-9999px'
-    document.body.appendChild(ghost)
-    e.dataTransfer.setDragImage(ghost, el.offsetWidth / 2, 20)
-    requestAnimationFrame(() => document.body.removeChild(ghost))
-    setIsDragging(true)
     onDragStart()
-  }
-
-  function handleDragEnd() {
-    setIsDragging(false)
-    onDragEnd()
   }
 
   // Duration label for resized tasks
@@ -1482,7 +1243,7 @@ function TaskCard({
     <div
       draggable={!isResizing}
       onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+      onDragEnd={onDragEnd}
       className={cn(
         'group relative rounded-lg border-l-[3px] px-2.5 py-2 transition-all duration-200',
         !isResizing && 'cursor-grab active:cursor-grabbing',
@@ -1493,8 +1254,7 @@ function TaskCard({
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-95 opacity-50',
         scheduled && 'shadow-sm',
-        isResizing && 'ring-2 ring-primary/30 shadow-xl',
-        isDragging && 'opacity-30 scale-95',
+        isResizing && 'ring-2 ring-primary/30 shadow-xl'
       )}
       style={heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : undefined}
       onClick={onEdit}

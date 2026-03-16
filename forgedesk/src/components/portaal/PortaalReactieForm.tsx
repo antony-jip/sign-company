@@ -90,11 +90,11 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
           data: base64,
         }),
       })
-      const uploadResult = await response.json().catch(() => null)
-      if (!response.ok || !uploadResult?.url) {
-        throw new Error(uploadResult?.error || `Upload mislukt: ${file.name}`)
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || `Upload mislukt: ${file.name}`)
       }
-      const result = uploadResult
+      const result = await response.json()
       urls.push(result.url)
     }
     return urls
@@ -133,9 +133,9 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
         }),
       })
 
-      const reactieResult = await response.json().catch(() => null)
       if (!response.ok) {
-        throw new Error(reactieResult?.error || 'Kon reactie niet versturen')
+        const err = await response.json()
+        throw new Error(err.error || 'Kon reactie niet versturen')
       }
 
       // Succes — reset velden
@@ -154,7 +154,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
   // Bericht chat modus — altijd een chatachtige input tonen
   if (itemType === 'bericht') {
     return (
-      <div className="border-t border-[#E8E8E3] px-6 py-4">
+      <div className="border-t border-gray-100 px-5 py-3">
         {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
         <div className="flex items-end gap-2">
           <div className="flex-1 relative">
@@ -162,6 +162,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
               value={bericht}
               onChange={(e) => {
                 setBericht(e.target.value)
+                // Auto-resize
                 e.target.style.height = 'auto'
                 e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
               }}
@@ -173,20 +174,21 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
               }}
               placeholder="Typ een reactie..."
               rows={1}
-              className="w-full px-4 py-2.5 border border-[#E8E8E3] rounded-xl text-sm text-[#1A1A1A] placeholder:text-[#C0C0BA] focus:outline-none focus:ring-2 focus:border-transparent resize-none bg-[#FAFAF7]"
-              style={{ '--tw-ring-color': primaire_kleur, minHeight: '40px' } as React.CSSProperties}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent resize-none"
+              style={{ '--tw-ring-color': primaire_kleur, minHeight: '38px' } as React.CSSProperties}
             />
           </div>
           <button
             onClick={() => { if (bericht.trim()) handleSubmit('bericht') }}
             disabled={loading || !bericht.trim()}
-            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all disabled:opacity-40 shadow-sm hover:shadow-md"
+            className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white transition-colors disabled:opacity-40"
             style={{ backgroundColor: primaire_kleur }}
             title="Versturen"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
+        {/* Naam opslaan (verborgen tot eerste keer) */}
         {!naam && (
           <div className="mt-2">
             <input
@@ -194,7 +196,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
               value={naam}
               onChange={(e) => saveNaam(e.target.value)}
               placeholder="Uw naam (optioneel)"
-              className="w-full px-4 py-2 border border-[#E8E8E3] rounded-xl text-xs text-[#5A5A55] placeholder:text-[#C0C0BA] focus:outline-none focus:ring-1 focus:border-transparent bg-[#FAFAF7]"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-600 focus:outline-none focus:ring-1 focus:border-transparent"
               style={{ '--tw-ring-color': primaire_kleur } as React.CSSProperties}
             />
           </div>
@@ -206,29 +208,29 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
   // Revisie modus
   if (modus === 'revisie') {
     return (
-      <div className="border-t border-[#E8E8E3] px-6 py-5 space-y-4">
+      <div className="border-t border-gray-100 px-5 py-4 space-y-3">
         <div>
-          <label className="block text-xs font-semibold text-[#5A5A55] uppercase tracking-wide mb-1.5">Uw naam (optioneel)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Uw naam (optioneel)</label>
           <input
             type="text"
             value={naam}
             onChange={(e) => saveNaam(e.target.value)}
             placeholder="Jan de Groot"
-            className="w-full px-4 py-2.5 border border-[#E8E8E3] rounded-xl text-sm text-[#1A1A1A] placeholder:text-[#C0C0BA] focus:outline-none focus:ring-2 focus:border-transparent bg-[#FAFAF7]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
             style={{ '--tw-ring-color': primaire_kleur } as React.CSSProperties}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#5A5A55] uppercase tracking-wide mb-1.5">
-            Wat moet er anders? <span className="text-[#D4856B]">*</span>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Wat moet er anders? <span className="text-red-500">*</span>
           </label>
           <textarea
             value={bericht}
             onChange={(e) => setBericht(e.target.value)}
             placeholder="Beschrijf wat u graag anders ziet..."
             rows={3}
-            className="w-full px-4 py-2.5 border border-[#E8E8E3] rounded-xl text-sm text-[#1A1A1A] placeholder:text-[#C0C0BA] focus:outline-none focus:ring-2 focus:border-transparent resize-none bg-[#FAFAF7]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent resize-none"
             style={{ '--tw-ring-color': primaire_kleur } as React.CSSProperties}
             required
           />
@@ -239,7 +241,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-1.5 text-sm text-[#5A5A55] hover:text-[#1A1A1A] transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
           >
             <Paperclip className="w-4 h-4" />
             Bestand toevoegen
@@ -255,18 +257,18 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
               e.target.value = ''
             }}
           />
-          <p className="text-[11px] text-[#C0C0BA] mt-0.5">Max {MAX_FILES} bestanden, 10MB per stuk (JPG, PNG, PDF)</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Max {MAX_FILES} bestanden, 10MB per stuk (JPG, PNG, PDF)</p>
         </div>
 
         {/* Geselecteerde bestanden */}
         {files.length > 0 && (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {files.map((file, i) => (
-              <div key={i} className="flex items-center gap-2 bg-[#FAFAF7] rounded-xl px-4 py-2 border border-[#E8E8E3]">
-                <FileText className="w-3.5 h-3.5 text-[#8A8A85] flex-shrink-0" />
-                <span className="text-xs text-[#333330] truncate flex-1">{file.name}</span>
-                <span className="text-[10px] text-[#C0C0BA]">{(file.size / 1024).toFixed(0)} KB</span>
-                <button onClick={() => removeFile(i)} className="text-[#C0C0BA] hover:text-[#D4856B] transition-colors">
+              <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
+                <FileText className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <span className="text-xs text-gray-700 truncate flex-1">{file.name}</span>
+                <span className="text-[10px] text-gray-400">{(file.size / 1024).toFixed(0)} KB</span>
+                <button onClick={() => removeFile(i)} className="text-gray-400 hover:text-red-500">
                   <X className="w-3 h-3" />
                 </button>
               </div>
@@ -276,25 +278,26 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
 
         {/* Drag & drop zone */}
         <div
-          className="border-2 border-dashed border-[#E8E8E3] rounded-xl p-4 text-center transition-colors"
-          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-[#C0C0BA]', 'bg-[#FAFAF7]') }}
-          onDragLeave={(e) => { e.currentTarget.classList.remove('border-[#C0C0BA]', 'bg-[#FAFAF7]') }}
+          className="border-2 border-dashed border-gray-200 rounded-lg p-3 text-center"
+          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-gray-400') }}
+          onDragLeave={(e) => { e.currentTarget.classList.remove('border-gray-400') }}
           onDrop={(e) => {
             e.preventDefault()
-            e.currentTarget.classList.remove('border-[#C0C0BA]', 'bg-[#FAFAF7]')
+            e.currentTarget.classList.remove('border-gray-400')
             if (e.dataTransfer.files) addFiles(e.dataTransfer.files)
           }}
         >
-          <p className="text-xs text-[#C0C0BA]">Sleep bestanden hierheen</p>
+          <p className="text-xs text-gray-400">Sleep bestanden hierheen</p>
         </div>
 
-        {error && <p className="text-sm text-[#D4856B]">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleSubmit('revisie')}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 shadow-sm hover:shadow-md bg-[#D4856B] hover:bg-[#C47860]"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
+            style={{ backgroundColor: '#f59e0b' }}
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
             Revisie versturen
@@ -302,7 +305,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
           <button
             onClick={() => { setModus('idle'); setError('') }}
             disabled={loading}
-            className="px-5 py-2.5 rounded-xl text-sm text-[#5A5A55] hover:bg-[#F2F2ED] transition-colors"
+            className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
           >
             Annuleren
           </button>
@@ -313,40 +316,40 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
 
   // Idle modus — toon goedkeuren / revisie knoppen
   return (
-    <div className="border-t border-[#E8E8E3] px-6 py-5 space-y-4">
+    <div className="border-t border-gray-100 px-5 py-4 space-y-3">
       <div>
-        <label className="block text-xs font-semibold text-[#5A5A55] uppercase tracking-wide mb-1.5">Uw naam (optioneel)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Uw naam (optioneel)</label>
         <input
           type="text"
           value={naam}
           onChange={(e) => saveNaam(e.target.value)}
           placeholder="Jan de Groot"
-          className="w-full px-4 py-2.5 border border-[#E8E8E3] rounded-xl text-sm text-[#1A1A1A] placeholder:text-[#C0C0BA] focus:outline-none focus:ring-2 focus:border-transparent bg-[#FAFAF7]"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
           style={{ '--tw-ring-color': primaire_kleur } as React.CSSProperties}
         />
       </div>
 
       {itemType === 'offerte' && (
         <div>
-          <label className="block text-xs font-semibold text-[#5A5A55] uppercase tracking-wide mb-1.5">Bericht (optioneel)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Bericht (optioneel)</label>
           <textarea
             value={bericht}
             onChange={(e) => setBericht(e.target.value)}
             placeholder="Optioneel bericht..."
             rows={2}
-            className="w-full px-4 py-2.5 border border-[#E8E8E3] rounded-xl text-sm text-[#1A1A1A] placeholder:text-[#C0C0BA] focus:outline-none focus:ring-2 focus:border-transparent resize-none bg-[#FAFAF7]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent resize-none"
             style={{ '--tw-ring-color': primaire_kleur } as React.CSSProperties}
           />
         </div>
       )}
 
-      {error && <p className="text-sm text-[#D4856B]">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <button
           onClick={() => handleSubmit('goedkeuring')}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 shadow-sm hover:shadow-md"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
           style={{ backgroundColor: primaire_kleur }}
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -356,7 +359,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
           <button
             onClick={() => setModus('revisie')}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#D4856B] bg-[#FAE8E0] hover:bg-[#F5D5C8] transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
             Revisie vragen

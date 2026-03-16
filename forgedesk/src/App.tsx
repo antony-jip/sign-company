@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { PaletteProvider } from '@/contexts/PaletteContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
@@ -187,6 +188,7 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
         <PaletteProvider>
           <LanguageProvider>
             <AuthProvider>
@@ -203,6 +205,7 @@ function App() {
             </AuthProvider>
           </LanguageProvider>
         </PaletteProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

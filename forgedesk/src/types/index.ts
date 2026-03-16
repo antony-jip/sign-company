@@ -601,8 +601,6 @@ export interface AppSettings {
   // Forgie
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;
-  // Quick Actions
-  quick_action_items: string[];
   // AI schrijfstijl per gebruiker
   ai_tone_of_voice: string;
   // Mollie betaalintegratie
@@ -1636,11 +1634,6 @@ export interface PortaalInstellingen {
   email_naar_klant_bij_nieuw_item: boolean;
   email_naar_mij_bij_reactie: boolean;
   herinnering_na_dagen: number;
-  herinnering_ook_voor_factuur: boolean;
-  email_nieuw_item_onderwerp: string;
-  email_nieuw_item_tekst: string;
-  email_herinnering_onderwerp: string;
-  email_herinnering_tekst: string;
   bedrijfslogo_op_portaal: boolean;
   bedrijfskleuren_gebruiken: boolean;
   contactgegevens_tonen: boolean;

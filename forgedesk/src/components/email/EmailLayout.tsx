@@ -35,7 +35,7 @@ import { useEmailFilters } from './hooks/useEmailFilters'
 import { useEmailKeyboard } from './hooks/useEmailKeyboard'
 import type { EmailFolder, FilterType, FontSize, EmailTab, ViewMode, NoReplyRange } from './emailTypes'
 import {
-  extractSenderName, extractSenderEmail,
+  extractSenderName, extractSenderEmail, fontSizeClasses,
   KEYBOARD_SHORTCUTS, SEARCH_OPERATORS,
 } from './emailHelpers'
 
@@ -67,7 +67,6 @@ export function EmailLayout() {
   const [showSearchHelp, setShowSearchHelp] = useState(false)
   const [noReplyRange, setNoReplyRange] = useState<NoReplyRange>('0-3')
   const [showNoReplyDropdown, setShowNoReplyDropdown] = useState(false)
-  const [mobileShowReader, setMobileShowReader] = useState(false)
 
   // Compose defaults (for reply/forward)
   const [composeDefaults, setComposeDefaults] = useState<{
@@ -167,32 +166,17 @@ export function EmailLayout() {
       .map((e) => ({ id: e.id, onderwerp: e.onderwerp, datum: e.datum, map: e.map, van: e.van, aan: e.aan }))
   }, [emails, currentSenderEmail])
 
-  // ── Email selection handler (delayed mark-as-read: 1.5s) ──
-  const markAsReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
+  // ── Email selection handler ──
   const handleSelectEmail = useCallback(async (email: Email) => {
-    // Clear any pending mark-as-read timer
-    if (markAsReadTimerRef.current) {
-      clearTimeout(markAsReadTimerRef.current)
-      markAsReadTimerRef.current = null
-    }
-
     setSelectedEmail(email)
     setViewMode('reading')
     selection.setCheckedEmails(new Set())
 
-    // Delayed mark as read (1.5s) — only if still unread
+    // Mark as read locally
     if (!email.gelezen) {
-      markAsReadTimerRef.current = setTimeout(() => {
-        setEmails((prev) =>
-          prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
-        )
-        if (!useIMAP) {
-          import('@/services/supabaseService').then(({ updateEmail: ue }) => {
-            ue(email.id, { gelezen: true }).catch(() => {})
-          })
-        }
-      }, 1500)
+      setEmails((prev) =>
+        prev.map((e) => (e.id === email.id ? { ...e, gelezen: true } : e))
+      )
     }
 
     // Load body if IMAP
@@ -202,6 +186,9 @@ export function EmailLayout() {
       setEmails((prev) =>
         prev.map((e) => (e.id === email.id ? updated : e))
       )
+    } else if (!useIMAP && !email.gelezen) {
+      const { updateEmail } = await import('@/services/supabaseService')
+      updateEmail(email.id, { gelezen: true }).catch(() => {})
     }
   }, [loadEmailBody, selectedFolder, useIMAP, setEmails, selection])
 
@@ -466,16 +453,8 @@ export function EmailLayout() {
   }, [showNoReplyDropdown])
 
   // ── Computed ──
-  // Mobile-aware select handler wrapper
-  const handleSelectEmailMobile = useCallback((email: Email) => {
-    handleSelectEmail(email)
-    setMobileShowReader(true)
-  }, [handleSelectEmail])
-
-  const handleBackMobile = useCallback(() => {
-    handleBack()
-    setMobileShowReader(false)
-  }, [handleBack])
+  const showSidebar = viewMode === 'reading' || viewMode === 'composing'
+  const fs = fontSizeClasses[fontSize]
 
   // ═════════════════════════════════════════════════════════════════
   // ─── Render ────────────────────────────────────────────────────
@@ -483,93 +462,126 @@ export function EmailLayout() {
 
   return (
     <div className="h-full flex flex-col mod-strip mod-strip-email">
-      {/* ── Minimal Header ── */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-stone-200/60 dark:border-stone-800/40 bg-background flex-shrink-0 rounded-t-2xl">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #8BAFD4, #6A8DB8)' }}>
-            <Mail className="h-4.5 w-4.5 text-white" />
+      {/* ── Header bar ── */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #8BAFD4, #6A8DB8)' }}>
+            <Mail className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-base font-bold text-[#1a1a1a] dark:text-stone-100 truncate">Email</h1>
+            <h1 className="page-title text-foreground truncate">Email</h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              Klantcommunicatie
+            </p>
           </div>
-        </div>
-        {/* Module tabs — compact, right-aligned */}
-        <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
-          {([
-            { id: 'email' as EmailTab, label: 'Email', icon: Mail },
-            { id: 'gedeelde-inbox' as EmailTab, label: 'Team Inbox', icon: Users },
-            { id: 'tracking' as EmailTab, label: 'Tracking', icon: Eye },
-            { id: 'sequences' as EmailTab, label: 'Sequences', icon: Zap },
-            { id: 'analytics' as EmailTab, label: 'Analytics', icon: BarChart3 },
-          ]).map((tab) => {
-            const TabIcon = tab.icon
-            const isActiveTab = activeTab === tab.id
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all whitespace-nowrap',
-                  isActiveTab
-                    ? 'bg-[#1a1a1a] text-white dark:bg-stone-200 dark:text-stone-900 shadow-sm'
-                    : 'text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300'
-                )}
-              >
-                <TabIcon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            )
-          })}
         </div>
       </div>
 
-      {/* ── Tab Content (non-email tabs) ── */}
+      {/* ── Top Tab Bar ── */}
+      <div className="flex items-center gap-0.5 px-4 sm:px-6 py-1.5 overflow-x-auto scrollbar-hide border-b border-border/20 bg-muted/5">
+        {([
+          { id: 'email' as EmailTab, label: 'Email', icon: Mail },
+          { id: 'gedeelde-inbox' as EmailTab, label: 'Team Inbox', icon: Users },
+          { id: 'tracking' as EmailTab, label: 'Tracking', icon: Eye },
+          { id: 'sequences' as EmailTab, label: 'Sequences', icon: Zap },
+          { id: 'analytics' as EmailTab, label: 'Analytics', icon: BarChart3 },
+        ]).map((tab) => {
+          const TabIcon = tab.icon
+          const isActive = activeTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap',
+                isActive
+                  ? 'bg-foreground text-background shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+              )}
+            >
+              <TabIcon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Tab Content ── */}
       {activeTab === 'gedeelde-inbox' ? (
-        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-stone-400" /></Card>}>
+        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></Card>}>
           <GedeeldeInboxLayout />
         </Suspense>
       ) : activeTab === 'tracking' ? (
-        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-stone-400" /></Card>}>
+        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></Card>}>
           <EmailTracking emails={emails} />
         </Suspense>
       ) : activeTab === 'sequences' ? (
-        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-stone-400" /></Card>}>
+        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></Card>}>
           <EmailSequences />
         </Suspense>
       ) : activeTab === 'analytics' ? (
-        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-stone-400" /></Card>}>
+        <Suspense fallback={<Card className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></Card>}>
           <EmailAnalytics emails={emails} />
         </Suspense>
+      ) : isLoading ? (
+        <Card className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex flex-col">
+            <div className="p-3 flex items-center gap-2">
+              <div className="flex-1 h-9 rounded-lg animate-shimmer" />
+              <div className="h-9 w-20 rounded-lg animate-shimmer" />
+            </div>
+            <div className="px-3 pb-2 flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-7 w-20 rounded-md animate-shimmer" />
+              ))}
+            </div>
+            <div className="px-3 pb-2 flex items-center gap-1 border-b">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-6 w-16 rounded-full animate-shimmer" />
+              ))}
+            </div>
+            <div className="flex-1">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 border-b border-border/30">
+                  <div className="w-2 h-2 rounded-full animate-shimmer" />
+                  <div className="w-32 h-4 rounded animate-shimmer" />
+                  <div className="flex-1 flex items-center gap-2">
+                    <div className="h-4 rounded animate-shimmer" style={{ width: `${30 + Math.random() * 30}%` }} />
+                    <div className="h-3 rounded animate-shimmer flex-1" />
+                  </div>
+                  <div className="w-12 h-3 rounded animate-shimmer" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
       ) : (
         /* ═══════════════════════════════════════════════════════════════
-           Superhuman 3-Panel Layout:
-           Panel 1: Sidebar (200px) — folders, labels, compose
-           Panel 2: Email list (flex) — always visible on desktop
-           Panel 3: Reader (45%) — always visible on desktop, empty state when idle
-           Mobile: stacked list → reader navigation
+           3-Column Gmail-style Layout:
+           Col 1: Folder sidebar (narrow, always visible on desktop)
+           Col 2: Email list (flexible)
+           Col 3: Reading pane / Compose / CRM sidebar
+           On mobile: single column with navigation
            ═══════════════════════════════════════════════════════════════ */
-        <Card className="flex-1 flex overflow-hidden border-stone-200/60 dark:border-stone-800/40">
+        <Card className="flex-1 flex overflow-hidden">
 
-          {/* ═══ Panel 1: Sidebar ═══ */}
+          {/* ═══ Column 1: Folder Sidebar (desktop only, sticky) ═══ */}
           <div className={cn(
-            'border-r border-stone-200/60 dark:border-stone-800/40 flex-shrink-0 flex flex-col bg-stone-50/40 dark:bg-stone-900/30',
+            'border-r border-border/30 flex-shrink-0 flex flex-col bg-gradient-to-b from-muted/15 to-muted/5 dark:from-muted/10 dark:to-muted/5 sticky top-0 self-start h-full overflow-y-auto',
             'hidden md:flex w-[200px]'
           )}>
-            {/* Compose button — black, full width, primary action */}
-            <div className="p-3 sticky top-0 z-10">
-              <button
-                onClick={handleCompose}
-                className="w-full flex items-center justify-center gap-2 h-10 bg-[#1a1a1a] dark:bg-stone-100 text-white dark:text-stone-900 rounded-md text-sm font-semibold hover:bg-[#2a2a2a] dark:hover:bg-stone-200 transition-colors shadow-sm"
-              >
+            {/* Compose button */}
+            <div className="p-3">
+              <Button onClick={handleCompose} className="w-full gap-1.5 h-10 shadow-sm font-semibold tracking-tight">
                 <Pencil className="w-4 h-4" />
                 Nieuw
-              </button>
+              </Button>
             </div>
 
             {/* Folder list */}
-            <nav className="flex-1 px-2 overflow-y-auto">
+            <nav className="flex-1 px-2">
               {folderTabs.map((tab) => {
-                const isActiveFolder = selectedFolder === tab.id
+                const isActive = selectedFolder === tab.id
                 const count = folderCounts[tab.id]
                 const FolderIcon = tab.icon
                 return (
@@ -577,20 +589,20 @@ export function EmailLayout() {
                     key={tab.id}
                     onClick={() => handleFolderChange(tab.id)}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-100 mb-0.5',
-                      isActiveFolder
-                        ? 'bg-stone-100/80 dark:bg-stone-800/60 text-[#1a1a1a] dark:text-stone-100 font-medium border-l-2 border-l-[#8BAFD4] -ml-px pl-[11px]'
-                        : 'text-stone-500 dark:text-stone-400 hover:bg-stone-100/50 dark:hover:bg-stone-800/30 hover:text-stone-700 dark:hover:text-stone-300'
+                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150 mb-0.5',
+                      isActive
+                        ? 'bg-foreground/8 text-foreground font-semibold shadow-[inset_0_1px_0_rgba(0,0,0,0.04)]'
+                        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
                     )}
                   >
-                    <FolderIcon className={cn('w-[18px] h-[18px] flex-shrink-0', isActiveFolder ? 'text-stone-600 dark:text-stone-300' : 'text-stone-400 dark:text-stone-500')} />
+                    <FolderIcon className={cn('w-4 h-4 flex-shrink-0', isActive && 'text-primary')} />
                     <span className="flex-1 text-left">{tab.label}</span>
                     {count > 0 && (
                       <span className={cn(
-                        'text-[10px] font-medium min-w-[20px] h-[20px] rounded-full flex items-center justify-center tabular-nums font-mono',
-                        isActiveFolder
-                          ? 'bg-[#8BAFD4] text-white'
-                          : 'bg-stone-200/60 dark:bg-stone-700/60 text-stone-500 dark:text-stone-400'
+                        'text-[10px] font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center tabular-nums',
+                        isActive
+                          ? 'bg-primary text-white'
+                          : 'bg-muted-foreground/10 text-muted-foreground/70'
                       )}>
                         {count}
                       </span>
@@ -600,35 +612,36 @@ export function EmailLayout() {
               })}
             </nav>
 
-            {/* Labels section */}
-            <div className="border-t border-stone-100 dark:border-stone-800/40 mt-4 pt-4 px-3 pb-4">
+            {/* Label section */}
+            <div className="border-t border-border/20 px-3 py-4">
               <div className="flex items-center gap-1.5 mb-2.5">
-                <Tag className="w-3 h-3 text-stone-400" />
-                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-[0.08em]">Labels</span>
+                <Tag className="w-3 h-3 text-muted-foreground/50" />
+                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.08em]">Labels</span>
               </div>
-              {[
-                { id: 'offerte', color: 'bg-[#D5CCE6]' },
-                { id: 'klant', color: 'bg-[#BCCAD6]' },
-                { id: 'project', color: 'bg-[#B8CCBE]' },
-                { id: 'leverancier', color: 'bg-[#E8866A]' },
-              ].map(({ id: label, color }) => {
+              {['offerte', 'klant', 'project', 'leverancier'].map((label) => {
                 const labelCount = emails.filter((e) => e.labels.includes(label)).length
-                const isActiveLabel = searchQuery === `label:${label}`
+                const isActive = searchQuery === `label:${label}`
                 return (
                   <button
                     key={label}
-                    onClick={() => setSearchQuery(isActiveLabel ? '' : `label:${label}`)}
+                    onClick={() => setSearchQuery(isActive ? '' : `label:${label}`)}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] transition-all duration-100',
-                      isActiveLabel
-                        ? 'bg-stone-100/80 dark:bg-stone-800/60 text-[#1a1a1a] dark:text-stone-100 font-medium'
-                        : 'text-stone-500 dark:text-stone-400 hover:bg-stone-100/40 dark:hover:bg-stone-800/20 hover:text-stone-700 dark:hover:text-stone-300'
+                      'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12px] transition-all duration-150',
+                      isActive
+                        ? 'bg-muted/60 text-foreground font-medium'
+                        : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                     )}
                   >
-                    <span className={cn('w-2 h-2 rounded-full flex-shrink-0', color)} />
+                    <span className={cn(
+                      'w-2 h-2 rounded-full flex-shrink-0',
+                      label === 'offerte' && 'bg-blue-400',
+                      label === 'klant' && 'bg-emerald-400',
+                      label === 'project' && 'bg-primary',
+                      label === 'leverancier' && 'bg-amber-400',
+                    )} />
                     <span className="flex-1 text-left capitalize">{label}</span>
                     {labelCount > 0 && (
-                      <span className="text-[10px] text-stone-400 dark:text-stone-500 tabular-nums font-mono">{labelCount}</span>
+                      <span className="text-[10px] text-muted-foreground/40 tabular-nums">{labelCount}</span>
                     )}
                   </button>
                 )
@@ -636,38 +649,36 @@ export function EmailLayout() {
             </div>
           </div>
 
-          {/* ═══ Panel 2: Email List — ALWAYS visible on desktop ═══ */}
+          {/* ═══ Column 2: Email List (inline / full-width, hidden when reading) ═══ */}
           <div className={cn(
-            'flex flex-col min-w-0 border-r border-stone-200/60 dark:border-stone-800/40',
-            // On desktop: fixed width for list, reader takes remaining
-            'md:w-[380px] lg:w-[420px] md:flex-shrink-0',
-            // On mobile: full width, hidden when viewing reader
-            mobileShowReader ? 'hidden md:flex' : 'flex-1 md:flex-initial'
+            'flex flex-col min-w-0 flex-1',
+            // Hide list when reading/composing (Pipedrive-style: reader takes full width)
+            viewMode !== 'idle' && 'hidden'
           )}>
-            {/* Search bar */}
-            <div className="p-3 flex items-center gap-2 flex-shrink-0">
+            {/* Search + actions */}
+            <div className="p-3 flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setShowSearchHelp(true)}
                   onBlur={() => setTimeout(() => setShowSearchHelp(false), 200)}
-                  placeholder="Zoek in emails..."
-                  className="pl-10 pr-8 h-9 bg-stone-50/50 dark:bg-stone-800/30 border-stone-200/60 dark:border-stone-700/40 rounded-md focus:bg-white dark:focus:bg-stone-900 focus:ring-[#8BAFD4]/30 focus:border-[#8BAFD4]/50 transition-all text-sm placeholder:text-stone-400"
+                  placeholder="Zoek emails... (probeer from: to: has: label:)"
+                  className="pl-10 pr-8 h-9 bg-muted/30 border-border/30 focus:bg-background focus:border-primary/30 transition-all"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-stone-100 dark:hover:bg-stone-800"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted"
                   >
-                    <X className="w-3.5 h-3.5 text-stone-400" />
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
                   </button>
                 )}
                 {/* Search operators help dropdown */}
                 {showSearchHelp && !searchQuery && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-md shadow-lg p-3 z-50">
-                    <p className="text-xs font-medium text-stone-500 mb-2 flex items-center gap-1.5">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border/40 rounded-xl shadow-lg p-3 z-50">
+                    <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
                       <Info className="w-3.5 h-3.5" />
                       Geavanceerd zoeken
                     </p>
@@ -676,11 +687,11 @@ export function EmailLayout() {
                         <button
                           key={op.key}
                           onClick={() => { setSearchQuery(op.key); setShowSearchHelp(false) }}
-                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-left"
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs hover:bg-muted/60 transition-colors text-left"
                         >
-                          <code className="font-mono text-[#8BAFD4] bg-[#8BAFD4]/10 px-1.5 py-0.5 rounded text-[11px]">{op.key}</code>
-                          <span className="text-stone-500">{op.description}</span>
-                          <span className="ml-auto text-stone-400 font-mono text-[10px]">{op.example}</span>
+                          <code className="font-mono text-primary bg-primary/8 px-1.5 py-0.5 rounded-md text-[11px]">{op.key}</code>
+                          <span className="text-muted-foreground">{op.description}</span>
+                          <span className="ml-auto text-muted-foreground/40 font-mono text-[10px]">{op.example}</span>
                         </button>
                       ))}
                     </div>
@@ -688,8 +699,8 @@ export function EmailLayout() {
                 )}
               </div>
 
-              {/* Geen antwoord filter */}
-              <div className="relative flex-shrink-0 hidden sm:block">
+              {/* Geen antwoord filter (right of search) */}
+              <div className="relative flex-shrink-0">
                 <button
                   onClick={() => {
                     if (filter === 'geen-antwoord') {
@@ -699,13 +710,18 @@ export function EmailLayout() {
                     }
                   }}
                   className={cn(
-                    'flex items-center gap-1.5 h-9 px-2.5 rounded-md text-[12px] font-medium transition-all border',
+                    'flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-medium transition-all border',
                     filter === 'geen-antwoord'
-                      ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400'
-                      : 'bg-white dark:bg-stone-900 border-stone-200/60 dark:border-stone-700/40 text-stone-500 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300'
+                      ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400 shadow-sm'
+                      : 'bg-background border-border/40 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                   )}
                 >
                   <Timer className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">
+                    {filter === 'geen-antwoord'
+                      ? `Geen antwoord (${noReplyRange === '0-3' ? '0-3' : noReplyRange === '4-7' ? '4-7' : '8-30'}d)`
+                      : 'Geen antwoord'}
+                  </span>
                   {filter === 'geen-antwoord' ? (
                     <ChevronDown
                       className="w-3 h-3 opacity-60 cursor-pointer"
@@ -716,7 +732,7 @@ export function EmailLayout() {
                 {filter === 'geen-antwoord' && (
                   <button
                     onClick={() => setFilter('alle')}
-                    className="ml-1 p-1 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 transition-colors"
+                    className="ml-1 p-1 rounded-md hover:bg-muted/60 text-muted-foreground transition-colors"
                     title="Filter verwijderen"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -724,8 +740,8 @@ export function EmailLayout() {
                 )}
                 {/* No-reply range dropdown */}
                 {showNoReplyDropdown && filter === 'geen-antwoord' && (
-                  <div className="absolute top-full right-0 mt-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-md shadow-lg p-1.5 z-50 min-w-[220px]">
-                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider px-2.5 py-1.5">
+                  <div className="absolute top-full right-0 mt-1 bg-popover border border-border/40 rounded-xl shadow-lg p-1.5 z-50 min-w-[220px]">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-label px-2.5 py-1.5">
                       Je hebt geen antwoord gestuurd:
                     </p>
                     {([
@@ -737,14 +753,14 @@ export function EmailLayout() {
                         key={option.value}
                         onClick={() => { setNoReplyRange(option.value); setShowNoReplyDropdown(false) }}
                         className={cn(
-                          'w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[13px] transition-colors text-left',
+                          'w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[13px] transition-colors text-left',
                           noReplyRange === option.value
-                            ? 'font-medium text-[#1a1a1a] dark:text-stone-100 bg-stone-50 dark:bg-stone-800'
-                            : 'text-stone-500 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300'
+                            ? 'font-semibold text-foreground bg-muted/40'
+                            : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                         )}
                       >
                         {option.label}
-                        {noReplyRange === option.value && <Check className="w-4 h-4 text-[#8BAFD4]" />}
+                        {noReplyRange === option.value && <Check className="w-4 h-4 text-primary" />}
                       </button>
                     ))}
                   </div>
@@ -755,25 +771,23 @@ export function EmailLayout() {
                 onClick={() => handleRefresh(selectedFolder)}
                 size="sm"
                 variant="outline"
-                className="h-9 w-9 flex-shrink-0 p-0 border-stone-200/60 dark:border-stone-700/40 text-stone-500 hover:text-stone-700 dark:hover:text-stone-300"
+                className="h-9 w-9 flex-shrink-0 p-0 border-border/30"
                 disabled={isRefreshing}
                 title="Vernieuwen"
               >
                 <RefreshCw className={cn('w-3.5 h-3.5', isRefreshing && 'animate-spin')} />
               </Button>
               {/* Mobile compose button */}
-              <button
-                onClick={handleCompose}
-                className="h-9 w-9 flex-shrink-0 flex items-center justify-center bg-[#1a1a1a] text-white rounded-md md:hidden hover:bg-[#2a2a2a] transition-colors"
-              >
+              <Button onClick={handleCompose} size="sm" className="gap-1.5 h-9 flex-shrink-0 md:hidden">
                 <Pencil className="w-3.5 h-3.5" />
-              </button>
+                Nieuw
+              </Button>
             </div>
 
-            {/* Mobile folder tabs */}
-            <div className="px-3 pb-2 flex items-center gap-1 overflow-x-auto scrollbar-hide md:hidden flex-shrink-0">
+            {/* Mobile folder tabs (visible when sidebar hidden) */}
+            <div className="px-3 pb-2 flex items-center gap-1 overflow-x-auto md:hidden">
               {folderTabs.map((tab) => {
-                const isActiveFolder = selectedFolder === tab.id
+                const isActive = selectedFolder === tab.id
                 const count = folderCounts[tab.id]
                 return (
                   <button
@@ -781,17 +795,17 @@ export function EmailLayout() {
                     onClick={() => handleFolderChange(tab.id)}
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
-                      isActiveFolder
-                        ? 'bg-[#8BAFD4]/15 text-[#6A8DB8] dark:bg-[#8BAFD4]/20 dark:text-[#8BAFD4]'
-                        : 'text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300'
+                      isActive
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     )}
                   >
                     <tab.icon className="w-3.5 h-3.5" />
                     {tab.label}
                     {count > 0 && (
                       <span className={cn(
-                        'text-[10px] font-medium min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-mono',
-                        isActiveFolder ? 'bg-[#8BAFD4] text-white' : 'bg-stone-200 dark:bg-stone-700 text-stone-500 dark:text-stone-400'
+                        'text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center',
+                        isActive ? 'bg-primary text-white' : 'bg-muted-foreground/20 text-muted-foreground'
                       )}>
                         {count}
                       </span>
@@ -801,8 +815,8 @@ export function EmailLayout() {
               })}
             </div>
 
-            {/* Filter pills */}
-            <div className="px-3 pb-2 flex items-center justify-between border-b border-stone-100 dark:border-stone-800/40 flex-shrink-0">
+            {/* Filter chips + Font size */}
+            <div className="px-3 pb-2 flex items-center justify-between border-b border-border/30">
               <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
                 {(['alle', 'ongelezen', 'met-ster', 'vastgepind', 'bijlagen'] as FilterType[]).map((f) => {
                   const labels: Record<string, string> = {
@@ -813,23 +827,23 @@ export function EmailLayout() {
                     bijlagen: 'Bijlagen',
                   }
                   const count = filterCounts[f] || 0
-                  const isActiveFilter = filter === f
+                  const isActive = filter === f
                   return (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
                       className={cn(
-                        'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all duration-100',
-                        isActiveFilter
-                          ? 'bg-[#8BAFD4] text-white shadow-sm'
-                          : 'bg-stone-100/60 dark:bg-stone-800/40 text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300'
+                        'flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-150',
+                        isActive
+                          ? 'bg-foreground text-background shadow-sm'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                       )}
                     >
                       {labels[f]}
                       {f !== 'alle' && count > 0 && (
                         <span className={cn(
-                          'text-[9px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center tabular-nums font-mono',
-                          isActiveFilter ? 'bg-white/25 text-white' : 'bg-stone-200/60 dark:bg-stone-700/60 text-stone-500 dark:text-stone-400'
+                          'text-[9px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center tabular-nums',
+                          isActive ? 'bg-background/20 text-background' : 'bg-muted-foreground/12 text-muted-foreground'
                         )}>
                           {count}
                         </span>
@@ -838,49 +852,68 @@ export function EmailLayout() {
                   )
                 })}
               </div>
+              {/* Font size control */}
+              <div className="flex items-center gap-0.5 ml-2 bg-muted/30 rounded-lg p-0.5">
+                {(['small', 'medium', 'large'] as FontSize[]).map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setFontSize(size)}
+                    className={cn(
+                      'w-6 h-6 rounded-md flex items-center justify-center font-bold transition-all duration-150',
+                      size === 'small' ? 'text-[10px]' : size === 'medium' ? 'text-xs' : 'text-sm',
+                      fontSize === size
+                        ? 'bg-foreground text-background shadow-sm'
+                        : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/60'
+                    )}
+                    title={size === 'small' ? 'Klein' : size === 'medium' ? 'Normaal' : 'Groot'}
+                  >
+                    A
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Bulk action toolbar */}
             {selection.hasChecked ? (
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-stone-100 dark:border-stone-800/40 bg-stone-50 dark:bg-stone-900/50 flex-shrink-0">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/30" style={{ background: 'linear-gradient(135deg, var(--color-sage), #d4e8db)', borderColor: 'var(--color-sage-border)' }}>
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={selection.allChecked ? true : selection.someChecked ? 'indeterminate' : false}
                     onCheckedChange={selection.toggleCheckAll}
                   />
-                  <span className="text-xs font-medium text-stone-600 dark:text-stone-300">
+                  <span className="text-xs font-semibold" style={{ color: 'var(--color-sage-text)' }}>
                     {selection.checkedEmails.size} geselecteerd
                   </span>
                 </div>
-                <div className="h-4 w-px bg-stone-200 dark:bg-stone-700 mx-1" />
-                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800" onClick={selection.handleBulkMarkRead}>
+                <div className="h-4 w-px bg-white/20 mx-1" />
+                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs hover:bg-white/20" style={{ color: 'var(--color-sage-text)' }} onClick={selection.handleBulkMarkRead}>
                   <MailOpen className="w-3.5 h-3.5" /> Gelezen
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800" onClick={selection.handleBulkMarkUnread}>
+                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs hover:bg-white/20" style={{ color: 'var(--color-sage-text)' }} onClick={selection.handleBulkMarkUnread}>
                   <Mail className="w-3.5 h-3.5" /> Ongelezen
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800" onClick={selection.handleBulkArchive}>
+                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs hover:bg-white/20" style={{ color: 'var(--color-sage-text)' }} onClick={selection.handleBulkArchive}>
                   <Archive className="w-3.5 h-3.5" /> Archiveren
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={selection.handleBulkDelete}>
+                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs hover:bg-red-500/10" style={{ color: '#c44040' }} onClick={selection.handleBulkDelete}>
                   <Trash2 className="w-3.5 h-3.5" /> Verwijderen
                 </Button>
                 <div className="flex-1" />
-                <button onClick={selection.clearChecked} className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors text-stone-400">
+                <button onClick={selection.clearChecked} className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors" style={{ color: 'var(--color-sage-text)' }}>
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-4 py-1.5 border-b border-stone-100/60 dark:border-stone-800/30 flex-shrink-0">
+              <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border/20 bg-muted/5">
                 <Checkbox
                   checked={false}
                   onCheckedChange={selection.toggleCheckAll}
                   className="opacity-40 hover:opacity-100 transition-opacity"
                 />
-                <button onClick={selection.toggleCheckAll} className="text-[11px] text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 transition-colors cursor-pointer">
+                <button onClick={selection.toggleCheckAll} className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer">
                   Alles selecteren
                 </button>
-                <span className="text-[11px] text-stone-400 ml-auto tabular-nums font-mono">
+                <span className="text-[11px] text-muted-foreground/40 ml-auto tabular-nums">
                   {filteredEmails.length} email{filteredEmails.length !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -888,53 +921,46 @@ export function EmailLayout() {
 
             {/* Email list */}
             <ScrollArea className="flex-1">
-              {isLoading ? (
-                /* Skeleton loading — 5 rows matching 3-line format */
-                <div>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="flex gap-3 px-4 py-3 min-h-[72px] border-b border-stone-100 dark:border-stone-800/40">
-                      <div className="w-5 flex-shrink-0 pt-1">
-                        <div className="w-2 h-2 rounded-full animate-shimmer" />
-                      </div>
-                      <div className="flex-1 flex flex-col gap-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="h-4 w-28 rounded animate-shimmer" />
-                          <div className="flex-1" />
-                          <div className="h-3 w-12 rounded animate-shimmer" />
-                        </div>
-                        <div className="h-4 rounded animate-shimmer" style={{ width: `${50 + Math.random() * 30}%` }} />
-                        <div className="h-3 rounded animate-shimmer" style={{ width: `${60 + Math.random() * 30}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : filteredEmails.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20">
+              {filteredEmails.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                   {selectedFolder === 'gepland' ? (
                     <>
-                      <Clock className="w-16 h-16 text-stone-300 dark:text-stone-600 mb-4" />
-                      <p className="text-base text-stone-400 dark:text-stone-500">Geen ingeplande emails</p>
-                      <p className="text-sm mt-1 text-stone-400/60 dark:text-stone-500/60">Plan een email in bij het verzenden</p>
+                      <div className="w-16 h-16 rounded-2xl bg-primary/8 flex items-center justify-center mb-4">
+                        <Clock className="w-8 h-8 text-primary/30" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground/70">Geen ingeplande emails</p>
+                      <p className="text-xs mt-1.5 text-muted-foreground/60">Plan een email in bij het verzenden</p>
                     </>
                   ) : selectedFolder === 'gesnoozed' ? (
                     <>
-                      <AlarmClock className="w-16 h-16 text-stone-300 dark:text-stone-600 mb-4" />
-                      <p className="text-base text-stone-400 dark:text-stone-500">Geen gesnoozede emails</p>
+                      <div className="w-16 h-16 rounded-2xl bg-amber-500/8 flex items-center justify-center mb-4">
+                        <AlarmClock className="w-8 h-8 text-amber-500/30" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground/70">Geen gesnoozede emails</p>
+                      <p className="text-xs mt-1.5 text-muted-foreground/60">Snooze een email om deze later terug te zien</p>
                     </>
                   ) : filter === 'geen-antwoord' ? (
                     <>
-                      <CheckCheck className="w-16 h-16 text-stone-300 dark:text-stone-600 mb-4" />
-                      <p className="text-base text-stone-400 dark:text-stone-500">Alles beantwoord</p>
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/8 flex items-center justify-center mb-4">
+                        <CheckCheck className="w-8 h-8 text-emerald-500/30" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground/70">Alles beantwoord</p>
+                      <p className="text-xs mt-1.5 text-muted-foreground/60">Geen onbeantwoorde emails in dit bereik</p>
                     </>
                   ) : filter !== 'alle' ? (
                     <>
-                      <CheckCheck className="w-16 h-16 text-stone-300 dark:text-stone-600 mb-4" />
-                      <p className="text-base text-stone-400 dark:text-stone-500">Alles bijgewerkt</p>
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/8 flex items-center justify-center mb-4">
+                        <CheckCheck className="w-8 h-8 text-emerald-500/30" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground/70">Alles bijgewerkt</p>
+                      <p className="text-xs mt-1.5 text-muted-foreground/60">Geen {filter === 'ongelezen' ? 'ongelezen' : filter === 'met-ster' ? 'emails met ster' : filter === 'vastgepind' ? 'vastgepinde emails' : 'emails met bijlagen'}</p>
                     </>
                   ) : (
                     <>
-                      <Inbox className="w-16 h-16 text-stone-300 dark:text-stone-600 mb-4" />
-                      <p className="text-lg text-stone-400 dark:text-stone-500">Inbox is leeg</p>
+                      <div className="w-16 h-16 rounded-2xl bg-muted/40 flex items-center justify-center mb-4">
+                        <Inbox className="w-8 h-8 opacity-20" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground/70">Geen emails</p>
                     </>
                   )}
                 </div>
@@ -944,20 +970,18 @@ export function EmailLayout() {
                     const senderAddr = email.map === 'verzonden' || email.map === 'concepten'
                       ? extractSenderEmail(email.aan)
                       : extractSenderEmail(email.van)
-                    const contact = findContactByEmail(senderAddr)
 
                     return (
                       <EmailListItem
                         key={email.id}
                         email={email}
-                        isActive={selectedEmail?.id === email.id}
+                        isActive={selectedEmail?.id === email.id && viewMode === 'reading'}
                         isChecked={selection.checkedEmails.has(email.id)}
                         isFocused={keyboard.focusedIndex === idx}
                         hasChecked={selection.hasChecked}
                         fontSize={fontSize}
-                        isUnknownContact={!contact}
-                        isCrmMatched={!!contact}
-                        onSelect={handleSelectEmailMobile}
+                        isUnknownContact={!findContactByEmail(senderAddr)}
+                        onSelect={handleSelectEmail}
                         onToggleStar={emailActions.handleToggleStar}
                         onTogglePin={emailActions.handleTogglePin}
                         onToggleCheck={selection.toggleCheckEmail}
@@ -969,20 +993,22 @@ export function EmailLayout() {
                       />
                     )
                   })}
-                  {/* Load more */}
+                  {/* Meer laden knop */}
                   {useIMAP && emails.length < imapTotal && (
-                    <div className="p-3 text-center border-t border-stone-100 dark:border-stone-800/40">
-                      <button
+                    <div className="p-3 text-center border-t">
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => loadMoreEmails(selectedFolder)}
                         disabled={isLoadingMore}
-                        className="text-sm text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
+                        className="gap-2 text-muted-foreground"
                       >
                         {isLoadingMore ? (
                           <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Laden...</>
                         ) : (
                           <>Meer laden ({emails.length} van {imapTotal})</>
                         )}
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -990,55 +1016,21 @@ export function EmailLayout() {
             </ScrollArea>
           </div>
 
-          {/* ═══ Panel 3: Reader — ALWAYS visible on desktop ═══ */}
-          <div className={cn(
-            'flex-1 min-w-0 flex',
-            // Mobile: only show when reading
-            mobileShowReader ? 'flex' : 'hidden md:flex'
-          )}>
-            {/* Reader content — crossfade transition */}
-            <div className="flex-1 min-w-0 flex flex-col transition-opacity duration-150 ease-in-out">
-              {viewMode === 'composing' ? (
-                <EmailCompose
-                  open={viewMode === 'composing'}
-                  onOpenChange={(isOpen) => { if (!isOpen) handleCancelCompose() }}
-                  defaultTo={composeDefaults.to}
-                  defaultSubject={composeDefaults.subject}
-                  defaultBody={composeDefaults.body}
-                  onSend={handleSendEmail}
-                />
-              ) : viewMode === 'reading' && selectedEmail ? (
-                <>
-                  {/* Compact CRM card — only if contact matched */}
-                  {currentContact && (
-                    <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800/40 bg-stone-50/40 dark:bg-stone-900/20 flex-shrink-0">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#8BAFD4]/20 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-semibold text-[#6A8DB8]">
-                            {getInitials(currentContact.company || currentContact.name)}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#1a1a1a] dark:text-stone-100 truncate">
-                            {currentContact.company || currentContact.name}
-                          </div>
-                          <div className="text-xs text-stone-500 dark:text-stone-400 truncate">
-                            {currentContact.name}{currentContact.phone ? ` · ${currentContact.phone}` : ''}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (currentContact.klantId) {
-                              window.location.hash = `#/klanten/${currentContact.klantId}`
-                            }
-                          }}
-                          className="text-xs text-[#8BAFD4] hover:text-[#6A8DB8] font-medium transition-colors flex-shrink-0"
-                        >
-                          Bekijk klant →
-                        </button>
-                      </div>
-                    </div>
-                  )}
+          {/* ═══ Column 3: Content Area (reading/composing) + CRM Sidebar ═══ */}
+          {viewMode !== 'idle' && (
+            <div className="flex-1 min-w-0 flex">
+              {/* Main content */}
+              <div className="flex-1 min-w-0 flex flex-col">
+                {viewMode === 'composing' ? (
+                  <EmailCompose
+                    open={viewMode === 'composing'}
+                    onOpenChange={(isOpen) => { if (!isOpen) handleCancelCompose() }}
+                    defaultTo={composeDefaults.to}
+                    defaultSubject={composeDefaults.subject}
+                    defaultBody={composeDefaults.body}
+                    onSend={handleSendEmail}
+                  />
+                ) : viewMode === 'reading' && selectedEmail ? (
                   <EmailReader
                     email={selectedEmail}
                     isLoadingBody={isLoadingBody}
@@ -1048,70 +1040,63 @@ export function EmailLayout() {
                     onReply={handleReply}
                     onForward={handleForward}
                     onArchive={emailActions.handleArchive}
-                    onBack={handleBackMobile}
+                    onBack={handleBack}
                     onCreateTask={handleCreateTaskFromEmail}
                   />
-                </>
-              ) : (
-                /* Empty state — no email selected */
-                <div className="flex-1 flex flex-col items-center justify-center text-stone-400 dark:text-stone-500">
-                  <Mail className="w-16 h-16 text-stone-300 dark:text-stone-600 mb-4" />
-                  <p className="text-base">Selecteer een email</p>
-                  <p className="text-sm mt-1 text-stone-400/60">of druk <kbd className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-xs font-mono font-medium text-stone-500">c</kbd> voor een nieuwe email</p>
+                ) : null}
+              </div>
+
+              {/* CRM Sidebar (sticky) */}
+              {showSidebar && (
+                <div className="border-l hidden xl:block sticky top-0 self-start h-full overflow-y-auto">
+                  <ContactSidebar
+                    contact={currentContact}
+                    senderName={currentSenderName}
+                    senderEmail={currentSenderEmail}
+                    senderCompany={currentContact?.company}
+                    emailSubject={selectedEmail?.onderwerp}
+                    contactEmails={contactEmails}
+                    onAddCustomer={handleAddCustomer}
+                    onSubscribeNewsletter={handleSubscribeNewsletter}
+                    onCreateProject={handleCreateProjectFromEmail}
+                    onCreateTask={handleQuickTaskFromEmail}
+                    onCreateDeal={handleCreateDealFromEmail}
+                    onNavigateToOfferte={handleNavigateToOfferte}
+                    recentlyCreatedKlantId={recentlyCreatedKlantId}
+                    width={280}
+                  />
                 </div>
               )}
             </div>
-
-            {/* CRM Contact Sidebar — only on xl screens when reading */}
-            {viewMode === 'reading' && selectedEmail && (
-              <div className="border-l border-stone-200/60 dark:border-stone-800/40 hidden xl:block flex-shrink-0 overflow-y-auto">
-                <ContactSidebar
-                  contact={currentContact}
-                  senderName={currentSenderName}
-                  senderEmail={currentSenderEmail}
-                  senderCompany={currentContact?.company}
-                  emailSubject={selectedEmail?.onderwerp}
-                  contactEmails={contactEmails}
-                  onAddCustomer={handleAddCustomer}
-                  onSubscribeNewsletter={handleSubscribeNewsletter}
-                  onCreateProject={handleCreateProjectFromEmail}
-                  onCreateTask={handleQuickTaskFromEmail}
-                  onCreateDeal={handleCreateDealFromEmail}
-                  onNavigateToOfferte={handleNavigateToOfferte}
-                  recentlyCreatedKlantId={recentlyCreatedKlantId}
-                  width={260}
-                />
-              </div>
-            )}
-          </div>
+          )}
 
         </Card>
       )}
 
-      {/* Keyboard shortcut hint */}
+      {/* Keyboard shortcut hint button */}
       <button
         onClick={() => keyboard.setShowShortcuts(true)}
-        className="fixed bottom-4 right-4 w-8 h-8 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-sm flex items-center justify-center hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors z-40"
+        className="fixed bottom-4 right-4 w-8 h-8 rounded-full bg-muted border shadow-sm flex items-center justify-center hover:bg-muted/80 transition-colors z-40"
         title="Sneltoetsen (?)"
       >
-        <Keyboard className="w-4 h-4 text-stone-400" />
+        <Keyboard className="w-4 h-4 text-muted-foreground" />
       </button>
 
       {/* Keyboard shortcuts overlay */}
       {keyboard.showShortcuts && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => keyboard.setShowShortcuts(false)}>
-          <div className="bg-white dark:bg-stone-900 rounded-lg border border-stone-200 dark:border-stone-700 shadow-xl p-6 w-80 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => keyboard.setShowShortcuts(false)}>
+          <div className="bg-popover rounded-lg border shadow-xl p-6 w-80 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-[#1a1a1a] dark:text-stone-100">Sneltoetsen</h3>
-              <button onClick={() => keyboard.setShowShortcuts(false)} className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800">
-                <X className="w-4 h-4 text-stone-400" />
+              <h3 className="text-lg font-semibold">Sneltoetsen</h3>
+              <button onClick={() => keyboard.setShowShortcuts(false)} className="p-1 rounded hover:bg-muted">
+                <X className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-2">
               {KEYBOARD_SHORTCUTS.map((shortcut) => (
                 <div key={shortcut.key} className="flex items-center justify-between text-sm">
-                  <span className="text-stone-500 dark:text-stone-400">{shortcut.action}</span>
-                  <kbd className="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-xs font-mono font-medium text-stone-600 dark:text-stone-300">{shortcut.key}</kbd>
+                  <span className="text-muted-foreground">{shortcut.action}</span>
+                  <kbd className="px-2 py-0.5 rounded bg-muted text-xs font-mono font-medium">{shortcut.key}</kbd>
                 </div>
               ))}
             </div>

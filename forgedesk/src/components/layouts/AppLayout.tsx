@@ -6,7 +6,6 @@ import { HeaderNav } from './HeaderNav'
 import { TopNav } from './TopNav'
 import { MobileBottomNav } from './MobileBottomNav'
 import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
-import { QuickActionsButton } from '@/components/shared/QuickActionsButton'
 import { TabBar } from '@/components/tabs/TabBar'
 import { TrialBanner } from '@/components/shared/TrialBanner'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -29,7 +28,6 @@ export function AppLayout() {
           </div>
         </main>
         <MobileBottomNav />
-        <QuickActionsButton />
         <ForgieChatWidget />
       </div>
     )
@@ -56,7 +54,6 @@ export function AppLayout() {
           <MobileBottomNav />
         </div>
       </div>
-      <QuickActionsButton />
       <ForgieChatWidget />
     </div>
   )

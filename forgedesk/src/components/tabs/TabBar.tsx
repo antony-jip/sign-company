@@ -163,7 +163,7 @@ export function TabBar() {
         {/* Tabs */}
         <div
           ref={scrollRef}
-          className="tab-bar-scroll flex items-center gap-0.5 overflow-x-auto"
+          className="tab-bar-scroll flex items-center gap-0.5 flex-1 overflow-x-auto"
           onScroll={checkOverflow}
         >
           {tabs.map(tab => (
@@ -197,7 +197,7 @@ export function TabBar() {
 
         {/* New tab */}
         <button
-          className="flex-shrink-0 p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+          className="flex-shrink-0 p-1 text-muted-foreground/50 hover:text-foreground hover:bg-card/50 rounded-md transition-colors"
           onClick={newTab}
           title="Nieuw tabblad (Cmd+T)"
         >

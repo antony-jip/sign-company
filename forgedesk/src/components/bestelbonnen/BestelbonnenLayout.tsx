@@ -13,8 +13,6 @@ import { Card } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { SkeletonTable } from '@/components/ui/skeleton'
-import { EmptyState } from '@/components/ui/empty-state'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import type { Bestelbon, Leverancier, Project } from '@/types'
 import {
@@ -156,16 +154,11 @@ export function BestelbonnenLayout() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
-            <ShoppingCart className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground font-display">Bestelbonnen</h1>
-          </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Bestelbonnen laden...</p>
         </div>
-        <SkeletonTable rows={6} cols={4} />
       </div>
     )
   }
@@ -230,22 +223,17 @@ export function BestelbonnenLayout() {
       </div>
 
       {/* Table */}
-      {gefilterd.length === 0 ? (
-        <Card className="border-dashed">
-          <EmptyState
-            module="default"
-            title="Nog geen bestelbonnen"
-            description="Maak een bestelbon aan vanuit een offerte of handmatig."
-            action={
-              <Button variant="outline" size="sm" onClick={() => navigate('/bestelbonnen/nieuw')}>
-                <Plus className="h-4 w-4 mr-2" /> Nieuwe bestelbon
-              </Button>
-            }
-          />
-        </Card>
-      ) : (
       <Card>
         <div className="overflow-x-auto">
+          {gefilterd.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
+              <ShoppingCart className="h-10 w-10 opacity-30" />
+              <p className="text-sm font-medium">Geen bestelbonnen gevonden</p>
+              <Button variant="outline" size="sm" onClick={() => navigate('/bestelbonnen/nieuw')}>
+                <Plus className="h-4 w-4 mr-2" /> Eerste bestelbon aanmaken
+              </Button>
+            </div>
+          ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
@@ -286,9 +274,9 @@ export function BestelbonnenLayout() {
                 })}
               </tbody>
             </table>
+          )}
         </div>
       </Card>
-      )}
 
       {/* Delete dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

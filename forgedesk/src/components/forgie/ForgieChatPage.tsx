@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Sparkles, Send, RotateCcw, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -8,12 +7,9 @@ import {
   getForgieHistory,
   clearForgieHistory,
   type ForgieChatMessage,
-  type ForgieActie,
-  type ForgieContext,
 } from '@/services/forgieChatService'
 import { getForgieUsage, type ForgieUsage } from '@/services/forgieService'
 import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
-import { ForgieActieKaart } from './ForgieActieKaart'
 
 const SUGGESTIE_CHIPS = [
   'Wat staat er open?',
@@ -25,27 +21,13 @@ const SUGGESTIE_CHIPS = [
 ]
 
 export function ForgieChatPage() {
-  const location = useLocation()
-  const navigate = useNavigate()
   const [messages, setMessages] = useState<ForgieChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [usage, setUsage] = useState<ForgieUsage | null>(null)
-  const [completedActies, setCompletedActies] = useState<Record<string, string>>({})
-  const [navigateCountdown, setNavigateCountdown] = useState<{ url: string; seconds: number } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  const context: ForgieContext = useMemo(() => {
-    const path = location.pathname
-    const parts = path.split('/').filter(Boolean)
-    return {
-      huidige_pagina: path,
-      huidige_module: parts[0] || 'dashboard',
-      entity_id: parts[1] || undefined,
-    }
-  }, [location.pathname])
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -74,19 +56,13 @@ export function ForgieChatPage() {
     if (!question || loading) return
 
     setInput('')
-    setCompletedActies({})
-    setNavigateCountdown(null)
     const userMsg: ForgieChatMessage = { role: 'user', content: question }
     setMessages(prev => [...prev, userMsg])
     setLoading(true)
 
     try {
-      const result = await sendForgieChat(question, messages, context)
-      const forgieMsg: ForgieChatMessage = {
-        role: 'forgie',
-        content: result.answer,
-        acties: result.acties,
-      }
+      const result = await sendForgieChat(question, messages)
+      const forgieMsg: ForgieChatMessage = { role: 'forgie', content: result.answer }
       setMessages(prev => [...prev, forgieMsg])
       setUsage({ usage: result.usage, limiet: result.limiet })
     } catch (err) {
@@ -99,36 +75,7 @@ export function ForgieChatPage() {
       setLoading(false)
       inputRef.current?.focus()
     }
-  }, [input, loading, messages, context])
-
-  const handleActieCreated = useCallback((type: string, id: string, navigeerNaar?: string) => {
-    setCompletedActies(prev => ({ ...prev, [type]: id }))
-    if (navigeerNaar) {
-      const url = navigeerNaar.replace('{id}', id)
-      setNavigateCountdown({ url, seconds: 2 })
-    }
-  }, [])
-
-  const handleActieCancel = useCallback(() => {
-    setMessages(prev => [
-      ...prev,
-      { role: 'forgie', content: 'Oké, laat maar weten als je iets anders nodig hebt.' },
-    ])
-  }, [])
-
-  // Auto-navigate countdown
-  useEffect(() => {
-    if (!navigateCountdown) return
-    if (navigateCountdown.seconds <= 0) {
-      navigate(navigateCountdown.url)
-      setNavigateCountdown(null)
-      return
-    }
-    const timer = setTimeout(() => {
-      setNavigateCountdown(prev => prev ? { ...prev, seconds: prev.seconds - 1 } : null)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [navigateCountdown, navigate])
+  }, [input, loading, messages])
 
   const handleClear = useCallback(async () => {
     await clearForgieHistory().catch(() => {})
@@ -203,55 +150,28 @@ export function ForgieChatPage() {
 
         {/* Chat messages */}
         {messages.map((msg, i) => (
-          <div key={i}>
-            <div
-              className={cn(
-                'flex gap-3',
-                msg.role === 'user' ? 'justify-end' : 'justify-start'
-              )}
-            >
-              {msg.role === 'forgie' && (
-                <div className="flex-shrink-0 mt-1">
-                  <Sparkles className="w-4 h-4 text-blush-deep" />
-                </div>
-              )}
-              <div
-                className={cn(
-                  'max-w-[85%] rounded-2xl p-4 text-sm whitespace-pre-wrap',
-                  msg.role === 'user'
-                    ? 'bg-mist/20 text-foreground'
-                    : 'bg-card border text-foreground'
-                )}
-              >
-                {msg.role === 'forgie' ? renderForgieMarkdown(msg.content) : msg.content}
-              </div>
-            </div>
-            {msg.acties && msg.acties.length > 0 && (
-              <div className="mt-3 space-y-3 pl-7">
-                {msg.acties.map((actie, j) => (
-                  <ForgieActieKaart
-                    key={`${i}-${j}`}
-                    actie={actie}
-                    onCreated={(type, id) => handleActieCreated(type, id, actie.navigeer_naar)}
-                    onCancel={() => handleActieCancel()}
-                    disabled={!!actie.wacht_op && !completedActies[actie.wacht_op]}
-                    pendingKlantId={completedActies['klant']}
-                    pendingProjectId={completedActies['project']}
-                  />
-                ))}
-                {navigateCountdown && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>Je wordt doorgestuurd in {navigateCountdown.seconds}s...</span>
-                    <button
-                      onClick={() => setNavigateCountdown(null)}
-                      className="underline hover:text-foreground"
-                    >
-                      Blijf hier
-                    </button>
-                  </div>
-                )}
+          <div
+            key={i}
+            className={cn(
+              'flex gap-3',
+              msg.role === 'user' ? 'justify-end' : 'justify-start'
+            )}
+          >
+            {msg.role === 'forgie' && (
+              <div className="flex-shrink-0 mt-1">
+                <Sparkles className="w-4 h-4 text-blush-deep" />
               </div>
             )}
+            <div
+              className={cn(
+                'max-w-[85%] rounded-2xl p-4 text-sm whitespace-pre-wrap',
+                msg.role === 'user'
+                  ? 'bg-mist/20 text-foreground'
+                  : 'bg-card border text-foreground'
+              )}
+            >
+              {msg.role === 'forgie' ? renderForgieMarkdown(msg.content) : msg.content}
+            </div>
           </div>
         ))}
 

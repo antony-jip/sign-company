@@ -108,7 +108,7 @@ export function ProjectCreate() {
 
       await createProject({
         user_id: user.id,
-        klant_id: klantId || null,
+        klant_id: klantId,
         naam: naam.trim(),
         beschrijving: beschrijving.trim(),
         status,
@@ -192,13 +192,14 @@ export function ProjectCreate() {
               <Label htmlFor="klant" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                 Klant
               </Label>
-              <Select value={klantId || "none"} onValueChange={(v) => setKlantId(v === "none" ? "" : v)}>
+              <Select value={klantId} onValueChange={setKlantId}>
                 <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Selecteer klant" />
+                  <SelectValue placeholder={klanten.length === 0 ? 'Geen klanten' : 'Selecteer klant'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Geen klant / Particulier</SelectItem>
-                  {klanten.map((klant) => (
+                  {klanten.length === 0 ? (
+                    <SelectItem value="_empty" disabled>Voeg eerst een klant toe</SelectItem>
+                  ) : klanten.map((klant) => (
                     <SelectItem key={klant.id} value={klant.id}>
                       {klant.bedrijfsnaam || klant.contactpersoon}
                     </SelectItem>
@@ -212,8 +213,8 @@ export function ProjectCreate() {
                 Contactpersoon
               </Label>
               <Select
-                value={contactpersoonId || "none"}
-                onValueChange={(v) => setContactpersoonId(v === "none" ? "" : v)}
+                value={contactpersoonId}
+                onValueChange={setContactpersoonId}
                 disabled={!klantId || contactpersonen.length === 0}
               >
                 <SelectTrigger className="h-9">
@@ -228,7 +229,6 @@ export function ProjectCreate() {
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Geen contactpersoon</SelectItem>
                   {contactpersonen.map((cp) => (
                     <SelectItem key={cp.id} value={cp.id}>
                       <span>{cp.naam}</span>
@@ -245,12 +245,11 @@ export function ProjectCreate() {
                 <Label htmlFor="vestiging" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                   Vestiging
                 </Label>
-                <Select value={vestigingId || "none"} onValueChange={(v) => setVestigingId(v === "none" ? "" : v)}>
+                <Select value={vestigingId} onValueChange={setVestigingId}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Selecteer vestiging (optioneel)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Geen vestiging</SelectItem>
                     {vestigingen.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
                         <span>{v.naam}</span>

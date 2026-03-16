@@ -106,12 +106,12 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Eye }> = {
-  verstuurd: { label: 'Verstuurd', color: 'bg-[#E6EAF0] text-[#5D7A93]', icon: Clock },
-  bekeken: { label: 'Bekeken', color: 'bg-[#F6F4EC] text-[#9A8E6E]', icon: Eye },
-  goedgekeurd: { label: 'Goedgekeurd', color: 'bg-[#E4EBE6] text-[#5A8264]', icon: CheckCircle2 },
-  revisie: { label: 'Revisie gevraagd', color: 'bg-[#FAE8E0] text-[#D4856B]', icon: RotateCcw },
-  betaald: { label: 'Betaald', color: 'bg-[#E4EBE6] text-[#5A8264]', icon: CreditCard },
-  vervangen: { label: 'Vervangen', color: 'bg-[#F2F2ED] text-[#8A8A85]', icon: AlertCircle },
+  verstuurd: { label: 'Verstuurd', color: 'bg-blue-50 text-blue-700', icon: Clock },
+  bekeken: { label: 'Bekeken', color: 'bg-gray-100 text-gray-700', icon: Eye },
+  goedgekeurd: { label: 'Goedgekeurd', color: 'bg-green-50 text-green-700', icon: CheckCircle2 },
+  revisie: { label: 'Revisie gevraagd', color: 'bg-amber-50 text-amber-700', icon: RotateCcw },
+  betaald: { label: 'Betaald', color: 'bg-green-50 text-green-700', icon: CreditCard },
+  vervangen: { label: 'Vervangen', color: 'bg-gray-100 text-gray-500', icon: AlertCircle },
 }
 
 function formatDate(dateStr: string): string {
@@ -228,33 +228,33 @@ function PortaalItemCard({
   }, [item.id, markBekeken])
 
   return (
-    <div ref={cardRef} className="bg-white rounded-xl border border-[#E8E8E3] overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.03)] transition-shadow hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+    <div ref={cardRef} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-5 flex items-start justify-between gap-3">
+      <div className="px-5 py-4 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: primaire_kleur + '12', color: primaire_kleur }}
+            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: primaire_kleur + '15', color: primaire_kleur }}
           >
-            <TypeIcon className="w-[18px] h-[18px]" />
+            <TypeIcon className="w-4.5 h-4.5" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-[#1A1A1A] tracking-[-0.01em]">{item.titel}</h3>
+              <h3 className="font-medium text-gray-900 truncate">{item.titel}</h3>
               {item.label && (
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#F2F2ED] text-[#5A5A55] whitespace-nowrap font-medium">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 whitespace-nowrap">
                   {item.label}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-[#8A8A85]">{TYPE_LABELS[item.type]}</span>
-              <span className="text-xs text-[#C0C0BA]">&middot;</span>
-              <span className="text-xs text-[#8A8A85]">{formatDate(item.created_at)}</span>
+              <span className="text-xs text-gray-500">{TYPE_LABELS[item.type]}</span>
+              <span className="text-xs text-gray-300">·</span>
+              <span className="text-xs text-gray-500">{formatDate(item.created_at)}</span>
             </div>
           </div>
         </div>
-        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${statusConfig.color}`}>
+        <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusConfig.color}`}>
           <StatusIcon className="w-3 h-3" />
           {statusConfig.label}
         </div>
@@ -262,63 +262,63 @@ function PortaalItemCard({
 
       {/* Omschrijving — chat bubble voor bericht items */}
       {item.omschrijving && item.type === 'bericht' ? (
-        <div className="px-6 pb-4">
+        <div className="px-5 pb-3">
           <div className="flex justify-start">
             <div className="max-w-[80%]">
-              <div className="rounded-2xl rounded-bl-md bg-[#F2F2ED] px-4 py-2.5">
-                <p className="text-sm text-[#333330] whitespace-pre-wrap leading-relaxed">{item.omschrijving}</p>
+              <div className="rounded-2xl rounded-bl-md bg-gray-100 px-3.5 py-2">
+                <p className="text-sm text-gray-800 whitespace-pre-wrap">{item.omschrijving}</p>
               </div>
-              <p className="text-[11px] text-[#C0C0BA] mt-1">{formatDate(item.created_at)}</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">{formatDate(item.created_at)}</p>
             </div>
           </div>
         </div>
       ) : item.omschrijving ? (
-        <div className="px-6 pb-4">
-          <p className="text-sm text-[#5A5A55] whitespace-pre-wrap leading-relaxed">{item.omschrijving}</p>
+        <div className="px-5 pb-3">
+          <p className="text-sm text-gray-600 whitespace-pre-wrap">{item.omschrijving}</p>
         </div>
       ) : null}
 
       {/* Bedrag */}
       {item.bedrag != null && item.type === 'factuur' && (
-        <div className="px-6 pb-4">
-          <div className="flex items-center justify-between bg-[#FAFAF7] rounded-xl px-5 py-3 border border-[#E8E8E3]">
-            <span className="text-sm text-[#5A5A55]">Bedrag</span>
-            <span className="text-lg font-bold text-[#1A1A1A] tracking-[-0.02em]">{formatCurrency(item.bedrag)}</span>
+        <div className="px-5 pb-3">
+          <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2.5">
+            <span className="text-sm text-gray-600">Bedrag</span>
+            <span className="text-lg font-semibold text-gray-900">{formatCurrency(item.bedrag)}</span>
           </div>
         </div>
       )}
 
       {/* Mollie betaallink */}
       {item.mollie_payment_url && item.status !== 'betaald' && (
-        <div className="px-6 pb-4">
+        <div className="px-5 pb-3">
           <a
             href={item.mollie_payment_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors"
             style={{ backgroundColor: primaire_kleur }}
           >
             <CreditCard className="w-4 h-4" />
             Online betalen
-            <ExternalLink className="w-3 h-3 opacity-60" />
+            <ExternalLink className="w-3 h-3" />
           </a>
         </div>
       )}
 
       {/* Afbeeldingen — klik voor lightbox */}
       {images.length > 0 && (
-        <div className="px-6 pb-4">
-          <div className={`grid gap-2.5 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+        <div className="px-5 pb-3">
+          <div className={`grid gap-2 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
             {images.map((img, idx) => (
               <button
                 key={img.id}
                 onClick={() => onImageClick(images.map(i => ({ url: i.url, bestandsnaam: i.bestandsnaam, grootte: i.grootte })), idx)}
-                className="block rounded-xl overflow-hidden border border-[#E8E8E3] hover:border-[#C0C0BA] transition-all cursor-zoom-in hover:shadow-md"
+                className="block rounded-lg overflow-hidden border border-gray-100 hover:border-gray-300 transition-colors cursor-zoom-in"
               >
                 <img
                   src={img.thumbnail_url || img.url}
                   alt={img.bestandsnaam}
-                  className="w-full h-52 object-cover"
+                  className="w-full h-48 object-cover"
                   loading="lazy"
                 />
               </button>
@@ -329,18 +329,18 @@ function PortaalItemCard({
 
       {/* Bestanden */}
       {files.length > 0 && (
-        <div className="px-6 pb-4 space-y-1.5">
+        <div className="px-5 pb-3 space-y-1.5">
           {files.map((bestand) => (
             <a
               key={bestand.id}
               href={bestand.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[#E8E8E3] hover:bg-[#FAFAF7] transition-colors group"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors group"
             >
-              <FileText className="w-4 h-4 text-[#8A8A85] flex-shrink-0" />
-              <span className="text-sm text-[#333330] truncate flex-1">{bestand.bestandsnaam}</span>
-              <Download className="w-4 h-4 text-[#C0C0BA] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="text-sm text-gray-700 truncate flex-1">{bestand.bestandsnaam}</span>
+              <Download className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </a>
           ))}
         </div>
@@ -348,7 +348,7 @@ function PortaalItemCard({
 
       {/* Reacties */}
       {item.reacties.length > 0 && (
-        <div className="border-t border-[#E8E8E3] px-6 py-4 space-y-3">
+        <div className="border-t border-gray-100 px-5 py-3 space-y-3">
           {item.reacties.map((reactie) => {
             const isGoedkeuring = reactie.type === 'goedkeuring'
             const isRevisie = reactie.type === 'revisie'
@@ -367,14 +367,14 @@ function PortaalItemCard({
                 <div key={reactie.id} className="flex justify-end">
                   <div className="max-w-[80%]">
                     <div
-                      className="rounded-2xl rounded-br-md px-4 py-2.5 text-white text-sm"
+                      className="rounded-2xl rounded-br-md px-3.5 py-2 text-white text-sm"
                       style={{ backgroundColor: primaire_kleur }}
                     >
                       {reactie.bericht && (
-                        <p className="whitespace-pre-wrap leading-relaxed">{reactie.bericht}</p>
+                        <p className="whitespace-pre-wrap">{reactie.bericht}</p>
                       )}
                       {reactieBestanden.length > 0 && (
-                        <div className="mt-2 space-y-1">
+                        <div className="mt-1.5 space-y-1">
                           {reactieBestanden.map((b) => (
                             <a
                               key={b.id}
@@ -390,8 +390,8 @@ function PortaalItemCard({
                         </div>
                       )}
                     </div>
-                    <p className="text-[11px] text-[#C0C0BA] mt-1 text-right">
-                      {reactie.klant_naam && `${reactie.klant_naam} \u00b7 `}
+                    <p className="text-[11px] text-gray-400 mt-0.5 text-right">
+                      {reactie.klant_naam && `${reactie.klant_naam} · `}
                       {formatDateTime(reactie.created_at)}
                     </p>
                   </div>
@@ -400,21 +400,21 @@ function PortaalItemCard({
             }
 
             // Standaard reactie kaart (goedkeuring/revisie/bericht op niet-bericht items)
-            const bgColor = isGoedkeuring ? 'bg-[#E4EBE6] border-[#C8D5CC]' : isRevisie ? 'bg-[#FAE8E0] border-[#F5D5C8]' : 'bg-[#F2F2ED] border-[#E8E8E3]'
-            const iconColor = isGoedkeuring ? 'text-[#5A8264]' : isRevisie ? 'text-[#D4856B]' : 'text-[#8A8A85]'
+            const bgColor = isGoedkeuring ? 'bg-green-50 border-green-200' : isRevisie ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
+            const iconColor = isGoedkeuring ? 'text-green-600' : isRevisie ? 'text-amber-600' : 'text-gray-500'
             const ReactieIcon = isGoedkeuring ? CheckCircle2 : isRevisie ? RotateCcw : MessageSquare
 
             return (
-              <div key={reactie.id} className={`rounded-xl border p-4 ${bgColor}`}>
+              <div key={reactie.id} className={`rounded-xl border p-3 ${bgColor}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <ReactieIcon className={`w-4 h-4 ${iconColor}`} />
-                  <span className="text-sm font-semibold text-[#1A1A1A]">
+                  <span className="text-sm font-medium text-gray-800">
                     {isGoedkeuring ? 'Goedgekeurd' : isRevisie ? 'Revisie gevraagd' : 'Bericht'}
                     {reactie.klant_naam && ` door ${reactie.klant_naam}`}
                   </span>
                 </div>
                 {reactie.bericht && (
-                  <p className="text-sm text-[#333330] whitespace-pre-wrap ml-6 leading-relaxed">{reactie.bericht}</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap ml-6">{reactie.bericht}</p>
                 )}
                 {reactieBestanden.length > 0 && (
                   <div className="ml-6 mt-2 space-y-1">
@@ -424,7 +424,7 @@ function PortaalItemCard({
                         href={b.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-[#5D7A93] hover:text-[#1A1A1A] transition-colors"
+                        className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800"
                       >
                         <Paperclip className="w-3 h-3" />
                         {b.bestandsnaam}
@@ -432,7 +432,7 @@ function PortaalItemCard({
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-[#8A8A85] mt-2 ml-6">{formatDateTime(reactie.created_at)}</p>
+                <p className="text-xs text-gray-500 mt-1.5 ml-6">{formatDateTime(reactie.created_at)}</p>
               </div>
             )
           })}
@@ -504,20 +504,18 @@ export function PortaalPagina() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAF7] flex items-center justify-center">
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <Loader2 className="w-8 h-8 animate-spin text-[#C0C0BA]" />
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
       </div>
     )
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-[#FAFAF7] flex items-center justify-center p-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-[#C0C0BA] mx-auto" />
-          <p className="text-[#5A5A55]">{error || 'Portaal niet gevonden'}</p>
+          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto" />
+          <p className="text-gray-600">{error || 'Portaal niet gevonden'}</p>
         </div>
       </div>
     )
@@ -553,9 +551,7 @@ export function PortaalPagina() {
   const toonContact = instellingen.contactgegevens_tonen !== false
 
   return (
-    <div className="min-h-screen bg-[#FAFAF7]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
+    <div className="min-h-screen bg-[#FAFAF8]">
       {/* Lightbox */}
       {lightboxImages && (
         <PortaalLightbox
@@ -566,34 +562,34 @@ export function PortaalPagina() {
       )}
 
       {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-[#E8E8E3] sticky top-0 z-30">
-        <div className="max-w-[800px] mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {bedrijf.logo_url ? (
               <img
                 src={bedrijf.logo_url}
                 alt={bedrijf.naam}
-                className="h-9 w-auto max-w-[160px] object-contain"
+                className="h-8 w-auto max-w-[140px] object-contain"
               />
             ) : (
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
                 style={{ backgroundColor: primaire_kleur }}
               >
                 {bedrijf.naam.charAt(0).toUpperCase()}
               </div>
             )}
-            <span className="font-semibold text-[#1A1A1A] tracking-[-0.02em]">{bedrijf.naam}</span>
+            <span className="font-semibold text-gray-900">{bedrijf.naam}</span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[800px] mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         {project && (
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-[-0.03em]">{project.naam}</h1>
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">{project.naam}</h1>
             {(project.adres || project.plaats) && (
-              <p className="text-sm text-[#8A8A85]">
+              <p className="text-sm text-gray-500 mt-0.5">
                 {[project.adres, project.postcode, project.plaats].filter(Boolean).join(', ')}
               </p>
             )}
@@ -601,20 +597,20 @@ export function PortaalPagina() {
         )}
 
         {portaal.instructie_tekst && (
-          <div className="bg-white rounded-xl border border-[#E8E8E3] px-6 py-5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]">
-            <p className="text-sm text-[#333330] leading-relaxed whitespace-pre-wrap">{portaal.instructie_tekst}</p>
+          <div className="bg-white rounded-2xl border border-gray-200 px-5 py-4">
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{portaal.instructie_tekst}</p>
           </div>
         )}
 
-        <div className="flex items-center gap-2 text-xs text-[#8A8A85]">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
           <Calendar className="w-3.5 h-3.5" />
           <span>Beschikbaar tot {formatDate(portaal.verloopt_op)}</span>
         </div>
 
         {items.length === 0 ? (
-          <div className="bg-white rounded-xl border border-[#E8E8E3] px-6 py-16 text-center shadow-[0_2px_16px_rgba(0,0,0,0.03)]">
-            <FileText className="w-10 h-10 text-[#C0C0BA] mx-auto mb-3" />
-            <p className="text-[#8A8A85]">Nog geen items gedeeld.</p>
+          <div className="bg-white rounded-2xl border border-gray-200 px-5 py-12 text-center">
+            <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">Nog geen items gedeeld.</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -633,26 +629,26 @@ export function PortaalPagina() {
         )}
 
         {toonContact && (bedrijf.telefoon || bedrijf.email || bedrijf.website) && (
-          <div className="bg-white rounded-xl border border-[#E8E8E3] px-6 py-5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]">
-            <div className="flex items-center gap-2 text-[#1A1A1A] font-semibold text-sm mb-3">
-              <Building2 className="w-4 h-4 text-[#8A8A85]" />
+          <div className="bg-white rounded-2xl border border-gray-200 px-5 py-4 space-y-2">
+            <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
+              <Building2 className="w-4 h-4" />
               <span>Contact</span>
             </div>
-            <div className="flex flex-wrap gap-5 text-sm text-[#5A5A55]">
+            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
               {bedrijf.telefoon && (
-                <a href={`tel:${bedrijf.telefoon}`} className="inline-flex items-center gap-1.5 hover:text-[#1A1A1A] transition-colors">
+                <a href={`tel:${bedrijf.telefoon}`} className="inline-flex items-center gap-1.5 hover:text-gray-900">
                   <Phone className="w-3.5 h-3.5" />
                   {bedrijf.telefoon}
                 </a>
               )}
               {bedrijf.email && (
-                <a href={`mailto:${bedrijf.email}`} className="inline-flex items-center gap-1.5 hover:text-[#1A1A1A] transition-colors">
+                <a href={`mailto:${bedrijf.email}`} className="inline-flex items-center gap-1.5 hover:text-gray-900">
                   <Mail className="w-3.5 h-3.5" />
                   {bedrijf.email}
                 </a>
               )}
               {bedrijf.website && (
-                <a href={bedrijf.website.startsWith('http') ? bedrijf.website : `https://${bedrijf.website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-[#1A1A1A] transition-colors">
+                <a href={bedrijf.website.startsWith('http') ? bedrijf.website : `https://${bedrijf.website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-gray-900">
                   <Globe className="w-3.5 h-3.5" />
                   {bedrijf.website.replace(/^https?:\/\//, '')}
                 </a>
@@ -662,10 +658,8 @@ export function PortaalPagina() {
         )}
       </main>
 
-      <footer className="max-w-[800px] mx-auto px-6 py-10 text-center border-t border-[#E8E8E3]">
-        <span className="text-xs text-[#C0C0BA]">
-          Powered by <strong className="font-semibold text-[#8A8A85]">FORGE</strong><span className="text-[#8A8A85]">desk</span>
-        </span>
+      <footer className="max-w-3xl mx-auto px-4 py-8 text-center">
+        <p className="text-xs text-gray-400">Powered by FORGEdesk</p>
       </footer>
     </div>
   )

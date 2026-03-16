@@ -1751,7 +1751,6 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     email_fetch_limit: 200,
     forgie_enabled: true,
     forgie_bedrijfscontext: '',
-    quick_action_items: ['project', 'mail', 'offerte', 'klant'],
     ai_tone_of_voice: '',
     mollie_api_key: '',
     mollie_enabled: false,
@@ -4952,11 +4951,6 @@ const DEFAULT_PORTAAL_INSTELLINGEN: PortaalInstellingen = {
   bedrijfslogo_op_portaal: true,
   bedrijfskleuren_gebruiken: true,
   contactgegevens_tonen: true,
-  herinnering_ook_voor_factuur: false,
-  email_nieuw_item_onderwerp: '{bedrijfsnaam} — {itemtitel}',
-  email_nieuw_item_tekst: 'Er is een nieuw item gedeeld voor project {projectnaam}.',
-  email_herinnering_onderwerp: 'Herinnering: {itemtitel} wacht op uw reactie',
-  email_herinnering_tekst: 'U heeft nog niet gereageerd op {itemtitel} voor project {projectnaam}.',
 }
 
 export function getDefaultPortaalInstellingen(): PortaalInstellingen {
