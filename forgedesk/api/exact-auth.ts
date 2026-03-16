@@ -1,11 +1,29 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { createHmac } from 'crypto'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const EXACT_AUTH_URL = 'https://start.exactonline.nl/api/oauth2/auth'
 const REDIRECT_URI = 'https://forgedesk-ten.vercel.app/api/exact-callback'
+
+export function signState(userId: string): string {
+  const secret = SUPABASE_SERVICE_KEY || 'fallback-secret'
+  const sig = createHmac('sha256', secret).update(userId).digest('hex').slice(0, 16)
+  return `${userId}:${sig}`
+}
+
+export function verifyState(state: string): string | null {
+  const parts = state.split(':')
+  if (parts.length < 2) return null
+  const sig = parts.pop()!
+  const userId = parts.join(':') // UUIDs contain no colons, but be safe
+  const secret = SUPABASE_SERVICE_KEY || 'fallback-secret'
+  const expected = createHmac('sha256', secret).update(userId).digest('hex').slice(0, 16)
+  if (sig !== expected) return null
+  return userId
+}
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
@@ -43,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       client_id: settings.exact_online_client_id,
       redirect_uri: REDIRECT_URI,
       response_type: 'code',
-      state: user_id,
+      state: signState(user_id),
       force_login: '0',
     })
 

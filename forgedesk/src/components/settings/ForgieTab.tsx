@@ -134,16 +134,19 @@ export function ForgieTab() {
 
   useEffect(() => {
     if (!user?.id) return
-    getVisualizerInstellingen(user.id).then(setVisInstellingen).catch(() => {})
+    let cancelled = false
+    getVisualizerInstellingen(user.id).then(v => { if (!cancelled) setVisInstellingen(v) }).catch(() => {})
     getVisualizerCredits(user.id).then(c => {
+      if (cancelled) return
       setCreditSaldo(c.saldo)
       setTotaalGebruikt(c.totaal_gebruikt)
     }).catch(() => {})
-    getCreditTransacties(user.id).then(t => setTransacties(t.slice(0, 20))).catch(() => {})
-    getForgieGebruik(user.id).then(setForgieGebruik).catch(() => {})
+    getCreditTransacties(user.id).then(t => { if (!cancelled) setTransacties(t.slice(0, 20)) }).catch(() => {})
+    getForgieGebruik(user.id).then(g => { if (!cancelled) setForgieGebruik(g) }).catch(() => {})
+    return () => { cancelled = true }
   }, [user?.id])
 
-  useEffect(() => { loadImports() }, [])
+  useEffect(() => { if (user?.id) loadImports() }, [user?.id])
 
   const loadImports = useCallback(async () => {
     setLoadingImports(true)

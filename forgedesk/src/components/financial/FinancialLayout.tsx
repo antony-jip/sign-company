@@ -45,11 +45,14 @@ export function FinancialLayout() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     Promise.all([getGrootboek(), getOffertes()]).then(([gb, off]) => {
+      if (cancelled) return
       setGrootboek(gb)
       setOffertes(off)
       setIsLoading(false)
     })
+    return () => { cancelled = true }
   }, [])
 
   const totaleOmzet = useMemo(

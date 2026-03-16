@@ -124,9 +124,10 @@ async function checkEnStuurHerinneringen(userId: string, bedrijfsnaam: string, l
     ? `<img src="${logoUrl}" alt="${bedrijfsnaam}" style="max-height:40px;margin-bottom:16px;" /><br/>`
     : ''
 
-  for (const item of teVersturen) {
+  // Parallel versturen voor betere performance bij veel items
+  await Promise.all(teVersturen.map(async (item) => {
     const portaal = portaalMap.get(item.portaal_id)
-    if (!portaal) continue
+    if (!portaal) return
 
     const project = projectMap.get(item.project_id)
     const klant = project ? klantMap.get(project.klant_id) : undefined
@@ -177,5 +178,5 @@ async function checkEnStuurHerinneringen(userId: string, bedrijfsnaam: string, l
       gelezen: false,
       actie_genomen: false,
     })
-  }
+  }))
 }

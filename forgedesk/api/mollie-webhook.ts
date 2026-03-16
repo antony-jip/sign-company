@@ -13,26 +13,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    // Verifieer webhook signature (verplicht in productie)
+    // Verifieer webhook signature — verplicht (fail-closed)
     if (!MOLLIE_WEBHOOK_SECRET) {
-      console.error('Mollie webhook: MOLLIE_WEBHOOK_SECRET niet geconfigureerd')
+      console.error('MOLLIE_WEBHOOK_SECRET is niet geconfigureerd — webhook geweigerd')
       return res.status(500).json({ error: 'Webhook verificatie niet geconfigureerd' })
     }
-
     const signature = req.headers['x-mollie-signature'] as string | undefined
     const expectedSignature = crypto
       .createHmac('sha256', MOLLIE_WEBHOOK_SECRET)
       .update(JSON.stringify(req.body))
       .digest('hex')
-    if (signature !== expectedSignature) {
+    if (!signature || signature !== expectedSignature) {
       console.warn('Mollie webhook: ongeldige signature')
       return res.status(401).json({ error: 'Ongeldige webhook signature' })
     }
 
+    // Valideer altijd dat het een geldig Mollie payment ID formaat is
+    const paymentIdPattern = /^tr_[a-zA-Z0-9]+$/
+
     const { id: paymentId } = req.body as { id?: string }
 
-    if (!paymentId) {
-      return res.status(400).json({ error: 'Payment ID ontbreekt' })
+    if (!paymentId || !paymentIdPattern.test(paymentId)) {
+      return res.status(400).json({ error: 'Ongeldig of ontbrekend Payment ID' })
     }
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {

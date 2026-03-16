@@ -30,11 +30,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const stripe = new Stripe(STRIPE_SECRET_KEY)
-    await verifyUser(req)
+    const user = await verifyUser(req)
 
     const { organisatie_id } = req.body as { organisatie_id: string }
     if (!organisatie_id) {
       return res.status(400).json({ error: 'organisatie_id is verplicht' })
+    }
+
+    // Verify user belongs to this organisation
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.organisatie_id !== organisatie_id) {
+      return res.status(403).json({ error: 'Geen toegang tot deze organisatie' })
     }
 
     const { data: org, error: orgError } = await supabaseAdmin

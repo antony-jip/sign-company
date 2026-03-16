@@ -446,7 +446,9 @@ export function FORGEdeskAIChat() {
 
   // Load facturen on mount
   useEffect(() => {
-    db.getFacturen().then(setFacturen).catch(() => setFacturen([]))
+    let cancelled = false
+    db.getFacturen().then(f => { if (!cancelled) setFacturen(f) }).catch(() => { if (!cancelled) setFacturen([]) })
+    return () => { cancelled = true }
   }, [])
 
   const businessData = useMemo<BusinessData>(() => ({

@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    await verifyUser(req)
+    const userId = await verifyUser(req)
 
     const { profile_id, action, rol } = req.body as {
       profile_id: string
@@ -43,6 +43,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
       return res.status(500).json({ error: 'Server configuratie onvolledig' })
+    }
+
+    // Voorkom dat gebruiker zichzelf beheert
+    if (profile_id === userId) {
+      return res.status(403).json({ error: 'Je kunt je eigen account niet beheren via dit endpoint' })
+    }
+
+    // Controleer of de aanvrager een admin is
+    const { data: requesterProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id, rol')
+      .eq('id', userId)
+      .single()
+
+    if (!requesterProfile || requesterProfile.rol !== 'admin') {
+      return res.status(403).json({ error: 'Alleen admins kunnen teamleden beheren' })
+    }
+
+    // Controleer of het doelprofiel bij dezelfde organisatie hoort
+    const { data: targetProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', profile_id)
+      .single()
+
+    if (!targetProfile || targetProfile.organisatie_id !== requesterProfile.organisatie_id) {
+      return res.status(403).json({ error: 'Dit teamlid hoort niet bij jouw organisatie' })
     }
 
     switch (action) {

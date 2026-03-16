@@ -41,6 +41,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'organisatie_id is verplicht' })
     }
 
+    // Verify user belongs to this organisation
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.organisatie_id !== organisatie_id) {
+      return res.status(403).json({ error: 'Geen toegang tot deze organisatie' })
+    }
+
     // Haal organisatie op
     const { data: org, error: orgError } = await supabaseAdmin
       .from('organisaties')

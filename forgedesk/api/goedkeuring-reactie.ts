@@ -1,29 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
-// Rate limiting: 10 per uur per IP
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + 3_600_000 })
-    return false
-  }
-  entry.count++
-  return entry.count > 10
-}
+import { supabaseAdmin, isRateLimited } from './_shared'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
-  if (isRateLimited(clientIp)) {
+  if (await isRateLimited(clientIp, 'goedkeuring-reactie', 10, 3600)) {
     return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
   }
 
@@ -50,12 +33,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (status === 'revisie' && (!revisie_opmerkingen || !revisie_opmerkingen.trim())) {
       return res.status(400).json({ error: 'Opmerkingen zijn verplicht bij revisie' })
     }
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      return res.status(500).json({ error: 'Server configuratie onvolledig' })
-    }
-
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
     // Haal goedkeuring op
     const { data: gk, error: gkError } = await supabaseAdmin

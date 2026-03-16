@@ -191,8 +191,8 @@ function createEmptyLineItem(): LineItem {
 }
 
 function calcLineTotal(item: LineItem): number {
-  const subtotaal = item.aantal * item.eenheidsprijs
-  const korting = subtotaal * (item.korting_percentage / 100)
+  const subtotaal = round2(item.aantal * item.eenheidsprijs)
+  const korting = round2(subtotaal * (item.korting_percentage / 100))
   return round2(subtotaal - korting)
 }
 

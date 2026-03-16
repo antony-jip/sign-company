@@ -1,43 +1,61 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin, isRateLimited } from './_shared'
+import { createTransport } from 'nodemailer'
+import crypto from 'crypto'
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
 
-// Rate limiting: 10 reacties per uur per IP
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 10
-const RATE_WINDOW_MS = 3_600_000
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
-    return false
-  }
-  entry.count++
-  return entry.count > RATE_LIMIT
+function decrypt(encrypted: string): string {
+  if (!ENCRYPTION_KEY) throw new Error('No encryption key')
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
+  const [ivHex, encHex] = encrypted.split(':')
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
+  let decrypted = decipher.update(encHex, 'hex', 'utf8')
+  decrypted += decipher.final('utf8')
+  return decrypted
 }
+
+// ---- Inline email template (Vercel bundelt geen lokale imports in api/) ----
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function buildPortalEmailHtml(params: {
+  heading: string; itemTitel?: string; beschrijving?: string; ctaLabel?: string
+  ctaUrl?: string; bedrijfsnaam?: string; quote?: string; logoUrl?: string; primaireKleur?: string
+}): string {
+  const { heading, itemTitel, beschrijving, ctaLabel = 'Bekijk in FORGEdesk \u2192', ctaUrl, bedrijfsnaam, quote, logoUrl, primaireKleur } = params
+  const sage = primaireKleur || '#5A8264'
+  const sageLight = primaireKleur ? `${primaireKleur}18` : '#E4EBE6'
+  const bgOuter = '#F4F3F0', bgCard = '#FFFFFF', textDark = '#1A1A1A', textMuted = '#5A5A55', textLight = '#8A8A85', borderLight = '#E8E8E3'
+  const itemBlock = itemTitel ? `<tr><td style="padding: 0 0 16px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid ${borderLight}; border-radius: 8px;"><tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; color: ${textDark};">${escapeHtml(itemTitel)}</td></tr>${beschrijving ? `<tr><td style="padding: 0 20px 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.6;">${escapeHtml(beschrijving)}</td></tr>` : ''}</table></td></tr>` : ''
+  const quoteBlock = quote ? `<tr><td style="padding: 0 0 20px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${primaireKleur ? sageLight : '#E4EBE6'}; border-radius: 8px; border-left: 4px solid ${sage};"><tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textDark}; font-style: italic; line-height: 1.6;">&ldquo;${escapeHtml(quote)}&rdquo;</td></tr></table></td></tr>` : ''
+  const ctaBlock = ctaUrl ? `<tr><td style="padding: 8px 0 0 0;" align="center"><a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${sage}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">${escapeHtml(ctaLabel)}</a></td></tr>` : ''
+  const footerText = bedrijfsnaam ? `Verzonden via FORGEdesk namens ${escapeHtml(bedrijfsnaam)}` : 'Verzonden via FORGEdesk'
+  const logoHtml = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
+    : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;"><strong>FORGE</strong><span style="font-weight: 300;">desk</span></span>`
+  return `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin: 0; padding: 0; background-color: ${bgOuter}; -webkit-font-smoothing: antialiased;"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: ${bgOuter}; padding: 40px 0;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 0 0 24px 0; text-align: center;">${logoHtml}</td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: ${bgCard}; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);"><tr><td style="padding: 40px 40px 36px 40px;"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0 0 24px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; line-height: 1.3;">${escapeHtml(heading)}</td></tr>${itemBlock}${quoteBlock}${ctaBlock}</table></td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 24px 0 0 0; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 12px; color: ${textLight}; line-height: 1.6;">${footerText}</td></tr></table></td></tr></table></body></html>`
+}
+// ---- Einde inline email template ----
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
-  if (isRateLimited(clientIp)) {
+  if (await isRateLimited(clientIp, 'portaal-reactie', 10, 3600)) {
     return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
   }
 
   try {
-    const { token, portaal_item_id, type, bericht, klant_naam, bestanden, portaal_bestand_id } = req.body as {
+    const { token, portaal_item_id, type, bericht, klant_naam, bestanden } = req.body as {
       token: string
       portaal_item_id: string
       type: 'goedkeuring' | 'revisie' | 'bericht'
       bericht?: string
       klant_naam?: string
       bestanden?: string[] // URLs van geüploade bestanden
-      portaal_bestand_id?: string // Voor per-afbeelding goedkeuring
     }
 
     if (!token || !portaal_item_id || !type) {
@@ -51,12 +69,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (type === 'revisie' && (!bericht || !bericht.trim())) {
       return res.status(400).json({ error: 'Bij een revisie is een bericht verplicht' })
     }
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      return res.status(500).json({ error: 'Server configuratie onvolledig' })
-    }
-
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
     // Valideer token
     const { data: portaal } = await supabaseAdmin
@@ -89,41 +101,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Item niet gevonden' })
     }
 
-    // Valideer portaal_bestand_id als meegegeven (per-afbeelding goedkeuring)
-    if (portaal_bestand_id) {
-      const { data: bestand } = await supabaseAdmin
-        .from('portaal_bestanden')
-        .select('id')
-        .eq('id', portaal_bestand_id)
-        .eq('portaal_item_id', portaal_item_id)
-        .single()
-      if (!bestand) {
-        return res.status(400).json({ error: 'Bestand hoort niet bij dit item' })
-      }
-    }
-
-    // Sanitize klant_naam: strip HTML tags en control characters
-    const sanitizedNaam = klant_naam
-      ? klant_naam.trim().replace(/<[^>]*>/g, '').replace(/[\r\n\t]/g, ' ').substring(0, 100)
-      : null
-
-    // Valideer bestanden URLs (alleen bekende URL-patronen)
-    if (bestanden && bestanden.length > 0) {
-      const invalidUrl = bestanden.find(u => !u.startsWith('http') && !u.startsWith('portaal-bestanden/') && !u.startsWith('data:'))
-      if (invalidUrl) {
-        return res.status(400).json({ error: 'Ongeldig bestand URL formaat' })
-      }
-    }
-
     // Sla reactie op
     const { data: reactie, error: reactieError } = await supabaseAdmin
       .from('portaal_reacties')
       .insert({
         portaal_item_id,
-        portaal_bestand_id: portaal_bestand_id || null,
         type,
-        bericht: bericht?.trim()?.substring(0, 5000) || null,
-        klant_naam: sanitizedNaam,
+        bericht: bericht?.trim() || null,
+        klant_naam: klant_naam?.trim() || null,
       })
       .select()
       .single()
@@ -134,48 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Update item status
-    let newStatus = type === 'goedkeuring' ? 'goedgekeurd' : type === 'revisie' ? 'revisie' : item.status
-
-    // Per-afbeelding status aggregatie: check alle afbeeldingen van het item
-    if (portaal_bestand_id && (type === 'goedkeuring' || type === 'revisie')) {
-      const { data: allBestanden } = await supabaseAdmin
-        .from('portaal_bestanden')
-        .select('id')
-        .eq('portaal_item_id', portaal_item_id)
-        .in('mime_type', ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'])
-
-      const { data: allReacties } = await supabaseAdmin
-        .from('portaal_reacties')
-        .select('portaal_bestand_id, type, created_at')
-        .eq('portaal_item_id', portaal_item_id)
-        .not('portaal_bestand_id', 'is', null)
-        .order('created_at', { ascending: false })
-
-      if (allBestanden && allReacties) {
-        const imageIds = allBestanden.map(b => b.id)
-        let alleGoedgekeurd = true
-        let heeftRevisie = false
-
-        for (const imageId of imageIds) {
-          const latestReactie = allReacties.find(r => r.portaal_bestand_id === imageId)
-          if (!latestReactie || latestReactie.type !== 'goedkeuring') {
-            alleGoedgekeurd = false
-          }
-          if (latestReactie?.type === 'revisie') {
-            heeftRevisie = true
-          }
-        }
-
-        if (alleGoedgekeurd && imageIds.length > 0) {
-          newStatus = 'goedgekeurd'
-        } else if (heeftRevisie) {
-          newStatus = 'revisie'
-        } else {
-          newStatus = 'bekeken' // Nog niet alle afbeeldingen beoordeeld
-        }
-      }
-    }
-
+    const newStatus = type === 'goedkeuring' ? 'goedgekeurd' : type === 'revisie' ? 'revisie' : item.status
     if (newStatus !== item.status) {
       await supabaseAdmin
         .from('portaal_items')
@@ -197,7 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // --- Notificatie + Email naar gebruiker (niet-blokkerend) ---
     try {
-      const displayNaam = sanitizedNaam || 'Klant'
+      const displayNaam = klant_naam?.trim() || 'Klant'
       const notifType = type === 'goedkeuring' ? 'portaal_goedkeuring' : type === 'revisie' ? 'portaal_revisie' : 'portaal_bericht'
       const actieLabel = type === 'goedkeuring' ? 'goedgekeurd' : type === 'revisie' ? 'revisie gevraagd' : 'een bericht gestuurd'
 
@@ -223,32 +167,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         bericht: bericht?.trim()
           ? `"${bericht.trim()}" — ${fullItem?.titel || 'Item'} (${project?.naam || 'Project'})`
           : `${fullItem?.titel || 'Item'} — ${project?.naam || 'Project'}`,
-        link: `/projecten/${portaal.project_id}?tab=portaal`,
+        link: `/projecten/${portaal.project_id}`,
         project_id: portaal.project_id,
         klant_id: project?.klant_id || null,
         actie_genomen: false,
         gelezen: false,
       })
 
-      // Stuur email naar gebruiker (alleen als email_bij_reactie aan staat)
-      const { data: appSettings } = await supabaseAdmin
-        .from('app_settings')
-        .select('email_instellingen, portaal_instellingen')
+      // Stuur email naar gebruiker via user_email_settings (encrypted credentials)
+      const { data: emailSettings, error: emailSettingsError } = await supabaseAdmin
+        .from('user_email_settings')
+        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
         .eq('user_id', portaal.user_id)
         .maybeSingle()
 
-      const emailConfig = appSettings?.email_instellingen as { gmail_address?: string; app_password?: string; smtp_host?: string; smtp_port?: number } | null
-      const portaalInstellingen = appSettings?.portaal_instellingen as { email_naar_mij_bij_reactie?: boolean } | null
-      const emailBijReactie = portaalInstellingen?.email_naar_mij_bij_reactie !== false // default true
+      console.log('[portaal-reactie] email lookup:', {
+        user_id: portaal.user_id,
+        found: !!emailSettings,
+        has_gmail: !!emailSettings?.gmail_address,
+        has_password: !!emailSettings?.encrypted_app_password,
+        has_encryption_key: !!ENCRYPTION_KEY,
+        error: emailSettingsError?.message || null,
+      })
 
-      if (emailBijReactie && emailConfig?.gmail_address && emailConfig?.app_password) {
+      // Haal branding info op voor email
+      const { data: profileData } = await supabaseAdmin
+        .from('profiles')
+        .select('logo_url, bedrijfsnaam')
+        .eq('id', portaal.user_id)
+        .maybeSingle()
+
+      const { data: docStyleData } = await supabaseAdmin
+        .from('document_styles')
+        .select('primaire_kleur')
+        .eq('user_id', portaal.user_id)
+        .maybeSingle()
+
+      if (emailSettings?.gmail_address && emailSettings?.encrypted_app_password && ENCRYPTION_KEY) {
+        const password = decrypt(emailSettings.encrypted_app_password)
+
         const onderwerp = type === 'goedkeuring'
           ? `Goedgekeurd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
           : type === 'revisie'
           ? `Revisie gevraagd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
           : `Nieuw bericht: ${fullItem?.titel || 'Item'} — ${displayNaam}`
 
-        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://forgedesk.nl')
+        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.forgedesk.io')
 
         const emailBody = [
           `${displayNaam} heeft ${actieLabel}:`,
@@ -258,23 +222,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           `\nBekijk in FORGEdesk: ${appUrl}/projecten/${portaal.project_id}`,
         ].filter(Boolean).join('\n')
 
-        // Fire-and-forget email
-        fetch(`${appUrl}/api/send-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            gmail_address: emailConfig.gmail_address,
-            app_password: emailConfig.app_password,
-            smtp_host: emailConfig.smtp_host,
-            smtp_port: emailConfig.smtp_port,
-            to: emailConfig.gmail_address, // Naar de gebruiker zelf
-            subject: onderwerp,
-            body: emailBody,
-          }),
-        }).catch(err => console.warn('Email naar gebruiker mislukt:', err))
+        const emailHtml = buildPortalEmailHtml({
+          heading: `${displayNaam} heeft ${actieLabel}`,
+          itemTitel: fullItem?.titel || 'Item',
+          beschrijving: `Project: ${project?.naam || 'Project'}`,
+          quote: bericht?.trim() || undefined,
+          ctaLabel: 'Bekijk in FORGEdesk \u2192',
+          ctaUrl: `${appUrl}/projecten/${portaal.project_id}`,
+          logoUrl: profileData?.logo_url || undefined,
+          primaireKleur: docStyleData?.primaire_kleur || undefined,
+        })
+
+        // Stuur direct via nodemailer
+        const transporter = createTransport({
+          host: emailSettings.smtp_host || 'smtp.gmail.com',
+          port: emailSettings.smtp_port || 587,
+          secure: (emailSettings.smtp_port || 587) === 465,
+          auth: { user: emailSettings.gmail_address, pass: password },
+        })
+
+        console.log('[portaal-reactie] sending email to:', emailSettings.gmail_address, 'subject:', onderwerp)
+        transporter.sendMail({
+          from: emailSettings.gmail_address,
+          to: emailSettings.gmail_address,
+          subject: onderwerp,
+          text: emailBody,
+          html: emailHtml,
+        }).then(() => {
+          console.log('[portaal-reactie] email sent successfully')
+        }).catch(err => console.warn('[portaal-reactie] email send failed:', err))
+      } else {
+        console.log('[portaal-reactie] skipping email — missing credentials or encryption key')
       }
     } catch (notifErr) {
-      console.warn('Notificatie/email bij reactie mislukt:', notifErr)
+      console.error('[portaal-reactie] notificatie/email error:', notifErr)
     }
 
     return res.status(201).json({ reactie })

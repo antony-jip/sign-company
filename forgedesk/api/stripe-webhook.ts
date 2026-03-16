@@ -54,6 +54,17 @@ async function handleCreditsCheckout(session: Stripe.Checkout.Session) {
     .eq('user_id', userId)
     .single()
 
+  // Idempotency check — voorkom dubbele credit toevoeging bij duplicate webhooks
+  const { data: bestaandeTransactie } = await supabase
+    .from('credit_transacties')
+    .select('id')
+    .eq('stripe_session_id', session.id)
+    .maybeSingle()
+  if (bestaandeTransactie) {
+    console.log(`Credits already processed for session ${session.id}, skipping`)
+    return
+  }
+
   if (existing) {
     await supabase
       .from('visualizer_credits')

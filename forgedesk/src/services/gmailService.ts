@@ -93,15 +93,15 @@ export async function sendEmail(
   body: string,
   options?: { cc?: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }
 ): Promise<{ success: boolean; message: string }> {
-  const credentials = getLocalEmailCredentials()
+  const token = await getAuthToken()
 
   const response = await fetch('/api/send-email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({
-      ...credentials,
       to,
       subject,
       body,
@@ -202,9 +202,13 @@ export async function testEmailConnection(
     imap_port?: number
   }
 ): Promise<{ imap_ok: boolean; smtp_ok: boolean; error?: string }> {
+  const token = await getAuthToken()
   const response = await fetch('/api/test-email-connection', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
     body: JSON.stringify({
       gmail_address,
       app_password,
@@ -222,34 +226,12 @@ export async function testEmailConnection(
   return response.json()
 }
 
-// Cache voor credentials uit Supabase (zodat we niet bij elke call een API request doen)
-let _cachedCredentials: { gmail_address: string; app_password: string; smtp_host?: string; smtp_port?: number; imap_host?: string; imap_port?: number } | null = null
-
-function getLocalEmailCredentials(): { gmail_address: string; app_password: string; smtp_host?: string; smtp_port?: number; imap_host?: string; imap_port?: number } {
-  try {
-    const stored = localStorage.getItem('forgedesk_email_settings')
-    if (stored) {
-      const settings = JSON.parse(stored)
-      if (settings.gmail_address && settings.app_password) {
-        return {
-          gmail_address: settings.gmail_address,
-          app_password: settings.app_password,
-          smtp_host: settings.smtp_host,
-          smtp_port: settings.smtp_port,
-          imap_host: settings.imap_host,
-          imap_port: settings.imap_port,
-        }
-      }
-    }
-  } catch { /* ignore */ }
-  // Fallback naar in-memory cache (geladen vanuit Supabase)
-  if (_cachedCredentials) return _cachedCredentials
-  throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
-}
+// Email credentials worden nu server-side opgehaald via getEmailCredentials() in _shared.ts
+// Geen wachtwoorden meer in localStorage
 
 /**
- * Laad email instellingen vanuit Supabase en cache ze in localStorage.
- * Wordt aangeroepen bij app start zodat credentials altijd beschikbaar zijn.
+ * Sync email instellingen vanuit Supabase naar localStorage (alleen niet-gevoelige velden).
+ * Wordt aangeroepen bij app start zodat de settings pagina altijd gevuld is.
  */
 export async function syncEmailSettingsFromServer(): Promise<boolean> {
   try {
@@ -264,18 +246,16 @@ export async function syncEmailSettingsFromServer(): Promise<boolean> {
     if (!response.ok) return false
 
     const settings = await response.json()
-    if (settings.gmail_address && settings.app_password) {
-      // Sla op in localStorage zodat ze persistent blijven
+    if (settings.gmail_address) {
+      // Sla op in localStorage voor de settings UI (wachtwoord wordt server-side beheerd)
       localStorage.setItem('forgedesk_email_settings', JSON.stringify({
         gmail_address: settings.gmail_address,
-        app_password: settings.app_password,
+        app_password: settings.app_password || '••••••••',
         smtp_host: settings.smtp_host || 'smtp.gmail.com',
         smtp_port: settings.smtp_port || 587,
         imap_host: settings.imap_host || 'imap.gmail.com',
         imap_port: settings.imap_port || 993,
       }))
-      // Ook in-memory cache bijwerken
-      _cachedCredentials = settings
       return true
     }
   } catch { /* ignore */ }
@@ -285,15 +265,18 @@ export async function syncEmailSettingsFromServer(): Promise<boolean> {
 export async function fetchEmailsFromIMAP(
   folder?: string,
   limit?: number,
-  offset?: number
-): Promise<{ emails: IMAPEmailSummary[]; total: number }> {
-  const credentials = getLocalEmailCredentials()
+  offset?: number,
+  userId?: string
+): Promise<{ emails: IMAPEmailSummary[]; total: number; synced?: number }> {
+  const token = await getAuthToken()
 
   const response = await fetch('/api/fetch-emails', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
     body: JSON.stringify({
-      ...credentials,
       folder: folder || 'INBOX',
       limit: limit || 50,
       offset: offset || 0,
@@ -312,13 +295,15 @@ export async function readEmailFromIMAP(
   uid: number,
   folder?: string
 ): Promise<IMAPEmailDetail> {
-  const credentials = getLocalEmailCredentials()
+  const token = await getAuthToken()
 
   const response = await fetch('/api/read-email', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
     body: JSON.stringify({
-      ...credentials,
       uid,
       folder: folder || 'INBOX',
     }),

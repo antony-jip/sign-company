@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Bell,
   Eye,
@@ -296,6 +297,7 @@ function NotificatieToast({
 }
 
 export function NotificatieCenter() {
+  const { user } = useAuth();
   const [notificaties, setNotificaties] = useState<Notificatie[]>([]);
   const [open, setOpen] = useState(false);
   const [laden, setLaden] = useState(false);
@@ -368,41 +370,52 @@ export function NotificatieCenter() {
     };
   }, [laadNotificaties]);
 
-  // Real-time Supabase subscription voor instant notificaties
+  // Real-time Supabase subscription voor instant notificaties (gefilterd op user)
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !user?.id) return;
 
-    const channel = supabase
-      .channel('notificaties-realtime')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notificaties' },
-        (payload) => {
-          const nieuw = payload.new as Notificatie;
-          setNotificaties((prev) => {
-            // Voorkom duplicaten
-            if (prev.some((n) => n.id === nieuw.id)) return prev;
-            return [nieuw, ...prev];
-          });
-          // Toon toast melding
-          setToast(nieuw);
-          // Speel notificatie geluid af (als browser het toelaat)
-          try {
-            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' +
-              'oGAACBhYqFbF1fdH2LkZGMhHpxam51gIuUl5ORiH54cnBze4WOk5KPiIJ7dnR1eoKKkJCOioWAfHl4eXyDiY2NjImFgn98e3t9gIWJi4qIhoOBf39+f4KFiImIh4WDgYB/f3+BhIaHh4aFg4KBgH+AgYOFhoaGhYSDgoGAgIGChIWFhYWEg4KBgYCBgoOEhYWEhIOCgoGBgYGCg4SEhISEg4OCgoGBgYKDg4SEhIODgoKBgYGBgoODhISDg4OCgoKBgYGCgoODg4ODg4KCgoKBgYGCgoODg4ODgoKCgoKBgYGCgoODg4OCgoKCgoKBgQ==');
-            audio.volume = 0.3;
-            audio.play().catch(() => {});
-          } catch {
-            // Negeer audio fouten
+    const userId = user.id;
+
+    const setupChannel = async () => {
+      const channel = supabase
+        .channel(`notificaties-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notificaties',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const nieuw = payload.new as Notificatie;
+            setNotificaties((prev) => {
+              if (prev.some((n) => n.id === nieuw.id)) return prev;
+              return [nieuw, ...prev];
+            });
+            setToast(nieuw);
+            try {
+              const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' +
+                'oGAACBhYqFbF1fdH2LkZGMhHpxam51gIuUl5ORiH54cnBze4WOk5KPiIJ7dnR1eoKKkJCOioWAfHl4eXyDiY2NjImFgn98e3t9gIWJi4qIhoOBf39+f4KFiImIh4WDgYB/f3+BhIaHh4aFg4KBgH+AgYOFhoaGhYSDgoGAgIGChIWFhYWEg4KBgYCBgoOEhYWEhIOCgoGBgYGCg4SEhISEg4OCgoGBgYKDg4SEhIODgoKBgYGBgoODhISDg4OCgoKBgYGCgoODg4ODg4KCgoKBgYGCgoODg4ODgoKCgoKBgYGCgoODg4OCgoKCgoKBgQ==');
+              audio.volume = 0.3;
+              audio.play().catch(() => {});
+            } catch {
+              // Negeer audio fouten
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+
+      return channel;
+    };
+
+    let channelRef: ReturnType<typeof supabase.channel> | undefined;
+    setupChannel().then((ch) => { channelRef = ch; });
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef) supabase.removeChannel(channelRef);
     };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     function handleBuitenKlik(event: MouseEvent) {

@@ -171,6 +171,7 @@ export function PortalenOverzicht() {
       setMedewerkers(m.filter(mw => mw.status === 'actief'))
     } catch (err) {
       console.error('Fout bij ophalen portalen:', err)
+      toast.error('Portalen konden niet geladen worden')
     } finally {
       setLoading(false)
     }

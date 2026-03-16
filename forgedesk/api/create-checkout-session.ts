@@ -3,6 +3,17 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
+const APP_URL = process.env.VITE_APP_URL || 'https://app.forgedesk.io'
+
+function isAllowedRedirectUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    const appHost = new URL(APP_URL).hostname
+    return parsed.hostname === appHost || parsed.hostname === 'localhost'
+  } catch {
+    return false
+  }
+}
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -47,6 +58,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!pakket_id || !success_url || !cancel_url) {
       return res.status(400).json({ error: 'pakket_id, success_url en cancel_url zijn verplicht' })
+    }
+
+    if (!isAllowedRedirectUrl(success_url) || !isAllowedRedirectUrl(cancel_url)) {
+      return res.status(400).json({ error: 'Ongeldige redirect URL' })
     }
 
     const user_id = user.id

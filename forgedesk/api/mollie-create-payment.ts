@@ -7,14 +7,24 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const MOLLIE_API_URL = 'https://api.mollie.com/v2/payments'
 const DEFAULT_REDIRECT = 'https://forgedesk-ten.vercel.app'
 
+function isAllowedRedirectUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    const appHost = new URL(DEFAULT_REDIRECT).hostname
+    return parsed.hostname === appHost || parsed.hostname === 'localhost'
+  } catch {
+    return false
+  }
+}
+
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-async function verifyUser(req: VercelRequest): Promise<string> {
+async function verifyUser(req: VercelRequest): Promise<string | null> {
   const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
+  if (!authHeader?.startsWith('Bearer ')) return null
   const token = authHeader.split(' ')[1]
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
-  if (error || !user) throw new Error('Ongeldige sessie')
+  if (error || !user) return null
   return user.id
 }
 
@@ -23,17 +33,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const user_id = await verifyUser(req)
-
-    const { factuur_id, bedrag, omschrijving, redirect_url } = req.body as {
+    const { factuur_id, bedrag, omschrijving, redirect_url, betaal_token } = req.body as {
       factuur_id: string
       bedrag: number
       omschrijving: string
       redirect_url?: string
+      betaal_token?: string
     }
 
     if (!factuur_id || !bedrag) {
       return res.status(400).json({ error: 'factuur_id en bedrag zijn verplicht' })
+    }
+
+    // Twee auth-paden: JWT (interne gebruiker) of betaal_token (publieke klant)
+    const jwt_user_id = await verifyUser(req)
+    let user_id: string
+
+    if (jwt_user_id) {
+      // Interne flow: verifieer dat factuur toebehoort aan ingelogde gebruiker
+      const { data: eigenFactuur } = await supabaseAdmin
+        .from('facturen')
+        .select('id, user_id')
+        .eq('id', factuur_id)
+        .eq('user_id', jwt_user_id)
+        .maybeSingle()
+      if (!eigenFactuur) {
+        return res.status(403).json({ error: 'Factuur niet gevonden of geen toegang' })
+      }
+      user_id = jwt_user_id
+    } else if (betaal_token) {
+      // Publieke flow: verifieer factuur via betaal_token
+      const { data: factuur } = await supabaseAdmin
+        .from('facturen')
+        .select('id, user_id')
+        .eq('id', factuur_id)
+        .eq('betaal_token', betaal_token)
+        .maybeSingle()
+      if (!factuur || !factuur.user_id) {
+        return res.status(403).json({ error: 'Ongeldige betaallink' })
+      }
+      user_id = factuur.user_id
+    } else {
+      return res.status(401).json({ error: 'Niet geautoriseerd' })
     }
 
     // Haal mollie_api_key op uit app_settings voor de user_id
@@ -63,7 +104,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    const redirectAfterPayment = redirect_url || `${DEFAULT_REDIRECT}/betaald?factuur_id=${factuur_id}`
+    const redirectAfterPayment = (redirect_url && isAllowedRedirectUrl(redirect_url))
+      ? redirect_url
+      : `${DEFAULT_REDIRECT}/betaald?factuur_id=${factuur_id}`
 
     // Webhook URL — Vercel detecteert automatisch de juiste host
     const host = req.headers['x-forwarded-host'] || req.headers.host || 'forgedesk-ten.vercel.app'
@@ -109,6 +152,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           betaal_link: payment._links?.checkout?.href || '',
         })
         .eq('id', factuur_id)
+        .eq('user_id', user_id)
     }
 
     return res.status(200).json({

@@ -1,29 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
-// Rate limiting: 30 per minuut per IP
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + 60_000 })
-    return false
-  }
-  entry.count++
-  return entry.count > 30
-}
+import { supabaseAdmin, isRateLimited } from './_shared'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
-  if (isRateLimited(clientIp)) {
+  if (await isRateLimited(clientIp, 'portaal-get', 30, 60)) {
     return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
   }
 
@@ -31,11 +14,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const token = req.query.token as string
     if (!token) return res.status(400).json({ error: 'Token is verplicht' })
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    if (!supabaseAdmin) {
       return res.status(500).json({ error: 'Server configuratie onvolledig' })
     }
-
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
     // Haal portaal op (probeer eerst project_portalen, dan tekening_goedkeuringen)
     const { data: portaal, error: portaalError } = await supabaseAdmin
@@ -111,35 +92,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Haal project info
-    const { data: project } = await supabaseAdmin
-      .from('projecten')
-      .select('id, naam, klant_id, status, adres, postcode, plaats')
-      .eq('id', portaal.project_id)
-      .single()
-
-    // Haal bedrijfsprofiel
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('bedrijfsnaam, logo_url, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website')
-      .eq('id', portaal.user_id)
-      .single()
-
-    // Haal document style voor primaire kleur
-    const { data: docStyle } = await supabaseAdmin
-      .from('document_styles')
-      .select('primaire_kleur')
-      .eq('user_id', portaal.user_id)
-      .maybeSingle()
-
-    // Haal items met bestanden en reacties (alleen zichtbaar voor klant)
-    const { data: items } = await supabaseAdmin
-      .from('portaal_items')
-      .select('id, type, titel, omschrijving, label, status, bekeken_op, mollie_payment_url, bedrag, volgorde, created_at, bericht_type, bericht_tekst, foto_url, afzender, offerte_id, factuur_id, portaal_bestanden(*), portaal_reacties(*)')
-      .eq('portaal_id', portaal.id)
-      .eq('zichtbaar_voor_klant', true)
-      .neq('bericht_type', 'notitie_intern')
-      .order('created_at', { ascending: true })
+    // Haal alle data parallel op
+    const [
+      { data: project },
+      { data: profile },
+      { data: docStyle },
+      { data: items },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from('projecten')
+        .select('id, naam, klant_id, status, adres, postcode, plaats')
+        .eq('id', portaal.project_id)
+        .single(),
+      supabaseAdmin
+        .from('profiles')
+        .select('bedrijfsnaam, logo_url, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website')
+        .eq('id', portaal.user_id)
+        .single(),
+      supabaseAdmin
+        .from('document_styles')
+        .select('primaire_kleur')
+        .eq('user_id', portaal.user_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('portaal_items')
+        .select('id, type, titel, omschrijving, label, status, bekeken_op, mollie_payment_url, bedrag, volgorde, created_at, bericht_type, bericht_tekst, foto_url, afzender, offerte_id, factuur_id, portaal_bestanden(*), portaal_reacties(*)')
+        .eq('portaal_id', portaal.id)
+        .eq('zichtbaar_voor_klant', true)
+        .neq('bericht_type', 'notitie_intern')
+        .order('created_at', { ascending: true }),
+    ])
 
     // Haal publiek_tokens op voor gekoppelde offertes
     const offerteIds = (items || [])
