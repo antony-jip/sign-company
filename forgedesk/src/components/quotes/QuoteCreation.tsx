@@ -27,8 +27,6 @@ import {
   Eye,
   Search,
   Building2,
-  Contact,
-  FolderOpen,
   TrendingUp,
   Percent,
   ShoppingCart,
@@ -1827,7 +1825,7 @@ export function QuoteCreation() {
   if (showKlantSelector && !isEditMode) {
     return (
       <div className="pb-6">
-        <div className="space-y-3 max-w-4xl mx-auto">
+        <div className="space-y-4 max-w-2xl mx-auto">
           {/* Header */}
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => {
@@ -1842,168 +1840,150 @@ export function QuoteCreation() {
             </div>
           </div>
 
-          {/* Klant selectie + Contactpersoon */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-            {/* Linker kolom: Klant zoeken (3/5) */}
-            <Card className="lg:col-span-3">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                    <Building2 className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Voor wie is deze offerte?
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Klant</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
-                    <Input value={klantSearch} onChange={(e) => setKlantSearch(e.target.value)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10" />
-                  </div>
-                  <Select value={selectedKlantId} onValueChange={(val) => { setSelectedKlantId(val); setKlantSearch('') }}>
-                    <SelectTrigger><SelectValue placeholder="Selecteer een klant..." /></SelectTrigger>
-                    <SelectContent>
-                      {filteredKlanten.map((klant) => (
-                        <SelectItem key={klant.id} value={klant.id}>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{klant.bedrijfsnaam}</span>
-                            {klant.contactpersoon && (<><span className="text-muted-foreground/60">-</span><span className="text-muted-foreground">{klant.contactpersoon}</span></>)}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          {/* Klant */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Klant</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                  <Input value={klantSearch} onChange={(e) => setKlantSearch(e.target.value)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10" />
                 </div>
-                {selectedKlant && (
-                  <div className="bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10 border border-primary/15 dark:border-primary/25 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <span className="text-white font-bold text-lg">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-foreground">{selectedKlant.bedrijfsnaam}</h4>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5">
-                          {selectedKlant.email && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Mail className="h-3 w-3" />{selectedKlant.email}</span>}
-                          {selectedKlant.telefoon && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Phone className="h-3 w-3" />{selectedKlant.telefoon}</span>}
+                <Select value={selectedKlantId} onValueChange={(val) => { setSelectedKlantId(val); setKlantSearch('') }}>
+                  <SelectTrigger><SelectValue placeholder="Selecteer een klant..." /></SelectTrigger>
+                  <SelectContent>
+                    {filteredKlanten.map((klant) => (
+                      <SelectItem key={klant.id} value={klant.id}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{klant.bedrijfsnaam}</span>
+                          {klant.contactpersoon && (<><span className="text-muted-foreground/60">-</span><span className="text-muted-foreground">{klant.contactpersoon}</span></>)}
                         </div>
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => { setSelectedKlantId(''); setSelectedProjectId(''); setContactpersoon(''); setSelectedContactId('') }}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedKlant && (
+                <div className="border border-border rounded-lg p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <span className="text-foreground font-bold text-sm">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-foreground text-sm">{selectedKlant.bedrijfsnaam}</h4>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                        {selectedKlant.email && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Mail className="h-3 w-3" />{selectedKlant.email}</span>}
+                        {selectedKlant.telefoon && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Phone className="h-3 w-3" />{selectedKlant.telefoon}</span>}
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => { setSelectedKlantId(''); setSelectedProjectId(''); setContactpersoon(''); setSelectedContactId('') }}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                )}
-                {selectedKlantId && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-1.5"><FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />Project<span className="text-xs text-muted-foreground font-normal">(optioneel)</span></Label>
-                    {klantProjecten.length > 0 ? (
-                      <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                        <SelectTrigger><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="geen"><span className="text-muted-foreground">Geen project</span></SelectItem>
-                          {klantProjecten.map((project) => (
-                            <SelectItem key={project.id} value={project.id}>
-                              <div className="flex items-center gap-2"><span className="font-medium">{project.naam}</span><Badge variant="outline" className="text-2xs px-1.5 py-0">{project.status}</Badge></div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : <p className="text-xs text-muted-foreground py-2">Geen projecten gevonden voor deze klant</p>}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Rechter kolom: Contactpersoon (2/5) */}
-            <Card className="lg:col-span-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"><Contact className="h-3.5 w-3.5 text-white" /></div>
-                  Contactpersoon
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {selectedKlant ? (
-                  <>
-                    {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
-                      <div className="space-y-1.5">
-                        {selectedKlant.contactpersonen?.map((cp) => (
-                          <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg border p-2.5 transition-all', selectedContactId === cp.id ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20' : 'border-border dark:border-border hover:border-border hover:bg-background')}>
-                            <div className="flex items-center gap-2">
-                              <div className={cn('w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold', selectedContactId === cp.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground')}>{cp.naam[0]?.toUpperCase()}</div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground truncate">{cp.naam}</p>
-                                {cp.functie && <p className="text-xs text-muted-foreground truncate">{cp.functie}</p>}
-                              </div>
-                              {cp.is_primair && <span className="text-2xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">primair</span>}
-                            </div>
-                          </button>
+                </div>
+              )}
+              {selectedKlantId && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-1.5">Project <span className="text-xs text-muted-foreground font-normal">(optioneel)</span></Label>
+                  {klantProjecten.length > 0 ? (
+                    <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                      <SelectTrigger><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="geen"><span className="text-muted-foreground">Geen project</span></SelectItem>
+                        {klantProjecten.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            <div className="flex items-center gap-2"><span className="font-medium">{project.naam}</span><Badge variant="outline" className="text-2xs px-1.5 py-0">{project.status}</Badge></div>
+                          </SelectItem>
                         ))}
-                        {(!selectedKlant.contactpersonen || selectedKlant.contactpersonen.length === 0) && selectedKlant.contactpersoon && (
-                          <div className="rounded-lg border border-primary/50 bg-primary/5 ring-1 ring-primary/20 p-2.5">
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">{selectedKlant.contactpersoon[0]?.toUpperCase()}</div>
-                              <p className="text-sm font-medium text-foreground">{selectedKlant.contactpersoon}</p>
+                      </SelectContent>
+                    </Select>
+                  ) : <p className="text-xs text-muted-foreground py-2">Geen projecten gevonden voor deze klant</p>}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Contactpersoon */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Contactpersoon</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {selectedKlant ? (
+                <>
+                  {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
+                    <div className="space-y-1.5">
+                      {selectedKlant.contactpersonen?.map((cp) => (
+                        <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg border p-2.5 transition-all', selectedContactId === cp.id ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20' : 'border-border hover:border-border hover:bg-muted/30')}>
+                          <div className="flex items-center gap-2">
+                            <div className={cn('w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold', selectedContactId === cp.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground')}>{cp.naam[0]?.toUpperCase()}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{cp.naam}</p>
+                              {cp.functie && <p className="text-xs text-muted-foreground truncate">{cp.functie}</p>}
                             </div>
+                            {cp.is_primair && <span className="text-2xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">primair</span>}
                           </div>
-                        )}
-                      </div>
-                    )}
-                    {!showNewContact ? (
-                      <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-accent transition-colors py-2 px-2 rounded-lg hover:bg-background">
-                        <UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon toevoegen
-                      </button>
-                    ) : (
-                      <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 space-y-2">
-                        <p className="text-xs font-medium text-blue-700 flex items-center gap-1.5"><UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon</p>
-                        <Input value={newContactNaam} onChange={(e) => setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-8 text-sm" autoFocus />
-                        <Input value={newContactFunctie} onChange={(e) => setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-8 text-sm" />
-                        <Input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-8 text-sm" />
-                        <Input value={newContactTelefoon} onChange={(e) => setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-8 text-sm" />
-                        <div className="flex items-center gap-2 pt-1">
-                          <Button size="sm" onClick={handleAddContact} disabled={!newContactNaam.trim()} className="h-7 text-xs gap-1"><Plus className="h-3 w-3" />Toevoegen</Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setShowNewContact(false); setNewContactNaam(''); setNewContactFunctie(''); setNewContactEmail(''); setNewContactTelefoon('') }} className="h-7 text-xs">Annuleren</Button>
+                        </button>
+                      ))}
+                      {(!selectedKlant.contactpersonen || selectedKlant.contactpersonen.length === 0) && selectedKlant.contactpersoon && (
+                        <div className="rounded-lg border border-primary/50 bg-primary/5 ring-1 ring-primary/20 p-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">{selectedKlant.contactpersoon[0]?.toUpperCase()}</div>
+                            <p className="text-sm font-medium text-foreground">{selectedKlant.contactpersoon}</p>
+                          </div>
                         </div>
+                      )}
+                    </div>
+                  )}
+                  {!showNewContact ? (
+                    <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-accent transition-colors py-2 px-2 rounded-lg hover:bg-muted/30">
+                      <UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon toevoegen
+                    </button>
+                  ) : (
+                    <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+                      <p className="text-xs font-medium text-foreground flex items-center gap-1.5"><UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon</p>
+                      <Input value={newContactNaam} onChange={(e) => setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-8 text-sm" autoFocus />
+                      <Input value={newContactFunctie} onChange={(e) => setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-8 text-sm" />
+                      <Input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-8 text-sm" />
+                      <Input value={newContactTelefoon} onChange={(e) => setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-8 text-sm" />
+                      <div className="flex items-center gap-2 pt-1">
+                        <Button size="sm" onClick={handleAddContact} disabled={!newContactNaam.trim()} className="h-7 text-xs gap-1"><Plus className="h-3 w-3" />Toevoegen</Button>
+                        <Button variant="ghost" size="sm" onClick={() => { setShowNewContact(false); setNewContactNaam(''); setNewContactFunctie(''); setNewContactEmail(''); setNewContactTelefoon('') }} className="h-7 text-xs">Annuleren</Button>
                       </div>
-                    )}
-                    {!showNewContact && (
-                      <div className="space-y-1.5 pt-1 border-t border-border">
-                        <Label className="text-xs text-muted-foreground">Of typ een naam</Label>
-                        <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-8 text-sm" />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-6">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-2"><User className="h-5 w-5 text-muted-foreground/60" /></div>
-                    <p className="text-sm text-muted-foreground">Selecteer eerst een klant</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                    </div>
+                  )}
+                  {!showNewContact && (
+                    <div className="space-y-1.5 pt-1 border-t border-border">
+                      <Label className="text-xs text-muted-foreground">Of typ een naam</Label>
+                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-8 text-sm" />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">Selecteer eerst een klant</p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Offerte details */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
-                Offerte details
-              </CardTitle>
+              <CardTitle className="text-base">Offerte details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="offerte-titel">Offerte titel</Label>
+                <Label htmlFor="offerte-titel">Titel</Label>
                 <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-base" autoFocus />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="offerte-nummer" className="flex items-center gap-1.5"><Hash className="h-3 w-3 text-muted-foreground" />Nummer</Label>
-                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="bg-background dark:bg-foreground/80 text-sm" />
+                  <Label htmlFor="offerte-nummer">Nummer</Label>
+                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="bg-muted/50 text-sm" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="geldig-tot" className="flex items-center gap-1.5"><Calendar className="h-3 w-3 text-muted-foreground" />Geldig tot</Label>
+                  <Label htmlFor="geldig-tot">Geldig tot</Label>
                   <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-sm" />
                 </div>
               </div>
@@ -2013,16 +1993,13 @@ export function QuoteCreation() {
           {/* Hoeveel items? */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center"><Plus className="h-3.5 w-3.5 text-white" /></div>
-                Hoeveel items heeft je offerte?
-              </CardTitle>
+              <CardTitle className="text-base">Aantal items</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-3">Elk item is een complete prijsberekening. Je kunt later altijd items toevoegen of verwijderen.</p>
               <div className="flex items-center gap-2">
                 {ITEM_COUNT_OPTIONS.map((count) => (
-                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-12 w-12 rounded-xl text-lg font-bold transition-all border-2', itemCount === count ? 'border-primary bg-gradient-to-br from-accent to-primary text-white shadow-md scale-110' : 'border-border dark:border-border bg-card text-foreground hover:border-border')}>
+                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-11 w-11 rounded-lg text-base font-bold transition-all border', itemCount === count ? 'border-primary bg-primary text-white shadow-sm' : 'border-border bg-card text-foreground hover:border-primary/40')}>
                     {count}
                   </button>
                 ))}

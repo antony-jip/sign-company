@@ -90,7 +90,7 @@ export function ProjectCreate() {
     try {
       // Genereer project nummer
       const settings = await getAppSettings(user.id)
-      const projectNummer = await generateProjectNummer(settings?.project_prefix || 'PRJ')
+      const projectNummer = await generateProjectNummer(settings?.project_prefix || 'P')
 
       await createProject({
         user_id: user.id,

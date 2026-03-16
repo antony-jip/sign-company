@@ -4280,7 +4280,7 @@ export async function generateCreditnotaNummer(): Promise<string> {
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
-export async function generateProjectNummer(prefix: string = 'PRJ'): Promise<string> {
+export async function generateProjectNummer(prefix: string = 'P'): Promise<string> {
   const jaar = new Date().getFullYear()
   const projecten = await getProjecten()
   const jaarPrefix = `${prefix}-${jaar}-`
