@@ -18,11 +18,11 @@ export default function Home() {
         <Hero />
         <Marquee />
         <AppPreview />
-        <FeaturesGrid />
         <StepsSection />
+        <FeaturesGrid />
         <SocialProof />
-        <SwitchSection />
         <PricingTeaser />
+        <SwitchSection />
         <CTASection />
       </main>
       <Footer />

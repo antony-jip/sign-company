@@ -39,7 +39,7 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring' as const, damping: 25, stiffness: 100 },
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
   },
 };
 
@@ -80,7 +80,7 @@ export default function FeaturePage({
 
               <motion.h1
                 className="font-heading text-white leading-tight mb-6"
-                style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, letterSpacing: '-2.5px', lineHeight: 1.0 }}
+                style={{ fontSize: 'clamp(40px, 6vw, 72px)', fontWeight: 900, letterSpacing: '-3px', lineHeight: 0.95 }}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ type: 'spring' as const, damping: 20, stiffness: 80, delay: 0.4 }}
@@ -167,7 +167,7 @@ export default function FeaturePage({
             </motion.div>
 
             <motion.div
-              className="max-w-[900px]"
+              className="max-w-[900px] relative"
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.1 }}
@@ -193,14 +193,14 @@ export default function FeaturePage({
                 style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-2px', lineHeight: 1.0 }}
               >
                 Klaar om te{' '}
-                <span className="neon-text-glow">smeden</span>?
+                smeden?
               </h2>
               <p className="text-[18px] leading-[1.7] text-ink-40 mb-10 max-w-[420px]">
                 Start vandaag gratis. Geen creditcard, geen contract.
               </p>
               <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
-                <Button variant="warm" href="https://app.forgedesk.io">
-                  Start 30 dagen gratis &rarr;
+                <Button variant="warm" size="lg" href="https://app.forgedesk.io">
+                  Probeer 30 dagen gratis &rarr;
                 </Button>
               </motion.div>
             </motion.div>
