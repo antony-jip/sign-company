@@ -269,6 +269,7 @@ export function FacturenLayout() {
   const [sortField, setSortField] = useState<SortField>('datum')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const PAGE_SIZE = 50
 
   // Dialog state
