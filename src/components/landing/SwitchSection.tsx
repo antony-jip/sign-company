@@ -45,8 +45,8 @@ export default function SwitchSection() {
               Of je nu van James Pro, Gripp of Excel komt. Import in minuten, niet in dagen.
             </p>
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}>
-              <Button variant="ink" href="https://app.forgedesk.io">
-                Probeer 30 dagen gratis &rarr;
+              <Button variant="soft" href="https://app.forgedesk.io">
+                Start gratis en importeer &rarr;
               </Button>
             </motion.div>
           </div>

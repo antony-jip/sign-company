@@ -61,13 +61,6 @@ const config: Config = {
           deep: '#D4856B',
         },
       },
-      letterSpacing: {
-        tighter: '-0.04em',
-        tightest: '-0.06em',
-      },
-      transitionTimingFunction: {
-        'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
-      },
       animation: {
         'bounce-slow': 'bounceChevron 2s ease-in-out infinite',
       },
