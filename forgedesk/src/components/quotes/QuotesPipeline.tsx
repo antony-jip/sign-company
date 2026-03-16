@@ -1393,13 +1393,26 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-2.5 px-4 hidden lg:table-cell">
+                    <th className="text-right py-2.5 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('created_at')}
                         className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
                       >
                         Datum
                         {listSortColumn === 'created_at' ? (
+                          listSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="text-right py-2.5 px-4 hidden lg:table-cell">
+                      <button
+                        onClick={() => handleListSort('days_open')}
+                        className="flex items-center gap-1 text-[11px] font-bold text-[#8a8680] uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                      >
+                        Dagen open
+                        {listSortColumn === 'days_open' ? (
                           listSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                         ) : (
                           <ArrowUpDown className="w-3 h-3 opacity-30" />
@@ -1528,10 +1541,22 @@ export function QuotesPipeline() {
                         </td>
 
                         {/* Datum */}
-                        <td className="py-3 px-4 text-right hidden lg:table-cell">
+                        <td className="py-3 px-4 text-right hidden md:table-cell">
                           <span className="text-xs text-muted-foreground tabular-nums">
                             {formatDate(offerte.created_at)}
                           </span>
+                        </td>
+
+                        {/* Dagen open */}
+                        <td className="py-3 px-4 text-right hidden lg:table-cell">
+                          {(() => {
+                            const days = getDaysOpen(offerte.created_at)
+                            return (
+                              <span className={cn('text-[11px] font-medium px-2 py-0.5 rounded-full tabular-nums', getDaysColor(days))}>
+                                {days}d
+                              </span>
+                            )
+                          })()}
                         </td>
 
                         {/* Geldig tot */}
