@@ -296,13 +296,14 @@ export function EmailReader({
             </div>
           </div>
 
-          {/* ─── Editor area (takes all remaining space, no box) ─── */}
+          {/* ─── Scrollable: editor + original email underneath ─── */}
           <div className="flex-1 overflow-y-auto bg-white">
+            {/* Editor */}
             <div
               ref={editorRef}
               contentEditable
               suppressContentEditableWarning
-              className="min-h-[300px] py-6 px-6 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[400px] empty:before:content-[attr(data-placeholder)] empty:before:text-foreground/25 empty:before:pointer-events-none"
+              className="min-h-[180px] py-5 px-6 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[400px] empty:before:content-[attr(data-placeholder)] empty:before:text-foreground/25 empty:before:pointer-events-none"
               data-placeholder="Schrijf je antwoord..."
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -312,21 +313,18 @@ export function EmailReader({
               }}
             />
 
-            {/* Quoted original (collapsed by default) */}
-            {email.inhoud && (
-              <div className="px-6 pb-6">
-                <button
-                  onClick={() => setShowQuotedText(!showQuotedText)}
-                  className="text-xs text-foreground/25 hover:text-foreground/45 transition-colors"
-                >
-                  {showQuotedText ? 'Verberg origineel bericht' : '··· Toon origineel bericht'}
-                </button>
-                {showQuotedText && (
+            {/* ─── Original email shown directly below editor ─── */}
+            {sanitizedBody && (
+              <div className="border-t border-foreground/[0.06] mx-6">
+                <div className="py-5 pl-4 border-l-2 border-foreground/[0.08]">
+                  <div className="flex items-center gap-2 mb-3 text-xs text-foreground/35">
+                    <span>Op {formatShortDate(email.datum)} schreef {senderName}:</span>
+                  </div>
                   <div
-                    className="mt-4 pl-4 border-l-2 border-foreground/[0.08] text-sm text-foreground/35 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(email.inhoud) }}
+                    className="text-sm leading-relaxed text-foreground/45 [&_img]:max-w-full [&_a]:text-primary/50 [&_a]:underline [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/10 [&_blockquote]:pl-3 [&_p]:mb-2"
+                    dangerouslySetInnerHTML={{ __html: sanitizedBody }}
                   />
-                )}
+                </div>
               </div>
             )}
           </div>
