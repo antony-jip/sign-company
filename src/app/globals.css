@@ -353,3 +353,50 @@
   writing-mode: vertical-rl;
   text-orientation: mixed;
 }
+
+/* ===== Custom easing ===== */
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ===== Redesign hero heading — OBSCENELY big ===== */
+.hero-heading-redesign {
+  font-size: clamp(72px, 12vw, 160px);
+  font-weight: 900;
+  letter-spacing: -5px;
+  line-height: 0.88;
+}
+
+@media (max-width: 479px) {
+  .hero-heading-redesign {
+    letter-spacing: -3px;
+  }
+}
+
+/* ===== Dot grid pattern ===== */
+.dot-grid-pattern::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: radial-gradient(circle, #1A1A1A 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ===== Deep soft shadow ===== */
+.shadow-deep {
+  box-shadow:
+    0 24px 64px -16px rgba(0, 0, 0, 0.1),
+    0 8px 24px -8px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== Pricing mesh ===== */
+.bg-mesh-pricing {
+  background:
+    radial-gradient(ellipse at 25% 30%, rgba(240,217,208,0.35) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 60%, rgba(200,213,204,0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 90%, rgba(221,213,232,0.25) 0%, transparent 45%),
+    #FAFAF7;
+}
