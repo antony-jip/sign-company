@@ -45,6 +45,7 @@ import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ModuleHeader } from '@/components/shared/ModuleHeader'
 
 type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
@@ -303,23 +304,18 @@ export function ClientsLayout() {
   return (
     <div className="h-full flex flex-col mod-strip mod-strip-klanten">
       {/* Page header bar */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #8BAFD4, #6A8DB8)' }}>
-            <Users className="h-5 w-5 text-white" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="page-title text-foreground truncate">Klanten</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {filteredKlanten.length} van {klanten.length} klanten
-            </p>
-          </div>
-        </div>
-        <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} className="flex-shrink-0 shadow-sm" size="sm">
-          <UserPlus className="w-4 h-4 sm:mr-2" />
-          <span className="hidden sm:inline">Nieuwe Klant</span>
-        </Button>
-      </div>
+      <ModuleHeader
+        module="klanten"
+        icon={Users}
+        title="Klanten"
+        subtitle={`${filteredKlanten.length} van ${klanten.length} klanten`}
+        actions={
+          <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} className="flex-shrink-0 shadow-sm" size="sm">
+            <UserPlus className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Nieuwe Klant</span>
+          </Button>
+        }
+      />
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">

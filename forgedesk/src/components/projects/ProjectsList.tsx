@@ -58,6 +58,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant, Offerte } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
+import { ModuleHeader } from '@/components/shared/ModuleHeader'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
@@ -393,26 +394,21 @@ export function ProjectsList() {
       />
 
       {/* ── Header bar ── */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #7EB5A6, #5A9A88)' }}>
-            <FolderKanban className="h-5 w-5 text-white" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="page-title text-foreground truncate">Projecten</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {gefilterdeProjecten.length} van {projecten.length} projecten
-            </p>
-          </div>
-        </div>
-        <Button asChild size="sm" className="flex-shrink-0 shadow-sm">
-          <Link to="/projecten/nieuw">
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Nieuw project</span>
-            <span className="sm:hidden">Nieuw</span>
-          </Link>
-        </Button>
-      </div>
+      <ModuleHeader
+        module="projecten"
+        icon={FolderKanban}
+        title="Projecten"
+        subtitle={`${gefilterdeProjecten.length} van ${projecten.length} projecten`}
+        actions={
+          <Button asChild size="sm" className="flex-shrink-0 shadow-sm">
+            <Link to="/projecten/nieuw">
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Nieuw project</span>
+              <span className="sm:hidden">Nieuw</span>
+            </Link>
+          </Button>
+        }
+      />
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">

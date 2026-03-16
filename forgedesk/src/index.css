@@ -493,11 +493,11 @@ tbody tr:hover {
    ================================================================ */
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in-up {
-  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp var(--duration-slow) var(--ease-out) forwards;
 }
 
 @keyframes fadeIn {
@@ -506,6 +506,40 @@ tbody tr:hover {
 }
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Scroll progress bar — pure CSS, no JS */
+@keyframes scrollProgress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.scroll-progress {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 2px;
+  background: hsl(var(--primary));
+  transform-origin: left;
+  animation: scrollProgress auto linear;
+  animation-timeline: scroll(nearest);
+}
+
+/* Interactive table rows — subtle scale + press feedback */
+.tr-interactive {
+  transition: all var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+}
+.tr-interactive:hover {
+  background: hsl(var(--bg-subtle));
+  transform: scale(1.003);
+}
+.tr-interactive:active {
+  transform: scale(0.997);
+}
+.tr-interactive:focus-visible {
+  outline: 2px solid hsl(var(--primary) / 0.3);
+  outline-offset: -2px;
+  border-radius: var(--radius-md);
 }
 
 @keyframes slideInLeft {

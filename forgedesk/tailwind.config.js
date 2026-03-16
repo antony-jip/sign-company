@@ -130,6 +130,14 @@ export default {
         "2xl": "var(--radius-2xl)",
       },
       keyframes: {
+        "stagger-item": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "count-up": {
+          from: { opacity: "0", transform: "translateY(4px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -173,6 +181,7 @@ export default {
         },
       },
       animation: {
+        "stagger-item": "stagger-item 0.3s var(--ease-out) both",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "float": "float 5s ease-in-out infinite",

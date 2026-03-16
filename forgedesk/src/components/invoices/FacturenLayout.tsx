@@ -87,6 +87,7 @@ import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PaginationControls } from '@/components/ui/pagination-controls'
+import { ModuleHeader } from '@/components/shared/ModuleHeader'
 
 // ============ TYPES ============
 
@@ -1262,55 +1263,50 @@ export function FacturenLayout() {
   return (
     <div className="h-full flex flex-col mod-strip mod-strip-facturen">
       {/* ── Header bar ────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #E8866A, #C4604A)' }}>
-            <Receipt className="h-5 w-5 text-white" />
+      <ModuleHeader
+        module="facturen"
+        icon={Receipt}
+        title="Facturen"
+        subtitle={`${filteredFacturen.length} van ${facturen.length} facturen`}
+        actions={
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 hidden sm:flex">
+                  <Download className="h-4 w-4" />
+                  Exporteer
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  Exporteer als CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportExcel}>
+                  Exporteer als Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="outline"
+              onClick={() => setOfferteDialogOpen(true)}
+              className="gap-2 hidden sm:flex"
+              size="sm"
+            >
+              <FileInput className="h-4 w-4" />
+              Vanuit offerte
+            </Button>
+            <Button
+              onClick={() => navigate('/facturen/nieuw')}
+              className="gap-2"
+              size="sm"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Nieuwe factuur</span>
+              <span className="sm:hidden">Nieuw</span>
+            </Button>
           </div>
-          <div className="min-w-0">
-            <h1 className="page-title text-foreground truncate">Facturen</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {filteredFacturen.length} van {facturen.length} facturen
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 hidden sm:flex">
-                <Download className="h-4 w-4" />
-                Exporteer
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExportCSV}>
-                Exporteer als CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportExcel}>
-                Exporteer als Excel
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            variant="outline"
-            onClick={() => setOfferteDialogOpen(true)}
-            className="gap-2 hidden sm:flex"
-            size="sm"
-          >
-            <FileInput className="h-4 w-4" />
-            Vanuit offerte
-          </Button>
-          <Button
-            onClick={() => navigate('/facturen/nieuw')}
-            className="gap-2"
-            size="sm"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nieuwe factuur</span>
-            <span className="sm:hidden">Nieuw</span>
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">

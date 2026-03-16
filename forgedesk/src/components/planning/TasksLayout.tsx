@@ -48,6 +48,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
 import type { Taak, Project, Klant, MontageAfspraak } from '@/types'
@@ -538,20 +539,7 @@ export function TasksLayout() {
   return (
     <>
       <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
-        {/* === MODULE HEADER === */}
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #C4A882, #A88E66)' }}>
-              <CheckSquare className="h-5 w-5 text-white" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="page-title text-foreground truncate">Taken</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Productie &amp; oplevering
-              </p>
-            </div>
-          </div>
-        </div>
+        <ModuleHeader module="taken" icon={CheckSquare} title="Taken" subtitle="Productie & oplevering" />
 
         {/* === WEEK NAV + FILTERS === */}
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2.5 border-b border-border/60 bg-card/50 flex-shrink-0">

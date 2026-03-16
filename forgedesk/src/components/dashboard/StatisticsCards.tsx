@@ -1,31 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import React, { useState, useEffect } from 'react'
 import { getProjecten, getOffertes, getFacturen } from '@/services/supabaseService'
 import type { Project, Offerte, Factuur } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { useCountUp } from '@/hooks/useCountUp'
 import { logger } from '../../utils/logger'
-
-function useAnimatedCounter(target: number, duration: number = 800): number {
-  const [count, setCount] = useState(0)
-  const prevTarget = useRef(0)
-
-  useEffect(() => {
-    if (target === prevTarget.current) return
-    prevTarget.current = target
-    const startTime = Date.now()
-    const startValue = count
-    function tick() {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setCount(Math.round(startValue + (target - startValue) * eased))
-      if (progress < 1) requestAnimationFrame(tick)
-    }
-    requestAnimationFrame(tick)
-  }, [target, duration])
-
-  return count
-}
 
 function Sparkline() {
   return (
@@ -61,9 +39,9 @@ export function StatisticsCards() {
   const totaalOffertes = offertes.filter(o => o.status !== 'concept').length
   const hitRate = totaalOffertes > 0 ? Math.round((goedgekeurd / totaalOffertes) * 100) : 0
 
-  const animProjecten = useAnimatedCounter(loading ? 0 : actieveProjecten)
-  const animOffertes = useAnimatedCounter(loading ? 0 : verstuurdeOffertes)
-  const animHitRate = useAnimatedCounter(loading ? 0 : hitRate)
+  const animProjecten = useCountUp(loading ? 0 : actieveProjecten)
+  const animOffertes = useCountUp(loading ? 0 : verstuurdeOffertes)
+  const animHitRate = useCountUp(loading ? 0 : hitRate)
 
   if (loading) {
     return (

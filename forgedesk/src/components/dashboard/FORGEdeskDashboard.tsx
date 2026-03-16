@@ -185,7 +185,7 @@ export function FORGEdeskDashboard() {
 
       {/* Configurable widget grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {layout.order.map((widgetId) => {
+        {layout.order.map((widgetId, index) => {
           const def = WIDGET_REGISTRY[widgetId]
           if (!def) return null
 
@@ -207,10 +207,11 @@ export function FORGEdeskDashboard() {
                 onDragOver={layout.handleDragOver}
                 onDrop={(e) => layout.handleDrop(e, widgetId)}
                 className={cn(
-                  'group/widget transition-all',
+                  'group/widget transition-all animate-stagger-item',
                   getSizeClass(size),
                   isDragging && 'opacity-40',
                 )}
+                style={{ animationDelay: `${index * 50}ms` }}
               >
                 {isDragOver && !isDragging && (
                   <div className="h-1 bg-primary/50 rounded-full mb-2 animate-pulse" />
@@ -232,10 +233,11 @@ export function FORGEdeskDashboard() {
               onDragOver={layout.handleDragOver}
               onDrop={(e) => layout.handleDrop(e, widgetId)}
               className={cn(
-                'group/widget transition-all',
+                'group/widget transition-all animate-stagger-item',
                 getSizeClass(size),
                 isDragging && 'opacity-40',
               )}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               {isDragOver && !isDragging && (
                 <div className="h-1 bg-primary/50 rounded-full mb-2 animate-pulse" />

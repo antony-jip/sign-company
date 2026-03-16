@@ -24,6 +24,7 @@ import { uploadFile } from '@/services/storageService'
 import type { SigningVisualisatie, Project, Offerte } from '@/types'
 import { VisualisatieLightbox } from './VisualisatieLightbox'
 import { CreditsPakketDialog } from './CreditsPakketDialog'
+import { ModuleHeader } from '@/components/shared/ModuleHeader'
 
 type GeneratieStatus = 'idle' | 'claude' | 'genereren' | 'klaar' | 'fout'
 
@@ -717,30 +718,25 @@ export function VisualizerLayout() {
   return (
     <div className="h-full flex flex-col mod-strip mod-strip-visualizer">
       {/* Header bar */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background flex-shrink-0 rounded-t-2xl">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #7EB5A6, #5A9A88)' }}>
-            <Palette className="h-5 w-5 text-white" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="page-title text-foreground truncate">Signing Visualizer</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Upload een foto of ontwerp, beschrijf het gewenste resultaat — AI doet de rest
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowCreditsPakket(true)}
-          className={cn(
-            'text-sm font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer flex-shrink-0',
-            creditSaldo < 5
-              ? 'bg-blush/20 text-blush-deep hover:bg-blush/30'
-              : 'bg-sage/20 text-sage-deep hover:bg-sage/30',
-          )}
-        >
-          {creditSaldo} credits {creditSaldo < 5 ? '— bijkopen' : ''}
-        </button>
-      </div>
+      <ModuleHeader
+        module="visualizer"
+        icon={Palette}
+        title="Signing Visualizer"
+        subtitle="Upload een foto of ontwerp, beschrijf het gewenste resultaat — AI doet de rest"
+        actions={
+          <button
+            onClick={() => setShowCreditsPakket(true)}
+            className={cn(
+              'text-sm font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer flex-shrink-0',
+              creditSaldo < 5
+                ? 'bg-blush/20 text-blush-deep hover:bg-blush/30'
+                : 'bg-sage/20 text-sage-deep hover:bg-sage/30',
+            )}
+          >
+            {creditSaldo} credits {creditSaldo < 5 ? '— bijkopen' : ''}
+          </button>
+        }
+      />
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
