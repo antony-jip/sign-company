@@ -129,6 +129,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const DOCUMENTEN_BUCKET = 'documenten'
     const PORTAAL_BUCKET = 'portaal-bestanden'
 
+    function resolveStorageUrl(url: string | null | undefined): string | null {
+      if (!url) return null
+      if (typeof url !== 'string') return null
+      if (url.startsWith('http') || url.startsWith('data:')) return url
+      // Storage path → generate public URL
+      const bucket = url.startsWith('portaal-bestanden/') ? PORTAAL_BUCKET : DOCUMENTEN_BUCKET
+      const storagePath = url.startsWith('portaal-bestanden/') ? url.replace('portaal-bestanden/', '') : url
+      const { data: publicUrl } = supabaseAdmin.storage.from(bucket).getPublicUrl(storagePath)
+      return publicUrl.publicUrl
+    }
+
     function resolveFileUrl(bestand: Record<string, unknown>): Record<string, unknown> {
       const url = bestand.url as string | null
       if (!url) return bestand
@@ -136,31 +147,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Al een volledige URL (http/https of data:) → niet aanpassen
       if (url.startsWith('http') || url.startsWith('data:')) return bestand
 
-      // Storage pad → genereer publieke URL
-      // Admin-uploads gaan naar 'documenten' bucket (pad begint met 'portaal/')
-      // Klant-uploads gaan naar 'portaal-bestanden' bucket (pad begint met 'portaal-bestanden/')
-      const bucket = url.startsWith('portaal-bestanden/') ? PORTAAL_BUCKET : DOCUMENTEN_BUCKET
-      const storagePath = url.startsWith('portaal-bestanden/') ? url.replace('portaal-bestanden/', '') : url
-
-      const { data: publicUrl } = supabaseAdmin.storage
-        .from(bucket)
-        .getPublicUrl(storagePath)
+      const resolvedUrl = resolveStorageUrl(url)
+      const resolvedThumbnail = bestand.thumbnail_url === url
+        ? resolvedUrl
+        : resolveStorageUrl(bestand.thumbnail_url as string | null) ?? bestand.thumbnail_url
 
       return {
         ...bestand,
-        url: publicUrl.publicUrl,
-        thumbnail_url: bestand.thumbnail_url === url ? publicUrl.publicUrl : bestand.thumbnail_url,
+        url: resolvedUrl ?? url,
+        thumbnail_url: resolvedThumbnail,
       }
-    }
-
-    function resolveStorageUrl(url: string | null | undefined): string | null {
-      if (!url) return null
-      if (url.startsWith('http') || url.startsWith('data:')) return url
-      // Storage path → generate public URL
-      const bucket = url.startsWith('portaal-bestanden/') ? PORTAAL_BUCKET : DOCUMENTEN_BUCKET
-      const storagePath = url.startsWith('portaal-bestanden/') ? url.replace('portaal-bestanden/', '') : url
-      const { data: publicUrl } = supabaseAdmin.storage.from(bucket).getPublicUrl(storagePath)
-      return publicUrl.publicUrl
     }
 
     const safeItems = (items || []).map((item: Record<string, unknown>) => {
