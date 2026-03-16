@@ -50,12 +50,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ portaal: bestaand, hergebruikt: true })
     }
 
-    // Maak nieuw portaal aan
-    const token = generateToken()
-    const linkGeldigheidDagen = (instellingen as { link_geldigheid_dagen?: number }).link_geldigheid_dagen || 30
-    const verlooptOp = new Date()
-    verlooptOp.setDate(verlooptOp.getDate() + linkGeldigheidDagen)
-
     // Haal portaal instellingen op voor instructietekst
     const { data: appSettings } = await supabaseAdmin
       .from('app_settings')
@@ -64,6 +58,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .maybeSingle()
 
     const instellingen = appSettings?.portaal_instellingen || {}
+
+    // Maak nieuw portaal aan
+    const token = generateToken()
+    const linkGeldigheidDagen = (instellingen as { link_geldigheid_dagen?: number }).link_geldigheid_dagen || 30
+    const verlooptOp = new Date()
+    verlooptOp.setDate(verlooptOp.getDate() + linkGeldigheidDagen)
 
     const { data: portaal, error } = await supabaseAdmin
       .from('project_portalen')
