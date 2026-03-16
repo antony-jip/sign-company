@@ -176,7 +176,33 @@ function normalizeKlant(raw: unknown): Klant {
   } as Klant
 }
 
-// ============ STUBS (tabellen bestaan nog niet) ============
+// ============ STUBS + ONTBREKENDE HELPERS ============
+
+export async function updateFactuurStatus(
+  id: string,
+  updates: Partial<Factuur>
+): Promise<Partial<Factuur>> {
+  assertId(id, 'factuur_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('facturen')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  return { id, ...updates }
+}
+
+export async function deleteNotificatie(id: string): Promise<void> {
+  assertId(id, 'notificatie_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('notificaties').delete().eq('id', id)
+    if (error) throw error
+  }
+}
 
 export async function getAuditLog(
   entityType: AuditLogEntry['entity_type'],
