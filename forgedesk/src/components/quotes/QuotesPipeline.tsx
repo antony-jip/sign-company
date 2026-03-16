@@ -185,11 +185,24 @@ function getDaysOpen(createdAt: string): number {
 }
 
 function getDaysColor(days: number): string {
-  if (days < 7) return 'text-accent dark:text-wm-light bg-wm-pale/20 dark:bg-primary/15'
-  if (days < 14) return 'text-amber-600 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-900/20'
-  if (days < 30) return 'text-orange-600 dark:text-orange-400 bg-orange-50/80 dark:bg-orange-900/20'
-  return 'text-red-600 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20'
+  if (days <= 3) return 'text-green-700 dark:text-green-400 bg-green-50/80 dark:bg-green-900/20'
+  if (days <= 7) return 'text-amber-600 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-900/20'
+  if (days <= 14) return 'text-orange-600 dark:text-orange-400 bg-orange-50/80 dark:bg-orange-900/20'
+  if (days <= 30) return 'text-red-600 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20'
+  return 'text-red-800 dark:text-red-300 bg-red-100/80 dark:bg-red-900/30'
 }
+
+type DagenOpenFilter = 'alle' | '<7' | '7-14' | '14-30' | '>30'
+
+const dagenOpenOpties: { value: DagenOpenFilter; label: string }[] = [
+  { value: 'alle', label: 'Alle' },
+  { value: '<7', label: '< 7 dagen' },
+  { value: '7-14', label: '7-14 dagen' },
+  { value: '14-30', label: '14-30 dagen' },
+  { value: '>30', label: '> 30 dagen' },
+]
+
+const OPEN_STATUSES = ['concept', 'verzonden', 'bekeken', 'wijziging_gevraagd']
 
 function getExpiryStatus(geldigTot: string): 'expired' | 'soon' | 'ok' {
   const expiry = new Date(geldigTot)
@@ -242,6 +255,7 @@ export function QuotesPipeline() {
   const [viewMode, setViewMode] = useState<ViewMode>('lijst')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('alle')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
+  const [dagenOpenFilter, setDagenOpenFilter] = useState<DagenOpenFilter>('alle')
   const [sortOption, setSortOption] = useState<SortOption>('newest')
   const [showClosed, setShowClosed] = useState(false)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
@@ -377,6 +391,20 @@ export function QuotesPipeline() {
       result = result.filter((o) => o.status === statusFilter)
     }
 
+    if (dagenOpenFilter !== 'alle') {
+      result = result.filter((o) => {
+        if (!OPEN_STATUSES.includes(o.status)) return false
+        const days = getDaysOpen(o.created_at)
+        switch (dagenOpenFilter) {
+          case '<7': return days < 7
+          case '7-14': return days >= 7 && days <= 14
+          case '14-30': return days > 14 && days <= 30
+          case '>30': return days > 30
+          default: return true
+        }
+      })
+    }
+
     switch (sortOption) {
       case 'newest':
         result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -393,7 +421,7 @@ export function QuotesPipeline() {
     }
 
     return result
-  }, [offertes, searchQuery, priorityFilter, statusFilter, sortOption])
+  }, [offertes, searchQuery, priorityFilter, statusFilter, dagenOpenFilter, sortOption])
 
   const offertesByStatus = useMemo(() => {
     const map: Record<string, Offerte[]> = {}
@@ -849,6 +877,42 @@ export function QuotesPipeline() {
             )
           })}
         </div>
+
+        {/* Dagen open filter pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
+          <span className="text-xs text-muted-foreground mr-1 flex-shrink-0">Dagen open:</span>
+          {dagenOpenOpties.map((optie) => {
+            const count = optie.value === 'alle'
+              ? offertes.filter((o) => OPEN_STATUSES.includes(o.status)).length
+              : offertes.filter((o) => {
+                  if (!OPEN_STATUSES.includes(o.status)) return false
+                  const days = getDaysOpen(o.created_at)
+                  switch (optie.value) {
+                    case '<7': return days < 7
+                    case '7-14': return days >= 7 && days <= 14
+                    case '14-30': return days > 14 && days <= 30
+                    case '>30': return days > 30
+                    default: return true
+                  }
+                }).length
+            if (optie.value !== 'alle' && count === 0) return null
+            return (
+              <button
+                key={optie.value}
+                onClick={() => setDagenOpenFilter(optie.value)}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
+                  dagenOpenFilter === optie.value
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                )}
+              >
+                {optie.label}
+                {count > 0 && <span className="ml-1 opacity-60">{count}</span>}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Pipeline Settings Panel */}
@@ -1085,14 +1149,21 @@ export function QuotesPipeline() {
                             {offerte.klant_naam || 'Onbekende klant'}
                           </p>
 
-                          {/* Amount + relative date */}
+                          {/* Amount + relative date + days open */}
                           <div className="flex items-center justify-between pt-2 border-t border-border dark:border-border/50">
                             <span className="text-sm font-bold font-mono text-foreground">
                               {formatCurrency(offerte.totaal)}
                             </span>
-                            <span className="text-2xs text-muted-foreground">
-                              {relativeDate(offerte.created_at)}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {OPEN_STATUSES.includes(offerte.status) && (
+                                <span className={`text-2xs font-semibold px-1.5 py-0.5 rounded-md ${getDaysColor(daysOpen)}`}>
+                                  {daysOpen}d
+                                </span>
+                              )}
+                              <span className="text-2xs text-muted-foreground">
+                                {relativeDate(offerte.created_at)}
+                              </span>
+                            </div>
                           </div>
 
                           {/* Expiry warning */}
