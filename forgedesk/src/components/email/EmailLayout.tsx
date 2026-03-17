@@ -4,7 +4,9 @@ import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail,
 } from 'lucide-react'
-import { sendEmail as sendEmailViaApi } from '@/services/gmailService'
+import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
+import type { IMAPEmailSummary } from '@/services/gmailService'
+import { getEmails, getKlanten, updateEmail, deleteEmail as deleteEmailDb, cacheEmailsToSupabase, getCachedEmails as getSupabaseCachedEmails } from '@/services/supabaseService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -12,14 +14,10 @@ import { EmailCompose } from './EmailCompose'
 import { EmailListItem } from './EmailListItem'
 import type { Email } from '@/types'
 import { logger } from '../../utils/logger'
-import { useEmailData } from './hooks/useEmailData'
-import { useEmailActions } from './hooks/useEmailActions'
-import { useEmailSelection } from './hooks/useEmailSelection'
-import { useEmailFilters } from './hooks/useEmailFilters'
-import { useEmailKeyboard } from './hooks/useEmailKeyboard'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
-import { extractSenderEmail } from './emailHelpers'
-import { KEYBOARD_SHORTCUTS } from './emailHelpers'
+import { extractSenderEmail, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
+import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 // Folder config
 const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] = [
@@ -30,17 +28,44 @@ const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] 
 ]
 
 // Filter config
-const filters: { id: FilterType; label: string }[] = [
+const filtersList: { id: FilterType; label: string }[] = [
   { id: 'alle', label: 'Alle' },
   { id: 'ongelezen', label: 'Ongelezen' },
   { id: 'met-ster', label: 'Met ster' },
   { id: 'bijlagen', label: 'Bijlagen' },
 ]
 
+const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak']
+
+// ─── Helper: convert IMAP message to Email ───
+function imapToEmail(msg: IMAPEmailSummary, folder: string, userId: string): Email {
+  return {
+    id: String(msg.uid),
+    user_id: userId,
+    gmail_id: String(msg.uid),
+    van: msg.fromName ? `${msg.fromName} <${msg.from}>` : msg.from,
+    aan: msg.to,
+    onderwerp: msg.subject,
+    inhoud: '',
+    datum: msg.date,
+    gelezen: msg.isRead,
+    starred: false,
+    labels: [],
+    bijlagen: msg.hasAttachments ? 1 : 0,
+    map: folder === 'INBOX' ? 'inbox' : folder.toLowerCase(),
+    created_at: msg.date,
+    updated_at: msg.date,
+  }
+}
+
 export function EmailLayout() {
-  // Core state
-  const [selectedFolder, setSelectedFolder] = useState<EmailFolder>('inbox')
+  const { user } = useAuth()
+  const { emailFetchLimit } = useAppSettings()
+
+  // ─── Core state ───
+  const [emails, setEmails] = useState<Email[]>([])
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
+  const [selectedFolder, setSelectedFolder] = useState<EmailFolder>('inbox')
   const [viewMode, setViewMode] = useState<ViewMode>('idle')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
@@ -49,72 +74,437 @@ export function EmailLayout() {
   const [showSearch, setShowSearch] = useState(false)
   const [fontSize, setFontSize] = useState<FontSize>('medium')
 
-  // Compose state
+  // ─── Loading state ───
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isLoadingBody, setIsLoadingBody] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [useIMAP, setUseIMAP] = useState(false)
+  const [imapTotal, setImapTotal] = useState(0)
+
+  // ─── Compose state ───
   const [composeDefaults, setComposeDefaults] = useState<{
     to?: string; subject?: string; body?: string
   }>({})
 
-  // Refs
+  // ─── Selection state (bulk actions) ───
+  const [checkedEmails, setCheckedEmails] = useState<Set<string>>(new Set())
+
+  // ─── Keyboard state ───
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1)
+  const [showShortcuts, setShowShortcuts] = useState(false)
+
+  // ─── Refs ───
   const emailListRef = useRef<HTMLDivElement>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const bodyCacheRef = useRef<Map<string, string>>(new Map())
 
-  // Hooks
-  const {
-    emails, setEmails, isLoading, isRefreshing, isLoadingBody,
-    handleRefresh, handleFolderLoad, loadEmailBody, loadMoreEmails,
-    imapTotal, isLoadingMore, user,
-  } = useEmailData()
+  const fetchLimit = emailFetchLimit || 200
 
-  const {
-    handleToggleStar, handleToggleRead, handleArchive, handleDelete,
-    handleTogglePin, handleSnooze, handleUnsnooze,
-  } = useEmailActions({ setEmails, setSelectedEmail, setViewMode })
+  // ─── SessionStorage cache for instant display ───
+  const getCachedEmails = useCallback((folder: string): Email[] | null => {
+    try {
+      const cached = sessionStorage.getItem(`forgedesk_emails_${folder}`)
+      if (!cached) return null
+      const { emails: cachedEmails, timestamp } = JSON.parse(cached)
+      if (Date.now() - timestamp > 5 * 60 * 1000) return null
+      return cachedEmails
+    } catch { return null }
+  }, [])
 
-  const { folderCounts, filterCounts, filteredEmails, threadedEmails } = useEmailFilters(
-    emails, selectedFolder, searchQuery, filter
-  )
+  const setCachedEmails = useCallback((folder: string, emailData: Email[]) => {
+    try {
+      sessionStorage.setItem(`forgedesk_emails_${folder}`, JSON.stringify({
+        emails: emailData,
+        timestamp: Date.now(),
+      }))
+    } catch { /* storage full */ }
+  }, [])
 
-  const {
-    checkedEmails, hasChecked, allChecked, someChecked,
-    toggleCheckEmail, toggleCheckAll, clearChecked,
-    handleBulkDelete, handleBulkArchive, handleBulkMarkRead, handleBulkMarkUnread,
-  } = useEmailSelection({ filteredEmails, setEmails })
+  // ─── Load emails from IMAP (with Supabase fallback) ───
+  const loadEmails = useCallback(async (folder?: string) => {
+    const imapFolder = folder || 'INBOX'
+    try {
+      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, 0)
+      setImapTotal(result.total)
+      setUseIMAP(true)
+      const emailData = result.emails.map((msg) => imapToEmail(msg, imapFolder, user?.id || ''))
+      setCachedEmails(imapFolder, emailData)
+      if (user?.id) {
+        cacheEmailsToSupabase(user.id, result.emails, imapFolder).catch(() => {})
+      }
+      return emailData
+    } catch {
+      if (user?.id) {
+        const dbCached = await getSupabaseCachedEmails(user.id, imapFolder).catch(() => null)
+        if (dbCached && dbCached.length > 0) {
+          setUseIMAP(false)
+          return dbCached
+        }
+      }
+      setUseIMAP(false)
+      return await getEmails().catch(() => [])
+    }
+  }, [fetchLimit, user?.id, setCachedEmails])
 
-  const noopSnooze = useCallback(() => {}, [])
-  const handleComposeEmpty = useCallback(() => handleCompose(), [handleCompose])
+  // ─── Initial load ───
+  useEffect(() => {
+    let cancelled = false
+    const cached = getCachedEmails('INBOX')
+    if (cached && cached.length > 0) {
+      setEmails(cached)
+      setIsLoading(false)
+      loadEmails().then((emailData) => {
+        if (!cancelled) setEmails(emailData)
+      })
+    } else {
+      setIsLoading(true)
+      loadEmails()
+        .then((emailData) => { if (!cancelled) setEmails(emailData) })
+        .finally(() => { if (!cancelled) setIsLoading(false) })
+    }
+    return () => { cancelled = true }
+  }, [loadEmails, getCachedEmails])
 
-  const { focusedIndex, setFocusedIndex, showShortcuts, setShowShortcuts } = useEmailKeyboard({
-    viewMode,
-    filteredEmails: threadedEmails,
-    onSelectEmail: handleSelectEmail,
-    onToggleStar: handleToggleStar,
-    onTogglePin: handleTogglePin,
-    onArchive: handleArchive,
-    onDelete: handleDelete,
-    onCompose: handleComposeEmpty,
-    onReply: handleReply,
-    onForward: handleForward,
-    onShowSnooze: noopSnooze,
-  })
+  // ─── Unsnooze timer ───
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date().toISOString()
+      setEmails((prev) => {
+        let changed = false
+        const next = prev.map((e) => {
+          if (e.snoozed_until && e.snoozed_until <= now) {
+            changed = true
+            return { ...e, snoozed_until: undefined, map: 'inbox' }
+          }
+          return e
+        })
+        return changed ? next : prev
+      })
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
-  // Polling: refresh every 60s or on window focus
+  // ─── Filtering (inline from useEmailFilters) ───
+  const folderCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    folderIds.forEach((id) => {
+      if (id === 'inbox') counts[id] = emails.filter((e) => e.map === 'inbox' && !e.gelezen).length
+      else if (id === 'concepten') counts[id] = emails.filter((e) => e.map === 'concepten').length
+      else if (id === 'gepland') counts[id] = emails.filter((e) => e.map === 'gepland').length
+      else if (id === 'gesnoozed') counts[id] = emails.filter((e) => e.snoozed_until).length
+      else counts[id] = 0
+    })
+    return counts
+  }, [emails])
+
+  const filteredEmails = useMemo(() => {
+    let filtered = selectedFolder === 'gesnoozed'
+      ? emails.filter((e) => e.snoozed_until)
+      : emails.filter((e) => e.map === selectedFolder && !e.snoozed_until)
+
+    if (searchQuery.trim()) {
+      const { text, operators } = parseSearchQuery(searchQuery)
+      if (text) {
+        const q = text.toLowerCase()
+        filtered = filtered.filter(
+          (e) =>
+            e.onderwerp.toLowerCase().includes(q) ||
+            e.van.toLowerCase().includes(q) ||
+            e.aan.toLowerCase().includes(q) ||
+            e.inhoud.toLowerCase().includes(q)
+        )
+      }
+      if (operators.from) {
+        const from = operators.from.toLowerCase()
+        filtered = filtered.filter((e) => e.van.toLowerCase().includes(from))
+      }
+      if (operators.to) {
+        const to = operators.to.toLowerCase()
+        filtered = filtered.filter((e) => e.aan.toLowerCase().includes(to))
+      }
+      if (operators.subject) {
+        const subj = operators.subject.toLowerCase()
+        filtered = filtered.filter((e) => e.onderwerp.toLowerCase().includes(subj))
+      }
+      if (operators.has) {
+        const has = operators.has.toLowerCase()
+        if (has === 'bijlage' || has === 'attachment') filtered = filtered.filter((e) => e.bijlagen > 0)
+        if (has === 'ster' || has === 'star') filtered = filtered.filter((e) => e.starred)
+      }
+      if (operators.label) {
+        const label = operators.label.toLowerCase()
+        filtered = filtered.filter((e) => e.labels.some((l) => l.toLowerCase() === label))
+      }
+      if (operators.before) {
+        const before = new Date(operators.before)
+        if (!isNaN(before.getTime())) filtered = filtered.filter((e) => new Date(e.datum) < before)
+      }
+      if (operators.after) {
+        const after = new Date(operators.after)
+        if (!isNaN(after.getTime())) filtered = filtered.filter((e) => new Date(e.datum) > after)
+      }
+    }
+
+    switch (filter) {
+      case 'ongelezen': filtered = filtered.filter((e) => !e.gelezen); break
+      case 'met-ster': filtered = filtered.filter((e) => e.starred); break
+      case 'vastgepind': filtered = filtered.filter((e) => e.pinned); break
+      case 'bijlagen': filtered = filtered.filter((e) => e.bijlagen > 0); break
+    }
+
+    // Sort: pinned first, then by date
+    const withTs = filtered.map(e => ({ e, ts: new Date(e.datum).getTime() }))
+    withTs.sort((a, b) => {
+      if (a.e.pinned && !b.e.pinned) return -1
+      if (!a.e.pinned && b.e.pinned) return 1
+      return b.ts - a.ts
+    })
+    return withTs.map(x => x.e)
+  }, [emails, selectedFolder, searchQuery, filter])
+
+  // Thread grouping
+  const threadedEmails = useMemo(() => {
+    const threads = new Map<string, Email[]>()
+    const standalone: Email[] = []
+
+    filteredEmails.forEach((email) => {
+      if (email.thread_id) {
+        const existing = threads.get(email.thread_id) || []
+        existing.push(email)
+        threads.set(email.thread_id, existing)
+      } else {
+        standalone.push(email)
+      }
+    })
+
+    const result: (Email & { threadCount?: number })[] = []
+    threads.forEach((threadEmails) => {
+      threadEmails.sort((a, b) => Date.parse(b.datum) - Date.parse(a.datum))
+      result.push({ ...threadEmails[0], threadCount: threadEmails.length })
+    })
+    standalone.forEach((email) => result.push({ ...email, threadCount: 1 }))
+
+    const tsMap = new Map<string, number>()
+    result.forEach(e => tsMap.set(e.id, new Date(e.datum).getTime()))
+    result.sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1
+      if (!a.pinned && b.pinned) return 1
+      return (tsMap.get(b.id) || 0) - (tsMap.get(a.id) || 0)
+    })
+    return result
+  }, [filteredEmails])
+
+  const filterCounts = useMemo(() => {
+    const folderEmails = selectedFolder === 'gesnoozed'
+      ? emails.filter((e) => e.snoozed_until)
+      : emails.filter((e) => e.map === selectedFolder)
+    return {
+      ongelezen: folderEmails.filter((e) => !e.gelezen).length,
+    }
+  }, [emails, selectedFolder])
+
+  // ─── Selection helpers (inline from useEmailSelection) ───
+  const hasChecked = checkedEmails.size > 0
+  const allChecked = filteredEmails.length > 0 && checkedEmails.size === filteredEmails.length
+  const someChecked = hasChecked && !allChecked
+
+  const toggleCheckEmail = useCallback((id: string) => {
+    setCheckedEmails((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleCheckAll = useCallback(() => {
+    if (allChecked) setCheckedEmails(new Set())
+    else setCheckedEmails(new Set(filteredEmails.map((e) => e.id)))
+  }, [allChecked, filteredEmails])
+
+  const clearChecked = useCallback(() => setCheckedEmails(new Set()), [])
+
+  // ─── Bulk actions ───
+  const handleBulkDelete = useCallback(() => {
+    const ids = Array.from(checkedEmails)
+    setEmails((prev) => prev.map((e) => ids.includes(e.id) ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e))
+    ids.forEach((id) => updateEmail(id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {}))
+    setCheckedEmails(new Set())
+    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} verwijderd`)
+  }, [checkedEmails])
+
+  const handleBulkArchive = useCallback(() => {
+    const ids = Array.from(checkedEmails)
+    setEmails((prev) => prev.filter((e) => !ids.includes(e.id)))
+    setCheckedEmails(new Set())
+    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} gearchiveerd`)
+  }, [checkedEmails])
+
+  const handleBulkMarkRead = useCallback(() => {
+    const ids = Array.from(checkedEmails)
+    setEmails((prev) => prev.map((e) => ids.includes(e.id) ? { ...e, gelezen: true } : e))
+    ids.forEach((id) => updateEmail(id, { gelezen: true }).catch(() => {}))
+    setCheckedEmails(new Set())
+    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} als gelezen gemarkeerd`)
+  }, [checkedEmails])
+
+  const handleBulkMarkUnread = useCallback(() => {
+    const ids = Array.from(checkedEmails)
+    setEmails((prev) => prev.map((e) => ids.includes(e.id) ? { ...e, gelezen: false } : e))
+    ids.forEach((id) => updateEmail(id, { gelezen: false }).catch(() => {}))
+    setCheckedEmails(new Set())
+    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} als ongelezen gemarkeerd`)
+  }, [checkedEmails])
+
+  // ─── Email actions (inline from useEmailActions) ───
+  const handleToggleStar = useCallback((email: Email) => {
+    const newStarred = !email.starred
+    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, starred: newStarred } : e)))
+    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, starred: newStarred } : prev)
+    updateEmail(email.id, { starred: newStarred }).catch(() => {})
+  }, [])
+
+  const handleToggleRead = useCallback((email: Email) => {
+    const newGelezen = !email.gelezen
+    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, gelezen: newGelezen } : e)))
+    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, gelezen: newGelezen } : prev)
+    updateEmail(email.id, { gelezen: newGelezen }).catch(() => {})
+  }, [])
+
+  const handleArchive = useCallback((email: Email) => {
+    setEmails((prev) => prev.filter((e) => e.id !== email.id))
+    setSelectedEmail(null)
+    setViewMode('idle')
+    toast.success('Email gearchiveerd')
+  }, [])
+
+  const handleDelete = useCallback((email: Email) => {
+    if (email.map === 'prullenbak') {
+      setEmails((prev) => prev.filter((e) => e.id !== email.id))
+      deleteEmailDb(email.id).catch(() => {})
+    } else {
+      setEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e))
+      updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
+    }
+    setSelectedEmail(null)
+    setViewMode('idle')
+    toast.success('Email verwijderd')
+  }, [])
+
+  // ─── Refresh & folder change ───
+  const handleRefresh = useCallback(async (folder: EmailFolder) => {
+    setIsRefreshing(true)
+    try {
+      const emailData = await loadEmails(IMAP_FOLDER_MAP[folder] || 'INBOX')
+      setEmails(emailData)
+      toast.success('Inbox vernieuwd')
+    } catch {
+      toast.error('Kon emails niet vernieuwen')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [loadEmails])
+
+  const handleFolderLoad = useCallback(async (folder: EmailFolder) => {
+    if (!useIMAP) return
+    setIsLoading(true)
+    try {
+      const emailData = await loadEmails(IMAP_FOLDER_MAP[folder] || 'INBOX')
+      setEmails(emailData)
+    } catch { /* keep existing */ }
+    finally { setIsLoading(false) }
+  }, [useIMAP, loadEmails])
+
+  // ─── Load more (infinite scroll) ───
+  const loadMoreEmails = useCallback(async (folder: EmailFolder) => {
+    if (!useIMAP || isLoadingMore) return
+    const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
+    const currentCount = emails.length
+    if (currentCount >= imapTotal) return
+    setIsLoadingMore(true)
+    try {
+      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, currentCount)
+      const moreEmails = result.emails.map((msg) => imapToEmail(msg, imapFolder, user?.id || ''))
+      setEmails((prev) => [...prev, ...moreEmails])
+      setImapTotal(result.total)
+    } catch {
+      toast.error('Kon meer emails niet laden')
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [useIMAP, isLoadingMore, emails.length, imapTotal, fetchLimit, user?.id])
+
+  // ─── Load email body ───
+  const loadEmailBody = useCallback(async (email: Email, folder: EmailFolder): Promise<Email> => {
+    const cached = bodyCacheRef.current.get(email.id)
+    if (cached) return { ...email, gelezen: true, inhoud: cached }
+    if (!useIMAP || email.inhoud) return email
+
+    setIsLoadingBody(true)
+    try {
+      const detail = await readEmailFromIMAP(Number(email.id), IMAP_FOLDER_MAP[folder] || 'INBOX')
+      const body = detail.bodyHtml || detail.bodyText || ''
+      bodyCacheRef.current.set(email.id, body)
+      return { ...email, gelezen: true, inhoud: body, aan: detail.to || email.aan }
+    } catch (err: unknown) {
+      logger.error('Email body ophalen mislukt:', err)
+      toast.error('Kon email inhoud niet laden')
+      return email
+    } finally {
+      setIsLoadingBody(false)
+    }
+  }, [useIMAP])
+
+  // ─── Polling: refresh every 60s or on window focus ───
   useEffect(() => {
     pollingRef.current = setInterval(() => {
       handleRefresh(selectedFolder)
     }, 60000)
-
-    const handleFocus = () => {
-      handleRefresh(selectedFolder)
-    }
+    const handleFocus = () => handleRefresh(selectedFolder)
     window.addEventListener('focus', handleFocus)
-
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
       window.removeEventListener('focus', handleFocus)
     }
   }, [selectedFolder, handleRefresh])
 
-  // Handlers
+  // ─── Keyboard shortcuts (inline from useEmailKeyboard) ───
+  const callbacksRef = useRef({ handleToggleStar, handleArchive, handleDelete })
+  callbacksRef.current = { handleToggleStar, handleArchive, handleDelete }
+  const emailsRef = useRef(threadedEmails)
+  emailsRef.current = threadedEmails
+  const focusedRef = useRef(focusedIndex)
+  focusedRef.current = focusedIndex
+
+  useEffect(() => {
+    if (viewMode !== 'idle') return
+    function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+      const idx = focusedRef.current
+      const cb = callbacksRef.current
+      const list = emailsRef.current
+      switch (e.key) {
+        case 'j': e.preventDefault(); setFocusedIndex((prev) => Math.min(prev + 1, list.length - 1)); break
+        case 'k': e.preventDefault(); setFocusedIndex((prev) => Math.max(prev - 1, 0)); break
+        case 'o': case 'Enter':
+          e.preventDefault()
+          if (idx >= 0 && idx < list.length) handleSelectEmail(list[idx])
+          break
+        case 's': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleToggleStar(list[idx]); break
+        case 'e': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleArchive(list[idx]); break
+        case '#': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleDelete(list[idx]); break
+        case 'c': e.preventDefault(); handleCompose(); break
+        case '?': e.preventDefault(); setShowShortcuts((prev) => !prev); break
+        case 'Escape': e.preventDefault(); setShowShortcuts(false); break
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [viewMode])
+
+  // ─── Handlers ───
   const handleSelectEmail = useCallback(async (email: Email) => {
     const withBody = await loadEmailBody(email, selectedFolder)
     if (!withBody.gelezen) {
@@ -122,8 +512,7 @@ export function EmailLayout() {
     }
     setSelectedEmail(withBody)
     setViewMode('reading')
-    setFocusedIndex(threadedEmails.indexOf(email))
-  }, [loadEmailBody, selectedFolder, setEmails, threadedEmails, setFocusedIndex])
+  }, [loadEmailBody, selectedFolder])
 
   const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string }) => {
     setComposeDefaults(defaults || {})
@@ -197,7 +586,6 @@ export function EmailLayout() {
     }
   }, [selectedEmail, threadedEmails, handleSelectEmail])
 
-  // Scroll handler for infinite loading
   const handleScroll = useCallback(() => {
     if (!emailListRef.current || isLoadingMore) return
     const { scrollTop, scrollHeight, clientHeight } = emailListRef.current
@@ -211,7 +599,6 @@ export function EmailLayout() {
     [selectedEmail, threadedEmails],
   )
 
-  // Navigate to next email after delete/archive
   const navigateAfterAction = useCallback((action: (email: Email) => void) => (email: Email) => {
     action(email)
     const idx = threadedEmails.findIndex(e => e.id === email.id)
@@ -262,9 +649,6 @@ export function EmailLayout() {
       </div>
     )
   }
-
-  // Active folder label for header
-  const activeFolder = folderTabs.find(f => f.id === selectedFolder)
 
   // ─── INBOX VIEW: sidebar + email list ───
   return (
@@ -326,7 +710,6 @@ export function EmailLayout() {
           </button>
         </nav>
 
-        {/* Sidebar footer — subtle branding */}
         <div className="px-4 py-3 border-t border-foreground/[0.05]">
           <div className="flex items-center gap-2 text-[11px] text-foreground/25">
             <Mail className="h-3 w-3" />
@@ -340,7 +723,6 @@ export function EmailLayout() {
         {/* Toolbar */}
         <div className="flex items-center justify-between px-4 h-12 border-b border-foreground/[0.06] flex-shrink-0">
           <div className="flex items-center gap-3">
-            {/* Select all checkbox */}
             <input
               type="checkbox"
               checked={allChecked}
@@ -366,7 +748,7 @@ export function EmailLayout() {
               </div>
             ) : (
               <div className="flex items-center gap-0.5 bg-foreground/[0.03] rounded-lg p-0.5">
-                {filters.map(f => {
+                {filtersList.map(f => {
                   const isActiveFilter = filter === f.id
                   return (
                     <button
@@ -394,7 +776,6 @@ export function EmailLayout() {
           </div>
 
           <div className="flex items-center gap-0.5">
-            {/* Font size toggle */}
             <div className="flex items-center bg-foreground/[0.03] rounded-md p-0.5 mr-1">
               {(['small', 'medium', 'large'] as FontSize[]).map((size) => (
                 <button
