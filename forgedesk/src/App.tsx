@@ -55,7 +55,6 @@ const QuotesPipeline = lazy(() => import('@/components/quotes/QuotesPipeline'), 
 const QuoteCreation = lazy(() => import('@/components/quotes/QuoteCreation'), 'QuoteCreation')
 const ForgeQuotePreview = lazy(() => import('@/components/quotes/ForgeQuotePreview'), 'ForgeQuotePreview')
 const InkoopOffertesPage = lazy(() => import('@/components/quotes/InkoopOffertesPage'), 'InkoopOffertesPage')
-const OfferteDetail = lazy(() => import('@/components/quotes/OfferteDetail'), 'OfferteDetail')
 const OffertePubliekPagina = lazy(() => import('@/components/quotes/OffertePubliekPagina'), 'OffertePubliekPagina')
 
 // Documents
@@ -143,6 +142,12 @@ function GoedkeuringRedirect() {
   return <Navigate to={`/portaal/${token}`} replace />
 }
 
+/** Redirect /offertes/:id/detail → /offertes/:id/bewerken */
+function OfferteDetailRedirect() {
+  const { id } = useParams()
+  return <Navigate to={`/offertes/${id}/bewerken`} replace />
+}
+
 function AppContent() {
   const { isReady } = useDataInit()
 
@@ -205,7 +210,7 @@ function AppContent() {
         <Route path="offertes/:id" element={<QuoteCreation />} />
         <Route path="offertes/:id/bewerken" element={<QuoteCreation />} />
         <Route path="offertes/:id/preview" element={<ForgeQuotePreview />} />
-        <Route path="offertes/:id/detail" element={<OfferteDetail />} />
+        <Route path="offertes/:id/detail" element={<OfferteDetailRedirect />} />
         <Route path="inkoopoffertes" element={<InkoopOffertesPage />} />
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
