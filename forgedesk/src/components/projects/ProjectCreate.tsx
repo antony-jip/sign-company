@@ -122,8 +122,9 @@ export function ProjectCreate() {
   }
 
   return (
-    <div className="-m-3 sm:-m-4 md:-m-6 min-h-full bg-gradient-to-br from-[#d5f5e3] via-[#dbeafe] to-[#ede9fe] dark:from-background dark:via-background dark:to-background">
-      <div className="max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full">
+      <div className="fixed inset-0 bg-gradient-to-br from-[#d5f5e3] via-[#dbeafe] to-[#ede9fe] dark:from-background dark:via-background dark:to-background pointer-events-none" />
+      <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-4 mb-10">
         <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-white/60" onClick={() => navigate('/projecten')}>
