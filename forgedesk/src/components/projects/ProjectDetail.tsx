@@ -51,6 +51,7 @@ import {
   MapPin,
   X,
   Wallet,
+  ArrowRight,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -894,17 +895,6 @@ export function ProjectDetail() {
                 {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
               </Badge>
               <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
-              {projectOffertes.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(`/offertes/${projectOffertes[0].id}/bewerken`, { state: { from: location.pathname } })}
-                  className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <Pencil className="h-3.5 w-3.5 mr-1" />
-                  Offerte bewerken
-                </Button>
-              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -914,29 +904,59 @@ export function ProjectDetail() {
                 <Copy className="h-3.5 w-3.5 mr-1" />
                 Kopiëren
               </Button>
-              <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
-              {projectOffertes.length > 0 ? (
-                <Button
-                  size="sm"
-                  onClick={() => navigate(`/offertes/${projectOffertes[0].id}/detail`, { state: { from: location.pathname } })}
-                  className="h-7 px-3 text-xs font-semibold"
-                >
-                  <FileText className="h-3.5 w-3.5 mr-1" />
-                  Ga naar offerte
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={openNieuweOfferte}
-                  className="h-7 px-3 text-xs font-semibold"
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  Maak offerte
-                </Button>
-              )}
             </div>
           </div>
 
+          {/* ── Offerte snelkoppeling (prominente CTA) ── */}
+          {projectOffertes.length === 0 ? (
+            <button
+              onClick={openNieuweOfferte}
+              className="mt-4 w-full group relative overflow-hidden rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent p-5 text-left transition-all hover:border-primary/50 hover:shadow-md hover:shadow-primary/5"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                  <FileText className="h-6 w-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold text-foreground">Maak een offerte</p>
+                  <p className="text-sm text-muted-foreground">Begin met het opstellen van een offerte voor dit project</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-primary/50 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </div>
+            </button>
+          ) : (
+            <div
+              className="mt-4 rounded-xl border bg-card p-4 cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
+              onClick={() => navigate(`/offertes/${projectOffertes[0].id}/bewerken`, { state: { from: location.pathname } })}
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground truncate">{projectOffertes[0].titel || 'Offerte'}</p>
+                    <span className="text-xs text-muted-foreground font-mono">{projectOffertes[0].nummer}</span>
+                    <span className={`${getStatusColor(projectOffertes[0].status)} text-2xs px-1.5 py-0.5 rounded-full font-medium`}>
+                      {projectOffertes[0].status}
+                    </span>
+                  </div>
+                  <p className="text-lg font-bold text-foreground font-mono">{formatCurrency(projectOffertes[0].totaal)}</p>
+                </div>
+                <Button
+                  size="sm"
+                  className="shrink-0 gap-1.5"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigate(`/offertes/${projectOffertes[0].id}/bewerken`, { state: { from: location.pathname } })
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Offerte bewerken
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Budget waarschuwing */}
           {(() => {
@@ -1916,19 +1936,10 @@ export function ProjectDetail() {
                             variant="ghost"
                             size="sm"
                             className="h-6 px-2 text-xs"
-                            onClick={() => navigate(`/offertes/${offerte.id}/detail`, { state: { from: location.pathname } })}
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            Bekijk
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
                             onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
                           >
                             <Pencil className="h-3 w-3 mr-1" />
-                            Bewerk
+                            Bewerken
                           </Button>
                           <Button
                             variant="ghost"

@@ -30,7 +30,7 @@ import { QuotesPipeline } from '@/components/quotes/QuotesPipeline'
 import { QuoteCreation } from '@/components/quotes/QuoteCreation'
 import { ForgeQuotePreview } from '@/components/quotes/ForgeQuotePreview'
 import { InkoopOffertesPage } from '@/components/quotes/InkoopOffertesPage'
-import { OfferteDetail } from '@/components/quotes/OfferteDetail'
+// OfferteDetail removed — detail page replaced by direct navigation to editor
 import { DocumentsLayout } from '@/components/documents/DocumentsLayout'
 import { EmailLayout } from '@/components/email/EmailLayout'
 import { EmailComposePage } from '@/components/email/EmailComposePage'
@@ -80,6 +80,12 @@ import { useParams } from 'react-router-dom'
 function GoedkeuringRedirect() {
   const { token } = useParams()
   return <Navigate to={`/portaal/${token}`} replace />
+}
+
+/** Redirect /offertes/:id/detail → /offertes/:id/bewerken */
+function OfferteDetailRedirect() {
+  const { id } = useParams()
+  return <Navigate to={`/offertes/${id}/bewerken`} replace />
 }
 
 function AppContent() {
@@ -147,7 +153,7 @@ function AppContent() {
         <Route path="offertes/:id" element={<QuoteCreation />} />
         <Route path="offertes/:id/bewerken" element={<QuoteCreation />} />
         <Route path="offertes/:id/preview" element={<ForgeQuotePreview />} />
-        <Route path="offertes/:id/detail" element={<OfferteDetail />} />
+        <Route path="offertes/:id/detail" element={<OfferteDetailRedirect />} />
         <Route path="inkoopoffertes" element={<InkoopOffertesPage />} />
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
