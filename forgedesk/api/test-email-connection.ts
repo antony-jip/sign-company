@@ -11,18 +11,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     await verifyUser(req)
-    const {
-      gmail_address,
-      app_password,
-      smtp_host = 'smtp.gmail.com',
-      smtp_port = 587,
-      imap_host = 'imap.gmail.com',
-      imap_port = 993,
-    } = req.body
+  } catch (authErr: unknown) {
+    const msg = authErr instanceof Error ? authErr.message : 'Auth fout'
+    console.error('[test-email-connection] Auth mislukt:', msg)
+    return res.status(401).json({ imap_ok: false, smtp_ok: false, error: msg })
+  }
+
+  try {
+    const body = req.body || {}
+    const gmail_address = body.gmail_address
+    const app_password = body.app_password
+    const smtp_host = body.smtp_host || 'smtp.gmail.com'
+    const smtp_port = body.smtp_port || 587
+    const imap_host = body.imap_host || 'imap.gmail.com'
+    const imap_port = body.imap_port || 993
 
     if (!gmail_address || !app_password) {
-      return res.status(400).json({ error: 'E-mailadres en app-wachtwoord zijn verplicht' })
+      return res.status(400).json({
+        imap_ok: false,
+        smtp_ok: false,
+        error: 'E-mailadres en app-wachtwoord zijn verplicht',
+      })
     }
+
+    console.log(`[test-email-connection] Testing ${gmail_address} — IMAP: ${imap_host}:${imap_port}, SMTP: ${smtp_host}:${smtp_port}`)
 
     // Test IMAP en SMTP parallel (sneller, past binnen Vercel timeout)
     const [imapResult, smtpResult] = await Promise.allSettled([
@@ -35,10 +47,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const errors: string[] = []
     if (imapResult.status === 'rejected') {
-      errors.push(`IMAP: ${imapResult.reason?.message || 'Onbekende fout'}`)
+      const imapErr = imapResult.reason?.message || String(imapResult.reason) || 'Onbekende fout'
+      console.error('[test-email-connection] IMAP fout:', imapErr)
+      errors.push(`IMAP: ${imapErr}`)
     }
     if (smtpResult.status === 'rejected') {
-      errors.push(`SMTP: ${smtpResult.reason?.message || 'Onbekende fout'}`)
+      const smtpErr = smtpResult.reason?.message || String(smtpResult.reason) || 'Onbekende fout'
+      console.error('[test-email-connection] SMTP fout:', smtpErr)
+      errors.push(`SMTP: ${smtpErr}`)
+    }
+
+    if (imap_ok && smtp_ok) {
+      console.log('[test-email-connection] Beide tests geslaagd')
     }
 
     return res.status(200).json({
@@ -48,10 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Verbindingstest mislukt'
-    if (msg === 'Niet geautoriseerd' || msg === 'Ongeldige sessie') {
-      return res.status(401).json({ imap_ok: false, smtp_ok: false, error: msg })
-    }
-    console.error('Email verbindingstest mislukt:', error)
+    console.error('[test-email-connection] Onverwachte fout:', error)
     return res.status(500).json({ imap_ok: false, smtp_ok: false, error: msg })
   }
 }

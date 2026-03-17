@@ -52,8 +52,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (data.encrypted_app_password) {
         try {
           app_password = decrypt(data.encrypted_app_password)
-        } catch {
-          return res.status(500).json({ error: 'Kon wachtwoord niet ontsleutelen' })
+        } catch (decryptErr) {
+          const decryptMsg = decryptErr instanceof Error ? decryptErr.message : 'Onbekende fout'
+          console.error('[email-settings] GET decrypt mislukt:', decryptMsg, '| format:', data.encrypted_app_password.substring(0, 10) + '...')
+          return res.status(500).json({ error: `Kon wachtwoord niet ontsleutelen: ${decryptMsg}` })
         }
       }
 
@@ -101,9 +103,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let encryptedPassword: string
     try {
       encryptedPassword = encrypt(app_password)
+      console.log('[email-settings] POST: wachtwoord versleuteld met AES')
     } catch {
       // Fallback: base64 obfuscation (when EMAIL_ENCRYPTION_KEY not set)
       encryptedPassword = 'b64:' + Buffer.from(app_password, 'utf8').toString('base64')
+      console.log('[email-settings] POST: EMAIL_ENCRYPTION_KEY ontbreekt, fallback naar b64 encoding')
     }
 
     const { error } = await supabaseAdmin
