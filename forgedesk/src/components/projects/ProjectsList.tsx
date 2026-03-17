@@ -926,22 +926,6 @@ export function ProjectsList() {
                     {/* Quick actions + Menu */}
                     <td className="py-3 px-2">
                       <div className="flex items-center gap-0.5 justify-end">
-                        {/* Quick offerte preview button */}
-                        {(() => {
-                          const projOffertes = getProjectOffertes(project.id)
-                          if (projOffertes.length === 0) return null
-                          const latestOfferte = projOffertes[0]
-                          return (
-                            <Link
-                              to={`/offertes/${latestOfferte.id}/preview`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors opacity-0 group-hover:opacity-100"
-                              title={`Offerte bekijken: ${latestOfferte.nummer || latestOfferte.titel}`}
-                            >
-                              <Eye className="w-4 h-4 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
-                            </Link>
-                          )
-                        })()}
                         {/* Quick photo upload button */}
                         <button
                           onClick={(e) => {
