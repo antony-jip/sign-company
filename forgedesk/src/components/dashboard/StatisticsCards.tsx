@@ -45,9 +45,9 @@ export function StatisticsCards() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl p-[22px] h-[120px] bg-muted/30 animate-pulse" />
+          <div key={i} className="rounded-xl p-5 h-[120px] bg-muted/30 animate-pulse" />
         ))}
       </div>
     )

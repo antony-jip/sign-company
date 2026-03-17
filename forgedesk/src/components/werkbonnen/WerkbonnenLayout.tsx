@@ -190,7 +190,7 @@ export function WerkbonnenLayout() {
           return (
             <Card key={status} className="cursor-pointer hover-lift"
               onClick={() => setFilterStatus(status === filterStatus ? 'alle' : status)}>
-              <CardContent className="p-4">
+              <CardContent className="p-5">
                 <p className="text-xs font-bold text-text-tertiary uppercase tracking-label">{cfg.label}</p>
                 <p className="text-2xl font-bold mt-1">{statusCounts[status] || 0}</p>
               </CardContent>

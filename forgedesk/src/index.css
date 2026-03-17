@@ -480,6 +480,7 @@ tbody tr:hover {
   }
   .wm-table tbody tr {
     cursor: pointer;
+    transition: background-color 120ms ease;
   }
   .wm-table tbody tr:hover {
     background: hsl(var(--background));
@@ -740,7 +741,7 @@ tbody tr:hover {
 }
 
 .wm-stat-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-1px);
   box-shadow:
     0 12px 40px -12px hsl(var(--wm-shadow-color) / 0.12),
     0 4px 12px -4px hsl(var(--wm-shadow-color) / 0.06),
@@ -854,7 +855,7 @@ tbody tr:hover {
 }
 
 .wm-quick-action:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   box-shadow:
     0 12px 32px -8px hsl(var(--wm-shadow-color) / 0.15),
     0 4px 12px -4px hsl(var(--wm-shadow-color) / 0.06);

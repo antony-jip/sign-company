@@ -172,12 +172,12 @@ export function LeveringsbonnenLayout() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-4">
         {FILTER_OPTIONS.filter((f) => f.value !== 'alle').map((opt) => {
           const cfg = STATUS_CONFIG[opt.value as Leveringsbon['status']]
           return (
             <button key={opt.value} onClick={() => setFilterStatus(opt.value)}
-              className={cn('text-left rounded-xl border p-3 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-border')}>
+              className={cn('text-left rounded-xl border p-5 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-border')}>
               <div className="flex items-center gap-2 mb-1">
                 <span className={cn('w-2 h-2 rounded-full', cfg.dot)} />
                 <span className="text-xs font-medium text-muted-foreground">{opt.label}</span>
